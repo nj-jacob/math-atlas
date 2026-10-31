@@ -44,7 +44,7 @@
   const rv = t => { const s = H.strip(t).replace(/−/g, '-'); if (s === 'π') return Math.PI; if (s.startsWith('√')) return Math.sqrt(n(s.slice(1))); if (s.includes('/')) { const [a, b] = s.split('/'); return n(a) / n(b); } return n(s); };
   const isSq = k => Number.isInteger(Math.sqrt(k));
   const irrational = t => { const s = H.strip(t); return s === 'π' || (s.startsWith('√') && !isSq(n(s.slice(1)))); };
-  set('rs-match', (q, m) => q.pairs.every((p, i) => n(p[1]) === m.list[i] * m.list[i] && H.strip(p[0]) === m.list[i] + '2') ? '' : 'pairs');
+  set('rs-match', (q, m) => q.pairs.every((p, i) => n(p[1]) === m.list[i] * m.list[i] && H.strip(p[0]) === m.list[i] + '\u00b2') ? '' : 'pairs');
   set('rs-tf', (q, m) => tf(m.x * m.x === m.said, q));
   set('rs-story', (q, m) => q.answer === m.s * m.s ? '' : 'area');
   set('rs-pick', q => same(which(q, o => isSq(n(o))), q.answer) ? '' : 'picks');
@@ -62,4 +62,32 @@
   set('ro-tf', (q, m) => tf(Math.sqrt(m.n) > m.d, q));
   set('ro-tap', q => { const v = q.tiles.map(rv); return v[q.answer] === Math.max(...v) && v.filter(x => x === Math.max(...v)).length === 1 ? '' : 'greatest'; });
   set('ro-pick', (q, m) => same(which(q, o => rv(o) > m.a && rv(o) < m.a + 1), q.answer) ? '' : 'picks');
+  /* ---- Big and small numbers ---- */
+  /* read superscript powers: "10⁻³" -> -3, "4.5 × 10⁶" -> 4 500 000 */
+  const SUPS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  const expOf = t => { const s = H.strip(t).match(/10([⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+)$/)[1]; return (s[0] === '⁻' ? -1 : 1) * +[...s.replace('⁻', '')].map(c => SUPS.indexOf(c)).join(''); };
+  const coefOf = t => { const s = H.strip(t); return s.includes('×') ? n(s.split('×')[0]) : 1; };
+  const sv = t => coefOf(t) * Math.pow(10, expOf(t));
+  const rel = (a, b) => Math.abs(a - b) <= 1e-9 * Math.max(1, Math.abs(a), Math.abs(b));
+  const PREF = { T: 12, G: 9, M: 6, k: 3, '': 0, m: -3, 'µ': -6, n: -9, p: -12 };
+  const unitPow = u => PREF[H.strip(u).slice(0, -1)];
+  set('bp-match', q => pairsOk(q, (l, r) => rel(sv(l), n(r))));
+  set('bp-tf', (q, m) => tf(Math.pow(10, m.e) === m.said, q));
+  set('bp-order', q => ordered(q.items.map(expOf)) ? '' : 'order');
+  set('bp-pick', q => same(which(q, o => sv(o) < 1), q.answer) ? '' : 'picks');
+  set('bh-match', q => pairsOk(q, (l, r) => rel(ev(l), n(r))));
+  set('bh-story', (q, m) => q.answer === m.n * Math.pow(10, m.k2) ? '' : 'total');
+  set('bh-tf', (q, m) => tf(rel(m.n * Math.pow(10, m.k2), n(m.said)), q));
+  set('bh-fill', (q, m) => rel(m.n / q.answers[0], m.r) ? '' : 'divisor');
+  set('bb-tap', q => { const ok = q.tiles.map((t, j) => (coefOf(t) >= 1 && coefOf(t) < 10 ? j : -1)).filter(j => j >= 0); const v = q.tiles.map(sv); return ok.length === 1 && ok[0] === q.answer && v.every(x => rel(x, v[0])) ? '' : 'proper form'; });
+  set('bb-story', (q, m) => rel(m.c * Math.pow(10, q.answers[0]), m.n) && m.c >= 1 && m.c < 10 ? '' : 'exponent');
+  set('bb-tf', (q, m) => tf(rel(m.c * Math.pow(10, m.e), m.n), q));
+  set('bb-match', q => pairsOk(q, (l, r) => rel(n(l), sv(r)) && coefOf(r) >= 1 && coefOf(r) < 10));
+  set('bx-match', q => pairsOk(q, (l, r) => PREF[H.strip(l).match(/\((.*)\)/)[1]] === expOf(r)));
+  set('bx-order', q => ordered(q.items.map(t => unitPow(H.strip(t).replace(/^1 /, '')))) ? '' : 'order');
+  set('bx-tf', (q, m) => tf(Math.pow(10, unitPow(m.from) - unitPow(m.to)) === m.said, q));
+  set('bx-story', (q, m) => q.answer === m.v * Math.pow(10, unitPow(m.from) - unitPow(m.to)) ? '' : 'conversion');
+  set('bc-tap', q => { const v = q.tiles.map(sv); return v[q.answer] === Math.max(...v) ? '' : 'biggest'; });
+  set('bc-order', q => ordered(q.items.map(sv)) ? '' : 'order');
+  set('bc-tf', (q, m) => tf(m.a * Math.pow(10, m.e) > m.b * Math.pow(10, m.f), q));
 })(window.__verify, window.__H);

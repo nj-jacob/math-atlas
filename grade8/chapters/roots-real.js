@@ -277,7 +277,7 @@ A.yt({ q: 'Which is greater?', opts: [RT + '20', '4.5'], a: 1, back: 'Change ' +
   });
 
   /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
-  var K = window.K8;
+  var K = window.K8, SQU = '\u00b2';
   function distinctInts(n, a, b) { var out = []; while (out.length < n) { var v = R.int(a, b); if (out.indexOf(v) < 0) out.push(v); } return out; }
   function perfect(k) { return Math.round(Math.sqrt(k)) * Math.round(Math.sqrt(k)) === k; }
   function notSq(a, b) { var k; do { k = R.int(a, b); } while (perfect(k)); return k; }
@@ -297,19 +297,19 @@ A.yt({ q: 'Which is greater?', opts: [RT + '20', '4.5'], a: 1, back: 'Change ' +
     'rr-square': [
       [1, 'match', function (lv) {
         var list = distinctInts(3, 2, lv === 1 ? 12 : 20);
-        return { q: 'Match each square to its value.', type: 'match', pairs: list.map(function (x) { return [x + SQ, F(x * x)]; }),
-          hint: 'A square is a number times itself.', steps: ['For example, ' + list[0] + SQ + ' = ' + list[0] + ' &times; ' + list[0] + ' = ' + list[0] * list[0] + '.'], explain: list.map(function (x) { return x + SQ + ' = ' + x * x; }).join(', ') + '.', meta: { k: 'rs-match', list: list } };
+        return { q: 'Match each square to its value.', type: 'match', pairs: list.map(function (x) { return [x + SQU, F(x * x)]; }),
+          hint: 'A square is a number times itself.', steps: ['For example, ' + list[0] + SQU + ' = ' + list[0] + ' &times; ' + list[0] + ' = ' + list[0] * list[0] + '.'], explain: list.map(function (x) { return x + SQU + ' = ' + x * x; }).join(', ') + '.', meta: { k: 'rs-match', list: list } };
       }],
       [1, 'mistake', function (lv) {
         var who = K.name(), x = R.int(3, lv === 1 ? 12 : 20), truth = R.int(0, 1), said = truth ? x * x : 2 * x;
-        return K.tf({ q: who + ' says <span class="math">' + x + SQ + ' = ' + said + '</span>. True or false?', truth: truth,
-          right: x + SQ + ' means ' + x + ' &times; ' + x + ', which is ' + x * x + '.', wrong: [x + SQ + ' means ' + x + ' &times; 2.', x + SQ + ' means ' + x + ' + ' + x + '.'],
+        return K.tf({ q: who + ' says <span class="math">' + x + SQU + ' = ' + said + '</span>. True or false?', truth: truth,
+          right: x + SQU + ' means ' + x + ' &times; ' + x + ', which is ' + x * x + '.', wrong: [x + SQU + ' means ' + x + ' &times; 2.', x + SQU + ' means ' + x + ' + ' + x + '.'],
           hint: 'What does the small 2 tell you to do?', meta: { k: 'rs-tf', x: x, said: said } });
       }],
       [1, 'story', function (lv) {
         var who = K.name(), s = R.int(3, lv === 1 ? 12 : 25), what = R.pick(['vegetable garden', 'patio', 'rink in the backyard', 'quilt']);
-        return { q: who + ' builds a square ' + what + ' with sides of <b>' + s + ' m</b>. What is its area?', type: 'num', answer: s * s, unit: 'm' + SQ,
-          hint: 'The area of a square is side &times; side.', steps: ['Area = ' + s + SQ + ' = ' + s + ' &times; ' + s + '.', 'Area = ' + F(s * s) + ' m' + SQ + '.'], explain: s + SQ + ' = ' + F(s * s) + ' m' + SQ + '.', meta: { k: 'rs-story', s: s } };
+        return { q: who + ' builds a square ' + what + ' with sides of <b>' + s + ' m</b>. What is its area?', type: 'num', answer: s * s, unit: 'm' + SQU,
+          hint: 'The area of a square is side &times; side.', steps: ['Area = ' + s + SQU + ' = ' + s + ' &times; ' + s + '.', 'Area = ' + F(s * s) + ' m' + SQU + '.'], explain: s + SQU + ' = ' + F(s * s) + ' m' + SQU + '.', meta: { k: 'rs-story', s: s } };
       }],
       [2, 'pick', function (lv) {
         return K.until(function () {
