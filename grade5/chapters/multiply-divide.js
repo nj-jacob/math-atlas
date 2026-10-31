@@ -9,7 +9,8 @@
     return out;
   }
   /* area model drawing for a (up to 99) times b (up to 99) */
-  function areaModel(a, b, rowCols) {
+  function areaModel(a, b, rowCols, show) {
+    var cell = 0;
     var pa = parts(a), pb = parts(b);
     var cw = pa.map(function (p) { return 70 + 220 * p / a; }), rh = pb.map(function (p) { return 40 + 90 * p / b; });
     var W = cw.reduce(function (x, y) { return x + y; }, 0), H = rh.reduce(function (x, y) { return x + y; }, 0), s = '', x = 50, y;
@@ -20,7 +21,8 @@
       x = 50;
       pa.forEach(function (p, c) {
         s += '<rect x="' + x + '" y="' + y + '" width="' + cw[c] + '" height="' + rh[r] + '" style="fill:color-mix(in srgb,' + (rowCols ? rowCols[r] : 'var(--strand)') + ' ' + (rowCols ? 30 + 12 * (c % 2) : 14 + 10 * ((r + c) % 2)) + '%,var(--card));stroke:var(--ink)" stroke-width="2"/>' +
-          '<text x="' + (x + cw[c] / 2) + '" y="' + (y + rh[r] / 2 + 6) + '" text-anchor="middle" class="tb" font-size="18">' + A.fmt(p * q) + '</text>';
+          '<text x="' + (x + cw[c] / 2) + '" y="' + (y + rh[r] / 2 + 6) + '" text-anchor="middle" class="tb" font-size="18">' + (show == null || cell < show ? A.fmt(p * q) : '?') + '</text>';
+        cell++;
         x += cw[c];
       });
       y += rh[r];
@@ -44,8 +46,9 @@
     return A.svg(c * sz + 8, r * sz + 8, s, label || r + ' rows of ' + c + (split ? ', split into ' + split + ' and ' + (c - split) + ' columns' : ''));
   }
   /* q full groups of d, then the r left over: as an extra group to fill (up), left out (down) or shared (share) */
-  function packs(q, r, d, kind, noun) {
-    var bw = 38, bh = 30, gap = 8, s = '', x = 4, perRow = 12, y = 4;
+  function packs(q, r, d, kind, noun, perRow) {
+    var bw = 38, bh = 30, gap = 8, s = '', x = 4, y = 4;
+    perRow = perRow || 12;
     for (var i = 0; i < q; i++) {
       var cx = 4 + (i % perRow) * (bw + gap), cy = y + Math.floor(i / perRow) * (bh + 22);
       s += '<rect x="' + cx + '" y="' + cy + '" width="' + bw + '" height="' + bh + '" rx="5" style="fill:var(--strand);stroke:var(--ink)" stroke-width="1.5"/><text x="' + (cx + bw / 2) + '" y="' + (cy + 20) + '" text-anchor="middle" font-size="16" font-weight="700" style="fill:#fff">' + d + '</text>';
@@ -64,8 +67,9 @@
     var W = 4 + Math.min(Math.max(q + 1, 1), perRow) * (bw + gap) + 60;
     return A.svg(Math.max(W, 200), H, s, q + ' full groups of ' + d + ' and ' + r + ' left over');
   }
-  function divModel(n, d) {
-    var ch = chunks(n, d), tot = ch.list.reduce(function (x, c) { return x + c.q; }, 0), s = '', x = 60, W = 400;
+  function divModel(n, d, k) {
+    var ch = chunks(n, d); if (k != null) { ch = { list: ch.list.slice(0, k), r: 0 }; }
+    var tot = ch.list.reduce(function (x, c) { return x + c.q; }, 0), s = '', x = 60, W = 400;
     ch.list.forEach(function (c, i) {
       var w = Math.max(70, W * c.q / Math.max(tot, 1));
       s += '<rect x="' + x + '" y="34" width="' + w + '" height="70" style="fill:color-mix(in srgb,var(--strand) ' + (16 + 12 * (i % 2)) + '%,var(--card));stroke:var(--ink)" stroke-width="2"/>' +
@@ -78,7 +82,132 @@
     return A.svg(Math.ceil(x + (ch.r ? 70 : 20)), 112, s, 'Area model for ' + n + ' divided by ' + d);
   }
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('multiply-divide', id, lv); }
+  function an(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  function algo(lines) { return '<div class="g5-anim"><span class="mono">' + lines + '</span></div>'; }
+  var LESSONS = [
+    { id: 'facts', title: 'Facts and strategies', sub: 'Up to 12 &times; 12, and how to rebuild a fact.', concepts: [
+      { id: 'break-apart', title: 'Break a fact apart', exp: ['B2.2'], skill: 'md-facts',
+        body: '<p>A hard fact can be split into two easier facts. 7 &times; 8 is 7 rows of 8. Split the rows of 8 into 4 and 4.</p>',
+        watch: K.watch([
+          { say: '7 &times; 8 is 7 rows of 8 dots.', fig: an(arr(7, 8)) },
+          { say: 'Split each row into 4 and 4.', fig: an(arr(7, 8, 4)) },
+          { say: '7 &times; 4 = 28 on each side.', fig: an(arr(7, 8, 4)) },
+          { say: '28 + 28 = <b>56</b>. So 7 &times; 8 = 56.', fig: an(arr(7, 8, 4)), ms: 2200 },
+          { say: 'It also gives two division facts: 56 &divide; 7 = 8 and 56 &divide; 8 = 7.', fig: an(arr(7, 8)), ms: 2400 }
+        ]),
+        try: K.widget('multiply-divide', 0, 'Nice. Try 12 × 7 and split the 12 into 10 and 2.'),
+        key: '<p><b>Split a factor into easier parts, multiply each part, then add.</b></p>',
+        check: [P('md-facts', 1), P('md-facts', 2)] },
+
+      { id: 'friendly', title: 'Friendly tens', exp: ['B2.2'], skill: 'md-facts', hard: true,
+        body: '<p>Facts with 9 or 11 are close to facts with 10. 9 &times; 6 is one group of 6 less than 10 &times; 6.</p>',
+        watch: K.watch([
+          { say: '10 &times; 6 is 6 rows of 10: 60.', fig: an(arr(6, 10)) },
+          { say: '9 &times; 6 has one column fewer.', fig: an(arr(6, 10, 9)) },
+          { say: 'Take away that column of 6: 60 &minus; 6 = <b>54</b>.', fig: an(arr(6, 9)), ms: 2200 }
+        ]),
+        ways: [
+          { label: 'Double and halve', html: '<p>Double one factor and halve the other. 15 &times; 12 = 30 &times; 6 = <b>180</b>.</p>' },
+          { label: 'Use a fact you know', html: '<p>11 &times; 8: 10 &times; 8 = 80, plus one more 8 is <b>88</b>.</p>' },
+          { label: 'Break apart', html: '<p>12 &times; 7 = 10 &times; 7 + 2 &times; 7 = 70 + 14 = <b>84</b>.</p><div class="fig">' + arr(7, 12, 10) + '</div>' }
+        ],
+        key: '<p>9 &times; n = 10 &times; n &minus; n. 11 &times; n = 10 &times; n + n.</p>',
+        mistake: '<p>Taking away 1 instead of one group: 9 &times; 6 = 60 &minus; 1 = 59. Show the array: one whole column of 6 comes off.</p>',
+        check: [P('md-facts', 2), P('md-facts', 3)] }
+    ] },
+
+    { id: 'area', title: 'Multiplying two-digit numbers', sub: 'The area model and the algorithm.', concepts: [
+      { id: 'model', title: 'The area model', exp: ['B2.6'], skill: 'md-mult',
+        body: '<p>Split each number by place value. 23 is 20 + 3 and 14 is 10 + 4. Each small rectangle is a <b>partial product</b>. Add them all.</p>',
+        watch: K.watch([
+          { say: '23 &times; 14. Split 23 into 20 and 3, and 14 into 10 and 4.', fig: an(areaModel(23, 14, null, 0)) },
+          { say: '20 &times; 10 = 200.', fig: an(areaModel(23, 14, null, 1)) },
+          { say: '3 &times; 10 = 30.', fig: an(areaModel(23, 14, null, 2)) },
+          { say: '20 &times; 4 = 80.', fig: an(areaModel(23, 14, null, 3)) },
+          { say: '3 &times; 4 = 12.', fig: an(areaModel(23, 14, null, 4)) },
+          { say: '200 + 30 + 80 + 12 = <b>322</b>.', fig: an(areaModel(23, 14)), ms: 2200 }
+        ]),
+        try: K.widget('multiply-divide', 1, 'Good. Estimate first, then check the model agrees.'),
+        key: '<p><b>Split by place value, multiply every part by every part, add.</b> Estimate first: 23 &times; 14 is about 20 &times; 15 = 300.</p>',
+        check: [P('md-mult', 1), P('md-mult', 2)] },
+
+      { id: 'algorithm', title: 'The standard algorithm', exp: ['B2.6'], skill: 'md-mult', hard: true,
+        body: '<p>The algorithm does the same multiplying as the area model, written in a shorter way. Each line is one row of the model.</p>',
+        watch: K.watch([
+          { say: '23 &times; 14 as an area model, in two rows.', fig: an(areaModel(23, 14, ['var(--strand)', 'var(--pm1)'])) },
+          { say: 'First line: 23 &times; 4 = <b>92</b>. That is the orange row: 80 + 12.', fig: algo('    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>') },
+          { say: 'Second line: 23 &times; 10 = <b>230</b>. That is the blue row: 200 + 30.', fig: algo('    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>\n<b style="color:var(--strand)">   230</b>') },
+          { say: 'Add the lines: 92 + 230 = <b>322</b>.', fig: algo('    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>\n<b style="color:var(--strand)">   230</b>\n  ────\n   322'), ms: 2200 }
+        ]),
+        try: K.widget('multiply-divide', 1, 'Nice. Now write the two lines of the algorithm and check them against the rows.'),
+        ways: [
+          { label: 'Side by side', html: '<div class="row2"><div class="fig">' + areaModel(23, 14, ['var(--strand)', 'var(--pm1)']) + '</div><span class="mono">    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>\n<b style="color:var(--strand)">   230</b>\n  ────\n   322</span></div>' },
+          { label: 'In words', html: '<p>23 groups of 14 = 23 groups of 4 (92) and 23 groups of 10 (230). Together 322.</p>' }
+        ],
+        key: '<p>Line 1: times the <b>ones</b>. Line 2: times the <b>tens</b>, so it ends in 0. Add the lines.</p>',
+        mistake: '<p>Forgetting the zero in the second line (writing 23 instead of 230). The 1 in 14 is 1 <b>ten</b>. Point to the matching row of the area model.</p>',
+        check: [P('md-mult', 2), P('md-mult', 3)] }
+    ] },
+
+    { id: 'divide', title: 'Dividing by a two-digit number', sub: 'Take out friendly chunks.', concepts: [
+      { id: 'chunks', title: 'Divide in chunks', exp: ['B2.7'], skill: 'md-div', hard: true,
+        body: '<p>Division asks "how many groups of this size fit?" Take out big friendly chunks, like 10 or 20 groups, until no more fit.</p>',
+        watch: K.watch([
+          { say: '372 &divide; 12. How many groups of 12 fit in 372?', fig: an(divModel(372, 12, 0)) },
+          { say: '30 groups of 12 is 360. Take that chunk out.', fig: an(divModel(372, 12, 1)) },
+          { say: '372 &minus; 360 = 12 left. That is 1 more group.', fig: an(divModel(372, 12, 2)) },
+          { say: '30 + 1 = <b>31</b>. Check: 12 &times; 31 = 372.', fig: an(divModel(372, 12)), ms: 2400 }
+        ]),
+        try: K.widget('multiply-divide', 2, 'Good. Try a total that leaves a remainder, like 250 ÷ 24.'),
+        ways: [
+          { label: 'Repeated subtraction', html: '<p class="math">372 &minus; 120 (10 groups) = 252</p><p class="math">252 &minus; 240 (20 groups) = 12</p><p class="math">12 &minus; 12 (1 group) = 0</p><p>10 + 20 + 1 = 31 groups.</p>' },
+          { label: 'Estimate', html: '<p>12 is close to 10. 372 &divide; 10 is about 37, so the answer is a bit less than 37. 31 makes sense.</p>' },
+          { label: 'Multiply up', html: '<p>12 &times; 10 = 120, 12 &times; 20 = 240, 12 &times; 30 = 360. 360 is close to 372, so start with 30.</p>' }
+        ],
+        key: '<p><b>Take out chunks of 10s, then 1s. Add up the chunks.</b> The remainder must be less than the divisor.</p>',
+        mistake: '<p>Stopping with a remainder bigger than the divisor (dividing by 12 and leaving 15). Ask: "Does one more group of 12 fit?"</p>',
+        check: [P('md-div', 1), P('md-div', 2)] }
+    ] },
+
+    { id: 'remainder', title: 'Remainders', sub: 'What do the leftovers need?', concepts: [
+      { id: 'leftovers', title: 'What to do with the remainder', exp: ['B2.7'], skill: 'md-rem', hard: true,
+        body: '<p>250 &divide; 24 = 10 R 10. The right answer depends on the question. Ask what the leftovers need.</p>',
+        watch: K.watch([
+          { say: '250 students, 24 per bus. 10 buses are full and 10 students are left.', fig: an(packs(10, 10, 24, 'down', null, 6)) },
+          { say: 'Those 10 students still need a ride: <b>round up to 11 buses</b>.', fig: an(packs(10, 10, 24, 'up', 'bus', 6)) },
+          { say: '250 stickers, 24 per sheet: <b>10 full sheets</b>. The leftovers are dropped.', fig: an(packs(10, 10, 24, 'down', null, 6)) },
+          { say: '250 cm of string in 24 equal pieces: share the rest, <b>10&nbsp;10/24 cm</b> each.', fig: an(packs(10, 10, 24, 'share', null, 6)), ms: 2600 }
+        ]),
+        ways: [
+          { label: 'Ask a question', html: '<p>Do the leftovers need their own group? <b>Round up.</b> Can they be ignored? <b>Drop them.</b> Can they be cut up? <b>Share them as a fraction.</b></p>' },
+          { label: 'Juice boxes', html: '<p>100 juice boxes, 12 per case. 100 &divide; 12 = 8 R 4. You can fill 8 cases, with 4 boxes left over.</p><div class="fig">' + packs(8, 4, 12, 'down') + '</div>' }
+        ],
+        key: '<p>Leftovers need their own group: <b>round up</b>. Leftovers are not enough: <b>drop them</b>. Leftovers can be cut: <b>share them</b>.</p>',
+        mistake: '<p>Always writing "R 10" without thinking about the story. Ask "what does the 10 mean here?" before writing the answer.</p>',
+        check: [P('md-rem', 1), P('md-rem', 2)] }
+    ] },
+
+    { id: 'props', title: 'Properties and checking', sub: 'Shortcuts that always work.', concepts: [
+      { id: 'properties', title: 'Order, grouping and checking', exp: ['B2.1'], skill: 'md-props',
+        body: '<p>You can multiply in any order and group factors any way. Pick the friendly pair first. Use multiplication to check division.</p>',
+        watch: K.watch([
+          { say: '4 rows of 6 is 24.', fig: an(arr(4, 6)) },
+          { say: 'Turn it: 6 rows of 4 is still 24. <b>Order does not matter.</b>', fig: an(arr(6, 4)) },
+          { say: '4 &times; 37 &times; 25: do the friendly pair 4 &times; 25 = 100 first.', fig: an(arr(4, 25, null, '4 rows of 25')) },
+          { say: '100 &times; 37 = <b>3700</b>.', fig: an(arr(4, 25, null, '4 rows of 25')), ms: 2200 },
+          { say: 'Check a division by multiplying back: 24 &times; 10 + 10 = 250.', fig: an(packs(10, 10, 24, 'down', null, 6)), ms: 2400 }
+        ]),
+        key: '<p><b>Any order, any grouping.</b> Check division: divisor &times; quotient + remainder = total.</p>',
+        mistake: '<p>Not checking a division answer. Make "multiply back" a habit: 24 &times; 10 + 10 should give the 250 you started with.</p>',
+        check: [P('md-props', 1), P('md-props', 2)] }
+    ] }
+  ];
   A.register('multiply-divide', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Facts and strategies</h2>' +
 '<p>Knowing the facts up to 12 &times; 12 makes every other question faster. Every multiplication fact also gives you two division facts.</p>' +

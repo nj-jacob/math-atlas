@@ -168,7 +168,146 @@
   A.fig = A.fig || {};
   A.fig.stair = stair; A.fig.shape = shape; A.fig.rect = rect; A.fig.angleBench = angleBench; A.fig.areaVsPerim = areaVsPerim;
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('measurement', id, lv); }
+  function an(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  function icons(list) { return '<div class="pies thumbs g5-anim">' + list.map(function (r) { return '<figure>' + icon(r[0]) + '<figcaption><b>' + r[1] + '</b><br>' + r[2] + '</figcaption></figure>'; }).join('') + '</div>'; }
+  function rects(list) { return '<div class="pies g5-anim">' + list.map(function (r) { return '<figure>' + rect(r[0], r[1], 14) + '<figcaption>perimeter ' + 2 * (r[0] + r[1]) + ' cm</figcaption></figure>'; }).join('') + '</div>'; }
+  var LESSONS = [
+    { id: 'units', title: 'Choosing metric units', sub: 'Benchmarks help you estimate.', concepts: [
+      { id: 'choose', title: 'Pick a unit that fits', exp: ['E2.1'], skill: 'me-unit',
+        body: '<p>Pick a unit that fits the size of what you measure. A <b>benchmark</b> is something you know the size of, like a fingertip for 1 cm.</p>',
+        watch: K.watch([
+          { say: 'Length: a millimetre is the thickness of a dime. A centimetre is the width of a fingertip.', fig: icons([['mm', 'Millimetre', 'a dime'], ['cm', 'Centimetre', 'a fingertip']]) },
+          { say: 'A metre is one big step. A kilometre is about 12 minutes of walking.', fig: icons([['m', 'Metre', 'one big step'], ['km', 'Kilometre', '12 minutes walking']]) },
+          { say: 'Mass is how heavy. A paper clip is about 1 g. A litre of water is about 1 kg.', fig: icons([['g', 'Gram', 'a paper clip'], ['kg', 'Kilogram', 'a litre of water']]) },
+          { say: 'Capacity is how much a container holds: millilitres and litres.', fig: icons([['mL', 'Millilitre', 'about 20 drops'], ['L', 'Litre', 'a big water bottle']]), ms: 2200 }
+        ]),
+        try: K.widget('measurement', 0, 'Nice. Estimate first, then check how close you were.'),
+        key: '<p>Small things: mm or cm. People and rooms: m. Trips: km. Heavy: g or kg. Holds: mL or L.</p>',
+        mistake: '<p>Mixing up mass and capacity (measuring juice in grams). Ask "are we asking how heavy, or how much it holds?"</p>',
+        check: [P('me-unit', 1), P('me-unit', 2)] }
+    ] },
+
+    { id: 'convert', title: 'Converting units', sub: 'Bigger unit to smaller unit.', concepts: [
+      { id: 'convert', title: 'Down the stairs, multiply', exp: ['E2.2'], skill: 'me-conv', hard: true,
+        body: '<p>To change a bigger unit into a smaller one, <b>multiply</b>. You need more of the small units to cover the same length.</p>',
+        watch: K.watch([
+          { say: 'One metre stick is 100 cm.', fig: an(msticks(1, function () { return '1 m = 100 cm'; })) },
+          { say: '3 metre sticks: 3 &times; 100 = <b>300 cm</b>.', fig: an(msticks(3, function () { return '100 cm'; })) },
+          { say: 'The unit staircase shows the step for each pair of units.', fig: an(stair('length')) },
+          { say: 'km to cm: two steps down. 3.6 &times; 1000 = 3600 m, then &times; 100 = 360 000 cm.', fig: an(stair('length', 'km', 'cm')), ms: 2600 }
+        ]),
+        try: K.widget('measurement', 1, 'Good. Try a decimal amount, like 2.5 L.'),
+        ways: [
+          { label: 'Mass and capacity', html: '<div class="pies">' + stair('mass') + stair('capacity') + '</div><p>1 kg = 1000 g. 1 L = 1000 mL.</p>' },
+          { label: 'Does it make sense?', html: '<p>Smaller units mean a <b>bigger</b> number. 3 m can\'t be 0.03 cm: a fingertip is 1 cm, and 3 m is far more than 3 fingertips.</p>' },
+          { label: 'Move the digits', html: '<p>&times; 100 moves each digit two places left: 2.5 m &rarr; 250 cm.</p>' }
+        ],
+        key: '<p><b>Bigger unit to smaller unit: multiply.</b> km to m &times; 1000, m to cm &times; 100, cm to mm &times; 10.</p>',
+        mistake: '<p>Dividing when going to a smaller unit (3 m = 0.03 cm). Ask "will there be more or fewer of the small unit?"</p>',
+        check: [P('me-conv', 1), P('me-conv', 2)] }
+    ] },
+
+    { id: 'angles', title: 'Angles', sub: 'Estimate, then measure.', concepts: [
+      { id: 'bench', title: 'Angle benchmarks', exp: ['E2.3'], skill: 'me-angle',
+        body: '<p>An angle measures the amount of turn between two arms. Learn four benchmarks: 45&deg;, 90&deg;, 135&deg; and 180&deg;.</p>',
+        watch: K.watch([
+          { say: '90&deg; is a square corner, like the corner of a page.', fig: an(angPic(90)) },
+          { say: '45&deg; is half a square corner.', fig: an(angPic(45)) },
+          { say: '135&deg; is a square corner and a half.', fig: an(angPic(135)) },
+          { say: '180&deg; is a straight line.', fig: an(angPic(180)), ms: 2000 }
+        ]),
+        try: K.widget('measurement', 2, 'Nice. Before you move the slider, say whether the angle is less or more than 90°.'),
+        key: '<p>Less than 90&deg;: <b>acute</b>. Exactly 90&deg;: <b>right</b>. Between 90&deg; and 180&deg;: <b>obtuse</b>.</p>',
+        check: [P('me-angle', 1), P('me-angle', 1)] },
+
+      { id: 'protractor', title: 'Measure with a protractor', exp: ['E2.4'], skill: 'me-angle', hard: true,
+        body: '<p>Put the protractor\'s centre on the vertex. Line up 0 with one arm. Read where the other arm crosses, starting from that 0.</p>',
+        watch: K.watch([
+          { say: 'Centre on the vertex. One arm along 0.', fig: an(protractor(0, null, false, true)) },
+          { say: 'The other arm opens to here.', fig: an(protractor(120, null, false, true)) },
+          { say: 'Count up from the 0 you started at: <b>120&deg;</b>, not 60&deg;.', fig: an(protractor(120, null, true, true)) },
+          { say: 'Check: it is wider than a square corner, so it must be more than 90&deg;.', fig: an(angPic(120, true)), ms: 2200 }
+        ]),
+        try: K.widget('measurement', 2, 'Good. Read the scale that starts at 0 on the flat arm.'),
+        ways: [
+          { label: 'Estimate first', html: '<div class="fig">' + angPic(105, true) + '</div><p>The dashed line is a square corner. This angle is a bit wider: about 100&deg;. Measuring gives 105&deg;.</p>' },
+          { label: 'Two scales', html: '<p>The outer scale counts from the left. The inner scale counts from the right. Use the one that says 0 where your first arm is.</p>' }
+        ],
+        key: '<p><b>Centre on the vertex, 0 on one arm, read from that 0.</b> Estimate first to catch the wrong scale.</p>',
+        mistake: '<p>Reading the wrong scale (60&deg; for a 120&deg; angle). Ask "is it wider than a square corner?" before accepting the reading.</p>',
+        check: [P('me-angle', 2), P('me-angle', 3)] }
+    ] },
+
+    { id: 'area', title: 'Area', sub: 'Parallelograms and triangles.', concepts: [
+      { id: 'para', title: 'Area of a parallelogram', exp: ['E2.5'], skill: 'me-area', hard: true,
+        body: '<p>Cut a triangle off one end of a parallelogram and slide it to the other end. You get a rectangle. So the area is <b>base &times; height</b>.</p>',
+        watch: K.watch([
+          { say: 'A rectangle 9 cm by 4 cm has area 9 &times; 4 = 36 cm&sup2;.', fig: an(shape('rect', 9, 4)) },
+          { say: 'A parallelogram with base 9 cm and height 4 cm.', fig: an(shape('para', 9, 4)) },
+          { say: 'Cut along the height and slide the triangle across.', fig: an(cutPara()) },
+          { say: 'It becomes the rectangle: <b>9 &times; 4 = 36 cm&sup2;</b>.', fig: an(shape('rect', 9, 4)), ms: 2200 }
+        ]),
+        try: K.widget('measurement', 3, 'Nice. Switch between rectangle and parallelogram. The area stays the same.'),
+        ways: [
+          { label: 'Count squares', html: '<p>Draw it on grid paper. The part sticking out on one side fills the gap on the other side. The squares match the rectangle.</p>' },
+          { label: 'Height, not slant', html: '<p>The height is the straight-up distance, at a right angle to the base. The slanted side is longer than the height, so it gives too big an area.</p>' }
+        ],
+        key: '<p><b>Parallelogram: A = base &times; height.</b> The height meets the base at a right angle.</p>',
+        mistake: '<p>Using the slanted side instead of the height. Point to the dashed red line and the square corner where it meets the base.</p>',
+        check: [P('me-area', 1), P('me-area', 2)] },
+
+      { id: 'triangle', title: 'Area of a triangle', exp: ['E2.5'], skill: 'me-area',
+        body: '<p>Two copies of a triangle make a parallelogram. So a triangle\'s area is <b>half</b>: base &times; height &divide; 2.</p>',
+        watch: K.watch([
+          { say: 'A triangle with base 9 cm and height 4 cm.', fig: an(shape('tri', 9, 4)) },
+          { say: 'A copy turned upside down fits on top. Together they make a parallelogram.', fig: an(halfPara()) },
+          { say: 'The parallelogram is 9 &times; 4 = 36 cm&sup2;. The triangle is half: <b>18 cm&sup2;</b>.', fig: an(shape('tri', 9, 4)), ms: 2400 }
+        ]),
+        try: K.widget('measurement', 3, 'Good. Choose triangle and compare it to the parallelogram with the same base and height.'),
+        key: '<p><b>Triangle: A = base &times; height &divide; 2.</b></p>',
+        mistake: '<p>Forgetting to halve. Ask "what shape do two of these make?"</p>',
+        check: [P('me-area', 2), P('me-area', 3)] }
+    ] },
+
+    { id: 'perim', title: 'Area and perimeter', sub: 'Inside and around.', concepts: [
+      { id: 'inside-around', title: 'Inside and around', exp: ['E2.6'], skill: 'me-perim',
+        body: '<p><b>Area</b> counts the squares inside, in cm&sup2;. <b>Perimeter</b> is the distance around the edge, in cm.</p>',
+        watch: K.watch([
+          { say: 'A 4 by 3 rectangle. Count the squares inside: 12 cm&sup2;.', fig: an(areaVsPerim(4, 3)) },
+          { say: 'Walk around the edge and count: 14 cm.', fig: an(areaVsPerim(4, 3)), ms: 2200 }
+        ]),
+        try: { tool: 'geoboard', opts: {}, tasks: [
+          { do: 'Make a rectangle with an area of <b>4 squares</b>. Tap pegs, then tap the first peg again.', goal: function (s) { return s.closed && s.area === 4 && s.perimeter != null; }, yes: 'Yes. Now look at its perimeter.' },
+          { do: 'Make a different rectangle with area 4 and a <b>bigger perimeter</b>.', goal: function (s) { return s.closed && s.area === 4 && s.perimeter === 10; }, yes: 'Yes. Long and thin: 1 by 4 has perimeter 10.' }
+        ] },
+        key: '<p>Area: squares <b>inside</b> (cm&sup2;). Perimeter: distance <b>around</b> (cm).</p>',
+        mistake: '<p>Mixing up the two, or writing cm for area. Have the child shade area and trace perimeter in different colours.</p>',
+        check: [P('me-perim', 1), P('me-perim', 1)] },
+
+      { id: 'same-area', title: 'Same area, different perimeters', exp: ['E2.6'], skill: 'me-perim', hard: true,
+        body: '<p>Shapes with the same area can have very different perimeters. Long, thin shapes have a bigger perimeter. Shapes close to a square have the smallest.</p>',
+        watch: K.watch([
+          { say: 'Each rectangle has an area of 24 cm&sup2;.', fig: rects([[12, 2]]) },
+          { say: '12 by 2 has perimeter 28. 8 by 3 has 22.', fig: rects([[12, 2], [8, 3]]) },
+          { say: '6 by 4 has the smallest: 20 cm. It is closest to a square.', fig: rects([[12, 2], [8, 3], [6, 4]]) },
+          { say: 'A 36 m&sup2; garden: a 6 by 6 square needs only 24 m of fence.', fig: an(gardens()), ms: 2400 }
+        ]),
+        try: K.widget('measurement', 4, 'Nice. Which rectangle uses the least fence?'),
+        ways: [
+          { label: 'Table', html: '<div class="tbl"><table><tr><th>Rectangle</th><td>1 by 24</td><td>2 by 12</td><td>3 by 8</td><td>4 by 6</td></tr><tr><th>Perimeter</th><td>50</td><td>28</td><td>22</td><td>20</td></tr></table></div>' },
+          { label: 'String', html: '<p>Tie a loop of string and stretch it into a long, thin shape, then a square. The square holds the most area for the same string.</p>' }
+        ],
+        key: '<p>Same area, different perimeters. <b>Closer to a square = smaller perimeter.</b></p>',
+        mistake: '<p>Thinking equal areas must have equal perimeters. Build 1 by 4 and 2 by 2 with tiles and count around each.</p>',
+        check: [P('me-perim', 2), P('me-perim', 3)] }
+    ] }
+  ];
   A.register('measurement', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Choosing metric units</h2>' +
 '<p>Pick a unit that fits the size of the thing you are measuring. Benchmarks help you estimate.</p>' +

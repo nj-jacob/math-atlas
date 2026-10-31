@@ -1,5 +1,5 @@
 (function () {
-  var A = Atlas;
+  var A = Atlas, M = window.Manip;
   var ones = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
   var tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
   function b1000(n) {
@@ -151,7 +151,211 @@
     return A.svg(460, 270, s, A.fmt(n) + ' shown as ' + full + ' of 100 squares, each worth 1000');
   }
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('place-value', id, lv); }
+  function an(html) { return html.replace('class="pv"', 'class="pv g5-anim"'); }
+  function disksTool(places, start, extra) { return function (el) { return K.disks(el, Object.assign({ places: places || [4, 3, 2, 1, 0], start: start }, extra || {})); }; }
+  function cmpFig(a, b, hl) {
+    return '<div class="g5-anim">' + chart(a, { cols: 5, hl: hl, dots: false }) + chart(b, { cols: 5, hl: hl, dots: false }) + '</div>';
+  }
+  var LESSONS = [
+    { id: 'read', title: 'Reading big numbers', sub: 'Every place is worth 10 times the place to its right.', concepts: [
+      { id: 'ten-times', title: 'Each place is 10 times bigger', exp: ['B1.1'], skill: 'pv-value',
+        body: '<p>Ten disks in one place make <b>one</b> disk in the next place to the left. That is why each place is worth <b>10 times</b> the place to its right.</p>',
+        watch: { mount: disksTool([3, 2, 1, 0], { 0: 6 }), steps: [
+          { say: 'Here are 6 ones.', ms: 1000 },
+          { say: 'Add 4 more ones. Now there are 10 ones.', act: function (t) { return t.add(0, 4, 300); } },
+          { say: '10 ones are grouped into <b>1 ten</b>.', act: function (t) { return t.group(0); } },
+          { say: 'Add tens until there are 10 tens.', act: function (t) { return t.add(1, 9, 220); } },
+          { say: '10 tens are grouped into <b>1 hundred</b>.', act: function (t) { return t.group(1); } },
+          { say: 'It keeps going: 10 hundreds make 1 thousand, and 10 thousands make 10 000.', act: function (t) { return t.add(2, 9, 160).then(function () { return t.group(2); }); }, ms: 2200 }
+        ] },
+        try: { mount: function (host, done) {
+          var t = K.disks(host, { places: [3, 2, 1, 0], controls: true, start: { 0: 7 }, onChange: function (s) {
+            if (s.last.indexOf('group-') === 0 && s.counts[2] >= 1 && !t.told) { t.told = 1; done('Yes. Every time you group 10, you make 1 of the next place.'); }
+          } });
+        }, do: 'Add ones and tens, then press <b>Group 10 into 1</b>. Keep going until you make a <b>hundred</b> disk.' },
+        key: '<p><b>10 of one place = 1 of the next place to the left.</b></p>',
+        check: [function () {
+          var p = R.int(1, 4), o = R.mc(A.fmt(Math.pow(10, p)), [A.fmt(Math.pow(10, p - 1)), A.fmt(Math.pow(10, p + 1)), '10']);
+          return { q: '10 disks of ' + A.fmt(Math.pow(10, p - 1)) + ' are worth how much?', type: 'mc', options: o.options, answer: o.answer, fig: A.draw.disks([{ p: p - 1, n: 10 }]), hint: 'Ten of one place make one of the next place.', explain: '10 &times; ' + A.fmt(Math.pow(10, p - 1)) + ' = ' + A.fmt(Math.pow(10, p)) + '.' };
+        }, P('pv-value', 1)] },
+
+      { id: 'digit-value', title: 'A digit is worth what its place says', exp: ['B1.1'], skill: 'pv-value',
+        body: '<p>The same digit can be worth very different amounts. In <b>47 305</b> the 7 is in the thousands place, so it is worth <b>7000</b>.</p>',
+        watch: K.watch([
+          { say: 'Here is 47 305 in a place value chart.', fig: an(chart(47305, { vals: false })) },
+          { say: 'The 4 is in the ten thousands place. It is worth <b>40 000</b>.', fig: an(chart(47305, { vals: true, hl: 0 })) },
+          { say: 'The 7 is in the thousands place. It is worth <b>7000</b>.', fig: an(chart(47305, { vals: true, hl: 1 })) },
+          { say: 'The 3 is worth 300, and the 5 is worth 5.', fig: an(chart(47305, { vals: true, hl: 3 })), ms: 1800 }
+        ]),
+        try: K.widget('place-value', 0, 'Nice. Watch how each digit tells you how many disks are in its place.'),
+        ways: [
+          { label: 'Say the place', html: '<p>Point to the digit, then say its place: "7 thousands". 7 thousands is 7000.</p><div class="fig">' + periods(47305) + '</div>' },
+          { label: 'Count the zeros', html: '<p>The value of a digit is the digit followed by one zero for each place to its right. The 7 in 47 305 has 3 places to its right: <b>7000</b>.</p>' }
+        ],
+        key: '<p><b>Value = digit &times; place.</b> The 7 in the thousands place is worth 7 &times; 1000 = 7000.</p>',
+        check: [P('pv-value', 1), P('pv-value', 2)] },
+
+      { id: 'zero', title: 'Zero holds a place', exp: ['B1.1'], skill: 'pv-forms', hard: true,
+        body: '<p>When a place is empty, we still write a <b>0</b> there. In <b>40 305</b> the zeros keep the 4 in the ten thousands place.</p>',
+        watch: { mount: disksTool([4, 3, 2, 1, 0]), steps: [
+          { say: 'Build 40 305. First, 4 ten thousands.', act: function (t) { return t.add(4, 4, 300); } },
+          { say: 'No thousands. That column stays empty, so we write <b>0</b>.', act: function (t) { return t.pulseCol(3); } },
+          { say: '3 hundreds.', act: function (t) { return t.add(2, 3, 300); } },
+          { say: 'No tens. Another <b>0</b>.', act: function (t) { return t.pulseCol(1); } },
+          { say: '5 ones. We write <b>40 305</b>, not 435.', act: function (t) { return t.add(0, 5, 220); }, ms: 2200 }
+        ] },
+        try: { mount: function (host, done) {
+          var tg = [40305, 60070, 90009], k = 0, p = A.$$ ? null : null, msg = document.createElement('p');
+          msg.className = 'ls-task'; host.appendChild(msg);
+          var box = document.createElement('div'); host.appendChild(box);
+          function say() { msg.innerHTML = 'Build <b>' + A.fmt(tg[k]) + '</b> with the fewest disks.'; }
+          var t = K.disks(box, { places: [4, 3, 2, 1, 0], controls: true, onChange: function (s) {
+            var tot = 0; Object.keys(s.counts).forEach(function (q) { tot += s.counts[q]; });
+            if (s.value === tg[k] && Object.keys(s.counts).every(function (q) { return s.counts[q] < 10; })) {
+              k++;
+              if (k < tg.length) { M.bump(msg, 'yes'); setTimeout(function () { t.set({}); say(); }, 900); }
+              else { msg.innerHTML = 'All three built.'; done('Yes. Empty columns are written as 0.'); }
+            }
+          } });
+          say();
+        }, do: 'Three numbers with empty places.' },
+        ways: [
+          { label: 'With money', html: '<p>$40 305 could be four $10 000 cheques, no $1000 bills, three $100 bills, no $10 bills and five $1 coins. The zeros say "none of these".</p>' },
+          { label: 'In a chart', html: '<div class="fig">' + chart(40305, { vals: true }) + '</div><p>Every column gets a digit. Empty columns get a 0.</p>' }
+        ],
+        key: '<p>A <b>0</b> holds an empty place, so every other digit stays in its own place.</p>',
+        mistake: '<p>Leaving out zeros: writing forty thousand three hundred five as <b>4305</b> or <b>435</b>. Ask the child to build it with disks, then write one digit for every column, from left to right.</p>',
+        check: [P('pv-forms', 1), P('pv-disks', 1)] }
+    ] },
+
+    { id: 'write', title: 'Writing numbers three ways', sub: 'Standard form, expanded form and words.', concepts: [
+      { id: 'expanded', title: 'Expanded form', exp: ['B1.1'], skill: 'pv-forms',
+        body: '<p><b>Expanded form</b> shows what each digit is worth, added together. 52 408 = 50 000 + 2000 + 400 + 8.</p>',
+        watch: K.watch([
+          { say: 'Start with 52 408.', fig: an(chart(52408, { dots: false })) },
+          { say: 'Each digit drops down to the value it stands for.', fig: expanded(52408) },
+          { say: 'The 0 in the tens place is worth nothing, so it is left out of the sum.', fig: expanded(52408), ms: 1800 },
+          { say: '52 408 = 50 000 + 2000 + 400 + 8.', fig: expanded(52408), ms: 1800 }
+        ]),
+        try: { mount: function (host, done) {
+          var msg = document.createElement('p'); msg.className = 'ls-task'; msg.innerHTML = 'Build <b>30 000 + 6000 + 70 + 2</b> with disks.'; host.appendChild(msg);
+          var b = document.createElement('div'); host.appendChild(b);
+          K.disks(b, { places: [4, 3, 2, 1, 0], controls: true, onChange: function (s) { if (s.value === 36072) done('Yes. That is 36 072 in standard form.'); } });
+        }, do: 'Turn expanded form into disks.' },
+        key: '<p>Standard form: <b>52 408</b>. Expanded form: <b>50 000 + 2000 + 400 + 8</b>. Same number.</p>',
+        check: [P('pv-forms', 1), P('pv-forms', 2)] },
+
+      { id: 'words', title: 'Numbers in words', exp: ['B1.1'], skill: 'pv-words',
+        body: '<p>Read a big number in two parts. Read the <b>thousands</b> part and say "thousand", then read the rest.</p>',
+        watch: K.watch([
+          { say: '47 305 has two parts, split by the space.', fig: periods(47305) },
+          { say: 'The left part is "forty-seven thousand".', fig: periods(47305) },
+          { say: 'The right part is "three hundred five". Together: forty-seven thousand three hundred five.', fig: periods(47305), ms: 2400 },
+          { say: 'In 60 018 the right part is "eighteen": sixty thousand eighteen.', fig: periods(60018), ms: 2200 }
+        ]),
+        try: K.widget('place-value', 0, 'Good. Try a number with zeros in it and read the words.'),
+        key: '<p>Read the <b>thousands</b> part, say "thousand", then read the rest. The space in 47 305 shows where to split.</p>',
+        mistake: '<p>Saying "and" inside a whole number (three hundred <b>and</b> five). In math, "and" marks the decimal point. Model it without "and".</p>',
+        check: [P('pv-words', 1), P('pv-words', 2)] },
+
+      { id: 'trade', title: 'One number, many ways', exp: ['B1.1'], skill: 'pv-disks', hard: true,
+        body: '<p>You can break one disk into 10 of the next smaller disk. The number stays the same. 2304 is also 23 hundreds and 4 ones.</p>',
+        watch: { mount: disksTool([3, 2, 1, 0], { 3: 2, 2: 3, 0: 4 }), steps: [
+          { say: 'This is 2304.', ms: 1200 },
+          { say: 'Break a thousand into 10 hundreds.', act: function (t) { return t.split(3); } },
+          { say: 'Now it is 1 thousand and 13 hundreds. Still 2304.', ms: 1600 },
+          { say: 'Break the other thousand too: 23 hundreds and 4 ones.', act: function (t) { return t.split(3); }, ms: 2000 },
+          { say: 'Count to check.', act: function (t) { return t.countAll(120); }, ms: 1200 }
+        ] },
+        try: K.widget('place-value', 1, 'Yes. The disks change, but the total does not.'),
+        ways: [
+          { label: 'With money', html: '<p>A $100 bill is the same as ten $10 bills. Trading does not change how much money you have.</p>' },
+          { label: 'With numbers', html: '<p class="math">2000 + 300 + 4 = 2304</p><p class="math">1000 + 1300 + 4 = 2304</p><p class="math">2300 + 4 = 2304</p>' }
+        ],
+        key: '<p>Trading 1 disk for 10 of the next smaller disk <b>does not change the number</b>.</p>',
+        check: [P('pv-disks', 2), P('pv-disks', 3)] }
+    ] },
+
+    { id: 'compare', title: 'Comparing and ordering', sub: 'Start at the left.', concepts: [
+      { id: 'compare', title: 'Compare from the left', exp: ['B1.2'], skill: 'pv-compare',
+        body: '<p>Line the numbers up by place. Compare from the <b>left</b>. The first place where the digits differ decides which number is greater.</p>',
+        watch: K.watch([
+          { say: 'Which is greater, 38 245 or 38 712?', fig: cmpFig(38245, 38712) },
+          { say: 'Ten thousands: 3 and 3. The same.', fig: cmpFig(38245, 38712, 0) },
+          { say: 'Thousands: 8 and 8. The same.', fig: cmpFig(38245, 38712, 1) },
+          { say: 'Hundreds: 2 and 7. Different! 7 hundreds is more.', fig: cmpFig(38245, 38712, 2) },
+          { say: 'So <b>38 245 &lt; 38 712</b>. The open side faces the greater number.', fig: cmpFig(38245, 38712, 2), ms: 2200 }
+        ]),
+        try: K.widget('place-value', 2, 'Nice. Try two numbers that only differ in the ones place.'),
+        key: '<p>Compare digits from the <b>left</b>. The first different digit decides. More digits means greater.</p>',
+        mistake: '<p>Comparing the last digits first, or deciding by the biggest digit anywhere. 40 001 &gt; 39 999 even though 9 &gt; 1. Have the child line the numbers up in a chart.</p>',
+        check: [P('pv-compare', 1), P('pv-compare', 2)] },
+
+      { id: 'order', title: 'Put numbers in order', exp: ['B1.2'], skill: 'pv-compare',
+        body: '<p>To order a list, compare the biggest place first. If two numbers tie there, look at the next place.</p>',
+        watch: K.watch([
+          { say: 'Order 52 800, 38 900, 61 200 and 47 300.', fig: A.draw.line(30000, 70000, 10000, null, 'Number line from 30 000 to 70 000') },
+          { say: 'They all have 5 digits. Look at the ten thousands: 5, 3, 6, 4.', fig: A.draw.line(30000, 70000, 10000, 38900) },
+          { say: 'The smallest is 38 900, then 47 300.', fig: A.draw.line(30000, 70000, 10000, 47300) },
+          { say: 'Then 52 800, then 61 200. Least to greatest: 38 900, 47 300, 52 800, 61 200.', fig: A.draw.line(30000, 70000, 10000, 61200), ms: 2400 }
+        ]),
+        key: '<p>Order by the <b>biggest place first</b>. Least to greatest goes left to right on a number line.</p>',
+        check: [P('pv-compare', 2), P('pv-compare', 3)] }
+    ] },
+
+    { id: 'round', title: 'Rounding', sub: 'Find the nearest friendly number.', concepts: [
+      { id: 'hill', title: 'Round with a hill', exp: ['B1.1'], skill: 'pv-round',
+        body: '<p>Picture a hill between two friendly numbers. Halfway is the top. A number past the top rolls <b>up</b>. Before the top, it rolls back <b>down</b>.</p>',
+        watch: K.watch([
+          { say: 'Round 48 650 to the nearest thousand. It is between 48 000 and 49 000.', fig: hill(48000, 1000) },
+          { say: 'Halfway is 48 500, the top of the hill.', fig: hill(48500, 1000) },
+          { say: '48 650 is past the top.', fig: hill(48650, 1000) },
+          { say: 'So it rolls up to <b>49 000</b>.', fig: hill(48650, 1000), ms: 2200 }
+        ]),
+        try: K.widget('place-value', 3, 'Good. Try a number exactly at halfway. It rounds up.'),
+        key: '<p>Look at the digit to the <b>right</b> of the rounding place. <b>5 or more</b>: round up. <b>Less than 5</b>: round down.</p>',
+        check: [P('pv-round', 1), P('pv-round', 2)] },
+
+      { id: 'carry', title: 'When rounding up carries over', exp: ['B1.1'], skill: 'pv-round', hard: true,
+        body: '<p>Rounding up adds 1 to the rounding place. If that place is a 9, it becomes 10 and carries, just like adding.</p>',
+        watch: K.watch([
+          { say: 'Round 39 700 to the nearest thousand.', fig: hill(39000, 1000) },
+          { say: 'It is between 39 000 and 40 000. The hundreds digit is 7.', fig: hill(39700, 1000) },
+          { say: '7 is 5 or more, so round up: 39 thousands + 1 thousand = <b>40 000</b>.', fig: hill(39700, 1000), ms: 2400 }
+        ]),
+        ways: [
+          { label: 'Count thousands', html: '<p>39 700 has 39 whole thousands. Rounding up gives one more: 40 thousands, which is 40 000.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + A.draw.line(39000, 40000, 100, 39700, 'Number line from 39 000 to 40 000 with 39 700 marked') + '</div><p>39 700 is closer to 40 000.</p>' }
+        ],
+        key: '<p>A 9 that rounds up becomes 10: write 0 and carry 1 to the left.</p>',
+        mistake: '<p>Writing 39 700 rounded as <b>30 000</b> or <b>39 000 + 1</b>. Ask how many whole thousands there are, then add one more.</p>',
+        check: [P('pv-round', 3), P('pv-round', 2)] }
+    ] },
+
+    { id: 'size', title: 'How big is 100 000?', sub: 'Big numbers in everyday life.', concepts: [
+      { id: 'hundred-k', title: 'Picture 100 000', exp: ['B1.1'], skill: 'pv-value',
+        body: '<p>100 000 is 100 groups of 1000. On this grid every square is 1000, so all 100 squares make 100 000.</p>',
+        watch: K.watch([
+          { say: 'Each square is 1000.', fig: hundredK(1000) },
+          { say: 'A large hockey arena seats about 19 000 people: 19 squares.', fig: hundredK(19000) },
+          { say: 'Around the Earth is about 40 000 km: 40 squares.', fig: hundredK(40075) },
+          { say: '100 squares make <b>100 000</b>.', fig: hundredK(100000), ms: 2200 }
+        ]),
+        try: K.widget('place-value', 4, 'Nice. Big numbers are easier to picture as groups of 1000.'),
+        key: '<p>100 000 = 10 &times; 10 000 = 100 &times; 1000 = 1000 &times; 100.</p>',
+        check: [function () {
+          var n = R.int(2, 9) * 10000, o = R.mc(String(n / 1000), [String(n / 10000), String(n / 100), String(n / 1000 + 10)]);
+          return { q: 'How many thousands are in ' + A.fmt(n) + '?', type: 'mc', options: o.options, answer: o.answer, fig: hundredK(n), hint: 'Each square is 1000. Count the squares.', explain: A.fmt(n) + ' is ' + n / 1000 + ' thousands.' };
+        }, P('pv-value', 2)] }
+    ] }
+  ];
+
   A.register('place-value', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Reading big numbers</h2>' +
 '<p>Every digit in a number has a <b>place</b>, and the place decides what the digit is worth. Each place is worth <b>10 times</b> the place to its right.</p>' +

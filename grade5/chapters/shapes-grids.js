@@ -159,7 +159,163 @@
 
   A.fig.moves = moves; A.fig.triGallery = triGallery; A.fig.angTri = angTri;
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var KIT = A.kit;
+  function P(id, lv) { return KIT.P('shapes-grids', id, lv); }
+  function wrap(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  /* geoboard triangle tests: squared side lengths and the dot product at each corner */
+  function tri(s) {
+    if (!s.closed || s.sides !== 3) return null;
+    var p = s.points, d = [], dot = [];
+    for (var i = 0; i < 3; i++) {
+      var a = p[i], b = p[(i + 1) % 3], c = p[(i + 2) % 3];
+      d.push((a[0] - b[0]) * (a[0] - b[0]) + (a[1] - b[1]) * (a[1] - b[1]));
+      dot.push((b[0] - a[0]) * (c[0] - a[0]) + (b[1] - a[1]) * (c[1] - a[1]));
+    }
+    if (!s.area) return null;
+    return { iso: d[0] === d[1] || d[1] === d[2] || d[0] === d[2], right: dot.indexOf(0) >= 0, obtuse: dot.some(function (x) { return x < 0; }) };
+  }
+  var FILL = 'color-mix(in srgb,var(--strand) 30%,var(--card))', FILL2 = 'color-mix(in srgb,var(--hi) 55%,var(--card))';
+  var LESSONS = [
+    { id: 'triangles', title: 'Kinds of triangles', sub: 'Named by sides and by angles.', concepts: [
+      { id: 'by-sides', title: 'Named by sides', exp: ['E1.1'], skill: 'sg-tri',
+        body: '<p><b>Equilateral</b>: 3 equal sides. <b>Isosceles</b>: 2 equal sides. <b>Scalene</b>: no equal sides. Tick marks show which sides are equal.</p>',
+        watch: KIT.watch([
+          { say: 'Equilateral: all 3 sides are equal. The marks show it.', fig: wrap(triPic([[0, 0], [2, 0], [1, 1.732]], [0, 1, 2], null, null, 220, 180)) },
+          { say: 'Isosceles: 2 sides are equal.', fig: wrap(triPic([[0, 0], [2, 0], [1, 2.6]], [1, 2], null, null, 220, 180)) },
+          { say: 'Scalene: no sides are equal.', fig: wrap(triPic([[0, 0], [3, 0], [0.8, 1.6]], [], null, null, 220, 180)), ms: 2000 }
+        ]),
+        try: { tool: 'geoboard', opts: {}, tasks: [
+          { do: 'Tap pegs to make an <b>isosceles</b> triangle. Tap the first peg again to close it.', goal: function (s) { var t = tri(s); return t && t.iso; }, yes: 'Yes. Two sides are the same length.' },
+          { do: 'Now make a <b>scalene</b> triangle: no two sides the same.', goal: function (s) { var t = tri(s); return t && !t.iso; }, yes: 'Yes. Every side is a different length.' }
+        ] },
+        key: '<p>Equilateral: 3 equal sides. Isosceles: 2 equal sides. Scalene: 0 equal sides.</p>',
+        check: [P('sg-tri', 1), P('sg-tri', 1)] },
+
+      { id: 'by-angles', title: 'Named by angles', exp: ['E1.1'], skill: 'sg-tri',
+        body: '<p><b>Right</b>: one angle is exactly 90&deg;. <b>Obtuse</b>: one angle is more than 90&deg;. <b>Acute</b>: every angle is less than 90&deg;.</p>',
+        watch: { tool: 'geoboard', opts: {}, steps: [
+          { say: 'A right triangle has a square corner, exactly 90&deg;.', act: function (t) { return t.shape([[0, 0], [0, 3], [3, 3]], 300); } },
+          { say: 'An obtuse triangle has one wide corner, more than 90&deg;.', act: function (t) { return t.shape([[0, 2], [1, 4], [4, 4]], 300); } },
+          { say: 'An acute triangle has three sharp corners, all less than 90&deg;.', act: function (t) { return t.shape([[2, 0], [0, 3], [4, 4]], 300); }, ms: 2000 }
+        ] },
+        try: { tool: 'geoboard', opts: {}, tasks: [
+          { do: 'Make a <b>right</b> triangle.', goal: function (s) { var t = tri(s); return t && t.right; }, yes: 'Yes. It has a square corner.' },
+          { do: 'Make an <b>obtuse</b> triangle.', goal: function (s) { var t = tri(s); return t && t.obtuse; }, yes: 'Yes. One corner is wider than a square corner.' }
+        ] },
+        key: '<p>Check the <b>biggest</b> angle. Exactly 90&deg;: right. More: obtuse. Less: acute.</p>',
+        mistake: '<p>Calling a triangle acute because it has some sharp corners. Every triangle has at least two acute angles. Only the biggest angle decides.</p>',
+        check: [P('sg-tri', 2), P('sg-tri', 2)] },
+
+      { id: 'angle-sum', title: 'The angles add to 180&deg;', exp: ['E1.1'], skill: 'sg-tri', hard: true,
+        body: '<p>The three angles of every triangle add up to <b>180&deg;</b>. If you know two angles, you can find the third.</p>',
+        watch: KIT.watch([
+          { say: 'An equilateral triangle: 60&deg; + 60&deg; + 60&deg; = 180&deg;.', fig: wrap(angTri(60, 60, 60)) },
+          { say: 'Change the shape: 40&deg; + 70&deg; + 70&deg; = 180&deg;.', fig: wrap(angTri(40, 70, 70)) },
+          { say: 'Two angles are 90&deg; and 35&deg;. What is the third?', fig: wrap(angTri(90, 35, 55, 2)) },
+          { say: '180 &minus; 90 &minus; 35 = <b>55&deg;</b>.', fig: wrap(angTri(90, 35, 55)), ms: 2200 }
+        ]),
+        try: KIT.widget('shapes-grids', 0, 'Nice. Try two big angles, like 100° and 90°. What goes wrong?'),
+        ways: [
+          { label: 'Tear the corners', html: '<p>Cut out a paper triangle and tear off its three corners. Put the points together: they make a straight line, which is 180&deg;.</p>' },
+          { label: 'Half a square', html: '<p>A square has four 90&deg; corners: 360&deg;. Cut it along a diagonal and each triangle gets half: 180&deg;.</p>' }
+        ],
+        key: '<p><b>Angles in a triangle add to 180&deg;.</b> Missing angle = 180&deg; minus the other two.</p>',
+        mistake: '<p>Forgetting to subtract both known angles, or drawing a triangle with two right angles. Two right angles already make 180&deg;, leaving nothing for the third corner.</p>',
+        check: [P('sg-tri', 3), P('sg-tri', 2)] },
+
+      { id: 'side-rule', title: 'Can these sides make a triangle?', exp: ['E1.1'], skill: 'sg-tri', hard: true,
+        body: '<p>Not every three lengths make a triangle. The two shorter sides together must be <b>longer</b> than the longest side.</p>',
+        watch: KIT.watch([
+          { say: 'Sticks of 4 cm, 5 cm and 7 cm. 4 + 5 = 9, longer than 7.', fig: wrap(sticks(7, 4, 5)) },
+          { say: 'They meet: a triangle.', fig: wrap(sideTri(7, 4, 5)) },
+          { say: 'Sticks of 2 cm, 3 cm and 8 cm. 2 + 3 = 5, shorter than 8.', fig: wrap(sticks(8, 2, 3)) },
+          { say: 'The ends cannot meet. <b>No triangle</b>.', fig: wrap(sticks(8, 2, 3)), ms: 2200 }
+        ]),
+        try: KIT.widget('shapes-grids', 1, 'Good. Find three lengths where the two short sides add up to exactly the long one.'),
+        ways: [
+          { label: 'Arms', html: '<p>The two short sides are arms reaching from the ends of the long side. If together they are too short, their hands cannot touch.</p>' },
+          { label: 'Exactly equal', html: '<p>3 cm, 4 cm and 7 cm: 3 + 4 = 7 exactly. The sides lie flat on top of the long side. That is a line, not a triangle.</p>' }
+        ],
+        key: '<p><b>Short + short &gt; long</b>, or there is no triangle.</p>',
+        mistake: '<p>Thinking any three sticks make a triangle. Use real strips of paper cut to the lengths and try it.</p>',
+        check: [function () {
+          var a = R.int(2, 6), b = R.int(2, 6), ok = R.int(0, 1), c = ok ? R.int(Math.abs(a - b) + 1, a + b - 1) : a + b + R.int(0, 3);
+          return KIT.mc('Can sides of ' + a + ' cm, ' + b + ' cm and ' + c + ' cm make a triangle?', ok ? 'Yes' : 'No', [ok ? 'No' : 'Yes'], { fig: sticks(Math.max(a, b, c), Math.min(a, b, c), a + b + c - Math.max(a, b, c) - Math.min(a, b, c)), hint: 'Add the two shorter sides. Is the total longer than the longest side?', explain: ok ? 'The two shorter sides add to more than the longest, so they meet.' : 'The two shorter sides are not longer than the longest side, so the ends cannot meet.' });
+        }, P('sg-tri', 1)] }
+    ] },
+
+    { id: 'congruent', title: 'Congruent shapes', sub: 'Same size, same shape.', concepts: [
+      { id: 'congruent', title: 'Same size and shape', exp: ['E1.2'], skill: 'sg-cong',
+        body: '<p>Two shapes are <b>congruent</b> if one fits exactly on the other after a slide, turn or flip. Stretching or shrinking breaks it.</p>',
+        watch: KIT.watch([
+          { say: 'A 5 by 3 rectangle.', fig: wrap(grid(1, [], [{ pts: [[1, 2], [6, 2], [6, 5], [1, 5]], fill: FILL }], 26)) },
+          { say: 'Turn it a quarter turn: 3 by 5. Same size and shape, so <b>congruent</b>.', fig: wrap(grid(1, [], [{ pts: [[1, 2], [6, 2], [6, 5], [1, 5]], fill: FILL }, { pts: [[7, 1], [10, 1], [10, 6], [7, 6]], fill: FILL2 }], 26)) },
+          { say: 'Stretch it to 5 by 4. Different size: <b>not congruent</b>.', fig: wrap(grid(1, [], [{ pts: [[1, 2], [6, 2], [6, 5], [1, 5]], fill: FILL }, { pts: [[4, 6], [9, 6], [9, 10], [4, 10]], fill: 'color-mix(in srgb,var(--bad) 30%,var(--card))' }], 26)), ms: 2200 }
+        ]),
+        try: KIT.widget('shapes-grids', 2, 'Nice. Only "made bigger" and "squashed" break congruence.'),
+        key: '<p>Slide, turn or flip: <b>congruent</b>. Stretch or shrink: <b>not congruent</b>.</p>',
+        mistake: '<p>Deciding a turned shape is different because it "points another way". Trace one shape on paper and lay it over the other.</p>',
+        check: [P('sg-cong', 1), P('sg-cong', 2)] }
+    ] },
+
+    { id: 'views', title: 'Views of objects', sub: 'Top, front and side.', concepts: [
+      { id: 'views', title: 'Top, front and side views', exp: ['E1.3'], skill: 'sg-views', hard: true,
+        body: '<p>The <b>top view</b> is what you see from above. The <b>front</b> and <b>side</b> views show the tallest stack in each column, like a shadow on a wall.</p>',
+        watch: KIT.watch([
+          { say: 'A building made of cube stacks.', fig: wrap(iso(BUILD.steps)) },
+          { say: 'From the top, you see where the stacks stand. The numbers say how tall.', fig: wrap(top(BUILD.steps, true)) },
+          { say: 'From the front, each column shows its tallest stack.', fig: wrap(view(front(BUILD.steps), 'Front view')) },
+          { say: 'From the right side, the same idea going back to front.', fig: wrap(view(side(BUILD.steps), 'Side view')), ms: 2200 }
+        ]),
+        try: KIT.widget('shapes-grids', 3, 'Good. Try the tower. Which views look the same?'),
+        ways: [
+          { label: 'Shadow', html: '<p>Shine a torch on the building from the front. The shadow on the wall is the front view: flat, showing only heights.</p>' },
+          { label: 'Row of stacks', html: '<div class="pies"><figure>' + iso([[0, 0, 0], [0, 0, 0], [2, 1, 3]]) + '<figcaption>stacks of 2, 1, 3</figcaption></figure><figure>' + view([2, 1, 3], 'Front view') + '<figcaption>front view</figcaption></figure></div>' }
+        ],
+        key: '<p>Front and side views are <b>flat</b>. Each column shows its <b>tallest</b> stack.</p>',
+        mistake: '<p>Drawing hidden cubes in a front view, or drawing it in 3D. Build it with real cubes and look with one eye closed at table height.</p>',
+        check: [P('sg-views', 1), P('sg-views', 2)] }
+    ] },
+
+    { id: 'coords', title: 'Coordinates', sub: 'Across, then up.', concepts: [
+      { id: 'plot', title: 'Plot a point', exp: ['E1.4'], skill: 'sg-coord',
+        body: '<p>A point is named by an <b>ordered pair</b> (x, y). Start at the origin (0, 0). Go <b>across</b> x, then <b>up</b> y.</p>',
+        watch: KIT.watch([
+          { say: 'Plot (4, 6). Start at the origin, (0, 0).', fig: wrap(grid(1, [{ x: 0, y: 0, label: '(0, 0)', c: 'var(--strand)' }], [], 26)) },
+          { say: 'Go 4 across.', fig: wrap(grid(1, [{ x: 4, y: 0, c: 'var(--strand)' }], [{ pts: [[0, 0], [4, 0], [4, 0]], fill: 'none', stroke: 'var(--accent)' }], 26)) },
+          { say: 'Then 6 up.', fig: wrap(grid(1, [{ x: 4, y: 6, label: '(4, 6)' }], [{ pts: [[0, 0], [4, 0], [4, 0]], fill: 'none', stroke: 'var(--accent)' }, { pts: [[4, 0], [4, 6], [4, 6]], fill: 'none', stroke: 'var(--pm1)' }], 26)) },
+          { say: '(6, 4) is a different point. Order matters.', fig: wrap(grid(1, [{ x: 4, y: 6, label: '(4, 6)' }, { x: 6, y: 4, label: '(6, 4)', c: 'var(--strand)' }], [], 26)), ms: 2200 }
+        ]),
+        try: KIT.widget('shapes-grids', 4, 'Nice. Change the scale to count by 5. The point moves to bigger numbers.'),
+        key: '<p><b>Across first, then up.</b> "Walk to the ladder, then climb it."</p>',
+        mistake: '<p>Mixing up the order, so (2, 5) is plotted at (5, 2). Say "across, then up" every time, and trace with a finger.</p>',
+        check: [P('sg-coord', 1), P('sg-coord', 2)] }
+    ] },
+
+    { id: 'transform', title: 'Transformations', sub: 'Slide, flip and turn.', concepts: [
+      { id: 'moves', title: 'Slide, flip and turn', exp: ['E1.5'], skill: 'sg-trans', hard: true,
+        body: '<p>A <b>translation</b> slides a shape. A <b>reflection</b> flips it over a line. A <b>rotation</b> turns it about a point. The shape stays congruent.</p>',
+        watch: KIT.watch([
+          { say: 'A triangle on the grid.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }], 26)) },
+          { say: '<b>Translation</b>: slide 4 right and 3 up. Every point moves the same way.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }, { pts: [[5, 4], [8, 4], [5, 7]], fill: FILL2 }], 26)) },
+          { say: '<b>Reflection</b> in the line x = 5: each point lands the same distance on the other side.', fig: wrap(grid(1, [], [{ pts: [[5, 0], [5, 10], [5, 10]], fill: 'none', stroke: 'var(--bad)', dash: 1 }, { pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }, { pts: [[9, 1], [6, 1], [9, 4]], fill: FILL2 }], 26)) },
+          { say: '<b>Rotation</b> a half turn about (5, 5).', fig: wrap(grid(1, [{ x: 5, y: 5, c: 'var(--bad)' }], [{ pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }, { pts: [[9, 9], [6, 9], [9, 6]], fill: FILL2 }], 26)), ms: 2200 }
+        ]),
+        try: KIT.widget('shapes-grids', 5, 'Good. Try each kind and check that the shape never changes size.'),
+        ways: [
+          { label: 'Track one corner', html: '<p>Follow just one corner. Translation: count across and up. Reflection: count to the line, then the same on the other side. Then draw the rest.</p>' },
+          { label: 'Tracing paper', html: '<p>Trace the shape. Slide the paper (translation), flip it over (reflection), or pin one point and turn it (rotation).</p>' },
+          { label: 'All three', html: A.fig.moves() }
+        ],
+        key: '<p>Slide, flip and turn change <b>where</b> a shape is, never its <b>size or shape</b>.</p>',
+        mistake: '<p>Moving the corners by different amounts in a translation, or reflecting to the wrong distance. Have the child move one corner at a time and count squares aloud.</p>',
+        check: [P('sg-trans', 1), P('sg-trans', 2)] }
+    ] }
+  ];
   A.register('shapes-grids', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Kinds of triangles</h2>' +
 '<p>Triangles are named by their <b>sides</b> and by their <b>angles</b>. The three angles of every triangle add up to <b>180&deg;</b>.</p>' +

@@ -69,7 +69,122 @@
     return A.svg((a + b) * 40 + 6, 48, s, a + ' apples and ' + b + ' oranges');
   }
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('ratios', id, lv); }
+  function an(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  /* k groups of (a circles and b squares), each group in its own box */
+  function groups(a, b, k) {
+    var gw = Math.max(a, b) * 26 + 16, s = '';
+    for (var g = 0; g < k; g++) {
+      var x0 = 6 + g * (gw + 10);
+      s += '<rect x="' + x0 + '" y="4" width="' + gw + '" height="68" rx="8" style="fill:none;stroke:var(--line)" stroke-width="2"/>';
+      for (var i = 0; i < a; i++) s += '<circle cx="' + (x0 + 20 + i * 26) + '" cy="24" r="10" style="fill:var(--strand);stroke:var(--ink)" stroke-width="1.5"/>';
+      for (i = 0; i < b; i++) s += '<rect x="' + (x0 + 10 + i * 26) + '" y="44" width="20" height="20" rx="3" style="fill:var(--hi);stroke:var(--ink)" stroke-width="1.5"/>';
+    }
+    return A.svg(6 + k * (gw + 10), 78, s, k + ' groups of ' + a + ' circles and ' + b + ' squares');
+  }
+  var LESSONS = [
+    { id: 'ratio', title: 'What is a ratio?', sub: 'Comparing two amounts.', concepts: [
+      { id: 'compare', title: 'A ratio compares two amounts', exp: ['B2.9'], skill: 'ra-write',
+        body: '<p>A <b>ratio</b> compares two amounts. 3 circles and 5 squares: the ratio of circles to squares is <b>3:5</b>, said "3 to 5". Order matters.</p>',
+        watch: K.watch([
+          { say: 'A bag has 3 circles.', fig: an(counters(3, 0)) },
+          { say: 'And 5 squares.', fig: an(counters(3, 5)) },
+          { say: 'Circles to squares is <b>3:5</b>. Circles come first because they were named first.', fig: an(tape(3, 5, 'circles', 'squares')) },
+          { say: 'Squares to circles is <b>5:3</b>. Same bag, different order.', fig: an(tape(3, 5, 'circles', 'squares')), ms: 2200 }
+        ]),
+        try: K.widget('ratios', 0, 'Nice. Try making the ratio 1:2, then 2:4. Do they look alike?'),
+        key: '<p><b>a:b</b> means "a for every b". Write the numbers in the same order as the words.</p>',
+        check: [P('ra-write', 1), P('ra-write', 2)] },
+
+      { id: 'part-whole', title: 'Part to part, part to whole', exp: ['B2.9'], skill: 'ra-write', hard: true,
+        body: '<p>A ratio can compare one part to another part, or one part to the whole. Read the words carefully.</p>',
+        watch: K.watch([
+          { say: 'A bowl has 4 apples and 6 oranges.', fig: an(fruit(4, 6)) },
+          { say: 'Apples to oranges is part to part: <b>4:6</b>.', fig: an(tape(4, 6, 'apples', 'oranges')) },
+          { say: 'All the fruit is 4 + 6 = 10.', fig: an(tape(4, 6, 'apples', 'oranges')) },
+          { say: 'Oranges to all the fruit is part to whole: <b>6:10</b>.', fig: an(tape(4, 6, 'apples', 'oranges')), ms: 2200 }
+        ]),
+        ways: [
+          { label: 'Ask "of what?"', html: '<p>"Oranges to apples": compare with apples (6:4). "Oranges to all fruit": compare with everything (6:10).</p>' },
+          { label: 'As a fraction', html: '<p>A part-to-whole ratio is a fraction. 6:10 of the fruit is oranges, so 6/10 of the fruit is oranges.</p>' }
+        ],
+        key: '<p>Part to part: <b>4:6</b>. Part to whole: <b>6:10</b>. The whole is both parts added.</p>',
+        mistake: '<p>Using the part instead of the whole (writing 6:4 for oranges to all fruit), or writing the numbers in the wrong order. Have the child point to each word and write its number in that order.</p>',
+        check: [P('ra-write', 2), P('ra-write', 3)] }
+    ] },
+
+    { id: 'equiv', title: 'Equivalent ratios', sub: 'The same mix, bigger or smaller.', concepts: [
+      { id: 'equiv', title: 'Multiply both parts', exp: ['B2.9'], skill: 'ra-equiv', hard: true,
+        body: '<p>Equivalent ratios make the same comparison. Make more groups of the same mix: multiply <b>both</b> numbers by the same number.</p>',
+        watch: K.watch([
+          { say: 'One group: 2 circles and 3 squares. 2:3.', fig: an(groups(2, 3, 1)) },
+          { say: 'Two groups: 4 circles and 6 squares. <b>4:6</b>.', fig: an(groups(2, 3, 2)) },
+          { say: 'Three groups: 6 circles and 9 squares. <b>6:9</b>.', fig: an(groups(2, 3, 3)) },
+          { say: 'Every column is the same mix: 2:3 = 4:6 = 6:9.', fig: an(rtab('circles', 'squares', [[2, 3], [4, 6], [6, 9]], [[0, 1, '&times; 2']])), ms: 2600 }
+        ]),
+        try: K.widget('ratios', 1, 'Good. Every column of the table is the same mix.'),
+        ways: [
+          { label: 'Groups', html: '<div class="fig">' + groups(3, 4, 2) + '</div><p>Two groups of 3:4 is 6:8.</p>' },
+          { label: 'Divide back', html: '<p>Is 12:16 the same as 3:4? Divide both by 4: 12 &divide; 4 = 3 and 16 &divide; 4 = 4. Yes.</p>' },
+          { label: 'Paint', html: '<p>2 cans of blue to 3 cans of yellow makes one green. 4 blue to 6 yellow makes the same green, just more of it. 4 blue to 5 yellow is a different green.</p>' }
+        ],
+        key: '<p><b>Multiply (or divide) both parts by the same number.</b></p>',
+        mistake: '<p>Adding the same number to both parts: 2:3 &rarr; 4:5. That changes the mix. Build both with counters to show the difference.</p><div class="pies"><figure>' + counters(4, 6, 10) + '<figcaption>4:6, same mix</figcaption></figure><figure>' + counters(4, 5, 10) + '<figcaption>4:5, different</figcaption></figure></div>',
+        check: [P('ra-equiv', 1), P('ra-equiv', 2)] }
+    ] },
+
+    { id: 'rates', title: 'Rates', sub: 'Comparing different units.', concepts: [
+      { id: 'rate', title: 'What is a rate?', exp: ['B2.9'], skill: 'ra-rate',
+        body: '<p>A <b>rate</b> compares two different units, like kilometres and hours. 80 km/h means 80 km for every 1 hour.</p>',
+        watch: K.watch([
+          { say: 'A car drives at 80 km per hour.', fig: an(dline(80, 1, 4, 'km', 'hours', 0)) },
+          { say: 'After 1 hour: 80 km.', fig: an(dline(80, 1, 4, 'km', 'hours', 1)) },
+          { say: 'After 2 hours: 160 km.', fig: an(dline(80, 1, 4, 'km', 'hours', 2)) },
+          { say: 'After 3 hours: <b>240 km</b>. Each hour adds another 80.', fig: an(dline(80, 1, 4, 'km', 'hours', 3)), ms: 2200 }
+        ]),
+        try: K.widget('ratios', 2, 'Nice. Try a faster speed and watch the distance grow.'),
+        key: '<p><b>Per</b> means "for each 1". 80 km/h = 80 km in 1 hour.</p>',
+        mistake: '<p>Mixing up the units: reading 80 km/h as 1 km in 80 hours. Ask "how far in <b>one</b> hour?"</p>',
+        check: [P('ra-rate', 1), P('ra-rate', 2)] },
+
+      { id: 'unit-rate', title: 'Find the rate for 1', exp: ['B2.9'], skill: 'ra-rate', hard: true,
+        body: '<p>To compare rates, find the amount for <b>1</b> unit. Divide both parts by the same number.</p>',
+        watch: K.watch([
+          { say: 'Mia cycles 45 km in 3 hours.', fig: an(dline(15, 1, 3, 'km', 'hours', 3)) },
+          { say: 'Split the 3 hours into 3 equal jumps.', fig: an(dline(15, 1, 3, 'km', 'hours', 2)) },
+          { say: '45 &divide; 3 = 15. In 1 hour she rides <b>15 km</b>.', fig: an(dline(15, 1, 3, 'km', 'hours', 1)), ms: 2200 }
+        ]),
+        ways: [
+          { label: 'Ratio table', html: '<div class="fig">' + rtab('km', 'hours', [[45, 3], [15, 1]], [[0, 1, '&divide; 3']]) + '</div>' },
+          { label: 'Shopping', html: '<p>4 kg of apples cost $12. 1 kg costs $12 &divide; 4 = $3. Now you can price any amount.</p>' }
+        ],
+        key: '<p><b>Divide both parts</b> by the number of units to get the rate for 1.</p>',
+        mistake: '<p>Dividing only one part (45 km in 3 hours &rarr; 15 km in 3 hours). Whatever happens to one row happens to the other.</p>',
+        check: [P('ra-rate', 2), P('ra-rate', 3)] }
+    ] },
+
+    { id: 'tables', title: 'Ratio tables', sub: 'Solve problems step by step.', concepts: [
+      { id: 'recipe', title: 'Solve with a ratio table', exp: ['B2.9'], skill: 'ra-table', hard: true,
+        body: '<p>A ratio table keeps both amounts in step. Whatever you do to one row, do to the other.</p>',
+        watch: K.watch([
+          { say: 'A recipe uses 3 cups of flour for every 2 eggs. How much flour for 8 eggs?', fig: an(rtab('eggs', 'cups of flour', [[2, 3]], [])) },
+          { say: 'Double the eggs: 4. Double the flour too: 6.', fig: an(rtab('eggs', 'cups of flour', [[2, 3], [4, 6]], [[0, 1, '&times; 2']])) },
+          { say: 'Double again: 8 eggs and <b>12 cups</b>.', fig: an(rtab('eggs', 'cups of flour', [[2, 3], [4, 6], [8, 12]], [[0, 1, '&times; 2'], [1, 2, '&times; 2']])), ms: 2400 }
+        ]),
+        ways: [
+          { label: 'One big step', html: '<p>2 eggs to 8 eggs is &times; 4. So 3 cups &times; 4 = 12 cups.</p><div class="fig">' + rtab('eggs', 'cups of flour', [[2, 3], [8, 12]], [[0, 1, '&times; 4']]) + '</div>' },
+          { label: 'Go through 1', html: '<p>1 egg needs 3 &divide; 2 = 1.5 cups. 8 eggs need 8 &times; 1.5 = 12 cups.</p>' }
+        ],
+        key: '<p>Find the step from what you know to what you want. <b>Do the same step to the other row.</b></p>',
+        mistake: '<p>Adding instead of multiplying (2 eggs &rarr; 8 eggs is +6, so flour 3 + 6 = 9). Ask "how many times bigger?"</p>',
+        check: [P('ra-table', 1), P('ra-table', 2)] }
+    ] }
+  ];
   A.register('ratios', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>What is a ratio?</h2>' +
 '<p>A <b>ratio</b> compares two amounts. If a bag has 3 circles and 5 squares, the ratio of circles to squares is <b>3 to 5</b>, written <span class="math">3:5</span>. Order matters: squares to circles is 5:3.</p>' +

@@ -148,7 +148,134 @@
   A.fig = A.fig || {};
   A.fig.hstSplit = hstSplit; A.fig.cashLine = cashLine;
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('money', id, lv); }
+  function an(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  function payPair(a, b) { return '<div class="pies thumbs g5-anim">' + [a, b].map(function (k) { return '<figure>' + payIcon(k[0]) + '<figcaption><b>' + k[1] + '</b><br>' + k[2] + '</figcaption></figure>'; }).join('') + '</div>'; }
+  var LESSONS = [
+    { id: 'moves', title: 'How money moves', sub: 'Cash, cards and transfers.', concepts: [
+      { id: 'pay', title: 'Ways to pay', exp: ['F1.1'], skill: 'mo-pay',
+        body: '<p>Money moves in many ways. Some use bills and coins. Most move numbers between bank accounts. Every way still spends <b>real money</b>.</p>',
+        watch: K.watch([
+          { say: 'Cash: you hand over bills and coins.', fig: payPair(['cash', 'Cash', 'bills and coins'], ['cheque', 'Cheque', 'a signed paper']) },
+          { say: 'Debit: money leaves your own account right away.', fig: payPair(['debit', 'Debit card or tap', 'your own money'], ['credit', 'Credit card', 'the bank lends it']) },
+          { say: 'Credit: the bank pays now, and you pay the bank back later with interest.', fig: an(debitCredit()) },
+          { say: 'E-transfers and direct deposits move money between accounts with no cash at all.', fig: an(flow([['Neighbour', 'pays $20', 'var(--ink2)'], ['Maya&rsquo;s bank', 'gets $20', 'var(--good)'], ['Store', 'debit $8', 'var(--bad)']], ['e-transfer', 'debit card'])), ms: 2400 }
+        ]),
+        try: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200, 500, 1000, 2000] }, tasks: [
+          { do: 'Pay exactly <b>$12.35</b> in cash, using as few bills and coins as you can.', goal: function (s) { return s.total === 1235 && s.n <= 5; }, yes: 'Yes. $10 + $2 + 25¢ + 10¢.' }
+        ] },
+        key: '<p>Debit spends <b>your money now</b>. Credit spends <b>the bank\'s money now</b>, and you pay it back later.</p>',
+        mistake: '<p>Thinking a card or phone payment is "free" because no cash changes hands. Look at a bank statement together to show the money leaving.</p>',
+        check: [P('mo-pay', 1), P('mo-pay', 2)] }
+    ] },
+
+    { id: 'tax', title: 'Shopping with sales tax', sub: 'Subtotal, HST, total and change.', concepts: [
+      { id: 'hst', title: 'Add the 13% HST', exp: ['F1.2'], skill: 'mo-tax', hard: true,
+        body: '<p>In Ontario most things have a sales tax called <b>HST</b>, which is <b>13%</b> of the price. Add the prices, find the tax, then add it on.</p>',
+        watch: K.watch([
+          { say: 'A $20.00 book. The subtotal is $20.00.', fig: an(receipt([['Book', 2000], ['Subtotal', 2000, 1]], 'Receipt')) },
+          { say: '10% of $20.00 is easy: move the decimal point one place left. $2.00.', fig: an(receipt([['Book', 2000], ['10%', 200]], 'Receipt')) },
+          { say: '3% more is $0.60. So 13% is $2.60.', fig: an(receipt([['Book', 2000], ['10%', 200], ['3%', 60], ['HST 13%', 260, 1, 'var(--bad)']], 'Receipt')) },
+          { say: 'Total at the till: <b>$22.60</b>.', fig: an(receipt([['Book', 2000], ['HST 13%', 260, 0, 'var(--bad)'], ['Total', 2260, 1]], 'Receipt')), ms: 2200 }
+        ]),
+        try: K.widget('money', 0, 'Nice. Switch to cash and watch the total round to the nearest 5 cents.'),
+        ways: [
+          { label: 'Where tax goes', html: '<div class="fig">' + hstSplit(2000) + '</div><p>5% goes to Canada and 8% to Ontario.</p>' },
+          { label: 'Estimate', html: '<p>13% is a bit more than a tenth. For $24.99, think $25: a tenth is $2.50, plus a bit, about $3.25. The total is about $28.</p>' }
+        ],
+        key: '<p><b>Subtotal + 13% HST = total.</b> 13% = 10% + 3%.</p>',
+        mistake: '<p>Forgetting the tax and bringing exactly the shelf price. Before shopping, estimate the total with tax together.</p>',
+        check: [P('mo-tax', 1), P('mo-tax', 2)] },
+
+      { id: 'cash', title: 'Cash rounding and change', exp: ['F1.2'], skill: 'mo-tax', hard: true,
+        body: '<p>Canada has no pennies. A <b>cash</b> total rounds to the nearest 5 cents. Find change by <b>counting up</b> from the price.</p>',
+        watch: K.watch([
+          { say: 'A cash total of $4.97 sits between $4.95 and $5.00.', fig: an(cashLine(497)) },
+          { say: 'It is 2&cent; from $4.95 and 3&cent; from $5.00, so it rounds to <b>$4.95</b>.', fig: an(cashLine(497)) },
+          { say: 'You pay with a $10 bill. Count up: $4.95 + $0.05 = $5.00.', fig: an(countUp(495, 1000)) },
+          { say: 'Then $5.00 more to $10.00. Change: <b>$5.05</b>.', fig: an(countUp(495, 1000)), ms: 2200 }
+        ]),
+        try: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200, 500] }, tasks: [
+          { do: 'The total is $4.95 and you paid $10.00. Put the <b>change</b> on the mat.', goal: function (s) { return s.total === 505; }, yes: 'Yes. $5.05 in change.' },
+          { do: 'Now a cash total of $7.38, rounded. Pay it exactly.', goal: function (s) { return s.total === 740; }, yes: 'Yes. $7.38 rounds up to $7.40.' }
+        ] },
+        key: '<p>Cash: ends in 1, 2, 6, 7 round <b>down</b>. 3, 4, 8, 9 round <b>up</b>. Count up to find change.</p>',
+        mistake: '<p>Rounding card totals (only cash rounds), or subtracting with errors when finding change. Practise counting up with real coins.</p>',
+        check: [P('mo-tax', 2), P('mo-tax', 3)] }
+    ] },
+
+    { id: 'budget', title: 'Making a budget', sub: 'Every dollar gets a job.', concepts: [
+      { id: 'budget', title: 'Needs, savings and wants', exp: ['F1.3'], skill: 'mo-budget',
+        body: '<p>A <b>budget</b> plans money coming in (<b>income</b>) and going out (<b>expenses</b>). Needs first, then savings, then wants. It is <b>balanced</b> when every dollar has a job.</p>',
+        watch: K.watch([
+          { say: 'Income this month: $40.', fig: an(flow([['Income', '$40', 'var(--ink2)']], [])) },
+          { say: 'Pay yourself first: $10 into savings.', fig: an(flow([['Income', '$40', 'var(--ink2)'], ['1. Savings', '$10', 'var(--sd)']], ['first'])) },
+          { say: 'Needs take $15.', fig: an(budgetBar(40, [15, 10, 15], 2)) },
+          { say: 'That leaves $15 for wants. 15 + 10 + 15 = 40: <b>balanced</b>.', fig: an(budgetBar(40, [15, 10, 15])), ms: 2400 }
+        ]),
+        try: K.widget('money', 1, 'Good. Make the plan add up exactly to the income.'),
+        key: '<p><b>Needs + savings + wants = income.</b> Save first, then spend what is left.</p>',
+        mistake: '<p>Spending first and saving "whatever is left", which is usually nothing. Set the savings aside the day money comes in.</p>',
+        check: [P('mo-budget', 1), P('mo-budget', 2)] }
+    ] },
+
+    { id: 'credit', title: 'Credit and debt', sub: 'Borrowing costs extra.', concepts: [
+      { id: 'interest', title: 'Interest makes debt grow', exp: ['F1.4'], skill: 'mo-credit', hard: true,
+        body: '<p><b>Credit</b> is borrowing now and paying back later. <b>Debt</b> is what you still owe. <b>Interest</b> is the extra you pay for borrowing.</p>',
+        watch: K.watch([
+          { say: 'You borrow $100 on a card that adds 2% each month.', fig: an(oweBars([['borrow', 10000]])) },
+          { say: 'After one month, 2% is added: you owe $102.', fig: an(oweBars([['borrow', 10000], ['+2%', 10200, 'var(--bad)']])) },
+          { say: 'You pay $52. You still owe $50.', fig: an(oweBars([['borrow', 10000], ['+2%', 10200, 'var(--bad)'], ['pay $52', 5000, 'var(--good)']])) },
+          { say: 'Next month 2% of $50 is added: $51. Pay more each month, and you pay less interest in total.', fig: an(oweBars([['borrow', 10000], ['+2%', 10200, 'var(--bad)'], ['pay $52', 5000, 'var(--good)'], ['+2%', 5100, 'var(--bad)']])), ms: 2600 }
+        ]),
+        try: K.widget('money', 2, 'Nice. Compare paying $20 a month to paying $100 a month.'),
+        ways: [
+          { label: 'Borrowing a bike', html: '<p>A friend lends you a bike, but you must give it back with a full tank of air and a clean chain. Interest is that "extra" for borrowing.</p>' },
+          { label: 'Good uses', html: '<p>Borrowing helps for big needs, like a home or school. It always costs extra, so borrow only what you can pay back.</p>' }
+        ],
+        key: '<p>Interest is added to what you <b>still owe</b>. Paying more, sooner, costs less.</p>',
+        mistake: '<p>Paying only the smallest amount and thinking the debt is nearly gone. Use the try-it to compare total interest for small and big payments.</p>',
+        check: [P('mo-credit', 1), P('mo-credit', 2)] }
+    ] },
+
+    { id: 'best-buy', title: 'Finding the better buy', sub: 'Compare unit rates.', concepts: [
+      { id: 'unit-rate', title: 'Price for one unit', exp: ['F1.5'], skill: 'mo-unit', hard: true,
+        body: '<p>A <b>unit rate</b> is the price for one unit: one item, one gram or one litre. Divide the price by the amount. The lower unit rate is the better value.</p>',
+        watch: K.watch([
+          { say: '6 granola bars for $3.90.', fig: an(items(6, 390, 'bar')) },
+          { say: '$3.90 &divide; 6 = <b>$0.65</b> each.', fig: an(items(6, 390, 'bar', 1)) },
+          { say: '10 bars for $5.90: $5.90 &divide; 10 = <b>$0.59</b> each.', fig: an(items(10, 590, 'bar', 1)) },
+          { say: '$0.59 is less than $0.65, so the 10-pack is the better buy, if you will eat them all.', fig: '<div class="pies g5-anim">' + items(6, 390, 'bar', 1) + items(10, 590, 'bar', 1) + '</div>', ms: 2600 }
+        ]),
+        try: K.widget('money', 3, 'Good. Try a case where the smaller size wins.'),
+        ways: [
+          { label: 'Same amount', html: '<p>Make the amounts match. 500 g for $4.00 is $8.00 per kg. 750 g for $5.25 is $7.00 per kg. The 750 g bag is cheaper per kilogram.</p>' },
+          { label: 'Bigger is not always better', html: '<div class="fig">' + packs([[2, 300, '$1.50 per L'], [3, 480, '$1.60 per L']], 'L') + '</div><p>Here the 2 L bottle wins.</p>' }
+        ],
+        key: '<p><b>Unit rate = price &divide; amount.</b> Lower is better value.</p>',
+        mistake: '<p>Assuming the bigger package is always cheaper. Work out both unit rates before deciding, and ask whether you will use it all.</p>',
+        check: [P('mo-unit', 1), P('mo-unit', 2)] }
+    ] },
+
+    { id: 'gov', title: 'Taxes and community services', sub: 'What taxes pay for.', concepts: [
+      { id: 'levels', title: 'Three levels of government', exp: ['F1.6'], skill: 'mo-gov',
+        body: '<p>Governments collect <b>taxes</b> and use them for services everyone shares. Canada has three main levels: federal, provincial and municipal.</p>',
+        watch: K.watch([
+          { say: 'Federal: Canada. Passports, armed forces, national parks.', fig: an(levels(0)) },
+          { say: 'Provincial: Ontario. Hospitals, schools, highways.', fig: an(levels(1)) },
+          { say: 'Municipal: your town. Parks, libraries, garbage pickup.', fig: an(levels(2)) },
+          { say: 'The 13% HST is shared: 5% to Canada and 8% to Ontario.', fig: an(hstSplit(1000)), ms: 2400 }
+        ]),
+        key: '<p>Taxes pay for things too costly for one family alone: <b>roads, schools, hospitals</b>.</p>',
+        mistake: '<p>Mixing up which level runs which service. Link each one to something nearby: your library (town), your school (Ontario), your passport (Canada).</p>',
+        check: [P('mo-gov', 1), P('mo-gov', 2)] }
+    ] }
+  ];
   A.register('money', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>How money moves</h2>' +
 '<p>Money moves between people, businesses and organizations in many ways. Some use real bills and coins. Most move numbers between bank accounts.</p>' +

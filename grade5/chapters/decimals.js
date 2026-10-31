@@ -90,7 +90,161 @@
   /* strip trailing zeros: 0.50 -> 0.5 */
   function t(c) { return String(A.clean(c / 100)); }
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('decimals', id, lv); }
+  function disksTool(places, start) { return function (el) { return K.disks(el, { places: places || [0, -1, -2], start: start }); }; }
+  function two(a, b, la, lb, sz) { return '<div class="pies g5-anim"><figure>' + tgrid(a, sz || 15) + '<figcaption>' + la + '</figcaption></figure><figure>' + tgrid(b, sz || 15) + '<figcaption>' + lb + '</figcaption></figure></div>'; }
+  function gfig(n, hl) { return '<div class="row2 g5-anim"><div class="fig">' + tgrid(n, 20) + '</div><div>' + dchart(n, hl) + '</div></div>'; }
+  var LESSONS = [
+    { id: 'tenths', title: 'Tenths and hundredths', sub: 'Places to the right of the decimal point.', concepts: [
+      { id: 'grid', title: 'A whole cut into 100', exp: ['B1.5'], skill: 'de-read',
+        body: '<p>This grid of 100 squares is one whole. One square is a <b>hundredth</b> (0.01). A full row of 10 squares is a <b>tenth</b> (0.1).</p>',
+        watch: K.watch([
+          { say: 'One whole, cut into 100 equal squares.', fig: gfig(0) },
+          { say: 'Shade one full row: 1 tenth, or <b>0.1</b>.', fig: gfig(10, 2) },
+          { say: 'Shade 4 rows: 4 tenths, or <b>0.4</b>.', fig: gfig(40, 2) },
+          { say: '7 more squares: 7 hundredths. Together <b>0.47</b>.', fig: gfig(47, 3) },
+          { say: '0.47 is 4 tenths and 7 hundredths. It is also 47 hundredths.', fig: gfig(47), ms: 2400 }
+        ]),
+        try: K.widget('decimals', 0, 'Nice. Try exactly 10, 50 and 100 squares and read the decimal each time.'),
+        key: '<p>First place after the point: <b>tenths</b>. Second place: <b>hundredths</b>. 0.47 = 4 tenths + 7 hundredths = 47 hundredths.</p>',
+        check: [P('de-read', 1), P('de-read', 2)] },
+
+      { id: 'disks', title: 'Decimals with place value disks', exp: ['B1.5'], skill: 'de-read', hard: true,
+        body: '<p>Places keep working the same way after the decimal point. 10 hundredths make 1 tenth, and 10 tenths make 1 one.</p>',
+        watch: { mount: disksTool([0, -1, -2]), steps: [
+          { say: 'Build 2.35: 2 ones,', act: function (t) { return t.add(0, 2, 300); } },
+          { say: '3 tenths,', act: function (t) { return t.add(-1, 3, 300); } },
+          { say: 'and 5 hundredths.', act: function (t) { return t.add(-2, 5, 260); } },
+          { say: 'Add 5 more hundredths. Now there are 10.', act: function (t) { return t.add(-2, 5, 220); } },
+          { say: '10 hundredths group into <b>1 tenth</b>. The total is 2.4.', act: function (t) { return t.group(-2); }, ms: 2200 }
+        ] },
+        try: { mount: function (host, done) {
+          var msg = document.createElement('p'); msg.className = 'ls-task'; msg.innerHTML = 'Build <b>1.47</b> with the fewest disks.'; host.appendChild(msg);
+          var b = document.createElement('div'); host.appendChild(b);
+          K.disks(b, { places: [0, -1, -2], controls: true, onChange: function (s) { if (s.value === 1.47 && s.counts[-1] < 10 && s.counts[-2] < 10) done('Yes. 1 one, 4 tenths and 7 hundredths.'); } });
+        }, do: 'Use the buttons to add disks.' },
+        ways: [
+          { label: 'With blocks', html: '<p>A flat is one whole, a rod is one tenth, and a small cube is one hundredth.</p><div class="fig">' + dblocks(235) + '</div>' },
+          { label: 'In a chart', html: dchart(235) + '<p>2 ones, 3 tenths, 5 hundredths. Say it: "two and thirty-five hundredths".</p>' },
+          { label: 'With money', html: '<p>$2.35 is 2 dollars and 35 cents. A dime is a tenth of a dollar and a cent is a hundredth, so $2.35 is 2 dollars, 3 dimes and 5 cents.</p>' }
+        ],
+        key: '<p><b>10 hundredths = 1 tenth. 10 tenths = 1 one.</b> Just like whole numbers.</p>',
+        mistake: '<p>Writing 5 hundredths as 0.5, or reading 2.35 as "two point thirty-five". Say the place name: "two and thirty-five <b>hundredths</b>", and check that the last digit sits in the hundredths place.</p>',
+        check: [P('de-read', 2), P('de-read', 3)] },
+
+      { id: 'line', title: 'Decimals on a number line', exp: ['B1.5'], skill: 'de-line',
+        body: '<p>Between 0 and 1 there are 10 equal jumps of one tenth. Count the jumps to find a decimal.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 2, tick: 0.1, every: 0.5, start: 0 }, steps: [
+          { say: 'This line goes from 0 to 2. Each small jump is one tenth.', ms: 1400 },
+          { say: 'Jump 7 tenths: <b>0.7</b>.', act: function (t) { return t.hop(0.7, '7 tenths'); } },
+          { say: '3 more tenths reach 1 whole.', act: function (t) { return t.hop(1, '+0.3'); } },
+          { say: '4 more tenths: <b>1.4</b>.', act: function (t) { return t.hop(1.4, '+0.4'); }, ms: 2000 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 2, tick: 0.1, every: 0.5, start: 0 }, tasks: [
+          { do: 'Drag or tap to put the marker on <b>0.6</b>.', goal: function (s) { return s.at === 0.6; }, yes: 'Yes. 6 tenths.' },
+          { do: 'Now put it on <b>1.3</b>.', reset: false, goal: function (s) { return s.at === 1.3; }, yes: 'Yes. 1 whole and 3 tenths.' },
+          { do: 'Put it halfway between 1 and 2.', reset: false, goal: function (s) { return s.at === 1.5; }, yes: 'Yes. 1.5 is halfway.' }
+        ] },
+        key: '<p>Count tenths from 0. <b>10 tenths make 1</b>, then keep counting.</p>',
+        check: [P('de-line', 1), P('de-line', 2)] }
+    ] },
+
+    { id: 'compare', title: 'Comparing decimals', sub: 'Line up the decimal points.', concepts: [
+      { id: 'compare', title: 'Compare from the left', exp: ['B1.5'], skill: 'de-compare', hard: true,
+        body: '<p>Line up the decimal points and give both numbers the same number of places by adding zeros at the end. Then compare from the left.</p>',
+        watch: K.watch([
+          { say: 'Which is greater, 0.6 or 0.58?', fig: two(0, 0, '0.6', '0.58') },
+          { say: '0.6 is 6 tenths: 6 full rows.', fig: two(60, 0, '0.6', '0.58') },
+          { say: '0.58 is 5 rows and 8 squares.', fig: two(60, 58, '0.6', '0.58') },
+          { say: 'Write 0.6 as 0.60. 60 hundredths is more than 58, so <b>0.6 &gt; 0.58</b>.', fig: two(60, 58, '0.60', '0.58'), ms: 2400 }
+        ]),
+        try: K.widget('decimals', 1, 'Good. Try 0.5 and 0.45. Which really is greater?'),
+        ways: [
+          { label: 'Add a zero', html: '<p class="math">0.6 &rarr; 0.60</p><p>Now both have 2 places. Compare 60 and 58 like whole numbers.</p>' },
+          { label: 'With money', html: '<p>$0.60 or $0.58? Sixty cents is more than fifty-eight cents.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + zoom(58, false) + '</div><p>0.58 sits before 0.6 on the line.</p>' }
+        ],
+        key: '<p><b>Line up the points, add zeros, compare from the left.</b> More digits does not mean bigger.</p>',
+        mistake: '<p>Thinking the decimal with more digits is bigger (0.45 &gt; 0.5 "because 45 &gt; 5"). Write both with two places: 0.50 and 0.45, or think in money.</p><div class="pies"><figure>' + tgrid(50, 12) + '<figcaption>0.5</figcaption></figure><figure>' + tgrid(45, 12) + '<figcaption>0.45</figcaption></figure></div>',
+        check: [P('de-compare', 1), P('de-compare', 2)] }
+    ] },
+
+    { id: 'round', title: 'Rounding decimals', sub: 'To the nearest tenth.', concepts: [
+      { id: 'tenth', title: 'Round to the nearest tenth', exp: ['B1.6'], skill: 'de-round', hard: true,
+        body: '<p>Find the two tenths on either side. Then look at the <b>hundredths</b> digit: 5 or more rounds up, less than 5 rounds down.</p>',
+        watch: K.watch([
+          { say: 'Round 3.47 to the nearest tenth.', fig: '<div class="g5-anim">' + zoom(347, false) + '</div>' },
+          { say: 'It sits between 3.4 and 3.5. The zoomed line shows the hundredths.', fig: '<div class="g5-anim">' + zoom(347, false) + '</div>' },
+          { say: 'The hundredths digit is 7, past halfway.', fig: '<div class="g5-anim">' + zoom(347, false) + '</div>' },
+          { say: 'So 3.47 rounds up to <b>3.5</b>.', fig: '<div class="g5-anim">' + zoom(347, true) + '</div>', ms: 2200 }
+        ]),
+        try: K.widget('decimals', 2, 'Nice. Try a number like 3.45, exactly halfway. It rounds up.'),
+        ways: [
+          { label: 'With money', html: '<p>Round $3.47 to the nearest 10 cents. 47 cents is closer to 50 cents than to 40 cents, so $3.50.</p>' },
+          { label: 'Cover up', html: '<p>Cover every digit after the tenths except the next one. 3.4<b>7</b>: the 7 says round up. 3.4 becomes 3.5.</p>' }
+        ],
+        key: '<p>Look at the <b>hundredths</b> digit. 5 or more: round up. Less than 5: round down.</p>',
+        mistake: '<p>Looking at the wrong digit, or rounding 3.97 up to 3.10. Rounding 9 tenths up gives 10 tenths, which is 1 more whole: 3.97 &rarr; 4.0.</p>',
+        check: [P('de-round', 1), P('de-round', 2)] }
+    ] },
+
+    { id: 'fdp', title: 'Fractions, decimals and percents', sub: 'One amount, three names.', concepts: [
+      { id: 'fdp', title: 'One amount, three names', exp: ['B1.7'], skill: 'de-fdp',
+        body: '<p>To change a fraction into a decimal, find an equal fraction with <b>10 or 100</b> on the bottom. Out of 100 is also a percent.</p>',
+        watch: K.watch([
+          { say: 'Start with 3/4.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(3, 4, 54) + '<figcaption>3/4</figcaption></figure></div>' },
+          { say: '3/4 = 75/100. That fills 75 squares.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(3, 4, 54) + '<figcaption>3/4</figcaption></figure><figure>' + tgrid(75, 11) + '<figcaption>75/100</figcaption></figure></div>' },
+          { say: '75 hundredths is <b>0.75</b>, and 75 out of 100 is <b>75%</b>.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(3, 4, 54) + '<figcaption>3/4</figcaption></figure><figure>' + tgrid(75, 11) + '<figcaption>0.75 = 75%</figcaption></figure></div>' },
+          { say: 'Learn these by heart: 1/10, 1/4, 1/2 and 3/4.', fig: '<div class="g5-anim">' + dnl([[0, 1], [1, 10], [1, 4], [1, 2], [3, 4], [1, 1]]) + '</div>', ms: 2600 }
+        ]),
+        try: K.widget('decimals', 3, 'Good. Try 1/5 and 2/5. Fifths become tenths.'),
+        key: '<p>1/2 = 0.5 = 50%. 1/4 = 0.25 = 25%. 3/4 = 0.75 = 75%. 1/10 = 0.1 = 10%.</p>',
+        mistake: '<p>Writing the digits of the fraction as a decimal: 1/4 = 0.14, or 3/5 = 0.35. Always make the bottom 10 or 100 first.</p>',
+        check: [P('de-fdp', 1), P('de-fdp', 2)] }
+    ] },
+
+    { id: 'addsub', title: 'Adding and subtracting decimals', sub: 'Line up the points.', concepts: [
+      { id: 'line-up', title: 'Line up the decimal points', exp: ['B2.4'], skill: 'de-addsub', hard: true,
+        body: '<p>Tenths go with tenths, hundredths with hundredths. Line up the <b>decimal points</b>, fill gaps with zeros, then add or subtract. Estimate first.</p>',
+        watch: { mount: disksTool([0, -1, -2], { 0: 3, '-1': 4, '-2': 5 }), steps: [
+          { say: '3.45 + 2.8. Estimate first: about 3 + 3 = 6. Here is 3.45.', ms: 1800 },
+          { say: '2.8 is 2 ones and 8 tenths. Add the 2 ones to the ones.', act: function (t) { return t.add(0, 2, 260); } },
+          { say: 'Add the 8 tenths to the tenths. There are no hundredths in 2.8.', act: function (t) { return t.add(-1, 8, 200); } },
+          { say: '12 tenths: group 10 of them into 1 one.', act: function (t) { return t.group(-1); } },
+          { say: '6 ones, 2 tenths, 5 hundredths: <b>6.25</b>. Close to the estimate of 6.', ms: 2400 }
+        ] },
+        try: K.widget('decimals', 4, 'Nice. Try 5 − 1.25 and watch the zeros fill the empty places.'),
+        ways: [
+          { label: 'In columns', html: cols(345, 280, 625, '+') + '<p>2.8 is written as 2.80 so tenths sit over tenths.</p>' },
+          { label: 'With money', html: '<p>$3.45 + $2.80: 3 dollars + 2 dollars is 5 dollars. 45 cents + 80 cents is 125 cents, which is $1.25. Total $6.25.</p>' },
+          { label: 'Subtract', html: '<p>$7.50 &minus; $2.85. Estimate 8 &minus; 3 = 5.</p>' + cols(750, 285, 465, '-') }
+        ],
+        key: '<p><b>Line up the decimal points.</b> Fill empty places with 0. Estimate to check.</p>',
+        mistake: '<p>Lining up the last digits instead of the points: 3.45 + 2.8 = 3.73. Have the child write 2.8 as 2.80 and estimate first (about 6).</p>' + cols(345, 280, 625, '+'),
+        check: [P('de-addsub', 1), P('de-addsub', 2)] }
+    ] },
+
+    { id: 'shift', title: 'Multiplying by 0.1 and 0.01', sub: 'Every digit moves right.', concepts: [
+      { id: 'tenth-of', title: 'A tenth of a number', exp: ['B2.3'], skill: 'de-mental',
+        body: '<p>Multiplying by <b>0.1</b> finds one tenth. It is the same as dividing by 10. Multiplying by <b>0.01</b> is the same as dividing by 100.</p>',
+        watch: { mount: disksTool([1, 0, -1, -2], { 1: 4, 0: 5 }), steps: [
+          { say: 'Here is 45: 4 tens and 5 ones.', ms: 1400 },
+          { say: '45 &times; 0.1: every disk becomes 10 times smaller. Tens become ones, ones become tenths.', act: function (t) { return t.set({ 0: 4, '-1': 5 }); }, ms: 2200 },
+          { say: '45 &times; 0.1 = <b>4.5</b>.', ms: 1400 },
+          { say: '45 &times; 0.01: 100 times smaller. Every digit moves two places.', act: function (t) { return t.set({ '-1': 4, '-2': 5 }); }, ms: 2200 },
+          { say: '45 &times; 0.01 = <b>0.45</b>.', ms: 1600 }
+        ] },
+        try: K.widget('decimals', 5, 'Good. Try a number ending in 0, like 230.'),
+        key: '<p>&times; 0.1: digits move <b>1 place right</b>. &times; 0.01: <b>2 places right</b>. The number gets smaller.</p>',
+        mistake: '<p>Expecting multiplying to make a number bigger (45 &times; 0.1 = 450). Multiplying by a number less than 1 takes a part of it, so the answer is smaller.</p>',
+        check: [P('de-mental', 1), P('de-mental', 2)] }
+    ] }
+  ];
   A.register('decimals', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Tenths and hundredths</h2>' +
 '<p>A grid of 100 squares is one whole. Each square is 1 <b>hundredth</b>, or 0.01. Each full row of 10 squares is 1 <b>tenth</b>, or 0.1. The first place after the decimal point is tenths. The second place is hundredths.</p>' +

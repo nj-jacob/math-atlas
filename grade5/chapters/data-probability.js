@@ -102,7 +102,141 @@
     return A.svg(560, 156, s, '12 classes of 25 students. 5 students picked at random in each class are filled in.');
   }
 
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('data-probability', id, lv); }
+  function an(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  /* 100 students, 40 green; picked ones get a ring */
+  function crowd(pick) {
+    var s = '';
+    for (var i = 0; i < 100; i++) {
+      var x = 14 + (i % 20) * 26, y = 14 + Math.floor(i / 20) * 26, on = pick && pick.indexOf(i) >= 0;
+      s += '<circle cx="' + x + '" cy="' + y + '" r="9" style="fill:' + (i % 5 < 2 ? 'var(--good)' : 'var(--line)') + ';stroke:' + (on ? 'var(--ink)' : 'none') + '" stroke-width="3"/>';
+    }
+    return A.svg(530, 136, s, '100 students, 40 of them green' + (pick ? ', ' + pick.length + ' picked' : ''));
+  }
+  var RAND = [3, 8, 11, 17, 22, 26, 30, 35, 41, 47, 52, 58, 61, 66, 72, 77, 80, 86, 93, 97];
+  var TEAM = [0, 1, 5, 6, 10, 11, 15, 16, 20, 21, 25, 26, 30, 31, 35, 36, 40, 41, 45, 46];
+  var LESSONS = [
+    { id: 'sample', title: 'Samples and populations', sub: 'Asking some to learn about all.', concepts: [
+      { id: 'sample', title: 'A fair sample', exp: ['D1.1'], skill: 'da-sample', hard: true,
+        body: '<p>The <b>population</b> is the whole group. A <b>sample</b> is a smaller group you ask. A good sample is <b>representative</b>: it looks like the whole population.</p>',
+        watch: K.watch([
+          { say: '100 students. 40 of them (green) like basketball best.', fig: an(crowd()) },
+          { say: 'Pick 20 students at random from everywhere.', fig: an(crowd(RAND)) },
+          { say: '8 of the 20 are green: 40%. The sample matches the school.', fig: an(crowd(RAND)) },
+          { say: 'Now ask only the team and its fans. All 20 are green: 100%. That sample is <b>biased</b>.', fig: an(crowd(TEAM)), ms: 2600 }
+        ]),
+        try: K.widget('data-probability', 0, 'Good. Take a few random samples. They are close to 40%, but not always exact.'),
+        ways: [
+          { label: 'Soup', html: '<p>To taste soup, you stir it and taste one spoonful. The spoonful is the sample. Stirring makes it fair.</p>' },
+          { label: 'Whole school', html: '<p>Pick 5 students at random from each of the 12 classes. Every part of the school is in the sample.</p><div class="fig">' + classes() + '</div>' }
+        ],
+        key: '<p>A sample should be <b>picked at random from every part</b> of the population.</p>',
+        mistake: '<p>Asking only friends or one group, which gives a <b>biased</b> sample. Ask the child "who did we leave out?"</p>',
+        check: [P('da-sample', 1), P('da-sample', 2)] }
+    ] },
+
+    { id: 'relfreq', title: 'Relative frequency', sub: 'Compare to the total.', concepts: [
+      { id: 'relfreq', title: 'Out of the total', exp: ['D1.2'], skill: 'da-rel',
+        body: '<p><b>Frequency</b> is how many times something happens. <b>Relative frequency</b> compares it to the total, as a fraction, decimal or percent.</p>',
+        watch: K.watch([
+          { say: '20 students chose a sport.', fig: an(people(0, 20)) },
+          { say: '8 chose soccer. The frequency is 8.', fig: an(people(8, 20)) },
+          { say: 'The relative frequency is 8 out of 20: 8/20.', fig: an(A.draw.fbars([{ n: 8, d: 20, label: '8/20' }], { w: 440 })) },
+          { say: '8/20 = 40/100 = <b>0.4 = 40%</b>.', fig: an(A.draw.fbars([{ n: 8, d: 20, label: '40%' }], { w: 440 })), ms: 2200 }
+        ]),
+        try: K.widget('data-probability', 1, 'Nice. Check that the relative frequencies add up to 1.'),
+        key: '<p>Relative frequency = <b>count &divide; total</b>. They always add up to 1, or 100%.</p>',
+        mistake: '<p>Dividing by the wrong total, or by another count. Ask "out of how many in all?"</p>',
+        check: [P('da-rel', 1), P('da-rel', 2)] }
+    ] },
+
+    { id: 'graphs', title: 'Graphs', sub: 'Choose, read and question them.', concepts: [
+      { id: 'choose', title: 'Choosing a graph', exp: ['D1.3', 'D1.4'], skill: 'da-graph',
+        body: '<p>Different graphs suit different data. Every graph needs a <b>title</b>, <b>labels</b>, a sensible <b>scale</b> and a <b>source</b>.</p>',
+        watch: K.watch([
+          { say: 'Bar graph: compare categories. Stacked bar: parts of a whole. Broken line: change over time.', fig: thumbs() },
+          { say: 'How do two classes get to school? A stacked bar shows each class split into walk, bus and car.', fig: an(stacked([{ name: 'Class A', parts: [10, 8, 6] }, { name: 'Class B', parts: [6, 12, 4] }], ['walk', 'bus', 'car'], SB)) },
+          { say: 'As percents, each bar is 100%. Now classes of different sizes compare fairly.', fig: an(stacked([{ name: 'Class A', parts: [10, 8, 6] }, { name: 'Class B', parts: [6, 12, 4] }], ['walk', 'bus', 'car'], SB, true)), ms: 2600 }
+        ]),
+        try: K.widget('data-probability', 2, 'Good. Switch to percents and compare the bus parts.'),
+        key: '<p>Bar: compare. Stacked bar: parts of a whole. Line: change over time. Always add title, labels, scale and source.</p>',
+        mistake: '<p>Leaving off the source or the labels. Before the child finishes a graph, check the four must-haves together.</p>',
+        check: [P('da-graph', 1), P('da-graph', 2)] },
+
+      { id: 'misleading', title: 'Graphs that mislead', exp: ['D1.6'], skill: 'da-graph', hard: true,
+        body: '<p>A graph can use true numbers and still mislead. Check where the <b>scale starts</b>.</p>',
+        watch: K.watch([
+          { say: 'Two scores: 94 and 98, on a scale that starts at 0. They look almost the same.', fig: an(misBars(94, 98, 0, 'Scale from 0')) },
+          { say: 'Start the scale at 80.', fig: an(misBars(94, 98, 80, 'Scale from 80')) },
+          { say: 'Start it at 90. Now B looks twice as tall, but 98 is not twice 94.', fig: an(misBars(94, 98, 90, 'Scale from 90')), ms: 2600 }
+        ]),
+        try: K.widget('data-probability', 3, 'Nice. The numbers never change. Only the picture does.'),
+        ways: [
+          { label: 'Side by side', html: '<div class="pies"><figure>' + misBars(94, 98, 90, 'Scale from 90') + '<figcaption>misleading</figcaption></figure><figure>' + misBars(94, 98, 0, 'Scale from 0') + '<figcaption>honest</figcaption></figure></div>' },
+          { label: 'Checklist', html: '<p>Does the scale start at 0? Are the gaps even? Are there labels and a source? Are pictures the same size?</p>' }
+        ],
+        key: '<p>Before you trust a graph, check its <b>title, labels, scale and source</b>.</p>',
+        mistake: '<p>Comparing bar heights without reading the scale. Cover the bars and compare the numbers first.</p>',
+        check: [P('da-graph', 3), P('da-graph', 2)] }
+    ] },
+
+    { id: 'average', title: 'Mean, median and mode', sub: 'Describing data with one number.', concepts: [
+      { id: 'mmm', title: 'Mean, median and mode', exp: ['D1.5'], skill: 'da-mmm', hard: true,
+        body: '<p><b>Mean</b>: the fair share. <b>Median</b>: the middle value in order. <b>Mode</b>: the most common value.</p>',
+        watch: K.watch([
+          { say: 'Data: 3, 5, 5, 7, 10.', fig: an(dotplot([3, 5, 5, 7, 10])) },
+          { say: 'In order, the middle value is 5: the <b>median</b>. 5 appears twice: the <b>mode</b>.', fig: an(dotplot([3, 5, 5, 7, 10], [{ v: 5, label: 'median and mode: 5', col: 'var(--pm1)' }])) },
+          { say: 'Add them: 30. Share equally among 5 values: 30 &divide; 5 = 6, the <b>mean</b>.', fig: an(dotplot([3, 5, 5, 7, 10], [{ v: 5, label: 'median and mode: 5', col: 'var(--pm1)' }, { v: 6, label: 'mean: 6', col: 'var(--strand)' }])) },
+          { say: 'One big value pulls the mean. For 2, 4, 5, 9, 20 the mean is 8 but the median is 5.', fig: an(dotplot([2, 4, 5, 9, 20], [{ v: 5, label: 'median 5', col: 'var(--pm1)' }, { v: 8, label: 'mean 8', col: 'var(--strand)' }])), ms: 2800 }
+        ]),
+        try: K.widget('data-probability', 4, 'Good. Add one very big number and watch the mean move.'),
+        ways: [
+          { label: 'Fair share', html: '<p>Mean: 3 friends have 2, 4 and 9 stickers. Pool them (15) and share equally: 5 each.</p>' },
+          { label: 'Line up', html: '<p>Median: line the values up from smallest to biggest and point to the middle one. With two middles, take the number halfway between.</p>' },
+          { label: 'Most popular', html: '<p>Mode: the value that shows up most. There can be no mode, or more than one.</p>' }
+        ],
+        key: '<p>Mean = total &divide; how many. Median = middle in order. Mode = most often. Range = biggest &minus; smallest.</p>',
+        mistake: '<p>Finding the median without putting the data in order first, or dividing the total by the wrong count. Have the child order the data and count the values aloud.</p>',
+        check: [P('da-mmm', 1), P('da-mmm', 2)] }
+    ] },
+
+    { id: 'prob', title: 'Probability', sub: 'How likely is it?', concepts: [
+      { id: 'chance', title: 'Probability as a fraction', exp: ['D2.1'], skill: 'da-prob',
+        body: '<p><b>Probability</b> runs from 0 (impossible) to 1 (certain). Probability = ways it can happen &divide; equally likely outcomes.</p>',
+        watch: K.watch([
+          { say: 'A bag has 3 red and 5 blue marbles.', fig: an(marbles(3, 5)) },
+          { say: '8 marbles in all, so 8 equally likely outcomes.', fig: an(marbles(3, 5)) },
+          { say: '3 ways to get red: P(red) = <b>3/8</b>.', fig: an(pline(3 / 8, '3/8')) },
+          { say: '3/8 is less than 1/2, so red is <b>unlikely</b>.', fig: an(pline(3 / 8, '3/8')), ms: 2200 }
+        ]),
+        try: K.widget('data-probability', 5, 'Nice. Make red certain, then impossible.'),
+        key: '<p>P = <b>ways it can happen &divide; all equally likely outcomes</b>.</p>',
+        mistake: '<p>Comparing red to blue (3/5) instead of red to all (3/8). Ask "how many marbles in the whole bag?"</p>',
+        check: [P('da-prob', 1), P('da-prob', 2)] },
+
+      { id: 'experiment', title: 'Expected and actual results', exp: ['D2.2'], skill: 'da-exp', hard: true,
+        body: '<p><b>Theoretical</b> probability is what should happen. <b>Experimental</b> results are what did happen. With more trials, they usually get closer.</p>',
+        watch: K.watch([
+          { say: 'A coin should land heads half the time: 1/2.', fig: an(pline(0.5, '1/2')) },
+          { say: 'Flip it 10 times: 7 heads. That is 7/10, not 5/10.', fig: an(coins('HTHHHTHHTH')) },
+          { say: 'That does not mean the coin is unfair. Small samples wobble.', fig: an(pline(0.7, '7/10')) },
+          { say: 'Over 1000 flips the share of heads gets much closer to 1/2.', fig: an(pline(0.51, '510/1000')), ms: 2400 }
+        ]),
+        try: K.widget('data-probability', 5, 'Good. Spin 100 a few times and compare to the expected fractions.'),
+        ways: [
+          { label: 'Spinner', html: '<p>A spinner with 3 equal sections should land on each about 1/3 of the time. In 9 spins you might get 4, 3 and 2. In 900 spins, each will be close to 300.</p>' },
+          { label: 'Weather', html: '<p>"30% chance of rain" does not promise dry weather. It means that on days like this, it rains about 3 days in 10.</p>' }
+        ],
+        key: '<p>Experimental results are <b>rarely exact</b>. More trials usually bring them closer to the theoretical probability.</p>',
+        mistake: '<p>Deciding a coin or spinner is unfair after only a few tries. Run more trials together and watch the results settle.</p>',
+        check: [P('da-exp', 1), P('da-exp', 2)] }
+    ] }
+  ];
   A.register('data-probability', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Samples and populations</h2>' +
 '<p>The <b>population</b> is the whole group you want to know about, like every student in your school. Asking everyone takes a long time, so we often ask a <b>sample</b>: a smaller group from the population. A good sample is <b>representative</b>: it is like the whole population.</p>' +

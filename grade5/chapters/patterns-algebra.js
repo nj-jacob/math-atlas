@@ -94,7 +94,138 @@
     }
     return A.svg(560, 72, s, 'Number line: filled dots are solutions. ' + edge + ' itself is not a solution.');
   }
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('patterns-algebra', id, lv); }
+  function an(svg) { return '<div class="g5-anim">' + svg + '</div>'; }
+  var LESSONS = [
+    { id: 'kinds', title: 'Kinds of patterns', sub: 'Repeating, growing and shrinking.', concepts: [
+      { id: 'kinds', title: 'Repeat, grow or shrink', exp: ['C1.1'], skill: 'al-next',
+        body: '<p>A <b>repeating</b> pattern has a core that repeats. A <b>growing</b> pattern goes up by the same amount each time. A <b>shrinking</b> pattern goes down.</p>',
+        watch: K.watch([
+          { say: 'Repeating: the core circle, square, square repeats.', fig: an(repeating(['r', 'b', 'b'], 3)) },
+          { say: 'Growing: 5, 9, 13, 17. Add 4 each time.', fig: an(jumps([5, 9, 13, 17], null, '+4')) },
+          { say: 'Shrinking: 100, 92, 84, 76. Take away 8 each time.', fig: an(bars([100, 92, 84, 76])) },
+          { say: 'To find the next term, find the change and keep it going.', fig: an(jumps([5, 9, 13, 17, '?'], null, '+4')), ms: 2200 }
+        ]),
+        try: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 5, step: 4 }, tasks: [
+          { do: 'The pattern starts at 5 and grows by 4. Jump until you land on <b>21</b>.', goal: function (s) { return s.at === 21; }, yes: 'Yes. 5, 9, 13, 17, 21.' },
+          { do: 'Keep jumping. What comes after 29?', reset: false, goal: function (s) { return s.at === 33; }, yes: 'Yes. 29 + 4 = 33.' }
+        ] },
+        key: '<p>Find <b>what changes</b> from one term to the next. Keep that change going.</p>',
+        check: [P('al-next', 1), P('al-next', 2)] }
+    ] },
+
+    { id: 'rule', title: 'Pattern rules', sub: 'Tables of values and graphs.', concepts: [
+      { id: 'tiles', title: 'A rule for any figure', exp: ['C1.2', 'C1.3'], skill: 'al-rule', hard: true,
+        body: '<p>Each figure has <b>groups</b> that repeat plus <b>extra</b> tiles that never change. Figure <i>n</i> has groups &times; <i>n</i> + extra tiles.</p>',
+        watch: K.watch([
+          { say: 'Figure 1: one group of 3 purple tiles, and 1 yellow extra. 4 tiles.', fig: an(tiles(3, 1, 1)) },
+          { say: 'Figure 2: two groups of 3, and the same 1 extra. 7 tiles.', fig: an(tiles(3, 1, 2)) },
+          { say: 'Figure 3: three groups. 10 tiles. It grows by 3 each time.', fig: an(tiles(3, 1, 3)) },
+          { say: 'Rule: <b>3 &times; n + 1</b>. Figure 50 has 3 &times; 50 + 1 = 151 tiles.', fig: an(graph([4, 7, 10, 13, 16], 'Graph of 3n + 1 for figures 1 to 5')), ms: 2600 }
+        ]),
+        try: K.widget('patterns-algebra', 0, 'Nice. Change the figure number to 30 and use the rule instead of counting.'),
+        ways: [
+          { label: 'Table', html: '<div class="tbl"><table><tr><th>Figure</th><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><th>Tiles</th><td>4</td><td>7</td><td>10</td><td>13</td></tr></table></div><p>The tiles go up by 3, so the rule starts with 3 &times; n. Figure 1 has 4, which is 3 + 1.</p>' },
+          { label: 'Graph', html: '<div class="fig">' + graph([4, 7, 10, 13, 16]) + '</div><p>The points climb by the same step, so they make a straight line.</p>' },
+          { label: 'In words', html: '<p>"Three tiles for every figure number, plus one more." Say it, then write it: 3n + 1.</p>' }
+        ],
+        key: '<p>The <b>step</b> is the number in front of n. The <b>extra</b> is what never changes.</p>',
+        mistake: '<p>Counting figure by figure to reach figure 50, or using only "add 3" (which needs the previous figure). Have the child say the rule for any figure, then put 50 into it.</p>',
+        check: [P('al-rule', 1), P('al-rule', 2)] }
+    ] },
+
+    { id: 'decimal', title: 'Decimal patterns', sub: 'Counting by tenths and hundredths.', concepts: [
+      { id: 'tenths', title: 'Count past a whole', exp: ['C1.4'], skill: 'al-dec', hard: true,
+        body: '<p>Counting by 0.1 is a growing pattern too. After 0.9 comes <b>1.0</b>, because ten tenths make one whole.</p>',
+        watch: { tool: 'numberline', opts: { min: 0.5, max: 1.5, tick: 0.1, every: 0.5, start: 0.7 }, steps: [
+          { say: 'Start at 0.7 and count by 0.1.', ms: 1200 },
+          { say: '0.8', act: function (t) { return t.hop(0.8, '+0.1'); } },
+          { say: '0.9', act: function (t) { return t.hop(0.9, '+0.1'); } },
+          { say: '<b>1.0</b>. Ten tenths make one whole.', act: function (t) { return t.hop(1, '+0.1'); } },
+          { say: '1.1, then 1.2.', act: function (t) { return t.hop(1.1, '+0.1').then(function () { return t.hop(1.2, '+0.1'); }); }, ms: 2000 }
+        ] },
+        try: K.widget('patterns-algebra', 1, 'Good. Try counting by 0.01 from 2.47. Watch what happens after 2.49.'),
+        ways: [
+          { label: 'With money', html: '<p>Count dimes: $0.70, $0.80, $0.90, $1.00. Ten dimes make a dollar.</p>' },
+          { label: 'Hundredths', html: '<div class="fig">' + jumps([1, 2, 3, 4], ['2.47', '2.48', '2.49', '2.50'], '+0.01') + '</div><p>10 hundredths make 1 tenth, so 2.49 + 0.01 = 2.50.</p>' }
+        ],
+        key: '<p><b>10 tenths make 1 whole. 10 hundredths make 1 tenth.</b> The next place goes up by 1.</p>',
+        mistake: '<p>Writing 0.10 after 0.9, or 0.010 after 0.09. Count with dimes and pennies, or on a number line, so the child sees the whole being made.</p>',
+        check: [P('al-dec', 1), P('al-dec', 2)] }
+    ] },
+
+    { id: 'expr', title: 'Variables and expressions', sub: 'A letter stands for a number.', concepts: [
+      { id: 'variables', title: 'Evaluate an expression', exp: ['C2.1', 'C2.2'], skill: 'al-eval',
+        body: '<p>A <b>variable</b> like <i>n</i> stands for a number. <b>3n + 2</b> means 3 &times; n, plus 2. To evaluate it, put in a number for n.</p>',
+        watch: K.watch([
+          { say: 'Think of n as a bag holding an unknown number of counters.', fig: an(bags(1, 0)) },
+          { say: '3n is 3 bags.', fig: an(bags(3, 0)) },
+          { say: '3n + 2 is 3 bags and 2 extra counters.', fig: an(bags(3, 2)) },
+          { say: 'If each bag holds 5: 3 &times; 5 + 2 = <b>17</b>.', fig: an(bags(3, 2, '5')), ms: 2200 }
+        ]),
+        try: K.widget('patterns-algebra', 2, 'Nice. Try n = 0. What is left?'),
+        key: '<p><b>3n means 3 &times; n.</b> Replace n with the number, multiply, then add.</p>',
+        mistake: '<p>Reading 3n as 3 + n (so 3n = 8 when n = 5). Use bags: 3n is three bags, not three counters and a bag.</p>',
+        check: [P('al-eval', 1), P('al-eval', 2)] }
+    ] },
+
+    { id: 'equations', title: 'Equations and inequalities', sub: 'Keep the balance.', concepts: [
+      { id: 'balance', title: 'Solve an equation', exp: ['C2.3'], skill: 'al-solve', hard: true,
+        body: '<p>An <b>equation</b> is like a balanced scale. To solve it, do the <b>same thing to both sides</b>. Then check your answer.</p>',
+        watch: K.watch([
+          { say: 'n &minus; 12 = 30. The two sides balance.', fig: an(scale('n &#8722; 12', '30')) },
+          { say: 'To get n alone, add 12 to both sides.', fig: an(scale('n', '30 + 12')) },
+          { say: 'n = <b>42</b>.', fig: an(scale('n', '42')) },
+          { say: 'Check: 42 &minus; 12 = 30. It balances.', fig: an(scale('42 &#8722; 12', '30')), ms: 2200 }
+        ]),
+        try: K.widget('patterns-algebra', 3, 'Good. Guess, check, and adjust until the scale balances.'),
+        ways: [
+          { label: 'Undo it', html: '<p>What was done to n? 12 was taken away. Undo it: add 12. 30 + 12 = 42.</p>' },
+          { label: 'Fact family', html: '<p>4 &times; n = 36 is part of a fact family: 36 &divide; 4 = n, so n = 9.</p>' },
+          { label: 'Guess and check', html: '<p>Try n = 40: 40 &minus; 12 = 28, too small. Try 42: 42 &minus; 12 = 30. Yes.</p>' }
+        ],
+        key: '<p><b>Same thing to both sides.</b> Then put the answer back in to check.</p>',
+        mistake: '<p>Doing the operation shown instead of undoing it (n &minus; 12 = 30, so n = 18). Ask "what number take away 12 gives 30?" and check by substituting.</p>',
+        check: [P('al-solve', 1), P('al-solve', 2)] },
+
+      { id: 'inequality', title: 'Inequalities have many answers', exp: ['C2.4'], skill: 'al-ineq', hard: true,
+        body: '<p>An <b>inequality</b> uses &lt; or &gt;. Solve it like an equation to find the edge, then test numbers on each side.</p>',
+        watch: K.watch([
+          { say: 'n + 3 &lt; 10. Find the edge: n + 3 = 10 when n = 7.', fig: an(ineq(7, true).replace(/var\(--strand\)/g, 'var(--card)')) },
+          { say: 'Test 5: 5 + 3 = 8, less than 10. It works.', fig: an(ineq(7, true)) },
+          { say: 'Test 7: 7 + 3 = 10, not less than 10. The edge never works.', fig: an(ineq(7, true)) },
+          { say: 'The answers are <b>every number less than 7</b>.', fig: an(ineq(7, true)), ms: 2200 }
+        ]),
+        try: K.widget('patterns-algebra', 4, 'Nice. Switch the symbol and watch the answers flip to the other side.'),
+        ways: [
+          { label: 'In words', html: '<p>"A number plus 3 is less than 10." Which numbers fit? 0, 1, 2, 3, 4, 5, 6. Not 7: 7 + 3 is exactly 10.</p>' },
+          { label: 'Money', html: '<p>You have $10 and a toy costs $3 plus some amount n. You can spend any n that keeps the total under $10.</p>' }
+        ],
+        key: '<p>Find the edge with =. <b>The edge is not an answer</b> for &lt; or &gt;. Test a number on each side.</p>',
+        mistake: '<p>Including the edge number (n + 3 &lt; 10, so n = 7), or giving only one answer. Test the edge out loud: "7 + 3 = 10. Is 10 less than 10?"</p>',
+        check: [P('al-ineq', 1), P('al-ineq', 2)] }
+    ] },
+
+    { id: 'code', title: 'Code', sub: 'Loops and conditions.', concepts: [
+      { id: 'loops', title: 'Loops and conditions', exp: ['C3.1', 'C3.2'], skill: 'al-code',
+        body: '<p>A <b>loop</b> repeats instructions. A <b>condition</b> checks if something is true, then chooses what to do. Trace the code one pass at a time.</p>',
+        watch: K.watch([
+          { say: 'total = 2. Repeat 4 times: total = total + 3.', fig: an(trace(2, 3, 1)) },
+          { say: 'Pass 2: 5 + 3 = 8.', fig: an(trace(2, 3, 2)) },
+          { say: 'Pass 3: 11. Pass 4: 14.', fig: an(trace(2, 3, 4)) },
+          { say: 'Add a condition: say "big" if total &gt; 10.', fig: an(trace(2, 3, 4, 10)), ms: 2400 }
+        ]),
+        try: K.widget('patterns-algebra', 5, 'Good. Change the start value and see every total move.'),
+        key: '<p>Trace a loop <b>one pass at a time</b>, and write the total after each pass.</p>',
+        mistake: '<p>Forgetting the start value, or running the loop one time too many. Have the child keep a written trace table: pass, total.</p>',
+        check: [P('al-code', 1), P('al-code', 2)] }
+    ] }
+  ];
   A.register('patterns-algebra', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Kinds of patterns</h2>' +
 '<p><b>Repeating:</b> the <i>core</i> (circle, square, square) repeats over and over.</p><div class="fig">' + repeating(['r', 'b', 'b'], 4) + '</div>' +

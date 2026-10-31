@@ -38,7 +38,203 @@
     return A.svg(560, 112, s, 'A bar cut into 4 equal parts is cut into quarters. A bar cut into 4 unequal parts is not.');
   }
   function lcm(a, b) { return a * b / A.gcd(a, b); }
+
+  /* ---------- Lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = A.kit;
+  function P(id, lv) { return K.P('fractions', id, lv); }
+  function bars(rows, o) { return '<div class="g5-anim">' + D.fbars(rows, Object.assign({ w: 460 }, o || {})) + '</div>'; }
+  function shadeT(k, r) { return function (t) { return t.shade(k, r || 0, 260); }; }
+  var LESSONS = [
+    { id: 'parts', title: 'What a fraction means', sub: 'Equal parts of one whole.', concepts: [
+      { id: 'equal', title: 'Equal parts', exp: ['B1.3'], skill: 'fr-name',
+        body: '<p>A fraction names <b>equal</b> parts of a whole. The bottom number says how many equal parts. The top number says how many you have.</p>',
+        watch: { tool: 'fractions', opts: { parts: 1, choices: [] }, steps: [
+          { say: 'Here is one whole strip.', ms: 1000 },
+          { say: 'Cut it into <b>8 equal parts</b>. Each part is one eighth.', act: function (t) { return t.split(8); } },
+          { say: 'Shade 3 parts.', act: shadeT(3) },
+          { say: '3 of 8 equal parts: <b>3/8</b>. The 8 tells the size of each part. The 3 tells how many.', ms: 2400 }
+        ] },
+        try: { tool: 'fractions', opts: { parts: 1, choices: [2, 3, 4, 5, 6, 8, 10] }, tasks: [
+          { do: 'Show <b>3/4</b>. Pick the number of parts, then tap parts to shade them.', goal: function (s) { return s[0].d === 4 && s[0].n === 3; }, yes: 'Yes. 3 of 4 equal parts.' },
+          { do: 'Show <b>5/6</b>.', goal: function (s) { return s[0].d === 6 && s[0].n === 5; }, yes: 'Yes. 5 sixths.' },
+          { do: 'Show <b>7/10</b>.', goal: function (s) { return s[0].d === 10 && s[0].n === 7; }, yes: 'Yes. 7 tenths.' }
+        ] },
+        key: '<p><b>Bottom: how many equal parts. Top: how many you have.</b> The parts must be equal.</p>',
+        mistake: '<p>Counting unequal pieces as a fraction, or writing the parts left over instead of the parts shaded. Ask: "Are the parts the same size? How many are shaded out of how many in all?"</p><div class="fig">' + fairUnfair() + '</div>',
+        check: [P('fr-name', 1), P('fr-name', 2)] },
+
+      { id: 'names', title: 'One amount, three names', exp: ['B1.3'], skill: 'fr-name', hard: true,
+        body: '<p>The same amount can be a <b>fraction</b>, a <b>decimal</b> or a <b>percent</b>. Percent means "out of 100".</p>',
+        watch: K.watch([
+          { say: 'Here is 1/4 of a strip.', fig: bars([{ n: 1, d: 4, label: '1/4' }]) },
+          { say: 'Cut the same strip into 100 parts. 1/4 covers 25 of them.', fig: bars([{ n: 1, d: 4, label: '1/4' }, { n: 25, d: 100, label: '25/100' }], { mark: 0.25 }) },
+          { say: '25 out of 100 is the decimal <b>0.25</b>.', fig: bars([{ n: 1, d: 4, label: '1/4' }, { n: 25, d: 100, label: '0.25' }], { mark: 0.25 }) },
+          { say: '25 out of 100 is also <b>25%</b>. Three names, one amount.', fig: bars([{ n: 1, d: 4, label: '1/4' }, { n: 25, d: 100, label: '25%' }], { mark: 0.25 }), ms: 2200 }
+        ]),
+        try: K.widget('fractions', 0, 'Nice. Try 10 parts and 100 parts. Those turn into decimals easily.'),
+        ways: [
+          { label: 'Out of 100', html: '<p>Make the bottom 100. 3/4 = 75/100, which is <b>0.75</b> and <b>75%</b>.</p><div class="fig">' + D.fbars([{ n: 3, d: 4, label: '3/4' }, { n: 75, d: 100, label: '75%' }], { w: 440, mark: 0.75 }) + '</div>' },
+          { label: 'With money', html: '<p>A dollar is 100 cents. A quarter is 1/4 of a dollar: 25 cents, or $0.25. That is 25% of a dollar.</p>' },
+          { label: 'Halves', html: '<p>1/2 = 50/100 = 0.5 = 50%. Half of anything is 50%.</p><div class="fig">' + pies([[1, 2, '1/2 = 50%'], [1, 4, '1/4 = 25%'], [3, 4, '3/4 = 75%']], 40) + '</div>' }
+        ],
+        key: '<p><b>Percent means out of 100.</b> 1/4 = 25/100 = 0.25 = 25%.</p>',
+        mistake: '<p>Writing 1/4 as 0.4 or 4% (copying the bottom number). Rewrite the fraction out of 100 first: 1/4 = 25/100.</p>',
+        check: [function () {
+          var p = R.pick([[1, 2, 50], [1, 4, 25], [3, 4, 75], [1, 10, 10], [3, 10, 30], [7, 10, 70], [1, 5, 20], [2, 5, 40], [4, 5, 80]]);
+          return K.mc('Which percent is the same as <span class="math">' + p[0] + '/' + p[1] + '</span>?', p[2] + '%', [p[1] + '%', (p[0] * 10 === p[2] ? p[2] + 5 : p[0] * 10) + '%', p[0] + p[1] + '%'],
+            { fig: D.fbars([{ n: p[2], d: 100, label: '' }], { w: 420, lw: 10 }), hint: 'Rewrite it out of 100.', explain: p[0] + '/' + p[1] + ' = ' + p[2] + '/100 = ' + p[2] + '%.' });
+        }, P('fr-name', 3)] }
+    ] },
+
+    { id: 'equiv', title: 'Equivalent fractions', sub: 'Different names, same size.', concepts: [
+      { id: 'same-size', title: 'Same size, different names', exp: ['B1.3'], skill: 'fr-equiv',
+        body: '<p>Cut every piece into the same number of smaller pieces. The shaded amount does not change. 3/4 = 6/8.</p>',
+        watch: { tool: 'fractions', opts: { wall: [4, 4] }, steps: [
+          { say: 'Shade 3/4 of the top strip.', act: shadeT(3, 0) },
+          { say: 'The bottom strip is the same size. Cut each quarter in two.', act: function (t) { return t.split(8, 1); } },
+          { say: 'Shade the same length: 6 eighths.', act: shadeT(6, 1) },
+          { say: 'Same length, so <b>3/4 = 6/8</b>. Top and bottom were both multiplied by 2.', ms: 2400 }
+        ] },
+        try: { tool: 'fractions', opts: { wall: [3, 6, 12] }, tasks: [
+          { do: 'The top strip shows <b>2/3</b>. Shade the same length on the sixths strip.', setup: function (t) { t.fast = true; t.shade(2, 0).then(function () { t.fast = false; }); },
+            goal: function (s) { return s[1].n === 4; }, yes: 'Yes. 2/3 = 4/6.' },
+          { do: 'Now shade the same length on the twelfths strip.', reset: false, goal: function (s) { return s[2].n === 8; }, yes: 'Yes. 2/3 = 4/6 = 8/12.' }
+        ] },
+        key: '<p>Multiply the top and bottom by the <b>same</b> number. The fraction keeps its size.</p>',
+        check: [P('fr-equiv', 1), P('fr-equiv', 2)] },
+
+      { id: 'simplest', title: 'Simplest form', exp: ['B1.3'], skill: 'fr-equiv', hard: true,
+        body: '<p>To simplify, <b>divide</b> the top and bottom by the same number. Fewer, bigger pieces cover the same length.</p>',
+        watch: K.watch([
+          { say: 'Here is 6/8.', fig: bars([{ n: 6, d: 8, label: '6/8' }], { mark: 0.75 }) },
+          { say: '6 and 8 can both be divided by 2.', fig: bars([{ n: 6, d: 8, label: '6/8' }, { n: 3, d: 4, label: '?' }], { mark: 0.75 }) },
+          { say: 'Join pairs of eighths into quarters: <b>6/8 = 3/4</b>.', fig: bars([{ n: 6, d: 8, label: '6/8' }, { n: 3, d: 4, label: '3/4' }], { mark: 0.75 }) },
+          { say: '3 and 4 share no factor except 1, so 3/4 is in <b>simplest form</b>.', fig: bars([{ n: 3, d: 4, label: '3/4' }], { mark: 0.75 }), ms: 2200 }
+        ]),
+        try: K.widget('fractions', 1, 'Good. Try multiplying by 1: the fraction stays exactly the same.'),
+        ways: [
+          { label: 'Group the pieces', html: '<p>Put the eighths in pairs. Each pair is a quarter. 6 eighths make 3 pairs, so 6/8 = 3/4.</p><div class="fig">' + D.fbars([{ n: 6, d: 8, label: '6/8', cols: ['var(--strand)', 'var(--strand)', 'var(--hi)', 'var(--hi)', 'var(--strand)', 'var(--strand)'] }], { w: 440 }) + '</div>' },
+          { label: 'Factors', html: '<p>Find a number that divides both. 12/16: both divide by 4. 12 &divide; 4 = 3 and 16 &divide; 4 = 4, so 12/16 = 3/4.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + D.fline(1, 8, [{ v: 0.75, label: '6/8 = 3/4' }], 'Number line from 0 to 1 in eighths with 6/8 marked') + '</div><p>Both names land on the same point.</p>' }
+        ],
+        key: '<p><b>Divide top and bottom by the same number</b> until nothing else divides both.</p>',
+        mistake: '<p>Adding or subtracting the same number from top and bottom (3/4 &rarr; 4/5). That changes the size. Only multiplying or dividing both by the same number keeps it.</p>',
+        check: [P('fr-equiv', 2), P('fr-equiv', 3)] }
+    ] },
+
+    { id: 'mixed', title: 'More than one whole', sub: 'Improper fractions and mixed numbers.', concepts: [
+      { id: 'improper', title: 'Improper fractions and mixed numbers', exp: ['B1.3'], skill: 'fr-mixed', hard: true,
+        body: '<p>When the top is bigger than the bottom, you have more than one whole. <b>11/4</b> is 2 whole strips and 3 more quarters: <b>2&nbsp;3/4</b>.</p>',
+        watch: { tool: 'fractions', opts: { wall: [4, 4, 4] }, steps: [
+          { say: 'Count 11 quarters. Fill the first whole: 4 quarters.', act: shadeT(4, 0) },
+          { say: '4 more quarters fill a second whole. That is 8.', act: shadeT(4, 1) },
+          { say: '3 more quarters. That is 11.', act: shadeT(3, 2) },
+          { say: '2 wholes and 3 quarters: <b>11/4 = 2&nbsp;3/4</b>.', ms: 2400 }
+        ] },
+        try: K.widget('fractions', 2, 'Nice. Watch the mixed number change each time a new whole fills up.'),
+        ways: [
+          { label: 'Divide', html: '<p>11 &divide; 4 = 2 remainder 3. The 2 is the wholes. The 3 is the quarters left: 2&nbsp;3/4.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + D.fline(3, 4, [{ v: 11 / 4, label: '11/4' }], 'Number line from 0 to 3 in quarters with 11/4 marked') + '</div><p>Count 11 quarter jumps. You pass 1 and 2, then go 3 more.</p>' },
+          { label: 'Back again', html: '<p>2&nbsp;3/4 to an improper fraction: 2 wholes is 2 &times; 4 = 8 quarters, plus 3 is <b>11/4</b>.</p>' }
+        ],
+        key: '<p><b>Improper to mixed: divide.</b> 11 &divide; 4 = 2 R 3, so 2&nbsp;3/4. <b>Mixed to improper:</b> wholes &times; bottom + top.</p>',
+        mistake: '<p>Writing 7/3 as 2&nbsp;1/7. The leftover piece is still a third, so the bottom stays 3: 7/3 = 2&nbsp;1/3.</p>',
+        check: [P('fr-mixed', 1), P('fr-mixed', 2)] }
+    ] },
+
+    { id: 'compare', title: 'Comparing fractions', sub: 'Which is greater?', concepts: [
+      { id: 'pieces', title: 'Same bottom or same top', exp: ['B1.4'], skill: 'fr-compare',
+        body: '<p><b>Same bottom:</b> the pieces are the same size, so the bigger top wins. <b>Same top:</b> the smaller bottom wins, because its pieces are bigger.</p>',
+        watch: { tool: 'fractions', opts: { wall: [8, 8] }, steps: [
+          { say: '5/8 and 3/8. The same size pieces.', act: function (t) { return t.shade(5, 0, 200).then(function () { return t.shade(3, 1, 200); }); } },
+          { say: '5 pieces is more than 3, so <b>5/8 &gt; 3/8</b>.', ms: 1800 },
+          { say: 'Now 1/3 and 1/5.', act: function (t) { var f = t.fast; t.fast = true; t.split(3, 0); t.split(5, 1); t.fast = f; return t.shade(1, 0).then(function () { return t.shade(1, 1); }); } },
+          { say: 'One piece each, but thirds are bigger pieces. <b>1/3 &gt; 1/5</b>.', ms: 2200 }
+        ] },
+        try: { tool: 'fractions', opts: { wall: [4, 8] }, tasks: [
+          { do: 'Shade <b>1/4</b> on top and <b>1/8</b> below. Which is bigger?', goal: function (s) { return s[0].n === 1 && s[1].n === 1; }, yes: 'Yes. A quarter is twice as big as an eighth, so 1/4 > 1/8.' },
+          { do: 'Shade <b>3/4</b> on top and <b>5/8</b> below. Which is bigger?', goal: function (s) { return s[0].n === 3 && s[1].n === 5; }, yes: 'Yes. 3/4 is 6/8, so it is more than 5/8.' }
+        ] },
+        key: '<p>Same bottom: <b>bigger top is bigger</b>. Same top: <b>smaller bottom is bigger</b>.</p>',
+        mistake: '<p>Thinking 1/8 &gt; 1/4 because 8 &gt; 4. More parts means <b>smaller</b> parts. Cut two equal strips of paper to show it.</p><div class="fig">' + pies([[1, 8, '1/8'], [1, 4, '1/4']], 36) + '</div>',
+        check: [P('fr-compare', 1), P('fr-compare', 2)] },
+
+      { id: 'common', title: 'Make the bottoms match', exp: ['B1.4'], skill: 'fr-compare', hard: true,
+        body: '<p>When the tops and bottoms are both different, rewrite one fraction so the bottoms match. Then compare the tops.</p>',
+        watch: K.watch([
+          { say: 'Which is greater, 5/8 or 3/4?', fig: bars([{ n: 5, d: 8 }, { n: 3, d: 4, col: 'var(--hi)' }]) },
+          { say: 'Rewrite 3/4 in eighths: multiply top and bottom by 2.', fig: bars([{ n: 5, d: 8 }, { n: 6, d: 8, label: '3/4', col: 'var(--hi)' }]) },
+          { say: '3/4 = 6/8. Now the pieces match.', fig: bars([{ n: 5, d: 8 }, { n: 6, d: 8, label: '6/8', col: 'var(--hi)' }], { mark: 0.75 }) },
+          { say: '6/8 &gt; 5/8, so <b>3/4 &gt; 5/8</b>.', fig: bars([{ n: 5, d: 8 }, { n: 6, d: 8, label: '3/4', col: 'var(--hi)' }], { mark: 0.75 }), ms: 2200 }
+        ]),
+        try: K.widget('fractions', 3, 'Good. Try two fractions that are equal, like 2/4 and 3/6.'),
+        ways: [
+          { label: 'Use 1/2', html: '<p>Compare each fraction to one half. 3/8 is less than 4/8 (a half). 4/6 is more than 3/6 (a half). So 3/8 &lt; 4/6.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + D.fline(1, 8, [{ v: 5 / 8, label: '5/8', col: 'var(--strand)' }, { v: 0.75, label: '3/4', up: false }], 'Number line from 0 to 1 with 5/8 and 3/4') + '</div><p>The fraction further right is greater.</p>' },
+          { label: 'How far from 1', html: '<p>5/8 is 3 eighths away from 1. 3/4 is 1 quarter (2 eighths) away. 3/4 is closer to 1, so it is greater.</p>' }
+        ],
+        key: '<p><b>Match the bottoms, then compare the tops.</b></p>',
+        mistake: '<p>Comparing only the tops (5/8 &gt; 3/4 "because 5 &gt; 3"). The pieces are different sizes. Draw both on strips of the same length.</p>',
+        check: [P('fr-compare', 3), P('fr-compare', 2)] }
+    ] },
+
+    { id: 'add', title: 'Adding and subtracting', sub: 'Fractions with the same bottom.', concepts: [
+      { id: 'like', title: 'Add and subtract same-size pieces', exp: ['B2.5'], skill: 'fr-add',
+        body: '<p>Same bottom means same-size pieces. Add or subtract the <b>tops</b>. The bottom stays, because the size of the pieces does not change.</p>',
+        watch: { tool: 'fractions', opts: { parts: 8, choices: [] }, steps: [
+          { say: '3/8 + 4/8. Shade 3 eighths.', act: shadeT(3) },
+          { say: 'Add 4 more eighths.', act: function (t) { return t.shade(7, 0, 260); } },
+          { say: '7 pieces, and each is still an eighth: <b>3/8 + 4/8 = 7/8</b>.', ms: 2400 }
+        ] },
+        try: { tool: 'fractions', opts: { parts: 6, choices: [] }, tasks: [
+          { do: 'Shade <b>2/6</b>, then add <b>3/6</b>. What do you get?', goal: function (s) { return s[0].n === 5; }, yes: 'Yes. 2/6 + 3/6 = 5/6.' },
+          { do: 'Start at <b>5/6</b> and take away <b>4/6</b>.', reset: false, goal: function (s) { return s[0].n === 1; }, yes: 'Yes. 5/6 − 4/6 = 1/6.' }
+        ] },
+        ways: [
+          { label: 'In words', html: '<p>3 eighths + 4 eighths = 7 eighths, just like 3 apples + 4 apples = 7 apples. "Eighths" is the thing you are counting.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + D.fline(1, 8, [{ v: 3 / 8, label: '3/8', col: 'var(--strand)' }, { v: 7 / 8, label: '7/8', up: false }], 'Number line: jump from 3/8 to 7/8') + '</div><p>Start at 3/8 and jump 4 eighths.</p>' }
+        ],
+        key: '<p><b>Add the tops. Keep the bottom.</b></p>',
+        mistake: '<p>Adding the bottoms too: 1/4 + 2/4 = 3/8. The bars show 3/8 is much less than 3/4. Say it in words: "1 quarter + 2 quarters = 3 quarters".</p><div class="fig">' + D.fbars([{ n: 3, d: 4, label: '3/4' }, { n: 3, d: 8, label: '3/8', col: 'var(--bad)' }], { w: 400 }) + '</div>',
+        check: [P('fr-add', 1), P('fr-add', 2)] }
+    ] },
+
+    { id: 'unit', title: 'Whole numbers and unit fractions', sub: 'Groups of, and how many fit.', concepts: [
+      { id: 'times', title: 'Groups of a unit fraction', exp: ['B2.8'], skill: 'fr-unit',
+        body: '<p>A <b>unit fraction</b> has 1 on top, like 1/4. <b>3 &times; 1/4</b> means 3 groups of one quarter: 3/4.</p>',
+        watch: K.watch([
+          { say: '5 &times; 1/3 means 5 pieces that are each one third.', fig: bars([{ n: 1, d: 3, label: '1/3' }], { unit: 180, lw: 90, w: 520 }) },
+          { say: 'Two thirds.', fig: bars([{ n: 2, d: 3, label: '2 &times; 1/3' }], { unit: 180, lw: 90, w: 520 }) },
+          { say: 'Three thirds fill one whole.', fig: bars([{ n: 3, d: 3, label: '3 &times; 1/3' }], { unit: 180, lw: 90, w: 520 }) },
+          { say: 'Five thirds: <b>5/3 = 1&nbsp;2/3</b>.', fig: bars([{ n: 5, d: 3, label: '5 &times; 1/3' }], { unit: 180, lw: 90, w: 520 }), ms: 2200 }
+        ]),
+        try: K.widget('fractions', 5, 'Nice. Keep the operation on "groups of" and change the whole number.'),
+        key: '<p><b>5 &times; 1/3 = 5/3.</b> The whole number becomes the top.</p>',
+        check: [P('fr-unit', 1), P('fr-unit', 1)] },
+
+      { id: 'divide', title: 'How many fit?', exp: ['B2.8'], skill: 'fr-unit', hard: true,
+        body: '<p><b>3 &divide; 1/4</b> asks "how many quarters fit in 3 wholes?" Each whole holds 4 quarters, so the answer is <b>12</b>.</p>',
+        watch: { tool: 'fractions', opts: { wall: [1, 1, 1] }, steps: [
+          { say: 'Here are 3 wholes.', ms: 1000 },
+          { say: 'Cut each whole into quarters.', act: function (t) { return t.split(4, 0).then(function () { return t.split(4, 1); }).then(function () { return t.split(4, 2); }); } },
+          { say: 'Count the quarters: 4, 8, 12.', act: function (t) { return t.shade(4, 0, 150).then(function () { return t.shade(4, 1, 150); }).then(function () { return t.shade(4, 2, 150); }); } },
+          { say: '12 quarters fit in 3 wholes: <b>3 &divide; 1/4 = 12</b>.', ms: 2400 }
+        ] },
+        try: { tool: 'fractions', opts: { wall: [3, 3] }, tasks: [
+          { do: 'How many thirds fit in 2 wholes? Shade every third.', goal: function (s) { return s[0].n + s[1].n === 6; }, yes: 'Yes. 2 ÷ 1/3 = 6.' }
+        ] },
+        ways: [
+          { label: 'Pizza', html: '<p>2 pizzas, each cut into 1/5 slices. Each pizza gives 5 slices, so 2 &divide; 1/5 = 10 slices.</p>' + pies([[5, 5, 'pizza 1'], [5, 5, 'pizza 2']], 36) },
+          { label: 'Multiply', html: '<p>Each whole holds as many pieces as the bottom number. So <b>whole number &times; bottom</b>: 3 &divide; 1/4 = 3 &times; 4 = 12.</p>' },
+          { label: 'Number line', html: '<div class="fig">' + D.fline(3, 4, [], 'Number line from 0 to 3 in quarters') + '</div><p>Count the quarter jumps from 0 to 3: there are 12.</p>' }
+        ],
+        key: '<p>Dividing by a unit fraction gives a <b>bigger</b> number. 3 &divide; 1/4 = 3 &times; 4 = 12.</p>',
+        mistake: '<p>Expecting division to make the answer smaller (3 &divide; 1/4 = 3/4). Ask "how many quarters fit in 3?" and count pieces on strips.</p>',
+        check: [P('fr-unit', 2), P('fr-unit', 3)] }
+    ] }
+  ];
   A.register('fractions', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>One amount, three names</h2>' +
 '<p>A fraction names equal parts of a whole. The <b>denominator</b> (bottom) says how many equal parts. The <b>numerator</b> (top) says how many you have. The same amount can also be a <b>decimal</b> or a <b>percent</b>, which means "out of 100".</p>' +
