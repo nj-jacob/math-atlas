@@ -296,4 +296,128 @@ A.yt({ q: 'A map has a scale of 1 cm : 2 m. A path is 7.5 cm on the map. How lon
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  var PNAME = { 3: 'triangle', 4: 'quadrilateral', 5: 'pentagon', 6: 'hexagon', 8: 'octagon', 10: 'decagon' };
+  var SHAPES = {
+    'ge-angles': [
+      [1, 'story', function (lv) {
+        var who = K.name(), a = R.int(80, 150), b = R.int(60, 300 - a - 30), c = 360 - a - b;
+        return { q: 'On ' + who + '\'s trail map, three ski trails meet at one point. Two of the angles between them are <b>' + a + D + '</b> and <b>' + b + D + '</b>. What is the third angle?', type: 'num', answer: c, unit: D,
+          hint: 'Angles around a point add to 360' + D + '.', steps: ['360 &minus; ' + a + ' &minus; ' + b + ' = ' + c + '.'], explain: 'The third angle is ' + c + D + '.', meta: { k: 'ga-story', a: a, b: b } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(30, 80), b = R.int(30, 80), truth = R.int(0, 1), said = truth ? 180 - a - b : 360 - a - b;
+        return K.tf({ q: 'A triangle has angles of ' + a + D + ' and ' + b + D + '. ' + who + ' says the third angle is <b>' + said + D + '</b>. True or false?', truth: truth,
+          right: 'The angles in a triangle add to 180' + D + ': 180 &minus; ' + a + ' &minus; ' + b + ' = ' + (180 - a - b) + D + '.', wrong: ['The angles in a triangle add to 360' + D + '.', 'The third angle is always the biggest.'],
+          hint: 'What do the angles in a triangle add to?', meta: { k: 'ga-tf', a: a, b: b, said: said } });
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.int(20, 160);
+        return { q: 'Two angles sit together on a straight line. Fill in the missing angle.', type: 'fill', fill: '<span class="math">' + a + D + ' + [[]]' + D + ' = 180' + D + '</span>', answers: [180 - a],
+          hint: 'Angles on a straight line add to 180' + D + '.', steps: ['180 &minus; ' + a + ' = ' + (180 - a) + '.'], explain: 'The missing angle is ' + (180 - a) + D + '.', meta: { k: 'ga-fill', a: a } };
+      }],
+      [2, 'match', function (lv) {
+        return K.until(function () {
+          var s = R.int(20, 160), t1 = R.int(30, 80), t2 = R.int(30, 70), p1 = R.int(80, 140), p2 = R.int(60, 140), v = [180 - s, 180 - t1 - t2, 360 - p1 - p2];
+          if (new Set(v).size < 3) return null;
+          return { q: 'Match each angle problem to its missing angle.', type: 'match', pairs: [['Straight line: ' + s + D + ' and ?', v[0] + D], ['Triangle: ' + t1 + D + ', ' + t2 + D + ' and ?', v[1] + D], ['Around a point: ' + p1 + D + ', ' + p2 + D + ' and ?', v[2] + D]],
+            hint: 'Straight line: 180' + D + '. Triangle: 180' + D + '. Around a point: 360' + D + '.', steps: ['Subtract the known angles from the total each time.'], explain: 'The missing angles are ' + v.join(D + ', ') + D + '.', meta: { k: 'ga-match' } };
+        });
+      }]
+    ],
+    'ge-parallel': [
+      [1, 'pick', function (lv) {
+        var t = R.int(35, 145); while (t === 90) t = R.int(35, 145);
+        return K.pickAll({ q: 'Angle 1 is ' + t + D + '. Pick every other angle that is also <b>' + t + D + '</b>.', opts: [2, 3, 4, 5, 6, 7, 8].map(function (k) { return ['Angle ' + k, k % 2 === 1]; }), fig: parallel(t, 'num'),
+          hint: 'Each angle is either ' + t + D + ' or ' + (180 - t) + D + '. Look for angles that match angle 1 in size.', steps: ['Vertically opposite, corresponding and alternate angles are equal.'], explain: 'Angles 3, 5 and 7 equal angle 1. The others are ' + (180 - t) + D + '.', meta: { k: 'gp-pick', t: t } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), t = R.int(35, 145); while (t === 90) t = R.int(35, 145);
+        var pr = R.pick([['corresponding', '1,5'], ['alternate', '3,5'], ['co-interior', '4,5']]), ids = pr[1].split(',').map(Number), given = ids[0] % 2 ? t : 180 - t;
+        return K.tf({ q: 'The highlighted ' + pr[0] + ' angles are on parallel lines. One is ' + given + D + '. ' + who + ' says the other is also <b>' + given + D + '</b>. True or false?', truth: pr[0] !== 'co-interior', fig: parallel(t, '', ids),
+          right: pr[0] === 'co-interior' ? 'Co-interior angles add to 180' + D + ', so the other is ' + (180 - given) + D + '.' : pr[0].charAt(0).toUpperCase() + pr[0].slice(1) + ' angles are equal, so it is ' + given + D + '.', wrong: ['All angles on parallel lines are equal.', 'Angles on parallel lines always add to 360' + D + '.'],
+          hint: 'F and Z shapes: equal. C shape: add to 180' + D + '.', meta: { k: 'gp-tf', kind: pr[0] } });
+      }],
+      [1, 'fill', function (lv) {
+        var t = R.int(35, 145); while (t === 90) t = R.int(35, 145);
+        return { q: 'Angle 1 is ' + t + D + '. Angles 1 and 2 are on a straight line. Find angle 2.', type: 'fill', fill: 'Angle 2 = [[]]' + D, answers: [180 - t], fig: parallel(t, 'num'),
+          hint: 'Angles on a straight line add to 180' + D + '.', steps: ['180 &minus; ' + t + ' = ' + (180 - t) + '.'], explain: 'Angle 2 is ' + (180 - t) + D + '.', meta: { k: 'gp-fill', t: t } };
+      }]
+    ],
+    'ge-polygon': [
+      [1, 'fill', function (lv) {
+        var n = R.pick([5, 6, 7, 8, 9, 10, 12]);
+        return { q: 'Find the sum of the interior angles of a polygon with ' + n + ' sides.', type: 'fill', fill: '<span class="math">(' + n + ' &minus; 2) &times; 180 = [[]] &times; 180 = [[]]' + D + '</span>', answers: [n - 2, (n - 2) * 180],
+          hint: 'A polygon with n sides splits into n &minus; 2 triangles.', steps: [n + ' &minus; 2 = ' + (n - 2) + '.', (n - 2) + ' &times; 180 = ' + A.fmt((n - 2) * 180) + '.'], explain: 'The sum is ' + A.fmt((n - 2) * 180) + D + '.', meta: { k: 'gy-fill', n: n } };
+      }],
+      [1, 'match', function (lv) {
+        var ns = R.shuffle([3, 4, 5, 6, 8]).slice(0, 3);
+        return { q: 'Match each polygon to the sum of its interior angles.', type: 'match', pairs: ns.map(function (k) { return [PNAME[k].charAt(0).toUpperCase() + PNAME[k].slice(1), A.fmt((k - 2) * 180) + D]; }),
+          hint: 'Sum = (number of sides &minus; 2) &times; 180' + D + '.', steps: ['Triangle 3 sides, quadrilateral 4, pentagon 5, hexagon 6, octagon 8.'], explain: ns.map(function (k) { return PNAME[k] + ': ' + A.fmt((k - 2) * 180) + D; }).join(', ') + '.', meta: { k: 'gy-match' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), n = R.pick([5, 6, 8, 10]), truth = R.int(0, 1), said = truth ? (n - 2) * 180 : n * 180;
+        return K.tf({ q: who + ' says the interior angles of a ' + PNAME[n] + ' add to <b>' + A.fmt(said) + D + '</b>. True or false?', truth: truth,
+          right: 'A ' + PNAME[n] + ' has ' + n + ' sides, so it splits into ' + (n - 2) + ' triangles: ' + (n - 2) + ' &times; 180 = ' + A.fmt((n - 2) * 180) + D + '.', wrong: ['Each side makes one triangle, so it is ' + n + ' &times; 180' + D + '.', 'Every polygon adds to 360' + D + '.'],
+          hint: 'How many triangles fit inside, from one corner?', meta: { k: 'gy-tf', n: n, said: said } });
+      }],
+      [2, 'story', function (lv) {
+        var it = R.pick([['A stop sign is a regular octagon', 8], ['A honeycomb cell is a regular hexagon', 6], ['A patio stone is a regular pentagon', 5], ['A gazebo floor is a regular decagon', 10]]);
+        return { q: it[0] + '. What is the size of each interior angle?', type: 'num', answer: (it[1] - 2) * 180 / it[1], unit: D,
+          hint: 'Find the sum, then share it among ' + it[1] + ' equal angles.', steps: ['Sum: (' + it[1] + ' &minus; 2) &times; 180 = ' + A.fmt((it[1] - 2) * 180) + D + '.', 'Each: ' + A.fmt((it[1] - 2) * 180) + ' &divide; ' + it[1] + ' = ' + (it[1] - 2) * 180 / it[1] + D + '.'], explain: 'Each angle is ' + (it[1] - 2) * 180 / it[1] + D + '.', meta: { k: 'gy-story', name: it[0] } };
+      }]
+    ],
+    'ge-transform': [
+      [1, 'fill', function (lv) {
+        var t = R.pick(lv === 1 ? ['rx', 'ry', 'r180'] : ['rx', 'ry', 'r180', 'r90', 'r270']), p = [R.int(1, 6) * R.pick([1, -1]), R.int(1, 6) * R.pick([1, -1])], img = tx(t, null, p);
+        return { q: 'Point ' + pt(p) + ' has a ' + TNAME[t] + '. Where is its image?', type: 'fill', fill: '( [[]] , [[]] )', answers: img,
+          hint: 'Rule: ' + TRULE[t] + '.', steps: ['Use ' + TRULE[t] + ' on ' + pt(p) + '.', 'The image is ' + pt(img) + '.'], explain: 'The image is ' + pt(img) + '.', meta: { k: 'gt-fill', t: t, p: p } };
+      }],
+      [1, 'match', function (lv) {
+        var ts = R.shuffle(['rx', 'ry', 'r180', 'r90']).slice(0, 3);
+        return { q: 'Match each transformation to its rule.', type: 'match', pairs: ts.map(function (t) { return [TNAME[t].charAt(0).toUpperCase() + TNAME[t].slice(1), TRULE[t]]; }),
+          hint: 'A reflection in the x-axis flips up and down, so y changes sign.', steps: ['Try a point like (2, 3) with each one.'], explain: ts.map(function (t) { return TNAME[t] + ': ' + TRULE[t]; }).join('; ') + '.', meta: { k: 'gt-match' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), t = R.pick(['rx', 'ry']), p = [R.int(1, 6), R.int(1, 6) * -1], truth = R.int(0, 1), said = truth ? tx(t, null, p) : tx(t === 'rx' ? 'ry' : 'rx', null, p);
+        return K.tf({ q: who + ' says the ' + TNAME[t] + ' of ' + pt(p) + ' is <b>' + pt(said) + '</b>. True or false?', truth: truth,
+          right: 'A ' + TNAME[t] + ' uses ' + TRULE[t] + ', so the image is ' + pt(tx(t, null, p)) + '.', wrong: ['A reflection always changes the sign of x.', 'A reflection changes the sign of both numbers.'],
+          hint: 'Which number changes sign when you flip across the ' + (t === 'rx' ? 'x' : 'y') + '-axis?', meta: { k: 'gt-tf', t: t, p: p, said: said } });
+      }],
+      [2, 'which', function (lv) {
+        var a = R.int(1, 6), b = R.int(1, 6);
+        while (b === a) b = R.int(1, 6);
+        var p = [a, -b], t = R.pick(['rx', 'ry', 'r180', 'r90', 'r270']), img = tx(t, null, p);
+        return K.pick1({ q: 'Point ' + pt(p) + ' moves to ' + pt(img) + '. Which transformation is it?', right: TNAME[t].charAt(0).toUpperCase() + TNAME[t].slice(1), wrong: ['rx', 'ry', 'r180', 'r90', 'r270'].filter(function (x) { return x !== t; }).map(function (x) { return TNAME[x].charAt(0).toUpperCase() + TNAME[x].slice(1); }),
+          hint: 'Compare the numbers: which changed sign, and did they swap places?', steps: ['Rule: ' + TRULE[t] + '.'], explain: 'It is a ' + TNAME[t] + '.', meta: { k: 'gt-which', p: p, img: img } });
+      }]
+    ],
+    'ge-scale': [
+      [1, 'fill', function (lv) {
+        var sc = R.pick([20, 25, 50, 100, 200]), l = R.int(2, 12);
+        return { q: 'A floor plan has a scale of 1 : ' + sc + '. A room is ' + l + ' cm long on the plan.', type: 'fill', fill: l + ' &times; ' + sc + ' = [[]] cm = [[]] m in real life', answers: [l * sc, l * sc / 100],
+          hint: 'Multiply by ' + sc + ' for centimetres. Divide by 100 for metres.', steps: [l + ' &times; ' + sc + ' = ' + l * sc + ' cm.', l * sc + ' &divide; 100 = ' + l * sc / 100 + ' m.'], explain: 'The room is ' + l * sc / 100 + ' m long.', meta: { k: 'gs-fill', sc: sc, l: l } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), k = R.pick([10, 20, 25, 50]), l = R.int(12, 30);
+        return { q: who + ' builds a model canoe at a scale of <b>1 : ' + k + '</b>. The model is <b>' + l + ' cm</b> long. How long is the real canoe, in cm?', type: 'num', answer: l * k, unit: 'cm',
+          hint: 'Every 1 cm on the model is ' + k + ' cm in real life.', steps: [l + ' &times; ' + k + ' = ' + l * k + ' cm.'], explain: 'The real canoe is ' + l * k + ' cm, or ' + l * k / 100 + ' m.', meta: { k: 'gs-story', k2: k, l: l } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), w = R.int(2, 6), h = R.int(2, 6), k = R.pick([2, 3]), truth = R.int(0, 1), said = truth ? w * h * k * k : w * h * k;
+        return K.tf({ q: 'A ' + w + ' cm by ' + h + ' cm rectangle is enlarged by a scale factor of ' + k + '. ' + who + ' says the new area is <b>' + said + ' cm<sup>2</sup></b>. True or false?', truth: truth,
+          right: 'The new sides are ' + w * k + ' cm and ' + h * k + ' cm, so the area is ' + w * h * k * k + ' cm<sup>2</sup>, which is ' + k * k + ' times as big.', wrong: ['The area grows by the scale factor, ' + k + '.', 'Only one side changes in an enlargement.'],
+          hint: 'Both sides get ' + k + ' times longer.', meta: { k: 'gs-tf', w: w, h: h, k2: k, said: said } });
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var w = R.int(2, 5), h = R.int(w + 1, 8), opts = [2, 3, 4].map(function (k) { return [w * k + ' cm by ' + h * k + ' cm', true]; }).concat([[(w + 2) + ' cm by ' + (h + 2) + ' cm', false], [w * 2 + ' cm by ' + (h * 2 + 1) + ' cm', false], [h + ' cm by ' + (w + h) + ' cm', false]]);
+          return K.pickAll({ q: 'A photo is ' + w + ' cm by ' + h + ' cm. Pick every size that is a true enlargement (the same shape).', opts: R.shuffle(opts).slice(0, 5), hint: 'Both sides must be multiplied by the same number.', steps: ['Divide each new side by the old side. The two answers must match.'], explain: 'A true enlargement multiplies both sides by the same scale factor.', meta: { k: 'gs-pick', w: w, h: h } });
+        });
+      }]
+    ]
+  };
+  K.shapes('geometry', SHAPES);
 })();
