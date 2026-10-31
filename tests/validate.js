@@ -26,6 +26,7 @@ window.__validate = function (q) {
     default: bad.push('unknown question type ' + q.type);
   }
   if (q.shape && q.shape !== 'plain' && !(q.meta && q.meta.k)) bad.push('new shape "' + q.shape + '" has no meta.k for its answer check');
+  if (q.meta && q.meta.k && window.__verifyTwice[q.meta.k]) bad.push('two answer checks share the key "' + q.meta.k + '" (give each its own key)');
   if (q.meta && q.meta.k && !(window.__verify && window.__verify[q.meta.k])) bad.push('no answer check written for meta.k "' + q.meta.k + '"');
   if (q.meta && q.meta.k && window.__verify && window.__verify[q.meta.k]) { try { const e = window.__verify[q.meta.k](q, q.meta, window.__H); if (e) bad.push('wrong answer (' + q.meta.k + '): ' + e); } catch (e) { bad.push('answer check crashed (' + q.meta.k + '): ' + e.message); } }
   return bad;
@@ -46,4 +47,7 @@ window.__validate = function (q) {
     close: (a, b, tol) => Math.abs(a - b) <= (tol || 1e-9)
   };
 })();
-window.__verify = window.__verify || {};
+/* every grade's answer checks share one list (all of tests/verify/ loads on every page), so a key used twice
+   would silently replace another check. Keys used twice are remembered and fail the questions that use them. */
+window.__verifyTwice = window.__verifyTwice || {};
+window.__verify = window.__verify || new Proxy({}, { set(t, k, v) { if (k in t) window.__verifyTwice[k] = 1; t[k] = v; return true; } });

@@ -3,7 +3,7 @@
    K.watch([[caption, figure html, ms], ...])  a clip: each step shows a drawing; parts that are new in a step light up.
    K.lab({ controls, render, tasks })           a hands-on lab with sliders, buttons or a list, and self-checking challenges.
    K.tap({ items, render, tasks })              a lab where you tap parts of a drawing to light them up and count.
-   K.shapes(id, SHAPES), K.why, K.small, K.digits, K.tapLine   more ways to ask in practice (see the end of this file). */
+   K.why, K.small, K.digits, K.tapLine   helpers for more ways to ask in practice (see the end of this file). */
 (function () {
   'use strict';
   var A = window.Atlas, K = (A.kit = {});
@@ -188,19 +188,7 @@
   K.gen = function (fn, lv) { return function () { return fn(lv); }; };
 
   /* ---------- More ways to ask: practice question shapes (docs/QUESTIONS.md) ----------
-     K.shapes(chapterId, SHAPES) keeps each skill's first question ("plain") and mixes in the
-     chapter's new shapes with Atlas.Q.vary. SHAPES = { skillId: [[minLevel, name, fn(lv)], ...] }. */
-  K.shapes = function (id, SHAPES) {
-    var ch = A.chapters[id];
-    if (!ch || !A.Q) return;
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
-      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
-  };
+     Chapters wire their shapes in with the shared Atlas.Q.shapes(chapterId, SHAPES). */
   /* the "why?" step of a true-or-false question: the right reason plus wrong ones, shuffled */
   K.why = function (right, wrong) { var o = A.R.mc(right, wrong); return { options: o.options, answer: o.answer }; };
   /* the same drawing shown smaller, for cards and tiles: sets the svg's width to w */

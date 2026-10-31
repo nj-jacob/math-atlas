@@ -774,5 +774,5 @@ thumbs() +
       }]
     ]
   };
-  K.shapes('data-probability', SHAPES);
+  Atlas.Q.shapes('data-probability', SHAPES);
 })();

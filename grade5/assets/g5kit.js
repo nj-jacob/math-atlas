@@ -3,7 +3,7 @@
    K.widget(ch, i)   a "Try it" activity that reuses the i-th interactive drawing of a chapter's original lesson.
    K.disks(el, o)    place value disks from hundredths to hundred thousands: tap to light and count, group 10 into 1, break 1 into 10.
    K.P(ch, skill, lv) a quick check made by a practice skill's question maker.
-   K.shapes(ch, SHAPES) more ways to ask each practice skill (see docs/QUESTIONS.md); K.why, K.tf, K.pick, K.digits help build them. */
+   K.why, K.tf, K.pick, K.digits help build more ways to ask each practice skill (see docs/QUESTIONS.md). */
 (function () {
   'use strict';
   var A = window.Atlas, M = window.Manip, K = (A.kit = {});
@@ -100,19 +100,6 @@
       x += w;
     }
     return A.svg(x + 4, 92, h, 'The number ' + A.fmt(n) + ' in big digits');
-  };
-  /* wrap every practice skill of a chapter: its first way of asking ("plain") plus the new shapes.
-     SHAPES = { skillId: [[minLevel, 'name', fn(lv)], ...] }. Chapter quizzes are made fresh each time. */
-  K.shapes = function (chId, SHAPES) {
-    var ch = A.chapters[chId];
-    if (!A.Q || !ch) return;
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (x) { return x[1]; }));
-      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
   };
 
   /* ---------- quick checks from practice skills ---------- */

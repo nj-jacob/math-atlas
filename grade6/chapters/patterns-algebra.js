@@ -604,6 +604,6 @@ A.yt({ q: 'x = 10. repeat while x &gt; 0: say x, then x = x &minus; 3. How many 
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

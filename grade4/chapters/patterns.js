@@ -674,5 +674,5 @@ A.yt({ gen: function () { return gen.code(1); } }) +
       }]
     ]
   };
-  K.shapes('patterns', SHAPES);
+  Atlas.Q.shapes('patterns', SHAPES);
 })();

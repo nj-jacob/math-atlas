@@ -455,5 +455,5 @@
       }]
     ]
   };
-  K.shapes('ratios', SHAPES);
+  Atlas.Q.shapes('ratios', SHAPES);
 })();

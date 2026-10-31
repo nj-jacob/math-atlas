@@ -638,5 +638,5 @@
       }]
     ]
   };
-  G.shapes(CH, SHAPES);
+  Atlas.Q.shapes(CH, SHAPES);
 })();

@@ -713,5 +713,5 @@ A.yt({ gen: function () { return gen.side(2); } }) +
       }]
     ]
   };
-  K.shapes('measuring', SHAPES);
+  Atlas.Q.shapes('measuring', SHAPES);
 })();

@@ -235,17 +235,7 @@
   K.lessons = function (id, list) { A.chapters[id].lessons = list; };
   /* ---------- question shapes: more ways to ask each practice skill (docs/QUESTIONS.md) ----------
      Each chapter ends with a SHAPES block: { skillId: [[minLevel, 'name', fn(lv)], ...] }.
-     K.shapes wraps every skill so practice and fresh quizzes rotate through its shapes. */
-  K.shapes = function (chId, SHAPES) {
-    var ch = A.chapters[chId];
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
-      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
-  };
+     The shared Atlas.Q.shapes(chapterId, SHAPES) wires it into every skill, so practice and fresh quizzes rotate through its shapes. */
   K.name = function () { return A.Q.name(); };
   /* a "why" list for true-or-false questions: the right reason first, shown shuffled */
   K.why = function (right, wrong) { var o = A.R.shuffle([right].concat(wrong)); return { options: o, answer: o.indexOf(right) }; };

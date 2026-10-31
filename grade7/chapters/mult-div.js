@@ -525,7 +525,7 @@
   /* ---------- question shapes: more ways to practise each skill ---------- */
   function money(x) { return '$' + x.toFixed(2); }
   function opMc(op) { var names = { add: 'Add', sub: 'Subtract', mul: 'Multiply', div: 'Divide' }, o = R.mc(names[op], ['Add', 'Subtract', 'Multiply', 'Divide'].filter(function (w) { return w !== names[op]; })); return o; }
-  K.shapes('mult-div', {
+  Atlas.Q.shapes('mult-div', {
     'md-round': [
       [1, 'tap', function (lv) {
         var p = lv === 1 ? 1 : R.int(1, 2), u = Math.pow(10, p), lo = R.int(1, 99) + R.int(0, u - 1) / u, d = R.pick([1, 2, 3, 4, 6, 7, 8, 9]), x = cl(lo + d / (u * 10)), hi = cl(lo + 1 / u);

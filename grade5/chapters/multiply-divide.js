@@ -551,5 +551,5 @@
       }]
     ]
   };
-  K.shapes('multiply-divide', SHAPES);
+  Atlas.Q.shapes('multiply-divide', SHAPES);
 })();

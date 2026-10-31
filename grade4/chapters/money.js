@@ -577,5 +577,5 @@ A.yt({ gen: function () { return gen.value(2); } }) +
       }]
     ]
   };
-  K.shapes('money', SHAPES);
+  Atlas.Q.shapes('money', SHAPES);
 })();

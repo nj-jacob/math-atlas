@@ -832,7 +832,7 @@
   var K = A.kit, why = K.why, who = K.who;
   function blankPairs(n) { return pairs(n).replace(/aria-label="[^"]*"/, 'aria-label="' + n + ' blocks in pairs"').replace(/<circle[^>]*stroke-dasharray="4 3"\/>/, ''); }
   function twoDigit(lv) { return lv === 1 ? R.int(21, 99) : R.int(101, 199); }
-  K.shapes('numbers-200', {
+  Atlas.Q.shapes('numbers-200', {
     'n2-blocks': [
       [1, 'build', function (lv) {
         var n = twoDigit(lv), d = hto(n);

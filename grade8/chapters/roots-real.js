@@ -417,5 +417,5 @@ A.yt({ q: 'Which is greater?', opts: [RT + '20', '4.5'], a: 1, back: 'Change ' +
       }]
     ]
   };
-  K.shapes('roots-real', SHAPES);
+  Atlas.Q.shapes('roots-real', SHAPES);
 })();

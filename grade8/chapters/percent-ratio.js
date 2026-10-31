@@ -417,5 +417,5 @@ A.yt({ q: 'Work out (&minus;2 + 5) &times; 1.5 &minus; 4 &divide; 0.5.', a: -3.5
       }]
     ]
   };
-  K.shapes('percent-ratio', SHAPES);
+  Atlas.Q.shapes('percent-ratio', SHAPES);
 })();

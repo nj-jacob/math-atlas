@@ -439,7 +439,7 @@
   function dressed(core) { var letters = R.shuffle(['A', 'B', 'C', 'D']); return extend(core, 6).split('').map(function (c) { return letters['ABCD'.indexOf(c)]; }).join(''); }
   var TCORES = ['AB', 'ABB', 'AAB', 'ABC', 'AABB'];
   function sum(a, b) { return a + ' + ' + b; }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'p2-repeat': [
       [1, 'tap', function (lv) {
         var p = makePat(lv === 1 ? ['AB', 'ABB', 'AAB'] : CORES), ans = p.next.charAt(0), set = R.shuffle(['A', 'B', 'C', 'D']).slice(0, 3);

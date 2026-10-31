@@ -762,5 +762,5 @@ moves() +
       }]
     ]
   };
-  KIT.shapes('shapes-grids', SHAPES);
+  Atlas.Q.shapes('shapes-grids', SHAPES);
 })();

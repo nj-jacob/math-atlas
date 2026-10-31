@@ -592,5 +592,5 @@ A.yt({ gen: function () { return gen.prob(1); } }) +
       }]
     ]
   };
-  K.shapes('data', SHAPES);
+  Atlas.Q.shapes('data', SHAPES);
 })();

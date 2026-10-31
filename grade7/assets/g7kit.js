@@ -3,7 +3,7 @@
    - K.slides(frames): a "Watch" clip made from the chapter's own drawings. Each frame fades in and its drawing builds itself.
    - K.lab(html, init, tasks): a "Try it" built from one of the chapter's interactive drawings, with challenges that check themselves.
    - K.ck(skillId, level): a quick check made by a practice skill, so lessons, practice and check-ups share one question bank.
-   - K.shapes(chapterId, SHAPES): more ways to ask each practice skill, with small helpers for writing them (K.why, K.uniq, K.picks). */
+   - K.why, K.uniq, K.picks: small helpers for writing more ways to ask each practice skill. */
 (function () {
   'use strict';
   var A = window.Atlas, R = A.R, K = (A.k7 = {});
@@ -94,7 +94,7 @@
   /* a fixed question, or a function that makes one */
   K.q = function (fn) { return fn; };
   /* ---------- question shapes: more ways to practise each skill (see docs/QUESTIONS.md) ----------
-     Each chapter ends with a SHAPES block, { skillId: [[minLevel, 'shape', fn(lv)], ...] }, passed to K.shapes.
+     Each chapter ends with a SHAPES block, { skillId: [[minLevel, 'shape', fn(lv)], ...] }, passed to the shared Atlas.Q.shapes.
      Every shape sets meta.k, and tests/verify/grade7.js checks its answer independently. */
   K.name = function () { return A.Q.name(); };
   K.two = function () { return A.Q.two(); };
@@ -115,15 +115,4 @@
   };
   /* keep calling make() until it returns a question (make returns null to ask for another try) */
   K.retry = function (make) { for (var i = 0; i < 60; i++) { var q = make(); if (q) return q; } throw new Error('shape could not be made'); };
-  /* turn on the shapes for a chapter, and a fresh chapter quiz each time */
-  K.shapes = function (chId, SHAPES) {
-    var ch = A.chapters[chId];
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
-      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
-  };
 })();
