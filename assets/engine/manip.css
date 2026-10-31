@@ -331,6 +331,9 @@
   .mp-frame{grid-template-columns:repeat(5,minmax(30px,46px))}
   .ls-nav .btn{min-width:0}
   .ls-pc{padding:2px 12px 12px}
+  .ls-steps{gap:4px}
+  .ls-steps button{gap:5px;font-size:.82rem;padding:3px 9px 3px 3px;min-height:36px}
+  .ls-steps i{width:24px;height:24px;font-size:.76rem}
   .mp-auto{margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){
@@ -347,3 +350,6 @@ p.ls-got{display:flex;flex-wrap:wrap;max-width:100%}
 .ls-ways,.ls-card{overflow:hidden}
 /* when an idea is a stack of cards, the cards are the panels: the screen around them stays plain */
 html body .ls-card:has(.ls-stack){background:transparent!important;border:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important}
+/* "My turn": a worked example the student plays, with a voice */
+.ls-example{margin:14px 0}
+.ls-exlead{font-weight:600;margin:0 0 8px}

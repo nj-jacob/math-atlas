@@ -1306,11 +1306,51 @@
 
   /* ================= "Watch" player =================
      A short animated demonstration, like a video clip, built from a tool's own moves.
-     steps: [{say: caption, act: function (tool) { return promise }, ms: pause after}]
-     Plays once when it scrolls into view. Pause, replay, and step dots to jump to any part. */
+     steps: [{say: caption, act: function (tool) { return promise }, ms: pause after, speak: words to say instead of the caption}]
+     The student plays it, or steps through it; it starts by itself only when "Auto-play" is on. */
   /* Auto-play is off unless the student or a grown-up switches it on. The choice is remembered in this browser for every grade. */
   function autoOn() { try { return localStorage.getItem('atlas:autoplay') === '1'; } catch (e) { return false; } }
   function setAuto(on) { try { localStorage.setItem('atlas:autoplay', on ? '1' : '0'); } catch (e) { /* storage blocked */ } }
+  /* Voice for worked examples only (Noel: no read-aloud anywhere else). Uses the browser's own speech, a Canadian English voice
+     when the device has one. On by default in those clips; the "Voice" switch is remembered in this browser for every grade. */
+  function voiceOn() { try { return localStorage.getItem('atlas:voice') !== '0'; } catch (e) { return true; } }
+  function setVoice(on) { try { localStorage.setItem('atlas:voice', on ? '1' : '0'); } catch (e) { /* storage blocked */ } }
+  var SS = window.speechSynthesis;
+  function pickVoice() {
+    var vs = SS ? SS.getVoices() : [], by = function (re) { return vs.filter(function (v) { return re.test(v.lang); }); };
+    var list = by(/^en[-_]CA/i).concat(by(/^en[-_](US|GB|AU)/i), by(/^en/i));
+    return list.filter(function (v) { return v.localService; })[0] || list[0] || null;
+  }
+  /* read maths the way a teacher says it: 3/4 is "3 quarters", 2x + 7 = 15 is "2 x plus 7 equals 15" */
+  var ORD = { 2: ['half', 'halves'], 3: ['third', 'thirds'], 4: ['quarter', 'quarters'], 5: ['fifth', 'fifths'], 6: ['sixth', 'sixths'], 7: ['seventh', 'sevenths'], 8: ['eighth', 'eighths'],
+    9: ['ninth', 'ninths'], 10: ['tenth', 'tenths'], 12: ['twelfth', 'twelfths'], 100: ['hundredth', 'hundredths'] };
+  function words(t) {
+    return t.replace(/(\d)[\s\u00a0\u202f](?=\d{3}\b)/g, '$1')
+      .replace(/\b(\d+)\s*\/\s*(\d+)\b/g, function (m, a, b) { var w = ORD[+b]; return w ? a + ' ' + w[+a === 1 ? 0 : 1] : a + ' over ' + b; })
+      .replace(/(\d)\s*([a-z])\b/g, '$1 $2')
+      .replace(/\s*=\s*/g, ' equals ').replace(/\s*\+\s*/g, ' plus ').replace(/\s+[\u2212-]\s+/g, ' minus ')
+      .replace(/\s*\u00d7\s*/g, ' times ').replace(/\s*\u00f7\s*/g, ' divided by ')
+      .replace(/\s*>\s*/g, ' is greater than ').replace(/\s*<\s*/g, ' is less than ')
+      .replace(/\s+/g, ' ').trim();
+  }
+  M.words = words;
+  /* say the words of one part; resolves when done (or after a fair time, as some browsers never report the end) */
+  function speak(html) {
+    if (!SS || !window.SpeechSynthesisUtterance) return Promise.resolve();
+    var d = document.createElement('div'); d.innerHTML = html;
+    var text = words(d.textContent);
+    if (!text) return Promise.resolve();
+    return new Promise(function (r) {
+      var u = new SpeechSynthesisUtterance(text), v = pickVoice(), t = setTimeout(r, 1500 + text.length * 90);
+      if (v) { u.voice = v; u.lang = v.lang; } else u.lang = 'en-CA';
+      u.rate = 0.9;
+      u.onend = u.onerror = function () { clearTimeout(t); r(); };
+      SS.speak(u);
+    });
+  }
+  function hush() { if (SS) SS.cancel(); }
+  M.speak = speak; M.hush = hush;
+
   /* A "Watch" clip: the student plays it, pauses it, or steps one part at a time. Each step is { say, act(tool), ms }. */
   M.player = function (root, tool, steps, o) {
     o = o || {};
@@ -1321,8 +1361,9 @@
       '<button type="button" class="mp-pb mp-play">Play</button>' +
       '<button type="button" class="mp-pb mp-step" aria-label="Next part">&rsaquo;</button>' +
       '<span class="mp-dots">' + steps.map(function (s, i) { return '<button type="button" class="mp-sd" data-i="' + i + '" aria-label="Part ' + (i + 1) + ' of ' + n + '"></button>'; }).join('') + '</span>' +
-      '<button type="button" class="mp-auto" aria-pressed="false"></button></div>';
-    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root), prevB = qs('.mp-prev', root), stepB = qs('.mp-step', root), autoB = qs('.mp-auto', root);
+      (o.voice ? '<button type="button" class="mp-auto mp-voice" aria-pressed="false"></button>' : '') +
+      '<button type="button" class="mp-auto mp-ap" aria-pressed="false"></button></div>';
+    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root), prevB = qs('.mp-prev', root), stepB = qs('.mp-step', root), autoB = qs('.mp-ap', root), voiceB = qs('.mp-voice', root);
     stage.appendChild(tool.root);
     /* k counts the parts already shown; the caption is the part on screen */
     function dots(i) { qsa('.mp-sd', root).forEach(function (d, j) { d.classList.toggle('on', j < k); d.classList.toggle('cur', j === i); }); }
@@ -1339,12 +1380,14 @@
       var on = autoOn();
       autoB.setAttribute('aria-pressed', String(on));
       autoB.textContent = 'Auto-play: ' + (on ? 'on' : 'off');
+      if (voiceB) { voiceB.setAttribute('aria-pressed', String(voiceOn())); voiceB.textContent = 'Voice: ' + (voiceOn() ? 'on' : 'off'); }
     }
+    var talk = function () { return !!o.voice && voiceOn(); };
     /* show part k with its animation, then count it as shown */
     function one(my) {
       var s = steps[k];
       caption(k);
-      return Promise.resolve(s.act ? s.act(tool) : null).then(function () { if (my === run) { k++; dots(k - 1); } });
+      return Promise.all([s.act ? s.act(tool) : null, talk() ? speak(s.speak || s.say) : null]).then(function () { if (my === run) { k++; dots(k - 1); } });
     }
     function go() {
       if (k >= n) return jump(0, true);
@@ -1353,11 +1396,11 @@
       (function next() {
         if (my !== run || !playing) return;
         if (k >= n) { playing = false; ui(); if (o.onEnd) o.onEnd(); return; }
-        var ms = steps[k].ms == null ? 1100 : steps[k].ms;
+        var ms = steps[k].ms == null ? 1100 : steps[k].ms; if (talk()) ms = Math.min(ms, 500);
         one(my).then(function () { return new Promise(function (r) { setTimeout(r, ms); }); }).then(next);
       })();
     }
-    function pause() { playing = false; run++; ui(); }
+    function pause() { playing = false; run++; if (o.voice) hush(); ui(); }
     /* rebuild the picture instantly with parts 0 to j-1 already shown */
     function jump(j, play) {
       pause();
@@ -1373,6 +1416,7 @@
     prevB.addEventListener('click', function () { if (!playing && k > 0) jump(k - 1); });
     qs('.mp-dots', root).addEventListener('click', function (e) { var d = e.target.closest('.mp-sd'); if (d) jump(+d.getAttribute('data-i') + 1); });
     autoB.addEventListener('click', function () { setAuto(!autoOn()); ui(); if (autoOn() && !started && !playing) go(); });
+    if (voiceB) voiceB.addEventListener('click', function () { setVoice(!voiceOn()); if (!voiceOn()) hush(); ui(); });
     caption(0); ui();
     /* with auto-play on, start by itself the first time it is on screen */
     if (o.autoplay !== false && autoOn() && window.IntersectionObserver) {
