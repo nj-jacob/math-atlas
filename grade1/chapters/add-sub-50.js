@@ -118,7 +118,159 @@
       explain: a + ' + ' + b + ' = ' + t2 + ' and ' + c + ' + ' + d + ' = ' + t2 + '. Both sides are equal.' };
   }
 
+  var CH = 'add-sub-50';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  var LESSONS = [
+    { id: 'make-ten', title: 'Make a ten to add', sub: 'Fill a ten frame first.', concepts: [
+      { id: 'fill', title: 'Fill the ten first', exp: ['B2.3'], skill: 'b-20',
+        body: '<p>To add 8 + 5, first <b>fill a ten</b>. 8 needs 2 more to make 10. Take 2 from the 5. That leaves 3. <b>10 + 3 = 13</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: '8 + 5. Here are 8 red and 5 yellow.', act: function (t) { return t.show(A.draw.frames(8, { c: 26 }) + A.draw.frames(0, { b: 5, c: 26 })); }, ms: 1600 },
+          { say: 'Move 2 yellow into the first frame. Now it is full: 10.', act: function (t) { return t.show(makeTen(8, 5)); }, ms: 1600 },
+          { say: '3 yellow are left in the second frame. 10 + 3 = <b>13</b>.', act: function (t) { return t.show(makeTen(8, 5) + '<p class="big">' + eqn('8 + 5 = 10 + 3 = 13') + '</p>'); }, ms: 2000 }
+        ] },
+        try: { tool: 'tenframe', opts: { frames: 2, n: 9 }, tasks: [
+          { do: 'Find ' + eqn('9 + 4') + '. Add 4 counters. Fill the first frame first.', reset: false, goal: function (s) { return s.n === 13; }, yes: '9 + 1 fills the ten. 3 more: 9 + 4 = 13.' }
+        ] },
+        ways: [
+          { label: 'Split the small number', html: '<p class="math">8 + 5</p><p class="math">8 + 2 + 3</p><p class="math">10 + 3 = 13</p><p>Split 5 into 2 and 3. The 2 makes 10.</p>' },
+          { label: 'Use a double', html: '<p>8 + 5 is close to 5 + 5 = 10. 8 is 3 more than 5, so the answer is 3 more than 10: <b>13</b>.</p>' }
+        ],
+        hard: true,
+        key: '<p><b>Make a ten</b>, then add what is left.</p>',
+        mistake: '<p>Losing track of how many were moved. Use real counters and two ten frames drawn on paper.</p>',
+        check: [P('b-20', 1), P('b-20', 2)] },
+      { id: 'back20', title: 'Subtract to 20', exp: ['B2.3'], skill: 'b-20',
+        body: '<p>To find <b>14 &minus; 6</b>, take away 4 to get to 10, then 2 more: <b>8</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 14 }, steps: [
+          { say: '14 &minus; 6. Start at 14.', ms: 1300 },
+          { say: 'Jump back 4 to get to 10.', act: function (t) { return t.hop(10, '−4'); }, ms: 900 },
+          { say: 'Jump back 2 more: 8.', act: function (t) { return t.hop(8, '−2'); }, ms: 900 },
+          { say: '14 &minus; 6 = <b>8</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 15, step: 1 }, tasks: [
+          { do: 'Find ' + eqn('15 &minus; 7') + '. Use Jump back 7 times.', goal: function (s) { return s.at === 8; }, yes: '15 &minus; 7 = 8.' }
+        ] },
+        key: '<p>Jump back <b>to 10</b> first, then the rest.</p>',
+        check: [P('b-20', 2), P('b-20', 3)] }
+    ] },
+
+    { id: 'bigger', title: 'Adding bigger numbers', sub: 'Tens first, then ones.', concepts: [
+      { id: 'tens', title: 'Add tens', exp: ['B2.4'], skill: 'b-tens',
+        body: '<p>Adding a ten makes the tens digit go up by 1. 23 + 10 = <b>33</b>. 23 + 20 = <b>43</b>.</p>',
+        watch: { tool: 'base10', opts: { cols: ['t', 'o'], t: 2, o: 3 }, steps: [
+          { say: 'Start with 23.', ms: 1200 },
+          { say: 'Add a ten: 33.', act: function (t) { return t.add('t', 1); }, ms: 900 },
+          { say: 'Add another ten: 43.', act: function (t) { return t.add('t', 1); }, ms: 900 },
+          { say: '23 + 20 = <b>43</b>. The ones stayed 3.', ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 1, o: 6 }, tasks: [
+          { do: 'This is 16. Show ' + eqn('16 + 30') + '.', reset: false, goal: function (s) { return s.value === 46; }, yes: '16 + 30 = 46.' }
+        ] },
+        key: '<p>Add tens: only the <b>tens digit</b> changes.</p>',
+        check: [P('b-tens', 1), P('b-tens', 2)] },
+      { id: 'jump', title: 'Jump tens, then ones', exp: ['B2.4'], skill: 'b-two',
+        body: '<p>For <b>23 + 14</b>, split 14 into 1 ten and 4 ones. Jump 10, then jump 4 ones.</p>',
+        watch: { tool: 'numberline', opts: { min: 20, max: 40, every: 5, start: 23 }, steps: [
+          { say: '23 + 14. Start at 23.', ms: 1200 },
+          { say: 'Jump one ten: 33.', act: function (t) { return t.hop(33, '+10'); }, ms: 900 },
+          { say: 'Jump 4 ones: 34, 35, 36, 37.', act: function (t) { return t.hop(34).then(function () { return t.hop(35); }).then(function () { return t.hop(36); }).then(function () { return t.hop(37); }); }, ms: 900 },
+          { say: '23 + 14 = <b>37</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 2, o: 1 }, tasks: [
+          { do: 'This is 21. Add <b>15</b>: 1 ten and 5 ones.', reset: false, goal: function (s) { return s.value === 36 && s.o < 10; }, yes: '21 + 15 = 36.' }
+        ] },
+        ways: [{ label: 'With blocks', html: '<p>23 is 2 tens and 3 ones. 14 is 1 ten and 4 ones. Put the tens together: 3 tens. Put the ones together: 7 ones. That is 37.</p>', tool: 'base10', opts: { cols: ['t', 'o'], t: 3, o: 7 } }],
+        key: '<p>Add the <b>tens</b>, then the <b>ones</b>.</p>',
+        check: [P('b-two', 1), P('b-two', 2)] }
+    ] },
+
+    { id: 'sub-big', title: 'Subtracting bigger numbers', sub: 'Take away tens, then ones.', concepts: [
+      { id: 'tens-away', title: 'Take away tens', exp: ['B2.4'], skill: 'b-tens',
+        body: '<p>Taking away a ten makes the tens digit go down by 1. 45 &minus; 10 = <b>35</b>.</p>',
+        watch: { tool: 'base10', opts: { cols: ['t', 'o'], t: 4, o: 5 }, steps: [
+          { say: 'Start with 45.', ms: 1200 },
+          { say: 'Take away a ten: 35.', act: function (t) { return t.remove('t', 1); }, ms: 900 },
+          { say: 'Take away another ten: 25.', act: function (t) { return t.remove('t', 1); }, ms: 900 },
+          { say: '45 &minus; 20 = <b>25</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 4, o: 8 }, tasks: [
+          { do: 'This is 48. Show ' + eqn('48 &minus; 30') + '.', reset: false, goal: function (s) { return s.value === 18; }, yes: '48 &minus; 30 = 18.' }
+        ] },
+        key: '<p>Take away tens: only the <b>tens digit</b> changes.</p>',
+        check: [P('b-tens', 2), P('b-tens', 3)] },
+      { id: 'back', title: 'Jump back tens, then ones', exp: ['B2.4'], skill: 'b-two',
+        body: '<p>For <b>45 &minus; 12</b>, jump back 10 to 35. Then back 2: 34, 33.</p>',
+        watch: { tool: 'numberline', opts: { min: 30, max: 50, every: 5, start: 45 }, steps: [
+          { say: '45 &minus; 12. Start at 45.', ms: 1200 },
+          { say: 'Jump back one ten: 35.', act: function (t) { return t.hop(35, '−10'); }, ms: 900 },
+          { say: 'Jump back 2 ones: 34, 33.', act: function (t) { return t.hop(34).then(function () { return t.hop(33); }); }, ms: 900 },
+          { say: '45 &minus; 12 = <b>33</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 3, o: 9 }, tasks: [
+          { do: 'This is 39. Take away <b>24</b>: 2 tens and 4 ones.', reset: false, goal: function (s) { return s.value === 15; }, yes: '39 &minus; 24 = 15.' }
+        ] },
+        mistake: '<p>Subtracting the smaller ones digit from the bigger one no matter which number it belongs to. Model with blocks: start with the first number only.</p>',
+        key: '<p>Take away the <b>tens</b>, then the <b>ones</b>.</p>',
+        check: [P('b-two', 2), P('b-two', 3)] }
+    ] },
+
+    { id: 'stories', title: 'Story problems', sub: 'Four steps for every story.', concepts: [
+      { id: 'steps', title: 'Four steps', exp: ['B2.4'], skill: 'b-story',
+        body: '<ol><li><b>Read</b> it. Read it twice.</li><li><b>Picture</b> it. Draw it or use objects.</li><li><b>Solve</b> it. Add or subtract?</li><li><b>Check</b> it. Does the answer make sense?</li></ol>',
+        watch: { tool: 'g1stage', steps: [
+          { say: '<b>Read:</b> Omar has 20 stickers. He gets 12 more. How many now?', act: function (t) { return t.show('<p class="big">20 stickers, then 12 more</p>'); }, ms: 2200 },
+          { say: '<b>Picture:</b> 2 tens, then 1 ten and 2 ones more.', act: function (t) { return t.show(A.draw.tens(2, 0) + A.draw.tens(1, 2)); }, ms: 1800 },
+          { say: '<b>Solve:</b> the group gets bigger, so add. 20 + 12 = 32.', act: function (t) { return t.show(A.draw.tens(3, 2) + '<p class="big">' + eqn('20 + 12 = 32') + '</p>'); }, ms: 1800 },
+          { say: '<b>Check:</b> 32 is more than 20. That makes sense.', ms: 1800 }
+        ] },
+        key: '<p><b>Read, picture, solve, check.</b></p>',
+        check: [P('b-story', 1), P('b-story', 2)] },
+      { id: 'which', title: 'Add or subtract?', exp: ['B2.4'], skill: 'b-story', hard: true,
+        body: '<p>Ask: does the group get <b>bigger</b> or <b>smaller</b>? Bigger means add. Smaller means subtract.</p>',
+        try: { tool: 'g1pick', opts: { cols: 2, items: [
+          { id: 'a', html: '<span>12 birds. 5 more land.</span>' }, { id: 's', html: '<span>30 cookies. 10 are eaten.</span>' },
+          { id: 'a2', html: '<span>Leo has 21 cards. He gets 4.</span>' }, { id: 's2', html: '<span>15 balloons. 3 pop.</span>' }] }, tasks: [
+          { do: 'Tap every story where you <b>subtract</b> (the group gets smaller).', goal: function (s) { return s.n === 2 && s.picked.indexOf('s') >= 0 && s.picked.indexOf('s2') >= 0; }, yes: 'Yes. Cookies are eaten and balloons pop. Those groups get smaller.' }
+        ] },
+        ways: [{ label: 'Act it out', html: '<p>Use real things. Put out the first number. Then do what the story says: add some or take some away. Count what you have.</p>' }],
+        mistake: '<p>Picking the operation from one key word without understanding the story ("more" can appear in a take-away story). Have the child act it out.</p>',
+        key: '<p>Bigger: <b>add</b>. Smaller: <b>subtract</b>.</p>',
+        check: [P('b-story', 2), P('b-story', 3)] }
+    ] },
+
+    { id: 'equal', title: 'Is it equal?', sub: 'The = sign means "the same as".', concepts: [
+      { id: 'same', title: '= means "the same as"', exp: ['C2.2'], skill: 'b-equal',
+        body: '<p>The <b>=</b> sign means both sides are <b>the same amount</b>. 4 + 3 = 5 + 2, because both sides are 7.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Put 4 + 3 on the left and 5 + 2 on the right.', act: function (t) { return t.show(balance(7, 7, '4 + 3', '5 + 2')); }, ms: 1800 },
+          { say: 'Both sides are 7. The balance is level. <b>4 + 3 = 5 + 2</b>.', ms: 1800 },
+          { say: 'Now 4 + 3 and 5 + 4. The right side is 9. It is heavier, so it is not equal.', act: function (t) { return t.show(balance(7, 9, '4 + 3', '5 + 4')); }, ms: 2200 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'y', html: '<span class="big">6 + 2</span>' }, { id: 'n', html: '<span class="big">6 + 3</span>' }, { id: 'n2', html: '<span class="big">4 + 2</span>' }] }, tasks: [
+          { do: 'Which one is <b>equal to 5 + 3</b>?', goal: function (s) { return s.picked[0] === 'y'; }, yes: '6 + 2 = 8 and 5 + 3 = 8. They are equal.' }
+        ] },
+        mistake: '<p>Reading = as "the answer comes next" (so 4 + 3 = 5 + 2 looks wrong). Say "is the same as" every time.</p>',
+        key: '<p><b>=</b> means <b>"is the same as"</b>.</p>',
+        check: [P('b-equal', 1), P('b-equal', 1)] },
+      { id: 'balance', title: 'Make both sides equal', exp: ['C2.2', 'C2.3'], skill: 'b-equal', hard: true,
+        body: '<p>' + eqn('3 + 5 = 4 + <b class="blank">?</b>') + ' The left side is 8. What makes the right side 8 too? 4 + <b>4</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Left: 3 + 5 = 8. Right: 4 and some more.', act: function (t) { return t.show(balance(8, 4, '3 + 5', '4 + ?')); }, ms: 1800 },
+          { say: 'Add 4 to the right side.', act: function (t) { return t.show(balance(8, 8, '3 + 5', '4 + 4')); }, ms: 1600 },
+          { say: 'Level. <b>3 + 5 = 4 + 4</b>.', ms: 1800 }
+        ] },
+        ways: [{ label: 'Count on', html: '<p>The left side is 8. Start at 4 and count on to 8: 5, 6, 7, 8. That is <b>4</b> more.</p>' }],
+        key: '<p>Work out one side. Make the other side <b>the same</b>.</p>',
+        check: [P('b-equal', 2), P('b-equal', 3)] }
+    ] }
+  ];
+
   A.register('add-sub-50', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Make a ten to add</h2>' +
 '<p>To add numbers like ' + eqn('8 + 5') + ', first fill a ten. Ten and some more is easy to read.</p>' +

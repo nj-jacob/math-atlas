@@ -2,6 +2,7 @@
 (function () {
   'use strict';
   var Atlas = (window.Atlas = {
+    grade: 1,
     chapters: {},
     strands: { B: 'Number', C: 'Algebra', D: 'Data', E: 'Spatial Sense', F: 'Financial Literacy' },
     meta: [
@@ -363,16 +364,6 @@
   function unitHtml(q) { return q.unit && q.unit !== '$' ? '<span class="unit">' + q.unit + '</span>' : ''; }
   function parseNum(t) { return parseFloat(String(t).replace(/[^0-9.\-]/g, '')); }
   function numOk(q, v) { return Math.abs(v - q.answer) <= (q.tol || 1e-9); }
-  function speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    var t = String(text).replace(/\s+/g, ' ').replace(/×/g, ' times ').replace(/−/g, ' minus ').replace(/ - /g, ' minus ')
-      .replace(/\+/g, ' plus ').replace(/=/g, ' equals ').replace(/(\d)¢/g, '$1 cents').replace(/\?/g, '? ').replace(/_{2,}|□/g, ' blank ');
-    var u = new SpeechSynthesisUtterance(t);
-    u.lang = 'en-CA'; u.rate = 0.85;
-    window.speechSynthesis.speak(u);
-  }
-  Atlas.speak = speak;
   /* the words of an element, with pictures read by their labels */
   function words(el) {
     var out = [];
@@ -390,16 +381,7 @@
     return out.join(' ').replace(/(\s*\.\s*){2,}/g, '. ').replace(/\s+/g, ' ').replace(/^[\s.]+/, '');
   }
   Atlas.words = words;
-  /* read a question: its words, its picture, then each choice */
-  function readQ(box) {
-    var t = words($('.qtext', box)), f = $('.fig', box), o = Atlas.$$('.opt', box);
-    if (f) t += '. ' + words(f);
-    if (o.length) t += '. The choices are: ' + o.map(function (b) { return words(b); }).join('. Or, ');
-    speak(t);
-  }
-  Atlas.readQ = readQ;
-  function sayBtn() { return 'speechSynthesis' in window ? '<button type="button" class="say" aria-label="Read the question to me"><i aria-hidden="true"></i>Read to me</button>' : ''; }
-  function autoRead(box) { if (store('auto') === '1') setTimeout(function () { readQ(box); }, 250); }
+  Atlas.sayText = words;
   /* big number pad under every typed answer, for children who find the keyboard hard */
   function padHtml() {
     var h = '<div class="pad" role="group" aria-label="Number pad">';
@@ -440,7 +422,7 @@
     qs.forEach(function (q, i) {
       var d = document.createElement('div');
       d.className = 'q';
-      var h = '<p class="qtext"><span class="qn">' + (i + 1) + '</span>' + q.q + '</p>' + sayBtn();
+      var h = '<p class="qtext"><span class="qn">' + (i + 1) + '</span>' + q.q + '</p>';
       if (q.fig) h += '<div class="fig">' + q.fig + '</div>';
       if (q.type === 'mc') {
         h += '<div class="opts">' + q.options.map(function (o, j) {
@@ -452,14 +434,13 @@
       h += '<div class="fb" aria-live="polite"></div>';
       d.innerHTML = h;
       box.appendChild(d);
-      var fb = $('.fb', d), s = st[i], sy = $('.say', d);
-      if (sy) sy.addEventListener('click', function () { readQ(d); });
+      var fb = $('.fb', d), s = st[i];
       function finish(ok) {
         s.done = true;
         if (ok && s.tries === 1) s.first = true;
         fb.className = 'fb ' + (ok ? 'ok' : 'bad');
         fb.innerHTML = '<b>' + (ok ? 'Yes, that is right.' : 'The answer is ' + shown(q, q.answer) + '.') + '</b> <span>' + (q.explain || '') + '</span>';
-        Atlas.$$('button:not(.say),input', d).forEach(function (b) { b.disabled = true; });
+        Atlas.$$('button,input', d).forEach(function (b) { b.disabled = true; });
         score();
       }
       function wrong() {
@@ -504,7 +485,7 @@
   function skillSave(sid, s) { s.t = Date.now(); save('sk:' + sid, s); }
   function status(s) {
     if (s.secure) return { k: 4, t: 'Secure' };
-    if (!s.n) return { k: 0, t: 'Not started' };
+    if (!s.n && !s.cu) return { k: 0, t: 'Not started' };
     return { k: s.lv, t: 'Level ' + s.lv + ': ' + LV[s.lv] };
   }
   Atlas.skillStatus = function (sid) { return status(skillState(sid)); };
@@ -577,14 +558,11 @@
       Atlas._q = q; /* exposed for automated checks */
       refreshRow();
       var h = '<div class="pcard"><p class="plv">' + (qsk !== cur ? '<span class="pill" style="--strand:var(--accent)">Review</span> ' : '') + '<span class="pill">' + qsk.code + '</span> <b>' + qsk.name + '</b> &middot; Level ' + lv + ': ' + LV[lv] + '</p>' +
-        '<p class="qtext">' + q.q + '</p>' + sayBtn() + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+        '<p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += numForm(q, 'pin-' + id, 'Check');
       h += '<div class="fb"></div><div class="steps"></div><div class="pnext"></div></div>';
       pq.innerHTML = h;
-      var say = $('.say', pq);
-      if (say) say.addEventListener('click', function () { readQ(pq); });
-      if (focus) autoRead(pq);
       if (q.type === 'mc') Atlas.$$('.opt', pq).forEach(function (b) {
         b.addEventListener('click', function () {
           if (done) return;
@@ -662,7 +640,7 @@
      Many short answers. A wrong answer points back to the step to use, then the child tries again
      until it is right, so every check ends with a correct answer. */
   function qHtml(q, iid) {
-    var h = '<p class="qtext">' + q.q + '</p>' + sayBtn() + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+    var h = '<p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
     if (q.type === 'mc') h += '<div class="opts' + (q.wide ? ' wide' : '') + '">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
     else h += numForm(q, iid, 'Check');
     return h + '<div class="fb" aria-live="polite"></div>';
@@ -678,8 +656,7 @@
       var q = typeof qs[k] === 'function' ? qs[k]() : qs[k], tries = 0;
       box._q = q; /* exposed for automated checks */
       box.innerHTML = '<p class="ytn">' + (k + 1) + ' of ' + qs.length + '</p>' + qHtml(q, id + '-' + k);
-      var fb = $('.fb', box), sy = $('.say', box);
-      if (sy) sy.addEventListener('click', function () { readQ(box); });
+      var fb = $('.fb', box);
       function res(ok, btn) {
         tries++;
         if (ok) {
@@ -729,6 +706,17 @@
   }
 
   /* ---------- Check-up (assessment) ---------- */
+  /* which expectations have been checked: one chip per code, from every chapter's skills */
+  function coverage() {
+    var cov = load('cov', {}), codes = [], seen = {};
+    Atlas.allSkills().forEach(function (p) { p.sk.code.split(/,\s*/).forEach(function (c) { if (!seen[c]) { seen[c] = 1; codes.push(c); } }); });
+    codes.sort(function (a, b) { return a.localeCompare(b, 'en', { numeric: true }); });
+    var done = codes.filter(function (c) { return cov[c]; }).length;
+    return '<h3>Expectations checked: ' + done + ' of ' + codes.length + '</h3><p class="pg-cov">' + codes.map(function (c) {
+      var v = cov[c];
+      return '<span class="' + (v ? (v.ok ? 'ok' : 'part') : '') + '" title="' + (v ? 'Checked ' + v.d + (v.ok ? ', all right' : ', some to practise') : 'Not checked yet') + '">' + c + '</span>';
+    }).join('') + '</p><p class="t2">Green: checked and right. Yellow: checked, some to practise. White: not checked yet.</p>';
+  }
   function checkup(app, scope) {
     var hist = load('checkups', []);
     if (!scope) {
@@ -738,13 +726,14 @@
         '<li>Each question is new. There are no hints and no time limit.</li>' +
         '<li>If you do not know, choose <b>"I\'m not sure yet"</b>. That is more useful than a guess.</li>' +
         '<li>At the end you see every answer, what each question checked, and a plan for what to practise.</li>' +
+        '<li>Questions start easy, with pictures. A chapter check-up asks one easy question for every skill, then a few a step harder.</li>' +
         '<li>Your practice levels change to match your results.</li></ul>' +
-        '<div class="cuopts"><a class="btn" href="#check-up/short">Short check-up: 10 questions</a> <a class="btn alt" href="#check-up/all">Full check-up: 20 questions</a></div>' +
-        '<p class="t2">For a young child, the short check-up in one sitting is plenty. A grown-up can read each question aloud, or press Read to me.</p>' +
-        '<h3>Or check one chapter (6 questions)</h3><div class="cuch">' +
+        '<div class="cuopts"><a class="btn" href="#check-up/short">Short check-up: 10 easy questions</a> <a class="btn alt" href="#check-up/all">Longer check-up: 20 easy questions</a></div>' +
+        '<p class="t2">For a young child, the short check-up in one sitting is plenty. A grown-up can read each question aloud.</p>' +
+        '<h3>Check one chapter</h3><p>Doing every chapter\'s check-up checks every Grade 1 expectation. The map below fills in as you go.</p><div class="cuch">' +
         Atlas.meta.filter(function (m) { return Atlas.chapters[m.id] && Atlas.chapters[m.id].practice; }).map(function (m) {
           return '<a class="pill" data-strand="' + m.strand + '" href="#check-up/' + m.id + '">' + m.title + '</a>';
-        }).join('') + '</div></section>';
+        }).join('') + '</div>' + coverage() + '</section>';
       if (hist.length) {
         h += '<section class="sec cu"><h2>Past check-ups</h2><div class="tbl"><table><thead><tr><th class="l">Date</th><th class="l">What</th><th>Result</th></tr></thead><tbody>' +
           hist.slice(-10).reverse().map(function (r) { return '<tr><td class="l">' + r.d + '</td><td class="l">' + r.w + '</td><td>' + r.s + ' of ' + r.n + '</td></tr>'; }).join('') +
@@ -754,38 +743,46 @@
       app.innerHTML = h;
       return;
     }
-    var pool = Atlas.allSkills(), items = [], label;
-    if (scope === 'all' || scope === 'short') {
+    /* Grade-appropriate by design: every question starts at level 1 (the gentlest, with pictures).
+       Whole grade: level 1 only (short = one per chapter, full = two per chapter). One chapter: one level-1 question for every skill
+       (so all chapter check-ups together cover every expectation), then up to 3 level-2 questions on skills answered right. */
+    var pool = Atlas.allSkills(), qs = [], label, chapterScope = scope !== 'all' && scope !== 'short';
+    function add(p, lv) { var q = make(p.sk, lv); q.ch = p.ch; q.sk = p.sk; q.lv = lv; qs.push(q); }
+    if (!chapterScope) {
       label = scope === 'all' ? 'Full check-up' : 'Short check-up';
       Atlas.meta.forEach(function (m) {
-        var mine = R.shuffle(pool.filter(function (p) { return p.ch.id === m.id; })).slice(0, scope === 'all' ? 2 : 1);
-        mine.forEach(function (p) { items.push(p); });
+        R.shuffle(pool.filter(function (p) { return p.ch.id === m.id; })).slice(0, scope === 'all' ? 2 : 1).forEach(function (p) { add(p, 1); });
       });
     } else {
       var m0 = Atlas.meta.filter(function (m) { return m.id === scope; })[0];
-      if (!m0) { location.hash = '#check-up'; return; }
+      if (!m0 || !Atlas.chapters[scope] || !Atlas.chapters[scope].practice) { location.hash = '#check-up'; return; }
       label = m0.title + ' check-up';
-      var mine = R.shuffle(pool.filter(function (p) { return p.ch.id === scope; }));
-      for (var i = 0; i < 6; i++) items.push(mine[i % mine.length]);
+      var mine = pool.filter(function (p) { return p.ch.id === scope; });
+      mine.forEach(function (p) { add(p, 1); });
+      while (qs.length < 3) add(mine[qs.length % mine.length], 1);
     }
-    /* whole-grade check-ups stay at the easiest level so a new student is not met with hard questions; a chapter check-up adds a few harder ones */
-    var qs = items.map(function (p, i) { var q = make(p.sk, scope === 'short' || scope === 'all' ? 1 : (i < 3 ? 1 : 2)); q.ch = p.ch; q.sk = p.sk; return q; });
+    var stepUps = 0;
+    /* after the level-1 round, add level-2 questions for skills answered right */
+    function stepUp() {
+      if (!chapterScope || stepUps) return;
+      stepUps = 1;
+      var right = [];
+      qs.forEach(function (q, i) { if (res[i].ok && right.indexOf(q.sk) < 0) right.push(q.sk); });
+      R.shuffle(right).slice(0, 3).forEach(function (sk) { add(pool.filter(function (p) { return p.sk === sk; })[0], 2); });
+    }
     var res = [], k = 0;
     function show() {
       var q = qs[k];
       Atlas._q = q;
       var h = '<div class="wrap chapter" data-strand="' + q.ch.strand + '"><p class="crumb"><a href="#check-up">Check-up</a></p>' +
-        '<div class="sec cu"><div class="cuprog"><span>' + label + '</span><span>Question ' + (k + 1) + ' of ' + qs.length + '</span></div>' +
+        '<div class="sec cu"><div class="cuprog"><span>' + label + (q.lv > 1 ? ' &middot; a step harder' : '') + '</span><span>Question ' + (k + 1) + ' of ' + qs.length + (chapterScope && !stepUps ? ' (up to ' + (qs.length + Math.min(3, qs.length)) + ')' : '') + '</span></div>' +
         '<div class="bar-h"><i style="width:' + (k / qs.length * 100) + '%;background:var(--accent)"></i></div>' +
-        '<p class="plv"><span class="pill">' + q.ch.title + '</span></p><p class="qtext">' + q.q + '</p>' + sayBtn() + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+        '<p class="plv"><span class="pill">' + q.ch.title + '</span></p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += numForm(q, 'cuin', 'Save answer');
       h += '<p><button type="button" class="btn alt" id="cuskip">I\'m not sure yet</button></p></div></div>';
       app.innerHTML = h;
-      var say = $('.say', app);
-      if (say) say.addEventListener('click', function () { readQ(app); });
-      autoRead(app);
-      function rec(given, ok) { res.push({ given: given, ok: ok }); k++; if (k < qs.length) { show(); var f = $('.opt, input', app); if (f) f.focus(); } else report(); }
+      function rec(given, ok) { res.push({ given: given, ok: ok }); k++; if (k === qs.length) stepUp(); if (k < qs.length) { show(); var f = $('.opt, input', app); if (f) f.focus(); } else report(); }
       if (q.type === 'mc') Atlas.$$('.opt', app).forEach(function (b) {
         b.addEventListener('click', function () { var j = +b.getAttribute('data-j'); rec(q.options[j], j === q.answer); });
       });
@@ -801,12 +798,18 @@
       var right = res.filter(function (r) { return r.ok; }).length, bySk = {}, order = [];
       qs.forEach(function (q, i) {
         var key = q.sk.id;
-        if (!bySk[key]) { bySk[key] = { q: q, ok: 0, n: 0 }; order.push(key); }
-        bySk[key].n++; if (res[i].ok) bySk[key].ok++;
-        var st = skillState(key);
-        if (res[i].ok) { if (st.lv < 2) st.lv = 2; } else { st.lv = 1; st.secure = false; }
-        st.streak = 0; st.miss = 0; skillSave(key, st);
+        if (!bySk[key]) { bySk[key] = { q: q, ok: 0, n: 0, top: 0 }; order.push(key); }
+        bySk[key].n++; if (res[i].ok) { bySk[key].ok++; bySk[key].top = Math.max(bySk[key].top, q.lv); }
       });
+      /* practice starts where the check-up shows: a miss -> level 1, right at level 1 -> level 2, right at level 2 -> level 3 */
+      var cov = load('cov', {}), today0 = new Date().toISOString().slice(0, 10);
+      order.forEach(function (key) {
+        var b = bySk[key], st = skillState(key), allOk = b.ok === b.n;
+        if (!allOk) { st.lv = 1; st.secure = false; } else if (!st.secure) st.lv = Math.max(st.lv || 1, Math.min(3, b.top + 1));
+        st.streak = 0; st.miss = 0; st.cu = 1; skillSave(key, st);
+        b.q.sk.code.split(/,\s*/).forEach(function (c) { var was = cov[c] || {}; cov[c] = { d: today0, ok: allOk ? 1 : 0, n: (was.n || 0) + 1 }; });
+      });
+      save('cov', cov);
       var d = new Date(), ds = d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
       hist.push({ d: ds, w: label, s: right, n: qs.length });
       save('checkups', hist.slice(-30));
@@ -824,7 +827,7 @@
         '<section class="sec cu"><h2>Every question</h2><div class="tbl"><table><thead><tr><th class="l">Skill</th><th>Expectation</th><th>Result</th></tr></thead><tbody>' +
         order.map(function (key) {
           var b = bySk[key];
-          return '<tr><td class="l">' + b.q.sk.name + '</td><td>' + b.q.sk.code + '</td><td>' + (b.ok === b.n ? '<b class="okc">Got it</b>' : b.ok ? 'Partly' : '<b class="noc">Not yet</b>') + (b.n > 1 ? ' (' + b.ok + '/' + b.n + ')' : '') + '</td></tr>';
+          return '<tr><td class="l">' + b.q.sk.name + '</td><td>' + b.q.sk.code + '</td><td>' + (b.ok === b.n ? '<b class="okc">Got it</b>' + (b.top > 1 ? ', level 2 too' : '') : b.ok ? 'Partly' : '<b class="noc">Start here</b>') + (b.n > 1 ? ' (' + b.ok + '/' + b.n + ')' : '') + '</td></tr>';
         }).join('') + '</tbody></table></div>' +
         '<div class="review">' + qs.map(function (q, i) {
           var r = res[i];
@@ -854,12 +857,12 @@
   }
   function home(app) {
     var h = '<div class="wrap"><div class="hero"><div class="herot"><h1>Grade 1 Math</h1>' +
-      '<p class="lede">Free lessons for Ontario Grade 1 math. Short parts, lots of pictures, and lots of practice. Every page can be read aloud.</p></div>' +
+      '<p class="lede">Free lessons for Ontario Grade 1 math. One idea at a time, hands-on blocks and counters, and lots of practice.</p></div>' +
       '<div class="herof" aria-hidden="true">' + Atlas.draw.frames(7, { r: 1, w: 210 }) + '</div></div>';
     h += '<ol class="howto" aria-label="How each chapter works">' +
-      '<li><b>Warm-up</b><span>3 quick review questions</span></li>' +
-      '<li><b>Watch me</b><span>see one done</span></li>' +
-      '<li><b>Do it with me</b><span>one step at a time</span></li>' +
+      '<li><b>Learn</b><span>one idea on screen at a time</span></li>' +
+      '<li><b>Watch</b><span>a short clip shows it</span></li>' +
+      '<li><b>Try it</b><span>blocks and counters that light up and count</span></li>' +
       '<li><b>Your turn</b><span>quick taps, fix any mistakes</span></li>' +
       '<li><b>Practise</b><span>new questions that get harder or easier</span></li>' +
       '<li><b>Quiz</b><span>7 questions on the chapter</span></li></ol>';
@@ -888,11 +891,11 @@
       h += '<a class="card" data-strand="' + m.strand + '" href="#' + m.id + '">' +
         '<span class="no">' + (m.ref ? '<b>Ref</b>' : miniFrame(num) + '<b>' + num + '</b>') + '</span><h2>' + m.title + '</h2><p class="desc">' + m.desc + '</p>' +
         '<div class="meta"><span class="pill" data-strand="' + m.strand + '">' + Atlas.strands[m.strand] + '</span>' +
-        (m.ref ? '<span>one page</span>' : '<span>' + c.s + ' parts' + (best >= 0 ? ' &middot; <span class="done">quiz ' + best + '/' + c.q + '</span>' : '') + (sec ? ' &middot; <span class="done">' + sec + '/' + nsk + ' secure</span>' : '') + '</span>') + '</div></a>';
+        (m.ref ? '<span>one page</span>' : '<span>' + (ch.lessons ? ch.lessons.length + ' lessons, ' + ch.lessons.reduce(function (t, l) { return t + l.concepts.length; }, 0) + ' ideas' : c.s + ' parts') + (best >= 0 ? ' &middot; <span class="done">quiz ' + best + '/' + c.q + '</span>' : '') + (sec ? ' &middot; <span class="done">' + sec + '/' + nsk + ' secure</span>' : '') + '</span>') + '</div></a>';
     });
     h += '</div><div class="note"><p><b>For grown-ups.</b> This site follows the five content strands (B to F) of the 2020 Ontario elementary math curriculum for Grade 1. ' +
       'It is a study aid, not a copy of the curriculum. Please check details against the Ontario Ministry of Education document.</p>' +
-      '<p><b>How to help.</b> Sit with your child, press Read to me, and let them tap the answers. Real objects help a lot: buttons, coins, pasta or blocks to count. Ten minutes a day is better than an hour once a week.</p>' +
+      '<p><b>How to help.</b> Sit with your child, read the words together, and let them tap the answers. Real objects help a lot: buttons, coins, pasta or blocks to count. Ten minutes a day is better than an hour once a week.</p>' +
       '<p><b>Not covered:</b> strand A (social-emotional learning and math processes) is woven through, not taught on its own. Mathematical modelling (C4) has no chapter of its own. Real-world tasks like collecting data from classmates or measuring with real objects are suggested, but can only be done away from the screen.</p>' +
       '<p><b>Progress</b> is saved only in this browser. Nothing is sent anywhere.</p></div></div>';
     app.innerHTML = h;
@@ -906,6 +909,8 @@
       '<header class="chead"><span class="num">' + (m.ref ? 'Reference' : 'Chapter ' + (idx + 1)) + '</span><h1>' + m.title + '</h1>' +
       '<p class="lede">' + m.sub.charAt(0).toUpperCase() + m.sub.slice(1) + '.</p>' +
       '<span class="pill">' + m.strand + ' &middot; ' + Atlas.strands[m.strand] + '</span>' + (m.codes ? ' <span class="codes">Ontario expectations ' + m.codes + '</span>' : '') + '</header>';
+    /* chapters built as lessons show one idea per screen (assets/lesson.js) */
+    if (ch.lessons && Atlas.lessons) return Atlas.lessons.chapter(app, id, sub, { head: h.replace(/^<div class="wrap chapter"[^>]*><p class="crumb">.*?<\/p>/, ''), m: m, prev: prev, next: next });
     if (ch.practice || ch.quiz) h += '<nav class="jump" aria-label="In this chapter"><a href="#' + id + '/lesson">Lesson</a>' + (ch.practice ? '<a href="#' + id + '/practice">Practise</a>' : '') + (ch.quiz ? '<a href="#' + id + '/quiz">Chapter quiz</a>' : '') + '<a href="#check-up/' + id + '">Check-up</a></nav>';
     if (ch.practice && !m.ref) h += '<div class="quiz warm" id="warm"></div>';
     h += '<div id="lesson">' + ch.html + '</div>';
@@ -916,19 +921,6 @@
       (next ? '<a class="nx" href="#' + next.id + '"><small>Next</small>' + next.title + '</a>' : '') + '</div></div>';
     app.innerHTML = h;
     if (ch.init) ch.init(app);
-    /* a Read to me button on every part of the lesson */
-    if ('speechSynthesis' in window) Atlas.$$('#lesson .sec', app).forEach(function (sec) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'say secsay'; b.innerHTML = '<i aria-hidden="true"></i>Read to me';
-      b.setAttribute('aria-label', 'Read this part to me');
-      b.addEventListener('click', function () {
-        var c = sec.cloneNode(true);
-        Atlas.$$('.lab .ctrl, .yt, .btnrow, .noread', c).forEach(function (n) { n.parentNode.removeChild(n); });
-        speak(words(c));
-      });
-      var h2 = $('h2', sec);
-      h2.parentNode.insertBefore(b, h2.nextSibling);
-    });
     /* Do it with me: <div class="wm"><ol><li>...</li></ol></div> shows one step at a time */
     Atlas.$$('#lesson .wm', app).forEach(function (wm, wi) {
       var li = Atlas.$$('ol > li', wm), k = 0, b = document.createElement('button');
@@ -957,17 +949,18 @@
 
   var lastPage = '';
   function route() {
-    if (window.speechSynthesis) window.speechSynthesis.cancel();
     var raw = (location.hash || '').replace('#', '') || 'home';
     var cut = raw.indexOf('/'), id = cut < 0 ? raw : raw.slice(0, cut), sub = cut < 0 ? '' : raw.slice(cut + 1);
     var app = $('#app'), target = null;
     /* in-chapter jumps do not re-render the page */
-    if (id === lastPage && Atlas.chapters[id] && (sub === 'lesson' || sub === 'practice' || sub === 'quiz')) {
+    if (id === lastPage && Atlas.chapters[id] && !Atlas.chapters[id].lessons && (sub === 'lesson' || sub === 'practice' || sub === 'quiz')) {
       target = $('#' + sub, app);
       if (target) { target.scrollIntoView(); return; }
     }
     lastPage = id;
     if (id === 'check-up') checkup(app, sub);
+    else if (id === 'progress' && Atlas.lessons) Atlas.lessons.progress(app);
+    else if (id === 'tools' && Atlas.lessons) Atlas.lessons.toolbox(app, sub);
     else if (id === 'home' || !Atlas.chapters[id]) home(app);
     else {
       var where = chapter(app, id, sub);
@@ -979,23 +972,27 @@
 
   /* reading supports: theme and larger text, remembered in this browser */
   function prefs() {
-    var root = document.documentElement, th = store('theme') || 'auto', big = store('big') === '1', auto = store('auto') === '1';
+    var root = document.documentElement, th = store('theme') === 'dark' ? 'dark' : 'light', big = store('big') === '1';
     function apply() {
-      if (th === 'auto') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', th);
+      root.setAttribute('data-theme', th);
       root.classList.toggle('bigtext', big);
       var tb = $('#themeb'), bb = $('#bigb');
-      if (tb) tb.textContent = 'Theme: ' + (th === 'auto' ? 'auto' : th);
+      if (tb) tb.textContent = 'Theme: ' + th;
       if (bb) { bb.setAttribute('aria-pressed', String(big)); bb.textContent = big ? 'Text: larger' : 'Text: normal'; }
-      var ab = $('#autob');
-      if (ab) { ab.setAttribute('aria-pressed', String(auto)); ab.textContent = auto ? 'Read questions: on' : 'Read questions: off'; }
-    }
-    var ab = $('#autob');
-    if (ab) {
-      if (!('speechSynthesis' in window)) ab.hidden = true;
-      ab.addEventListener('click', function () { auto = !auto; store('auto', auto ? '1' : '0'); apply(); if (auto) speak('Questions will be read to you.'); else if (window.speechSynthesis) window.speechSynthesis.cancel(); });
     }
     var tb = $('#themeb'), bb = $('#bigb');
-    if (tb) tb.addEventListener('click', function () { th = th === 'auto' ? 'light' : th === 'light' ? 'dark' : 'auto'; store('theme', th); apply(); });
+    /* grown-up view: coaching notes (common mistakes) for a parent or tutor. Kept outside the g1atlas: keys so it is never copied to the student's account. */
+    var adb = $('#adultb');
+    function adult(on) {
+      try { if (on === undefined) on = localStorage.getItem('atlas:adult') === '1'; else localStorage.setItem('atlas:adult', on ? '1' : '0'); } catch (e) { on = !!on; }
+      root.classList.toggle('adult', on);
+      if (adb) { adb.setAttribute('aria-pressed', String(on)); adb.textContent = 'Grown-up view: ' + (on ? 'on' : 'off'); }
+      return on;
+    }
+    Atlas.adult = adult;
+    if (adb) adb.addEventListener('click', function () { adult(!root.classList.contains('adult')); });
+    adult();
+    if (tb) tb.addEventListener('click', function () { th = th === 'light' ? 'dark' : 'light'; store('theme', th); apply(); });
     if (bb) bb.addEventListener('click', function () { big = !big; store('big', big ? '1' : '0'); apply(); });
     apply();
   }

@@ -157,7 +157,173 @@
       explain: 'Following ' + wordsCode + ', the robot reaches the ' + A.NAMES[kinds[0]][0] + '.' };
   }
 
+  var CH = 'shapes-position';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  function card(html, cap) { return html + (cap ? '<span>' + cap + '</span>' : ''); }
+  /* "Try it": code the robot. Tap arrows to write the code, then run it. */
+  function robot(start, goal, kind) {
+    return { do: 'Write code to move the robot to the <b>' + A.NAMES[kind][0] + '</b>. Tap arrows, then press <b>Run</b>.', mount: function (host, done) {
+      var code = [];
+      host.innerHTML = '<div class="btnrow" role="group" aria-label="Add a step">' + ['U', 'D', 'L', 'Rt'].map(function (k) { return '<button type="button" class="btn alt" data-d="' + k + '" aria-label="' + DIR[k][3] + '">' + DIR[k][2] + '</button>'; }).join('') + '</div>' +
+        '<p>My code: <span class="cd"></span></p><div class="btnrow"><button type="button" class="btn rn">Run</button><button type="button" class="btn alt un">Take back</button></div><div class="fig g1-frame"></div><p class="mp-read" aria-live="polite"></p>';
+      function draw(path) { A.$('.cd', host).innerHTML = code.length ? codeHtml(code) : '<span class="t2">no steps yet</span>'; A.$('.fig', host).innerHTML = grid(5, path ? path[path.length - 1] : start, [[goal[0], goal[1], kind]], path); }
+      A.$$('[data-d]', host).forEach(function (b) { b.addEventListener('click', function () { if (code.length < 10) code.push(b.getAttribute('data-d')); draw(); }); });
+      A.$('.un', host).addEventListener('click', function () { code.pop(); draw(); A.$('.mp-read', host).textContent = ''; });
+      A.$('.rn', host).addEventListener('click', function () {
+        var p = run(start, code), end = p[p.length - 1], off = p.some(function (q) { return q[0] < 0 || q[1] < 0 || q[0] > 4 || q[1] > 4; });
+        if (off) { A.$('.mp-read', host).textContent = 'Oops, the robot would leave the grid. Take back a step.'; return; }
+        draw(p); Manip.bump(A.$('.fig', host), 'mp-fade');
+        if (end[0] === goal[0] && end[1] === goal[1]) { A.$('.mp-read', host).textContent = 'The robot reached the ' + A.NAMES[kind][0] + '!'; done('Your code works.'); }
+        else A.$('.mp-read', host).textContent = 'Not there yet. Follow your code one step at a time to find the fix.';
+      });
+      draw();
+    } };
+  }
+  var ROUND = { circle: 1 };
+
+  var LESSONS = [
+    { id: 'flat', title: 'Flat shapes', sub: 'Sides and corners.', concepts: [
+      { id: 'sides', title: 'Sides and corners', exp: ['E1.1'], skill: 's-2d',
+        body: '<p>Flat shapes are <b>2D shapes</b>. A <b>side</b> is a straight edge. A <b>corner</b> is where two sides meet.</p><div class="vrow">' + FLAT.map(function (k) { return '<figure>' + flatPic(k, 60) + '<figcaption>' + k + (SIDES[k] ? ': ' + SIDES[k] + ' sides' : ': round') + '</figcaption></figure>'; }).join('') + '</div>',
+        watch: { tool: 'geoboard', opts: { size: 5 }, steps: [
+          { say: 'Stretch a band around 3 pegs.', act: function (t) { return t.shape([[0, 4], [2, 0], [4, 4]], 450); }, ms: 900 },
+          { say: '3 sides and 3 corners: a <b>triangle</b>.', ms: 1600 },
+          { say: 'Now 4 pegs, all sides the same: a <b>square</b>.', act: function (t) { t.reset(); return t.shape([[0, 0], [3, 0], [3, 3], [0, 3]], 450); }, ms: 1800 }
+        ] },
+        try: { tool: 'geoboard', opts: { size: 5 }, tasks: [
+          { do: 'Make a <b>triangle</b>. Tap pegs, then tap the first peg again to close it.', goal: function (s) { return s.closed && s.sides === 3; }, yes: '3 sides, 3 corners. A triangle.' },
+          { do: 'Make a shape with <b>4 sides</b>.', goal: function (s) { return s.closed && s.sides === 4; }, yes: '4 sides and 4 corners.' }
+        ] },
+        key: '<p>Count the <b>sides</b> to name a shape.</p>',
+        check: [P('s-2d', 1), P('s-2d', 2)] },
+      { id: 'turned', title: 'Turning does not change the name', exp: ['E1.1'], skill: 's-2d', hard: true,
+        body: '<p>A triangle turned upside down is still a triangle. It still has 3 sides. <b>Turning a shape does not change its name.</b></p>',
+        watch: { tool: 'g1stage', steps: [0, 45, 90, 180].map(function (d, i) { return { say: i ? 'Turn it. Still 3 sides: still a <b>triangle</b>.' : 'A triangle.', act: function (t) { return t.show(A.svg(110, 110, '<g transform="rotate(' + d + ' 55 55)">' + flat('triangle', 55, 55, 92) + '</g>', 'a triangle turned')); }, ms: 1000 }; }) },
+        try: { tool: 'g1pick', opts: { items: [0, 1, 2, 3].map(function (i) { var k = ['triangle', 'square', 'triangle', 'rectangle'][i], d = [180, 45, 100, 90][i]; return { id: k + i, html: A.svg(90, 90, '<g transform="rotate(' + d + ' 45 45)">' + flat(k, 45, 45, 70) + '</g>', 'a turned shape') }; }) }, tasks: [
+          { do: 'Tap <b>every triangle</b>, even turned ones.', goal: function (s) { return s.n === 2 && s.picked.indexOf('triangle0') >= 0 && s.picked.indexOf('triangle2') >= 0; }, yes: 'Yes. They have 3 sides, so they are triangles.' }
+        ] },
+        ways: [{ label: 'Count, do not look', html: '<p>Do not decide by how it looks. Touch each side and count. 3 sides is always a triangle. 4 equal sides is always a square, even when it looks like a diamond.</p>' }],
+        mistake: '<p>Saying a square turned on its corner is a "diamond", or an upside-down triangle is not a triangle. Count the sides together.</p>',
+        key: '<p>Turn it any way: the name <b>stays the same</b>.</p>',
+        check: [P('s-2d', 2), P('s-2d', 3)] }
+    ] },
+
+    { id: 'solids', title: 'Solid shapes', sub: 'Shapes you can hold.', concepts: [
+      { id: 'names', title: 'Solids around us', exp: ['E1.1'], skill: 's-3d',
+        body: '<p>Solid shapes are <b>3D objects</b>. You can hold them. A ball is a <b>sphere</b>. A can is a <b>cylinder</b>. A box is a <b>rectangular prism</b>.</p>',
+        watch: { tool: 'g1stage', steps: SOLIDS.map(function (k) { return { say: 'A <b>' + k + '</b>, like ' + OBJ[k] + '.', act: function (t) { return t.show(solidPic(k, 120)); }, ms: 1100 }; }) },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['cube', 'sphere', 'cylinder', 'cone'].map(function (k) { return { id: k, html: card(solidPic(k, 70)) }; }) }, tasks: [
+          { do: 'Tap the shape like a <b>soup can</b>.', goal: function (s) { return s.picked[0] === 'cylinder'; }, yes: 'A soup can is a cylinder.' },
+          { do: 'Tap the shape like a <b>ball</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'sphere'; }, yes: 'A ball is a sphere.' }
+        ] },
+        key: '<p>Look for solid shapes in things around you.</p>',
+        check: [P('s-3d', 1), P('s-3d', 1)] },
+      { id: 'faces', title: 'Flat shapes in solid shapes', exp: ['E1.2'], skill: 's-3d',
+        body: '<p>Trace around the bottom of a solid and you get a flat shape. A box gives a <b>rectangle</b>. A can gives a <b>circle</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Stand a can on paper and trace around it.', act: function (t) { return t.show(solidPic('cylinder', 110)); }, ms: 1400 },
+          { say: 'The tracing is a <b>circle</b>.', act: function (t) { return t.show(flatPic('circle', 100)); }, ms: 1400 },
+          { say: 'A cube gives a <b>square</b>.', act: function (t) { return t.show(solidPic('cube', 100) + flatPic('square', 90)); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['circle', 'square', 'triangle', 'rectangle'].map(function (k) { return { id: k, html: card(flatPic(k, 60)) }; }) }, tasks: [
+          { do: 'Trace a <b>cereal box</b> (a rectangular prism). Which shape do you get?', goal: function (s) { return s.picked[0] === 'rectangle'; }, yes: 'The face of a box is a rectangle.' }
+        ] },
+        key: '<p>Faces of solids are <b>flat shapes</b>.</p>',
+        check: [P('s-3d', 2), P('s-3d', 3)] }
+    ] },
+
+    { id: 'sort', title: 'Sorting shapes', sub: 'One rule at a time.', concepts: [
+      { id: 'rule', title: 'A sorting rule', exp: ['E1.1'], skill: 's-2d',
+        body: '<p>To <b>sort</b>, pick one rule, like "4 sides" or "round". Colour and size do not matter for that rule.</p>',
+        watch: { tool: 'g1pick', opts: { items: FLAT.concat(['square', 'triangle']).map(function (k, i) { return { id: k + i, html: flatPic(k, 56) }; }) }, steps: [
+          { say: 'Rule: shapes with <b>4 sides</b>.', ms: 1200 },
+          { say: 'Square: 4 sides. Yes.', act: function (t) { return t.pick('square2'); }, ms: 700 },
+          { say: 'Rectangle: 4 sides. Yes.', act: function (t) { return t.pick('rectangle3'); }, ms: 700 },
+          { say: 'This square is a different colour, but it has 4 sides. Yes.', act: function (t) { return t.pick('square5'); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { items: ['triangle', 'circle', 'hexagon', 'triangle', 'square', 'circle'].map(function (k, i) { return { id: k + i, html: flatPic(k, 56 - (i % 2) * 14) }; }) }, tasks: [
+          { do: 'Sort by the rule <b>round</b>. Tap every round shape.', goal: function (s) { return s.n === 2 && s.picked.every(function (p) { return /circle/.test(p); }); }, yes: 'Only the circles are round. Big or small does not matter.' }
+        ] },
+        key: '<p>One <b>rule</b> decides each group.</p>',
+        check: [P('s-2d', 3), P('s-3d', 2)] }
+    ] },
+
+    { id: 'halves', title: 'Matching halves', sub: 'Fold it. Do the halves match?', concepts: [
+      { id: 'fold', title: 'Halves that match', exp: ['E1.3'], skill: 's-sym',
+        body: '<p>Some shapes fold so the two halves <b>match</b> exactly, like a mirror. A heart folded down the middle matches.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Fold the heart down the middle.', act: function (t) { return t.show(foldPic('heart', 'v')); }, ms: 1400 },
+          { say: 'The two sides match. Yes.', ms: 1200 },
+          { say: 'Fold it across. The top and bottom do <b>not</b> match.', act: function (t) { return t.show(foldPic('heart', 'h')); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { items: [['square', 'd'], ['circle', 'off'], ['rectangle', 'v'], ['triangle', 'h']].map(function (p, i) { return { id: 'f' + i, html: foldPic(p[0], p[1]) }; }) }, tasks: [
+          { do: 'Tap every fold line where the halves <b>match</b>.', goal: function (s) { return s.n === 2 && s.picked.indexOf('f0') >= 0 && s.picked.indexOf('f2') >= 0; }, yes: 'The square corner to corner, and the rectangle down the middle.' }
+        ] },
+        mistake: '<p>Thinking every line through the middle makes matching halves. Fold real paper shapes to test.</p>',
+        key: '<p>Fold it. If the edges line up <b>all the way round</b>, the halves match.</p>',
+        check: [P('s-sym', 1), P('s-sym', 2)] }
+    ] },
+
+    { id: 'where', title: 'Where is it?', sub: 'Position words.', concepts: [
+      { id: 'above', title: 'Above, below, beside', exp: ['E1.4'], skill: 's-pos',
+        body: '<p><b>Position words</b> tell where something is: above, below, beside, between, in front of, behind.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'The flower is in the middle.', act: function (t) { return t.show(shelf(['apple', 'ball', 'star', 'fish', 'flower', 'car', 'leaf', 'sock', 'cube'])); }, ms: 1400 },
+          { say: 'The ball is <b>above</b> the flower. The sock is <b>below</b> it.', ms: 1800 },
+          { say: 'The fish and the car are <b>beside</b> it. The flower is <b>between</b> them.', ms: 2000 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['ball', 'sock', 'car'].map(function (k) { return { id: k, html: card(G1.icon(k, 50), A.NAMES[k][0]) }; }) }, tasks: [
+          { do: 'Look at the shelf. What is <b>below</b> the flower?<div class="fig">' + shelf(['apple', 'ball', 'star', 'fish', 'flower', 'car', 'leaf', 'sock', 'cube']) + '</div>', goal: function (s) { return s.picked[0] === 'sock'; }, yes: 'The sock is below the flower.' }
+        ] },
+        key: '<p>Position words tell <b>where</b>.</p>',
+        check: [P('s-pos', 1), P('s-pos', 2)] },
+      { id: 'left', title: 'Left and right', exp: ['E1.4'], skill: 's-pos', hard: true,
+        body: '<p>Hold up your <b>left</b> hand with your thumb out. Your thumb and finger make an <b>L</b>. L is for left.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Hold up both hands, palms away from you.', act: function (t) { return t.show(A.svg(220, 110, A.icon('hand', 55, 55, 90) + '<g transform="translate(220,0) scale(-1,1)">' + A.icon('hand', 55, 55, 90) + '</g>', 'two hands')); }, ms: 1500 },
+          { say: 'The hand that makes an <b>L</b> is your <b>left</b>.', ms: 1600 },
+          { say: 'On the shelf, the apple is on the <b>left</b> of the ball. The star is on the <b>right</b>.', act: function (t) { return t.show(shelf(['apple', 'ball', 'star', '', '', '', '', '', ''])); }, ms: 2000 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['fish', 'car'].map(function (k) { return { id: k, html: card(G1.icon(k, 50), A.NAMES[k][0]) }; }) }, tasks: [
+          { do: 'Which is on the <b>left</b> of the flower?<div class="fig">' + shelf(['', '', '', 'fish', 'flower', 'car', '', '', '']) + '</div>', goal: function (s) { return s.picked[0] === 'fish'; }, yes: 'The fish is on the left.' }
+        ] },
+        ways: [{ label: 'Use your body', html: '<p>Stand up. Wave your left hand. Stomp your right foot. Touch your left ear. Practise a little every day.</p>' }],
+        mistake: '<p>Mixing up left and right, which is very common at this age. Use the "L" hand trick and a sticker on the left hand.</p>',
+        key: '<p>The hand that makes an <b>L</b> is your <b>left</b>.</p>',
+        check: [P('s-pos', 2), P('s-pos', 3)] }
+    ] },
+
+    { id: 'code', title: 'Directions and code', sub: 'Steps in order.', concepts: [
+      { id: 'follow', title: 'Follow the code', exp: ['E1.5', 'C3.1'], skill: 's-code',
+        body: '<p><b>Code</b> is a list of steps done in order. Each arrow moves the robot one square.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'The code is ' + codeHtml(['Rt', 'Rt', 'U', 'U']) + '.', act: function (t) { return t.show(grid(5, [0, 4], [[2, 2, 'star']])); }, ms: 1500 },
+          { say: 'Right, right.', act: function (t) { return t.show(grid(5, [2, 4], [[2, 2, 'star']], run([0, 4], ['Rt', 'Rt']))); }, ms: 1200 },
+          { say: 'Up, up. The robot reaches the star.', act: function (t) { return t.show(grid(5, [2, 2], [[2, 2, 'star']], run([0, 4], ['Rt', 'Rt', 'U', 'U']))); }, ms: 1800 }
+        ] },
+        try: robot([0, 4], [3, 1], 'star'),
+        key: '<p>Do each step <b>in order</b>.</p>',
+        check: [P('s-code', 1), P('s-code', 2)] },
+      { id: 'debug', title: 'Fix the code', exp: ['C3.2'], skill: 's-code', hard: true,
+        body: '<p>If the robot ends up in the wrong place, the code has a mistake. Follow it <b>one step at a time</b> to find the step to change.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'This code should reach the apple: ' + codeHtml(['U', 'U', 'Rt']) + '.', act: function (t) { return t.show(grid(5, [1, 3], [[3, 1, 'apple']])); }, ms: 1600 },
+          { say: 'Run it: up, up, right. The robot misses the apple.', act: function (t) { return t.show(grid(5, [2, 1], [[3, 1, 'apple']], run([1, 3], ['U', 'U', 'Rt']))); }, ms: 1800 },
+          { say: 'It needs one more right. Fixed code: ' + codeHtml(['U', 'U', 'Rt', 'Rt']) + '.', act: function (t) { return t.show(grid(5, [3, 1], [[3, 1, 'apple']], run([1, 3], ['U', 'U', 'Rt', 'Rt']))); }, ms: 2000 }
+        ] },
+        try: robot([4, 4], [0, 2], 'apple'),
+        ways: [{ label: 'Act it out', html: '<p>Make a grid with tape on the floor. One person reads the code. The other walks it, one square per arrow.</p>' }],
+        mistake: '<p>Starting over from scratch instead of finding the one wrong step. Point to each arrow and move a finger one square.</p>',
+        key: '<p>Find the step that goes wrong. <b>Change just that step.</b></p>',
+        check: [P('s-code', 2), P('s-code', 3)] }
+    ] }
+  ];
+
   A.register('shapes-position', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Flat shapes</h2>' +
 '<p>Flat shapes are also called <b>2D shapes</b>. We tell them apart by their <b>sides</b> (straight edges) and <b>corners</b> (where two sides meet).</p>' +

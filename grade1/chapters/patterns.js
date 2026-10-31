@@ -96,7 +96,141 @@
   }
 
   var demoCore = ['rc', 'bs'], demoCore2 = ['yt', 'yt', 'gs'];
+  var CH = 'patterns';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  var TRAY = ['rc', 'bs', 'yt', 'gs'].map(function (k) { return { id: k, html: one(k), label: SH[k].n }; });
+  function strip(start, o) { return Object.assign({ tray: TRAY, start: start }, o || {}); }
+  function repeats(seq, core) { return seq.length >= core.length * 2 && seq.every(function (k, i) { return k === core[i % core.length]; }); }
+  /* a growing tower of blocks: day 1, 2, 3 ... */
+  function tower(ns) { return A.svg(40 + ns.length * 46, 140, '<rect x="10" y="126" width="' + (ns.length * 46 + 20) + '" height="6" style="fill:var(--ink2)"/>' + ns.map(function (n, i) { var s = ''; for (var j = 0; j < n; j++) s += '<rect x="' + (24 + i * 46) + '" y="' + (104 - j * 22) + '" width="30" height="20" rx="3" style="fill:var(--p1)" stroke="rgba(0,0,0,.35)" stroke-width="1.5"/>'; return s + '<text x="' + (39 + i * 46) + '" y="' + (98 - n * 22 + 4) + '" text-anchor="middle" font-size="18" class="tb">' + n + '</text>'; }).join(''), 'Towers of ' + ns.join(', ') + ' blocks'); }
+
+  var LESSONS = [
+    { id: 'what', title: 'What is a pattern?', sub: 'Something that repeats.', concepts: [
+      { id: 'repeat', title: 'A pattern repeats', exp: ['C1.1'], skill: 'p-core',
+        body: '<p>A <b>repeating pattern</b> has a part that happens again and again. Red, blue, red, blue, red, blue.</p>',
+        watch: { tool: 'g1strip', opts: strip([], { tap: false, slots: 8 }), steps: ['rc', 'bs', 'rc', 'bs', 'rc', 'bs'].map(function (k, i) {
+          return { say: i < 2 ? (i ? 'Blue square.' : 'Red circle.') : i === 5 ? 'Red, blue, red, blue. It keeps <b>repeating</b>. That makes it a pattern.' : 'Again: ' + SH[k].n + '.', act: function (t) { return t.add(k); }, ms: i === 5 ? 1800 : 600 };
+        }) },
+        try: { tool: 'g1strip', opts: strip([], { max: 10 }), tasks: [
+          { do: 'Make a pattern: <b>yellow triangle, green star</b>, again and again. Make at least 6.', goal: function (s) { return s.n >= 6 && repeats(s.seq, ['yt', 'gs']); }, yes: 'Yes. Triangle, star repeats. That is a pattern.' }
+        ] },
+        key: '<p>A pattern has a part that <b>repeats</b>.</p>',
+        check: [P('p-core', 1), P('p-next', 1)] },
+      { id: 'core', title: 'The core', exp: ['C1.1', 'C1.2'], skill: 'p-core',
+        body: '<p>The part that repeats is called the <b>core</b>. In red, red, blue, red, red, blue the core is <b>red, red, blue</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Look at this pattern.', act: function (t) { return t.show(row(rep(['rc', 'rc', 'bs'], 9))); }, ms: 1400 },
+          { say: 'Find where it starts again. Draw a line after each core.', act: function (t) { return t.show(row(rep(['rc', 'rc', 'bs'], 9), { core: 3 })); }, ms: 1600 },
+          { say: 'The core is <b>red, red, blue</b>. It repeats 3 times.', ms: 1800 }
+        ] },
+        try: { tool: 'g1strip', opts: strip([], { max: 10 }), tasks: [
+          { do: 'Make a pattern with the core <b>circle, circle, star</b>. Show the core 2 times.', goal: function (s) { return repeats(s.seq, ['rc', 'rc', 'gs']); }, yes: 'Circle, circle, star, circle, circle, star.' }
+        ] },
+        mistake: '<p>Calling any row of shapes a pattern, or finding the core too early (red, red only). Check that the core repeats at least twice.</p>',
+        key: '<p>The <b>core</b> is the part that repeats.</p>',
+        check: [P('p-core', 2), P('p-core', 2)] }
+    ] },
+
+    { id: 'next', title: 'What comes next?', sub: 'Say the pattern out loud.', concepts: [
+      { id: 'say', title: 'Say it to find what comes next', exp: ['C1.3'], skill: 'p-next',
+        body: '<p>Say the pattern out loud. Your voice will tell you what comes next: "circle, square, circle, square, <b>circle</b>".</p>',
+        watch: { tool: 'g1strip', opts: strip(rep(['rc', 'bs'], 5), { tap: false }), steps: [
+          { say: 'Circle, square, circle, square, circle ...', ms: 1600 },
+          { say: 'What comes next? <b>Square</b>.', act: function (t) { return t.add('bs'); }, ms: 900 },
+          { say: 'Then <b>circle</b>, then <b>square</b>.', act: function (t) { return t.add('rc').then(function () { return t.add('bs'); }); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1strip', opts: strip(rep(['yt', 'gs', 'gs'], 5), { max: 11 }), tasks: [
+          { do: 'Add the <b>next 3</b> shapes.', goal: function (s) { return s.added.length === 3 && repeats(s.seq, ['yt', 'gs', 'gs']); }, yes: 'Star, triangle, star. The core triangle, star, star keeps going.' }
+        ] },
+        key: '<p>Say it out loud. Find the core. Keep it going.</p>',
+        check: [P('p-next', 1), P('p-next', 2)] },
+      { id: 'extend', title: 'Longer cores', exp: ['C1.3'], skill: 'p-next', hard: true,
+        body: '<p>Some cores are longer: <b>A A B B</b> or <b>A B C</b>. Find the whole core before you go on.</p>',
+        watch: { tool: 'g1strip', opts: strip(rep(['rc', 'rc', 'yt', 'yt'], 6), { tap: false }), steps: [
+          { say: 'Red, red, yellow, yellow, red, red ...', ms: 1600 },
+          { say: 'The core has 4 parts: red, red, yellow, yellow. Next: yellow.', act: function (t) { return t.add('yt'); }, ms: 900 },
+          { say: 'Then yellow again, then red, red.', act: function (t) { return t.add('yt').then(function () { return t.add('rc'); }); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1strip', opts: strip(rep(['bs', 'yt', 'gs'], 4), { max: 10 }), tasks: [
+          { do: 'Add the next <b>3</b> shapes.', goal: function (s) { return s.added.length === 3 && repeats(s.seq, ['bs', 'yt', 'gs']); }, yes: 'Triangle, star, square. The core has 3 parts.' }
+        ] },
+        ways: [
+          { label: 'Use letters', html: '<p>Give each new shape a letter. Red is A, yellow is B: <b>A A B B A A</b> ... next is <b>B</b>.</p>' },
+          { label: 'Clap it', html: '<p>Clap for one shape and stomp for the other: clap, clap, stomp, stomp, clap, clap ... your feet know what comes next.</p>' }
+        ],
+        mistake: '<p>Repeating only the last shape (red, red, yellow, yellow, red, red, red...). Point to each shape and say the core out loud.</p>',
+        key: '<p>Find the <b>whole core</b>, then repeat it.</p>',
+        check: [P('p-next', 2), P('p-next', 3)] }
+    ] },
+
+    { id: 'missing', title: 'Find what is missing', sub: 'Use the core.', concepts: [
+      { id: 'gap', title: 'Fill the gap', exp: ['C1.3'], skill: 'p-missing',
+        body: '<p>When a pattern has a gap, say the pattern and find the part that is missing.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Something is missing.', act: function (t) { return t.show(row(rep(['gs', 'bs'], 7), { gap: 3 })); }, ms: 1500 },
+          { say: 'Star, square, star, <b>?</b> ... After a star comes a square.', ms: 1600 },
+          { say: 'The missing shape is a <b>blue square</b>.', act: function (t) { return t.show(row(rep(['gs', 'bs'], 7))); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['rc', 'yt', 'gs'].map(function (k) { return { id: k, html: one(k), label: SH[k].n }; }) }, tasks: [
+          { do: 'What is missing? <div class="fig">' + row(rep(['rc', 'yt', 'yt'], 8), { gap: 4 }) + '</div>', goal: function (s) { return s.picked[0] === 'yt'; }, yes: 'Red, yellow, yellow, red, yellow, yellow. A yellow triangle is missing.' }
+        ] },
+        key: '<p>Say the pattern. Find the <b>missing part</b>.</p>',
+        check: [P('p-missing', 1), P('p-missing', 2)] }
+    ] },
+
+    { id: 'ways', title: 'The same pattern, many ways', sub: 'Shapes, letters, sounds and moves.', concepts: [
+      { id: 'letters', title: 'Write a pattern in letters', exp: ['C1.2'], skill: 'p-core',
+        body: '<p>The first thing is <b>A</b>. The next <b>new</b> thing is <b>B</b>. Star, circle, circle is <b>A B B</b>. Clap, stomp, stomp is also <b>A B B</b>.</p>' +
+          '<div class="tbl"><table><tbody><tr><th class="l">Letters</th><td>A B B A B B</td></tr><tr><th class="l">Sounds</th><td>clap, stomp, stomp, clap, stomp, stomp</td></tr><tr><th class="l">Moves</th><td>jump, sit, sit, jump, sit, sit</td></tr></tbody></table></div>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Star, circle, circle ...', act: function (t) { return t.show(row(rep(['gs', 'rc', 'rc'], 6))); }, ms: 1400 },
+          { say: 'Star is A. Circle is B. So it is <b>A B B A B B</b>.', act: function (t) { return t.show(row(rep(['gs', 'rc', 'rc'], 6)) + '<p class="big">A B B A B B</p>'); }, ms: 1800 },
+          { say: 'Clap, stomp, stomp has the same core. It is the same pattern.', ms: 1800 }
+        ] },
+        try: { tool: 'g1strip', opts: strip([], { max: 10 }), tasks: [
+          { do: 'Make an <b>A B B</b> pattern with any shapes. Show the core 2 times.', goal: function (s) { var c = s.seq.slice(0, 3); return c[0] !== c[1] && c[1] === c[2] && repeats(s.seq, c); }, yes: 'That is an A B B pattern.' }
+        ] },
+        key: '<p>Same core, same pattern, <b>even if it looks different</b>.</p>',
+        check: [P('p-core', 3), P('p-core', 3)] }
+    ] },
+
+    { id: 'numbers', title: 'Number patterns', sub: 'A rule like "add 2".', concepts: [
+      { id: 'rule', title: 'Find the rule', exp: ['C1.4'], skill: 'p-num',
+        body: '<p>A number pattern has a <b>rule</b>. 5, 10, 15, 20: each number is 5 more. The rule is <b>add 5</b>.</p>',
+        watch: { tool: 'hundred', opts: { to: 50 }, steps: [
+          { say: 'Start at 2. Add 2 each time.', act: function (t) { return t.skip(2, 2, 20, 450); }, ms: 800 },
+          { say: '2, 4, 6, 8 ... The rule is <b>add 2</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'hundred', opts: { to: 50 }, tasks: [
+          { do: 'Start at 3. Add 10 each time. Tap <b>3, 13, 23, 33, 43</b>.', goal: function (s) { return [3, 13, 23, 33, 43].every(function (v) { return s.lit.indexOf(v) >= 0; }); }, yes: 'Add 10 goes straight down the chart.' }
+        ] },
+        key: '<p>Look at two numbers next to each other to find the <b>rule</b>.</p>',
+        check: [P('p-num', 1), P('p-num', 2)] },
+      { id: 'grow', title: 'Patterns that grow', exp: ['C1.4'], skill: 'p-num',
+        body: '<p>Some patterns <b>grow</b>. A tower gets 1 block taller each day: 1, 2, 3, 4.</p>',
+        watch: { tool: 'g1stage', steps: [1, 2, 3, 4, 5].map(function (n) { return { say: n < 5 ? 'Day ' + n + ': ' + n + ' block' + (n > 1 ? 's' : '') + '.' : 'Each day, add 1. The rule is <b>add 1</b>.', act: function (t) { return t.show(tower([1, 2, 3, 4, 5].slice(0, Math.min(n, 4)))); }, ms: n === 5 ? 1800 : 900 }; }) },
+        key: '<p>A growing pattern gets bigger by the <b>same amount</b> each time.</p>',
+        check: [P('p-num', 3), P('p-num', 2)] }
+    ] },
+
+    { id: 'change', title: 'Changes or stays the same', sub: 'Some things change. Some do not.', concepts: [
+      { id: 'change', title: 'Change or stay the same?', exp: ['C2.1'], skill: 'p-change',
+        body: '<p>Some things <b>change</b>: how tall you are, the weather, your age. Some things <b>stay the same</b>: a week always has 7 days.</p>',
+        try: { tool: 'g1pick', opts: { cols: 2, items: [
+          { id: 'c1', html: '<span>How tall you are</span>' }, { id: 's1', html: '<span>Days in a week</span>' },
+          { id: 'c2', html: '<span>The weather</span>' }, { id: 's2', html: '<span>Wheels on a bicycle</span>' }] }, tasks: [
+          { do: 'Tap everything that <b>changes</b>.', goal: function (s) { return s.n === 2 && s.picked.indexOf('c1') >= 0 && s.picked.indexOf('c2') >= 0; }, yes: 'You grow, and the weather changes. A week always has 7 days, and a bicycle always has 2 wheels.' }
+        ] },
+        key: '<p>Ask: <b>"Will it be different tomorrow or next year?"</b></p>',
+        check: [P('p-change', 1), P('p-change', 2)] }
+    ] }
+  ];
+
   A.register('patterns', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>What is a pattern?</h2>' +
 '<p>A <b>repeating pattern</b> has a part that repeats again and again. We call it the <b>core</b>.</p>' +

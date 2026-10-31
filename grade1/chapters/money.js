@@ -84,7 +84,90 @@
       hint: 'Write the value of each one. Then find the smallest.', steps: ['Values: ' + ks.map(function (k) { return M[k].n + ' ' + price(k); }).join(', ') + '.', 'The least is the ' + M[s[0]].n + '. The greatest is the ' + M[s[2]].n + '.', 'Least to greatest: ' + right + '.'], explain: 'Least to greatest: ' + s.map(function (k) { return M[k].n + ' (' + price(k) + ')'; }).join(', ') + '.' };
   }
 
+  var CH = 'money';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  function mk(k, cap) { return { id: k, html: one(k) + (cap ? '<span>' + cap + '</span>' : ''), label: M[k].n }; }
+
+  var LESSONS = [
+    { id: 'coins', title: 'Canadian coins', sub: 'Name each coin and its value.', concepts: [
+      { id: 'names', title: 'Name the coins', exp: ['F1.1'], skill: 'f-name',
+        body: '<p>Canada has these coins. Look for the <b>number</b>, the <b>colour</b> and the <b>animal</b>.</p>',
+        watch: { tool: 'g1stage', steps: COINS.map(function (k) { return { say: 'The <b>' + M[k].n + '</b>: worth ' + M[k].say + '. Look for the ' + M[k].animal + '.', act: function (t) { return t.show(one(k)); }, ms: 1400 }; }) },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['nickel', 'dime', 'quarter', 'loonie', 'toonie'].map(function (k) { return mk(k); }) }, tasks: [
+          { do: 'Tap the <b>loonie</b>.', goal: function (s) { return s.picked[0] === 'loonie'; }, yes: 'The loonie is gold and has 11 sides. It is worth 1 dollar.' },
+          { do: 'Tap the <b>quarter</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'quarter'; }, yes: 'The quarter is worth 25 cents.' },
+          { do: 'Tap the <b>toonie</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'toonie'; }, yes: 'The toonie has a gold centre and is worth 2 dollars.' }
+        ] },
+        key: '<p>Nickel 5¢, dime 10¢, quarter 25¢, loonie $1, toonie $2.</p>',
+        check: [P('f-name', 1), P('f-name', 2)] },
+      { id: 'cents', title: 'Cents and dollars', exp: ['F1.1'], skill: 'f-value',
+        body: '<p>Small coins are counted in <b>cents</b>: <b>¢</b>. The loonie and toonie, and all bills, are counted in <b>dollars</b>: <b>$</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'A dime is worth <b>10¢</b>, ten cents.', act: function (t) { return t.show(one('dime', { cap: '10¢' })); }, ms: 1400 },
+          { say: 'A loonie is worth <b>$1</b>, one dollar.', act: function (t) { return t.show(one('loonie', { cap: '$1' })); }, ms: 1400 },
+          { say: 'One dollar is the same as 100 cents. Dollars are worth more.', ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: [{ id: '5', html: '<span class="big">5¢</span>' }, { id: '50', html: '<span class="big">50¢</span>' }, { id: '2', html: '<span class="big">$2</span>' }] }, tasks: [
+          { do: 'How much is a <b>nickel</b> worth?<div class="fig">' + one('nickel') + '</div>', goal: function (s) { return s.picked[0] === '5'; }, yes: 'A nickel is worth 5 cents.' }
+        ] },
+        key: '<p><b>¢</b> means cents. <b>$</b> means dollars.</p>',
+        check: [P('f-value', 1), P('f-value', 2)] }
+    ] },
+
+    { id: 'bills', title: 'Canadian bills', sub: 'Each bill has its own colour.', concepts: [
+      { id: 'colours', title: 'Bills and their colours', exp: ['F1.1'], skill: 'f-name',
+        body: '<p>Bills are paper money. Each one has its own <b>colour</b>: $5 blue, $10 purple, $20 green, $50 red.</p>',
+        watch: { tool: 'g1stage', steps: BILLS.map(function (k) { return { say: 'The <b>' + M[k].n + '</b> is ' + { b5: 'blue', b10: 'purple', b20: 'green', b50: 'red' }[k] + '.', act: function (t) { return t.show(one(k)); }, ms: 1300 }; }) },
+        try: { tool: 'g1pick', opts: { multi: false, items: BILLS.map(function (k) { return mk(k); }) }, tasks: [
+          { do: 'Tap the <b>$20 bill</b>.', goal: function (s) { return s.picked[0] === 'b20'; }, yes: 'The $20 bill is green.' },
+          { do: 'Tap the bill worth the <b>most</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'b50'; }, yes: 'The $50 bill is worth the most.' }
+        ] },
+        key: '<p>Read the <b>number</b> on a bill to know its value.</p>',
+        check: [P('f-name', 3), P('f-value', 3)] }
+    ] },
+
+    { id: 'size', title: 'Size is not value', sub: 'Read the number.', concepts: [
+      { id: 'dime', title: 'The small dime is worth more', exp: ['F1.1'], skill: 'f-compare', hard: true,
+        body: '<p>A bigger coin is <b>not</b> always worth more. The dime is the smallest coin, but it is worth <b>10¢</b>. The bigger nickel is worth only 5¢.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'A nickel and a dime. Which is bigger?', act: function (t) { return t.show(row(['nickel', 'dime'], function (k) { return M[k].n; })); }, ms: 1500 },
+          { say: 'The nickel is bigger.', ms: 1100 },
+          { say: 'Now read the numbers: 5 and 10. The <b>dime</b> is worth more.', act: function (t) { return t.show(row(['nickel', 'dime'], function (k) { return M[k].n + ': ' + price(k); })); }, ms: 2000 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: [mk('dime'), mk('nickel')] }, tasks: [
+          { do: 'Tap the coin worth <b>more</b>.', goal: function (s) { return s.picked[0] === 'dime'; }, yes: 'The dime, 10¢. Small, but worth more.' }
+        ] },
+        ways: [
+          { label: 'Read, do not look', html: '<p>Every coin has its value written on it. Always read the number. Never go by size.</p>' },
+          { label: 'Ten and five', html: '<p>1 dime buys the same as 2 nickels. 10¢ = 5¢ + 5¢.</p>' + row(['dime', 'nickel', 'nickel'], function (k) { return price(k); }) }
+        ],
+        mistake: '<p>Choosing the nickel over the dime because it is bigger. Practise with real coins: "Read the number, not the size."</p>',
+        key: '<p>Read the <b>number</b>, not the size.</p>',
+        check: [P('f-compare', 1), P('f-compare', 2)] }
+    ] },
+
+    { id: 'order', title: 'Least to greatest', sub: 'Put money in order.', concepts: [
+      { id: 'order', title: 'Put money in order', exp: ['F1.1'], skill: 'f-order',
+        body: '<p>To put money in order, read each value. Start with the <b>least</b>. End with the <b>greatest</b>.</p>',
+        watch: { tool: 'g1pick', opts: { items: ['quarter', 'loonie', 'dime'].map(function (k) { return mk(k, price(k)); }) }, steps: [
+          { say: 'A quarter, a loonie and a dime. Least first.', ms: 1400 },
+          { say: 'The dime: 10¢.', act: function (t) { return t.pick('dime'); }, ms: 800 },
+          { say: 'The quarter: 25¢.', act: function (t) { return t.pick('quarter'); }, ms: 800 },
+          { say: 'The loonie: $1. Least to greatest: <b>dime, quarter, loonie</b>.', act: function (t) { return t.pick('loonie'); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { items: ['toonie', 'nickel', 'b5', 'quarter'].map(function (k) { return mk(k); }), readout: function (s) { return s.n ? '<p>Your order: <b>' + s.picked.map(function (k) { return M[k].n; }).join(', ') + '</b></p>' : '<p class="t2">Tap from least to greatest.</p>'; } }, tasks: [
+          { do: 'Tap from <b>least to greatest</b>. Tap again to undo.', goal: function (s) { return s.picked.join() === 'nickel,quarter,toonie,b5'; }, yes: 'Nickel 5¢, quarter 25¢, toonie $2, $5 bill.' }
+        ] },
+        key: '<p>Least first, greatest last. <b>Every bill is worth more than every coin.</b></p>',
+        check: [P('f-order', 1), P('f-order', 2)] }
+    ] }
+  ];
+
   A.register('money', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Canadian coins</h2>' +
 '<p>Canada has these coins. The number on each coin tells its value. <b>¢</b> means cents. <b>$</b> means dollars.</p>' +

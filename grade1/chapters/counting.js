@@ -166,7 +166,273 @@
       explain: 'There are ' + n + '. "About ' + c + '" is closest. An estimate does not have to be exact. It just has to be close.' };
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters.counting.practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  function chartCls(list, cls) { var c = {}; list.forEach(function (v) { c[v] = cls || 'a'; }); return c; }
+
+  var LESSONS = [
+    { id: 'how-many', title: 'Count how many', sub: 'Touch each one once. The last number tells how many.', concepts: [
+      { id: 'touch', title: 'Touch and count', exp: ['B1.1'], skill: 'c-count',
+        body: '<p>To count, touch each thing <b>one time</b> and say <b>one number</b>. Go in order, so you do not miss one or count one twice.</p>',
+        watch: { mount: function (el) { return K.objects(el, { kind: 'apple', n: 7, tap: false }); }, steps: [
+          { say: 'Here are some apples. How many are there?', ms: 1200 },
+          { say: 'Touch each apple one time. Say one number for each: 1, 2, 3, 4, 5, 6, 7.', act: function (t) { return t.countAll(520); }, ms: 600 },
+          { say: 'The last number we said is <b>7</b>. There are 7 apples.', ms: 1800 }
+        ] },
+        try: { tool: 'g1objects', opts: { kind: 'fish', n: 6 }, tasks: [
+          { do: '<b>Tap each fish</b> to count it. Each one lights up and shows its number.', goal: function (s) { return s.allCounted; }, yes: function (s) { return 'Yes. You touched each fish once. There are ' + s.n + '.'; } }
+        ] },
+        key: '<p>Touch each one <b>once</b>. Say <b>one number</b> for each.</p>',
+        mistake: '<p>Counting the same object twice, or skipping one, when objects are spread out. Ask the child to push each counted object to one side.</p>',
+        check: [P('c-count', 1), P('c-count', 1)] },
+      { id: 'last', title: 'The last number tells how many', exp: ['B1.1'], skill: 'c-count',
+        body: '<p>When you finish counting, the <b>last number</b> you said tells how many there are. You do not need to count again.</p>',
+        watch: { mount: function (el) { return K.objects(el, { kind: 'star', n: 9, tap: false }); }, steps: [
+          { say: 'Count the stars.', act: function (t) { return t.countAll(420); }, ms: 500 },
+          { say: 'The last number is 9. So there are <b>9</b> stars.', ms: 1400 },
+          { say: 'Now mix them up. Are there still 9?', act: function (t) { return t.mix(true); }, ms: 900 },
+          { say: 'Count again: still 9. Moving things does not change how many.', act: function (t) { return t.countAll(380); }, ms: 1600 }
+        ] },
+        try: { tool: 'g1objects', opts: { kind: 'ball', n: 8, controls: ['mix'], min: 1, max: 20 }, tasks: [
+          { do: 'Tap each ball to count it.', goal: function (s) { return s.allCounted; }, yes: function (s) { return 'The last number is ' + s.n + '. There are ' + s.n + ' balls.'; } },
+          { do: 'Press <b>Mix them up</b>, then count again. Is it the same number?', goal: function (s) { return s.mixed && s.allCounted; }, yes: 'Yes. Still the same. Moving the balls does not change how many.' },
+          { do: 'Use <b>+ 1</b> to make <b>12</b> balls. Then count them.', reset: false, setup: function (t) { t.mix(false); }, goal: function (s) { return s.n === 12 && s.allCounted; }, yes: 'Yes. 12 balls.' }
+        ] },
+        ways: [
+          { label: 'Line them up', html: '<p>Things in a line are easier to count. Count left to right, and the last number is how many.</p><div class="fig">' + counted('flower', 6, 6) + '</div>' },
+          { label: 'Make groups of 5', html: '<p>Put 5 in a group. A full group is 5, then count on: 6, 7, 8.</p><div class="fig">' + A.draw.frames(8, { c: 26 }) + '</div>' }
+        ],
+        hard: true,
+        key: '<p>The <b>last number</b> you say tells <b>how many</b>.</p>',
+        mistake: '<p>After counting, the child counts again from 1 when asked "how many?". Ask: "What was the last number you said?"</p>',
+        check: [P('c-count', 1), P('c-count', 2)] },
+      { id: 'names', title: 'Numbers that are names', exp: ['B1.1'], skill: 'c-count',
+        body: '<p>Most numbers tell <b>how many</b>. Some numbers are a <b>name</b>. Bus 5 does not have 5 of anything. The 5 tells you which bus it is.</p>',
+        watch: { mount: function (el) { return K.stage(el); }, steps: [
+          { say: 'This cake has 6 candles. The 6 tells <b>how many</b>.', act: function (t) { return t.show(cake(6)); }, ms: 1600 },
+          { say: 'This is bus 5. The 5 is its <b>name</b>. There are not 5 buses.', act: function (t) { return t.show(bus(5)); }, ms: 1600 },
+          { say: 'Number 23 on a hockey shirt is a <b>name</b> too.', act: function (t) { return t.show(shirt(23)); }, ms: 1600 },
+          { say: 'House 14 is the <b>name</b> of a house on the street.', act: function (t) { return t.show(door(14)); }, ms: 1600 }
+        ] },
+        try: { tool: 'g1pick', opts: { cols: 2, items: [
+          { id: 'cake', html: cake(4) + '<span>4 candles</span>' }, { id: 'bus', html: bus(12) + '<span>bus 12</span>' },
+          { id: 'apples', html: A.draw.row('apple', 3, { s: 30 }) + '<span>3 apples</span>' }, { id: 'shirt', html: shirt(7) + '<span>shirt 7</span>' }] }, tasks: [
+          { do: 'Tap the <b>two</b> pictures where the number tells <b>how many</b>.', goal: function (s) { return s.n === 2 && s.picked.indexOf('cake') >= 0 && s.picked.indexOf('apples') >= 0; }, yes: 'Yes. You can count 4 candles and 3 apples. Bus 12 and shirt 7 are names.' }
+        ] },
+        key: '<p>Ask: "Can I count it?" If yes, the number tells <b>how many</b>. If not, it is a <b>name</b>.</p>',
+        check: [function () { var n = R.int(3, 9); return mc('Which one tells <b>how many</b>?', n + ' candles on a cake', ['Bus number ' + n, 'Jersey number ' + n], { wide: true, hint: 'Which one has things you could count?', explain: 'You can count ' + n + ' candles. The bus and jersey numbers are names.' }); }] }
+    ] },
+
+    { id: 'frames', title: 'Ten frames', sub: '5 in a row, 10 in a frame.', concepts: [
+      { id: 'five', title: 'Five and some more', exp: ['B1.1'], skill: 'c-frames',
+        body: '<p>A <b>ten frame</b> has 10 boxes in 2 rows of 5. We fill the top row first. A full row is <b>5</b>.</p>',
+        watch: { tool: 'tenframe', opts: {}, steps: [
+          { say: 'An empty ten frame. 2 rows, 5 boxes in each.', ms: 1200 },
+          { say: 'Fill the top row: 1, 2, 3, 4, 5. A full row is <b>5</b>.', act: function (t) { return t.fill(5, 450); }, ms: 700 },
+          { say: 'Put 3 more on the bottom row. Count on from 5: 6, 7, 8.', act: function (t) { return t.fill(8, 500); }, ms: 700 },
+          { say: 'The frame shows <b>8</b>. That is 5 and 3 more.', ms: 1800 }
+        ] },
+        try: { tool: 'tenframe', opts: {}, tasks: [
+          { do: 'Tap boxes to show <b>5</b>.', goal: function (s) { return s.n === 5; }, yes: 'Yes. A full row is 5.' },
+          { do: 'Now show <b>7</b>. Start with a full row of 5.', reset: false, goal: function (s) { return s.n === 7; }, yes: '7 is 5 and 2 more.' },
+          { do: 'Show <b>10</b>. The whole frame is full.', reset: false, goal: function (s) { return s.full; }, yes: 'A full frame is 10.' }
+        ] },
+        key: '<p>A full row is <b>5</b>. A full frame is <b>10</b>.</p>',
+        check: [P('c-frames', 1), P('c-frames', 1)] },
+      { id: 'empty', title: 'Count the empty boxes', exp: ['B1.1', 'B1.2'], skill: 'c-frames',
+        body: '<p>The empty boxes help too. If 2 boxes are empty, the frame shows 2 less than 10. That is <b>8</b>.</p>',
+        watch: { tool: 'tenframe', opts: { n: 9 }, steps: [
+          { say: 'How many counters? Look at the empty boxes.', ms: 1400 },
+          { say: 'Only 1 box is empty. 10 and 1 less is <b>9</b>.', ms: 1800 },
+          { say: 'So 9 and 1 more make 10.', act: function (t) { return t.fill(10); }, ms: 1600 }
+        ] },
+        try: { tool: 'tenframe', opts: { n: 6 }, tasks: [
+          { do: 'The frame shows 6. How many more make <b>10</b>? Fill the empty boxes to find out.', reset: false, goal: function (s) { return s.full; }, yes: 'You added 4. 6 and 4 make 10.' }
+        ] },
+        key: '<p>Empty boxes tell <b>how many more</b> make 10.</p>',
+        check: [function () { var n = R.int(5, 9); return { q: 'How many <b>more</b> counters make 10?', type: 'num', answer: 10 - n, fig: A.draw.frames(n, { c: 26 }), hint: 'Count the empty boxes.', explain: n + ' and ' + (10 - n) + ' more make 10.' }; }, P('c-frames', 1)] },
+      { id: 'teens', title: 'Ten and some more', exp: ['B1.1', 'B1.2'], skill: 'c-frames',
+        body: '<p>When one frame is full, start a second frame. A full frame is <b>10</b>, so count on from 10: 11, 12, 13.</p>',
+        watch: { tool: 'tenframe', opts: { frames: 2 }, steps: [
+          { say: 'Fill the first frame: that is <b>10</b>.', act: function (t) { return t.fill(10, 200); }, ms: 600 },
+          { say: 'Now 4 more in the second frame. Count on: 11, 12, 13, 14.', act: function (t) { return t.fill(14, 550); }, ms: 600 },
+          { say: 'The frames show <b>14</b>: ten and 4 more. We say "fourteen".', ms: 1800 }
+        ] },
+        try: { tool: 'tenframe', opts: { frames: 2 }, tasks: [
+          { do: 'Show <b>12</b> with the two frames.', goal: function (s) { return s.n === 12; }, yes: '12 is 10 and 2 more.' },
+          { do: 'Show <b>17</b>.', reset: false, goal: function (s) { return s.n === 17; }, yes: '17 is 10 and 7 more.' },
+          { do: 'Show <b>20</b>.', reset: false, goal: function (s) { return s.full; }, yes: 'Two full frames are 20.' }
+        ] },
+        key: '<p>A full frame is <b>10</b>. Count on from 10.</p>',
+        check: [P('c-frames', 2), P('c-frames', 2)] },
+      { id: 'teen-forty', title: 'Fourteen is not forty', exp: ['B1.1'], skill: 'c-words', hard: true,
+        body: '<p><b>Fourteen</b> and <b>forty</b> sound alike. Fourteen is 14: <b>one ten</b> and 4 more. Forty is 40: <b>four tens</b>.</p>' +
+          '<div class="vrow"><figure>' + A.draw.frames(14, { c: 14, r: 2 }) + '<figcaption>fourteen: 14</figcaption></figure><figure>' + A.draw.frames(40, { c: 14, r: 2 }) + '<figcaption>forty: 40</figcaption></figure></div>',
+        watch: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: '<b>Fourteen</b>: 1 ten and 4 ones.', act: function (t) { return t.set(0, 1, 4); }, ms: 1600 },
+          { say: 'Count it: 10, 11, 12, 13, 14.', act: function (t) { return t.countAll(420); }, ms: 900 },
+          { say: '<b>Forty</b>: 4 tens and no ones.', act: function (t) { t.clearLit(); return t.set(0, 4, 0); }, ms: 1400 },
+          { say: 'Count by tens: 10, 20, 30, 40. Forty is much more than fourteen.', act: function (t) { return t.countAll(500); }, ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true }, tasks: [
+          { do: 'Build <b>fourteen</b>.', goal: function (s) { return s.value === 14 && s.o < 10; }, yes: 'Fourteen is 1 ten and 4 ones: 14.' },
+          { do: 'Now build <b>forty</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 40 && s.o === 0; }, yes: 'Forty is 4 tens: 40.' }
+        ] },
+        ways: [
+          { label: 'Listen to the end', html: '<p>Words that end in <b>"teen"</b> are <b>10 and some more</b>: thirteen, fourteen, fifteen.</p><p>Words that end in <b>"ty"</b> are <b>tens</b>: twenty, thirty, forty, fifty.</p>' },
+          { label: 'Look at the digits', html: '<p>In <span class="math big">14</span> the <b>1</b> comes first. That is 1 ten.</p><p>In <span class="math big">40</span> the <b>4</b> comes first. That is 4 tens.</p>' }
+        ],
+        key: '<p><b>"Teen"</b> means ten and some more. <b>"Ty"</b> means tens.</p>',
+        mistake: '<p>Writing 41 or 40 for "fourteen" because the word starts with "four". Have the child build both numbers with blocks and compare.</p>',
+        check: [P('c-words', 2), P('c-words', 2)] }
+    ] },
+
+    { id: 'to-50', title: 'Counting to 50', sub: 'One more, one less, and counting on.', concepts: [
+      { id: 'more-less', title: 'One more, one less', exp: ['B1.1'], skill: 'c-next',
+        body: '<p>On a number line, a jump to the <b>right</b> is one more. A jump to the <b>left</b> is one less.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 12 }, steps: [
+          { say: 'The dot is on 12.', ms: 1200 },
+          { say: 'Jump one to the right: <b>13</b>. One more than 12 is 13.', act: function (t) { return t.hop(13, '+1'); }, ms: 1200 },
+          { say: 'Back to 12, and jump one to the left: <b>11</b>.', act: function (t) { t.clearHops(); return t.moveTo(12).then(function () { return t.hop(11, '−1'); }); }, ms: 1200 },
+          { say: 'One less than 12 is 11.', ms: 1600 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 6, step: 1 }, tasks: [
+          { do: 'Move the dot to <b>one more than 9</b>. Tap or drag along the line.', goal: function (s) { return s.at === 10; }, yes: 'One more than 9 is 10.' },
+          { do: 'Move the dot to <b>one less than 15</b>.', reset: false, goal: function (s) { return s.at === 14; }, yes: 'One less than 15 is 14.' }
+        ] },
+        key: '<p><b>One more</b>: the next number. <b>One less</b>: the number before.</p>',
+        check: [P('c-next', 1), P('c-next', 1)] },
+      { id: 'new-ten', title: 'After 29 comes 30', exp: ['B1.1'], skill: 'c-next', hard: true,
+        body: '<p>When the ones get to <b>9</b>, the next number starts a new ten: 28, 29, <b>30</b>. Each row of the chart ends with a ten.</p>',
+        watch: { tool: 'hundred', opts: { to: 50 }, steps: [
+          { say: 'Count along the chart: 21, 22, 23 ...', act: function (t) { return t.skip(1, 21, 29, 260); }, ms: 500 },
+          { say: 'After 29 the row ends with <b>30</b>. Not "twenty-ten".', act: function (t) { return t.skip(1, 30, 30); }, ms: 1400 },
+          { say: 'Then a new row starts: 31, 32, 33.', act: function (t) { return t.skip(1, 31, 33, 400); }, ms: 1600 }
+        ] },
+        try: { tool: 'hundred', opts: { to: 50 }, tasks: [
+          { do: 'Tap the number that comes <b>after 39</b>.', goal: function (s) { return s.lit.indexOf(40) >= 0; }, yes: 'After 39 comes 40.' },
+          { do: 'Tap the number that comes <b>before 21</b>.', goal: function (s) { return s.lit.indexOf(20) >= 0; }, yes: 'Before 21 comes 20.' }
+        ] },
+        ways: [
+          { label: 'With blocks', html: '<p>29 is 2 tens and 9 ones. Add 1 more one: now there are 10 ones. They make a new ten. 3 tens is <b>30</b>.</p>', tool: 'base10', opts: { cols: ['t', 'o'], t: 2, o: 9, controls: true } },
+          { label: 'Say the tens', html: '<p>Say the row-ends out loud: ten, twenty, thirty, forty, fifty. After every "nine" comes the next one of these.</p>' }
+        ],
+        key: '<p>After a <b>9</b> comes a new ten: 19, <b>20</b>. 39, <b>40</b>.</p>',
+        mistake: '<p>Saying "twenty-ten" after 29, or jumping from 29 to 40. Count the row-ends together: 10, 20, 30, 40, 50.</p>',
+        check: [P('c-next', 2), P('c-next', 2)] },
+      { id: 'count-on', title: 'Count on from a number', exp: ['B1.5'], skill: 'c-next',
+        body: '<p>You do not have to start at 1. Say the start number <b>in your head</b>, then count on.</p>',
+        watch: { tool: 'numberline', opts: { min: 5, max: 20, every: 5, start: 8 }, steps: [
+          { say: 'Start at 8. Say "eight" in your head.', ms: 1400 },
+          { say: 'Count on 3: 9 ...', act: function (t) { return t.hop(9, '1'); }, ms: 400 },
+          { say: 'Count on 3: 9, 10 ...', act: function (t) { return t.hop(10, '2'); }, ms: 400 },
+          { say: 'Count on 3: 9, 10, 11.', act: function (t) { return t.hop(11, '3'); }, ms: 800 },
+          { say: 'We land on <b>11</b>.', ms: 1600 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 10, max: 30, every: 5, start: 14, step: 1 }, tasks: [
+          { do: 'Start at 14. Use the jump button to count on <b>4</b>.', goal: function (s) { return s.at === 18 && s.hops >= 4; }, yes: '14 ... 15, 16, 17, 18. You land on 18.' }
+        ] },
+        key: '<p>Say the start number <b>in your head</b>. Count on from there.</p>',
+        check: [P('c-next', 3), P('c-next', 3)] },
+      { id: 'words', title: 'Number words to 50', exp: ['B1.1'], skill: 'c-words',
+        body: '<p>Big number words have two parts. <b>Thirty-six</b> is "thirty" (3 tens) and "six" (6 ones): <b>36</b>.</p>',
+        watch: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: '"Thirty" is 3 tens.', act: function (t) { return t.add('t', 3, 400); }, ms: 900 },
+          { say: '"Six" is 6 ones.', act: function (t) { return t.add('o', 6, 260); }, ms: 900 },
+          { say: 'Thirty-six: we write <b>36</b>. The tens digit comes first.', ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true }, tasks: [
+          { do: 'Build <b>twenty-three</b>.', goal: function (s) { return s.value === 23 && s.o < 10; }, yes: 'Twenty-three is 23.' },
+          { do: 'Build <b>forty-one</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 41 && s.o < 10; }, yes: 'Forty-one is 41.' }
+        ] },
+        key: '<p>The first word tells the <b>tens</b>. The second word tells the <b>ones</b>.</p>',
+        check: [P('c-words', 1), P('c-words', 3)] }
+    ] },
+
+    { id: 'skip', title: 'Skip counting', sub: 'Count by 10s, 5s and 2s.', concepts: [
+      { id: 'tens', title: 'Count by 10s', exp: ['B1.5'], skill: 'c-skip',
+        body: '<p>When things come in tens, count by 10s: <b>10, 20, 30, 40, 50</b>. It is much faster than counting by 1s.</p>',
+        watch: { tool: 'counters', opts: { n: 30, arrange: 'tens' }, steps: [
+          { say: 'Here are some counters in rows of 10.', ms: 1200 },
+          { say: 'Count by 10s, one row at a time: 10, 20, 30.', act: function (t) { return t.countAll(80); }, ms: 900 },
+          { say: 'There are <b>30</b> counters.', ms: 1600 }
+        ] },
+        try: { tool: 'hundred', opts: { to: 50 }, tasks: [
+          { do: 'Count by 10s on the chart. Tap <b>10, 20, 30, 40, 50</b>.', goal: function (s) { return [10, 20, 30, 40, 50].every(function (v) { return s.lit.indexOf(v) >= 0; }); }, yes: 'They are all at the end of a row. Counting by 10s: 10, 20, 30, 40, 50.' }
+        ] },
+        key: '<p>By 10s: <b>10, 20, 30, 40, 50</b>.</p>',
+        check: [P('c-skip', 1), P('c-skip', 1)] },
+      { id: 'fives', title: 'Count by 5s', exp: ['B1.5'], skill: 'c-skip',
+        body: '<p>A hand has 5 fingers. Count hands by 5s: <b>5, 10, 15, 20</b>.</p><div class="fig">' + groupsPic(5, 4) + '</div>',
+        watch: { tool: 'hundred', opts: { to: 50 }, steps: [
+          { say: 'Count by 5s on the chart.', act: function (t) { return t.skip(5, 5, 50, 520); }, ms: 600 },
+          { say: 'Look: the numbers end in <b>5</b> or <b>0</b>, and make two straight columns.', ms: 2000 }
+        ] },
+        try: { tool: 'hundred', opts: { to: 50 }, tasks: [
+          { do: 'Count by 5s. Tap <b>5, 10, 15, 20, 25, 30</b>.', goal: function (s) { return [5, 10, 15, 20, 25, 30].every(function (v) { return s.lit.indexOf(v) >= 0; }); }, yes: '5, 10, 15, 20, 25, 30. Every number ends in 5 or 0.' }
+        ] },
+        key: '<p>By 5s: <b>5, 10, 15, 20, 25</b>. The numbers end in 5 or 0.</p>',
+        check: [P('c-skip', 2), P('c-skip', 2)] },
+      { id: 'twos', title: 'Count by 2s', exp: ['B1.5'], skill: 'c-skip',
+        body: '<p>Socks come in pairs. Count pairs by 2s: <b>2, 4, 6, 8, 10</b>.</p>',
+        watch: { tool: 'counters', opts: { n: 10, arrange: 'pairs' }, steps: [
+          { say: 'Here are counters in pairs.', ms: 1200 },
+          { say: 'Count by 2s, one pair at a time: 2, 4, 6, 8, 10.', act: function (t) { return t.countAll(300); }, ms: 900 },
+          { say: 'There are <b>10</b>. Same answer as counting by 1s, just faster.', ms: 1800 }
+        ] },
+        try: { tool: 'counters', opts: { n: 6, arrange: 'pairs', controls: ['pairs'], max: 20 }, tasks: [
+          { do: 'Make <b>8</b> counters (4 pairs). Use + 1, then press Pair them up.', goal: function (s) { return s.n === 8 && s.mode === 'pairs'; }, yes: '4 pairs: 2, 4, 6, 8.' },
+          { do: 'Make <b>12</b> counters in pairs.', reset: false, goal: function (s) { return s.n === 12 && s.mode === 'pairs'; }, yes: '6 pairs: 2, 4, 6, 8, 10, 12.' }
+        ] },
+        key: '<p>By 2s: <b>2, 4, 6, 8, 10</b>.</p>',
+        mistake: '<p>Skip counting the words but pointing at single objects (2, 4, 6 for three socks). Point to a whole pair for each number.</p>',
+        check: [P('c-skip', 3), P('c-skip', 3)] }
+    ] },
+
+    { id: 'estimate', title: 'Estimate', sub: 'A smart guess, then count to check.', concepts: [
+      { id: 'group-ten', title: 'Picture a group of 10', exp: ['B1.4'], skill: 'c-est',
+        body: '<p>An <b>estimate</b> is a smart guess about how many. Picture what <b>10</b> looks like. Then ask, "How many groups of 10 could I make?"</p>',
+        watch: { tool: 'counters', opts: { n: 23, arrange: 'scatter', seed: 5 }, steps: [
+          { say: 'About how many counters? Do not count them all.', ms: 1600 },
+          { say: 'I picture a group of 10. I think about 2 groups fit. My estimate: <b>about 20</b>.', ms: 2200 },
+          { say: 'Now check. Put them in rows of 10.', act: function (t) { return t.arrange('tens'); }, ms: 1000 },
+          { say: '2 tens and 3 more: <b>23</b>. My estimate was close.', ms: 2000 }
+        ] },
+        try: { tool: 'counters', opts: { n: 34, arrange: 'scatter', seed: 9, controls: ['tens'] }, tasks: [
+          { do: 'Make an estimate in your head. Then press <b>Group in tens</b> to check.', goal: function (s) { return s.mode === 'tens'; }, yes: '3 tens and 4 more: 34. Was your estimate close to 30?' }
+        ] },
+        key: '<p>An estimate does not have to be exact. A <b>close</b> estimate is a good estimate.</p>',
+        check: [P('c-est', 1), P('c-est', 2)] },
+      { id: 'check', title: 'Estimate, then count', exp: ['B1.4'], skill: 'c-est',
+        body: '<p>First estimate. Then count to check. Each time you check, your next estimate gets better.</p>',
+        watch: { mount: function (el) { return K.stage(el); }, steps: [
+          { say: 'How many leaves? My estimate: about 20.', act: function (t) { return t.show(A.draw.scatter(22, 4242, { kind: 'leaf', w: 340, h: 180, label: '22 leaves spread out' })); }, ms: 2000 },
+          { say: 'Count to check: put them in ten frames.', act: function (t) { return t.show(A.draw.frames(22, { c: 22, label: '22 leaves in ten frames' })); }, ms: 1400 },
+          { say: '10, 20, then 21, 22. There are <b>22</b>. My estimate was close.', ms: 2000 }
+        ] },
+        try: { do: 'Move the slider to your estimate. Then press <b>Count to check</b>.', mount: function (el, done) {
+          var n = R.int(12, 38), k = R.pick(['apple', 'flower', 'star']);
+          el.innerHTML = '<div class="g1-frame">' + A.draw.scatter(n, R.int(1, 9999), { kind: k, w: 340, h: 200, r: n > 30 ? 9 : 11, label: 'A group of ' + A.NAMES[k][1] + ' to estimate' }) + '</div>' +
+            '<div class="ctrl"><label>My estimate: <output>20</output><input type="range" min="0" max="50" step="5" value="20"></label></div><div class="btnrow"><button type="button" class="btn">Count to check</button></div><div class="mp-read" aria-live="polite"></div>';
+          var rg = A.$('input', el), out = A.$('output', el);
+          rg.addEventListener('input', function () { out.textContent = rg.value; });
+          A.$('.btn', el).addEventListener('click', function () {
+            var g = +rg.value, d = Math.abs(g - n);
+            A.$('.g1-frame', el).innerHTML = A.draw.frames(n, { c: 20, label: n + ' ' + A.NAMES[k][1] + ' put in ten frames' });
+            Manip.bump(A.$('.g1-frame', el), 'mp-fade');
+            A.$('.mp-read', el).innerHTML = '<p>There are <span class="mp-num">' + n + '</span>. Your estimate was ' + g + (d <= 5 ? ': very close.' : d <= 10 ? ': fairly close.' : '. Next time, picture groups of 10.') + '</p>';
+            done('Good. Checking makes your next estimate better.');
+          });
+        } },
+        key: '<p><b>Estimate</b> first, then <b>count</b> to check.</p>',
+        check: [P('c-est', 2), P('c-est', 3)] }
+    ] }
+  ];
+
   A.register('counting', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Numbers tell how many</h2>' +
 '<p>We use numbers every day. Most of the time a number tells <b>how many</b>.</p>' +
@@ -278,7 +544,7 @@
         });
       });
       A.$$('[data-by]', root).forEach(function (x) { x.classList.toggle('alt', x.getAttribute('data-by') !== '5'); });
-      $('#skn', root).addEventListener('click', function () { if (at + by <= 50) { at += by; sk(); if (A.store('auto') === '1') A.speak(String(at)); } });
+      $('#skn', root).addEventListener('click', function () { if (at + by <= 50) { at += by; sk(); } });
       $('#skr', root).addEventListener('click', function () { at = 0; sk(); });
       sk();
       /* 5: estimate */

@@ -114,7 +114,211 @@
       steps: ['Taking some away means we subtract.', 'Start at ' + a + ', count back ' + b + ': ' + seq(c, b).reverse().join(', ') + '.', a + ' ' + M + ' ' + b + ' = ' + c + '. There are ' + c + ' left.'], explain: a + ' ' + M + ' ' + b + ' = ' + c + '.' };
   }
 
+  var CH = 'add-sub-10';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  function fr(a, b, lab) { return A.draw.frames(a, { b: b || 0, c: 30, label: lab || (a + ' red and ' + (b || 0) + ' yellow counters') }); }
+
+  var LESSONS = [
+    { id: 'add', title: 'Adding', sub: 'Put groups together.', concepts: [
+      { id: 'join', title: 'Adding puts groups together', exp: ['B2.2'], skill: 'a-add',
+        body: '<p>When we <b>add</b>, we put two groups together and find how many in all.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Here are 3 red counters.', act: function (t) { return t.show(fr(3, 0)); }, ms: 1200 },
+          { say: 'Add 4 yellow counters.', act: function (t) { return t.show(fr(3, 4)); }, ms: 1200 },
+          { say: 'Count them all: 1, 2, 3, then 4, 5, 6, 7.', act: function (t) { return t.show(fr(3, 4) + '<p class="big">' + eqn('3 + 4 = 7') + '</p>'); }, ms: 1200 },
+          { say: '3 and 4 make <b>7</b>. We write 3 + 4 = 7.', ms: 1800 }
+        ] },
+        try: { tool: 'tenframe', opts: { two: true }, tasks: [
+          { do: 'Show ' + eqn('2 + 5') + ': 2 red and 5 yellow. Tap a box once for red, twice for yellow.', goal: function (s) { return s.a === 2 && s.b === 5; }, yes: '2 + 5 = 7.' },
+          { do: 'Show ' + eqn('6 + 3') + '.', goal: function (s) { return s.a === 6 && s.b === 3; }, yes: '6 + 3 = 9.' }
+        ] },
+        key: '<p><b>+</b> means put together. <b>=</b> means "is the same as".</p>',
+        check: [P('a-add', 1), P('a-add', 1)] },
+      { id: 'count-on', title: 'Count on from the bigger number', exp: ['B2.2'], skill: 'a-add',
+        body: '<p>Start at the <b>bigger</b> number. Say it in your head. Then count on the smaller number.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 6 }, steps: [
+          { say: 'What is 2 + 6? Start at the bigger number, 6.', ms: 1400 },
+          { say: 'Count on 2: 7 ...', act: function (t) { return t.hop(7, '1'); }, ms: 500 },
+          { say: 'Count on 2: 7, 8.', act: function (t) { return t.hop(8, '2'); }, ms: 800 },
+          { say: 'We land on 8. So <b>2 + 6 = 8</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 0, step: 1 }, tasks: [
+          { do: 'Find ' + eqn('3 + 5') + '. Move the dot to 5, then jump on 3.', goal: function (s) { return s.at === 8 && s.hops >= 3; }, yes: '5 ... 6, 7, 8. So 3 + 5 = 8.' }
+        ] },
+        mistake: '<p>Counting the start number again (5 + 3: "5, 6, 7" = 7). Say the start number in your head, then count the jumps.</p>',
+        key: '<p>Start <b>big</b>, count on <b>small</b>.</p>',
+        check: [P('a-add', 2), P('a-add', 2)] },
+      { id: 'missing', title: 'Find the missing number', exp: ['B2.2'], skill: 'a-add', hard: true,
+        body: '<p>' + eqn('4 + <b class="blank">?</b> = 7') + ' asks: "4 and how many more make 7?" Count on from 4 to 7.</p>',
+        watch: { tool: 'tenframe', opts: { n: 4 }, steps: [
+          { say: '4 + ? = 7. Start with 4.', ms: 1400 },
+          { say: 'Add counters until there are 7: 5, 6, 7.', act: function (t) { return t.fill(7, 600); }, ms: 700 },
+          { say: 'We added <b>3</b>. So 4 + 3 = 7.', ms: 1800 }
+        ] },
+        try: { tool: 'tenframe', opts: { n: 5 }, tasks: [
+          { do: 'Solve ' + eqn('5 + <b class="blank">?</b> = 9') + '. Add counters until there are 9.', reset: false, goal: function (s) { return s.n === 9; }, yes: 'You added 4. So 5 + 4 = 9.' }
+        ] },
+        ways: [
+          { label: 'Count on with fingers', html: '<p>Say "4" in your head. Put up one finger for each number: 5, 6, 7. You have <b>3 fingers</b> up.</p>' },
+          { label: 'Take away', html: '<p>7 take away 4 leaves 3. So the missing number is 3. ' + eqn('7 &minus; 4 = 3') + '</p>' }
+        ],
+        key: '<p>Count on from the part you know to the whole.</p>',
+        check: [P('a-add', 3), P('a-add', 3)] }
+    ] },
+
+    { id: 'ten', title: 'Make 10', sub: 'Pairs that make 10.', concepts: [
+      { id: 'pairs', title: 'Pairs that make 10', exp: ['B2.2'], skill: 'a-ten',
+        body: '<p>A full ten frame is 10. Red and yellow counters show two numbers that <b>make 10</b>.</p><div class="vrow">' + [1, 2, 3, 4, 5].map(function (a) { return '<figure>' + A.draw.frames(a, { b: 10 - a, c: 13 }) + '<figcaption>' + a + ' + ' + (10 - a) + '</figcaption></figure>'; }).join('') + '</div>',
+        watch: { tool: 'g1stage', steps: [1, 2, 3, 4, 5, 6].map(function (a) { return { say: a + ' and ' + (10 - a) + ' make 10.', act: function (t) { return t.show(fr(a, 10 - a) + '<p class="big">' + eqn(a + ' + ' + (10 - a) + ' = 10') + '</p>'); }, ms: 1300 }; }) },
+        try: { tool: 'tenframe', opts: { two: true }, tasks: [
+          { do: 'Fill the frame with red and yellow to make <b>10</b>. Use 7 red.', goal: function (s) { return s.a === 7 && s.b === 3; }, yes: '7 + 3 = 10.' },
+          { do: 'Make 10 another way.', goal: function (s) { return s.full && s.a !== 7 && s.a > 0 && s.b > 0; }, yes: function (s) { return s.a + ' + ' + s.b + ' = 10.'; } }
+        ] },
+        key: '<p>1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5 all make <b>10</b>.</p>',
+        check: [P('a-ten', 1), P('a-ten', 1)] },
+      { id: 'how-many', title: 'How many more make 10?', exp: ['B2.2'], skill: 'a-ten',
+        body: '<p>Look at the empty boxes. They show how many more make 10.</p>',
+        watch: { tool: 'tenframe', opts: { n: 6 }, steps: [
+          { say: '6 counters. How many more make 10?', ms: 1400 },
+          { say: 'Count the empty boxes as we fill them: 1, 2, 3, 4.', act: function (t) { return t.fill(10, 600); }, ms: 700 },
+          { say: '<b>4</b> more. 6 + 4 = 10.', ms: 1800 }
+        ] },
+        try: { tool: 'tenframe', opts: { n: 2 }, tasks: [
+          { do: '2 are in the frame. Fill it up. How many did you add?', reset: false, goal: function (s) { return s.full; }, yes: 'You added 8. 2 + 8 = 10.' }
+        ] },
+        key: '<p>The <b>empty boxes</b> show how many more make 10.</p>',
+        check: [P('a-ten', 2), P('a-ten', 2)] }
+    ] },
+
+    { id: 'facts', title: 'Facts that help', sub: 'Doubles, turn-arounds and zero.', concepts: [
+      { id: 'doubles', title: 'Doubles', exp: ['B2.1'], skill: 'a-facts',
+        body: '<p>A <b>double</b> adds a number to itself: 3 + 3 = 6. Doubles are easy to remember.</p>',
+        watch: { tool: 'counters', opts: { n: 0, arrange: 'pairs' }, steps: [
+          { say: '1 + 1 = 2', act: function (t) { return t.setN(2); }, ms: 900 },
+          { say: '2 + 2 = 4', act: function (t) { return t.setN(4); }, ms: 900 },
+          { say: '3 + 3 = 6', act: function (t) { return t.setN(6); }, ms: 900 },
+          { say: '4 + 4 = 8', act: function (t) { return t.setN(8); }, ms: 900 },
+          { say: '5 + 5 = 10. Each double makes two equal rows.', act: function (t) { return t.setN(10); }, ms: 1800 }
+        ] },
+        try: { tool: 'counters', opts: { n: 2, arrange: 'pairs', controls: ['pairs'], max: 10 }, tasks: [
+          { do: 'Show the double <b>4 + 4</b>. Use + 1, then Pair them up.', goal: function (s) { return s.n === 8 && s.mode === 'pairs'; }, yes: '4 + 4 = 8. Two rows of 4.' }
+        ] },
+        key: '<p>Doubles: <b>1+1=2, 2+2=4, 3+3=6, 4+4=8, 5+5=10</b>.</p>',
+        check: [P('a-facts', 1), P('a-facts', 1)] },
+      { id: 'turn', title: 'Turn-arounds', exp: ['B2.1'], skill: 'a-facts',
+        body: '<p>You can add in any order. <b>2 + 5</b> and <b>5 + 2</b> are both 7. These are turn-around facts.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: '2 red and 5 yellow: 2 + 5 = 7.', act: function (t) { return t.show(fr(2, 5) + '<p class="big">' + eqn('2 + 5 = 7') + '</p>'); }, ms: 1600 },
+          { say: 'Turn the frame around: 5 + 2. Still 7.', act: function (t) { return t.show('<div style="transform:rotate(180deg)">' + fr(2, 5) + '</div><p class="big">' + eqn('5 + 2 = 7') + '</p>'); }, ms: 1800 },
+          { say: 'Same counters, same total. Start with the bigger number to count on faster.', ms: 1800 }
+        ] },
+        try: { tool: 'tenframe', opts: { two: true }, tasks: [
+          { do: 'Show ' + eqn('1 + 6') + ': 1 red and 6 yellow.', goal: function (s) { return s.a === 1 && s.b === 6; }, yes: '1 + 6 = 7.' },
+          { do: 'Now the turn-around: ' + eqn('6 + 1') + '. 6 red and 1 yellow.', goal: function (s) { return s.a === 6 && s.b === 1; }, yes: '6 + 1 = 7 too.' }
+        ] },
+        key: '<p>The order does not change the total: <b>2 + 5 = 5 + 2</b>.</p>',
+        check: [P('a-facts', 2), P('a-facts', 2)] },
+      { id: 'zero', title: 'Adding zero', exp: ['B2.1'], skill: 'a-facts',
+        body: '<p>Zero means none. Adding 0 does not change a number: <b>6 + 0 = 6</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: '6 red counters.', act: function (t) { return t.show(fr(6, 0)); }, ms: 1200 },
+          { say: 'Add 0 yellow counters. Nothing new comes.', act: function (t) { return t.show(fr(6, 0) + '<p class="big">' + eqn('6 + 0 = 6') + '</p>'); }, ms: 1800 }
+        ] },
+        key: '<p>Any number <b>+ 0</b> stays the same.</p>',
+        check: [function () { var n = R.int(1, 9); return { q: eqn(n + ' + 0 = <b class="blank">?</b>'), type: 'num', answer: n, hint: 'Adding zero adds nothing.', explain: n + ' + 0 = ' + n + '.' }; }, P('a-facts', 3)] }
+    ] },
+
+    { id: 'sub', title: 'Subtracting', sub: 'Take away, and count back.', concepts: [
+      { id: 'take', title: 'Subtracting takes away', exp: ['B2.2'], skill: 'a-sub',
+        body: '<p>When we <b>subtract</b>, we take some away and find how many are left.</p>',
+        watch: { tool: 'g1objects', opts: { kind: 'apple', n: 8 }, steps: [
+          { say: 'There are 8 apples.', ms: 1200 },
+          { say: '3 apples get eaten.', act: function (t) { return t.setN(5); }, ms: 900 },
+          { say: 'Count what is left: 1, 2, 3, 4, 5.', act: function (t) { return t.countAll(420); }, ms: 600 },
+          { say: '8 take away 3 is <b>5</b>. We write 8 &minus; 3 = 5.', ms: 1800 }
+        ] },
+        try: { tool: 'g1objects', opts: { kind: 'fish', n: 9, controls: ['less'], max: 9 }, tasks: [
+          { do: 'There are 9 fish. <b>Take away 4</b> with the &minus; 1 button. How many are left?', goal: function (s) { return s.n === 5; }, yes: '9 &minus; 4 = 5.' }
+        ] },
+        key: '<p><b>&minus;</b> means take away.</p>',
+        check: [P('a-sub', 1), P('a-sub', 1)] },
+      { id: 'back', title: 'Count back', exp: ['B2.2'], skill: 'a-sub',
+        body: '<p>To take away a small number, start at the big number and <b>count back</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 9 }, steps: [
+          { say: 'What is 9 &minus; 2? Start at 9.', ms: 1400 },
+          { say: 'Count back 2: 8 ...', act: function (t) { return t.hop(8, '1'); }, ms: 500 },
+          { say: 'Count back 2: 8, 7.', act: function (t) { return t.hop(7, '2'); }, ms: 800 },
+          { say: 'We land on 7. <b>9 &minus; 2 = 7</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 10, step: 1 }, tasks: [
+          { do: 'Find ' + eqn('10 &minus; 3') + '. Start at 10 and press Jump back 3 times.', goal: function (s) { return s.at === 7 && s.hops >= 3; }, yes: '10 ... 9, 8, 7. So 10 &minus; 3 = 7.' }
+        ] },
+        mistake: '<p>Counting the start number as the first jump back (9 &minus; 2: "9, 8"). The first number said is one jump back.</p>',
+        key: '<p>Start at the big number. <b>Count back</b>.</p>',
+        check: [P('a-sub', 2), P('a-sub', 2)] }
+    ] },
+
+    { id: 'family', title: 'Adding and subtracting go together', sub: 'Fact families.', concepts: [
+      { id: 'family', title: 'A fact family', exp: ['B2.1'], skill: 'a-fam',
+        body: '<p>The same three numbers make four facts. 3, 5 and 8: <b>3 + 5 = 8</b>, <b>5 + 3 = 8</b>, <b>8 &minus; 3 = 5</b>, <b>8 &minus; 5 = 3</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: '3 red and 5 yellow make 8.', act: function (t) { return t.show(fr(3, 5) + '<p class="big">' + eqn('3 + 5 = 8') + '</p>'); }, ms: 1500 },
+          { say: 'Turn it around: 5 + 3 = 8.', act: function (t) { return t.show(fr(3, 5) + '<p class="big">' + eqn('5 + 3 = 8') + '</p>'); }, ms: 1500 },
+          { say: 'Take away the 3 red: 8 &minus; 3 = 5.', act: function (t) { return t.show(A.draw.frames(0, { b: 5, ghost: 8, c: 30 }) + '<p class="big">' + eqn('8 &minus; 3 = 5') + '</p>'); }, ms: 1500 },
+          { say: 'Take away the 5 yellow: 8 &minus; 5 = 3. Four facts, one family.', act: function (t) { return t.show(fr(3, 0) + '<p class="big">' + eqn('8 &minus; 5 = 3') + '</p>'); }, ms: 1800 }
+        ] },
+        key: '<p>Three numbers, <b>four facts</b>.</p>',
+        check: [P('a-fam', 1), P('a-fam', 2)] },
+      { id: 'think-add', title: 'Think addition to subtract', exp: ['B2.1'], skill: 'a-fam', hard: true,
+        body: '<p>To find <b>9 &minus; 4</b>, think: "4 and what make 9?" 4 + 5 = 9, so 9 &minus; 4 = <b>5</b>.</p>',
+        watch: { tool: 'tenframe', opts: { n: 4 }, steps: [
+          { say: '9 &minus; 4? Think: 4 + ? = 9.', ms: 1500 },
+          { say: 'Count on from 4 to 9: 5, 6, 7, 8, 9.', act: function (t) { return t.fill(9, 500); }, ms: 700 },
+          { say: 'That is 5 more. So <b>9 &minus; 4 = 5</b>.', ms: 1800 }
+        ] },
+        ways: [
+          { label: 'Use the family', html: '<p>If you know ' + eqn('4 + 5 = 9') + ', you also know ' + eqn('9 &minus; 4 = 5') + ' and ' + eqn('9 &minus; 5 = 4') + '.</p>' },
+          { label: 'On a number line', html: '<div class="fig">' + A.draw.nl(0, 10, { mark: 4, hops: hops(4, 5) }) + '</div><p>From 4 to 9 is 5 jumps.</p>' }
+        ],
+        key: '<p>Subtracting asks: <b>"What do I add?"</b></p>',
+        check: [P('a-fam', 3), P('a-sub', 3)] }
+    ] },
+
+    { id: 'story', title: 'Story problems', sub: 'Read, picture, solve, check.', concepts: [
+      { id: 'join', title: 'Stories that join', exp: ['B2.2'], skill: 'a-story',
+        body: '<p>Some stories put things <b>together</b>. Words like <b>in all</b>, <b>more came</b>, <b>altogether</b> tell us to add.</p>',
+        watch: { tool: 'g1objects', opts: { kind: 'ball', n: 4 }, steps: [
+          { say: 'Ava has 4 balls.', ms: 1300 },
+          { say: 'Leo gives her 3 more.', act: function (t) { return t.setN(7); }, ms: 1000 },
+          { say: 'How many in all? Count: 1 to 7.', act: function (t) { return t.countAll(380); }, ms: 600 },
+          { say: '4 + 3 = <b>7</b> balls.', ms: 1800 }
+        ] },
+        try: { tool: 'g1objects', opts: { kind: 'flower', n: 5, controls: ['more'], max: 10 }, tasks: [
+          { do: 'Zoe picks 5 flowers. Then she picks 2 more. Show the flowers, then tap each one to count.', goal: function (s) { return s.n === 7 && s.allCounted; }, yes: '5 + 2 = 7 flowers.' }
+        ] },
+        key: '<p>Read it. Picture it. Solve it. Check it.</p>',
+        check: [P('a-story', 1), P('a-story', 2)] },
+      { id: 'away', title: 'Stories that take away', exp: ['B2.2'], skill: 'a-story',
+        body: '<p>Some stories take things <b>away</b>. Words like <b>left</b>, <b>ate</b>, <b>flew away</b>, <b>gave away</b> tell us to subtract.</p>',
+        watch: { tool: 'g1objects', opts: { kind: 'star', n: 9 }, steps: [
+          { say: 'There are 9 stickers.', ms: 1300 },
+          { say: 'Sam gives 4 away.', act: function (t) { return t.setN(5); }, ms: 1000 },
+          { say: 'How many are left? 9 &minus; 4 = <b>5</b>.', act: function (t) { return t.countAll(380); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1objects', opts: { kind: 'apple', n: 8, controls: ['less'], max: 8 }, tasks: [
+          { do: 'There are 8 apples. Mei eats 2. Show what is left.', goal: function (s) { return s.n === 6; }, yes: '8 &minus; 2 = 6 apples left.' }
+        ] },
+        mistake: '<p>Adding the two numbers in every story. Ask: "Does the group get bigger or smaller?"</p>',
+        key: '<p>Bigger group: <b>add</b>. Smaller group: <b>subtract</b>.</p>',
+        check: [P('a-story', 2), P('a-story', 3)] }
+    ] }
+  ];
+
   A.register('add-sub-10', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Adding puts groups together</h2>' +
 '<p>When we <b>add</b>, we put two groups together and find how many in all. The sign <b>+</b> means "plus" or "add". The sign <b>=</b> means "is the same as".</p>' +

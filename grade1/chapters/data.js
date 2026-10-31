@@ -133,7 +133,104 @@
   }
 
   var demo = { t: 'Our favourite fruit', cats: TOPICS[0].cats };
+  var CH = 'data';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  var SH8 = [['#e04b3a', 'c', 1], ['#2c68cf', 's', 0], ['#e04b3a', 's', 1], ['#2c68cf', 'c', 1], ['#e04b3a', 'c', 0], ['#2c68cf', 's', 1]];
+  function shp(it, i) { var z = it[2] ? 44 : 26, s = it[1] === 'c' ? '<circle cx="26" cy="26" r="' + z / 2 + '" style="fill:' + it[0] + '" stroke="rgba(0,0,0,.45)" stroke-width="2"/>' : '<rect x="' + (26 - z / 2) + '" y="' + (26 - z / 2) + '" width="' + z + '" height="' + z + '" rx="3" style="fill:' + it[0] + '" stroke="rgba(0,0,0,.45)" stroke-width="2"/>'; return { id: 's' + i, html: A.svg(52, 52, s, (it[2] ? 'big ' : 'small ') + (it[0] === '#e04b3a' ? 'red ' : 'blue ') + (it[1] === 'c' ? 'circle' : 'square')) }; }
+  /* "Try it": a survey. Tap an answer to add a tally mark; the table and the picture graph grow. */
+  function survey(goal) {
+    return { do: 'Ask people: <b>"What is your favourite fruit?"</b> Tap their answer each time. Collect <b>' + goal + '</b> answers.', mount: function (host, done) {
+      var votes = demo.cats.map(function () { return 0; });
+      host.innerHTML = '<div class="btnrow">' + demo.cats.map(function (c, i) { return '<button type="button" class="btn alt" data-i="' + i + '">' + c[0] + '</button>'; }).join('') + '</div><div class="tt"></div><div class="fig g1-frame"></div>';
+      function draw() {
+        var tot = votes.reduce(function (a, b) { return a + b; }, 0);
+        A.$('.tt', host).innerHTML = tallyTable(demo.cats, votes, 'Our favourite fruit');
+        A.$('.fig', host).innerHTML = tot ? picto(demo, votes, 'my survey') : '';
+        if (tot === goal) done('You collected ' + goal + ' answers. Your tally table and picture graph show the same data.');
+      }
+      A.$$('[data-i]', host).forEach(function (b) { b.addEventListener('click', function () { votes[+b.getAttribute('data-i')]++; draw(); }); });
+      draw();
+    } };
+  }
+
+  var LESSONS = [
+    { id: 'sort', title: 'Sorting', sub: 'Groups that are alike.', concepts: [
+      { id: 'rule', title: 'A sorting rule', exp: ['D1.1'], skill: 'd-sort',
+        body: '<p>To <b>sort</b>, put things into groups that are alike in one way. The way we choose is the <b>sorting rule</b>.</p>',
+        watch: { tool: 'g1pick', opts: { items: SH8.map(shp) }, steps: [
+          { say: 'Sorting rule: <b>red</b>.', ms: 1200 },
+          { say: 'Red circle. Red.', act: function (t) { return t.pick('s0'); }, ms: 600 },
+          { say: 'Red square, small red circle. Red, red.', act: function (t) { return t.pick('s2').then(function () { return t.pick('s4'); }); }, ms: 900 },
+          { say: 'Shape and size do not matter for this rule. Only colour.', ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { items: SH8.map(shp) }, tasks: [
+          { do: 'Sort by shape. Tap every <b>square</b>, big or small, red or blue.', goal: function (s) { return s.n === 3 && ['s1', 's2', 's5'].every(function (k) { return s.picked.indexOf(k) >= 0; }); }, yes: 'Those are all the squares.' },
+          { do: 'Now sort the same shapes by size. Tap every <b>big</b> one.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.n === 4 && ['s0', 's2', 's3', 's5'].every(function (k) { return s.picked.indexOf(k) >= 0; }); }, yes: 'Same shapes, a different rule, different groups.' }
+        ] },
+        key: '<p>The same things can be sorted <b>many ways</b>. Say your rule.</p>',
+        check: [P('d-sort', 1), P('d-sort', 2)] }
+    ] },
+
+    { id: 'tally', title: 'Tally tables', sub: 'One line for each answer.', concepts: [
+      { id: 'marks', title: 'Tally marks', exp: ['D1.2'], skill: 'd-tally',
+        body: '<p>A <b>tally</b> is a quick way to count. Make one line for each answer. The 5th line goes <b>across</b> the first 4 to make a bundle of 5.</p>',
+        watch: { tool: 'g1stage', steps: [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) { return { say: n === 5 ? 'The 5th line goes <b>across</b>. A bundle of 5.' : n === 8 ? 'Count the bundle as 5, then 6, 7, 8. <b>8</b> tallies.' : String(n) + '.', act: function (t) { return t.show(tallyPic(n)); }, ms: n === 5 ? 1500 : n === 8 ? 1800 : 450 }; }) },
+        try: survey(8),
+        key: '<p>Count tally bundles by <b>5s</b>, then count on.</p>',
+        check: [P('d-tally', 1), P('d-tally', 2)] }
+    ] },
+
+    { id: 'graph', title: 'Picture graphs', sub: 'One picture for each answer.', concepts: [
+      { id: 'picto', title: 'Make a picture graph', exp: ['D1.3'], skill: 'd-graph',
+        body: '<p>A <b>pictograph</b> uses pictures to show data. Each picture is 1 answer. A good graph has a <b>title</b>, <b>labels</b> and a <b>source</b> (where the data came from).</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Ms. Lee\'s class voted. Start with a title and labels.', act: function (t) { return t.show(picto(demo, [0, 0, 0, 0], 'Ms. Lee\'s class')); }, ms: 1500 },
+          { say: 'One apple picture for each child who picked apples: 7.', act: function (t) { return t.show(picto(demo, [7, 0, 0, 0], 'Ms. Lee\'s class')); }, ms: 1300 },
+          { say: 'Then the others: oranges 3, bananas 5, grapes 2.', act: function (t) { return t.show(picto(demo, [7, 3, 5, 2], 'Ms. Lee\'s class')); }, ms: 1800 }
+        ] },
+        try: survey(10),
+        mistake: '<p>Pictures that are different sizes or spread out make a short row look long. Line them up from the same start, one per space.</p>',
+        key: '<p>One picture for <b>each answer</b>, lined up from the same start.</p>',
+        check: [P('d-graph', 1), P('d-graph', 2)] },
+      { id: 'read', title: 'Read a graph', exp: ['D1.4', 'D1.5'], skill: 'd-order',
+        body: '<p>We can ask questions about a graph. Which is the <b>most</b>? The <b>least</b>? How many <b>more</b>?</p><div class="fig">' + picto(demo, [7, 3, 5, 2], 'Ms. Lee\'s class') + '</div>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'The longest row is apples: <b>most</b>, 7.', act: function (t) { return t.show(picto(demo, [7, 3, 5, 2], 'Ms. Lee\'s class')); }, ms: 1600 },
+          { say: 'The shortest row is grapes: <b>least</b>, 2.', ms: 1500 },
+          { say: 'Apples 7, bananas 5. Apples has <b>2 more</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: demo.cats.map(function (c) { return { id: c[0], html: '<span>' + c[0] + '</span>' }; }) }, tasks: [
+          { do: 'Which fruit did the <b>fewest</b> children pick?', goal: function (s) { return s.picked[0] === 'grapes'; }, yes: 'Grapes: only 2.' },
+          { do: 'Which fruit did <b>5</b> children pick?', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'bananas'; }, yes: 'Bananas: 5.' }
+        ] },
+        key: '<p>Longest row: <b>most</b>. Shortest row: <b>least</b>.</p>',
+        check: [P('d-graph', 3), P('d-order', 1), P('d-order', 2)] }
+    ] },
+
+    { id: 'chance', title: 'Impossible, possible, certain', sub: 'Will it happen?', concepts: [
+      { id: 'words', title: 'Certain, possible, impossible', exp: ['D2.1'], skill: 'd-chance',
+        body: '<p><b>Certain</b>: it will happen for sure. <b>Possible</b>: it might happen. <b>Impossible</b>: it cannot happen.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'All red counters. Picking red is <b>certain</b>.', act: function (t) { return t.show(bag(6, 0)); }, ms: 1600 },
+          { say: 'Some red, some blue. Picking red is <b>possible</b>.', act: function (t) { return t.show(bag(3, 3)); }, ms: 1600 },
+          { say: 'No red at all. Picking red is <b>impossible</b>.', act: function (t) { return t.show(bag(0, 6)); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: [['c', 'certain'], ['p', 'possible'], ['i', 'impossible']].map(function (x) { return { id: x[0], html: '<span>' + x[1] + '</span>' }; }) }, tasks: [
+          { do: '"A dog will fly to the moon."', goal: function (s) { return s.picked[0] === 'i'; }, yes: 'Dogs cannot fly. Impossible.' },
+          { do: '"It will rain tomorrow."', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'p'; }, yes: 'It might rain, or it might not. Possible.' },
+          { do: '"Tomorrow will come after today."', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'c'; }, yes: 'That always happens. Certain.' }
+        ] },
+        mistake: '<p>Calling things that are unlikely "impossible". Ask: "Could it ever happen, even once?"</p>',
+        key: '<p><b>Will</b> happen, <b>might</b> happen, <b>cannot</b> happen.</p>',
+        check: [P('d-chance', 1), P('d-chance', 2)] }
+    ] }
+  ];
+
   A.register('data', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Sorting</h2>' +
 '<p>To <b>sort</b>, we put things into groups that are alike in one way. The way we choose is the <b>sorting rule</b>.</p>' +

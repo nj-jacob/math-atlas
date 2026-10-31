@@ -167,7 +167,171 @@
       hint: 'Find ' + d + ' on the calendar. Look up to the top of its column.', steps: ['Find the number ' + d + '.', 'Go straight up its column to the day name at the top.', MONTHS[mo] + ' ' + d + ' is a ' + dayName + '.'], explain: MONTHS[mo] + ' ' + d + ', ' + yr + ' is a ' + dayName + '.' };
   }
 
+  var CH = 'measuring';
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var K = window.G1;
+  function P(id, lv) { return function () { var s = A.chapters[CH].practice.filter(function (x) { return x.id === id; })[0]; return s.gen(typeof lv === 'function' ? lv() : lv); }; }
+  function mc(q, right, wrong, extra) { var o = R.mc(right, wrong); return Object.assign({ q: q, type: 'mc', options: o.options, answer: o.answer }, extra || {}); }
+  /* "Try it": measure a pencil with cubes. Tap + to add a cube under it. */
+  function cubeTrain(len) {
+    return { do: 'Measure the pencil with cubes. Add cubes until the train is <b>as long as the pencil</b>, end to end.', mount: function (host, done) {
+      var n = 0, u = 30;
+      function draw() {
+        var s = '<line x1="10" y1="6" x2="10" y2="96" style="stroke:var(--ink2)" stroke-width="2" stroke-dasharray="4 4"/>' +
+          '<path d="M10 22H' + (10 + len * u - 16) + 'L' + (10 + len * u) + ' 32L' + (10 + len * u - 16) + ' 42H10Z" style="fill:#f2bd24" stroke="rgba(0,0,0,.45)" stroke-width="2"/>';
+        for (var i = 0; i < n; i++) s += '<rect x="' + (11 + i * u) + '" y="58" width="' + (u - 2) + '" height="' + (u - 2) + '" rx="4" style="fill:var(--p1)" stroke="rgba(0,0,0,.4)" stroke-width="1.5"/>';
+        A.$('.fig', host).innerHTML = A.svg(Math.max(len, n) * u + 30, 100, s, 'A pencil and a train of ' + n + ' cubes');
+        A.$('.mp-read', host).innerHTML = '<p>Cubes: <span class="mp-num">' + n + '</span></p>';
+        if (n === len) done('The pencil is ' + len + ' cubes long.');
+      }
+      host.innerHTML = '<div class="mp-acts"><button type="button" class="mp-act" data-a="-">&minus; 1 cube</button><button type="button" class="mp-act" data-a="+">+ 1 cube</button></div><div class="fig g1-frame"></div><div class="mp-read" aria-live="polite"></div>';
+      A.$('.mp-acts', host).addEventListener('click', function (e) { var b = e.target.closest('.mp-act'); if (!b) return; n = Math.max(0, Math.min(12, n + (b.getAttribute('data-a') === '+' ? 1 : -1))); draw(); });
+      draw();
+    } };
+  }
+  /* "Try it": tap squares on a grid to cover them */
+  function cover(goal) {
+    return { do: 'Make a shape that covers <b>' + goal + ' squares</b>. Tap squares to colour them.', mount: function (host, done) {
+      var on = {};
+      function draw() {
+        var k = Object.keys(on).length, h = '<div class="g1-grid">';
+        for (var i = 0; i < 24; i++) h += '<button type="button" data-i="' + i + '" class="' + (on[i] ? 'on' : '') + '" aria-pressed="' + !!on[i] + '" aria-label="Square ' + (i + 1) + '"></button>';
+        host.innerHTML = h + '</div><div class="mp-read" aria-live="polite"><p>Squares covered: <span class="mp-num">' + k + '</span></p></div>';
+        if (k === goal) done('Your shape covers ' + goal + ' squares. That is its area.');
+      }
+      host.addEventListener('click', function (e) { var b = e.target.closest('[data-i]'); if (!b) return; var i = b.getAttribute('data-i'); if (on[i]) delete on[i]; else on[i] = 1; draw(); });
+      draw();
+    } };
+  }
+
+  var LESSONS = [
+    { id: 'what', title: 'What can we measure?', sub: 'Length, area, mass and capacity.', concepts: [
+      { id: 'attr', title: 'Four things to measure', exp: ['E2.1'], skill: 'm-attr',
+        body: '<p>We can measure different things about the same object. <b>Length</b>: how long. <b>Area</b>: how much it covers. <b>Mass</b>: how heavy. <b>Capacity</b>: how much it holds.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: '<b>Length</b>: how long is the ribbon?', act: function (t) { return t.show(ribbons([{ n: 6, c: COLS[0], name: 'ribbon' }])); }, ms: 1300 },
+          { say: '<b>Area</b>: how much of the table does it cover?', act: function (t) { return t.show(gridShape([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]], '#2f9a4c', 'A mat')); }, ms: 1300 },
+          { say: '<b>Mass</b>: how heavy is it?', act: function (t) { return t.show(scale('rock', 'feather', 'L')); }, ms: 1300 },
+          { say: '<b>Capacity</b>: how much does it hold?', act: function (t) { return t.show(jugs([{ cups: 5, name: 'jug' }])); }, ms: 1500 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'l', html: '<span>Length</span>' }, { id: 'a', html: '<span>Area</span>' }, { id: 'm', html: '<span>Mass</span>' }, { id: 'c', html: '<span>Capacity</span>' }] }, tasks: [
+          { do: '"How much water fits in the bathtub?" What are we measuring?', goal: function (s) { return s.picked[0] === 'c'; }, yes: 'How much it holds is capacity.' },
+          { do: '"Which backpack is heavier?" What are we measuring?', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'm'; }, yes: 'How heavy is mass.' }
+        ] },
+        key: '<p>Length, area, mass, capacity: <b>long, covers, heavy, holds</b>.</p>',
+        check: [P('m-attr', 1), P('m-attr', 2)] }
+    ] },
+
+    { id: 'length', title: 'Longer and shorter', sub: 'Line up the ends.', concepts: [
+      { id: 'line-up', title: 'Line up the ends', exp: ['E2.2'], skill: 'm-length', hard: true,
+        body: '<p>To compare length, line up the <b>ends</b> on the same starting line. Then look at the other ends.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Which ribbon is longer? The ends are not lined up.', act: function (t) { return t.show(ribbons([{ n: 5, c: COLS[0], name: 'red', off: 3 }, { n: 7, c: COLS[1], name: 'blue' }])); }, ms: 1800 },
+          { say: 'The red one looks longer. But is it?', ms: 1300 },
+          { say: 'Line up the ends. Now we can see: <b>blue is longer</b>.', act: function (t) { return t.show(ribbons([{ n: 5, c: COLS[0], name: 'red' }, { n: 7, c: COLS[1], name: 'blue' }])); }, ms: 2000 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, cols: 1, items: [{ id: 'g', html: ribbons([{ n: 6, c: COLS[2], name: 'green' }]) }, { id: 'p', html: ribbons([{ n: 8, c: COLS[3], name: 'purple' }]) }, { id: 'o', html: ribbons([{ n: 4, c: COLS[4], name: 'orange' }]) }] }, tasks: [
+          { do: 'All the ribbons start at the dashed line. Tap the <b>longest</b>.', goal: function (s) { return s.picked[0] === 'p'; }, yes: 'Purple reaches furthest, so it is longest.' }
+        ] },
+        ways: [{ label: 'Try with string', html: '<p>Cut two pieces of string. Hold the ends together in one hand and pull both straight. The one that sticks out further is longer.</p>' }],
+        mistake: '<p>Judging length by where the ends finish when the starts are not lined up. Always line up the start.</p>',
+        key: '<p>Line up the <b>start</b>. Then compare the <b>end</b>.</p>',
+        check: [P('m-length', 1), P('m-length', 2)] },
+      { id: 'cubes', title: 'Measure with cubes', exp: ['E2.2'], skill: 'm-length',
+        body: '<p>We can measure length by counting cubes laid <b>end to end</b>, with no gaps.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'How long is the red ribbon? Lay cubes under it.', act: function (t) { return t.show(ribbons([{ n: 7, c: COLS[0], name: 'red' }])); }, ms: 1300 },
+          { say: 'End to end, no gaps: 7 cubes.', act: function (t) { return t.show(ribbons([{ n: 7, c: COLS[0], name: 'red' }], { cubes: true })); }, ms: 1500 },
+          { say: 'The ribbon is <b>7 cubes long</b>.', ms: 1600 }
+        ] },
+        try: cubeTrain(6),
+        key: '<p>Cubes go <b>end to end</b>, with no gaps and no overlaps.</p>',
+        check: [P('m-length', 2), P('m-length', 3)] }
+    ] },
+
+    { id: 'area', title: 'Covers more, covers less', sub: 'Count the squares.', concepts: [
+      { id: 'squares', title: 'Count the squares', exp: ['E2.2'], skill: 'm-area',
+        body: '<p><b>Area</b> is how much space a shape covers. Count the squares to compare. More squares means it <b>covers more</b>.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'Red covers 5 squares.', act: function (t) { return t.show(gridShape([[0, 0], [1, 0], [2, 0], [3, 0], [0, 1]], '#e04b3a', 'Red shape')); }, ms: 1400 },
+          { say: 'Blue covers 6 squares.', act: function (t) { return t.show(gridShape([[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]], '#2c68cf', 'Blue shape')); }, ms: 1400 },
+          { say: '6 is more than 5, so blue <b>covers more</b>, even though red looks longer.', ms: 2000 }
+        ] },
+        try: cover(6),
+        key: '<p>More squares, <b>more area</b>.</p>',
+        check: [P('m-area', 1), P('m-area', 2)] }
+    ] },
+
+    { id: 'mass', title: 'Heavier and lighter', sub: 'The heavier side goes down.', concepts: [
+      { id: 'balance', title: 'Use a balance', exp: ['E2.2'], skill: 'm-mass',
+        body: '<p>A <b>balance</b> compares mass. The heavier side goes <b>down</b>. The lighter side goes up.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'An apple and a book.', act: function (t) { return t.show(scale('apple', 'book', '=')); }, ms: 1200 },
+          { say: 'The book side goes down. The <b>book is heavier</b>.', act: function (t) { return t.show(scale('apple', 'book', 'R')); }, ms: 1800 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'p', html: OBJ.pumpkin.draw ? A.svg(80, 60, OBJ.pumpkin.draw(40, 30), 'a pumpkin') + '<span>pumpkin</span>' : '' }, { id: 'b', html: A.svg(80, 60, OBJ.ball.draw(40, 30), 'a ball') + '<span>ball</span>' }] }, tasks: [
+          { do: 'Look at the balance. Which is <b>heavier</b>?<div class="fig">' + scale('ball', 'pumpkin', 'R') + '</div>', goal: function (s) { return s.picked[0] === 'p'; }, yes: 'The pumpkin side is down, so the pumpkin is heavier.' }
+        ] },
+        key: '<p>Down is <b>heavier</b>. Up is <b>lighter</b>.</p>',
+        check: [P('m-mass', 1), P('m-mass', 2)] },
+      { id: 'big', title: 'Bigger is not always heavier', exp: ['E2.2'], skill: 'm-mass', hard: true,
+        body: '<p>A big pillow can be lighter than a small rock. You cannot tell mass just by looking at size.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'A big ball and a small rock.', act: function (t) { return t.show(scale('ball', 'rock', '=')); }, ms: 1300 },
+          { say: 'The rock side goes down. The small rock is <b>heavier</b>.', act: function (t) { return t.show(scale('ball', 'rock', 'R')); }, ms: 2000 }
+        ] },
+        ways: [{ label: 'Hold them', html: '<p>Hold one thing in each hand. Which hand is pulled down more? Try a pillow and a can of soup.</p>' }],
+        mistake: '<p>Choosing the bigger object as heavier. Let the child feel both in their hands.</p>',
+        key: '<p>Use a balance or your hands, <b>not your eyes</b>.</p>',
+        check: [P('m-mass', 3), P('m-mass', 2)] }
+    ] },
+
+    { id: 'cap', title: 'Holds more, holds less', sub: 'Fill with the same cup.', concepts: [
+      { id: 'cups', title: 'Count the cups', exp: ['E2.2'], skill: 'm-cap',
+        body: '<p><b>Capacity</b> is how much a container holds. Fill each one with the <b>same cup</b> and count.</p>',
+        watch: { tool: 'g1stage', steps: [0, 1, 2, 3, 4, 5, 6, 7].map(function (c) { return { say: c < 7 ? 'Pour in cup ' + (c + 1) + '.' : 'Jug A holds 4 cups. Jug B holds 7. <b>B holds more</b>.', act: function (t) { return t.show(jugs([{ cups: Math.min(c + 1, 4), name: 'A' }, { cups: Math.min(c + 1, 7), name: 'B' }])); }, ms: c === 7 ? 1800 : 500 }; }) },
+        try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'a', html: jugs([{ cups: 6, name: 'A' }]) }, { id: 'b', html: jugs([{ cups: 3, name: 'B' }]) }] }, tasks: [
+          { do: 'Which holds <b>less</b>?', goal: function (s) { return s.picked[0] === 'b'; }, yes: 'B holds 3 cups. A holds 6. B holds less.' }
+        ] },
+        key: '<p>Always use the <b>same size cup</b>.</p>',
+        check: [P('m-cap', 1), P('m-cap', 2)] }
+    ] },
+
+    { id: 'cal', title: 'The calendar', sub: 'Days, months and seasons.', concepts: [
+      { id: 'week', title: 'Days of the week', exp: ['E2.3'], skill: 'm-cal',
+        body: '<p>A <b>week</b> has 7 days: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday. Then it starts again.</p>',
+        watch: { tool: 'g1strip', opts: { tap: false, slots: 7, tray: DAYS.map(function (d) { return { id: d, html: '<b>' + d.slice(0, 3) + '</b>', label: d }; }) }, steps: DAYS.map(function (d, i) { return { say: i === 6 ? 'Saturday. That is 7 days. Then Sunday comes again.' : d + '.', act: function (t) { return t.add(d); }, ms: i === 6 ? 1800 : 450 }; }) },
+        try: { tool: 'g1strip', opts: { max: 7, tray: R.shuffle(DAYS.slice()).map(function (d) { return { id: d, html: '<b>' + d.slice(0, 3) + '</b>', label: d }; }) }, tasks: [
+          { do: 'Put the days in order. Start with <b>Sunday</b>.', goal: function (s) { return s.seq.join() === DAYS.join(); }, yes: 'Sunday to Saturday: 7 days.' }
+        ] },
+        key: '<p>7 days make <b>1 week</b>.</p>',
+        check: [P('m-cal', 1), P('m-cal', 1)] },
+      { id: 'months', title: 'Months and seasons', exp: ['E2.3'], skill: 'm-cal',
+        body: '<p>A <b>year</b> has 12 months. Canada has 4 seasons: <b>winter, spring, summer, fall</b>.</p>' +
+          '<div class="tbl"><table><thead><tr><th class="l">Season</th><th class="l">Months (mostly)</th></tr></thead><tbody><tr><td class="l">Winter</td><td class="l">December, January, February</td></tr><tr><td class="l">Spring</td><td class="l">March, April, May</td></tr><tr><td class="l">Summer</td><td class="l">June, July, August</td></tr><tr><td class="l">Fall</td><td class="l">September, October, November</td></tr></tbody></table></div>',
+        try: { tool: 'g1pick', opts: { multi: false, items: ['winter', 'spring', 'summer', 'fall'].map(function (k) { return { id: k, html: '<span>' + k + '</span>' }; }) }, tasks: [
+          { do: 'Canada Day is <b>July 1</b>. Which season is it?', goal: function (s) { return s.picked[0] === 'summer'; }, yes: 'July is in summer.' },
+          { do: 'Halloween is <b>October 31</b>. Which season?', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'fall'; }, yes: 'October is in the fall.' }
+        ] },
+        key: '<p>12 months, <b>4 seasons</b>.</p>',
+        check: [P('m-cal', 2), P('m-cal', 2)] },
+      { id: 'read', title: 'Read a calendar', exp: ['E2.3'], skill: 'm-cal',
+        body: '<p>To find the day for a date, find the number, then look <b>up its column</b> to the day name at the top.</p>',
+        watch: { tool: 'g1stage', steps: [
+          { say: 'What day is July 1, 2026?', act: function (t) { return t.show(calendar(2026, 6)); }, ms: 1400 },
+          { say: 'Find the 1.', act: function (t) { return t.show(calendar(2026, 6, 1)); }, ms: 1200 },
+          { say: 'Look up its column: <b>Wednesday</b>. Canada Day 2026 is on a Wednesday.', ms: 2000 }
+        ] },
+        try: { tool: 'g1pick', opts: { multi: false, items: ['Monday', 'Wednesday', 'Saturday'].map(function (d) { return { id: d, html: '<span>' + d + '</span>' }; }) }, tasks: [
+          { do: 'Remembrance Day is <b>November 11</b>. What day is it in 2026?<div class="fig">' + calendar(2026, 10, 11) + '</div>', goal: function (s) { return s.picked[0] === 'Wednesday'; }, yes: 'November 11, 2026 is a Wednesday.' }
+        ] },
+        key: '<p>Find the date, then look <b>up</b> to the day.</p>',
+        check: [P('m-cal', 3), P('m-cal', 3)] }
+    ] }
+  ];
+
   A.register('measuring', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>What can we measure?</h2>' +
 '<p>We can measure different things about the same object.</p>' +
