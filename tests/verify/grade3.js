@@ -2,7 +2,7 @@
    an error message, or '' when the answer is right. Work the answer out here independently:
    never copy the site's own calculation. */
 (function (V, H) {
-  const set = (k, fn) => { V[k] = fn; };
+  const set = (k, fn) => { if (V[k]) throw new Error('two answer checks share the key ' + k); V[k] = fn; };
   const bold = q => H.strip((q.q.match(/<b>([^<]+)<\/b>/) || [])[1] || '');
   const same = (a, b) => a.slice().sort().join() === b.slice().sort().join();
   /* works out a plain sum like "450 + 120 − 30" from its text */
@@ -213,4 +213,65 @@
   set('path-tap', (q, m) => go(m.x, m.y, m.acts) === q.answer ? '' : 'square');
   set('path-which', (q, m) => { const ok = q.options.map((o, j) => go(m.x, m.y, readActs(o)) === m.to ? j : -1).filter(j => j >= 0); return ok.length === 1 && ok[0] === q.answer ? '' : 'directions'; });
   set('path-tf', (q, m) => (go(m.x, m.y, m.acts) === m.said) === q.answer ? '' : 'truth');
+  /* ---- Length and area ---- */
+  const INMM = { mm: 1, cm: 10, m: 1000, km: 1000000 };
+  const toMM = t => { const m = H.strip(t).match(/^(\d+) (mm|cm|m|km)$/); return m ? +m[1] * INMM[m[2]] : NaN; };
+  const BEST = { 'an ant': 'mm', 'a grain of rice': 'mm', 'a pencil': 'cm', 'your hand': 'cm', 'a book': 'cm', 'a door': 'm', 'a classroom': 'm', 'a school bus': 'm', 'a bike ride to the next town': 'km', 'the drive from Toronto to Ottawa': 'km' };
+  const ABOUT = { 'a pencil': '19 cm', 'a door': '2 m', 'a paper clip': '3 cm', 'a car': '4 m', 'a ladybug': '7 mm', 'a walk around a big park': '2 km' };
+  const filled = svg => { const d = document.createElement('div'); d.innerHTML = svg; return [...d.querySelectorAll('rect')].filter(r => /color-mix/.test(r.getAttribute('style') || '')); };
+  const rowsCols = svg => { const f = filled(svg), ys = new Set(f.map(r => r.getAttribute('y'))); return [ys.size, f.length / ys.size]; };
+  const area = t => { const n = nums(t); return /a row of/.test(t) ? n[0] : n[0] * n[1]; };
+  set('conv-match', q => q.pairs.every(p => toMM(p[0]) === toMM(p[1])) && new Set(q.pairs.map(p => toMM(p[0]))).size === q.pairs.length ? '' : 'pairs');
+  set('conv-line', (q, m) => H.close(q.answer * 10, m.mm, 1e-9) ? '' : 'point');
+  set('conv-tf', (q, m) => (m.a * INMM[m.from] === m.said * INMM[m.to]) === q.answer ? '' : 'truth');
+  set('conv-order', q => { const v = q.items.map(toMM); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('unit-match', q => q.pairs.every(p => BEST[p[0]] === p[1]) ? '' : 'pairs');
+  set('unit-order', q => { const r = q.items.map(t => ['mm', 'cm', 'm', 'km'].indexOf(BEST[t])); return r.every((x, i) => !i || x > r[i - 1]) ? '' : 'order'; });
+  set('unit-pick', (q, m) => same(q.options.map((o, j) => BEST[o] === m.u ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('unit-tf', (q, m) => (ABOUT[m.thing] === m.n + ' ' + m.said) === q.answer ? '' : 'truth');
+  set('count-num', (q, m) => q.answer * m.u === m.L ? '' : 'count');
+  set('count-match', (q, m) => q.pairs.every(p => nums(p[0])[0] * nums(p[1])[0] === m.L) ? '' : 'pairs');
+  set('count-tf', (q, m) => (m.n * m.said === m.L) === q.answer ? '' : 'truth');
+  set('count-tf2', (q, m) => (m.said * m.u === m.L) === q.answer ? '' : 'truth');
+  set('per-fill', (q, m) => q.answers[0] === 2 * m.l && q.answers[1] === 2 * m.w && q.answers[2] === 2 * m.l + 2 * m.w && H.strip(q.fig).includes(m.l + ' cm') ? '' : 'perimeter');
+  set('per-num', (q, m) => q.answer === m.l + m.w + m.l + m.w ? '' : 'perimeter');
+  set('per-pick', (q, m) => same(q.options.map((o, j) => { const n = nums(o); return n[0] + n[1] + n[0] + n[1] === m.P ? j : -1; }).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('per-tf', (q, m) => (m.l + m.w + m.l + m.w === m.said) === q.answer ? '' : 'truth');
+  set('area-tap', (q, m) => { const hit = q.tiles.map((t, j) => filled(t).length === m.A ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'shape'; });
+  set('area-fill', q => { const rc = rowsCols(q.fig); return q.answers[0] === rc[0] && q.answers[1] === rc[1] && q.answers[2] === filled(q.fig).length ? '' : 'area'; });
+  set('area-num', (q, m) => q.answer === m.r * m.c ? '' : 'area');
+  set('area-tf', (q, m) => (filled(q.fig).length === m.said) === q.answer ? '' : 'truth');
+  set('gaps-tap', q => { const d = document.createElement('div'); d.innerHTML = q.tiles[q.answer]; return /no gaps or overlaps/.test(d.querySelector('svg').getAttribute('aria-label')) ? '' : 'tiles'; });
+  set('gaps-tf', (q, m) => ((m.mode === 'gap' ? 'too low' : 'too high') === m.said) === q.answer ? '' : 'truth');
+  set('gaps-pick', (q, m) => same(q.options.map((o, j) => area(o) === m.A ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('gaps-same', (q, m) => ((m.a === m.b) === m.saysSame) === q.answer ? '' : 'truth');
+  /* ---- Time, mass and capacity ---- */
+  /* reads the time from the hands of a clock picture */
+  const readClock = svg => { const d = document.createElement('div'); d.innerHTML = svg; const ang = c => { const l = d.querySelector(c), dx = +l.getAttribute('x2') - 150, dy = +l.getAttribute('y2') - 150; return (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360; }; const m = Math.round(ang('.mh') / 6) % 60, h = Math.floor((ang('.hh') + 0.01) / 30) % 12 || 12; return h + ':' + String(m).padStart(2, '0'); };
+  /* turns "7:15", "half past 7", "quarter to 8", "10 minutes past 3" or "8 o'clock" into minutes after midnight */
+  const timeOf = t => { t = H.strip(t); let m; if ((m = t.match(/^(\d+):(\d\d)$/))) return +m[1] * 60 + +m[2]; if ((m = t.match(/^(\d+) o'clock$/))) return +m[1] * 60; if ((m = t.match(/^half past (\d+)$/))) return +m[1] * 60 + 30; if ((m = t.match(/^quarter past (\d+)$/))) return +m[1] * 60 + 15; if ((m = t.match(/^quarter to (\d+)$/))) return +m[1] * 60 - 15; if ((m = t.match(/^(\d+) minutes? past (\d+)$/))) return +m[2] * 60 + +m[1]; if ((m = t.match(/^(\d+) minutes? to (\d+)$/))) return +m[2] * 60 - +m[1]; return NaN; };
+  const sameTime = (a, b) => ((timeOf(a) - timeOf(b)) % 720 + 720) % 720 === 0;
+  const TAKES = { 'blink your eyes': 'seconds', 'tie your shoes': 'seconds', 'clap 5 times': 'seconds', 'brush your teeth': 'minutes', 'eat lunch': 'minutes', 'have recess': 'minutes', 'spend a school day': 'hours', 'sleep at night': 'hours', 'drive from Toronto to Montréal': 'hours' };
+  const secs = t => { const m = H.strip(t).match(/^(\d+) (seconds?|minutes?|hours?)$/); return m ? +m[1] * { s: 1, m: 60, h: 3600 }[m[2][0]] : NaN; };
+  const CUBES = { apple: 9, book: 23, shoe: 15, pencil: 2, orange: 11, mug: 18 };
+  const jugCups = svg => { const d = document.createElement('div'); d.innerHTML = svg; const w = [...d.querySelectorAll('rect')].find(r => /color-mix/.test(r.getAttribute('style') || '')); return Math.round(+w.getAttribute('height') / 240 * 8); };
+  set('clock-tap', (q, m) => { const want = m.h + ':' + String(m.m).padStart(2, '0'), hit = q.tiles.map((t, j) => readClock(t) === want ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer && bold(q) === want ? '' : 'clock'; });
+  set('clock-fill', q => readClock(q.fig) === q.answers[0] + ':' + String(q.answers[1]).padStart(2, '0') ? '' : 'time');
+  set('clock-tf', (q, m) => (readClock(q.fig) === m.said) === q.answer ? '' : 'truth');
+  set('time-match', q => q.pairs.every(p => sameTime(p[0], p[1])) ? '' : 'pairs');
+  set('time-tap', (q, m) => { const hit = q.tiles.map((t, j) => sameTime(readClock(t), m.said) ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'clock'; });
+  set('time-order', q => { const v = q.items.map(timeOf); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('time-tf', (q, m) => sameTime(m.w, m.said) === q.answer ? '' : 'truth');
+  set('tunit-match', q => q.pairs.every(p => TAKES[p[0]] === p[1]) ? '' : 'pairs');
+  set('tunit-pick', (q, m) => same(q.options.map((o, j) => TAKES[o] === m.u ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('tunit-tf', (q, m) => (m.a * secs('1 ' + m.big) === m.said * secs('1 ' + m.small)) === q.answer ? '' : 'truth');
+  set('tunit-order', q => { const v = q.items.map(secs); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('mass-tf', (q, m) => ((m.ask === 'heavier' ? CUBES[m.obj] > m.c : CUBES[m.obj] < m.c) === q.answer) ? '' : 'truth');
+  set('mass-num', (q, m) => m.a - m.b === q.answer ? '' : 'difference');
+  set('mass-order', q => { const v = q.items.map(n => CUBES[n]); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('mass-tf2', (q, m) => ((m.said === 'a' ? m.a > m.b : m.b > m.a) === q.answer) ? '' : 'truth');
+  set('cap-tap', (q, m) => { const hit = q.tiles.map((t, j) => jugCups(t) === m.f ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'jug'; });
+  set('cap-num', (q, m) => m.a - m.b === q.answer ? '' : 'difference');
+  set('cap-order', q => { const said = {}; H.strip(q.q).replace(/The (\w+) holds (\d+) cups/g, (_, n, c) => { said[n] = +c; }); const v = q.items.map(n => said[n]); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('cap-tf', (q, m) => (({ 'used cups that were only half full': 'too high', 'stopped pouring before the pot was full': 'too low', 'let water spill over the top': 'too high' })[m.how] === m.said) === q.answer ? '' : 'truth');
 })(window.__verify, window.__H);
