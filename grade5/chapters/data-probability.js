@@ -626,7 +626,7 @@ thumbs() +
     'da-rel': [
       [1, 'fill', function (lv) {
         var tot = R.pick([10, 20, 25, 50]), n = R.int(1, tot - 1), k = 100 / tot;
-        return { q: n + ' of ' + tot + ' students walk to school. Fill in the blanks.', type: 'fill', fill: mth(n + '/' + tot + ' = [[]]/100 = [[]]%'), answers: [n * k, n * k],
+        return { q: n + ' of ' + tot + ' students walk to school. Fill in the blanks.', type: 'fill', fill: mth(n + '/' + tot + ' = [[]]/100') + '<br>' + mth('= [[]]%'), answers: [n * k, n * k],
           fig: lv === 1 ? people(n, tot) : '', hint: 'What times ' + tot + ' makes 100?', steps: [tot + ' &times; ' + k + ' = 100.', n + ' &times; ' + k + ' = ' + n * k + ', so ' + n * k + '/100 = ' + n * k + '%.'],
           explain: n + '/' + tot + ' = ' + n * k + '%.', meta: { k: 'g5da-relfill' } };
       }],

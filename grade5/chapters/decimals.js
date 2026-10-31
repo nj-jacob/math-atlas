@@ -648,7 +648,7 @@
       }],
       [1, 'fill', function (lv) {
         var p = R.pick(lv === 1 ? [[1, 2], [1, 4], [3, 4], [1, 10], [3, 10], [1, 5]] : [[2, 5], [3, 5], [4, 5], [3, 20], [7, 20], [6, 25], [11, 50]]), k = 100 / p[1], h = p[0] * k;
-        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(p[0] + '/' + p[1] + ' = [[]]/100 = [[]]%'), answers: [h, h],
+        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(p[0] + '/' + p[1] + ' = [[]]/100') + '<br>' + mth('= [[]]%'), answers: [h, h],
           hint: 'What do you multiply ' + p[1] + ' by to get 100?', steps: [p[1] + ' &times; ' + k + ' = 100. Multiply the top by ' + k + ' too: ' + h + '.', h + '/100 = ' + h + '%.'],
           explain: p[0] + '/' + p[1] + ' = ' + h + '/100 = ' + h + '%.', meta: { k: 'g5de-fdpfill' } };
       }],
