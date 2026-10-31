@@ -97,114 +97,366 @@
     return { svg: A.svg(W, 196, s, 'Zoom in between ' + a + '/' + b + ' and ' + c + '/' + d + '. Written as ' + lo + '/' + D + ' and ' + hi + '/' + D + ', the fractions in between are ' + Array.apply(null, Array(n - 1)).map(function (_, i) { return (lo + i + 1) + '/' + D; }).join(', ') + '.'), lo: lo, hi: hi, D: D };
   }
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    eqno: { title: 'cut the pieces smaller', html: 
+      '<div class="ctrl"><label for="eqn">Top (numerator): <output id="eqno"></output><input type="range" id="eqn" min="1" max="9" value="3"></label>' +
+      '<label for="eqd">Bottom (denominator): <output id="eqdo"></output><input type="range" id="eqd" min="2" max="10" value="4"></label>' +
+      '<label for="eqk">Cut each piece into: <output id="eqko"></output><input type="range" id="eqk" min="1" max="5" value="2"></label></div>' +
+      '<div class="fig" id="eqfig"></div><div class="out" id="eqout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        function num(id, lo, hi, def) { var v = parseInt($('#' + id, root).value, 10); if (isNaN(v)) v = def; return Math.max(lo, Math.min(hi, v)); }
+        A.bind(root, ['eqn', 'eqd', 'eqk'], function () {
+          var d = +$('#eqd', root).value, n = Math.min(+$('#eqn', root).value, d), k = +$('#eqk', root).value;
+          $('#eqno', root).textContent = n; $('#eqdo', root).textContent = d; $('#eqko', root).textContent = k;
+          $('#eqfig', root).innerHTML = stack([[n, d, 'var(--sb)'], [n * k, d * k, 'var(--se)']]);
+          $('#eqout', root).innerHTML = '<p class="big2">' + fr(n, d) + ' = ' + fr(n + ' &times; ' + k, d + ' &times; ' + k) + ' = ' + fr(n * k, d * k) + '</p><p>Each piece was cut into ' + k + '. There are ' + k + ' times as many pieces, each ' + k + ' times smaller, so the amount is the same.</p>';
+        });
+      } },
+    smn: { title: 'simplify any fraction', html: 
+      '<div class="ctrl"><label for="smn">Top<input type="number" id="smn" min="1" max="144" value="24"></label><label for="smd">Bottom<input type="number" id="smd" min="2" max="144" value="36"></label></div>' +
+      '<div class="out" id="smout"></div><div class="fig" id="smfig"></div>',
+      init: function (root) {
+        var $ = A.$;
+        function num(id, lo, hi, def) { var v = parseInt($('#' + id, root).value, 10); if (isNaN(v)) v = def; return Math.max(lo, Math.min(hi, v)); }
+        A.bind(root, ['smn', 'smd'], function () {
+          var n = num('smn', 1, 144, 1), d = num('smd', 2, 144, 2), g = gcd(n, d);
+          $('#smout', root).innerHTML = '<p>GCF of ' + n + ' and ' + d + ' is <b>' + g + '</b>.</p><p class="big2">' + fr(n, d) + ' = ' + fr(n + ' &divide; ' + g, d + ' &divide; ' + g) + ' = ' + fr(n / g, d / g) + '</p>' +
+            (g === 1 ? '<p>The GCF is 1, so ' + n + '/' + d + ' is already in simplest form.</p>' : '') + (n > d ? '<p>As a mixed number: ' + frs(n, d) + '.</p>' : '');
+          $('#smfig', root).innerHTML = d <= 48 && n <= 2 * d ? stack([[n, d, 'var(--sb)'], [n / g, d / g, 'var(--se)']]) : '<p class="t2">(Pictures are drawn for bottoms up to 48.)</p>';
+        });
+      } },
+    cpa: { title: 'compare two fractions', html: 
+      '<div class="ctrl"><label for="cpa">First: top<input type="number" id="cpa" min="0" max="20" value="5"></label><label for="cpb">bottom<input type="number" id="cpb" min="1" max="12" value="6"></label>' +
+      '<label for="cpc">Second: top<input type="number" id="cpc" min="0" max="20" value="7"></label><label for="cpd">bottom<input type="number" id="cpd" min="1" max="12" value="9"></label></div>' +
+      '<div class="fig" id="cpfig"></div><div class="out" id="cpout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        function num(id, lo, hi, def) { var v = parseInt($('#' + id, root).value, 10); if (isNaN(v)) v = def; return Math.max(lo, Math.min(hi, v)); }
+        A.bind(root, ['cpa', 'cpb', 'cpc', 'cpd'], function () {
+          var a = num('cpa', 0, 20, 0), b = num('cpb', 1, 12, 1), c = num('cpc', 0, 20, 0), d = num('cpd', 1, 12, 1), L = lcm(b, d);
+          var x = a * L / b, y = c * L / d, top = Math.max(1, Math.ceil(Math.max(a / b, c / d)));
+          $('#cpfig', root).innerHTML = fline(0, top, L <= 24 / top ? L : 1, [{ v: a / b, lab: a + '/' + b, col: 'var(--sb)' }, { v: c / d, lab: c + '/' + d, col: 'var(--se)' }]);
+          $('#cpout', root).innerHTML = '<p>Common denominator: ' + L + '. ' + fr(a, b) + ' = ' + fr(x, L) + ' and ' + fr(c, d) + ' = ' + fr(y, L) + '.</p><p class="big2">' + fr(a, b) + (x > y ? ' &gt; ' : x < y ? ' &lt; ' : ' = ') + fr(c, d) + '</p>' +
+            (x === y ? '<p>They are equivalent.</p>' : '<p>The one further right on the line is greater.</p>');
+        });
+      } },
+    zma: { title: 'zoom in on the gap', html: 
+      '<div class="ctrl"><label for="zma">First fraction<select id="zma"><option value="1,4">1/4</option><option value="1,3" selected>1/3</option><option value="2,5">2/5</option><option value="1,2">1/2</option><option value="3,5">3/5</option></select></label>' +
+      '<label for="zmb">Second fraction<select id="zmb"><option value="1,2" selected>1/2</option><option value="3,5">3/5</option><option value="2,3">2/3</option><option value="3,4">3/4</option><option value="4,5">4/5</option></select></label></div>' +
+      '<div class="fig" id="zmfig"></div><div class="out" id="zmout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        function num(id, lo, hi, def) { var v = parseInt($('#' + id, root).value, 10); if (isNaN(v)) v = def; return Math.max(lo, Math.min(hi, v)); }
+        A.bind(root, ['zma', 'zmb'], function () {
+          var p = $('#zma', root).value.split(',').map(Number), q = $('#zmb', root).value.split(',').map(Number);
+          if (p[0] / p[1] > q[0] / q[1]) { var t = p; p = q; q = t; }
+          if (p[0] / p[1] === q[0] / q[1]) { $('#zmfig', root).innerHTML = ''; $('#zmout', root).innerHTML = '<p>Pick two different fractions.</p>'; return; }
+          var z = zoom(p[0], p[1], q[0], q[1]);
+          $('#zmfig', root).innerHTML = z.svg;
+          var mids = []; for (var i = z.lo + 1; i < z.hi; i++) mids.push(frs(i, z.D));
+          $('#zmout', root).innerHTML = '<p>In ' + z.D + 'ths: ' + fr(p[0], p[1]) + ' = ' + fr(z.lo, z.D) + ' and ' + fr(q[0], q[1]) + ' = ' + fr(z.hi, z.D) + '.</p><p>In between: ' + mids.join(', ') + '</p>';
+        });
+      } },
+    ada: { title: 'add two fractions', html: 
+      '<div class="ctrl"><label for="ada">Top<input type="number" id="ada" min="0" max="12" value="2"></label><label for="adb">Bottom<input type="number" id="adb" min="2" max="12" value="3"></label><span class="big2">+</span>' +
+      '<label for="adc">Top<input type="number" id="adc" min="0" max="12" value="3"></label><label for="add">Bottom<input type="number" id="add" min="2" max="12" value="4"></label></div>' +
+      '<div class="out" id="adout"></div><div class="fig" id="adfig"></div>',
+      init: function (root) {
+        var $ = A.$;
+        function num(id, lo, hi, def) { var v = parseInt($('#' + id, root).value, 10); if (isNaN(v)) v = def; return Math.max(lo, Math.min(hi, v)); }
+        A.bind(root, ['ada', 'adb', 'adc', 'add'], function () {
+          var a = num('ada', 0, 12, 0), b = num('adb', 2, 12, 2), c = num('adc', 0, 12, 0), d = num('add', 2, 12, 2), L = lcm(b, d), s = a * L / b + c * L / d;
+          $('#adout', root).innerHTML = '<p class="big2">' + fr(a, b) + ' + ' + fr(c, d) + ' = ' + fr(a * L / b, L) + ' + ' + fr(c * L / d, L) + ' = ' + fr(s, L) + (frs(s, L) !== fr(s, L) ? ' = ' + frs(s, L) : '') + '</p>';
+          $('#adfig', root).innerHTML = L <= 60 && s / L <= 3 ? addPic(a, b, c, d) : '<p class="t2">(The picture is shown for answers up to 3.)</p>';
+        });
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function fq(q, n, d, hint, explain) { return { q: q + ' Type a fraction, like 2/5.', type: 'num', answer: n / d, show: frs(n, d, true), kb: 'text', tol: 1e-6, hint: hint, explain: explain }; }
+  function rows(s) { return s.map(function (r) { return r.n; }); }
+  function sum(s) { return s.reduce(function (t, r) { return t + r.n; }, 0); }
+  /* a decimal number line from lo to hi in steps, with marked points */
+  function dline(lo, hi, step, marks) {
+    var W = 540, x0 = 30, x1 = W - 30, n = Math.round((hi - lo) / step), s = '', sc = function (v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); };
+    var dp = String(step).split('.')[1] ? String(step).split('.')[1].length : 0;
+    s += '<line x1="' + x0 + '" y1="54" x2="' + x1 + '" y2="54" style="stroke:var(--ink)" stroke-width="2.5"/>';
+    for (var i = 0; i <= n; i++) {
+      var v = lo + i * step, x = sc(v), end = i === 0 || i === n;
+      s += '<line x1="' + x + '" y1="' + (end ? 42 : 46) + '" x2="' + x + '" y2="' + (end ? 66 : 62) + '" style="stroke:var(--ink)" stroke-width="' + (end ? 2.5 : 1.5) + '"/>';
+      if (end || (n <= 10 && i % 5 === 0)) s += '<text x="' + x + '" y="88" text-anchor="middle" font-size="18" font-weight="700">' + String(+v.toFixed(dp)) + '</text>';
+    }
+    (marks || []).forEach(function (m) {
+      s += '<circle cx="' + sc(m.v) + '" cy="54" r="8" style="fill:' + (m.col || 'var(--hi)') + ';stroke:var(--ink)" stroke-width="2"/>';
+      if (m.lab) s += '<text x="' + Math.min(Math.max(sc(m.v), 30), W - 30) + '" y="28" text-anchor="middle" font-size="18" font-weight="700">' + m.lab + '</text>';
+    });
+    return A.svg(W, 96, s, 'Number line from ' + lo + ' to ' + hi);
+  }
+
+  var LESSONS = [
+    { id: 'equiv', title: 'Equivalent fractions', sub: 'Different names for the same amount.', concepts: [
+      { id: 'same', title: 'Same amount, different names', exp: ['B1.4'], skill: 'fr-equiv',
+        body: '<p><b>Equivalent fractions</b> name the same amount. ' + fr(2, 3) + ', ' + fr(4, 6) + ' and ' + fr(8, 12) + ' all cover the same length of a bar.</p>',
+        watch: K.slides([
+          { say: 'Here is a bar cut into 3 equal parts. 2 are shaded: two thirds.', fig: function () { return stack([[2, 3, 'var(--sb)']]); } },
+          { say: 'Cut every third in half. Now there are 6 parts, and 4 are shaded.', fig: function () { return stack([[2, 3, 'var(--sb)'], [4, 6, 'var(--se)']]); } },
+          { say: 'Cut again. 12 parts, 8 shaded.', fig: function () { return stack([[2, 3, 'var(--sb)'], [4, 6, 'var(--se)'], [8, 12, 'var(--sd)']]); } },
+          { say: 'The dashed line shows the shaded length never changed. ' + fr(2, 3) + ' = ' + fr(4, 6) + ' = ' + fr(8, 12) + '.', fig: function () { return stack([[2, 3, 'var(--sb)'], [4, 6, 'var(--se)'], [8, 12, 'var(--sd)']]); }, ms: 2600 }
+        ]),
+        try: { tool: 'fractions', opts: { wall: [3, 6, 12] }, tasks: [
+          { do: 'Shade <b>2/3</b> in the top strip.', goal: function (s) { return s[0].n === 2; }, yes: 'Two thirds shaded.' },
+          { reset: false, do: 'Now shade the <b>same length</b> in the sixths strip.', goal: function (s) { return s[0].n === 2 && s[1].n === 4; }, yes: '4/6 covers the same length as 2/3.' },
+          { reset: false, do: 'And in the twelfths strip.', goal: function (s) { return s[0].n === 2 && s[1].n === 4 && s[2].n === 8; }, yes: '2/3 = 4/6 = 8/12.' }
+        ] },
+        key: '<p>Equivalent fractions <b>cover the same amount</b>. The pieces are smaller, but there are more of them.</p>',
+        mistake: '<p>Thinking 8/12 is bigger than 2/3 because the numbers are bigger. Put the bars side by side and compare lengths.</p>',
+        check: [function () { return mc('Which fraction is equivalent to ' + fr(3, 4) + '?', fr(6, 8), [fr(3, 8), fr(4, 5), fr(6, 4)], 'Cut each quarter into 2 pieces.', fr(3, 4) + ' = ' + fr(6, 8) + '. Each quarter became 2 eighths.', stack([[3, 4, 'var(--sb)'], [6, 8, 'var(--se)']])); }, K.ck('fr-equiv', 1)] },
+      { id: 'rule', title: 'Multiply the top and the bottom', exp: ['B1.4'], skill: 'fr-equiv',
+        body: '<p>To make an equivalent fraction, <b>multiply the top and the bottom by the same number</b>.</p>',
+        watch: K.slides([
+          { say: 'Start with three fifths.', fig: function () { return stack([[3, 5, 'var(--sb)']]) + eq(fr(3, 5)); } },
+          { say: 'Cut each fifth into 4. The bottom is multiplied by 4.', fig: function () { return stack([[3, 5, 'var(--sb)'], [12, 20, 'var(--se)']]) + eq(fr(3, 5) + ' = ' + fr('?', '5 &times; 4')); } },
+          { say: 'Each shaded piece became 4 pieces too, so the top is multiplied by 4.', fig: function () { return stack([[3, 5, 'var(--sb)'], [12, 20, 'var(--se)']]) + eq(fr(3, 5) + ' = ' + fr('3 &times; 4', '5 &times; 4')); } },
+          { say: 'Three fifths equals twelve twentieths.', fig: function () { return stack([[3, 5, 'var(--sb)'], [12, 20, 'var(--se)']]) + eq(fr(3, 5) + ' = ' + fr(12, 20)); }, ms: 2400 }
+        ]),
+        try: lab('eqno', [
+          { do: 'Show <b>3/4</b> cut so that there are <b>12</b> parts.', goal: function (h) { return K.v(h, 'eqn') === 3 && K.v(h, 'eqd') === 4 && K.v(h, 'eqk') === 3; }, yes: '3/4 = 9/12. Both parts were multiplied by 3.' },
+          { do: 'Make a fraction equal to <b>2/5</b> with a bottom of <b>10</b>.', goal: function (h) { return K.v(h, 'eqn') === 2 && K.v(h, 'eqd') === 5 && K.v(h, 'eqk') === 2; }, yes: '2/5 = 4/10.' },
+          { do: 'Make <b>15</b> pieces in the bottom bar, from any fraction.', goal: function (h) { return K.v(h, 'eqd') * K.v(h, 'eqk') === 15; }, yes: function (h) { return 'Yes. ' + K.v(h, 'eqd') + ' &times; ' + K.v(h, 'eqk') + ' = 15.'; } }
+        ]),
+        key: '<p><b>Whatever you do to the bottom, do to the top.</b> Multiply both by the same number.</p>',
+        mistake: '<p>Adding the same number to top and bottom: 3/5 is not 4/6. Only multiplying or dividing keeps the amount the same. Draw both bars to show it.</p>',
+        check: [function () { return { q: 'Fill in the missing number: ' + fr(3, 5) + ' = ' + fr('?', 20), type: 'num', answer: 12, hint: '5 times what is 20? Do the same to the top.', explain: '5 &times; 4 = 20, so 3 &times; 4 = 12.' }; }, K.ck('fr-equiv', 1), K.ck('fr-equiv', 2)] }
+    ] },
+    { id: 'simplify', title: 'Simplifying', sub: 'Write a fraction with the smallest numbers.', concepts: [
+      { id: 'gcf', title: 'Divide by the GCF', exp: ['B1.4'], skill: 'fr-simplify', hard: true,
+        body: '<p>To <b>simplify</b>, divide the top and the bottom by a common factor. Divide by the <b>greatest common factor (GCF)</b> and you reach <b>simplest form</b> in one step.</p>',
+        watch: K.slides([
+          { say: 'Simplify 18 twenty-fourths.', fig: function () { return stack([[18, 24, 'var(--sb)']]) + eq(fr(18, 24)); } },
+          { say: 'Find the GCF. Factors of 18 and 24 in common: 1, 2, 3 and 6. The greatest is 6.', fig: eq('GCF of 18 and 24 = <b>6</b>') },
+          { say: 'Divide the top and the bottom by 6.', fig: function () { return eq(fr(18, 24) + ' = ' + fr('18 &divide; 6', '24 &divide; 6')); } },
+          { say: 'Every 6 small pieces join into 1 big piece. 18 twenty-fourths is <b>three quarters</b>.', fig: function () { return stack([[18, 24, 'var(--sb)'], [3, 4, 'var(--se)']]) + eq(fr(18, 24) + ' = ' + fr(3, 4)); }, ms: 2600 }
+        ]),
+        try: lab('smn', [
+          { do: 'Type <b>18</b> on top and <b>24</b> on the bottom.', goal: function (h) { return +K.v(h, 'smn') === 18 && +K.v(h, 'smd') === 24; }, yes: 'GCF 6, so 18/24 = 3/4.' },
+          { do: 'Find a fraction that simplifies to <b>2/3</b>.', goal: function (h) { var n = +K.v(h, 'smn'), d = +K.v(h, 'smd'); return n > 2 && n * 3 === d * 2; }, yes: function (h) { return 'Yes. ' + K.v(h, 'smn') + '/' + K.v(h, 'smd') + ' = 2/3.'; } },
+          { do: 'Find a fraction that is <b>already</b> in simplest form (GCF 1).', goal: function (h) { var n = +K.v(h, 'smn'), d = +K.v(h, 'smd'); return n > 0 && d > 1 && gcd(n, d) === 1; }, yes: 'When the GCF is 1, the fraction cannot be simplified.' }
+        ]),
+        ways: [
+          { label: 'Divide in small steps', html: '<p>You do not have to find the GCF first. Divide by any common factor, then keep going until nothing more works.</p>' + eq(fr(18, 24) + ' &rarr; &divide;2 &rarr; ' + fr(9, 12) + ' &rarr; &divide;3 &rarr; ' + fr(3, 4)) + '<p>Using the GCF just gets there in one step.</p>' },
+          { label: 'Group the pieces', html: '<p>Simplifying is the opposite of cutting pieces smaller. It glues small pieces into bigger ones.</p><div class="fig">' + stack([[6, 8, 'var(--sb)'], [3, 4, 'var(--se)']]) + '</div><p>Glue every 2 eighths into 1 quarter: 6 eighths become 3 quarters.</p>' },
+          { label: 'Prime factors', html: '<p>Write the top and bottom as prime factors and cross out the shared ones.</p>' + eq(fr('2 &times; 3 &times; 3', '2 &times; 2 &times; 2 &times; 3') + ' = ' + fr(3, 4)) + '<p>One 2 and one 3 are shared (2 &times; 3 = 6, the GCF).</p>' }
+        ],
+        key: '<p><b>Divide the top and the bottom by the GCF.</b> The answer is in simplest form.</p>',
+        mistake: '<p>Dividing only the top (18/24 becomes 3/24), or subtracting the same number from both. Remind: same operation to both parts, only multiply or divide.</p>',
+        check: [function () { var o = fq('Simplify ' + fr(20, 30) + '.', 2, 3, 'The GCF of 20 and 30 is 10.', '20 &divide; 10 = 2 and 30 &divide; 10 = 3.'); o.accept = A.lowest(2, 3); return o; }, K.ck('fr-simplify', 1), K.ck('fr-simplify', 2)] },
+      { id: 'simplest', title: 'Is it in simplest form?', exp: ['B1.4'], skill: 'fr-simplify',
+        body: '<p>A fraction is in <b>simplest form</b> when the only number that divides both the top and the bottom is 1.</p>',
+        watch: K.slides([
+          { say: 'Is 9 fifteenths in simplest form? 3 divides 9 and 15, so no.', fig: eq(fr(9, 15) + ' &rarr; both divide by 3 &rarr; ' + fr(3, 5)) },
+          { say: 'Is 3 fifths in simplest form? Only 1 divides 3 and 5. Yes.', fig: eq(fr(3, 5) + ': GCF = 1 &#10003;') },
+          { say: '8 ninths: 8 is 2 &times; 2 &times; 2 and 9 is 3 &times; 3. Nothing shared, so it is already simplest.', fig: eq(fr(8, 9) + ': GCF = 1 &#10003;'), ms: 2600 }
+        ]),
+        key: '<p><b>GCF = 1 means simplest form.</b> If any number bigger than 1 divides both, keep simplifying.</p>',
+        mistake: '<p>Thinking a fraction with big numbers cannot be simple (8/9 is simplest) or one with small numbers always is (2/4 is not).</p>',
+        check: [function () {
+          var list = [[2, 4], [3, 9], [6, 8], [5, 10], [4, 6], [10, 15]], good = R.pick([[3, 8], [5, 9], [4, 7], [7, 10], [8, 15]]), w = R.shuffle(list).slice(0, 3);
+          return mc('Which fraction is in simplest form?', fr(good[0], good[1]), w.map(function (f) { return fr(f[0], f[1]); }), 'Look for a number bigger than 1 that divides both the top and bottom.', 'Only 1 divides both ' + good[0] + ' and ' + good[1] + '.');
+        }, K.ck('fr-simplify', 2)] }
+    ] },
+    { id: 'compare', title: 'Comparing and ordering', sub: 'Which fraction is greater?', concepts: [
+      { id: 'samepart', title: 'Same bottom or same top', exp: ['B1.3', 'B1.4'], skill: 'fr-compare',
+        body: '<div class="vs"><div><b class="t">Same bottom</b><p>' + fr(5, 8) + ' &gt; ' + fr(3, 8) + '</p><p>Same size pieces: more pieces wins.</p></div><div><b class="t">Same top</b><p>' + fr(3, 4) + ' &gt; ' + fr(3, 8) + '</p><p>Same number of pieces: bigger pieces win.</p></div></div>',
+        watch: K.slides([
+          { say: 'Five eighths and three eighths. The pieces are the same size.', fig: function () { return stack([[5, 8, 'var(--sb)'], [3, 8, 'var(--se)']]); } },
+          { say: 'So 5 pieces is more than 3 pieces: ' + fr(5, 8) + ' &gt; ' + fr(3, 8) + '.', fig: function () { return stack([[5, 8, 'var(--sb)'], [3, 8, 'var(--se)']]) + eq(fr(5, 8) + ' &gt; ' + fr(3, 8)); } },
+          { say: 'Now three quarters and three eighths. Both have 3 pieces.', fig: function () { return stack([[3, 4, 'var(--sb)'], [3, 8, 'var(--se)']]); } },
+          { say: 'Quarters are bigger pieces than eighths, so ' + fr(3, 4) + ' &gt; ' + fr(3, 8) + '.', fig: function () { return stack([[3, 4, 'var(--sb)'], [3, 8, 'var(--se)']]) + eq(fr(3, 4) + ' &gt; ' + fr(3, 8)); }, ms: 2400 }
+        ]),
+        try: { tool: 'fractions', opts: { wall: [4, 8] }, tasks: [
+          { do: 'Shade <b>3/4</b> and <b>3/8</b>. Which is longer?', goal: function (s) { return s[0].n === 3 && s[1].n === 3; }, yes: '3/4 is longer: quarters are bigger pieces.' },
+          { reset: false, do: 'Change the eighths strip so it matches 3/4 exactly.', goal: function (s) { return s[0].n === 3 && s[1].n === 6; }, yes: '6/8 = 3/4.' }
+        ] },
+        key: '<p><b>Same bottom: bigger top wins. Same top: smaller bottom wins</b> (the pieces are bigger).</p>',
+        mistake: '<p>Choosing 3/8 over 3/4 because 8 is bigger than 4. A bigger bottom means smaller pieces.</p>',
+        check: [K.ck('fr-compare', 1), K.ck('fr-compare', 1)] },
+      { id: 'common', title: 'Use a common denominator', exp: ['B1.3', 'B1.4'], skill: 'fr-compare', hard: true,
+        body: '<p>When both the tops and the bottoms are different, rewrite both fractions with a <b>common denominator</b>. The LCM of the bottoms works well.</p>',
+        watch: K.slides([
+          { say: 'Which is greater, two thirds or three fifths?', fig: function () { return stack([[2, 3, 'var(--sb)'], [3, 5, 'var(--se)']]); } },
+          { say: 'The LCM of 3 and 5 is 15. Cut both bars into fifteenths.', fig: function () { return stack([[10, 15, 'var(--sb)'], [9, 15, 'var(--se)']]); } },
+          { say: 'Two thirds is ten fifteenths. Three fifths is nine fifteenths.', fig: function () { return eq(fr(2, 3) + ' = ' + fr(10, 15) + ' &nbsp; ' + fr(3, 5) + ' = ' + fr(9, 15)); } },
+          { say: '10 is more than 9, so <b>two thirds is greater</b>.', fig: function () { return stack([[10, 15, 'var(--sb)'], [9, 15, 'var(--se)']]) + eq(fr(2, 3) + ' &gt; ' + fr(3, 5)); }, ms: 2400 }
+        ]),
+        try: lab('cpa', [
+          { do: 'Compare <b>2/3</b> and <b>3/5</b>.', goal: function (h) { return +K.v(h, 'cpa') === 2 && +K.v(h, 'cpb') === 3 && +K.v(h, 'cpc') === 3 && +K.v(h, 'cpd') === 5; }, yes: 'In fifteenths: 10/15 &gt; 9/15.' },
+          { do: 'Find two <b>different-looking</b> fractions that are equal.', goal: function (h) { var a = +K.v(h, 'cpa'), b = +K.v(h, 'cpb'), c = +K.v(h, 'cpc'), d = +K.v(h, 'cpd'); return b > 0 && d > 0 && b !== d && a * d === b * c && a > 0; }, yes: 'Equal fractions land on the same point.' }
+        ]),
+        ways: [
+          { label: 'On a number line', html: '<p>Put both on a number line. The one further right is greater.</p><div class="fig">' + fline(0, 1, 15, [{ v: 3 / 5, lab: '3/5', col: 'var(--se)' }, { v: 2 / 3, lab: '2/3', col: 'var(--sb)' }], '3/5 and 2/3 on a number line', 5) + '</div>' },
+          { label: 'Change to decimals', html: '<p>Divide top by bottom. ' + fr(2, 3) + ' = 2 &divide; 3 &asymp; 0.67 and ' + fr(3, 5) + ' = 3 &divide; 5 = 0.6. 0.67 &gt; 0.6.</p>' },
+          { label: 'How far from 1?', html: '<p>' + fr(2, 3) + ' is ' + fr(1, 3) + ' away from 1. ' + fr(3, 5) + ' is ' + fr(2, 5) + ' away. ' + fr(1, 3) + ' is less than ' + fr(2, 5) + ', so ' + fr(2, 3) + ' is closer to 1 and greater.</p>' }
+        ],
+        key: '<p><b>Rewrite with a common denominator, then compare the tops.</b></p>',
+        mistake: '<p>Comparing only the tops (3/5 &gt; 2/3 because 3 &gt; 2) or only the bottoms. Both parts matter until the bottoms match.</p>',
+        check: [function () { return mc('Which is greater?', fr(3, 4), [fr(5, 8), 'They are equal'], 'Write ' + fr(3, 4) + ' in eighths.', fr(3, 4) + ' = ' + fr(6, 8) + ', more than ' + fr(5, 8) + '.'); }, K.ck('fr-compare', 2), K.ck('fr-compare', 2)] },
+      { id: 'half', title: 'Check against one half', exp: ['B1.3'], skill: 'fr-compare',
+        body: '<p>A quick check: is each fraction <b>more or less than ' + fr(1, 2) + '</b>? If the top is less than half the bottom, the fraction is less than a half.</p>',
+        watch: K.slides([
+          { say: 'Three sevenths: half of 7 is 3.5. 3 is less, so three sevenths is <b>less than a half</b>.', fig: function () { return fline(0, 1, 7, [{ v: 3 / 7, lab: '3/7', col: 'var(--sb)' }, { v: 0.5, lab: '1/2', col: 'var(--hi)' }]); } },
+          { say: 'Five ninths: half of 9 is 4.5. 5 is more, so five ninths is <b>more than a half</b>.', fig: function () { return fline(0, 1, 9, [{ v: 0.5, lab: '1/2', col: 'var(--hi)' }, { v: 5 / 9, lab: '5/9', col: 'var(--se)' }]); } },
+          { say: 'So three sevenths is less than five ninths. No common denominator needed.', fig: eq(fr(3, 7) + ' &lt; ' + fr(1, 2) + ' &lt; ' + fr(5, 9)), ms: 2600 }
+        ]),
+        key: '<p><b>Compare the top with half the bottom.</b> Less: under ' + fr(1, 2) + '. More: over ' + fr(1, 2) + '.</p>',
+        mistake: '<p>Using this check when both fractions are on the same side of 1/2. Then it does not decide; use a common denominator.</p>',
+        check: [function () {
+          var d1 = R.int(5, 12), n1 = R.int(1, Math.ceil(d1 / 2) - 1), d2 = R.int(5, 12), n2 = R.int(Math.floor(d2 / 2) + 1, d2 - 1), lo = fr(n1, d1), hi = fr(n2, d2);
+          return mc('Which is greater: ' + lo + ' or ' + hi + '?', hi, [lo, 'They are equal'], 'Is each one more or less than a half?', lo + ' is less than a half and ' + hi + ' is more than a half.');
+        }, function () {
+          var d = R.int(5, 12), n = R.int(1, d - 1); if (2 * n === d) n = n + 1 < d ? n + 1 : n - 1;
+          return mc('Is ' + fr(n, d) + ' more or less than ' + fr(1, 2) + '?', 2 * n > d ? 'More than a half' : 'Less than a half', [2 * n > d ? 'Less than a half' : 'More than a half', 'Exactly a half'], 'Half of ' + d + ' is ' + d / 2 + '.', 'Half of ' + d + ' is ' + d / 2 + ', and ' + n + ' is ' + (2 * n > d ? 'more' : 'less') + '.');
+        }] },
+      { id: 'order', title: 'Put fractions in order', exp: ['B1.3'], skill: 'fr-compare',
+        body: '<p>To order three or more fractions, give them <b>all the same denominator</b>, then order the tops.</p>',
+        watch: K.slides([
+          { say: 'Order one half, three eighths and three quarters.', fig: eq(fr(1, 2) + ', ' + fr(3, 8) + ', ' + fr(3, 4)) },
+          { say: 'All three can be written in eighths.', fig: eq(fr(4, 8) + ', ' + fr(3, 8) + ', ' + fr(6, 8)) },
+          { say: 'Order the tops: 3, 4, 6.', fig: function () { return stack([[3, 8, 'var(--se)'], [4, 8, 'var(--sb)'], [6, 8, 'var(--sd)']]); } },
+          { say: 'Least to greatest: three eighths, one half, three quarters.', fig: function () { return fline(0, 1, 8, [{ v: 3 / 8, lab: '3/8', col: 'var(--se)' }, { v: 0.5, lab: '1/2', col: 'var(--sb)' }, { v: 0.75, lab: '3/4', col: 'var(--sd)' }]); }, ms: 2600 }
+        ]),
+        key: '<p><b>Same denominator for all, then order the tops.</b></p>',
+        mistake: '<p>Ordering by the bottoms alone (3/8 last because 8 is biggest).</p>',
+        check: [K.ck('fr-compare', 3), K.ck('fr-compare', 3)] }
+    ] },
+    { id: 'between', title: 'Numbers in between', sub: 'There is always another number in the gap.', concepts: [
+      { id: 'zoom', title: 'Zoom in on the gap', exp: ['B1.5'], skill: 'fr-between', hard: true,
+        body: '<p>Between any two different fractions there is <b>always</b> another fraction. Give them a common denominator. If there is no gap, cut the pieces smaller.</p>',
+        watch: K.slides([
+          { say: 'Find a fraction between one third and one half.', fig: function () { return fline(0, 1, 6, [{ v: 1 / 3, lab: '1/3', col: 'var(--sb)' }, { v: 0.5, lab: '1/2', col: 'var(--se)' }]); } },
+          { say: 'In sixths they are 2/6 and 3/6. They are next to each other. No gap yet.', fig: eq(fr(1, 3) + ' = ' + fr(2, 6) + ' &nbsp; ' + fr(1, 2) + ' = ' + fr(3, 6)) },
+          { say: 'Cut smaller, into twelfths: 4/12 and 6/12.', fig: eq(fr(4, 12) + ' &nbsp; ? &nbsp; ' + fr(6, 12)) },
+          { say: 'Now <b>5/12</b> fits in between.', fig: function () { return zoom(1, 3, 1, 2).svg; }, ms: 2800 }
+        ]),
+        try: lab('zma', [
+          { do: 'Zoom in between <b>1/3</b> and <b>1/2</b>.', goal: function (h) { return K.v(h, 'zma') === '1,3' && K.v(h, 'zmb') === '1,2'; }, yes: 'In twelfths: 5/12 is between.' },
+          { do: 'Try <b>1/2</b> and <b>3/5</b>. What denominator does it need?', goal: function (h) { return K.v(h, 'zma') === '1,2' && K.v(h, 'zmb') === '3,5'; }, yes: 'Tenths are next to each other (5/10, 6/10), so it uses twentieths: 11/20.' },
+          { do: 'Find a pair with <b>more than one</b> fraction in between.', goal: function (h) { var p = String(K.v(h, 'zma')).split(',').map(Number), q = String(K.v(h, 'zmb')).split(',').map(Number); if (p[0] * q[1] === q[0] * p[1]) return false; if (p[0] / p[1] > q[0] / q[1]) { var t = p; p = q; q = t; } var z = zoom(p[0], p[1], q[0], q[1]); return z.hi - z.lo > 2; }, yes: 'The wider the gap, the more fractions fit.' }
+        ]),
+        ways: [
+          { label: 'Use decimals', html: '<p>' + fr(1, 3) + ' &asymp; 0.33 and ' + fr(1, 2) + ' = 0.5. Any decimal between, like 0.4, works. 0.4 = ' + fr(2, 5) + '.</p>' },
+          { label: 'Add tops and bottoms', html: '<p>A shortcut: add the tops and add the bottoms. ' + fr(1, 3) + ' and ' + fr(1, 2) + ' give ' + fr('1 + 1', '3 + 2') + ' = ' + fr(2, 5) + ', which is always between the two. (This trick only finds a number between. It is not how to add fractions.)</p>' },
+          { label: 'Double the bottoms', html: '<p>Double everything: ' + fr(1, 3) + ' = ' + fr(2, 6) + ' and ' + fr(1, 2) + ' = ' + fr(3, 6) + '. Double again: ' + fr(4, 12) + ' and ' + fr(6, 12) + '. Keep doubling until a gap opens.</p>' }
+        ],
+        key: '<p><b>Common denominator. No gap? Cut the pieces smaller.</b></p>',
+        mistake: '<p>Saying there is nothing between 2/6 and 3/6. There are always fractions between; the pieces just need to be smaller.</p>',
+        check: [function () { return mc('Which fraction is between ' + fr(2, 5) + ' and ' + fr(1, 2) + '?', fr(9, 20), [fr(3, 10), fr(11, 20), fr(3, 5)], 'Write both in twentieths.', fr(2, 5) + ' = ' + fr(8, 20) + ' and ' + fr(1, 2) + ' = ' + fr(10, 20) + '.'); }, K.ck('fr-between', 1), K.ck('fr-between', 3)] },
+      { id: 'decimals', title: 'Decimals in between', exp: ['B1.5'], skill: 'fr-between',
+        body: '<p>Decimals work the same way. Add a zero to cut the pieces 10 times smaller. Between 0.3 and 0.4 are 0.31, 0.32, ... 0.39.</p>',
+        watch: K.slides([
+          { say: 'What is between 0.3 and 0.4?', fig: function () { return dline(0.3, 0.4, 0.1, [{ v: 0.3, col: 'var(--sb)' }, { v: 0.4, col: 'var(--se)' }]); } },
+          { say: 'Write them as hundredths: 0.30 and 0.40. Ten small steps appear.', fig: function () { return dline(0.3, 0.4, 0.01, [{ v: 0.3, col: 'var(--sb)' }, { v: 0.4, col: 'var(--se)' }]); } },
+          { say: '0.35 is halfway. 0.31 to 0.39 are all between.', fig: function () { return dline(0.3, 0.4, 0.01, [{ v: 0.35, lab: '0.35' }]); } },
+          { say: 'Zoom again: between 0.35 and 0.36 is <b>0.355</b>.', fig: function () { return dline(0.35, 0.36, 0.001, [{ v: 0.355, lab: '0.355' }]); }, ms: 2600 }
+        ]),
+        key: '<p><b>Add a zero to both, then look between.</b> 0.6 and 0.7 become 0.60 and 0.70.</p>',
+        mistake: '<p>Thinking 0.35 is bigger than 0.4 because 35 is bigger than 4. Line up the places: 0.35 and 0.40.</p>',
+        check: [function () { return mc('Which number is between 0.6 and 0.7?', '0.65', ['0.06', '0.71', '0.7'], 'Write both as hundredths: 0.60 and 0.70.', '0.60 &lt; 0.65 &lt; 0.70.'); }, K.ck('fr-between', 2)] }
+    ] },
+    { id: 'add', title: 'Adding fractions', sub: 'Add pieces of the same size.', concepts: [
+      { id: 'addsame', title: 'Add pieces of the same size', exp: ['B2.5'], skill: 'fr-add',
+        body: '<p>When the bottoms match, the pieces are the same size. <b>Add the tops and keep the bottom.</b></p>',
+        watch: K.slides([
+          { say: 'Three eighths plus two eighths.', fig: function () { return stack([[3, 8, 'var(--sb)'], [2, 8, 'var(--se)']]); } },
+          { say: 'Slide the pieces together: 3 eighths and 2 more eighths.', fig: function () { return addPic(3, 8, 2, 8); } },
+          { say: '3 + 2 = 5 pieces. They are still eighths: five eighths.', fig: eq(fr(3, 8) + ' + ' + fr(2, 8) + ' = ' + fr(5, 8)), ms: 2400 }
+        ]),
+        try: { tool: 'fractions', opts: { wall: [8, 8, 8] }, tasks: [
+          { do: 'Shade <b>3/8</b> in the first strip and <b>2/8</b> in the second.', goal: function (s) { var r = rows(s); return r[0] === 3 && r[1] === 2; }, yes: 'Now show the total in the third strip.' },
+          { reset: false, do: 'Shade the <b>total</b> in the third strip.', goal: function (s) { var r = rows(s); return r[0] === 3 && r[1] === 2 && r[2] === 5; }, yes: '3/8 + 2/8 = 5/8.' }
+        ] },
+        key: '<p><b>Same bottom: add the tops, keep the bottom.</b></p>',
+        mistake: '<p>Adding the bottoms too: 3/8 + 2/8 = 5/16. The pieces do not change size when you put them together.</p>',
+        check: [function () { var d = R.int(5, 12), a = R.int(1, d - 2), b = R.int(1, d - 1 - a); return fq('Add: ' + fr(a, d) + ' + ' + fr(b, d) + '.', a + b, d, 'Same bottom: add the tops.', a + ' + ' + b + ' = ' + (a + b) + ', so ' + fr(a + b, d) + (gcd(a + b, d) > 1 ? ' = ' + frs(a + b, d) : '') + '.'); }, K.ck('fr-add', 1)] },
+      { id: 'unlike', title: 'Different bottoms', exp: ['B2.5'], skill: 'fr-add', hard: true,
+        body: '<p>You can only add pieces of the same size. If the bottoms are different, <b>rewrite both with a common denominator first</b>.</p>',
+        watch: K.slides([
+          { say: 'One half plus one third. Halves and thirds are different sizes.', fig: function () { return stack([[1, 2, 'var(--sb)'], [1, 3, 'var(--se)']]); } },
+          { say: 'The LCM of 2 and 3 is 6. Cut both into sixths.', fig: function () { return addPic(1, 2, 1, 3); } },
+          { say: 'One half is 3 sixths. One third is 2 sixths.', fig: eq(fr(1, 2) + ' + ' + fr(1, 3) + ' = ' + fr(3, 6) + ' + ' + fr(2, 6)) },
+          { say: '3 + 2 = 5. The total is <b>five sixths</b>.', fig: eq(fr(1, 2) + ' + ' + fr(1, 3) + ' = ' + fr(5, 6)), ms: 2400 }
+        ]),
+        try: lab('ada', [
+          { do: 'Add <b>1/2 + 1/3</b>.', goal: function (h) { return +K.v(h, 'ada') === 1 && +K.v(h, 'adb') === 2 && +K.v(h, 'adc') === 1 && +K.v(h, 'add') === 3; }, yes: '3/6 + 2/6 = 5/6.' },
+          { do: 'Find two fractions with different bottoms that add to <b>exactly 1</b>.', goal: function (h) { var a = +K.v(h, 'ada'), b = +K.v(h, 'adb'), c = +K.v(h, 'adc'), d = +K.v(h, 'add'); return b !== d && b > 1 && d > 1 && a * d + c * b === b * d; }, yes: 'The pieces fill exactly one whole.' },
+          { do: 'Make a total <b>more than 1</b>.', goal: function (h) { var a = +K.v(h, 'ada'), b = +K.v(h, 'adb'), c = +K.v(h, 'adc'), d = +K.v(h, 'add'); return b > 1 && d > 1 && a * d + c * b > b * d; }, yes: 'The answer can be written as a mixed number.' }
+        ]),
+        ways: [
+          { label: 'Fraction strips', html: '<p>Shade 1/2 on the halves strip and 1/3 on the thirds strip. Then shade the same total on the sixths strip.</p>', tool: 'fractions', opts: { wall: [2, 3, 6] } },
+          { label: 'Use money', html: '<p>Think of a dollar. ' + fr(1, 2) + ' of a dollar is 50¢ and ' + fr(1, 4) + ' is 25¢. Together 75¢, which is ' + fr(3, 4) + ' of a dollar. Cents are a common denominator of 100.</p>' },
+          { label: 'Check it makes sense', html: '<p>' + fr(1, 2) + ' + ' + fr(1, 3) + ' must be <b>more than ' + fr(1, 2) + '</b>. Adding the bottoms gives ' + fr(2, 5) + ', which is less than ' + fr(1, 2) + ', so that cannot be right.</p>' }
+        ],
+        key: '<p><b>Common denominator first. Then add the tops and keep the bottom.</b></p>',
+        mistake: '<p>Adding tops and bottoms: 1/2 + 1/3 = 2/5. Ask: is 2/5 more than 1/2? It is not, so it cannot be the total.</p>',
+        check: [function () { return fq('Add: ' + fr(2, 5) + ' + ' + fr(3, 10) + '.', 7, 10, 'Write ' + fr(2, 5) + ' in tenths first.', fr(2, 5) + ' = ' + fr(4, 10) + '. ' + fr(4, 10) + ' + ' + fr(3, 10) + ' = ' + fr(7, 10) + '.'); }, K.ck('fr-add', 2), K.ck('fr-add', 2)] },
+      { id: 'mixed', title: 'Add mixed numbers', exp: ['B2.5'], skill: 'fr-add',
+        body: '<p>A <b>mixed number</b> like ' + A.mixed(2, 1, 4) + ' is a whole number and a fraction. To add mixed numbers, <b>add the wholes, add the fractions</b>, then tidy up.</p>',
+        watch: K.slides([
+          { say: 'One and three quarters plus two and a half.', fig: eq(A.mixed(1, 3, 4) + ' + ' + A.mixed(2, 1, 2)) },
+          { say: 'Wholes: 1 + 2 = 3.', fig: eq('1 + 2 = 3') },
+          { say: 'Fractions: three quarters plus two quarters is five quarters.', fig: function () { return addPic(3, 4, 1, 2) + eq(fr(3, 4) + ' + ' + fr(2, 4) + ' = ' + fr(5, 4)); } },
+          { say: 'Five quarters is 1 and one quarter. So the total is 3 + 1 and one quarter: <b>4 and one quarter</b>.', fig: eq('3 + ' + A.mixed(1, 1, 4) + ' = ' + A.mixed(4, 1, 4)), ms: 2800 }
+        ]),
+        key: '<p><b>Wholes with wholes, fractions with fractions.</b> If the fraction part is more than 1, carry a whole.</p>',
+        mistake: '<p>Leaving the answer as 3 5/4. Five quarters is more than a whole, so carry 1: 4 1/4.</p>',
+        check: [K.ck('fr-add', 3), function () { return { q: 'Mia ran ' + fr(3, 4) + ' km on Monday and ' + fr(5, 6) + ' km on Tuesday. How far in total? Type a fraction or mixed number.', type: 'num', answer: 19 / 12, show: '1 7/12', kb: 'text', tol: 1e-6, hint: 'Use twelfths.', explain: fr(9, 12) + ' + ' + fr(10, 12) + ' = ' + fr(19, 12) + ' = ' + A.mixed(1, 7, 12) + ' km.' }; }] }
+    ] },
+    { id: 'sub', title: 'Subtracting fractions', sub: 'Take away pieces of the same size.', concepts: [
+      { id: 'take', title: 'Subtract fractions', exp: ['B2.5'], skill: 'fr-sub',
+        body: '<p>Subtracting works the same way: <b>common denominator first, then subtract the tops</b>.</p>',
+        watch: K.slides([
+          { say: 'Five sixths take away one quarter.', fig: function () { return stack([[5, 6, 'var(--sb)'], [1, 4, 'var(--se)']]); } },
+          { say: 'The LCM of 6 and 4 is 12. Five sixths is 10 twelfths. One quarter is 3 twelfths.', fig: eq(fr(10, 12) + ' &minus; ' + fr(3, 12)) },
+          { say: 'Take 3 twelfths away from 10 twelfths.', fig: function () { return addPic(5, 6, 1, 4, true); } },
+          { say: '7 twelfths are left.', fig: eq(fr(5, 6) + ' &minus; ' + fr(1, 4) + ' = ' + fr(7, 12)), ms: 2400 }
+        ]),
+        try: { tool: 'fractions', opts: { wall: [12] }, tasks: [
+          { do: 'Shade <b>10/12</b>. That is 5/6.', goal: function (s) { return s[0].n === 10; }, yes: 'Now take away 1/4, which is 3/12.' },
+          { reset: false, do: 'Take away <b>3/12</b> by tapping shaded parts.', goal: function (s) { return s[0].n === 7; }, yes: '10/12 &minus; 3/12 = 7/12.' }
+        ] },
+        key: '<p><b>Common denominator first. Then subtract the tops and keep the bottom.</b></p>',
+        mistake: '<p>Subtracting the bottoms: 5/6 &minus; 1/4 = 4/2. Check by adding back: the answer plus 1/4 must give 5/6.</p>',
+        check: [function () { return fq('Subtract: ' + fr(7, 8) + ' &minus; ' + fr(1, 2) + '.', 3, 8, fr(1, 2) + ' is how many eighths?', fr(1, 2) + ' = ' + fr(4, 8) + '. ' + fr(7, 8) + ' &minus; ' + fr(4, 8) + ' = ' + fr(3, 8) + '.'); }, K.ck('fr-sub', 1), K.ck('fr-sub', 2)] },
+      { id: 'borrow', title: 'Borrow a whole', exp: ['B2.5'], skill: 'fr-sub', hard: true,
+        body: '<p>In ' + A.mixed(2, 1, 4) + ' &minus; ' + fr(3, 4) + ' you cannot take 3 quarters from 1 quarter. <b>Break one whole into quarters</b> first.</p>',
+        watch: K.slides([
+          { say: 'Two and one quarter. Take away three quarters.', fig: function () { return bar(9, 4, { col: 'var(--sb)' }); } },
+          { say: 'Only 1 quarter is loose. Break one whole into 4 quarters.', fig: eq(A.mixed(2, 1, 4) + ' = 1 + ' + fr(4, 4) + ' + ' + fr(1, 4) + ' = ' + A.mixed(1, 5, 4)) },
+          { say: 'Now take 3 quarters from 5 quarters. 2 quarters are left.', fig: function () { return bar(6, 4, { col: 'var(--sb)' }) + eq(A.mixed(1, 5, 4) + ' &minus; ' + fr(3, 4) + ' = ' + A.mixed(1, 2, 4)); } },
+          { say: 'Two quarters is one half. The answer is <b>one and a half</b>.', fig: eq(A.mixed(1, 2, 4) + ' = ' + A.mixed(1, 1, 2)), ms: 2400 }
+        ]),
+        try: { tool: 'fractions', opts: { wall: [4, 4, 4] }, tasks: [
+          { do: 'Show <b>2 1/4</b>: two full strips and 1 quarter.', goal: function (s) { var r = rows(s).slice().sort(); return sum(s) === 9 && r.join() === '1,4,4'; }, yes: '2 1/4 is 9 quarters.' },
+          { reset: false, do: 'Take away <b>3/4</b>. You will need to break into a full strip.', goal: function (s) { return sum(s) === 6; }, yes: '6 quarters = 1 2/4 = 1 1/2.' }
+        ] },
+        ways: [
+          { label: 'Change to improper fractions', html: '<p>Write everything in quarters: ' + A.mixed(2, 1, 4) + ' = ' + fr(9, 4) + '. Then ' + fr(9, 4) + ' &minus; ' + fr(3, 4) + ' = ' + fr(6, 4) + ' = ' + A.mixed(1, 1, 2) + '.</p>' },
+          { label: 'Count up', html: '<p>Start at ' + fr(3, 4) + ' and count up to ' + A.mixed(2, 1, 4) + '. ' + fr(3, 4) + ' to 1 is ' + fr(1, 4) + '. 1 to 2 is 1. 2 to ' + A.mixed(2, 1, 4) + ' is ' + fr(1, 4) + '. Total: ' + A.mixed(1, 2, 4) + ' = ' + A.mixed(1, 1, 2) + '.</p><div class="fig">' + fline(0, 3, 4, [{ v: 0.75, lab: '3/4', col: 'var(--se)' }, { v: 2.25, lab: '2 1/4', col: 'var(--sb)' }]) + '</div>' },
+          { label: 'Like making change', html: '<p>It is like paying with a loonie when you only have a quarter loose: break the dollar into 4 quarters, then pay.</p>' }
+        ],
+        key: '<p><b>Not enough pieces? Break one whole into pieces.</b> Check by adding back.</p>',
+        mistake: '<p>Subtracting the smaller fraction from the larger one (3/4 &minus; 1/4) and getting 2 2/4. Have the student add back to check.</p>',
+        check: [function () { return { q: 'Subtract: ' + A.mixed(3, 1, 3) + ' &minus; ' + A.mixed(1, 2, 3) + '. Type a fraction or mixed number, like 1 1/2.', type: 'num', answer: 5 / 3, show: '1 2/3', kb: 'text', tol: 1e-6, hint: 'Break one whole into thirds: ' + A.mixed(3, 1, 3) + ' = ' + A.mixed(2, 4, 3) + '.', explain: A.mixed(2, 4, 3) + ' &minus; ' + A.mixed(1, 2, 3) + ' = ' + A.mixed(1, 2, 3) + '.' }; }, K.ck('fr-sub', 3), K.ck('fr-sub', 3)] }
+    ] }
+  ];
+
+
   A.register('fractions', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Equivalent fractions</h2>' +
-'<p><b>Equivalent fractions</b> name the same amount. Cut every piece into the same number of smaller pieces, and the shaded amount does not change.</p>' +
-'<div class="fig">' + stack([[2, 3], [4, 6], [8, 12]], '2/3, 4/6 and 8/12 shade the same length of bar') + '</div>' +
-'<div class="key"><b class="t">Key idea</b><p>Multiply or divide the top <b>and</b> the bottom by the same number. ' + fr(2, 3) + ' = ' + fr('2 &times; 4', '3 &times; 4') + ' = ' + fr(8, 12) + '.</p></div>' +
-'<div class="lab"><span class="lt">Try it: cut the pieces smaller</span>' +
-'<div class="ctrl"><label for="eqn">Top (numerator): <output id="eqno"></output><input type="range" id="eqn" min="1" max="9" value="3"></label>' +
-'<label for="eqd">Bottom (denominator): <output id="eqdo"></output><input type="range" id="eqd" min="2" max="10" value="4"></label>' +
-'<label for="eqk">Cut each piece into: <output id="eqko"></output><input type="range" id="eqk" min="1" max="5" value="2"></label></div>' +
-'<div class="fig" id="eqfig"></div><div class="out" id="eqout"></div></div>' +
-A.yt({ q: 'Fill in the missing number: ' + fr(3, 5) + ' = ' + fr('?', 20), answer: 12, hint: '5 times what is 20? Do the same to the top.', explain: '5 &times; 4 = 20, so 3 &times; 4 = 12. ' + fr(3, 5) + ' = ' + fr(12, 20) + '.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Simplifying with the GCF</h2>' +
-'<p>To <b>simplify</b> a fraction, divide the top and bottom by a common factor. Divide by the <b>GCF</b> and you reach <b>simplest form</b> in one step.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>Simplify ' + fr(18, 24) + '. The GCF of 18 and 24 is 6.</p><p class="math" style="font-size:1.2rem">' + fr(18, 24) + ' = ' + fr('18 &divide; 6', '24 &divide; 6') + ' = ' + fr(3, 4) + '</p>' +
-'<div class="fig">' + stack([[18, 24], [3, 4]], '18/24 and 3/4 shade the same length') + '</div><p>Every 6 small pieces join into 1 big piece.</p></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Do not divide only the top, or subtract. ' + fr(18, 24) + ' is not ' + fr(3, 24) + ' and not ' + fr(12, 18) + '. Whatever you do to the top, do the same to the bottom, and only multiply or divide.</p></div>' +
-'<div class="lab"><span class="lt">Try it: simplify any fraction</span>' +
-'<div class="ctrl"><label for="smn">Top<input type="number" id="smn" min="1" max="144" value="24"></label><label for="smd">Bottom<input type="number" id="smd" min="2" max="144" value="36"></label></div>' +
-'<div class="out" id="smout"></div><div class="fig" id="smfig"></div></div>' +
-A.yt({ q: 'Simplify ' + fr(20, 30) + '. Type it as a fraction, like 2/5.', answer: 2 / 3, show: '2/3', kb: 'text', accept: A.lowest(2, 3), hint: 'The GCF of 20 and 30 is 10.', explain: '20 &divide; 10 = 2 and 30 &divide; 10 = 3, so ' + fr(20, 30) + ' = ' + fr(2, 3) + '.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Comparing and ordering fractions</h2>' +
-'<p>Fractions are easy to compare when they have the <b>same denominator</b>, because the pieces are the same size. Then the bigger top wins.</p>' +
-'<div class="vs"><div><b class="t">Same bottom</b><p>' + fr(5, 8) + ' &gt; ' + fr(3, 8) + '</p><p>5 pieces beat 3 pieces of the same size.</p></div><div><b class="t">Same top</b><p>' + fr(3, 4) + ' &gt; ' + fr(3, 8) + '</p><p>Quarters are bigger pieces than eighths.</p></div></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Which is greater, ' + fr(2, 3) + ' or ' + fr(3, 5) + '? Rewrite both with the denominator 15 (the LCM of 3 and 5).</p>' +
-'<p class="math">' + fr(2, 3) + ' = ' + fr(10, 15) + ' and ' + fr(3, 5) + ' = ' + fr(9, 15) + '. 10 &gt; 9, so ' + fr(2, 3) + ' is greater.</p>' +
-'<div class="fig">' + stack([[10, 15, 'var(--sb)'], [9, 15, 'var(--se)']], '10/15 is longer than 9/15') + '</div></div>' +
-'<div class="lab"><span class="lt">Try it: compare two fractions</span>' +
-'<div class="ctrl"><label for="cpa">First: top<input type="number" id="cpa" min="0" max="20" value="5"></label><label for="cpb">bottom<input type="number" id="cpb" min="1" max="12" value="6"></label>' +
-'<label for="cpc">Second: top<input type="number" id="cpc" min="0" max="20" value="7"></label><label for="cpd">bottom<input type="number" id="cpd" min="1" max="12" value="9"></label></div>' +
-'<div class="fig" id="cpfig"></div><div class="out" id="cpout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Use <b>' + fr(1, 2) + '</b> as a quick check. ' + fr(3, 7) + ' is less than a half (3 is less than half of 7). ' + fr(5, 9) + ' is more than a half. So ' + fr(3, 7) + ' &lt; ' + fr(5, 9) + '.</p></div>' +
-A.yt({ q: 'Which is greater?', type: 'mc', options: [fr(3, 4), fr(5, 8), 'They are equal'], answer: 0, hint: 'Write ' + fr(3, 4) + ' in eighths.', explain: fr(3, 4) + ' = ' + fr(6, 8) + ', and 6 eighths is more than 5 eighths.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Finding a number in between</h2>' +
-'<p>Between any two different fractions there is always another fraction. To find one, give them a common denominator. If there is no gap, cut the pieces smaller.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>Find a fraction between ' + fr(1, 3) + ' and ' + fr(1, 2) + '. In sixths they are ' + fr(2, 6) + ' and ' + fr(3, 6) + ', which are next to each other. Cut smaller, into twelfths: ' + fr(4, 12) + ' and ' + fr(6, 12) + '. Now ' + fr(5, 12) + ' fits between.</p>' +
-'<div class="fig">' + zoom(1, 3, 1, 2).svg + '</div></div>' +
-'<p>Decimals work the same way. Between 0.3 and 0.4 are 0.31, 0.35, 0.39, and many more. Between 0.35 and 0.36 is 0.355.</p>' +
-'<div class="lab"><span class="lt">Try it: zoom in on the gap</span>' +
-'<div class="ctrl"><label for="zma">First fraction<select id="zma"><option value="1,4">1/4</option><option value="1,3" selected>1/3</option><option value="2,5">2/5</option><option value="1,2">1/2</option><option value="3,5">3/5</option></select></label>' +
-'<label for="zmb">Second fraction<select id="zmb"><option value="1,2" selected>1/2</option><option value="3,5">3/5</option><option value="2,3">2/3</option><option value="3,4">3/4</option><option value="4,5">4/5</option></select></label></div>' +
-'<div class="fig" id="zmfig"></div><div class="out" id="zmout"></div></div>' +
-A.yt({ q: 'Which number is between 0.6 and 0.7?', type: 'mc', options: ['0.06', '0.65', '0.71', '0.7'], answer: 1, hint: 'Write both as hundredths: 0.60 and 0.70.', explain: '0.60 &lt; 0.65 &lt; 0.70.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Adding fractions</h2>' +
-'<p>You can only add pieces of the <b>same size</b>. If the denominators are different, rewrite the fractions with a common denominator first. Then add the tops and keep the bottom.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p class="math">' + fr(1, 2) + ' + ' + fr(1, 3) + ' = ' + fr(3, 6) + ' + ' + fr(2, 6) + ' = ' + fr(5, 6) + '</p><div class="fig">' + addPic(1, 2, 1, 3) + '</div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Do not add the bottoms. ' + fr(1, 2) + ' + ' + fr(1, 3) + ' is not ' + fr(2, 5) + '. That answer is smaller than ' + fr(1, 2) + ', which cannot be right.</p></div>' +
-'<div class="lab"><span class="lt">Try it: add two fractions</span>' +
-'<div class="ctrl"><label for="ada">Top<input type="number" id="ada" min="0" max="12" value="2"></label><label for="adb">Bottom<input type="number" id="adb" min="2" max="12" value="3"></label><span class="big2">+</span>' +
-'<label for="adc">Top<input type="number" id="adc" min="0" max="12" value="3"></label><label for="add">Bottom<input type="number" id="add" min="2" max="12" value="4"></label></div>' +
-'<div class="out" id="adout"></div><div class="fig" id="adfig"></div></div>' +
-A.yt({ q: 'Add: ' + fr(2, 5) + ' + ' + fr(3, 10) + '. Type a fraction, like 1/2.', answer: 7 / 10, show: '7/10', kb: 'text', hint: 'Write ' + fr(2, 5) + ' in tenths first.', explain: fr(2, 5) + ' = ' + fr(4, 10) + '. ' + fr(4, 10) + ' + ' + fr(3, 10) + ' = ' + fr(7, 10) + '.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>Subtracting fractions and mixed numbers</h2>' +
-'<p>Subtracting works the same way: common denominator first, then subtract the tops. A <b>mixed number</b> like ' + A.mixed(2, 1, 4) + ' is a whole number and a fraction.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p class="math">' + fr(5, 6) + ' &minus; ' + fr(1, 4) + ' = ' + fr(10, 12) + ' &minus; ' + fr(3, 12) + ' = ' + fr(7, 12) + '</p><div class="fig">' + addPic(5, 6, 1, 4, true) + '</div></div>' +
-'<div class="eg"><b class="t">Worked example: borrowing a whole</b><p>' + A.mixed(2, 1, 4) + ' &minus; ' + fr(3, 4) + '. You cannot take 3 quarters from 1 quarter, so break one whole into 4 quarters: ' + A.mixed(2, 1, 4) + ' = ' + A.mixed(1, 5, 4) + '.</p>' +
-'<p class="math">' + A.mixed(1, 5, 4) + ' &minus; ' + fr(3, 4) + ' = ' + A.mixed(1, 2, 4) + ' = ' + A.mixed(1, 1, 2) + '</p><div class="fig">' + bar(9, 4, { lab: '= 9/4', alt: '2 and 1/4 is 9 quarters' }) + '</div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Check your answer by adding back. ' + A.mixed(1, 1, 2) + ' + ' + fr(3, 4) + ' = ' + A.mixed(1, 2, 4) + ' + ' + fr(3, 4) + ' = ' + A.mixed(1, 5, 4) + ' = ' + A.mixed(2, 1, 4) + '. It works.</p></div>' +
-A.yt({ q: 'Subtract: ' + fr(7, 8) + ' &minus; ' + fr(1, 2) + '. Type a fraction.', answer: 3 / 8, show: '3/8', kb: 'text', hint: fr(1, 2) + ' is how many eighths?', explain: fr(1, 2) + ' = ' + fr(4, 8) + '. ' + fr(7, 8) + ' &minus; ' + fr(4, 8) + ' = ' + fr(3, 8) + '.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      function num(id, lo, hi, def) { var v = parseInt($('#' + id, root).value, 10); if (isNaN(v)) v = def; return Math.max(lo, Math.min(hi, v)); }
-      A.bind(root, ['eqn', 'eqd', 'eqk'], function () {
-        var d = +$('#eqd', root).value, n = Math.min(+$('#eqn', root).value, d), k = +$('#eqk', root).value;
-        $('#eqno', root).textContent = n; $('#eqdo', root).textContent = d; $('#eqko', root).textContent = k;
-        $('#eqfig', root).innerHTML = stack([[n, d, 'var(--sb)'], [n * k, d * k, 'var(--se)']]);
-        $('#eqout', root).innerHTML = '<p class="big2">' + fr(n, d) + ' = ' + fr(n + ' &times; ' + k, d + ' &times; ' + k) + ' = ' + fr(n * k, d * k) + '</p><p>Each piece was cut into ' + k + '. There are ' + k + ' times as many pieces, each ' + k + ' times smaller, so the amount is the same.</p>';
-      });
-      A.bind(root, ['smn', 'smd'], function () {
-        var n = num('smn', 1, 144, 1), d = num('smd', 2, 144, 2), g = gcd(n, d);
-        $('#smout', root).innerHTML = '<p>GCF of ' + n + ' and ' + d + ' is <b>' + g + '</b>.</p><p class="big2">' + fr(n, d) + ' = ' + fr(n + ' &divide; ' + g, d + ' &divide; ' + g) + ' = ' + fr(n / g, d / g) + '</p>' +
-          (g === 1 ? '<p>The GCF is 1, so ' + n + '/' + d + ' is already in simplest form.</p>' : '') + (n > d ? '<p>As a mixed number: ' + frs(n, d) + '.</p>' : '');
-        $('#smfig', root).innerHTML = d <= 48 && n <= 2 * d ? stack([[n, d, 'var(--sb)'], [n / g, d / g, 'var(--se)']]) : '<p class="t2">(Pictures are drawn for bottoms up to 48.)</p>';
-      });
-      A.bind(root, ['cpa', 'cpb', 'cpc', 'cpd'], function () {
-        var a = num('cpa', 0, 20, 0), b = num('cpb', 1, 12, 1), c = num('cpc', 0, 20, 0), d = num('cpd', 1, 12, 1), L = lcm(b, d);
-        var x = a * L / b, y = c * L / d, top = Math.max(1, Math.ceil(Math.max(a / b, c / d)));
-        $('#cpfig', root).innerHTML = fline(0, top, L <= 24 / top ? L : 1, [{ v: a / b, lab: a + '/' + b, col: 'var(--sb)' }, { v: c / d, lab: c + '/' + d, col: 'var(--se)' }]);
-        $('#cpout', root).innerHTML = '<p>Common denominator: ' + L + '. ' + fr(a, b) + ' = ' + fr(x, L) + ' and ' + fr(c, d) + ' = ' + fr(y, L) + '.</p><p class="big2">' + fr(a, b) + (x > y ? ' &gt; ' : x < y ? ' &lt; ' : ' = ') + fr(c, d) + '</p>' +
-          (x === y ? '<p>They are equivalent.</p>' : '<p>The one further right on the line is greater.</p>');
-      });
-      A.bind(root, ['zma', 'zmb'], function () {
-        var p = $('#zma', root).value.split(',').map(Number), q = $('#zmb', root).value.split(',').map(Number);
-        if (p[0] / p[1] > q[0] / q[1]) { var t = p; p = q; q = t; }
-        if (p[0] / p[1] === q[0] / q[1]) { $('#zmfig', root).innerHTML = ''; $('#zmout', root).innerHTML = '<p>Pick two different fractions.</p>'; return; }
-        var z = zoom(p[0], p[1], q[0], q[1]);
-        $('#zmfig', root).innerHTML = z.svg;
-        var mids = []; for (var i = z.lo + 1; i < z.hi; i++) mids.push(frs(i, z.D));
-        $('#zmout', root).innerHTML = '<p>In ' + z.D + 'ths: ' + fr(p[0], p[1]) + ' = ' + fr(z.lo, z.D) + ' and ' + fr(q[0], q[1]) + ' = ' + fr(z.hi, z.D) + '.</p><p>In between: ' + mids.join(', ') + '</p>';
-      });
-      A.bind(root, ['ada', 'adb', 'adc', 'add'], function () {
-        var a = num('ada', 0, 12, 0), b = num('adb', 2, 12, 2), c = num('adc', 0, 12, 0), d = num('add', 2, 12, 2), L = lcm(b, d), s = a * L / b + c * L / d;
-        $('#adout', root).innerHTML = '<p class="big2">' + fr(a, b) + ' + ' + fr(c, d) + ' = ' + fr(a * L / b, L) + ' + ' + fr(c * L / d, L) + ' = ' + fr(s, L) + (frs(s, L) !== fr(s, L) ? ' = ' + frs(s, L) : '') + '</p>';
-        $('#adfig', root).innerHTML = L <= 60 && s / L <= 3 ? addPic(a, b, c, d) : '<p class="t2">(The picture is shown for answers up to 3.)</p>';
-      });
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'Fill in the missing number: ' + fr(4, 7) + ' = ' + fr('?', 35), type: 'num', answer: 20, hint: '7 times what makes 35? Do the same to the top.', explain: '7 &times; 5 = 35, so 4 &times; 5 = 20.' },

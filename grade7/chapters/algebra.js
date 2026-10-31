@@ -77,132 +77,299 @@
     return rows;
   }
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    pgmo: { title: 'build and compare two patterns', html: 
+      '<div class="ctrl"><label for="pgm">Pattern A rate: <output id="pgmo"></output><input type="range" id="pgm" min="1" max="6" value="2"></label><label for="pgc">Pattern A initial value: <output id="pgco"></output><input type="range" id="pgc" min="0" max="10" value="3"></label></div>' +
+      '<div class="ctrl"><label for="pgm2">Pattern B rate: <output id="pgm2o"></output><input type="range" id="pgm2" min="1" max="6" value="4"></label><label for="pgc2">Pattern B initial value: <output id="pgc2o"></output><input type="range" id="pgc2" min="0" max="10" value="0"></label></div>' +
+      '<div class="fig" id="pgtiles"></div><div class="fig" id="pggraph"></div><div class="out" id="pgout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['pgm', 'pgc', 'pgm2', 'pgc2'], function () {
+          var m = +$('#pgm', root).value, c = +$('#pgc', root).value, m2 = +$('#pgm2', root).value, c2 = +$('#pgc2', root).value;
+          $('#pgmo', root).textContent = m; $('#pgco', root).textContent = c; $('#pgm2o', root).textContent = m2; $('#pgc2o', root).textContent = c2;
+          $('#pgtiles', root).innerHTML = '<p class="t2" style="margin:0">Pattern A</p>' + tiles(m, c, 4);
+          $('#pggraph', root).innerHTML = pgraph([{ m: m, c: c, col: 'var(--sb)', lab: 'A: ' + m + 'n + ' + c }, { m: m2, c: c2, col: 'var(--se)', lab: 'B: ' + m2 + 'n + ' + c2 }], 8);
+          var meet = m === m2 ? null : (c2 - c) / (m - m2), msg;
+          if (m === m2) msg = c === c2 ? 'They are the same pattern.' : 'Same rate, so they never meet. ' + (c > c2 ? 'A' : 'B') + ' stays ' + Math.abs(c - c2) + ' ahead.';
+          else if (meet < 0) msg = (c >= c2 && m > m2 ? 'A' : 'B') + ' is ahead from the start and grows faster, so it stays ahead.';
+          else if (meet === 0) msg = 'They start together, then ' + (m > m2 ? 'A' : 'B') + ' pulls ahead.';
+          else msg = (Math.abs(meet - Math.round(meet)) < 1e-9 ? 'They are equal at term ' + meet + '.' : 'They cross between term ' + Math.floor(meet) + ' and term ' + Math.ceil(meet) + '.') + ' After that, ' + (m > m2 ? 'A' : 'B') + ' is bigger because it grows faster.';
+          $('#pgout', root).innerHTML = '<p><b>A:</b> ' + expr(m, c) + ' &nbsp; <b>B:</b> ' + expr(m2, c2) + '</p><p>' + msg + '</p>';
+        });
+      } },
+    ltao: { title: 'combine tiles', html: 
+      '<div class="ctrl"><label for="lta">First: <output id="ltao"></output><input type="range" id="lta" min="1" max="9" value="6"></label><label for="ltop">Operation<select id="ltop"><option value="1">+</option><option value="-1" selected>&minus;</option></select></label><label for="ltb">Second: <output id="ltbo"></output><input type="range" id="ltb" min="1" max="9" value="2"></label></div>' +
+      '<div class="fig" id="ltfig"></div><div class="out" id="ltout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['lta', 'ltop', 'ltb'], function () {
+          var a = +$('#lta', root).value, op = +$('#ltop', root).value, b = +$('#ltb', root).value, r = a + op * b;
+          $('#ltao', root).innerHTML = a + '<i>x</i>'; $('#ltbo', root).innerHTML = b + '<i>x</i>';
+          $('#ltfig', root).innerHTML = '<div class="vrow"><figure><figcaption>' + a + '<i>x</i></figcaption>' + atiles(a, 0) + '</figure><figure><figcaption>' + (op > 0 ? '+ ' : '&minus; ') + b + '<i>x</i></figcaption>' + atiles(op * b, 0) + '</figure><figure><figcaption>= ' + (r === 0 ? '0' : r === 1 ? '<i>x</i>' : r === -1 ? '&minus;<i>x</i>' : dec(r) + '<i>x</i>') + '</figcaption>' + (r ? atiles(r, 0) : '<p class="t2">(nothing left)</p>') + '</figure></div>';
+          $('#ltout', root).innerHTML = '<p class="big2">' + a + '<i>x</i> ' + (op > 0 ? '+' : '&minus;') + ' ' + b + '<i>x</i> = ' + (r === 1 ? '' : r === -1 ? '&minus;' : dec(r)) + (r ? '<i>x</i>' : '') + '</p>' + (op < 0 && b > a ? '<p>Red tiles are negative: you took away more than you had.</p>' : '');
+        });
+      } },
+    evx: { title: 'change the value of n', html: 
+      '<div class="ctrl"><label for="evx">Expression<select id="evx"><option value="3,2">3n + 2</option><option value="2.5,1">2.5n + 1</option><option value="4,-3" selected>4n &minus; 3</option><option value="0.5,6">0.5n + 6</option></select></label><label for="evn"><i>n</i> = <output id="evno"></output><input type="range" id="evn" min="0" max="12" step="0.5" value="5"></label></div>' +
+      '<div class="out" id="evout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['evx', 'evn'], function () {
+          var p = $('#evx', root).value.split(',').map(Number), n = +$('#evn', root).value, v = cl(p[0] * n + p[1]);
+          $('#evno', root).textContent = dec(n);
+          $('#evout', root).innerHTML = '<p class="big2">' + expr(p[0], p[1]) + '</p><p class="big2">= ' + dec(p[0]) + ' &times; ' + dec(n) + (p[1] > 0 ? ' + ' + p[1] : ' &minus; ' + (-p[1])) + ' = ' + dec(p[0] * n) + (p[1] > 0 ? ' + ' + p[1] : ' &minus; ' + (-p[1])) + ' = ' + dec(v) + '</p>';
+        });
+      } },
+    eqao: { title: 'balance and solve', html: 
+      '<div class="ctrl"><label for="eqa">Boxes of x: <output id="eqao"></output><input type="range" id="eqa" min="1" max="5" value="2"></label><label for="eqx">Secret x: <output id="eqxo"></output><input type="range" id="eqx" min="1" max="12" value="7"></label><label for="eqb">Extra weight: <output id="eqbo"></output><input type="range" id="eqb" min="0" max="15" value="5"></label></div>' +
+      '<div class="fig" id="eqfig"></div><div class="btnrow"><button type="button" class="btn" id="eqgo">Show the steps</button></div><div class="out" id="eqout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        function eq() {
+          var a = +$('#eqa', root).value, x = +$('#eqx', root).value, b = +$('#eqb', root).value, c = a * x + b;
+          $('#eqao', root).textContent = a; $('#eqxo', root).textContent = x; $('#eqbo', root).textContent = b;
+          $('#eqfig', root).innerHTML = balance(a, b, c);
+          $('#eqout', root).innerHTML = '<p>Can you find <i>x</i> before you look?</p>';
+          return { a: a, b: b, c: c, x: x };
+        }
+        A.bind(root, ['eqa', 'eqx', 'eqb'], eq);
+        $('#eqgo', root).addEventListener('click', function () {
+          var e = eq(), st = [];
+          if (e.b) st.push('Take ' + e.b + ' off both sides: ' + (e.a > 1 ? e.a : '') + '<i>x</i> = ' + e.c + ' &minus; ' + e.b + ' = ' + (e.c - e.b) + '.');
+          if (e.a > 1) st.push('Split both sides into ' + e.a + ' equal groups: <i>x</i> = ' + (e.c - e.b) + ' &divide; ' + e.a + ' = ' + e.x + '.');
+          st.push('Check: ' + (e.a > 1 ? e.a + ' &times; ' : '') + e.x + (e.b ? ' + ' + e.b : '') + ' = ' + e.c + '. It balances.');
+          $('#eqout', root).innerHTML = '<ol>' + st.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol><p class="big2"><i>x</i> = ' + e.x + '</p>';
+        });
+      } },
+    iqop: { title: 'graph an inequality', html: 
+      '<div class="ctrl"><label for="iqop">x is<select id="iqop"><option value="<">less than (&lt;)</option><option value="<=">less than or equal (&le;)</option><option value=">" selected>greater than (&gt;)</option><option value=">=">greater than or equal (&ge;)</option></select></label><label for="iqv">this number: <output id="iqvo"></output><input type="range" id="iqv" min="-5" max="10" value="2"></label></div>' +
+      '<div class="fig" id="iqfig"></div><div class="out" id="iqout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['iqop', 'iqv'], function () {
+          var op = $('#iqop', root).value, v = +$('#iqv', root).value;
+          $('#iqvo', root).textContent = dec(v);
+          $('#iqfig', root).innerHTML = ineqLine(op, v);
+          var whole = [];
+          for (var t = v - 3; t <= v + 3; t++) { var ok = op === '<' ? t < v : op === '<=' ? t <= v : op === '>' ? t > v : t >= v; if (ok) whole.push(dec(t)); }
+          $('#iqout', root).innerHTML = '<p class="big2"><i>x</i> ' + OPS[op] + ' ' + dec(v) + '</p><p>' + (op.length > 1 ? 'Closed dot: ' + dec(v) + ' is a solution.' : 'Open dot: ' + dec(v) + ' is not a solution.') + ' Some integer solutions: ' + whole.join(', ') + ', ...</p>';
+        });
+      } },
+    cdso: { title: 'change the code and run it', html: 
+      '<div class="ctrl"><label for="cds">total = <output id="cdso"></output><input type="range" id="cds" min="0" max="20" value="4"></label><label for="cdr">repeat ___ times: <output id="cdro"></output><input type="range" id="cdr" min="1" max="10" value="4"></label><label for="cdp">total = total + <output id="cdpo"></output><input type="range" id="cdp" min="-5" max="10" step="0.5" value="3"></label></div>' +
+      '<span class="mono" id="cdcode"></span><div class="out" id="cdout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['cds', 'cdr', 'cdp'], function () {
+          var s0 = +$('#cds', root).value, r = +$('#cdr', root).value, p = +$('#cdp', root).value, rows = runCode(s0, p, r);
+          $('#cdso', root).textContent = s0; $('#cdro', root).textContent = r; $('#cdpo', root).textContent = dec(p);
+          $('#cdcode', root).innerHTML = 'total = ' + s0 + '\nrepeat ' + r + ' times:\n    total = total ' + (p < 0 ? '&minus; ' + dec(-p) : '+ ' + dec(p)) + '\nshow total';
+          $('#cdout', root).innerHTML = '<div class="tbl"><table><thead><tr><th>Time through the loop</th>' + rows.map(function (x) { return '<th>' + x[0] + '</th>'; }).join('') + '</tr></thead><tbody><tr><td>total</td>' + rows.map(function (x) { return '<td>' + dec(x[1]) + '</td>'; }).join('') + '</tr></tbody></table></div>' +
+            '<p>The code shows <b class="big2">' + dec(rows[rows.length - 1][1]) + '</b>. That is ' + s0 + ' + ' + r + ' &times; ' + (p < 0 ? '(' + dec(p) + ')' : dec(p)) + '.</p>';
+        });
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function mono(t) { return '<span class="mono">' + t + '</span>'; }
+  function addx(t, k, s, n) { var p = Promise.resolve(); for (var i = 0; i < n; i++) p = p.then(function () { return t.add(k, s); }); return p; }
+
+  var LESSONS = [
+    { id: 'patterns', title: 'Linear growing patterns', sub: 'The same amount added each time.', concepts: [
+      { id: 'rate', title: 'Rate and initial value', exp: ['C1.1', 'C1.3'], skill: 'al-pattern',
+        body: '<p>In a <b>linear growing pattern</b> the same amount is added each time: the <b>constant rate</b>. The value before the first term, at term 0, is the <b>initial value</b>.</p>',
+        watch: K.slides([
+          { say: 'Term 1 has 3 orange tiles and 2 blue tiles.', fig: function () { return tiles(2, 3, 1); } },
+          { say: 'Each new term adds 2 more blue tiles.', fig: function () { return tiles(2, 3, 2); } },
+          { say: 'The orange 3 never change. That is the initial value.', fig: function () { return tiles(2, 3, 4); } },
+          { say: 'Rate: 2 each term. Initial value: 3.', fig: function () { return pgraph([{ m: 2, c: 3, col: 'var(--sc)', lab: '2n + 3' }], 6); }, ms: 2600 }
+        ]),
+        try: lab('pgmo', [
+          { do: 'Make pattern A <b>start at 5</b> and <b>grow by 3</b>.', goal: function (h) { return K.v(h, 'pgm') === 3 && K.v(h, 'pgc') === 5; }, yes: 'Rule: 3n + 5.' },
+          { do: 'Make A and B <b>equal at term 2</b>.', goal: function (h) { return K.v(h, 'pgm') * 2 + K.v(h, 'pgc') === K.v(h, 'pgm2') * 2 + K.v(h, 'pgc2') && K.v(h, 'pgm') !== K.v(h, 'pgm2'); }, yes: 'The lines cross at term 2.' }
+        ]),
+        key: '<p><b>Rate: what is added each time. Initial value: where it starts, at term 0.</b></p>',
+        mistake: '<p>Taking term 1 as the initial value. Term 1 is 5 tiles, but the initial value is 3: go back one step.</p>',
+        check: [K.ck('al-pattern', 1), K.ck('al-pattern', 1)] },
+      { id: 'rule', title: 'The pattern rule', exp: ['C1.3'], skill: 'al-pattern', hard: true,
+        body: '<p>The rule is <span class="math">rate &times; <i>n</i> + initial value</span>, where <i>n</i> is the term number. The pattern above is ' + expr(2, 3) + '.</p>',
+        watch: K.slides([
+          { say: 'Rule: 2n + 3. Term 10: replace n with 10.', fig: eq('2 &times; 10 + 3 = <b>23</b>') },
+          { say: 'Which term has 51 tiles? Write the equation.', fig: eq('2<i>n</i> + 3 = 51') },
+          { say: 'Take 3 away: 2n = 48. Divide by 2: n = 24.', fig: eq('2<i>n</i> = 48 &nbsp; <i>n</i> = 24') },
+          { say: 'Term <b>24</b> has 51 tiles.', fig: eq('2 &times; 24 + 3 = 51 &#10003;'), ms: 2400 }
+        ]),
+        ways: [
+          { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><td class="l">term <i>n</i></td><td>0</td><td>1</td><td>2</td><td>3</td></tr><tr><td class="l">tiles</td><td>3</td><td>5</td><td>7</td><td>9</td></tr></tbody></table></div><p>Going across, it adds 2 each time (the rate). At term 0 it is 3 (the initial value). So the rule is 2<i>n</i> + 3.</p>' },
+          { label: 'Picture the tiles', html: '<div class="fig">' + tiles(2, 3, 3) + '</div><p>Every term has the 3 orange tiles, plus 2 blue tiles for each term number: 2<i>n</i> + 3.</p>' }
+        ],
+        key: '<p><b>Term = rate &times; <i>n</i> + initial value.</b></p>',
+        mistake: '<p>Writing the rule as <i>n</i> + 2 (counting up by 2 from term 1). Check the rule against two terms before using it.</p>',
+        check: [function () { return { q: 'A pattern has the rule 5<i>n</i> + 2. What is term 8?', type: 'num', answer: 42, hint: 'Replace <i>n</i> with 8.', explain: '5 &times; 8 + 2 = 42.' }; }, K.ck('al-pattern', 2), K.ck('al-pattern', 3)] },
+      { id: 'compare', title: 'Compare two patterns', exp: ['C1.3'], skill: 'al-pattern',
+        body: '<p>On a graph, the <b>rate</b> is how steep the line is and the <b>initial value</b> is where it starts. A steeper pattern always catches up in the end.</p>',
+        watch: K.slides([
+          { say: 'A starts at 8 and grows by 2. B starts at 2 and grows by 4.', fig: function () { return pgraph([{ m: 2, c: 8, col: 'var(--sb)', lab: 'A: 2n + 8' }, { m: 4, c: 2, col: 'var(--se)', lab: 'B: 4n + 2' }], 6); } },
+          { say: 'At term 3 they are equal: 14 and 14.', fig: eq('2 &times; 3 + 8 = 14 &nbsp; 4 &times; 3 + 2 = 14') },
+          { say: 'After that, B is bigger, because it grows faster.', fig: function () { return pgraph([{ m: 2, c: 8, col: 'var(--sb)', lab: 'A: 2n + 8' }, { m: 4, c: 2, col: 'var(--se)', lab: 'B: 4n + 2' }], 6); }, ms: 2400 }
+        ]),
+        key: '<p><b>Bigger start wins early. Bigger rate wins in the end.</b></p>',
+        mistake: '<p>Deciding which is bigger from the first term only. Ask what happens at term 10 or 100.</p>',
+        check: [function () { return mc('Pattern A: 3<i>n</i> + 10. Pattern B: 5<i>n</i>. Which is bigger at term 20?', 'B', ['A', 'They are equal'], 'Work out both at <i>n</i> = 20.', 'A: 70. B: 100.'); }] }
+    ] },
+    { id: 'like', title: 'Like terms', sub: 'Add apples to apples.', concepts: [
+      { id: 'combine', title: 'Combine like terms', exp: ['C2.1'], skill: 'al-like',
+        body: '<p>A <b>variable</b> is a letter that stands for a number. <b>Like terms</b> have the same variable. You can add or subtract them: 3<i>x</i> + 2<i>x</i> = 5<i>x</i>.</p>',
+        watch: { tool: 'tiles', opts: {}, steps: [
+          { say: '3<i>x</i>: three <i>x</i>-tiles.', act: function (t) { return addx(t, 'x', 1, 3); }, ms: 700 },
+          { say: 'Plus 2<i>x</i>: two more.', act: function (t) { return addx(t, 'x', 1, 2); }, ms: 700 },
+          { say: 'Altogether, 5<i>x</i>.', act: null, ms: 1200 },
+          { say: 'Add 4 unit tiles. They are not <i>x</i>-tiles, so they stay separate: 5<i>x</i> + 4.', act: function (t) { return addx(t, 'one', 1, 4); }, ms: 2400 }
+        ] },
+        try: { tool: 'tiles', opts: {}, tasks: [
+          { do: 'Build <b>4<i>x</i> + 3</b>.', goal: function (s) { return s.x === 4 && s.one === 3; }, yes: '4 <i>x</i>-tiles and 3 unit tiles. They cannot be combined.' },
+          { do: 'Now take away 1 <i>x</i>-tile. What is left?', reset: false, goal: function (s) { return s.x === 3 && s.one === 3; }, yes: '3<i>x</i> + 3.' }
+        ] },
+        ways: [
+          { label: 'Apples and bananas', html: '<p>3 apples + 2 apples = 5 apples. But 3 apples + 4 bananas stays 3 apples + 4 bananas. In the same way, 3<i>x</i> + 4 cannot become 7<i>x</i>.</p>' },
+          { label: 'Try a number', html: '<p>Let <i>x</i> = 10. 3<i>x</i> + 2<i>x</i> = 30 + 20 = 50, and 5<i>x</i> = 50. It matches.</p>' }
+        ],
+        hard: true,
+        key: '<p><b>Only like terms combine.</b> Add or subtract the numbers in front; keep the variable.</p>',
+        mistake: '<p>Combining unlike terms (4<i>a</i> + 7 = 11<i>a</i>) or multiplying the variables (3<i>x</i> + 2<i>x</i> = 5<i>x</i><sup>2</sup>).</p>',
+        check: [K.ck('al-like', 1), K.ck('al-like', 1)] },
+      { id: 'lone', title: 'Subtract like terms', exp: ['C2.1'], skill: 'al-like',
+        body: '<p>Subtracting works the same way. 6<i>x</i> &minus; 2<i>x</i> = 4<i>x</i>. A lone <i>x</i> means <b>1<i>x</i></b>.</p>',
+        watch: K.slides([
+          { say: '6<i>x</i> take away 2<i>x</i>.', fig: function () { return atiles(6, 0); } },
+          { say: 'Take 2 tiles away: 4 are left.', fig: function () { return atiles(4, 0); } },
+          { say: '5<i>x</i> &minus; <i>x</i>: the lone <i>x</i> is one tile. 4<i>x</i> are left, not 5.', fig: eq('5<i>x</i> &minus; <i>x</i> = 4<i>x</i>'), ms: 2600 }
+        ]),
+        try: lab('ltao', [
+          { do: 'Show <b>5<i>x</i> &minus; 1<i>x</i></b>.', goal: function (h) { return K.v(h, 'lta') === 5 && K.v(h, 'ltop') === -1 && K.v(h, 'ltb') === 1; }, yes: '5<i>x</i> − <i>x</i> = 4<i>x</i>.' },
+          { do: 'Make the answer <b>zero</b>.', goal: function (h) { return K.v(h, 'ltop') === -1 && K.v(h, 'lta') === K.v(h, 'ltb'); }, yes: 'Anything minus itself is 0.' }
+        ]),
+        key: '<p><b><i>x</i> means 1<i>x</i>.</b> Subtract the numbers in front.</p>',
+        mistake: '<p>5<i>x</i> &minus; <i>x</i> = 5: the lone <i>x</i> taken as nothing, or the <i>x</i> dropped.</p>',
+        check: [function () { return { q: 'Simplify 9<i>y</i> &minus; 4<i>y</i>. How many <i>y</i> are left? (Type the number in front of <i>y</i>.)', type: 'num', answer: 5, hint: '9 of something take away 4 of the same thing.', explain: '9<i>y</i> &minus; 4<i>y</i> = 5<i>y</i>.' }; }, K.ck('al-like', 2), K.ck('al-like', 3)] }
+    ] },
+    { id: 'eval', title: 'Evaluating expressions', sub: 'Replace the variable with a number.', concepts: [
+      { id: 'sub', title: 'Replace the variable', exp: ['C2.2'], skill: 'al-eval',
+        body: '<p>To <b>evaluate</b> an expression, replace the variable with its value. 3<i>n</i> means 3 &times; <i>n</i>, so write the times sign.</p>',
+        watch: K.slides([
+          { say: 'Evaluate 4n &minus; 2.5 when n = 3.', fig: eq('4<i>n</i> &minus; 2.5, &nbsp; <i>n</i> = 3') },
+          { say: 'Replace n with 3, and write the times sign.', fig: eq('4 &times; 3 &minus; 2.5') },
+          { say: 'Multiply first: 12. Then subtract: <b>9.5</b>.', fig: eq('12 &minus; 2.5 = 9.5'), ms: 2400 }
+        ]),
+        try: lab('evx', [
+          { do: 'Evaluate <b>3n + 2</b> when <b>n = 4</b>.', goal: function (h) { return K.v(h, 'evx') === '3,2' && K.v(h, 'evn') === 4; }, yes: '3 × 4 + 2 = 14.' },
+          { do: 'Find a value of n that makes <b>4n &minus; 3</b> equal <b>17</b>.', goal: function (h) { return K.v(h, 'evx') === '4,-3' && K.v(h, 'evn') === 5; }, yes: '4 × 5 − 3 = 17.' }
+        ]),
+        key: '<p><b>Replace, write the times sign, then use BEDMAS.</b></p>',
+        mistake: '<p>3<i>n</i> with <i>n</i> = 4 written as 34. Insist on "3 &times; 4".</p>',
+        check: [function () { return { q: 'Evaluate 6 + 2<i>k</i> when <i>k</i> = 1.5.', type: 'num', answer: 9, hint: 'Multiply first: 2 &times; 1.5.', explain: '2 &times; 1.5 = 3, and 6 + 3 = 9.' }; }, K.ck('al-eval', 1), K.ck('al-eval', 2)] }
+    ] },
+    { id: 'solve', title: 'Solving equations', sub: 'Keep the balance.', concepts: [
+      { id: 'balance', title: 'An equation is a balance', exp: ['C2.3'], skill: 'al-solve', hard: true,
+        body: '<p>An <b>equation</b> is like a balance: both sides weigh the same. Do the <b>same thing to both sides</b> until <i>x</i> is alone.</p>',
+        watch: K.slides([
+          { say: '3 boxes of x and a 4 on the left. 19 on the right. It balances.', fig: function () { return balance(3, 4, 19); } },
+          { say: 'Take 4 off both sides. Still balanced: 3 boxes weigh 15.', fig: function () { return balance(3, 0, 15, '3x = 15'); } },
+          { say: 'Split both sides into 3 equal groups: one box weighs 5.', fig: function () { return balance(1, 0, 5, 'x = 5'); } },
+          { say: 'Check: 3 &times; 5 + 4 = 19. It balances.', fig: eq('3 &times; 5 + 4 = 19 &#10003;'), ms: 2400 }
+        ]),
+        try: lab('eqao', [
+          { do: 'Set up <b>2x + 5 = 19</b>, then press <b>Show the steps</b>.', goal: function (h) { return K.v(h, 'eqa') === 2 && K.v(h, 'eqb') === 5 && K.v(h, 'eqx') === 7 && /x = 7|x<\/i> = 7/.test(h.querySelector('#eqout').innerHTML); }, yes: 'Take 5 off: 2x = 14. Split in 2: x = 7.' },
+          { do: 'Make a balance where <b>x = 12</b> and there are <b>4 boxes</b>. Solve it in your head first.', goal: function (h) { return K.v(h, 'eqa') === 4 && K.v(h, 'eqx') === 12; }, yes: 'Undo the adding, then undo the multiplying.' }
+        ]),
+        ways: [
+          { label: 'Undo in reverse', html: '<p>Think of what happened to <i>x</i>: it was multiplied by 3, then 4 was added, giving 19. Undo in reverse order: subtract 4 (15), then divide by 3 (5).</p>' },
+          { label: 'Guess and check', html: '<p>Try <i>x</i> = 4: 3 &times; 4 + 4 = 16, too small. Try 5: 19. Found it. Good for checking, but slow for bigger numbers.</p>' },
+          { label: 'Cover up', html: '<p>3<i>x</i> + 4 = 19. Cover 3<i>x</i>: what plus 4 is 19? 15. So 3<i>x</i> = 15. What times 3 is 15? 5.</p>' }
+        ],
+        key: '<p><b>Same to both sides. Undo adding first, then undo multiplying. Check.</b></p>',
+        mistake: '<p>Doing something to one side only (3<i>x</i> = 19 &minus; 4 is fine, but 3<i>x</i> + 4 &minus; 4 = 19 forgets the right side). Always check by substituting.</p>',
+        check: [function () { return { q: 'Solve: 5<i>x</i> &minus; 3 = 27. What is <i>x</i>?', type: 'num', answer: 6, hint: 'Add 3 to both sides first.', explain: '5<i>x</i> = 30, so <i>x</i> = 6.' }; }, K.ck('al-solve', 1), K.ck('al-solve', 2)] },
+      { id: 'more', title: 'Combine first, then solve', exp: ['C2.3'], skill: 'al-solve',
+        body: '<p>If an equation has <b>more than one <i>x</i> term</b>, combine like terms first. Decimals work the same way.</p>',
+        watch: K.slides([
+          { say: '2x + 3 + x = 18. There are two x terms.', fig: eq('2<i>x</i> + 3 + <i>x</i> = 18') },
+          { say: 'Combine them: 3x + 3 = 18.', fig: eq('3<i>x</i> + 3 = 18') },
+          { say: 'Take 3 off both sides: 3x = 15. Divide by 3: x = 5.', fig: eq('3<i>x</i> = 15 &nbsp; <i>x</i> = 5') },
+          { say: 'With decimals: 2x + 1.5 = 9.5 gives 2x = 8, so x = 4.', fig: eq('2<i>x</i> + 1.5 = 9.5 &rarr; <i>x</i> = 4'), ms: 2600 }
+        ]),
+        key: '<p><b>Tidy up (combine like terms), then solve.</b></p>',
+        mistake: '<p>Forgetting the lone <i>x</i> when combining: 2<i>x</i> + <i>x</i> = 2<i>x</i>.</p>',
+        check: [function () { return { q: 'Solve: 2<i>x</i> + 4 + 2<i>x</i> = 24. What is <i>x</i>?', type: 'num', answer: 5, hint: 'Combine: 4<i>x</i> + 4 = 24.', explain: '4<i>x</i> = 20, so <i>x</i> = 5.' }; }, K.ck('al-solve', 3)] }
+    ] },
+    { id: 'ineq', title: 'Inequalities', sub: 'Many solutions at once.', concepts: [
+      { id: 'symbols', title: 'Show it on a number line', exp: ['C2.4'], skill: 'al-ineq',
+        body: '<p>An <b>inequality</b> says one side is bigger or smaller. It has many solutions, so we show them on a number line. An <b>open dot</b> leaves the number out; a <b>closed dot</b> includes it.</p>',
+        watch: K.slides([
+          { say: 'x &gt; 2: every number bigger than 2. The open dot means 2 itself is not included.', fig: function () { return ineqLine('>', 2); } },
+          { say: 'x &ge; 2: now 2 is included. The dot is closed.', fig: function () { return ineqLine('>=', 2); } },
+          { say: 'x &lt; &minus;1: everything to the left of &minus;1.', fig: function () { return ineqLine('<', -1); }, ms: 2400 }
+        ]),
+        try: lab('iqop', [
+          { do: 'Graph <b><i>x</i> &le; 4</b>.', goal: function (h) { return K.v(h, 'iqop') === '<=' && K.v(h, 'iqv') === 4; }, yes: 'Closed dot at 4, arrow to the left.' },
+          { do: 'Graph an inequality where <b>0 is not a solution</b> but <b>1 is</b>.', goal: function (h) { var op = K.v(h, 'iqop'), v = K.v(h, 'iqv'), t = function (x) { return op === '<' ? x < v : op === '<=' ? x <= v : op === '>' ? x > v : x >= v; }; return !t(0) && t(1); }, yes: 'For example x > 0 or x ≥ 1.' }
+        ]),
+        key: '<p><b>Open dot: not included (&lt;, &gt;). Closed dot: included (&le;, &ge;).</b></p>',
+        mistake: '<p>Mixing up the dots, or pointing the arrow the wrong way. Read it aloud: "x is greater than 2" means to the right.</p>',
+        check: [K.ck('al-ineq', 1), K.ck('al-ineq', 1)] },
+      { id: 'solveit', title: 'Solve an inequality', exp: ['C2.4'], skill: 'al-ineq', hard: true,
+        body: '<p>Solve an inequality <b>like an equation</b>: do the same to both sides. Then check one value that works and one that does not.</p>',
+        watch: K.slides([
+          { say: 'You have $20. Tickets cost $6 and the bus costs $2. How many tickets?', fig: eq('6<i>t</i> + 2 &le; 20') },
+          { say: 'Take 2 off both sides: 6t &le; 18.', fig: eq('6<i>t</i> &le; 18') },
+          { say: 'Divide by 6: t &le; 3.', fig: function () { return ineqLine('<=', 3, -1, 8); } },
+          { say: 'Check: t = 3 costs $20, fine. t = 4 costs $26, too much. You can buy 0 to 3 tickets.', fig: eq('<i>t</i> = 3: 20 &le; 20 &#10003; &nbsp; <i>t</i> = 4: 26 &le; 20 &#10007;'), ms: 3000 }
+        ]),
+        ways: [
+          { label: 'Solve the equation first', html: '<p>Pretend it is 6<i>t</i> + 2 = 20: <i>t</i> = 3. Then ask: do bigger or smaller values work? Smaller ones cost less, so <i>t</i> &le; 3.</p>' },
+          { label: 'Make a table', html: '<div class="tbl"><table><tbody><tr><td class="l"><i>t</i></td><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><td class="l">6<i>t</i> + 2</td><td>8</td><td>14</td><td>20</td><td>26</td></tr><tr><td class="l">&le; 20?</td><td>yes</td><td>yes</td><td>yes</td><td>no</td></tr></tbody></table></div>' }
+        ],
+        key: '<p><b>Solve like an equation, then test a value on each side.</b></p>',
+        mistake: '<p>Treating the answer as one number (<i>t</i> = 3) instead of a range of values.</p>',
+        check: [function () { return mc('Which value is a solution of 2<i>x</i> + 1 &gt; 9?', '5', ['2', '4', '0'], 'Solve: 2<i>x</i> &gt; 8, so <i>x</i> &gt; 4. Is 4 itself included?', '<i>x</i> &gt; 4, so 5 works. 4 does not: 9 &gt; 9 is false.'); }, K.ck('al-ineq', 2), K.ck('al-ineq', 3)] }
+    ] },
+    { id: 'code', title: 'Reading and changing code', sub: 'Loops and sub-programs.', concepts: [
+      { id: 'loop', title: 'Loops', exp: ['C3.1', 'C3.2'], skill: 'al-code',
+        body: '<p>Code is a list of instructions followed in order. A <b>loop</b> repeats instructions a set number of times. Loops make code shorter and easier to change.</p>',
+        watch: K.slides([
+          { say: 'Without a loop: add 3, four times. Long and repetitive.', fig: mono('total = 4\ntotal = total + 3\ntotal = total + 3\ntotal = total + 3\ntotal = total + 3\nshow total') },
+          { say: 'With a loop: the same thing in 3 lines.', fig: mono('total = 4\nrepeat 4 times:\n    total = total + 3\nshow total') },
+          { say: 'Trace it: 4, then 7, 10, 13, 16. It shows 16.', fig: eq('4 &rarr; 7 &rarr; 10 &rarr; 13 &rarr; 16') },
+          { say: 'This code makes the pattern 3n + 4. To repeat 100 times, change one number.', fig: eq('3<i>n</i> + 4'), ms: 2600 }
+        ]),
+        try: lab('cdso', [
+          { do: 'Change the code so it shows <b>25</b>.', goal: function (h) { return Math.abs(K.v(h, 'cds') + K.v(h, 'cdr') * K.v(h, 'cdp') - 25) < 1e-9; }, yes: 'Start + repeats × step = 25.' },
+          { do: 'Make the total go <b>down</b> each time.', goal: function (h) { return K.v(h, 'cdp') < 0; }, yes: 'Adding a negative number makes it shrink.' }
+        ]),
+        key: '<p><b>A loop repeats the steps inside it.</b> Trace the value each time through.</p>',
+        mistake: '<p>Running the loop once too many or too few times. Write a row for each pass, numbered 1 to the count.</p>',
+        check: [function () { return { q: 'What does this code show?' + mono('x = 50\nrepeat 6 times:\n    x = x &minus; 4\nshow x'), type: 'num', answer: 26, hint: 'Take 4 away 6 times: 24 in total.', explain: '50 &minus; 24 = 26.' }; }, K.ck('al-code', 1), K.ck('al-code', 2)] },
+      { id: 'subprog', title: 'Sub-programs', exp: ['C3.1', 'C3.2'], skill: 'al-code',
+        body: '<p>A <b>sub-program</b> is a named set of steps you write once and use again. To change how it works, you change it in one place.</p>',
+        watch: K.slides([
+          { say: 'This sub-program adds 13% tax to a price.', fig: mono('define addTax(price):\n    return price + price &times; 0.13') },
+          { say: 'Use it twice: for $20 and for $50.', fig: mono('show addTax(20)\nshow addTax(50)') },
+          { say: '20 + 2.6 = 22.6, and 50 + 6.5 = 56.5.', fig: eq('22.6 &nbsp;&nbsp; 56.5') },
+          { say: 'If the tax changes, edit one line and every use updates.', fig: mono('define addTax(price):\n    return price + price &times; <b>0.15</b>'), ms: 2600 }
+        ]),
+        key: '<p><b>Write it once, use it many times.</b></p>',
+        mistake: '<p>Copying the same steps in many places. When one copy is fixed, the others stay wrong.</p>',
+        check: [function () { return { q: 'What does this code show?' + mono('define double(n):\n    return n &times; 2\n\nshow double(7) + 1'), type: 'num', answer: 15, hint: 'double(7) is 14.', explain: '14 + 1 = 15.' }; }, K.ck('al-code', 3)] }
+    ] }
+  ];
+
+
   A.register('algebra', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Linear growing patterns</h2>' +
-'<p>A pattern can <b>repeat</b> (red, blue, red, blue), <b>grow</b> (3, 5, 7, 9) or <b>shrink</b> (20, 17, 14). In a <b>linear growing pattern</b> the same amount is added each time. That amount is the <b>constant rate</b>. The value before the first term, at term 0, is the <b>initial value</b>.</p>' +
-'<div class="fig">' + tiles(2, 3, 4) + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p>This pattern starts with 3 orange tiles and adds 2 blue tiles each term. Rate: 2. Initial value: 3.</p>' +
-'<p>The rule is <span class="math">' + expr(2, 3) + '</span>, where <i>n</i> is the term number. Term 10: 2 &times; 10 + 3 = <b>23 tiles</b>.</p>' +
-'<p>Which term has 51 tiles? Solve 2<i>n</i> + 3 = 51. Take away 3: 2<i>n</i> = 48. Divide by 2: <i>n</i> = <b>24</b>.</p></div>' +
-'<div class="lab"><span class="lt">Try it: build and compare two patterns</span>' +
-'<div class="ctrl"><label for="pgm">Pattern A rate: <output id="pgmo"></output><input type="range" id="pgm" min="1" max="6" value="2"></label><label for="pgc">Pattern A initial value: <output id="pgco"></output><input type="range" id="pgc" min="0" max="10" value="3"></label></div>' +
-'<div class="ctrl"><label for="pgm2">Pattern B rate: <output id="pgm2o"></output><input type="range" id="pgm2" min="1" max="6" value="4"></label><label for="pgc2">Pattern B initial value: <output id="pgc2o"></output><input type="range" id="pgc2" min="0" max="10" value="0"></label></div>' +
-'<div class="fig" id="pgtiles"></div><div class="fig" id="pggraph"></div><div class="out" id="pgout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>On a graph, the <b>rate</b> is how steep the line is. The <b>initial value</b> is where it starts on the left (at term 0). A steeper pattern always catches up in the end.</p></div>' +
-A.yt({ q: 'A pattern has the rule 5<i>n</i> + 2. What is term 8?', answer: 42, hint: 'Replace <i>n</i> with 8.', explain: '5 &times; 8 + 2 = 40 + 2 = 42.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Adding and subtracting like terms</h2>' +
-'<p>A <b>variable</b> is a letter that stands for a number. <b>Like terms</b> have the same variable. You can add or subtract like terms, just as you add apples to apples.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p class="math" style="font-size:1.2rem">3<i>x</i> + 2<i>x</i> = 5<i>x</i></p><div class="vrow"><figure><figcaption>3<i>x</i></figcaption>' + atiles(3, 0) + '</figure><figure><figcaption>+ 2<i>x</i></figcaption>' + atiles(2, 0) + '</figure><figure><figcaption>= 5<i>x</i></figcaption>' + atiles(5, 0) + '</figure></div></div>' +
-'<div class="vs"><div><b class="t">Like terms</b><p>4<i>a</i> and 7<i>a</i></p><p>4<i>a</i> + 7<i>a</i> = 11<i>a</i></p></div><div><b class="t">Not like terms</b><p>4<i>a</i> and 7</p><p>4<i>a</i> + 7 stays as it is. You cannot add a tile to a square.</p></div></div>' +
-'<div class="lab"><span class="lt">Try it: combine tiles</span>' +
-'<div class="ctrl"><label for="lta">First: <output id="ltao"></output><input type="range" id="lta" min="1" max="9" value="6"></label><label for="ltop">Operation<select id="ltop"><option value="1">+</option><option value="-1" selected>&minus;</option></select></label><label for="ltb">Second: <output id="ltbo"></output><input type="range" id="ltb" min="1" max="9" value="2"></label></div>' +
-'<div class="fig" id="ltfig"></div><div class="out" id="ltout"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>5<i>x</i> &minus; <i>x</i> is 4<i>x</i>, not 5. A lone <i>x</i> means 1<i>x</i>.</p></div>' +
-A.yt({ q: 'Simplify 9<i>y</i> &minus; 4<i>y</i>. How many <i>y</i> are left? (Type the number in front of <i>y</i>.)', answer: 5, hint: '9 of something take away 4 of the same thing.', explain: '9<i>y</i> &minus; 4<i>y</i> = 5<i>y</i>.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Evaluating expressions</h2>' +
-'<p>To <b>evaluate</b> an expression, replace the variable with its value. Then follow the order of operations. 3<i>n</i> means 3 &times; <i>n</i>.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>Evaluate 4<i>n</i> &minus; 2.5 when <i>n</i> = 3.</p><p class="math">4 &times; 3 &minus; 2.5 = 12 &minus; 2.5 = <b>9.5</b></p></div>' +
-'<div class="lab"><span class="lt">Try it: change the value of n</span>' +
-'<div class="ctrl"><label for="evx">Expression<select id="evx"><option value="3,2">3n + 2</option><option value="2.5,1">2.5n + 1</option><option value="4,-3" selected>4n &minus; 3</option><option value="0.5,6">0.5n + 6</option></select></label><label for="evn"><i>n</i> = <output id="evno"></output><input type="range" id="evn" min="0" max="12" step="0.5" value="5"></label></div>' +
-'<div class="out" id="evout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Write the multiplication sign when you replace the variable. 3<i>n</i> with <i>n</i> = 4 is 3 &times; 4 = 12, not 34.</p></div>' +
-A.yt({ q: 'Evaluate 6 + 2<i>k</i> when <i>k</i> = 1.5.', answer: 9, hint: 'Multiply first: 2 &times; 1.5.', explain: '2 &times; 1.5 = 3, and 6 + 3 = 9.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Solving equations</h2>' +
-'<p>An <b>equation</b> is like a balance: both sides weigh the same. To find <i>x</i>, do the same thing to both sides until <i>x</i> is alone. <b>Undo</b> the operations in reverse order.</p>' +
-'<div class="fig">' + balance(3, 4, 19) + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p class="math">3<i>x</i> + 4 = 19</p><p>Take 4 off both sides: 3<i>x</i> = 15. Split both sides into 3 equal groups: <i>x</i> = 5.</p><p><b>Check</b> by putting it back in: 3 &times; 5 + 4 = 19. It balances.</p></div>' +
-'<div class="lab"><span class="lt">Try it: balance and solve</span>' +
-'<div class="ctrl"><label for="eqa">Boxes of x: <output id="eqao"></output><input type="range" id="eqa" min="1" max="5" value="2"></label><label for="eqx">Secret x: <output id="eqxo"></output><input type="range" id="eqx" min="1" max="12" value="7"></label><label for="eqb">Extra weight: <output id="eqbo"></output><input type="range" id="eqb" min="0" max="15" value="5"></label></div>' +
-'<div class="fig" id="eqfig"></div><div class="btnrow"><button type="button" class="btn" id="eqgo">Show the steps</button></div><div class="out" id="eqout"></div></div>' +
-'<p>Some equations have <b>more than one term</b> with <i>x</i>. Combine like terms first. 2<i>x</i> + 3 + <i>x</i> = 18 becomes 3<i>x</i> + 3 = 18, so 3<i>x</i> = 15 and <i>x</i> = 5. Decimals work the same way: 2<i>x</i> + 1.5 = 9.5 gives 2<i>x</i> = 8, so <i>x</i> = 4.</p>' +
-A.yt({ q: 'Solve: 5<i>x</i> &minus; 3 = 27. What is <i>x</i>?', answer: 6, hint: 'Undo the &minus; 3 first by adding 3 to both sides.', explain: '5<i>x</i> = 30, so <i>x</i> = 6. Check: 5 &times; 6 &minus; 3 = 27.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Inequalities</h2>' +
-'<p>An <b>inequality</b> says one side is bigger or smaller. It has many solutions, so we show them on a number line.</p>' +
-'<div class="tbl"><table><tbody><tr><td class="math">&lt;</td><td class="l">less than</td><td class="l">open dot: the number itself is not included</td></tr><tr><td class="math">&le;</td><td class="l">less than or equal to</td><td class="l">closed dot: the number is included</td></tr><tr><td class="math">&gt;</td><td class="l">greater than</td><td class="l">open dot</td></tr><tr><td class="math">&ge;</td><td class="l">greater than or equal to</td><td class="l">closed dot</td></tr></tbody></table></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>You have $20. Movie tickets cost $6 and you need $2 for the bus. How many tickets can you buy? 6<i>t</i> + 2 &le; 20.</p><p>Solve like an equation: 6<i>t</i> &le; 18, so <i>t</i> &le; 3. You can buy 0, 1, 2 or 3 tickets.</p><div class="fig">' + ineqLine('<=', 3, -2, 8) + '</div>' +
-'<p><b>Check</b> a value that works and one that does not: <i>t</i> = 3 gives 20 &le; 20, true. <i>t</i> = 4 gives 26 &le; 20, false.</p></div>' +
-'<div class="lab"><span class="lt">Try it: graph an inequality</span>' +
-'<div class="ctrl"><label for="iqop">x is<select id="iqop"><option value="<">less than (&lt;)</option><option value="<=">less than or equal (&le;)</option><option value=">" selected>greater than (&gt;)</option><option value=">=">greater than or equal (&ge;)</option></select></label><label for="iqv">this number: <output id="iqvo"></output><input type="range" id="iqv" min="-5" max="10" value="2"></label></div>' +
-'<div class="fig" id="iqfig"></div><div class="out" id="iqout"></div></div>' +
-A.yt({ q: 'Which value is a solution of 2<i>x</i> + 1 &gt; 9?', type: 'mc', options: ['2', '4', '5', '0'], answer: 2, hint: 'Solve: 2<i>x</i> &gt; 8, so <i>x</i> &gt; 4. Is 4 itself included?', explain: '<i>x</i> &gt; 4, so 5 works. 4 does not, because 2 &times; 4 + 1 = 9 is not greater than 9.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>Reading and changing code</h2>' +
-'<p>Code is a list of instructions a computer follows in order. A <b>loop</b> repeats instructions a set number of times (a <b>defined count</b>). A <b>sub-program</b> is a named set of steps you can use again. Loops make code <b>efficient</b>: shorter and easier to change.</p>' +
-'<div class="row2"><div><p><b>Without a loop</b></p><span class="mono">total = 4\ntotal = total + 3\ntotal = total + 3\ntotal = total + 3\ntotal = total + 3\nshow total</span></div><div><p><b>With a loop</b></p><span class="mono">total = 4\nrepeat 4 times:\n    total = total + 3\nshow total</span></div></div>' +
-'<p>Both show 16. The loop version is shorter, and to change 4 repeats into 100 you change one number. This code makes the pattern 3<i>n</i> + 4.</p>' +
-'<div class="lab"><span class="lt">Try it: change the code and run it</span>' +
-'<div class="ctrl"><label for="cds">total = <output id="cdso"></output><input type="range" id="cds" min="0" max="20" value="4"></label><label for="cdr">repeat ___ times: <output id="cdro"></output><input type="range" id="cdr" min="1" max="10" value="4"></label><label for="cdp">total = total + <output id="cdpo"></output><input type="range" id="cdp" min="-5" max="10" step="0.5" value="3"></label></div>' +
-'<span class="mono" id="cdcode"></span><div class="out" id="cdout"></div></div>' +
-'<div class="eg"><b class="t">Worked example: a sub-program</b><span class="mono">define addTax(price):\n    return price + price &times; 0.13\n\nshow addTax(20)\nshow addTax(50)</span><p>The sub-program is written once and used twice. It shows 22.6 and 56.5. To change the tax rate, you only change one line.</p></div>' +
-A.yt({ q: 'What does this code show?<span class="mono">x = 50\nrepeat 6 times:\n    x = x &minus; 4\nshow x</span>', answer: 26, hint: 'Take 4 away 6 times: that is 24 in total.', explain: '50 &minus; 6 &times; 4 = 50 &minus; 24 = 26.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['pgm', 'pgc', 'pgm2', 'pgc2'], function () {
-        var m = +$('#pgm', root).value, c = +$('#pgc', root).value, m2 = +$('#pgm2', root).value, c2 = +$('#pgc2', root).value;
-        $('#pgmo', root).textContent = m; $('#pgco', root).textContent = c; $('#pgm2o', root).textContent = m2; $('#pgc2o', root).textContent = c2;
-        $('#pgtiles', root).innerHTML = '<p class="t2" style="margin:0">Pattern A</p>' + tiles(m, c, 4);
-        $('#pggraph', root).innerHTML = pgraph([{ m: m, c: c, col: 'var(--sb)', lab: 'A: ' + m + 'n + ' + c }, { m: m2, c: c2, col: 'var(--se)', lab: 'B: ' + m2 + 'n + ' + c2 }], 8);
-        var meet = m === m2 ? null : (c2 - c) / (m - m2), msg;
-        if (m === m2) msg = c === c2 ? 'They are the same pattern.' : 'Same rate, so they never meet. ' + (c > c2 ? 'A' : 'B') + ' stays ' + Math.abs(c - c2) + ' ahead.';
-        else if (meet < 0) msg = (c >= c2 && m > m2 ? 'A' : 'B') + ' is ahead from the start and grows faster, so it stays ahead.';
-        else if (meet === 0) msg = 'They start together, then ' + (m > m2 ? 'A' : 'B') + ' pulls ahead.';
-        else msg = (Math.abs(meet - Math.round(meet)) < 1e-9 ? 'They are equal at term ' + meet + '.' : 'They cross between term ' + Math.floor(meet) + ' and term ' + Math.ceil(meet) + '.') + ' After that, ' + (m > m2 ? 'A' : 'B') + ' is bigger because it grows faster.';
-        $('#pgout', root).innerHTML = '<p><b>A:</b> ' + expr(m, c) + ' &nbsp; <b>B:</b> ' + expr(m2, c2) + '</p><p>' + msg + '</p>';
-      });
-      A.bind(root, ['lta', 'ltop', 'ltb'], function () {
-        var a = +$('#lta', root).value, op = +$('#ltop', root).value, b = +$('#ltb', root).value, r = a + op * b;
-        $('#ltao', root).innerHTML = a + '<i>x</i>'; $('#ltbo', root).innerHTML = b + '<i>x</i>';
-        $('#ltfig', root).innerHTML = '<div class="vrow"><figure><figcaption>' + a + '<i>x</i></figcaption>' + atiles(a, 0) + '</figure><figure><figcaption>' + (op > 0 ? '+ ' : '&minus; ') + b + '<i>x</i></figcaption>' + atiles(op * b, 0) + '</figure><figure><figcaption>= ' + (r === 0 ? '0' : r === 1 ? '<i>x</i>' : r === -1 ? '&minus;<i>x</i>' : dec(r) + '<i>x</i>') + '</figcaption>' + (r ? atiles(r, 0) : '<p class="t2">(nothing left)</p>') + '</figure></div>';
-        $('#ltout', root).innerHTML = '<p class="big2">' + a + '<i>x</i> ' + (op > 0 ? '+' : '&minus;') + ' ' + b + '<i>x</i> = ' + (r === 1 ? '' : r === -1 ? '&minus;' : dec(r)) + (r ? '<i>x</i>' : '') + '</p>' + (op < 0 && b > a ? '<p>Red tiles are negative: you took away more than you had.</p>' : '');
-      });
-      A.bind(root, ['evx', 'evn'], function () {
-        var p = $('#evx', root).value.split(',').map(Number), n = +$('#evn', root).value, v = cl(p[0] * n + p[1]);
-        $('#evno', root).textContent = dec(n);
-        $('#evout', root).innerHTML = '<p class="big2">' + expr(p[0], p[1]) + '</p><p class="big2">= ' + dec(p[0]) + ' &times; ' + dec(n) + (p[1] > 0 ? ' + ' + p[1] : ' &minus; ' + (-p[1])) + ' = ' + dec(p[0] * n) + (p[1] > 0 ? ' + ' + p[1] : ' &minus; ' + (-p[1])) + ' = ' + dec(v) + '</p>';
-      });
-      function eq() {
-        var a = +$('#eqa', root).value, x = +$('#eqx', root).value, b = +$('#eqb', root).value, c = a * x + b;
-        $('#eqao', root).textContent = a; $('#eqxo', root).textContent = x; $('#eqbo', root).textContent = b;
-        $('#eqfig', root).innerHTML = balance(a, b, c);
-        $('#eqout', root).innerHTML = '<p>Can you find <i>x</i> before you look?</p>';
-        return { a: a, b: b, c: c, x: x };
-      }
-      A.bind(root, ['eqa', 'eqx', 'eqb'], eq);
-      $('#eqgo', root).addEventListener('click', function () {
-        var e = eq(), st = [];
-        if (e.b) st.push('Take ' + e.b + ' off both sides: ' + (e.a > 1 ? e.a : '') + '<i>x</i> = ' + e.c + ' &minus; ' + e.b + ' = ' + (e.c - e.b) + '.');
-        if (e.a > 1) st.push('Split both sides into ' + e.a + ' equal groups: <i>x</i> = ' + (e.c - e.b) + ' &divide; ' + e.a + ' = ' + e.x + '.');
-        st.push('Check: ' + (e.a > 1 ? e.a + ' &times; ' : '') + e.x + (e.b ? ' + ' + e.b : '') + ' = ' + e.c + '. It balances.');
-        $('#eqout', root).innerHTML = '<ol>' + st.map(function (s) { return '<li>' + s + '</li>'; }).join('') + '</ol><p class="big2"><i>x</i> = ' + e.x + '</p>';
-      });
-      A.bind(root, ['iqop', 'iqv'], function () {
-        var op = $('#iqop', root).value, v = +$('#iqv', root).value;
-        $('#iqvo', root).textContent = dec(v);
-        $('#iqfig', root).innerHTML = ineqLine(op, v);
-        var whole = [];
-        for (var t = v - 3; t <= v + 3; t++) { var ok = op === '<' ? t < v : op === '<=' ? t <= v : op === '>' ? t > v : t >= v; if (ok) whole.push(dec(t)); }
-        $('#iqout', root).innerHTML = '<p class="big2"><i>x</i> ' + OPS[op] + ' ' + dec(v) + '</p><p>' + (op.length > 1 ? 'Closed dot: ' + dec(v) + ' is a solution.' : 'Open dot: ' + dec(v) + ' is not a solution.') + ' Some integer solutions: ' + whole.join(', ') + ', ...</p>';
-      });
-      A.bind(root, ['cds', 'cdr', 'cdp'], function () {
-        var s0 = +$('#cds', root).value, r = +$('#cdr', root).value, p = +$('#cdp', root).value, rows = runCode(s0, p, r);
-        $('#cdso', root).textContent = s0; $('#cdro', root).textContent = r; $('#cdpo', root).textContent = dec(p);
-        $('#cdcode', root).innerHTML = 'total = ' + s0 + '\nrepeat ' + r + ' times:\n    total = total ' + (p < 0 ? '&minus; ' + dec(-p) : '+ ' + dec(p)) + '\nshow total';
-        $('#cdout', root).innerHTML = '<div class="tbl"><table><thead><tr><th>Time through the loop</th>' + rows.map(function (x) { return '<th>' + x[0] + '</th>'; }).join('') + '</tr></thead><tbody><tr><td>total</td>' + rows.map(function (x) { return '<td>' + dec(x[1]) + '</td>'; }).join('') + '</tr></tbody></table></div>' +
-          '<p>The code shows <b class="big2">' + dec(rows[rows.length - 1][1]) + '</b>. That is ' + s0 + ' + ' + r + ' &times; ' + (p < 0 ? '(' + dec(p) + ')' : dec(p)) + '.</p>';
-      });
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'A pattern starts at 5 (term 0) and goes up by 3 each term. Which expression gives term <i>n</i>?', type: 'mc', options: ['5<i>n</i> + 3', '3<i>n</i> + 5', '<i>n</i> + 8', '8<i>n</i>'], answer: 1, hint: 'The rate multiplies <i>n</i>. The initial value is added.', explain: 'Rate 3, initial value 5: 3<i>n</i> + 5.' },

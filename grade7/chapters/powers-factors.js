@@ -154,146 +154,286 @@
     return A.draw.line(s0 - 1 < 0 ? 0 : s0 - 1, s0 + 2, 1, Math.sqrt(N), 'Number line. The square root of ' + N + ' is about ' + (Math.round(Math.sqrt(N) * 10) / 10) + ', between ' + s0 + ' and ' + (s0 + 1) + '.');
   }
 
-  A.register('powers-factors', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Numbers up to one billion</h2>' +
-'<p>Big numbers are built in groups of three digits called <b>periods</b>: ones, thousands, millions and billions. Each period is <b>1000 times</b> the one before.</p>' +
-'<div class="fig">' + billion() + '</div>' +
-'<div class="facts">' +
-'<div><b>about 41 million</b><small>people live in Canada</small></div>' +
-'<div><b>1 billion seconds</b><small>is about 32 years</small></div>' +
-'<div><b>1 billion mm</b><small>is 1000 km, about Toronto to Thunder Bay by air</small></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Read a big number one period at a time, from the left. Say the number in the period, then the period name. Never say "ones".</p></div>' +
-'<div class="eg"><b class="t">Worked example</b><p><span class="math">3 405 216 789</span> is read <i>three billion four hundred five million two hundred sixteen thousand seven hundred eighty-nine</i>.</p>' + perChart(3405216789) + '</div>' +
-'<div class="lab"><span class="lt">Try it: read any number</span>' +
-'<div class="ctrl"><label for="pfn">Type a number (0 to 999 999 999 999)<input type="text" inputmode="numeric" id="pfn" value="36 200 000"></label></div>' +
-'<div class="btnrow"><button type="button" class="btn alt" data-pf="41528680">Canada\'s population, 2025</button><button type="button" class="btn alt" data-pf="9984670">Area of Canada in km&sup2;</button><button type="button" class="btn alt" data-pf="1000000000">One billion</button></div>' +
-'<div id="pfchart"></div><div class="out" id="pfout"></div></div>' +
-A.yt({ q: 'What is the value of the digit 7 in <span class="math">2 704 315 000</span>?', type: 'mc', options: ['7 000 000', '70 000 000', '700 000 000', '7 000 000 000'], answer: 2,
-  hint: 'The 7 is in the millions period. Is it the ones, tens or hundreds digit of that period?', explain: 'The 7 is the hundreds digit of the millions period, so it is worth 700 million: 700 000 000.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Powers and exponents</h2>' +
-'<p>A <b>power</b> is a short way to write the same number multiplied again and again. In <span class="math">' + pw(5, 3) + '</span>, 5 is the <b>base</b> and 3 is the <b>exponent</b>. The exponent says how many 5s to multiply.</p>' +
-'<p class="math" style="font-size:1.3rem;text-align:center">' + pw(5, 3) + ' = 5 &times; 5 &times; 5 = 125</p>' +
-'<div class="vrow"><figure><figcaption>3<sup>2</sup> = 9 is a square, "3 squared"</figcaption>' + sq(3, 30) + '</figure><figure><figcaption>3<sup>3</sup> = 27 is a cube, "3 cubed"</figcaption>' + cube(3, 90) + '</figure></div>' +
-'<div class="vs"><div><b class="t">This: 2<sup>3</sup></b><p>2 &times; 2 &times; 2 = <b>8</b></p><p>Three 2s multiplied.</p></div><div><b class="t">Not this: 2 &times; 3</b><p>2 + 2 + 2 = <b>6</b></p><p>Three 2s added.</p></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Do not multiply the base by the exponent. <span class="math">' + pw(4, 3) + '</span> is 4 &times; 4 &times; 4 = 64, not 4 &times; 3 = 12.</p></div>' +
-'<div class="lab"><span class="lt">Try it: watch a power grow</span>' +
-'<div class="ctrl"><label for="pwb">Base: <output id="pwbo"></output><input type="range" id="pwb" min="1" max="12" value="2"></label>' +
-'<label for="pwe">Exponent: <output id="pweo"></output><input type="range" id="pwe" min="0" max="6" value="3"></label></div>' +
-'<div class="out" id="pwout"></div><div class="fig" id="pwfig"></div><div class="fig" id="pwpic"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Any number to the power 1 is itself: ' + pw(7, 1) + ' = 7. Any number (except 0) to the power 0 is 1: ' + pw(7, 0) + ' = 1.</p></div>' +
-A.yt({ q: 'Evaluate <span class="math">' + pw(2, 5) + '</span>.', answer: 32, hint: 'Multiply five 2s: 2 &times; 2 &times; 2 &times; 2 &times; 2.', explain: '2 &times; 2 = 4, &times; 2 = 8, &times; 2 = 16, &times; 2 = 32.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Powers of ten and expanded form</h2>' +
-'<p>Powers of ten are easy to read: the exponent is the <b>number of zeros</b>.</p>' +
-'<div class="tbl"><table><thead><tr><th>Power</th><th>Standard form</th><th class="l">Name</th></tr></thead><tbody>' +
-[[0, 'one'], [1, 'ten'], [2, 'hundred'], [3, 'thousand'], [4, 'ten thousand'], [5, 'hundred thousand'], [6, 'million'], [7, 'ten million'], [8, 'hundred million'], [9, 'billion']].map(function (r) {
-  return '<tr><td class="math">' + pw(10, r[0]) + '</td><td class="math">' + fmt(Math.pow(10, r[0])) + '</td><td class="l">' + r[1] + '</td></tr>';
-}).join('') + '</tbody></table></div>' +
-'<p>We can use powers of ten to write a number in <b>expanded form</b>. Each non-zero digit becomes <i>digit &times; a power of ten</i>.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p><span class="math">307 020 050</span> = 3 &times; ' + pw(10, 8) + ' + 7 &times; ' + pw(10, 6) + ' + 2 &times; ' + pw(10, 4) + ' + 5 &times; 10</p>' +
-'<p>The zeros are skipped. A digit in the hundred millions place gets ' + pw(10, 8) + ', because 100 000 000 has 8 zeros.</p></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Big numbers in the news are often written as a decimal and a word: <b>36.2 million</b> = 36 200 000. Move 36.2 six places for "million" (' + pw(10, 6) + ').</p></div>' +
-A.yt({ q: 'Write <span class="math">4 &times; ' + pw(10, 7) + ' + 9 &times; ' + pw(10, 3) + ' + 6</span> in standard form.', answer: 40009006,
-  hint: '4 &times; ' + pw(10, 7) + ' is 4 followed by 7 zeros. Line up the parts by place value.', explain: '40 000 000 + 9000 + 6 = 40 009 006.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Perfect squares and square roots</h2>' +
-'<p>A <b>perfect square</b> is a number of tiles that can make a full square. 16 tiles make a 4 by 4 square, so 16 is a perfect square.</p>' +
-'<div class="vrow">' + [1, 2, 3, 4, 5].map(function (b) { return '<figure><figcaption>' + b + ' &times; ' + b + ' = ' + b * b + '</figcaption>' + sq(b, 16) + '</figure>'; }).join('') + '</div>' +
-'<p>The <b>square root</b> goes backwards: it is the side length of the square. <span class="math">&radic;16 = 4</span> because 4 &times; 4 = 16.</p>' +
-'<div class="lab"><span class="lt">Try it: can these tiles make a square?</span>' +
-'<div class="ctrl"><label for="sqn">Number of tiles: <output id="sqo"></output><input type="range" id="sqn" min="1" max="200" value="50"></label></div>' +
-'<div class="row2"><div class="fig" id="sqfig"></div><div><div class="out" id="sqout"></div><div class="fig" id="sqline"></div></div></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>If a number is not a perfect square, its square root is between two whole numbers. 50 is between 49 (7 &times; 7) and 64 (8 &times; 8), so &radic;50 is between 7 and 8, a bit more than 7.</p></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>A square garden has an area of 81 m&sup2;. How long is each side?</p><p>Side = &radic;81 = 9 m, because 9 &times; 9 = 81.</p></div>' +
-A.yt({ q: 'A square tile has an area of 144 cm&sup2;. How long is one side?', answer: 12, unit: 'cm', hint: 'Which number times itself is 144?', explain: '12 &times; 12 = 144, so the side is &radic;144 = 12 cm.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Factors and the greatest common factor</h2>' +
-'<p>A <b>factor</b> divides a number with no remainder. Factors come in pairs that multiply to the number. A <b>factor rainbow</b> joins the pairs.</p>' +
-'<div class="fig">' + rainbow(36) + '</div>' +
-'<p>The <b>greatest common factor (GCF)</b> of two numbers is the biggest number that is a factor of both. Use it to split things into equal groups with nothing left over.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>GCF of 24 and 36.</p><p>Factors of 24: 1, 2, 3, 4, 6, 8, <b>12</b>, 24<br>Factors of 36: 1, 2, 3, 4, 6, 9, <b>12</b>, 18, 36</p><p>The biggest one in both lists is <b>12</b>. Or use prime factors: the shared primes are 2, 2 and 3, and 2 &times; 2 &times; 3 = 12.</p>' +
-'<div class="fig">' + venn(24, 36).svg + '</div></div>' +
-'<div class="lab"><span class="lt">Try it: find the GCF</span>' +
-'<div class="ctrl"><label for="gca">First number (2 to 144)<input type="number" id="gca" min="2" max="144" value="48"></label><label for="gcb">Second number (2 to 144)<input type="number" id="gcb" min="2" max="144" value="60"></label></div>' +
-'<div class="out" id="gcout"></div><div class="fig" id="gcfig"></div></div>' +
-A.yt({ q: 'What is the GCF of 18 and 30?', answer: 6, hint: 'List the factors of 18: 1, 2, 3, 6, 9, 18. Which is the biggest that also divides 30?', explain: '6 divides both: 18 = 6 &times; 3 and 30 = 6 &times; 5. Nothing bigger does.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>Multiples and the lowest common multiple</h2>' +
-'<p>A <b>multiple</b> is what you land on when you skip count: the multiples of 4 are 4, 8, 12, 16, ... The <b>lowest common multiple (LCM)</b> is the first number two skip counts both land on.</p>' +
-'<div class="fig">' + hops([4, 6]) + '</div>' +
-'<div class="vs"><div><b class="t">GCF: split up</b><p>Biggest number that goes <b>into</b> both.</p><p>GCF of 4 and 6 is <b>2</b>. It is never bigger than the smaller number.</p></div><div><b class="t">LCM: line up</b><p>Smallest number both go <b>into</b>.</p><p>LCM of 4 and 6 is <b>12</b>. It is never smaller than the bigger number.</p></div></div>' +
-'<div class="lab"><span class="lt">Try it: when do the jumps meet?</span>' +
-'<div class="ctrl"><label for="lca">First: <output id="lcao"></output><input type="range" id="lca" min="2" max="15" value="6"></label><label for="lcb">Second: <output id="lcbo"></output><input type="range" id="lcb" min="2" max="15" value="8"></label>' +
-'<label for="lcc">Third (0 = none): <output id="lcco"></output><input type="range" id="lcc" min="0" max="10" value="0"></label></div>' +
-'<div class="out" id="lcout"></div><div class="fig" id="lcfig"></div></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Hot dogs come in packs of 12. Buns come in packs of 8. What is the fewest of each you can buy to have the same number?</p>' +
-'<p>Multiples of 12: 12, <b>24</b>, 36. Multiples of 8: 8, 16, <b>24</b>. The LCM is 24: 2 packs of hot dogs and 3 packs of buns.</p></div>' +
-A.yt({ q: 'What is the LCM of 3, 4 and 6?', answer: 12, hint: 'Skip count by the biggest number, 6: 6, 12, ... Which one do 3 and 4 also go into?', explain: '6 does not divide by 4. 12 divides by 3, 4 and 6, so the LCM is 12.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      /* section 1 */
-      function pf() {
-        var n = parseInt(String($('#pfn', root).value).replace(/[^0-9]/g, ''), 10);
-        if (isNaN(n)) n = 0;
-        n = Math.min(999999999999, n);
-        $('#pfchart', root).innerHTML = perChart(n);
-        var about = n >= 1e9 ? (Math.round(n / 1e8) / 10) + ' billion' : n >= 1e6 ? (Math.round(n / 1e5) / 10) + ' million' : '';
-        $('#pfout', root).innerHTML = '<p><b>Standard form:</b> <span class="math">' + fmt(n) + '</span></p><p><b>In words:</b> ' + words(n) + '</p>' +
-          '<p><b>Expanded form:</b> <span class="math" style="white-space:normal">' + expPow(n) + '</span></p>' + (about ? '<p><b>Rounded for the news:</b> about ' + about + '</p>' : '');
-      }
-      $('#pfn', root).addEventListener('input', pf);
-      A.$$('[data-pf]', root).forEach(function (b) { b.addEventListener('click', function () { $('#pfn', root).value = fmt(+b.getAttribute('data-pf')); pf(); }); });
-      pf();
-      /* section 2 */
-      A.bind(root, ['pwb', 'pwe'], function () {
-        var b = +$('#pwb', root).value, e = +$('#pwe', root).value, v = Math.pow(b, e);
-        $('#pwbo', root).textContent = b; $('#pweo', root).textContent = e;
-        var rep = e === 0 ? '1' : e === 1 ? String(b) : Array(e + 1).join(b + ' &times; ').slice(0, -9);
-        $('#pwout', root).innerHTML = '<p class="big2 math">' + pw(b, e) + ' = ' + rep + ' = ' + fmt(v) + '</p>' +
-          (e === 0 ? '<p>An exponent of 0 always gives 1.</p>' : '<p>' + e + ' factor' + (e > 1 ? 's' : '') + ' of ' + b + ' multiplied together.</p>');
-        $('#pwfig', root).innerHTML = chain(b, e);
-        $('#pwpic', root).innerHTML = e === 2 && b > 1 ? sq(b) : e === 3 && b > 1 ? cube(b) : '';
-      });
-      /* section 4 */
-      A.bind(root, ['sqn'], function () {
-        var N = +$('#sqn', root).value, s0 = Math.floor(Math.sqrt(N) + 1e-9), left = N - s0 * s0;
-        $('#sqo', root).textContent = N;
-        $('#sqfig', root).innerHTML = tiles(N);
-        $('#sqout', root).innerHTML = left === 0
-          ? '<p><b>' + N + ' is a perfect square.</b></p><p>' + s0 + ' &times; ' + s0 + ' = ' + N + ', so <span class="math">&radic;' + N + ' = ' + s0 + '</span>.</p>'
-          : '<p><b>' + N + ' is not a perfect square.</b> ' + left + ' tile' + (left > 1 ? 's are' : ' is') + ' left over.</p><p>It is between ' + s0 * s0 + ' (' + s0 + ' &times; ' + s0 + ') and ' + (s0 + 1) * (s0 + 1) + ' (' + (s0 + 1) + ' &times; ' + (s0 + 1) + '), so &radic;' + N + ' is between ' + s0 + ' and ' + (s0 + 1) + '. It is about ' + (Math.round(Math.sqrt(N) * 10) / 10) + '.</p>';
-        $('#sqline', root).innerHTML = rootLine(N);
-      });
-      /* section 5 */
-      A.bind(root, ['gca', 'gcb'], function () {
-        var a = Math.max(2, Math.min(144, parseInt($('#gca', root).value, 10) || 2)), b = Math.max(2, Math.min(144, parseInt($('#gcb', root).value, 10) || 2)), g = gcd(a, b);
-        var fb = factors(b);
-        function chips(n) {
-          return factors(n).map(function (f) { var c = fb.indexOf(f) >= 0 && n % f === 0 && b % f === 0 && a % f === 0; return '<span class="pill" style="' + (f === g ? 'background:var(--se);color:#fff;border-color:var(--se)' : c ? '' : 'opacity:.55;border-style:dashed') + '">' + f + '</span>'; }).join(' ');
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7, $ = A.$;
+  function num(host) { return parseInt(String(K.v(host, 'pfn') || '').replace(/[^0-9]/g, ''), 10) || 0; }
+  var W = {
+    read: { html: '<div class="ctrl"><label for="pfn">Type a number (0 to 999 999 999 999)<input type="text" inputmode="numeric" id="pfn" value="36 200 000"></label></div>' +
+      '<div class="btnrow"><button type="button" class="btn alt" data-pf="41528680">Canada\'s population, 2025</button><button type="button" class="btn alt" data-pf="9984670">Area of Canada in km&sup2;</button><button type="button" class="btn alt" data-pf="1000000000">One billion</button></div>' +
+      '<div id="pfchart"></div><div class="out" id="pfout"></div>',
+      init: function (root) {
+        function pf() {
+          var n = Math.min(999999999999, num(root));
+          $('#pfchart', root).innerHTML = perChart(n);
+          var about = n >= 1e9 ? (Math.round(n / 1e8) / 10) + ' billion' : n >= 1e6 ? (Math.round(n / 1e5) / 10) + ' million' : '';
+          $('#pfout', root).innerHTML = '<p><b>Standard form:</b> <span class="math">' + fmt(n) + '</span></p><p><b>In words:</b> ' + words(n) + '</p>' +
+            '<p><b>Expanded form:</b> <span class="math" style="white-space:normal">' + expPow(n) + '</span></p>' + (about ? '<p><b>Rounded for the news:</b> about ' + about + '</p>' : '');
         }
-        $('#gcout', root).innerHTML = '<p><b>Factors of ' + a + ':</b> ' + chips(a) + '</p><p><b>Factors of ' + b + ':</b> ' + chips(b) + '</p>' +
-          '<p>Solid chips are common factors. <b>GCF = <span class="big2">' + g + '</span></b>' + (g === 1 ? ' (nothing bigger than 1 divides both)' : '') + '</p>';
-        var v = venn(a, b);
-        $('#gcfig', root).innerHTML = v.svg + '<p class="t2" style="text-align:center;margin:0">Shared prime factors: ' + (v.both.length ? v.both.join(' &times; ') + ' = ' + g : 'none, so the GCF is 1') + '</p>';
-      });
-      /* section 6 */
-      A.bind(root, ['lca', 'lcb', 'lcc'], function () {
-        var a = +$('#lca', root).value, b = +$('#lcb', root).value, c = +$('#lcc', root).value, nums = c ? [a, b, c] : [a, b];
-        $('#lcao', root).textContent = a; $('#lcbo', root).textContent = b; $('#lcco', root).textContent = c || 'none';
-        var L = nums.reduce(lcm);
-        $('#lcout', root).innerHTML = '<p>LCM of ' + nums.join(', ') + ' = <span class="big2">' + L + '</span></p>';
-        $('#lcfig', root).innerHTML = hops(nums);
-      });
-    },
+        $('#pfn', root).addEventListener('input', pf);
+        A.$$('[data-pf]', root).forEach(function (b) { b.addEventListener('click', function () { $('#pfn', root).value = fmt(+b.getAttribute('data-pf')); pf(); }); });
+        pf();
+      } },
+    power: { html: '<div class="ctrl"><label for="pwb">Base: <output id="pwbo"></output><input type="range" id="pwb" min="1" max="12" value="2"></label>' +
+      '<label for="pwe">Exponent: <output id="pweo"></output><input type="range" id="pwe" min="0" max="6" value="3"></label></div>' +
+      '<div class="out" id="pwout"></div><div class="fig" id="pwfig"></div><div class="fig" id="pwpic"></div>',
+      init: function (root) {
+        A.bind(root, ['pwb', 'pwe'], function () {
+          var b = +$('#pwb', root).value, e = +$('#pwe', root).value, v = Math.pow(b, e);
+          $('#pwbo', root).textContent = b; $('#pweo', root).textContent = e;
+          var rep = e === 0 ? '1' : e === 1 ? String(b) : Array(e + 1).join(b + ' &times; ').slice(0, -9);
+          $('#pwout', root).innerHTML = '<p class="big2 math">' + pw(b, e) + ' = ' + rep + ' = ' + fmt(v) + '</p>' +
+            (e === 0 ? '<p>An exponent of 0 always gives 1.</p>' : '<p>' + e + ' factor' + (e > 1 ? 's' : '') + ' of ' + b + ' multiplied together.</p>');
+          $('#pwfig', root).innerHTML = chain(b, e);
+          $('#pwpic', root).innerHTML = e === 2 && b > 1 ? sq(b) : e === 3 && b > 1 ? cube(b) : '';
+        });
+      } },
+    squares: { html: '<div class="ctrl"><label for="sqn">Number of tiles: <output id="sqo"></output><input type="range" id="sqn" min="1" max="200" value="50"></label></div>' +
+      '<div class="row2"><div class="fig" id="sqfig"></div><div><div class="out" id="sqout"></div><div class="fig" id="sqline"></div></div></div>',
+      init: function (root) {
+        A.bind(root, ['sqn'], function () {
+          var N = +$('#sqn', root).value, s0 = Math.floor(Math.sqrt(N) + 1e-9), left = N - s0 * s0;
+          $('#sqo', root).textContent = N;
+          $('#sqfig', root).innerHTML = tiles(N);
+          $('#sqout', root).innerHTML = left === 0
+            ? '<p><b>' + N + ' is a perfect square.</b></p><p>' + s0 + ' &times; ' + s0 + ' = ' + N + ', so <span class="math">&radic;' + N + ' = ' + s0 + '</span>.</p>'
+            : '<p><b>' + N + ' is not a perfect square.</b> ' + left + ' tile' + (left > 1 ? 's are' : ' is') + ' left over.</p><p>It is between ' + s0 * s0 + ' (' + s0 + ' &times; ' + s0 + ') and ' + (s0 + 1) * (s0 + 1) + ' (' + (s0 + 1) + ' &times; ' + (s0 + 1) + '), so &radic;' + N + ' is between ' + s0 + ' and ' + (s0 + 1) + '. It is about ' + (Math.round(Math.sqrt(N) * 10) / 10) + '.</p>';
+          $('#sqline', root).innerHTML = rootLine(N);
+        });
+      } },
+    gcf: { html: '<div class="ctrl"><label for="gca">First number (2 to 144)<input type="number" id="gca" min="2" max="144" value="48"></label><label for="gcb">Second number (2 to 144)<input type="number" id="gcb" min="2" max="144" value="60"></label></div>' +
+      '<div class="out" id="gcout"></div><div class="fig" id="gcfig"></div>',
+      init: function (root) {
+        A.bind(root, ['gca', 'gcb'], function () {
+          var a = Math.max(2, Math.min(144, parseInt($('#gca', root).value, 10) || 2)), b = Math.max(2, Math.min(144, parseInt($('#gcb', root).value, 10) || 2)), g = gcd(a, b);
+          function chips(n) {
+            return factors(n).map(function (f) { var c = a % f === 0 && b % f === 0; return '<span class="pill' + (f === g ? ' k7-hit' : '') + '" style="' + (c ? '' : 'opacity:.5;border-style:dashed') + '">' + f + '</span>'; }).join(' ');
+          }
+          $('#gcout', root).innerHTML = '<p><b>Factors of ' + a + ':</b> ' + chips(a) + '</p><p><b>Factors of ' + b + ':</b> ' + chips(b) + '</p>' +
+            '<p>Solid chips are common factors. <b>GCF = <span class="big2">' + g + '</span></b>' + (g === 1 ? ' (nothing bigger than 1 divides both)' : '') + '</p>';
+          var v = venn(a, b);
+          $('#gcfig', root).innerHTML = v.svg + '<p class="t2" style="text-align:center;margin:0">Shared prime factors: ' + (v.both.length ? v.both.join(' &times; ') + ' = ' + g : 'none, so the GCF is 1') + '</p>';
+        });
+      } },
+    lcm: { html: '<div class="ctrl"><label for="lca">First: <output id="lcao"></output><input type="range" id="lca" min="2" max="15" value="6"></label><label for="lcb">Second: <output id="lcbo"></output><input type="range" id="lcb" min="2" max="15" value="8"></label>' +
+      '<label for="lcc">Third (0 = none): <output id="lcco"></output><input type="range" id="lcc" min="0" max="10" value="0"></label></div>' +
+      '<div class="out" id="lcout"></div><div class="fig" id="lcfig"></div>',
+      init: function (root) {
+        A.bind(root, ['lca', 'lcb', 'lcc'], function () {
+          var a = +$('#lca', root).value, b = +$('#lcb', root).value, c = +$('#lcc', root).value, nums = c ? [a, b, c] : [a, b];
+          $('#lcao', root).textContent = a; $('#lcbo', root).textContent = b; $('#lcco', root).textContent = c || 'none';
+          $('#lcout', root).innerHTML = '<p>LCM of ' + nums.join(', ') + ' = <span class="big2">' + nums.reduce(lcm) + '</span></p>';
+          $('#lcfig', root).innerHTML = hops(nums);
+        });
+      } }
+  };
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+
+  var LESSONS = [
+    { id: 'big', title: 'Numbers to one billion', sub: 'Read and write very large numbers.', concepts: [
+      { id: 'periods', title: 'Big numbers come in periods', exp: ['B1.1'], skill: 'pf-read',
+        body: '<p>Big numbers are built in groups of three digits called <b>periods</b>: ones, thousands, millions and billions. Each period is <b>1000 times</b> the one before.</p>',
+        watch: K.slides([
+          { say: 'Start with a thousand small cubes in one big cube.', fig: billion },
+          { say: 'Every number is split into periods of three digits, starting from the right.', fig: function () { return perChart(3405216789); } },
+          { say: 'The <b>ones</b> period: 789.', fig: function () { return perChart(789); } },
+          { say: 'The <b>thousands</b> period: 216 thousand.', fig: function () { return perChart(216789); } },
+          { say: 'The <b>millions</b> period: 405 million.', fig: function () { return perChart(405216789); } },
+          { say: 'The <b>billions</b> period: 3 billion. Each period is 1000 times bigger than the one to its right.', fig: function () { return perChart(3405216789); }, ms: 2600 }
+        ]),
+        try: lab('read', [
+          { do: 'Press <b>One billion</b>. How many periods does it fill?', goal: function (h) { return num(h) === 1e9; }, yes: 'One billion fills four periods: 1 000 000 000.' },
+          { do: 'Type a number in the <b>millions</b>, like your city\'s population.', goal: function (h) { var n = num(h); return n >= 1e6 && n < 1e9; }, yes: function (h) { return 'Yes. ' + fmt(num(h)) + ' has a millions period.'; } },
+          { do: 'Type any number of <b>one billion or more</b>.', goal: function (h) { return num(h) >= 1e9; }, yes: 'Yes. Now the billions period is full too.' }
+        ]),
+        key: '<p>Read a big number <b>one period at a time, from the left</b>. Say the number in the period, then the period name.</p>',
+        mistake: '<p>Saying "ones" at the end, or reading digit by digit. The ones period has no name when you read it: 3 405 216 789 ends "...seven hundred eighty-nine".</p>',
+        check: [function () { return mc('What is the value of the digit 7 in <span class="math">2 704 315 000</span>?', '700 000 000', ['7 000 000', '70 000 000', '7 000 000 000'], 'The 7 is in the millions period. Is it the ones, tens or hundreds digit of that period?', 'The 7 is the hundreds digit of the millions period: 700 000 000.'); }, K.ck('pf-read', 1), K.ck('pf-read', 2)] },
+      { id: 'news', title: 'Big numbers in the news', exp: ['B1.1'], skill: 'pf-read',
+        body: '<p>News stories often write big numbers as a <b>decimal and a word</b>: "36.2 million people". It is short and easy to read.</p>',
+        watch: K.slides([
+          { say: '36.2 million means 36 millions and 2 tenths of a million.', fig: eq('36.2 million') },
+          { say: 'One million is 1 000 000. A tenth of a million is 100 000.', fig: eq('1 million = 1 000 000 &nbsp;&nbsp; 0.1 million = 100 000') },
+          { say: '36 million is 36 000 000. 0.2 million is 200 000.', fig: eq('36 000 000 + 200 000') },
+          { say: 'Together: <b>36 200 000</b>.', fig: function () { return perChart(36200000); }, ms: 2400 }
+        ]),
+        ways: [{ label: 'Move the decimal point', html: '<p>"Million" means &times; 1 000 000, which moves the decimal point <b>6 places right</b>.</p>' + eq('36.2 &rarr; 36.200000 &rarr; 36 200 000') },
+          { label: 'Think of money', html: '<p>$2.5 million is two and a half million dollars: $2 000 000 plus half a million, $500 000. That is $2 500 000.</p>' }],
+        hard: true,
+        key: '<p><b>36.2 million = 36 200 000.</b> Multiply by 1 000 000: move the point 6 places right.</p>',
+        mistake: '<p>Writing 36.2 million as 36 000 002 or 362 000 000. Ask: what is 0.2 of a million? (200 000)</p>',
+        check: [K.ck('pf-read', 3), function () { var m = R.int(2, 40), d = R.int(1, 9); return { q: 'Write <b>' + m + '.' + d + ' million</b> in standard form.', type: 'num', answer: m * 1e6 + d * 1e5, hint: 'One tenth of a million is 100 000.', explain: m + ' 000 000 + ' + d + '00 000 = ' + fmt(m * 1e6 + d * 1e5) + '.' }; }] }
+    ] },
+    { id: 'powers', title: 'Powers', sub: 'A short way to write repeated multiplication.', concepts: [
+      { id: 'base', title: 'Base and exponent', exp: ['B2.7'], skill: 'pf-power',
+        body: '<p>A <b>power</b> is a number multiplied by itself again and again. In ' + pw(5, 3) + ', 5 is the <b>base</b> and 3 is the <b>exponent</b>. The exponent says how many 5s to multiply.</p>',
+        watch: K.slides([
+          { say: 'Here is the power 5 to the 3. The big 5 is the base. The small 3 is the exponent.', fig: eq('<span style="font-size:2.4rem">' + pw(5, 3) + '</span>') },
+          { say: 'The exponent 3 means: write the base 3 times, with times signs.', fig: eq(pw(5, 3) + ' = 5 &times; 5 &times; 5') },
+          { say: '5 times 5 is 25.', fig: eq(pw(5, 3) + ' = 25 &times; 5') },
+          { say: '25 times 5 is 125. So 5 to the 3 is <b>125</b>.', fig: eq(pw(5, 3) + ' = <b>125</b>') },
+          { say: 'Each step multiplies by the base again.', fig: function () { return chain(5, 3); }, ms: 2400 }
+        ]),
+        try: lab('power', [
+          { do: 'Make <b>2<sup>5</sup></b>. What does it equal?', goal: function (h) { return K.v(h, 'pwb') === 2 && K.v(h, 'pwe') === 5; }, yes: '2 &times; 2 &times; 2 &times; 2 &times; 2 = 32.' },
+          { do: 'Find a power that equals <b>81</b>.', goal: function (h) { return Math.pow(K.v(h, 'pwb'), K.v(h, 'pwe')) === 81; }, yes: function (h) { return 'Yes. ' + K.v(h, 'pwb') + ' to the ' + K.v(h, 'pwe') + ' is 81. (Both 3<sup>4</sup> and 9<sup>2</sup> work.)'; } },
+          { do: 'Find a power bigger than <b>100 000</b>.', goal: function (h) { return Math.pow(K.v(h, 'pwb'), K.v(h, 'pwe')) > 100000; }, yes: 'Powers grow very fast.' }
+        ]),
+        key: '<p><b>The exponent counts how many times the base is multiplied.</b> ' + pw(5, 3) + ' = 5 &times; 5 &times; 5 = 125.</p>',
+        mistake: '<p>Multiplying the base by the exponent: ' + pw(4, 3) + ' = 12. Have the student write the base out 3 times first: 4 &times; 4 &times; 4 = 64.</p>',
+        check: [function () { return { q: 'Evaluate <span class="math">' + pw(2, 5) + '</span>.', type: 'num', answer: 32, hint: 'Multiply five 2s.', explain: '2 &times; 2 = 4, 8, 16, 32.' }; }, K.ck('pf-power', 1), K.ck('pf-power', 2)] },
+      { id: 'notthis', title: 'Powers are not multiplication', exp: ['B2.7'], skill: 'pf-power', hard: true,
+        body: '<p>' + pw(2, 3) + ' and 2 &times; 3 look alike but are different. One multiplies 2s. The other adds 2s.</p><div class="vs"><div><b class="t">This: 2<sup>3</sup></b><p>2 &times; 2 &times; 2 = <b>8</b></p><p>Three 2s multiplied.</p></div><div><b class="t">Not this: 2 &times; 3</b><p>2 + 2 + 2 = <b>6</b></p><p>Three 2s added.</p></div></div>',
+        watch: K.slides([
+          { say: '2 times 3 means three 2s <b>added</b>: 6.', fig: eq('2 &times; 3 = 2 + 2 + 2 = 6') },
+          { say: '2 to the 3 means three 2s <b>multiplied</b>: 8.', fig: eq(pw(2, 3) + ' = 2 &times; 2 &times; 2 = 8') },
+          { say: 'With bigger numbers the difference is huge. 10 times 4 is 40.', fig: eq('10 &times; 4 = 40') },
+          { say: 'But 10 to the 4 is 10 000.', fig: eq(pw(10, 4) + ' = 10 &times; 10 &times; 10 &times; 10 = 10 000'), ms: 2400 }
+        ]),
+        ways: [{ label: 'As a picture', html: '<p>' + pw(3, 2) + ' is a 3 by 3 square of tiles: 9. And ' + pw(3, 3) + ' is a 3 by 3 by 3 cube: 27.</p><div class="vrow"><figure><figcaption>3<sup>2</sup> = 9</figcaption>' + sq(3, 30) + '</figure><figure><figcaption>3<sup>3</sup> = 27</figcaption>' + cube(3, 90) + '</figure></div>' },
+          { label: 'Powers of 1 and 0', html: '<p>Any number to the power 1 is itself: ' + pw(7, 1) + ' = 7. Any number (except 0) to the power 0 is 1: ' + pw(7, 0) + ' = 1. Look at the pattern: ' + pw(2, 3) + ' = 8, ' + pw(2, 2) + ' = 4, ' + pw(2, 1) + ' = 2, ' + pw(2, 0) + ' = 1. Each step down halves.</p>' }],
+        key: '<p><b>Power: multiply the base again and again.</b> Not base &times; exponent.</p>',
+        mistake: '<p>Answering 4<sup>2</sup> = 8 or 5<sup>3</sup> = 15. Ask the student to say it aloud: "four times four".</p>',
+        check: [function () { var b = R.int(3, 6), e = R.pick([2, 3]); return mc('Which is equal to <span class="math">' + pw(b, e) + '</span>?', fmt(Math.pow(b, e)), [String(b * e), String(b + e), fmt(Math.pow(e, b))], 'Write the base out ' + e + ' times and multiply.', pw(b, e) + ' = ' + Array(e + 1).join(b + ' &times; ').slice(0, -9) + ' = ' + Math.pow(b, e) + '.'); }, K.ck('pf-power', 3)] }
+    ] },
+    { id: 'tens', title: 'Powers of ten', sub: 'The exponent counts the zeros.', concepts: [
+      { id: 'zeros', title: 'The exponent counts the zeros', exp: ['B1.1', 'B2.7'], skill: 'pf-expand',
+        body: '<p>Powers of ten are easy to read. ' + pw(10, 6) + ' is 1 followed by <b>6 zeros</b>: 1 000 000, one million.</p>',
+        watch: K.slides([
+          { say: '10 to the 1 is 10. One zero.', fig: eq(pw(10, 1) + ' = 10') },
+          { say: '10 to the 2 is 10 times 10: 100. Two zeros.', fig: eq(pw(10, 2) + ' = 10 &times; 10 = 100') },
+          { say: '10 to the 3 is 1000. Three zeros.', fig: eq(pw(10, 3) + ' = 1000') },
+          { say: '10 to the 6 is one million. Six zeros.', fig: eq(pw(10, 6) + ' = 1 000 000') },
+          { say: '10 to the 9 is one billion. Nine zeros.', fig: eq(pw(10, 9) + ' = 1 000 000 000'), ms: 2400 }
+        ]),
+        try: lab('power', [{ do: 'Set the base to <b>10</b>. Make one million.', goal: function (h) { return K.v(h, 'pwb') === 10 && K.v(h, 'pwe') === 6; }, yes: pw(10, 6) + ' = 1 000 000: six zeros.' }]),
+        key: '<p><b>' + pw(10, 'n') + ' is 1 followed by n zeros.</b></p>',
+        mistake: '<p>Counting the digits instead of the zeros: 1000 has 4 digits but only 3 zeros, so it is ' + pw(10, 3) + '.</p>',
+        check: [K.ck('pf-expand', 1), function () { var k = R.int(4, 9); return { q: 'How many zeros does <span class="math">' + pw(10, k) + '</span> have in standard form?', type: 'num', answer: k, hint: 'The exponent counts the zeros.', explain: pw(10, k) + ' = ' + fmt(Math.pow(10, k)) + ': ' + k + ' zeros.' }; }] },
+      { id: 'expanded', title: 'Expanded form with powers of ten', exp: ['B1.1'], skill: 'pf-expand', hard: true,
+        body: '<p>In <b>expanded form</b>, each non-zero digit is written as <i>digit &times; a power of ten</i>. Zeros are skipped.</p>',
+        watch: K.slides([
+          { say: 'Take 307 020 050.', fig: function () { return perChart(307020050); } },
+          { say: 'The 3 has 8 places after it. It is 3 times 10 to the 8.', fig: eq('3 &times; ' + pw(10, 8)) },
+          { say: 'The 7 has 6 places after it: 7 times 10 to the 6.', fig: eq('3 &times; ' + pw(10, 8) + ' + 7 &times; ' + pw(10, 6)) },
+          { say: 'Then 2 times 10 to the 4, and 5 times 10.', fig: eq('3 &times; ' + pw(10, 8) + ' + 7 &times; ' + pw(10, 6) + ' + 2 &times; ' + pw(10, 4) + ' + 5 &times; 10') },
+          { say: 'The zeros are skipped. Each part matches one non-zero digit.', fig: function () { return perChart(307020050); }, ms: 2400 }
+        ]),
+        try: lab('read', [{ do: 'Type <b>4 000 900 006</b>. Look at its expanded form.', goal: function (h) { return num(h) === 4000900006; }, yes: '4 &times; 10<sup>9</sup> + 9 &times; 10<sup>5</sup> + 6.' },
+          { do: 'Type a number whose expanded form has exactly <b>two parts</b>.', goal: function (h) { var n = String(num(h)); return n !== '0' && n.replace(/0/g, '').length === 2; }, yes: 'Two non-zero digits make two parts.' }]),
+        ways: [{ label: 'Count places to the right', html: '<p>For each digit, count how many digits come <b>after</b> it. That count is the exponent. In 5<u>0</u>400, the 5 has 4 digits after it, so it is 5 &times; 10<sup>4</sup>.</p>' },
+          { label: 'Line up the parts', html: '<p>Write each part in standard form and stack them:</p><p class="math">300 000 000<br>&nbsp;&nbsp;&nbsp;7 000 000<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;20 000<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;50</p><p>Add: 307 020 050.</p>' }],
+        key: '<p><b>Exponent = number of places to the right of the digit.</b></p>',
+        mistake: '<p>Using the place number counted from 1: writing the 3 in 307 020 050 as 3 &times; 10<sup>9</sup>. The ones place is 10<sup>0</sup>, not 10<sup>1</sup>.</p>',
+        check: [function () { return { q: 'Write <span class="math">4 &times; ' + pw(10, 7) + ' + 9 &times; ' + pw(10, 3) + ' + 6</span> in standard form.', type: 'num', answer: 40009006, hint: 'Line the parts up by place value.', explain: '40 000 000 + 9000 + 6 = 40 009 006.' }; }, K.ck('pf-expand', 2), K.ck('pf-expand', 3)] }
+    ] },
+    { id: 'squares', title: 'Squares and square roots', sub: 'Tiles that make a square, and the side of that square.', concepts: [
+      { id: 'perfect', title: 'Perfect squares', exp: ['B1.2'], skill: 'pf-root',
+        body: '<p>A <b>perfect square</b> is a number of tiles that make a full square. 16 tiles make a 4 by 4 square, so 16 is a perfect square: 4 &times; 4 = 4<sup>2</sup> = 16.</p>',
+        watch: K.slides([1, 2, 3, 4, 5].map(function (b) { return { say: b + ' by ' + b + ' makes ' + b * b + '.', fig: '<div class="vrow"><figure><figcaption>' + b + ' &times; ' + b + ' = ' + b * b + '</figcaption>' + sq(b, 30) + '</figure></div>', ms: 1300 }; })
+          .concat([{ say: 'The perfect squares: 1, 4, 9, 16, 25, ... The gaps between them grow by 2 each time.', fig: eq('1, 4, 9, 16, 25, 36, 49, 64, 81, 100'), ms: 2600 }])),
+        try: lab('squares', [
+          { do: 'Find a perfect square <b>between 50 and 70</b>.', goal: function (h) { return K.v(h, 'sqn') === 64; }, yes: '64 = 8 &times; 8.' },
+          { do: 'Find the biggest perfect square on the slider.', goal: function (h) { return K.v(h, 'sqn') === 196; }, yes: '196 = 14 &times; 14. (225 is past the end.)' }
+        ]),
+        key: '<p><b>A perfect square is a whole number times itself.</b></p>',
+        mistake: '<p>Thinking 2 &times; 8 = 16 is why 16 is square. It is square because 4 &times; 4 = 16: the two sides must be equal.</p>',
+        check: [K.ck('pf-root', 2), function () { return mc('Which number is a perfect square?', '64', ['48', '80', '96'], 'Try 7 &times; 7, 8 &times; 8, 9 &times; 9.', '64 = 8 &times; 8.'); }] },
+      { id: 'root', title: 'Square roots', exp: ['B1.2'], skill: 'pf-root',
+        body: '<p>The <b>square root</b> goes backwards. It is the side length of the square. <span class="math">&radic;16 = 4</span> because 4 &times; 4 = 16.</p>',
+        watch: K.slides([
+          { say: 'A square garden has an area of 81 square metres. How long is each side?', fig: '<div class="vrow"><figure><figcaption>Area 81 m&sup2;</figcaption>' + sq(9, 22) + '</figure></div>' },
+          { say: 'We need a number that times itself makes 81.', fig: eq('? &times; ? = 81') },
+          { say: '9 times 9 is 81. So the side is 9 metres.', fig: eq('9 &times; 9 = 81 &nbsp;&nbsp; &radic;81 = 9'), ms: 2400 }
+        ]),
+        key: '<p><b>&radic;n is the side of a square with area n.</b> &radic;81 = 9 because 9 &times; 9 = 81.</p>',
+        mistake: '<p>Halving instead of rooting: &radic;16 = 8. Check by multiplying back: 8 &times; 8 = 64, not 16.</p>',
+        check: [function () { return { q: 'A square tile has an area of 144 cm&sup2;. How long is one side?', type: 'num', answer: 12, unit: 'cm', hint: 'Which number times itself is 144?', explain: '12 &times; 12 = 144.' }; }, K.ck('pf-root', 1)] },
+      { id: 'between', title: 'Roots between whole numbers', exp: ['B1.2'], skill: 'pf-root', hard: true,
+        body: '<p>Most numbers are not perfect squares. Their square roots fall <b>between</b> two whole numbers. 50 is between 49 and 64, so &radic;50 is between 7 and 8.</p>',
+        watch: K.slides([
+          { say: 'Try to make a square with 50 tiles.', fig: function () { return tiles(50); } },
+          { say: 'A 7 by 7 square uses 49. One tile is left over.', fig: function () { return tiles(50); } },
+          { say: 'On a number line, 50 sits just past 49.', fig: function () { return rootLine(50); } },
+          { say: 'So &radic;50 is between 7 and 8, very close to 7: about 7.1.', fig: eq('7 &times; 7 = 49 &lt; 50 &lt; 64 = 8 &times; 8'), ms: 2600 }
+        ]),
+        try: lab('squares', [{ do: 'Set the slider to <b>30</b>. Between which two whole numbers is &radic;30?', goal: function (h) { return K.v(h, 'sqn') === 30; }, yes: '25 &lt; 30 &lt; 36, so &radic;30 is between 5 and 6.' }]),
+        ways: [{ label: 'Squeeze it', html: '<p>List the squares until you pass the number: 1, 4, 9, 16, 25, <b>36</b>. 30 is between 25 and 36, so &radic;30 is between &radic;25 = 5 and &radic;36 = 6.</p>' },
+          { label: 'Which is closer?', html: '<p>30 is 5 away from 25 and 6 away from 36, so &radic;30 is a bit closer to 5. It is about 5.5.</p>' }],
+        key: '<p><b>Find the perfect squares on each side.</b> Their roots are the two whole numbers.</p>',
+        mistake: '<p>Answering with the squares (25 and 36) instead of their roots (5 and 6).</p>',
+        check: [K.ck('pf-root', 3)] }
+    ] },
+    { id: 'gcf', title: 'Factors and the GCF', sub: 'The biggest number that divides two numbers.', concepts: [
+      { id: 'pairs', title: 'Factor pairs', exp: ['B2.6'], skill: 'pf-gcf',
+        body: '<p>A <b>factor</b> divides a number with no remainder. Factors come in <b>pairs</b> that multiply to the number. A factor rainbow joins the pairs.</p>',
+        watch: K.slides([
+          { say: 'Factors of 36. Start with 1 times 36.', fig: eq('1 &times; 36') },
+          { say: 'Then 2 times 18, 3 times 12, 4 times 9.', fig: eq('1 &times; 36 &nbsp; 2 &times; 18 &nbsp; 3 &times; 12 &nbsp; 4 &times; 9') },
+          { say: '6 times 6 meets in the middle. Stop there.', fig: eq('1 &times; 36 &nbsp; 2 &times; 18 &nbsp; 3 &times; 12 &nbsp; 4 &times; 9 &nbsp; 6 &times; 6') },
+          { say: 'The rainbow joins each pair.', fig: function () { return rainbow(36); }, ms: 2600 }
+        ]),
+        key: '<p><b>Factors come in pairs.</b> Test 1, 2, 3, ... until the pairs meet.</p>',
+        mistake: '<p>Stopping too early and missing a pair, such as 4 &times; 9 for 36. The rainbow shows a gap when a pair is missing.</p>',
+        check: [function () { var n = R.pick([24, 30, 36, 40, 48]), f = factors(n), bad = R.pick([5, 7, 9, 11].filter(function (x) { return n % x; })); return mc('Which is <b>not</b> a factor of ' + n + '?', String(bad), R.shuffle(f.filter(function (x) { return x > 1 && x < n; })).slice(0, 3).map(String), 'Does it divide ' + n + ' with no remainder?', n + ' &divide; ' + bad + ' has a remainder. Factors of ' + n + ': ' + f.join(', ') + '.'); }] },
+      { id: 'gcf', title: 'The greatest common factor', exp: ['B2.6'], skill: 'pf-gcf',
+        body: '<p>The <b>greatest common factor (GCF)</b> is the biggest number that divides <b>both</b> numbers. Use it to split things into equal groups with nothing left over.</p>',
+        watch: K.slides([
+          { say: 'GCF of 24 and 36. List the factors of 24.', fig: eq('24: 1, 2, 3, 4, 6, 8, 12, 24') },
+          { say: 'List the factors of 36.', fig: eq('24: 1, 2, 3, 4, 6, 8, 12, 24<br>36: 1, 2, 3, 4, 6, 9, 12, 18, 36') },
+          { say: 'The biggest number in both lists is <b>12</b>.', fig: eq('24: 1, 2, 3, 4, 6, 8, <b>12</b>, 24<br>36: 1, 2, 3, 4, 6, 9, <b>12</b>, 18, 36'), ms: 2400 }
+        ]),
+        try: lab('gcf', [
+          { do: 'Find two numbers with a GCF of <b>12</b>.', goal: function (h) { return gcd(+K.v(h, 'gca'), +K.v(h, 'gcb')) === 12; }, yes: 'Both are multiples of 12, and nothing bigger divides both.' },
+          { do: 'Find two numbers with a GCF of <b>1</b>.', goal: function (h) { return gcd(+K.v(h, 'gca'), +K.v(h, 'gcb')) === 1; }, yes: 'They share no prime factor.' }
+        ]),
+        key: '<p><b>GCF: the biggest number that goes into both.</b></p>',
+        mistake: '<p>Giving any common factor, like 6 for 24 and 36. Ask: is there a bigger one in both lists?</p>',
+        check: [function () { return { q: 'What is the GCF of 18 and 30?', type: 'num', answer: 6, hint: 'Factors of 18: 1, 2, 3, 6, 9, 18. Which is biggest and also divides 30?', explain: '6 divides both, nothing bigger does.' }; }, K.ck('pf-gcf', 1), K.ck('pf-gcf', 2)] },
+      { id: 'primes', title: 'GCF from prime factors', exp: ['B2.6'], skill: 'pf-gcf', hard: true,
+        body: '<p>Every number is a product of <b>primes</b>. The GCF is the product of the primes the two numbers <b>share</b>.</p>',
+        watch: K.slides([
+          { say: '24 = 2 &times; 2 &times; 2 &times; 3. 36 = 2 &times; 2 &times; 3 &times; 3.', fig: eq('24 = 2 &times; 2 &times; 2 &times; 3<br>36 = 2 &times; 2 &times; 3 &times; 3') },
+          { say: 'Put the shared primes in the middle of a Venn diagram.', fig: function () { return venn(24, 36).svg; } },
+          { say: 'Multiply the shared primes: 2 &times; 2 &times; 3 = 12.', fig: eq('GCF = 2 &times; 2 &times; 3 = 12'), ms: 2400 }
+        ]),
+        ways: [{ label: 'Equal groups', html: '<p>24 pencils and 36 erasers go into identical kits with nothing left over. The most kits is the GCF, 12: each kit gets 2 pencils and 3 erasers.</p>' }],
+        key: '<p><b>GCF = product of the shared prime factors.</b></p>',
+        mistake: '<p>Multiplying all the primes of both numbers. That gives a multiple, not a factor.</p>',
+        check: [K.ck('pf-gcf', 3)] }
+    ] },
+    { id: 'lcm', title: 'Multiples and the LCM', sub: 'The first place two skip counts meet.', concepts: [
+      { id: 'lcm', title: 'The lowest common multiple', exp: ['B2.6'], skill: 'pf-lcm',
+        body: '<p>A <b>multiple</b> is a number you land on when you skip count. The <b>lowest common multiple (LCM)</b> is the first number two skip counts <b>both</b> land on.</p>',
+        watch: K.slides([
+          { say: 'Skip count by 4: 4, 8, 12, 16 ...', fig: function () { return hops([4]); } },
+          { say: 'Skip count by 6: 6, 12, 18 ...', fig: function () { return hops([4, 6]); } },
+          { say: 'They first land together on 12. The LCM of 4 and 6 is <b>12</b>.', fig: function () { return hops([4, 6]); }, ms: 2400 }
+        ]),
+        try: lab('lcm', [
+          { do: 'Make two jumps that first meet at <b>24</b>.', goal: function (h) { var a = K.v(h, 'lca'), b = K.v(h, 'lcb'), c = K.v(h, 'lcc'); return [a, b].concat(c ? [c] : []).reduce(lcm) === 24; }, yes: 'Yes, the LCM is 24.' },
+          { do: 'Add a third jump. Find three numbers with an LCM of <b>30</b>.', goal: function (h) { var c = K.v(h, 'lcc'); return c && [K.v(h, 'lca'), K.v(h, 'lcb'), c].reduce(lcm) === 30; }, yes: 'All three first meet at 30.' }
+        ]),
+        key: '<p><b>LCM: the smallest number both go into.</b> Skip count by the bigger number and check.</p>',
+        mistake: '<p>Multiplying the two numbers every time: 4 &times; 6 = 24 is a common multiple, but 12 comes first.</p>',
+        check: [function () { return { q: 'What is the LCM of 3, 4 and 6?', type: 'num', answer: 12, hint: 'Skip count by 6: 6, 12. Do 3 and 4 go into it?', explain: '12 divides by 3, 4 and 6.' }; }, K.ck('pf-lcm', 1), K.ck('pf-lcm', 2)] },
+      { id: 'which', title: 'GCF or LCM?', exp: ['B2.6'], skill: 'pf-lcm', hard: true,
+        body: '<p>Word problems need you to choose. <b>Splitting into groups</b> uses the GCF. <b>Lining things up</b> or "when together again" uses the LCM.</p><div class="vs"><div><b class="t">GCF: split up</b><p>Biggest number that goes <b>into</b> both. Never bigger than the smaller number.</p></div><div><b class="t">LCM: line up</b><p>Smallest number both go <b>into</b>. Never smaller than the bigger number.</p></div></div>',
+        watch: K.slides([
+          { say: 'Bus A leaves every 8 minutes. Bus B every 12. When do they leave together again?', fig: eq('8, 16, <b>24</b> &nbsp;&nbsp; 12, <b>24</b>') },
+          { say: '"Together again" means line up: LCM. 24 minutes.', fig: function () { return hops([8, 12]); } },
+          { say: '24 pencils and 36 erasers into identical kits. The most kits? That is splitting: GCF, 12.', fig: function () { return venn(24, 36).svg; }, ms: 2600 }
+        ]),
+        ways: [{ label: 'A quick test', html: '<p>Should the answer be <b>smaller</b> than the numbers (a share)? Use the GCF. <b>Bigger</b> (a time or amount you reach)? Use the LCM.</p>' }],
+        key: '<p><b>Split into groups: GCF. Meet again: LCM.</b></p>',
+        mistake: '<p>Using the GCF for a "when again" question. The answer would come before either event happens again.</p>',
+        check: [K.ck('pf-lcm', 3), K.ck('pf-gcf', 3), function () { return mc('Hot dogs come in packs of 12 and buns in packs of 8. To have the same number of each, should you use the GCF or the LCM?', 'LCM', ['GCF'], 'Are you splitting something up, or lining two counts up?', 'You need a number both 12 and 8 go into: the LCM, 24.'); }] }
+    ] }
+  ];
+
+  A.register('powers-factors', {
+    lessons: LESSONS,
 
     quiz: [
       { q: 'What is the value of the digit 4 in <span class="math">3 405 216 789</span>?', type: 'mc', options: ['4 000 000', '40 000 000', '400 000 000', '4 000 000 000'], answer: 2,
@@ -434,7 +574,7 @@ A.yt({ q: 'What is the LCM of 3, 4 and 6?', answer: 12, hint: 'Skip count by the
       } },
       { id: 'pf-gcf', name: 'Greatest common factor', code: 'B2.6', gen: function (lv) {
         var g = lv === 1 ? R.int(2, 6) : R.int(2, 12), m, n, lim = lv === 1 ? 40 : 144;
-        do { m = R.int(1, 12); n = R.int(2, 12); } while (m === n || gcd(m, n) !== 1 || g * m > lim || g * n > lim);
+        do { m = R.int(1, 12); n = R.int(2, 12); } while (m === n || gcd(m, n) !== 1 || g * m > lim || g * n > lim || (lv === 3 && m < 2));
         var a = g * m, b = g * n, G = gcd(a, b);
         var steps = ['Factors of ' + a + ': ' + factors(a).join(', ') + '.', 'Factors of ' + b + ': ' + factors(b).join(', ') + '.', 'The biggest number in both lists is ' + G + '.'];
         if (lv === 3) {

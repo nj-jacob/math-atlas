@@ -98,96 +98,229 @@
   var MRULE = { rx: '(x, y) &rarr; (x, &minus;y)', ry: '(x, y) &rarr; (&minus;x, y)', r90cw: '(x, y) &rarr; (y, &minus;x)', r90ccw: '(x, y) &rarr; (&minus;y, x)', r180: '(x, y) &rarr; (&minus;x, &minus;y)' };
   var TRI = [[1, 1], [4, 1], [1, 3]];
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    slk: { title: 'explore a solid', html:
+      '<div class="ctrl"><label for="slk">Solid<select id="slk">' + Object.keys(SOLIDS).map(function (k) { return '<option value="' + k + '"' + (k === 'sqpyr' ? ' selected' : '') + '>' + SOLIDS[k].name + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="row2"><div class="fig" id="slfig"></div><div class="out" id="slout"></div></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['slk'], function () {
+          var k = $('#slk', root).value, S = SOLIDS[k];
+          $('#slfig', root).innerHTML = solid(k);
+          $('#slout', root).innerHTML = '<div class="tbl"><table><tbody><tr><td class="l">Base</td><td class="l">' + S.base + '</td></tr><tr><td class="l">Faces</td><td class="l">' + S.F + '</td></tr><tr><td class="l">Edges</td><td class="l">' + S.E + '</td></tr><tr><td class="l">Vertices (corners)</td><td class="l">' + S.V + '</td></tr>' +
+            '<tr><td class="l">Planes of symmetry</td><td class="l">' + S.planes + '</td></tr><tr><td class="l">Rotational symmetry</td><td class="l">' + S.rot + '</td></tr></tbody></table></div>' +
+            (typeof S.F === 'number' ? '<p class="t2">Check: faces + vertices &minus; edges = ' + S.F + ' + ' + S.V + ' &minus; ' + S.E + ' = 2. This works for every prism and pyramid.</p>' : '');
+        });
+      } },
+    vbgrid: { title: 'build with cubes', html:
+      '<p class="t2" style="margin:0 0 6px">Each square is a spot on the floor (the back row is at the top). Press a square to add a cube there, up to 3. A fourth press clears it.</p>' +
+      '<div class="vbuild" id="vbgrid"></div>' +
+      '<div class="row2"><div class="fig" id="vbiso"></div><div class="vrow" id="vbviews"></div></div>',
+      init: function (root) {
+        var $ = A.$;
+        var map = [[1, 2, 3], [0, 1, 2], [1, 0, 1]];
+        function vb() {
+          $('#vbgrid', root).innerHTML = map.map(function (row, r) { return row.map(function (h, c) { return '<button type="button" class="vcell" data-r="' + r + '" data-c="' + c + '" aria-label="Row ' + (r + 1) + ' from the back, column ' + (c + 1) + ': ' + h + ' cubes">' + h + '</button>'; }).join(''); }).join('');
+          A.$$('.vcell', root).forEach(function (b) { b.addEventListener('click', function () { var r = +b.getAttribute('data-r'), c = +b.getAttribute('data-c'); map[r][c] = (map[r][c] + 1) % 4; vb(); var nb = A.$('.vcell[data-r="' + r + '"][data-c="' + c + '"]', root); if (nb) nb.focus(); }); });
+          var v = views(map);
+          $('#vbiso', root).innerHTML = iso(map);
+          $('#vbviews', root).innerHTML = '<figure><figcaption>Front view</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side view</figcaption>' + view(v.side, 'Right side view') + '</figure><figure><figcaption>Top view</figcaption>' + topView(map) + '</figure>';
+        }
+        vb();
+      } },
+    mvk: { title: 'move the triangle', html:
+      '<div class="ctrl"><label for="mvk">Move<select id="mvk"><option value="tr">translation</option><option value="rx">reflect in the x-axis</option><option value="ry" selected>reflect in the y-axis</option><option value="r90cw">rotate 90&deg; clockwise</option><option value="r90ccw">rotate 90&deg; counterclockwise</option><option value="r180">rotate 180&deg;</option></select></label>' +
+      '<label for="mva">Slide across: <output id="mvao"></output><input type="range" id="mva" min="-6" max="6" value="2"></label><label for="mvb">Slide up: <output id="mvbo"></output><input type="range" id="mvb" min="-6" max="6" value="-3"></label></div>' +
+      '<div class="row2"><div class="fig" id="mvfig"></div><div class="out" id="mvout"></div></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['mvk', 'mva', 'mvb'], function () {
+          var k = $('#mvk', root).value, a = +$('#mva', root).value, b = +$('#mvb', root).value, img = TRI.map(function (p) { return MOVES[k](p, a, b); });
+          $('#mvao', root).innerHTML = sg(a); $('#mvbo', root).innerHTML = sg(b);
+          $('#mva', root).disabled = $('#mvb', root).disabled = k !== 'tr';
+          $('#mvfig', root).innerHTML = plane([{ pts: TRI, col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: img, col: 'var(--se)', labs: ["A'", "B'", "C'"] }], 8, k === 'rx' || k === 'ry' ? function (X, Y) { return k === 'rx' ? '<line x1="' + X(-8) + '" y1="' + Y(0) + '" x2="' + X(8) + '" y2="' + Y(0) + '" style="stroke:var(--se)" stroke-width="4" opacity=".6"/>' : '<line x1="' + X(0) + '" y1="' + Y(-8) + '" x2="' + X(0) + '" y2="' + Y(8) + '" style="stroke:var(--se)" stroke-width="4" opacity=".6"/>'; } : null);
+          $('#mvout', root).innerHTML = '<p><b>' + (k === 'tr' ? 'Translation ' + (a ? (a > 0 ? 'right ' + a : 'left ' + (-a)) : '') + (a && b ? ', ' : '') + (b ? (b > 0 ? 'up ' + b : 'down ' + (-b)) : '') : MNAME[k].replace(/^./, function (c) { return c.toUpperCase(); })) + '</b></p>' +
+            '<p class="math">Rule: ' + (k === 'tr' ? '(x, y) &rarr; (x ' + (a < 0 ? '&minus; ' + (-a) : '+ ' + a) + ', y ' + (b < 0 ? '&minus; ' + (-b) : '+ ' + b) + ')' : MRULE[k]) + '</p>' +
+            '<div class="tbl"><table><thead><tr><th>Point</th><th>Image</th></tr></thead><tbody>' + TRI.map(function (p, i) { return '<tr><td>' + 'ABC'[i] + pt(p) + '</td><td>' + 'ABC'[i] + "'" + pt(img[i]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
+        });
+      } },
+    dlk: { title: 'change the scale factor', html:
+      '<div class="ctrl"><label for="dlk">Scale factor<select id="dlk"><option>0.5</option><option>1</option><option>1.5</option><option selected>2</option><option>3</option></select></label></div>' +
+      '<div class="row2"><div class="fig" id="dlfig"></div><div class="out" id="dlout"></div></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['dlk'], function () {
+          var k = parseFloat($('#dlk', root).value), base = [[2, 2], [4, 2], [2, 6]], img = base.map(function (p) { return MOVES.dil(p, k); });
+          $('#dlfig', root).innerHTML = plane([{ pts: base, col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: img, col: 'var(--se)', labs: ["A'", "B'", "C'"], dash: k === 1 }], 12, function (X, Y) { return img.map(function (p) { return '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" style="stroke:var(--ink2)" stroke-dasharray="3 4"/>'; }).join(''); });
+          $('#dlout', root).innerHTML = '<p class="big2">Scale factor ' + k + '</p><p>' + (k > 1 ? 'Enlargement.' : k < 1 ? 'Reduction.' : 'Same size: the image sits on top of the original.') + '</p>' +
+            '<div class="tbl"><table><thead><tr><th>Point</th><th>Image</th></tr></thead><tbody>' + base.map(function (p, i) { return '<tr><td>' + 'ABC'[i] + pt(p) + '</td><td>' + 'ABC'[i] + "'" + pt(img[i]) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+            '<p>Side AB = 2 units, so A\'B\' = 2 &times; ' + k + ' = ' + cl(2 * k) + ' units. Side AC = 4 units, so A\'C\' = ' + cl(4 * k) + ' units.</p>';
+        });
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function shape(k) { return '<figure class="k7-solid"><figcaption>' + SOLIDS[k].name + '</figcaption>' + solid(k, 220) + '</figure>'; }
+  function tri(img, labs, extra) { var sh = [{ pts: TRI, col: 'var(--sb)', labs: ['A', 'B', 'C'], name: 'Triangle ABC' }]; if (img) sh.push({ pts: img, col: 'var(--se)', labs: labs || ["A'", "B'", "C'"], name: 'Image' }); return plane(sh, 8, extra); }
+  function axis(k) { return function (X, Y) { return k === 'rx' ? '<line x1="' + X(-8) + '" y1="' + Y(0) + '" x2="' + X(8) + '" y2="' + Y(0) + '" style="stroke:var(--se)" stroke-width="4"/>' : '<line x1="' + X(0) + '" y1="' + Y(-8) + '" x2="' + X(0) + '" y2="' + Y(8) + '" style="stroke:var(--se)" stroke-width="4"/>'; }; }
+  function img(k, a, b) { return TRI.map(function (p) { return MOVES[k](p, a, b); }); }
+  var BLD = [[1, 2, 3], [0, 1, 2], [1, 0, 1]];
+
+  var LESSONS = [
+    { id: 'solids', title: 'Prisms, pyramids and cylinders', sub: 'Name a solid by its base.', concepts: [
+      { id: 'names', title: 'Prism or pyramid?', exp: ['E1.1'], skill: 'sm-solid',
+        body: '<p>A <b>prism</b> has two matching bases joined by rectangles. A <b>pyramid</b> has one base, and triangles that meet at a point. A <b>cylinder</b> has two circle bases and a curved surface. The base gives the name.</p>',
+        watch: K.slides([
+          { say: 'A triangular prism: two triangle bases, joined by rectangles.', fig: function () { return shape('tri'); } },
+          { say: 'Cut it anywhere parallel to the base, and you get the same triangle. Same shape all the way through.', fig: function () { return shape('tri'); } },
+          { say: 'A square-based pyramid: one square base, and 4 triangles that meet at the top.', fig: function () { return shape('sqpyr'); } },
+          { say: 'A cylinder: two circles and one curved surface.', fig: function () { return shape('cyl'); }, ms: 2400 }
+        ]),
+        try: lab('slk', [
+          { do: 'Find the solid with <b>4 faces</b>.', goal: function (h) { return K.v(h, 'slk') === 'tripyr'; }, yes: 'The triangular pyramid: 4 triangles.' },
+          { do: 'Find a solid with <b>12 edges</b>.', goal: function (h) { var k = K.v(h, 'slk'); return k === 'rect' || k === 'cube'; }, yes: 'Rectangular prisms and cubes have 12 edges.' },
+          { do: 'Find the solid with <b>no vertices</b>.', goal: function (h) { return K.v(h, 'slk') === 'cyl'; }, yes: 'A cylinder has no corners.' }
+        ]),
+        key: '<p><b>Prism: two bases, same all the way through. Pyramid: one base, comes to a point.</b></p>',
+        mistake: '<p>Naming a solid by its side faces (calling a triangular prism a "rectangle prism"). The <b>base</b> gives the name.</p>',
+        check: [function () { return { q: 'How many edges does a triangular prism have?', type: 'num', answer: 9, hint: '3 edges on each triangle, plus the edges that join them.', explain: '3 + 3 + 3 = 9 edges.' }; }, K.ck('sm-solid', 1), K.ck('sm-solid', 2)] },
+      { id: 'symmetry', title: 'Symmetry in solids', exp: ['E1.1'], skill: 'sm-solid', hard: true,
+        body: '<p>A <b>plane of symmetry</b> cuts a solid into two mirror halves. A solid has <b>rotational symmetry</b> if a part turn makes it look the same. The <b>order</b> is how many times it looks the same in one full turn.</p>',
+        watch: K.slides([
+          { say: 'A square-based pyramid. Slice it straight down through the top point and the middle of two sides: two mirror halves.', fig: function () { return shape('sqpyr'); } },
+          { say: 'It has 4 planes of symmetry: 2 through the middles of the sides, 2 through the corners.', fig: eq('4 planes of symmetry') },
+          { say: 'Spin it about the line through the top point. Every quarter turn looks the same: order 4.', fig: eq('360&deg; &divide; 90&deg; = 4 &rarr; order 4'), ms: 2800 }
+        ]),
+        ways: [
+          { label: 'Look at the base', html: '<p>For prisms and pyramids, the rotational symmetry about the central axis comes from the base. A square base gives order 4. An equilateral triangle gives order 3.</p>' },
+          { label: 'Use a real object', html: '<p>Turn a box of tissues (a rectangular prism) on the table. It looks the same after a half turn: order 2.</p>' }
+        ],
+        key: '<p><b>Order = how many times it looks the same in one full turn.</b></p>',
+        mistake: '<p>Counting the starting position twice, or saying order 1 means "no symmetry" without explaining that every shape looks the same after a full turn.</p>',
+        check: [function () { return { q: 'What is the order of rotational symmetry of a square-based pyramid, turning about the axis through its top point?', type: 'num', answer: 4, fig: solid('sqpyr'), hint: 'How many times does the square base look the same in one full turn?', explain: 'Every quarter turn: order 4.' }; }, K.ck('sm-solid', 3)] }
+    ] },
+    { id: 'views', title: 'Views of a building', sub: 'Top, front and side.', concepts: [
+      { id: 'views', title: 'Front, side and top views', exp: ['E1.2'], skill: 'sm-view', hard: true,
+        body: '<p>A <b>view</b> is what you see looking straight at one side. You see only the outline, not depth.</p>',
+        watch: K.slides([
+          { say: 'A building made of cubes.', fig: function () { return iso(BLD); } },
+          { say: 'The <b>front view</b>: for each column, the tallest stack, seen from the front.', fig: function () { var v = views(BLD); return iso(BLD) + '<div class="vrow"><figure><figcaption>Front view</figcaption>' + view(v.front, 'Front view') + '</figure></div>'; } },
+          { say: 'The <b>right side view</b>: for each row, the tallest stack, seen from the right.', fig: function () { var v = views(BLD); return '<div class="vrow"><figure><figcaption>Front</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side</figcaption>' + view(v.side, 'Right side view') + '</figure></div>'; } },
+          { say: 'The <b>top view</b>: which floor squares are covered.', fig: function () { var v = views(BLD); return '<div class="vrow"><figure><figcaption>Front</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side</figcaption>' + view(v.side, 'Right side view') + '</figure><figure><figcaption>Top</figcaption>' + topView(BLD) + '</figure></div>'; }, ms: 2600 }
+        ]),
+        try: lab('vbgrid', [
+          { do: 'Make the <b>front view</b> show three columns of height <b>3</b>.', goal: function (h) { var c = h.querySelectorAll('.vcell'), m = [0, 0, 0]; c.forEach(function (b) { var k = +b.getAttribute('data-c'); m[k] = Math.max(m[k], +b.textContent); }); return m.join() === '3,3,3'; }, yes: 'Each column needs at least one stack of 3.' },
+          { do: 'Make the <b>top view</b> show only <b>one</b> square.', goal: function (h) { var n = 0; h.querySelectorAll('.vcell').forEach(function (b) { if (+b.textContent) n++; }); return n === 1; }, yes: 'One stack: the top view is a single square.' }
+        ]),
+        ways: [
+          { label: 'Stand where the viewer stands', html: '<p>Imagine kneeling in front of the building. Each column of the floor is one column in your view. You only see the tallest stack in each column, because it hides the ones behind.</p>' },
+          { label: 'Why you need more than one view', html: '<p>A front view of 2, 3 could come from many buildings: the stacks could be anywhere front to back. The side and top views pin it down.</p>' }
+        ],
+        key: '<p><b>Front: tallest in each column. Side: tallest in each row. Top: covered squares.</b></p>',
+        mistake: '<p>Adding the stacks in a column instead of taking the tallest. A view shows height, not how many cubes.</p>',
+        check: [function () { return mc('Which is the front view of this building?', view([2, 3], 'A'), [view([1, 3], 'B'), view([2, 1], 'C')], 'For each column, take the tallest stack.', 'Left column: 2. Right column: 3.', iso([[2, 1], [1, 3]])); }, K.ck('sm-view', 1), K.ck('sm-view', 2)] }
+    ] },
+    { id: 'plane', title: 'The Cartesian plane', sub: 'Four quadrants and translations.', concepts: [
+      { id: 'coords', title: 'Points in four quadrants', exp: ['E1.4'], skill: 'sm-translate',
+        body: '<p>The <b>Cartesian plane</b> has an <i>x</i>-axis (across) and a <i>y</i>-axis (up and down). They cross at the <b>origin</b>, (0, 0). A point (<i>x</i>, <i>y</i>) means across first, then up or down.</p>',
+        watch: K.slides([
+          { say: 'The axes cross at the origin, (0, 0).', fig: function () { return plane([{ pts: [[0, 0], [0, 0]], col: 'var(--sb)', labs: ['O', ''] }], 8); } },
+          { say: '(3, 2): 3 right, 2 up.', fig: function () { return plane([{ pts: [[3, 2], [3, 2]], col: 'var(--sb)', labs: ['(3, 2)', ''] }], 8); } },
+          { say: '(&minus;4, 5): 4 left, 5 up. Negative <i>x</i> means left.', fig: function () { return plane([{ pts: [[3, 2], [3, 2]], col: 'var(--sb)', labs: ['(3, 2)', ''] }, { pts: [[-4, 5], [-4, 5]], col: 'var(--se)', labs: ['(&minus;4, 5)', ''] }], 8); } },
+          { say: '(3, &minus;2): 3 right, 2 down. The four regions are the four quadrants.', fig: function () { return plane([{ pts: [[3, 2], [3, 2]], col: 'var(--sb)', labs: ['(3, 2)', ''] }, { pts: [[-4, 5], [-4, 5]], col: 'var(--se)', labs: ['(&minus;4, 5)', ''] }, { pts: [[3, -2], [3, -2]], col: 'var(--sd)', labs: ['(3, &minus;2)', ''] }], 8); }, ms: 2600 }
+        ]),
+        key: '<p><b>(<i>x</i>, <i>y</i>): across first, then up or down.</b></p>',
+        mistake: '<p>Swapping the order: (3, &minus;2) plotted as 3 up and 2 left.</p>',
+        check: [function () { return mc('Which point is 5 left and 2 up from the origin?', '(&minus;5, 2)', ['(5, &minus;2)', '(2, &minus;5)', '(&minus;2, 5)'], 'Across first: left is negative.', '(&minus;5, 2).'); }, function () { return mc('In which quadrant are both coordinates negative?', 'Bottom left', ['Top left', 'Top right', 'Bottom right'], 'Negative <i>x</i> is left, negative <i>y</i> is down.', 'Left and down: bottom left.'); }] },
+      { id: 'translate', title: 'Translations', exp: ['E1.4'], skill: 'sm-translate',
+        body: '<p>A <b>translation</b> slides every point the same distance in the same direction. "Right 3, down 5" adds 3 to every <i>x</i> and subtracts 5 from every <i>y</i>.</p>',
+        watch: K.slides([
+          { say: 'Triangle ABC.', fig: function () { return tri(); } },
+          { say: 'Slide it right 3 and down 5.', fig: function () { return tri(img('tr', 3, -5)); } },
+          { say: 'A(1, 1) goes to A\'(4, &minus;4). Every point moves the same way.', fig: eq('(1, 1) &rarr; (1 + 3, 1 &minus; 5) = (4, &minus;4)') },
+          { say: 'Same size, same shape, facing the same way.', fig: function () { return tri(img('tr', 3, -5)); }, ms: 2400 }
+        ]),
+        try: lab('mvk', [
+          { do: 'Choose <b>translation</b> and move A to <b>(4, &minus;4)</b>.', goal: function (h) { return K.v(h, 'mvk') === 'tr' && K.v(h, 'mva') === 3 && K.v(h, 'mvb') === -5; }, yes: 'Right 3, down 5.' },
+          { do: 'Slide the triangle so A lands on <b>(&minus;3, 4)</b>.', goal: function (h) { return K.v(h, 'mvk') === 'tr' && K.v(h, 'mva') === -4 && K.v(h, 'mvb') === 3; }, yes: 'Left 4, up 3.' }
+        ]),
+        key: '<p><b>Right/left changes <i>x</i>. Up/down changes <i>y</i>.</b></p>',
+        mistake: '<p>Changing the wrong coordinate for up/down, or moving only one vertex.</p>',
+        check: [function () { return mc('Point P(&minus;2, 5) is translated left 4 and down 6. Where does it land?', '(&minus;6, &minus;1)', ['(2, &minus;1)', '(&minus;6, 11)', '(4, &minus;1)'], 'Left changes <i>x</i>, down changes <i>y</i>.', '&minus;2 &minus; 4 = &minus;6 and 5 &minus; 6 = &minus;1.'); }, K.ck('sm-translate', 1), K.ck('sm-translate', 2)] }
+    ] },
+    { id: 'moves', title: 'Reflections and rotations', sub: 'Flip and turn.', concepts: [
+      { id: 'reflect', title: 'Reflections', exp: ['E1.4'], skill: 'sm-reflect',
+        body: '<p>A <b>reflection</b> flips a shape over a line, like a mirror. Each point is the same distance from the line, on the other side.</p>',
+        watch: K.slides([
+          { say: 'Reflect triangle ABC in the <i>y</i>-axis.', fig: function () { return tri(null, null, axis('ry')); } },
+          { say: 'Each point jumps to the other side, the same distance away.', fig: function () { return tri(img('ry'), null, axis('ry')); } },
+          { say: 'The rule: (x, y) &rarr; (&minus;x, y). Only the sign of <i>x</i> changes.', fig: eq('(1, 1) &rarr; (&minus;1, 1) &nbsp; (4, 1) &rarr; (&minus;4, 1)') },
+          { say: 'In the <i>x</i>-axis: (x, y) &rarr; (x, &minus;y). The shape flips up and down.', fig: function () { return tri(img('rx'), null, axis('rx')); }, ms: 2600 }
+        ]),
+        try: lab('mvk', [
+          { do: 'Reflect the triangle so it lands <b>below</b> the <i>x</i>-axis.', goal: function (h) { return K.v(h, 'mvk') === 'rx'; }, yes: 'Reflect in the x-axis: (x, y) → (x, −y).' },
+          { do: 'Reflect it so it lands <b>to the left</b>.', goal: function (h) { return K.v(h, 'mvk') === 'ry'; }, yes: 'Reflect in the y-axis: (x, y) → (−x, y).' }
+        ]),
+        key: '<p><b>In the <i>x</i>-axis: change the sign of <i>y</i>. In the <i>y</i>-axis: change the sign of <i>x</i>.</b></p>',
+        mistake: '<p>Mixing up the two axes. Reflecting in the <i>x</i>-axis flips up and down, because the <i>x</i>-axis is the horizontal mirror.</p>',
+        check: [function () { return mc('Point (4, 3) is reflected in the <i>x</i>-axis. What is the image?', '(4, &minus;3)', ['(&minus;4, 3)', '(&minus;4, &minus;3)', '(3, 4)'], 'The <i>x</i>-axis is a horizontal mirror.', '(x, y) &rarr; (x, &minus;y).'); }, K.ck('sm-reflect', 1), K.ck('sm-reflect', 2)] },
+      { id: 'rotate', title: 'Rotations about the origin', exp: ['E1.4'], skill: 'sm-rotate', hard: true,
+        body: '<p>A <b>rotation</b> turns a shape around a point. The image is the same size and shape, but faces a different way.</p>',
+        watch: K.slides([
+          { say: 'Rotate triangle ABC 180&deg; about the origin.', fig: function () { return tri(); } },
+          { say: 'A half turn: it lands in the opposite quadrant. Both signs change.', fig: function () { return tri(img('r180')); } },
+          { say: '90&deg; clockwise: a quarter turn, like a clock hand. (x, y) &rarr; (y, &minus;x).', fig: function () { return tri(img('r90cw')); } },
+          { say: 'A(1, 1) &rarr; (1, &minus;1). B(4, 1) &rarr; (1, &minus;4).', fig: eq('(4, 1) &rarr; (1, &minus;4)'), ms: 2600 }
+        ]),
+        try: lab('mvk', [
+          { do: 'Rotate the triangle into the <b>opposite quadrant</b>.', goal: function (h) { return K.v(h, 'mvk') === 'r180'; }, yes: '180°: (x, y) → (−x, −y).' },
+          { do: 'Rotate it so B lands on <b>(&minus;1, 4)</b>.', goal: function (h) { return K.v(h, 'mvk') === 'r90ccw'; }, yes: '90° counterclockwise: (x, y) → (−y, x).' }
+        ]),
+        ways: [
+          { label: 'Turn the page', html: '<p>Draw the shape on tracing paper with the axes. Put a pencil on the origin and turn the paper a quarter turn. Read the new coordinates.</p>' },
+          { label: 'Follow one point', html: '<p>(4, 1) is 4 right, 1 up. A quarter turn clockwise turns "right" into "down" and "up" into "right": 1 right, 4 down, (1, &minus;4).</p>' },
+          { label: 'Rules to check with', html: '<p>90&deg; clockwise: (x, y) &rarr; (y, &minus;x).<br>90&deg; counterclockwise: (x, y) &rarr; (&minus;y, x).<br>180&deg;: (x, y) &rarr; (&minus;x, &minus;y).</p>' }
+        ],
+        key: '<p><b>180&deg;: change both signs. 90&deg;: swap the numbers and change one sign.</b> Check with a picture.</p>',
+        mistake: '<p>Swapping coordinates but forgetting the sign change, or turning the wrong way. Have the student trace and turn.</p>',
+        check: [function () { return mc('Point Q(3, &minus;2) is rotated 180&deg; about the origin. Where does it land?', '(&minus;3, 2)', ['(3, 2)', '(&minus;2, 3)', '(&minus;3, &minus;2)'], 'Change the sign of both coordinates.', '(3, &minus;2) &rarr; (&minus;3, 2).'); }, K.ck('sm-rotate', 1), K.ck('sm-rotate', 2)] }
+    ] },
+    { id: 'dilate', title: 'Dilations', sub: 'Bigger or smaller, same shape.', concepts: [
+      { id: 'scale', title: 'Scale factor', exp: ['E1.3'], skill: 'sm-dilate',
+        body: '<p>A <b>dilation</b> makes a shape bigger or smaller from a centre point. With the centre at the origin, <b>multiply both coordinates by the scale factor</b>.</p>',
+        watch: K.slides([
+          { say: 'Triangle ABC: A(1, 1), B(3, 1), C(1, 2).', fig: function () { return plane([{ pts: [[1, 1], [3, 1], [1, 2]], col: 'var(--sb)', labs: ['A', 'B', 'C'] }], 10); } },
+          { say: 'Scale factor 3: multiply every coordinate by 3. B(3, 1) &rarr; B\'(9, 3).', fig: function () { return plane([{ pts: [[1, 1], [3, 1], [1, 2]], col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: [[3, 3], [9, 3], [3, 6]], col: 'var(--se)', labs: ["A'", "B'", "C'"] }], 10); } },
+          { say: 'Lines from the origin pass through each point and its image.', fig: function () { return plane([{ pts: [[1, 1], [3, 1], [1, 2]], col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: [[3, 3], [9, 3], [3, 6]], col: 'var(--se)', labs: ["A'", "B'", "C'"] }], 10, function (X, Y) { return [[3, 3], [9, 3], [3, 6]].map(function (p) { return '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" style="stroke:var(--ink2)" stroke-dasharray="4 4"/>'; }).join(''); }); } },
+          { say: 'Side AB was 2 units. A\'B\' is 6 units: 3 times as long.', fig: eq('AB = 2 &nbsp; A\'B\' = 2 &times; 3 = 6'), ms: 2600 }
+        ]),
+        try: lab('dlk', [
+          { do: 'Make the triangle <b>twice as big</b>.', goal: function (h) { return K.v(h, 'dlk') === 2; }, yes: 'Scale factor 2: every length doubles.' },
+          { do: 'Make it <b>smaller</b>.', goal: function (h) { return K.v(h, 'dlk') < 1; }, yes: 'A scale factor between 0 and 1 shrinks the shape.' }
+        ]),
+        key: '<p><b>Multiply both coordinates (and every length) by the scale factor.</b> Bigger than 1 enlarges; between 0 and 1 shrinks.</p>',
+        mistake: '<p>Adding the scale factor instead of multiplying: (3, 1) with factor 3 written as (6, 4).</p>',
+        check: [function () { return mc('A triangle with vertex (6, 4) is dilated by a scale factor of 0.5 about the origin. Where does that vertex go?', '(3, 2)', ['(12, 8)', '(5.5, 3.5)', '(6, 2)'], 'Multiply both coordinates by 0.5.', '(3, 2).'); }, K.ck('sm-dilate', 1), K.ck('sm-dilate', 2)] },
+      { id: 'similar', title: 'Similar shapes', exp: ['E1.3'], skill: 'sm-dilate',
+        body: '<p>A dilated image is <b>similar</b> to the original: same shape, same angles, and every side in the same ratio.</p>',
+        watch: K.slides([
+          { say: 'A 4 cm by 6 cm rectangle, scale factor 2.5.', fig: eq('4 &times; 2.5 = 10 &nbsp;&nbsp; 6 &times; 2.5 = 15') },
+          { say: 'The image is 10 cm by 15 cm. Each side is 2.5 times as long.', fig: eq('10 : 4 = 15 : 6 = 2.5') },
+          { say: 'The angles are still right angles. Same shape, different size: similar.', fig: eq('similar: same angles, sides in the same ratio'), ms: 2400 }
+        ]),
+        key: '<p><b>Similar: same angles, all sides multiplied by the same scale factor.</b></p>',
+        mistake: '<p>Calling any two rectangles similar. A 2 by 3 and a 4 by 5 rectangle are not: 4 &divide; 2 = 2 but 5 &divide; 3 is not 2.</p>',
+        check: [function () { return { q: 'A rectangle 4 cm by 6 cm is dilated by a scale factor of 2.5. How long is the longer side of the image?', type: 'num', answer: 15, unit: 'cm', hint: 'Multiply 6 by 2.5.', explain: '6 &times; 2.5 = 15 cm.' }; }, K.ck('sm-dilate', 3)] }
+    ] }
+  ];
+
+
   A.register('shapes-moves', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Prisms, pyramids and cylinders</h2>' +
-'<p>A <b>prism</b> has two matching bases joined by rectangles. A <b>pyramid</b> has one base, and triangles that meet at a point. A <b>cylinder</b> has two circle bases joined by a curved surface. The base gives the name.</p>' +
-'<div class="vrow">' + ['tri', 'rect', 'sqpyr', 'tripyr', 'cyl'].map(function (k) { return '<figure><figcaption>' + SOLIDS[k].name + '</figcaption>' + solid(k, 180).replace('width="180"', 'width="150"') + '</figure>'; }).join('') + '</div>' +
-'<div class="vs"><div><b class="t">Prism</b><p>Same shape all the way through. Cut it anywhere parallel to the base and you get the base again.</p></div><div><b class="t">Pyramid</b><p>Gets smaller toward the top. All the side faces are triangles.</p></div></div>' +
-'<p>A <b>plane of symmetry</b> cuts a solid into two mirror halves. A solid has <b>rotational symmetry</b> if you can turn it part of the way around and it looks the same. The <b>order</b> is how many times it looks the same in one full turn.</p>' +
-'<div class="lab"><span class="lt">Try it: explore a solid</span>' +
-'<div class="ctrl"><label for="slk">Solid<select id="slk">' + Object.keys(SOLIDS).map(function (k) { return '<option value="' + k + '"' + (k === 'sqpyr' ? ' selected' : '') + '>' + SOLIDS[k].name + '</option>'; }).join('') + '</select></label></div>' +
-'<div class="row2"><div class="fig" id="slfig"></div><div class="out" id="slout"></div></div></div>' +
-A.yt({ q: 'How many edges does a triangular prism have?', answer: 9, hint: '3 edges on each triangle, plus the edges that join them.', explain: '3 + 3 on the two triangles, plus 3 joining them: 9 edges.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Top, front and side views</h2>' +
-'<p>Architects draw a building from different directions. A <b>view</b> is what you see looking straight at one side. You only see the outline, not depth.</p>' +
-'<div class="lab"><span class="lt">Try it: build with cubes</span>' +
-'<p class="t2" style="margin:0 0 6px">Each square is a spot on the floor (the back row is at the top). Press a square to add a cube there, up to 3. A fourth press clears it.</p>' +
-'<div class="vbuild" id="vbgrid"></div>' +
-'<div class="row2"><div class="fig" id="vbiso"></div><div class="vrow" id="vbviews"></div></div></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>The <b>front view</b> shows the tallest stack in each column, seen from the front. The <b>right side view</b> shows the tallest stack in each row, seen from the right. The <b>top view</b> shows which floor squares are covered.</p></div>' +
-'<div class="key"><b class="t">Key idea</b><p>A view loses one direction. Many different buildings can have the same front view, so you need two or three views to know the shape.</p></div>' +
-A.yt({ q: 'A building has 2 rows. The back row has stacks of 1, 1, 3. The front row has stacks of 2, 1, 0. How tall is the tallest column in the front view, and which column is it? (Type its height.)', answer: 3, hint: 'In each column, take the taller of the two stacks.', explain: 'Columns: max(1, 2) = 2, max(1, 1) = 1, max(3, 0) = 3. The front view is 2, 1, 3, so the tallest is 3, on the right.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>The Cartesian plane and translations</h2>' +
-'<p>The <b>Cartesian plane</b> has an <i>x</i>-axis (across) and a <i>y</i>-axis (up and down). They cross at the <b>origin</b>, (0, 0). Negative numbers let us use all four <b>quadrants</b>. A point is written (<i>x</i>, <i>y</i>): across first, then up or down.</p>' +
-'<p>A <b>translation</b> slides every point the same distance in the same direction. "Right 3, down 5" adds 3 to every <i>x</i> and subtracts 5 from every <i>y</i>.</p>' +
-'<div class="fig">' + plane([{ pts: TRI, col: 'var(--sb)', labs: ['A', 'B', 'C'], name: 'Triangle ABC' }, { pts: TRI.map(function (p) { return MOVES.tr(p, 3, -5); }), col: 'var(--se)', labs: ["A'", "B'", "C'"], name: "Image A'B'C'" }], 8) + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p>A(1, 1) moves right 3 and down 5 to A\'(4, &minus;4). The image is the same size and shape, and faces the same way.</p></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Mixing up the order. (3, &minus;2) means 3 across and 2 down, not 3 up and 2 across.</p></div>' +
-A.yt({ q: 'Point P(&minus;2, 5) is translated left 4 and down 6. Where does it land?', type: 'mc', options: ['(&minus;6, &minus;1)', '(2, &minus;1)', '(&minus;6, 11)', '(4, &minus;1)'], answer: 0, hint: 'Left changes <i>x</i>, down changes <i>y</i>.', explain: '&minus;2 &minus; 4 = &minus;6 and 5 &minus; 6 = &minus;1, so (&minus;6, &minus;1).' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Reflections and rotations</h2>' +
-'<p>A <b>reflection</b> flips a shape over a line, like a mirror. A <b>rotation</b> turns a shape around a point. In both, the image is the same size and shape, but it may face a different way.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Move</th><th>Rule</th></tr></thead><tbody>' + Object.keys(MNAME).map(function (k) { return '<tr><td class="l">' + MNAME[k].replace(/^./, function (c) { return c.toUpperCase(); }) + '</td><td class="math">' + MRULE[k] + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-'<div class="lab"><span class="lt">Try it: move the triangle</span>' +
-'<div class="ctrl"><label for="mvk">Move<select id="mvk"><option value="tr">translation</option><option value="rx">reflect in the x-axis</option><option value="ry" selected>reflect in the y-axis</option><option value="r90cw">rotate 90&deg; clockwise</option><option value="r90ccw">rotate 90&deg; counterclockwise</option><option value="r180">rotate 180&deg;</option></select></label>' +
-'<label for="mva">Slide across: <output id="mvao"></output><input type="range" id="mva" min="-6" max="6" value="2"></label><label for="mvb">Slide up: <output id="mvbo"></output><input type="range" id="mvb" min="-6" max="6" value="-3"></label></div>' +
-'<div class="row2"><div class="fig" id="mvfig"></div><div class="out" id="mvout"></div></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Predict before you move. A reflection in the <i>y</i>-axis changes the sign of <i>x</i>, so the shape jumps to the other side, left or right. A 180&deg; rotation changes both signs, so the shape lands in the opposite quadrant.</p></div>' +
-A.yt({ q: 'Point Q(3, &minus;2) is rotated 180&deg; about the origin. Where does it land?', type: 'mc', options: ['(&minus;3, 2)', '(3, 2)', '(&minus;2, 3)', '(&minus;3, &minus;2)'], answer: 0, hint: 'A 180&deg; rotation changes the sign of both coordinates.', explain: '(3, &minus;2) &rarr; (&minus;3, 2).' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Dilations and similar shapes</h2>' +
-'<p>A <b>dilation</b> makes a shape bigger or smaller from a centre point. Every length is multiplied by the <b>scale factor</b>. With the centre at the origin, multiply both coordinates by the scale factor.</p>' +
-'<div class="fig">' + plane([{ pts: [[1, 1], [3, 1], [1, 2]], col: 'var(--sb)', labs: ['A', 'B', 'C'], name: 'Triangle ABC' }, { pts: [[3, 3], [9, 3], [3, 6]], col: 'var(--se)', labs: ["A'", "B'", "C'"], name: "Image with scale factor 3" }], 10, function (X, Y) { return [[3, 3], [9, 3], [3, 6]].map(function (p) { return '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" style="stroke:var(--ink2)" stroke-dasharray="3 4"/>'; }).join(''); }) + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Scale factor 3, centre (0, 0). B(3, 1) &rarr; B\'(9, 3). Side AB was 2 units, and A\'B\' is 6 units: 3 times as long. The dashed lines from the origin pass through each point and its image.</p></div>' +
-'<p>The image is <b>similar</b> to the original: same shape, same angles, and every side in the same ratio. A scale factor greater than 1 enlarges. Between 0 and 1, it shrinks.</p>' +
-'<div class="lab"><span class="lt">Try it: change the scale factor</span>' +
-'<div class="ctrl"><label for="dlk">Scale factor<select id="dlk"><option>0.5</option><option>1</option><option>1.5</option><option selected>2</option><option>3</option></select></label></div>' +
-'<div class="row2"><div class="fig" id="dlfig"></div><div class="out" id="dlout"></div></div></div>' +
-A.yt({ q: 'A rectangle 4 cm by 6 cm is dilated by a scale factor of 2.5. How long is the longer side of the image?', answer: 15, unit: 'cm', hint: 'Multiply the 6 cm side by 2.5.', explain: '6 &times; 2.5 = 15 cm. (The other side is 4 &times; 2.5 = 10 cm.)' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['slk'], function () {
-        var k = $('#slk', root).value, S = SOLIDS[k];
-        $('#slfig', root).innerHTML = solid(k);
-        $('#slout', root).innerHTML = '<div class="tbl"><table><tbody><tr><td class="l">Base</td><td class="l">' + S.base + '</td></tr><tr><td class="l">Faces</td><td class="l">' + S.F + '</td></tr><tr><td class="l">Edges</td><td class="l">' + S.E + '</td></tr><tr><td class="l">Vertices (corners)</td><td class="l">' + S.V + '</td></tr>' +
-          '<tr><td class="l">Planes of symmetry</td><td class="l">' + S.planes + '</td></tr><tr><td class="l">Rotational symmetry</td><td class="l">' + S.rot + '</td></tr></tbody></table></div>' +
-          (typeof S.F === 'number' ? '<p class="t2">Check: faces + vertices &minus; edges = ' + S.F + ' + ' + S.V + ' &minus; ' + S.E + ' = 2. This works for every prism and pyramid.</p>' : '');
-      });
-      var map = [[1, 2, 3], [0, 1, 2], [1, 0, 1]];
-      function vb() {
-        $('#vbgrid', root).innerHTML = map.map(function (row, r) { return row.map(function (h, c) { return '<button type="button" class="vcell" data-r="' + r + '" data-c="' + c + '" aria-label="Row ' + (r + 1) + ' from the back, column ' + (c + 1) + ': ' + h + ' cubes">' + h + '</button>'; }).join(''); }).join('');
-        A.$$('.vcell', root).forEach(function (b) { b.addEventListener('click', function () { var r = +b.getAttribute('data-r'), c = +b.getAttribute('data-c'); map[r][c] = (map[r][c] + 1) % 4; vb(); var nb = A.$('.vcell[data-r="' + r + '"][data-c="' + c + '"]', root); if (nb) nb.focus(); }); });
-        var v = views(map);
-        $('#vbiso', root).innerHTML = iso(map);
-        $('#vbviews', root).innerHTML = '<figure><figcaption>Front view</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side view</figcaption>' + view(v.side, 'Right side view') + '</figure><figure><figcaption>Top view</figcaption>' + topView(map) + '</figure>';
-      }
-      vb();
-      A.bind(root, ['mvk', 'mva', 'mvb'], function () {
-        var k = $('#mvk', root).value, a = +$('#mva', root).value, b = +$('#mvb', root).value, img = TRI.map(function (p) { return MOVES[k](p, a, b); });
-        $('#mvao', root).innerHTML = sg(a); $('#mvbo', root).innerHTML = sg(b);
-        $('#mva', root).disabled = $('#mvb', root).disabled = k !== 'tr';
-        $('#mvfig', root).innerHTML = plane([{ pts: TRI, col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: img, col: 'var(--se)', labs: ["A'", "B'", "C'"] }], 8, k === 'rx' || k === 'ry' ? function (X, Y) { return k === 'rx' ? '<line x1="' + X(-8) + '" y1="' + Y(0) + '" x2="' + X(8) + '" y2="' + Y(0) + '" style="stroke:var(--se)" stroke-width="4" opacity=".6"/>' : '<line x1="' + X(0) + '" y1="' + Y(-8) + '" x2="' + X(0) + '" y2="' + Y(8) + '" style="stroke:var(--se)" stroke-width="4" opacity=".6"/>'; } : null);
-        $('#mvout', root).innerHTML = '<p><b>' + (k === 'tr' ? 'Translation ' + (a ? (a > 0 ? 'right ' + a : 'left ' + (-a)) : '') + (a && b ? ', ' : '') + (b ? (b > 0 ? 'up ' + b : 'down ' + (-b)) : '') : MNAME[k].replace(/^./, function (c) { return c.toUpperCase(); })) + '</b></p>' +
-          '<p class="math">Rule: ' + (k === 'tr' ? '(x, y) &rarr; (x ' + (a < 0 ? '&minus; ' + (-a) : '+ ' + a) + ', y ' + (b < 0 ? '&minus; ' + (-b) : '+ ' + b) + ')' : MRULE[k]) + '</p>' +
-          '<div class="tbl"><table><thead><tr><th>Point</th><th>Image</th></tr></thead><tbody>' + TRI.map(function (p, i) { return '<tr><td>' + 'ABC'[i] + pt(p) + '</td><td>' + 'ABC'[i] + "'" + pt(img[i]) + '</td></tr>'; }).join('') + '</tbody></table></div>';
-      });
-      A.bind(root, ['dlk'], function () {
-        var k = parseFloat($('#dlk', root).value), base = [[2, 2], [4, 2], [2, 6]], img = base.map(function (p) { return MOVES.dil(p, k); });
-        $('#dlfig', root).innerHTML = plane([{ pts: base, col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: img, col: 'var(--se)', labs: ["A'", "B'", "C'"], dash: k === 1 }], 12, function (X, Y) { return img.map(function (p) { return '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" style="stroke:var(--ink2)" stroke-dasharray="3 4"/>'; }).join(''); });
-        $('#dlout', root).innerHTML = '<p class="big2">Scale factor ' + k + '</p><p>' + (k > 1 ? 'Enlargement.' : k < 1 ? 'Reduction.' : 'Same size: the image sits on top of the original.') + '</p>' +
-          '<div class="tbl"><table><thead><tr><th>Point</th><th>Image</th></tr></thead><tbody>' + base.map(function (p, i) { return '<tr><td>' + 'ABC'[i] + pt(p) + '</td><td>' + 'ABC'[i] + "'" + pt(img[i]) + '</td></tr>'; }).join('') + '</tbody></table></div>' +
-          '<p>Side AB = 2 units, so A\'B\' = 2 &times; ' + k + ' = ' + cl(2 * k) + ' units. Side AC = 4 units, so A\'C\' = ' + cl(4 * k) + ' units.</p>';
-      });
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'Which solid has 5 faces, 8 edges and 5 vertices?', type: 'mc', options: ['Triangular prism', 'Square-based pyramid', 'Cube', 'Triangular pyramid'], answer: 1, hint: 'Count the base plus the triangles.', explain: 'A square-based pyramid: 1 square + 4 triangles = 5 faces, 4 + 4 = 8 edges, 4 corners + 1 top = 5 vertices.' },

@@ -71,108 +71,261 @@
     return A.svg(W, H + 40, s, 'Pattern: ' + terms.join(', '));
   }
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    tho: { title: 'move the temperature', html: 
+      '<div class="ctrl"><label for="thr">Temperature: <output id="tho"></output><input type="range" id="thr" min="-30" max="30" value="-8"></label></div>' +
+      '<div class="row2"><div class="fig" id="thfig"></div><div class="out" id="thout"></div></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['thr'], function () {
+          var t = +$('#thr', root).value;
+          $('#tho', root).innerHTML = sg(t) + '&deg;C';
+          $('#thfig', root).innerHTML = thermo(t, -t !== t ? -t : undefined);
+          $('#thout', root).innerHTML = '<p class="big2">' + sg(t) + '&deg;C</p><p>' + (t < 0 ? (-t) + ' degrees <b>below</b> zero.' : t > 0 ? t + ' degrees <b>above</b> zero.' : 'Water freezes at 0&deg;C.') + '</p>' +
+            (t ? '<p>Its opposite is <b>' + sg(-t) + '&deg;C</b> (the yellow dot). ' + sg(t) + ' + ' + sgp(-t) + ' = 0.</p>' : '');
+        });
+      } },
+    ordn: { title: 'put numbers in order', html: 
+      '<div class="ctrl"><label for="ordn">Type numbers separated by commas<input type="text" id="ordn" value="-2.5, 1/2, -3/4, 1.2, -1" style="width:16em"></label></div>' +
+      '<div class="fig" id="ordfig"></div><div class="out" id="ordout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['ordn'], function () {
+          var raw = $('#ordn', root).value.split(','), vals = [];
+          raw.forEach(function (r) { r = r.trim(); if (!r) return; var v = A.parseNum(r); if (!isNaN(v) && Math.abs(v) <= 20) vals.push({ v: v, t: r.replace(/^-/, '&minus;').replace(/−/, '&minus;') }); });
+          if (!vals.length) { $('#ordfig', root).innerHTML = ''; $('#ordout', root).innerHTML = '<p>Type numbers between &minus;20 and 20.</p>'; return; }
+          vals.sort(function (a, b) { return a.v - b.v; });
+          var lo = Math.min(-1, Math.floor(vals[0].v) - 1), hi = Math.max(1, Math.ceil(vals[vals.length - 1].v) + 1);
+          var W = 540, sc = function (v) { return 24 + 492 * (v - lo) / (hi - lo); }, s = '';
+          s += '<line x1="24" y1="30" x2="516" y2="30" style="stroke:var(--ink)" stroke-width="2.5"/>';
+          for (var v = lo; v <= hi; v++) if ((hi - lo) <= 20 || v % 2 === 0) s += '<line x1="' + sc(v) + '" y1="22" x2="' + sc(v) + '" y2="38" style="stroke:var(--ink)" stroke-width="' + (v ? 1.5 : 3) + '"/><text x="' + sc(v) + '" y="58" text-anchor="middle" font-size="15">' + sg(v) + '</text>';
+          vals.forEach(function (o, i) { s += '<circle cx="' + sc(o.v) + '" cy="30" r="7" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="' + sc(o.v) + '" y="' + (84 + (i % 2) * 22) + '" text-anchor="middle" font-size="17" font-weight="700" style="fill:var(--se)">' + o.t + '</text>'; });
+          $('#ordfig', root).innerHTML = A.svg(W, 114, s, 'Numbers on a line: ' + vals.map(function (o) { return o.t; }).join(', '));
+          $('#ordout', root).innerHTML = '<p><b>Least to greatest:</b> ' + vals.map(function (o) { return o.t; }).join(', ') + '</p>';
+        });
+      } },
+    chao: { title: 'add with chips', html: 
+      '<div class="ctrl"><label for="cha">First: <output id="chao"></output><input type="range" id="cha" min="-10" max="10" value="-6"></label><label for="chb">Second: <output id="chbo"></output><input type="range" id="chb" min="-10" max="10" value="4"></label></div>' +
+      '<div class="fig" id="chfig"></div><div class="out" id="chout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['cha', 'chb'], function () {
+          var a = +$('#cha', root).value, b = +$('#chb', root).value, s = a + b;
+          $('#chao', root).innerHTML = sg(a); $('#chbo', root).innerHTML = sg(b);
+          $('#chfig', root).innerHTML = chips(a, b);
+          $('#chout', root).innerHTML = '<p class="big2">' + sg(a) + ' + ' + sgp(b) + ' = ' + sg(s) + '</p><p>' + (s === 0 ? 'Every chip is in a zero pair. Nothing is left.' : 'After removing zero pairs, ' + Math.abs(s) + ' ' + (s > 0 ? 'yellow' : 'red') + ' chip' + (Math.abs(s) > 1 ? 's are' : ' is') + ' left.') + '</p>';
+        });
+      } },
+    sbao: { title: 'move along the line', html: 
+      '<div class="ctrl"><label for="sba">Start: <output id="sbao"></output><input type="range" id="sba" min="-10" max="10" value="-2"></label><label for="sbop">Operation<select id="sbop"><option value="1">add (+)</option><option value="-1" selected>subtract (&minus;)</option></select></label>' +
+      '<label for="sbb">Number: <output id="sbbo"></output><input type="range" id="sbb" min="-10" max="10" value="-6"></label></div>' +
+      '<div class="fig" id="sbfig"></div><div class="out" id="sbout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['sba', 'sbop', 'sbb'], function () {
+          var a = +$('#sba', root).value, op = +$('#sbop', root).value, b = +$('#sbb', root).value, mv = op * b, res = a + mv;
+          $('#sbao', root).innerHTML = sg(a); $('#sbbo', root).innerHTML = sg(b);
+          $('#sbfig', root).innerHTML = iline(-20, 20, [{ v: a, col: 'var(--hi)' }, { v: res, lab: sg(res), col: 'var(--se)' }], mv ? [{ from: a, to: res, col: mv > 0 ? 'var(--sd)' : 'var(--sc)', id: 'ia2', lab: (mv > 0 ? 'right ' : 'left ') + Math.abs(mv) }] : []);
+          $('#sbout', root).innerHTML = '<p class="big2">' + sg(a) + (op > 0 ? ' + ' : ' &minus; ') + sgp(b) + (op < 0 ? ' = ' + sg(a) + ' + ' + sgp(-b) : '') + ' = ' + sg(res) + '</p>' +
+            '<p>' + (mv === 0 ? 'Adding or subtracting 0 does not move you.' : (op < 0 ? 'Subtracting ' + sg(b) + ' is the same as adding ' + sg(-b) + '. ' : '') + 'Move ' + Math.abs(mv) + ' to the ' + (mv > 0 ? 'right' : 'left') + '.') + '</p>';
+        });
+      } },
+    ptao: { title: 'build a pattern', html: 
+      '<div class="ctrl"><label for="pta">Start: <output id="ptao"></output><input type="range" id="pta" min="-10" max="10" value="5"></label><label for="ptd">Add each time: <output id="ptdo"></output><input type="range" id="ptd" min="-5" max="5" value="-2"></label></div>' +
+      '<div class="fig" id="ptfig"></div><div class="out" id="ptout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['pta', 'ptd'], function () {
+          var a = +$('#pta', root).value, d = +$('#ptd', root).value, t = [];
+          $('#ptao', root).innerHTML = sg(a); $('#ptdo', root).innerHTML = sg(d);
+          for (var i = 0; i < 7; i++) t.push(a + i * d);
+          $('#ptfig', root).innerHTML = patt(t);
+          $('#ptout', root).innerHTML = '<p><b>Terms:</b> ' + t.map(sg).join(', ') + ', ...</p><p><b>Rule:</b> start at ' + sg(a) + ' and add ' + sgp(d) + ' each time. Term 10 is ' + sg(a) + ' + 9 &times; ' + sgp(d) + ' = ' + sg(a + 9 * d) + '.</p>';
+        });
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function nq(q, a, hint, explain) { return { q: q, type: 'num', answer: a, kb: 'text', hint: hint, explain: explain }; }
+  /* add n tiles of one kind, one after another */
+  function put(t, s, n) { var p = Promise.resolve(); for (var i = 0; i < n; i++) p = p.then(function () { return t.add('one', s); }); return p; }
+
+  var LESSONS = [
+    { id: 'below', title: 'Numbers below zero', sub: 'Integers and their opposites.', concepts: [
+      { id: 'zero', title: 'Below zero', exp: ['B1.2'], skill: 'in-compare',
+        body: '<p><b>Integers</b> are the whole numbers, their opposites, and zero: ..., &minus;3, &minus;2, &minus;1, 0, 1, 2, 3, ... Negative numbers are <b>below zero</b>.</p>',
+        watch: K.slides([
+          { say: 'On a spring day it is 12&deg;C: 12 degrees above zero.', fig: function () { return thermo(12); } },
+          { say: 'Overnight it drops to 0&deg;C, where water freezes.', fig: function () { return thermo(0); } },
+          { say: 'In January in Ottawa it can be &minus;12&deg;C: 12 degrees <b>below</b> zero.', fig: function () { return thermo(-12); } },
+          { say: 'Negative numbers are everywhere: a debt of $20 is &minus;20, and 86 m below sea level is &minus;86 m.', fig: eq('&minus;$20 &nbsp;&nbsp; &minus;86 m &nbsp;&nbsp; &minus;12&deg;C'), ms: 2800 }
+        ]),
+        try: lab('tho', [
+          { do: 'Set the temperature to <b>&minus;20&deg;C</b>.', goal: function (h) { return K.v(h, 'thr') === -20; }, yes: '20 degrees below zero. Its opposite is 20&deg;C.' },
+          { do: 'Find a temperature that is <b>its own opposite</b>.', goal: function (h) { return K.v(h, 'thr') === 0; }, yes: 'Zero is neither positive nor negative. It is its own opposite.' }
+        ]),
+        key: '<p><b>Negative means below zero.</b> The minus sign tells you which side of zero.</p>',
+        mistake: '<p>Reading &minus;12 as "12" and ignoring the sign. Ask: above or below zero?</p>',
+        check: [function () { var t = R.int(3, 25); return mc('Which temperature is ' + t + ' degrees below zero?', '&minus;' + t + '&deg;C', [t + '&deg;C', '&minus;' + (t + 10) + '&deg;C', '0&deg;C'], 'Below zero means negative.', t + ' degrees below zero is &minus;' + t + '&deg;C.'); }, K.ck('in-compare', 1)] },
+      { id: 'opposite', title: 'Opposites', exp: ['B1.2'], skill: 'in-compare',
+        body: '<p>Two numbers the <b>same distance from zero</b>, on opposite sides, are <b>opposites</b>. The opposite of 7 is &minus;7. A number and its opposite add to 0.</p>',
+        watch: { tool: 'numberline', opts: { min: -10, max: 10, start: 0, tap: false }, steps: [
+          { say: 'Start at zero.', act: null, ms: 1000 },
+          { say: 'Hop 7 to the right: 7.', act: function (t) { return t.hop(7, '+7'); }, ms: 900 },
+          { say: 'Back to zero, and hop 7 to the left: &minus;7.', act: function (t) { return t.moveTo(0).then(function () { return t.hop(-7, '−7'); }); }, ms: 900 },
+          { say: '7 and &minus;7 are the same distance from zero. They are opposites.', act: function (t) { return t.mark(7, '7'); }, ms: 2200 }
+        ] },
+        key: '<p><b>Opposites: same distance from zero, other side.</b> 7 + (&minus;7) = 0.</p>',
+        mistake: '<p>Thinking the opposite of &minus;5 is &minus;5 or 0. The opposite flips the side: 5.</p>',
+        check: [function () { return nq('What is the opposite of &minus;15?', 15, 'Same distance from zero, other side.', 'The opposite of &minus;15 is 15.'); }, function () { var n = R.int(2, 40); return nq('What is ' + n + ' + (&minus;' + n + ')?', 0, 'A number and its opposite add to zero.', n + ' and &minus;' + n + ' are opposites, so they add to 0.'); }] }
+    ] },
+    { id: 'compare', title: 'Comparing and ordering', sub: 'Further right is greater.', concepts: [
+      { id: 'right', title: 'Further right is greater', exp: ['B1.3'], skill: 'in-compare', hard: true,
+        body: '<p>On a number line, numbers get <b>bigger to the right</b>. So &minus;8 is <b>less</b> than &minus;3, even though 8 is more than 3.</p>',
+        watch: K.slides([
+          { say: 'Here are &minus;8 and &minus;3 on a number line.', fig: function () { return iline(-10, 5, [{ v: -8, lab: '&minus;8', col: 'var(--sc)' }, { v: -3, lab: '&minus;3', col: 'var(--bad)' }]); } },
+          { say: '&minus;3 is further right, so &minus;3 is greater.', fig: eq('&minus;3 &gt; &minus;8') },
+          { say: 'Think of temperature: &minus;8&deg;C is colder than &minus;3&deg;C.', fig: function () { return thermo(-3, -8); } },
+          { say: 'For negatives, further from zero means <b>smaller</b>.', fig: '<div class="vs"><div><b class="t">Positive</b><p>8 &gt; 3</p></div><div><b class="t">Negative</b><p>&minus;8 &lt; &minus;3</p></div></div>', ms: 2600 }
+        ]),
+        try: { tool: 'numberline', opts: { min: -10, max: 10, start: 0, step: [-1, 1] }, tasks: [
+          { do: 'Move the marker to a number <b>less than &minus;6</b>.', goal: function (s) { return s.at < -6; }, yes: 'Further left is less.' },
+          { do: 'Move to the number that is <b>3 greater</b> than &minus;5.', goal: function (s) { return s.at === -2; }, yes: '−5 + 3 = −2. Greater means move right.' }
+        ] },
+        ways: [
+          { label: 'Temperature', html: '<p>Which is warmer, &minus;8&deg;C or &minus;3&deg;C? &minus;3&deg;C is warmer, so &minus;3 is greater.</p><div class="fig">' + thermo(-3, -8) + '</div>' },
+          { label: 'Money', html: '<p>Owing $8 (&minus;8) is worse than owing $3 (&minus;3). The less you owe, the more you have: &minus;3 &gt; &minus;8.</p>' }
+        ],
+        key: '<p><b>Further right is greater.</b> For negatives, the one closer to zero is greater.</p>',
+        mistake: '<p>Comparing the sizes without the signs: saying &minus;8 &gt; &minus;3 because 8 &gt; 3. Always picture the line.</p>',
+        check: [function () { return mc('The temperature is &minus;6&deg;C. Which temperature is colder?', '&minus;9&deg;C', ['&minus;2&deg;C', '0&deg;C', '3&deg;C'], 'Colder means further below zero.', '&minus;9 is further left on the line than &minus;6.'); }, K.ck('in-compare', 1), K.ck('in-compare', 2)] },
+      { id: 'rational', title: 'Negative fractions and decimals', exp: ['B1.2', 'B1.3'], skill: 'in-compare', hard: true,
+        body: '<p>Fractions and decimals can be negative too. &minus;2.5 is halfway between &minus;3 and &minus;2. All of these are <b>rational numbers</b>.</p>',
+        watch: K.slides([
+          { say: '&minus;2.5 is halfway between &minus;3 and &minus;2.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sc)' }]); } },
+          { say: '&minus;' + fr(3, 4) + ' is between &minus;1 and 0, closer to &minus;1.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sc)' }, { v: -0.75, lab: '&minus;3/4', col: 'var(--sb)' }]); } },
+          { say: 'Order &minus;2, &minus;1.2, &minus;' + fr(1, 2) + ' and 0.4: read them left to right.', fig: function () { return iline(-3, 1, [{ v: -2, lab: '&minus;2' }, { v: -1.2, lab: '&minus;1.2' }, { v: -0.5, lab: '&minus;1/2' }, { v: 0.4, lab: '0.4' }]); }, ms: 2800 }
+        ]),
+        try: lab('ordn', [
+          { do: 'Add <b>&minus;4.5</b> to the list. Where does it go?', goal: function (h) { return /(^|,)\s*[-−]4\.5\s*(,|$)/.test(K.v(h, 'ordn')); }, yes: '−4.5 is the least: furthest left.' },
+          { do: 'Type <b>&minus;4.5</b> and <b>&minus;4.05</b>. Which is greater?', goal: function (h) { var v = K.v(h, 'ordn'); return /(^|,)\s*[-−]4\.5\s*(,|$)/.test(v) && /(^|,)\s*[-−]4\.05\s*(,|$)/.test(v); }, yes: '−4.05 is closer to zero, so it is greater.' }
+        ]),
+        ways: [
+          { label: 'Ignore the sign, then flip', html: '<p>Compare 4.5 and 4.05: 4.5 is bigger. For the negatives, it flips: &minus;4.5 is <b>smaller</b> than &minus;4.05.</p>' },
+          { label: 'Line up the places', html: '<p>Write &minus;4.50 and &minus;4.05. Both are past &minus;4. &minus;4.50 is 0.50 past it; &minus;4.05 is only 0.05 past it, so &minus;4.05 is closer to zero and greater.</p>' }
+        ],
+        key: '<p><b>Place them on the line, then read left to right.</b></p>',
+        mistake: '<p>Thinking &minus;1/2 is less than &minus;1 because 2 is bigger. &minus;1/2 is halfway between &minus;1 and 0.</p>',
+        check: [function () { return mc('Which is greater?', '&minus;4.05', ['&minus;4.5', 'They are equal'], 'Which one is closer to zero?', '&minus;4.05 is closer to zero.'); }, K.ck('in-compare', 3)] }
+    ] },
+    { id: 'add', title: 'Adding integers', sub: 'Zero pairs cancel out.', concepts: [
+      { id: 'pairs', title: 'Zero pairs', exp: ['B2.4'], skill: 'in-add',
+        body: '<p>Use a <b>positive tile</b> for +1 and a <b>negative tile</b> for &minus;1. One of each is a <b>zero pair</b>, because 1 + (&minus;1) = 0. Remove the zero pairs; what is left is the answer.</p>',
+        watch: { tool: 'tiles', opts: { ones: true }, steps: [
+          { say: '5 + (&minus;3). Put out 5 positive tiles.', act: function (t) { return put(t, 1, 5); }, ms: 600 },
+          { say: 'Add 3 negative tiles.', act: function (t) { return put(t, -1, 3); }, ms: 800 },
+          { say: 'Each positive and negative together make zero. Remove the zero pairs.', act: function (t) { return t.zeroPairs(); }, ms: 900 },
+          { say: '2 positive tiles are left: 5 + (&minus;3) = <b>2</b>.', act: null, ms: 2200 }
+        ] },
+        try: { tool: 'tiles', opts: { ones: true }, tasks: [
+          { do: 'Show <b>&minus;6 + 4</b>: 6 negative tiles and 4 positive. Then remove the zero pairs.', goal: function (s) { return s.one === -2 && s.n === 2; }, yes: '4 zero pairs cancel. −2 is left.' },
+          { do: 'Make <b>zero</b> using exactly 10 tiles.', goal: function (s) { return s.one === 0 && s.n === 10; }, yes: '5 zero pairs: 5 + (−5) = 0.' }
+        ] },
+        key: '<p><b>Cancel the zero pairs. What is left is the answer.</b></p>',
+        mistake: '<p>Counting all the tiles (6 + 4 = 10) instead of cancelling. Have the student physically pair and remove them.</p>',
+        check: [function () { return nq('Add: &minus;7 + 3', -4, 'Three zero pairs cancel. What is left?', '3 zero pairs cancel and 4 negatives are left: &minus;4.'); }, K.ck('in-add', 1), K.ck('in-add', 1)] },
+      { id: 'rule', title: 'Same signs, different signs', exp: ['B2.4'], skill: 'in-add', hard: true,
+        body: '<p><b>Same signs:</b> add the sizes and keep the sign. <b>Different signs:</b> subtract the sizes and keep the sign of the bigger size.</p>',
+        watch: K.slides([
+          { say: '&minus;4 + (&minus;3): both negative. No zero pairs.', fig: function () { return chips(-4, -3); } },
+          { say: 'Add the sizes, 4 + 3 = 7, and keep the sign: &minus;7.', fig: eq('&minus;4 + (&minus;3) = &minus;7') },
+          { say: '&minus;6 + 4: different signs. 4 zero pairs cancel.', fig: function () { return chips(-6, 4); } },
+          { say: 'Subtract the sizes, 6 &minus; 4 = 2. The negative was bigger, so &minus;2.', fig: eq('&minus;6 + 4 = &minus;2'), ms: 2600 }
+        ]),
+        try: lab('chao', [
+          { do: 'Show <b>&minus;6 + 4</b>.', goal: function (h) { return K.v(h, 'cha') === -6 && K.v(h, 'chb') === 4; }, yes: 'Different signs: 6 − 4 = 2, and the negative is bigger: −2.' },
+          { do: 'Find two <b>negative</b> numbers that add to <b>&minus;10</b>.', goal: function (h) { var a = K.v(h, 'cha'), b = K.v(h, 'chb'); return a < 0 && b < 0 && a + b === -10; }, yes: 'Same signs: add the sizes, keep the negative sign.' },
+          { do: 'Make the answer <b>positive</b> with one negative number.', goal: function (h) { var a = K.v(h, 'cha'), b = K.v(h, 'chb'); return a * b < 0 && a + b > 0; }, yes: 'The positive size was bigger, so the answer is positive.' }
+        ]),
+        ways: [
+          { label: 'On a number line', html: '<p>Start at &minus;6. Adding 4 moves 4 to the <b>right</b>. You land on &minus;2.</p><div class="fig">' + iline(-8, 2, [{ v: -6, col: 'var(--hi)' }, { v: -2, lab: '&minus;2', col: 'var(--se)' }], [{ from: -6, to: -2, col: 'var(--sd)', id: 'inw1', lab: '+ 4' }]) + '</div>' },
+          { label: 'Money', html: '<p>You owe $6 (&minus;6) and earn $4 (+4). After paying, you still owe $2: &minus;2.</p>' },
+          { label: 'Tug of war', html: '<p>6 pull left, 4 pull right. The left side wins by 2: &minus;2.</p>' }
+        ],
+        key: '<p><b>Same signs: add, keep the sign. Different signs: subtract, keep the sign of the bigger size.</b></p>',
+        mistake: '<p>Mixing the rules: &minus;4 + (&minus;3) = 7 or &minus;6 + 4 = &minus;10. Go back to tiles until the rule makes sense.</p>',
+        check: [function () { return nq('Add: &minus;6 + (&minus;7)', -13, 'Same signs: add the sizes and keep the sign.', '6 + 7 = 13, both negative: &minus;13.'); }, K.ck('in-add', 2), K.ck('in-add', 3)] }
+    ] },
+    { id: 'sub', title: 'Subtracting integers', sub: 'Add the opposite.', concepts: [
+      { id: 'addopp', title: 'Subtracting is adding the opposite', exp: ['B2.4'], skill: 'in-sub', hard: true,
+        body: '<p>Adding a positive moves <b>right</b>; adding a negative moves <b>left</b>. Subtracting does the <b>opposite</b>. So <b>subtracting a number is the same as adding its opposite</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: -10, max: 10, start: 3, tap: false }, steps: [
+          { say: '3 &minus; 5. Start at 3.', act: null, ms: 1000 },
+          { say: 'Subtract 5 means add &minus;5: move 5 left to &minus;2.', act: function (t) { return t.hop(-2, '−5'); }, ms: 1200 },
+          { say: 'Now 3 &minus; (&minus;5). Start at 3 again.', act: function (t) { return t.clearHops().then(function () { return t.moveTo(3); }); }, ms: 800 },
+          { say: 'Subtracting &minus;5 means adding 5: move 5 right to 8.', act: function (t) { return t.hop(8, '+5'); }, ms: 1200 },
+          { say: '3 &minus; (&minus;5) = 3 + 5 = <b>8</b>.', act: null, ms: 2200 }
+        ] },
+        try: lab('sbao', [
+          { do: 'Show <b>&minus;2 &minus; (&minus;6)</b>.', goal: function (h) { return K.v(h, 'sba') === -2 && K.v(h, 'sbop') === -1 && K.v(h, 'sbb') === -6; }, yes: '−2 − (−6) = −2 + 6 = 4.' },
+          { do: 'Now change it to <b>&minus;2 + 6</b>. Is the answer the same?', goal: function (h) { return K.v(h, 'sba') === -2 && K.v(h, 'sbop') === 1 && K.v(h, 'sbb') === 6; }, yes: 'Yes: subtracting −6 is adding 6.' },
+          { do: 'Find a subtraction with an answer of <b>&minus;5</b>.', goal: function (h) { return K.v(h, 'sbop') === -1 && K.v(h, 'sba') - K.v(h, 'sbb') === -5; }, yes: 'Check it by adding the opposite.' }
+        ]),
+        ways: [
+          { label: 'Chips: add zero pairs', html: '<p>For 3 &minus; (&minus;5), you need 5 negatives to take away, but there are none. Add 5 zero pairs (5 positive and 5 negative): the value is still 3. Now take away the 5 negatives. 8 positives are left.</p><div class="fig">' + chips(8, -5) + '</div>' },
+          { label: 'The pattern', html: '<p>3 &minus; 2 = 1<br>3 &minus; 1 = 2<br>3 &minus; 0 = 3<br>3 &minus; (&minus;1) = 4<br>3 &minus; (&minus;2) = 5</p><p>Each time the number taken away goes down by 1, the answer goes up by 1.</p>' },
+          { label: 'Taking away a debt', html: '<p>If someone takes away a $5 debt you owe, you are $5 better off. Subtracting &minus;5 is like adding 5.</p>' }
+        ],
+        key: '<p><b>Subtract = add the opposite.</b> 3 &minus; (&minus;5) = 3 + 5.</p>',
+        mistake: '<p>Turning every pair of negatives into a plus. &minus;3 + (&minus;5) = &minus;8: there is no subtraction there, so nothing flips.</p>',
+        check: [function () { return nq('Subtract: &minus;4 &minus; (&minus;9)', 5, 'Change it to adding the opposite: &minus;4 + 9.', '&minus;4 + 9 = 5.'); }, K.ck('in-sub', 1), K.ck('in-sub', 2)] },
+      { id: 'diff', title: 'How far apart?', exp: ['B2.4'], skill: 'in-word',
+        body: '<p>Subtraction also finds the <b>difference</b> between two numbers: how far apart they are on the line. Always do <b>bigger &minus; smaller</b>.</p>',
+        watch: K.slides([
+          { say: 'At night it was &minus;12&deg;C. At noon it was 4&deg;C. How much did it rise?', fig: function () { return thermo(4, -12); } },
+          { say: 'From &minus;12 up to 0 is 12 degrees. From 0 up to 4 is 4 more.', fig: function () { return iline(-14, 6, [{ v: -12, lab: '&minus;12', col: 'var(--sc)' }, { v: 4, lab: '4', col: 'var(--bad)' }], [{ from: -12, to: 0, col: 'var(--sc)', id: 'idf1', lab: '12' }, { from: 0, to: 4, col: 'var(--bad)', id: 'idf2', lab: '4' }]); } },
+          { say: 'Or subtract: 4 &minus; (&minus;12) = 4 + 12 = <b>16 degrees</b>.', fig: eq('4 &minus; (&minus;12) = 16'), ms: 2600 }
+        ]),
+        key: '<p><b>Difference = bigger &minus; smaller.</b> Across zero, add the two distances from zero.</p>',
+        mistake: '<p>Subtracting the sizes (12 &minus; 4 = 8) when the numbers are on opposite sides of zero. Draw the line and count across zero.</p>',
+        check: [function () { return { q: 'At 6 a.m. it was &minus;14&deg;C. By noon it was 3&deg;C. How many degrees did the temperature rise?', type: 'num', answer: 17, hint: 'Find the distance from &minus;14 to 3.', explain: '3 &minus; (&minus;14) = 17 degrees.' }; }, K.ck('in-word', 1), K.ck('in-word', 2)] }
+    ] },
+    { id: 'pattern', title: 'Integer patterns', sub: 'Patterns that go below zero.', concepts: [
+      { id: 'grow', title: 'Patterns below zero', exp: ['C1.4'], skill: 'in-pattern',
+        body: '<p>A pattern can go below zero. Start at 7 and keep adding &minus;3: 7, 4, 1, &minus;2, &minus;5, ... Each term is 3 less than the one before.</p>',
+        watch: K.slides([
+          { say: 'Start at 7.', fig: function () { return patt([7]); } },
+          { say: 'Add &minus;3 each time: 4, then 1.', fig: function () { return patt([7, 4, 1]); } },
+          { say: 'Keep going below zero: &minus;2, &minus;5, &minus;8.', fig: function () { return patt([7, 4, 1, -2, -5, -8]); } },
+          { say: 'The rule: start at 7, add &minus;3 each time.', fig: eq('7, 4, 1, &minus;2, &minus;5, &minus;8, ...'), ms: 2400 }
+        ]),
+        try: lab('ptao', [
+          { do: 'Build the pattern <b>5, 3, 1, &minus;1, ...</b>', goal: function (h) { return K.v(h, 'pta') === 5 && K.v(h, 'ptd') === -2; }, yes: 'Start at 5, add −2 each time.' },
+          { do: 'Build a pattern that <b>starts below zero and goes up</b>.', goal: function (h) { return K.v(h, 'pta') < 0 && K.v(h, 'ptd') > 0; }, yes: 'Adding a positive moves it up.' }
+        ]),
+        key: '<p><b>Find the change from one term to the next.</b> Then keep adding it, even past zero.</p>',
+        mistake: '<p>Stopping at zero, or switching to counting up after zero (1, 0, 1, 2). The change stays the same all the way.</p>',
+        check: [function () { return nq('What comes next? 10, 6, 2, &minus;2, ...', -6, 'How much does it change each time?', 'Each term is 4 less: &minus;6.'); }, K.ck('in-pattern', 1), K.ck('in-pattern', 2)] },
+      { id: 'term', title: 'Jump to any term', exp: ['C1.4'], skill: 'in-pattern',
+        body: '<p>To find a term far away, use the rule. The 10th term of 9, 6, 3, ... is the start plus 9 changes: 9 + 9 &times; (&minus;3) = &minus;18.</p>',
+        watch: K.slides([
+          { say: 'A diver starts at the surface, 0 m, and goes down 4 m every minute.', fig: function () { return patt([0, -4, -8, -12]); } },
+          { say: 'After 1 minute: &minus;4. After 2: &minus;8. After 3: &minus;12.', fig: eq('0, &minus;4, &minus;8, &minus;12, ...') },
+          { say: 'After 6 minutes: 6 &times; (&minus;4) = <b>&minus;24 m</b>. No need to list every term.', fig: function () { return patt([0, -4, -8, -12, -16, -20, -24]); }, ms: 2800 }
+        ]),
+        key: '<p><b>Term = start + (number of steps) &times; change.</b></p>',
+        mistake: '<p>Multiplying by the term number instead of the number of steps: the 10th term has 9 steps after the first.</p>',
+        check: [function () { return nq('What is the 8th term of the pattern 9, 6, 3, 0, &minus;3, ...?', -12, 'Each term is 3 less. The 8th term is 7 steps after the first.', '9 + 7 &times; (&minus;3) = &minus;12.'); }, K.ck('in-pattern', 3)] }
+    ] }
+  ];
+
+
   A.register('integers', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Numbers below zero</h2>' +
-'<p><b>Integers</b> are the whole numbers, their <b>opposites</b>, and zero: ..., &minus;3, &minus;2, &minus;1, 0, 1, 2, 3, ... Negative numbers are below zero. You see them on a thermometer in a Canadian winter.</p>' +
-'<div class="row2"><div class="fig">' + thermo(-12) + '</div><div><div class="facts" style="grid-template-columns:1fr">' +
-'<div><b>&minus;12&deg;C</b><small>a cold January day in Ottawa</small></div><div><b>&minus;86 m</b><small>below sea level, the lowest point in North America</small></div><div><b>&minus;$20</b><small>you owe $20</small></div></div></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Two numbers the same distance from zero, on opposite sides, are <b>opposites</b>. The opposite of 7 is &minus;7. The opposite of &minus;7 is 7. A number and its opposite add to 0.</p></div>' +
-'<div class="lab"><span class="lt">Try it: move the temperature</span>' +
-'<div class="ctrl"><label for="thr">Temperature: <output id="tho"></output><input type="range" id="thr" min="-30" max="30" value="-8"></label></div>' +
-'<div class="row2"><div class="fig" id="thfig"></div><div class="out" id="thout"></div></div></div>' +
-A.yt({ q: 'What is the opposite of &minus;15?', answer: 15, kb: 'text', hint: 'Same distance from zero, other side.', explain: '&minus;15 is 15 below zero. Its opposite is 15 above zero: 15.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Comparing and ordering</h2>' +
-'<p>On a number line, numbers get <b>bigger to the right</b> and smaller to the left. So &minus;8 is less than &minus;3, even though 8 is more than 3.</p>' +
-'<div class="fig">' + iline(-10, 5, [{ v: -8, lab: '&minus;8', col: 'var(--sc)' }, { v: -3, lab: '&minus;3', col: 'var(--bad)' }]) + '</div>' +
-'<div class="vs"><div><b class="t">Positive numbers</b><p>8 &gt; 3</p><p>Further from zero means bigger.</p></div><div><b class="t">Negative numbers</b><p>&minus;8 &lt; &minus;3</p><p>Further from zero means <b>smaller</b>. &minus;8&deg;C is colder.</p></div></div>' +
-'<p>This works for negative fractions and decimals too. These are all <b>rational numbers</b>: &minus;2.5 is halfway between &minus;3 and &minus;2. &minus;' + fr(3, 4) + ' is between &minus;1 and 0.</p>' +
-'<div class="lab"><span class="lt">Try it: put numbers in order</span>' +
-'<div class="ctrl"><label for="ordn">Type numbers separated by commas<input type="text" id="ordn" value="-2.5, 1/2, -3/4, 1.2, -1" style="width:16em"></label></div>' +
-'<div class="fig" id="ordfig"></div><div class="out" id="ordout"></div></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Order from least to greatest: 0.4, &minus;1.2, &minus;' + fr(1, 2) + ', &minus;2. On the line from left to right: <b>&minus;2, &minus;1.2, &minus;' + fr(1, 2) + ', 0.4</b>.</p></div>' +
-A.yt({ q: 'Which is greater?', type: 'mc', options: ['&minus;4.5', '&minus;4.05', 'They are equal'], answer: 1, hint: 'Which one is closer to zero?', explain: '&minus;4.05 is closer to zero, so it is further right on the line. &minus;4.05 &gt; &minus;4.5.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Adding integers with chips</h2>' +
-'<p>Use yellow chips for +1 and red chips for &minus;1. A yellow and a red together make a <b>zero pair</b>, because 1 + (&minus;1) = 0. Remove the zero pairs. What is left is the answer.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p class="math">5 + (&minus;3)</p><div class="fig">' + chips(5, -3) + '</div><p>Three zero pairs cancel. Two yellow chips are left: 5 + (&minus;3) = <b>2</b>.</p></div>' +
-'<div class="lab"><span class="lt">Try it: add with chips</span>' +
-'<div class="ctrl"><label for="cha">First: <output id="chao"></output><input type="range" id="cha" min="-10" max="10" value="-6"></label><label for="chb">Second: <output id="chbo"></output><input type="range" id="chb" min="-10" max="10" value="4"></label></div>' +
-'<div class="fig" id="chfig"></div><div class="out" id="chout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p><b>Same signs:</b> add the sizes and keep the sign. &minus;4 + (&minus;3) = &minus;7.<br><b>Different signs:</b> subtract the sizes, and keep the sign of the bigger size. &minus;6 + 4 = &minus;2.</p></div>' +
-A.yt({ q: 'Add: &minus;7 + 3', answer: -4, kb: 'text', hint: 'Three zero pairs cancel. What colour is left, and how many?', explain: '3 zero pairs cancel and 4 red chips are left: &minus;4.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Subtracting integers</h2>' +
-'<p>On a number line, adding a positive moves <b>right</b>, and adding a negative moves <b>left</b>. Subtracting does the <b>opposite</b>.</p>' +
-'<div class="key"><b class="t">Key idea: subtracting is adding the opposite</b><p class="math" style="font-size:1.2rem">3 &minus; 5 = 3 + (&minus;5) = &minus;2 &nbsp;&nbsp;&nbsp; 3 &minus; (&minus;5) = 3 + 5 = 8</p></div>' +
-'<div class="fig">' + iline(-4, 9, [{ v: 3, col: 'var(--hi)' }, { v: 8, lab: '8', col: 'var(--bad)' }], [{ from: 3, to: 8, col: 'var(--sd)', id: 'ia1', lab: '&minus; (&minus;5) is + 5' }], 'Start at 3. Subtracting negative 5 is adding 5, so move 5 right to 8.') + '</div>' +
-'<p>Subtraction also finds the <b>difference</b>, or distance, between two numbers. From &minus;12&deg;C at night to 4&deg;C at noon, the temperature rose 4 &minus; (&minus;12) = 16 degrees.</p>' +
-'<div class="lab"><span class="lt">Try it: move along the line</span>' +
-'<div class="ctrl"><label for="sba">Start: <output id="sbao"></output><input type="range" id="sba" min="-10" max="10" value="-2"></label><label for="sbop">Operation<select id="sbop"><option value="1">add (+)</option><option value="-1" selected>subtract (&minus;)</option></select></label>' +
-'<label for="sbb">Number: <output id="sbbo"></output><input type="range" id="sbb" min="-10" max="10" value="-6"></label></div>' +
-'<div class="fig" id="sbfig"></div><div class="out" id="sbout"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Two negative signs side by side do not cancel when adding. &minus;3 + (&minus;5) = &minus;8. They only turn into a plus when you <b>subtract</b> a negative: &minus;3 &minus; (&minus;5) = &minus;3 + 5 = 2.</p></div>' +
-A.yt({ q: 'Subtract: &minus;4 &minus; (&minus;9)', answer: 5, kb: 'text', hint: 'Change it to adding the opposite: &minus;4 + 9.', explain: '&minus;4 &minus; (&minus;9) = &minus;4 + 9 = 5.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Integer patterns</h2>' +
-'<p>A pattern can go below zero. Start at 7 and keep adding &minus;3: 7, 4, 1, &minus;2, &minus;5, ... Each term is 3 less than the one before.</p>' +
-'<div class="fig">' + patt([7, 4, 1, -2, -5, -8]) + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p>A diver starts at the surface (0 m) and goes down 4 m every minute. Depths: 0, &minus;4, &minus;8, &minus;12, ... After 6 minutes she is at 6 &times; (&minus;4) = <b>&minus;24 m</b>.</p></div>' +
-'<div class="lab"><span class="lt">Try it: build a pattern</span>' +
-'<div class="ctrl"><label for="pta">Start: <output id="ptao"></output><input type="range" id="pta" min="-10" max="10" value="5"></label><label for="ptd">Add each time: <output id="ptdo"></output><input type="range" id="ptd" min="-5" max="5" value="-2"></label></div>' +
-'<div class="fig" id="ptfig"></div><div class="out" id="ptout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Integer patterns help you check rules. Look down this list: 3 &minus; 1 = 2, 3 &minus; 0 = 3, 3 &minus; (&minus;1) = 4, 3 &minus; (&minus;2) = 5. As the number subtracted goes down by 1, the answer goes <b>up</b> by 1. That is why subtracting a negative makes the answer bigger.</p></div>' +
-A.yt({ q: 'What comes next? 10, 6, 2, &minus;2, ...', answer: -6, kb: 'text', hint: 'How much does it change each time?', explain: 'Each term is 4 less: &minus;2 &minus; 4 = &minus;6.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['thr'], function () {
-        var t = +$('#thr', root).value;
-        $('#tho', root).innerHTML = sg(t) + '&deg;C';
-        $('#thfig', root).innerHTML = thermo(t, -t !== t ? -t : undefined);
-        $('#thout', root).innerHTML = '<p class="big2">' + sg(t) + '&deg;C</p><p>' + (t < 0 ? (-t) + ' degrees <b>below</b> zero.' : t > 0 ? t + ' degrees <b>above</b> zero.' : 'Water freezes at 0&deg;C.') + '</p>' +
-          (t ? '<p>Its opposite is <b>' + sg(-t) + '&deg;C</b> (the yellow dot). ' + sg(t) + ' + ' + sgp(-t) + ' = 0.</p>' : '');
-      });
-      A.bind(root, ['ordn'], function () {
-        var raw = $('#ordn', root).value.split(','), vals = [];
-        raw.forEach(function (r) { r = r.trim(); if (!r) return; var v = A.parseNum(r); if (!isNaN(v) && Math.abs(v) <= 20) vals.push({ v: v, t: r.replace(/^-/, '&minus;').replace(/−/, '&minus;') }); });
-        if (!vals.length) { $('#ordfig', root).innerHTML = ''; $('#ordout', root).innerHTML = '<p>Type numbers between &minus;20 and 20.</p>'; return; }
-        vals.sort(function (a, b) { return a.v - b.v; });
-        var lo = Math.min(-1, Math.floor(vals[0].v) - 1), hi = Math.max(1, Math.ceil(vals[vals.length - 1].v) + 1);
-        var W = 540, sc = function (v) { return 24 + 492 * (v - lo) / (hi - lo); }, s = '';
-        s += '<line x1="24" y1="30" x2="516" y2="30" style="stroke:var(--ink)" stroke-width="2.5"/>';
-        for (var v = lo; v <= hi; v++) if ((hi - lo) <= 20 || v % 2 === 0) s += '<line x1="' + sc(v) + '" y1="22" x2="' + sc(v) + '" y2="38" style="stroke:var(--ink)" stroke-width="' + (v ? 1.5 : 3) + '"/><text x="' + sc(v) + '" y="58" text-anchor="middle" font-size="15">' + sg(v) + '</text>';
-        vals.forEach(function (o, i) { s += '<circle cx="' + sc(o.v) + '" cy="30" r="7" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="' + sc(o.v) + '" y="' + (84 + (i % 2) * 22) + '" text-anchor="middle" font-size="17" font-weight="700" style="fill:var(--se)">' + o.t + '</text>'; });
-        $('#ordfig', root).innerHTML = A.svg(W, 114, s, 'Numbers on a line: ' + vals.map(function (o) { return o.t; }).join(', '));
-        $('#ordout', root).innerHTML = '<p><b>Least to greatest:</b> ' + vals.map(function (o) { return o.t; }).join(', ') + '</p>';
-      });
-      A.bind(root, ['cha', 'chb'], function () {
-        var a = +$('#cha', root).value, b = +$('#chb', root).value, s = a + b;
-        $('#chao', root).innerHTML = sg(a); $('#chbo', root).innerHTML = sg(b);
-        $('#chfig', root).innerHTML = chips(a, b);
-        $('#chout', root).innerHTML = '<p class="big2">' + sg(a) + ' + ' + sgp(b) + ' = ' + sg(s) + '</p><p>' + (s === 0 ? 'Every chip is in a zero pair. Nothing is left.' : 'After removing zero pairs, ' + Math.abs(s) + ' ' + (s > 0 ? 'yellow' : 'red') + ' chip' + (Math.abs(s) > 1 ? 's are' : ' is') + ' left.') + '</p>';
-      });
-      A.bind(root, ['sba', 'sbop', 'sbb'], function () {
-        var a = +$('#sba', root).value, op = +$('#sbop', root).value, b = +$('#sbb', root).value, mv = op * b, res = a + mv;
-        $('#sbao', root).innerHTML = sg(a); $('#sbbo', root).innerHTML = sg(b);
-        $('#sbfig', root).innerHTML = iline(-20, 20, [{ v: a, col: 'var(--hi)' }, { v: res, lab: sg(res), col: 'var(--se)' }], mv ? [{ from: a, to: res, col: mv > 0 ? 'var(--sd)' : 'var(--sc)', id: 'ia2', lab: (mv > 0 ? 'right ' : 'left ') + Math.abs(mv) }] : []);
-        $('#sbout', root).innerHTML = '<p class="big2">' + sg(a) + (op > 0 ? ' + ' : ' &minus; ') + sgp(b) + (op < 0 ? ' = ' + sg(a) + ' + ' + sgp(-b) : '') + ' = ' + sg(res) + '</p>' +
-          '<p>' + (mv === 0 ? 'Adding or subtracting 0 does not move you.' : (op < 0 ? 'Subtracting ' + sg(b) + ' is the same as adding ' + sg(-b) + '. ' : '') + 'Move ' + Math.abs(mv) + ' to the ' + (mv > 0 ? 'right' : 'left') + '.') + '</p>';
-      });
-      A.bind(root, ['pta', 'ptd'], function () {
-        var a = +$('#pta', root).value, d = +$('#ptd', root).value, t = [];
-        $('#ptao', root).innerHTML = sg(a); $('#ptdo', root).innerHTML = sg(d);
-        for (var i = 0; i < 7; i++) t.push(a + i * d);
-        $('#ptfig', root).innerHTML = patt(t);
-        $('#ptout', root).innerHTML = '<p><b>Terms:</b> ' + t.map(sg).join(', ') + ', ...</p><p><b>Rule:</b> start at ' + sg(a) + ' and add ' + sgp(d) + ' each time. Term 10 is ' + sg(a) + ' + 9 &times; ' + sgp(d) + ' = ' + sg(a + 9 * d) + '.</p>';
-      });
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'The temperature is &minus;6&deg;C. Which temperature is colder?', type: 'mc', options: ['&minus;2&deg;C', '0&deg;C', '&minus;9&deg;C', '3&deg;C'], answer: 2, hint: 'Colder means further below zero, further left on the line.', explain: '&minus;9 is further below zero than &minus;6, so &minus;9&deg;C is colder.' },

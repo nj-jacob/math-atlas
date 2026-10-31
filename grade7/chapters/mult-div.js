@@ -90,121 +90,333 @@
     { e: '1/2 + 1/4 &times; 2', st: [['1/2 + <u>1/4 &times; 2</u>', 'Multiply first'], ['1/2 + 1/2', 'Then add'], ['1', '']] }
   ];
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    rdx: { title: 'round any decimal', html: 
+      '<div class="ctrl"><label for="rdx">Number<input type="text" inputmode="decimal" id="rdx" value="12.648"></label><label for="rdp">Round to the nearest<select id="rdp"><option value="0">whole number</option><option value="1">tenth</option><option value="2" selected>hundredth</option></select></label></div>' +
+      '<div class="fig" id="rdfig"></div><div class="out" id="rdout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['rdx', 'rdp'], function () {
+          var x = parseFloat($('#rdx', root).value), p = +$('#rdp', root).value;
+          if (isNaN(x) || x < 0 || x > 1e6) { $('#rdout', root).innerHTML = '<p>Type a number from 0 to 1 000 000.</p>'; $('#rdfig', root).innerHTML = ''; return; }
+          var r = roundTo(x, p), dig = Math.floor(cl(x * Math.pow(10, p + 1))) % 10;
+          $('#rdfig', root).innerHTML = roundPic(x, p);
+          $('#rdout', root).innerHTML = '<p>Look at the digit after the ' + PL[p] + (p ? 's' : 's') + ' place: <b>' + dig + '</b>. ' + (dig >= 5 ? 'It is 5 or more, so round up.' : 'It is less than 5, so round down.') + '</p><p class="big2">' + dec(x) + ' &asymp; ' + r.toFixed(p) + '</p>';
+        });
+      } },
+    mfao: { title: 'the area model', html: 
+      '<div class="ctrl"><label for="mfa">Columns: <output id="mfao"></output><input type="range" id="mfa" min="1" max="8" value="2"></label><label for="mfb">out of <output id="mfbo"></output><input type="range" id="mfb" min="1" max="8" value="3"></label></div>' +
+      '<div class="ctrl"><label for="mfc">Rows: <output id="mfco"></output><input type="range" id="mfc" min="1" max="8" value="3"></label><label for="mfd">out of <output id="mfdo"></output><input type="range" id="mfd" min="1" max="8" value="5"></label></div>' +
+      '<div class="fig" id="mffig"></div><div class="out" id="mfout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['mfa', 'mfb', 'mfc', 'mfd'], function () {
+          var b = +$('#mfb', root).value, d = +$('#mfd', root).value, a = Math.min(+$('#mfa', root).value, b), c = Math.min(+$('#mfc', root).value, d);
+          $('#mfao', root).textContent = a; $('#mfbo', root).textContent = b; $('#mfco', root).textContent = c; $('#mfdo', root).textContent = d;
+          $('#mffig', root).innerHTML = areaFr(a, b, c, d);
+          $('#mfout', root).innerHTML = '<p class="big2">' + fr(a, b) + ' &times; ' + fr(c, d) + ' = ' + fr(a * c, b * d) + (frs(a * c, b * d) !== fr(a * c, b * d) ? ' = ' + frs(a * c, b * d) : '') + '</p>';
+        });
+      } },
+    dva: { title: 'how many fit?', html: 
+      '<div class="ctrl"><label for="dva">Start with<select id="dva"><option value="1,2">1/2</option><option value="3,4">3/4</option><option value="1,1">1</option><option value="3,2" selected>1 1/2</option><option value="2,1">2</option><option value="5,2">2 1/2</option></select></label>' +
+      '<label for="dvb">Pieces of size<select id="dvb"><option value="1,2">1/2</option><option value="1,3">1/3</option><option value="1,4">1/4</option><option value="3,4" selected>3/4</option><option value="1,6">1/6</option><option value="2,3">2/3</option><option value="1,8">1/8</option></select></label></div>' +
+      '<div class="fig" id="dvfig"></div><div class="out" id="dvout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['dva', 'dvb'], function () {
+          var p = $('#dva', root).value.split(',').map(Number), q = $('#dvb', root).value.split(',').map(Number);
+          $('#dvfig', root).innerHTML = measure(p[0], p[1], q[0], q[1]);
+          $('#dvout', root).innerHTML = '<p class="big2">' + frs(p[0], p[1]) + ' &divide; ' + fr(q[0], q[1]) + ' = ' + frs(p[0], p[1]) + ' &times; ' + fr(q[1], q[0]) + ' = ' + frs(p[0] * q[1], p[1] * q[0]) + '</p>';
+        });
+      } },
+    mdao: { title: 'tenths times tenths', html: 
+      '<div class="ctrl"><label for="mda">First: <output id="mdao"></output><input type="range" id="mda" min="1" max="10" value="6"></label><label for="mdb">Second: <output id="mdbo"></output><input type="range" id="mdb" min="1" max="10" value="7"></label></div>' +
+      '<div class="fig" id="mdfig"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['mda', 'mdb'], function () {
+          var a = +$('#mda', root).value, b = +$('#mdb', root).value;
+          $('#mdao', root).textContent = dec(a / 10); $('#mdbo', root).textContent = dec(b / 10);
+          $('#mdfig', root).innerHTML = grid(a, b) + '<p class="big2" style="text-align:center">' + dec(a / 10) + ' &times; ' + dec(b / 10) + ' = ' + dec(a * b / 100) + '</p>';
+        });
+      } },
+    ddb: { title: 'count the jumps', html: 
+      '<div class="ctrl"><label for="ddb">Jump size<select id="ddb"><option>0.2</option><option selected>0.25</option><option>0.4</option><option>0.5</option><option>0.75</option><option>1.5</option></select></label><label for="ddn">Number of jumps: <output id="ddno"></output><input type="range" id="ddn" min="1" max="12" value="6"></label></div>' +
+      '<div class="fig" id="ddfig"></div><div class="out" id="ddout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['ddb', 'ddn'], function () {
+          var b = parseFloat($('#ddb', root).value), n = +$('#ddn', root).value, a = cl(b * n), k = places(b), m = Math.pow(10, k);
+          $('#ddno', root).textContent = n;
+          $('#ddfig', root).innerHTML = jumps(a, b);
+          $('#ddout', root).innerHTML = '<p class="big2">' + dec(a) + ' &divide; ' + dec(b) + ' = ' + n + '</p><p>Multiply both by ' + m + ': ' + dec(a * m) + ' &divide; ' + dec(b * m) + ' = ' + n + '.</p>';
+        });
+      } },
+    ooe: { title: 'one step at a time', html: 
+      '<div class="ctrl"><label for="ooe">Expression<select id="ooe">' + EXPR.map(function (x, i) { return '<option value="' + i + '">' + x.e.replace(/<[^>]+>/g, '').replace(/&times;/g, '×').replace(/&divide;/g, '÷').replace(/&minus;/g, '−').replace(/23/, '2³') + '</option>'; }).join('') + '</select></label></div>' +
+      '<div class="btnrow"><button type="button" class="btn" id="oonext">Show the next step</button><button type="button" class="btn alt" id="oores">Start again</button></div>' +
+      '<ol class="oo" id="ooout"></ol>',
+      init: function (root) {
+        var $ = A.$;
+        var step = 0;
+        function oo() {
+          var x = EXPR[+$('#ooe', root).value];
+          $('#ooout', root).innerHTML = x.st.slice(0, step + 1).map(function (s, i) { return '<li><span class="math big2" style="font-size:1.3rem">' + (i ? '= ' : '') + s[0] + '</span>' + (s[1] && i === step ? ' <span class="t2">&larr; ' + s[1] + '</span>' : '') + '</li>'; }).join('');
+          $('#oonext', root).disabled = step >= x.st.length - 1;
+        }
+        $('#ooe', root).addEventListener('change', function () { step = 0; oo(); });
+        $('#oonext', root).addEventListener('click', function () { step++; oo(); });
+        $('#oores', root).addEventListener('click', function () { step = 0; oo(); });
+        oo();
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function fq(q, n, d, hint, explain) { return { q: q + ' Type a fraction, like 2/5.', type: 'num', answer: n / d, show: plain(n, d), kb: 'text', tol: 1e-6, hint: hint, explain: explain }; }
+  function sel(h, id) { return String(K.v(h, id)); }
+
+  var LESSONS = [
+    { id: 'round', title: 'Rounding decimals', sub: 'Give a sensible, shorter answer.', concepts: [
+      { id: 'closer', title: 'Which one is it closer to?', exp: ['B1.6'], skill: 'md-round',
+        body: '<p>To round, find the two numbers it is <b>between</b> at the place you want. Then ask which one it is <b>closer to</b>. Exactly halfway rounds <b>up</b>.</p>',
+        watch: K.slides([
+          { say: 'Round 3.47 to the nearest tenth.', fig: eq('3.47 &rarr; nearest tenth') },
+          { say: 'It is between 3.4 and 3.5. Halfway is 3.45.', fig: eq('3.4 &nbsp; &larr; 3.45 &rarr; &nbsp; 3.5') },
+          { say: '3.47 is past halfway, so it is closer to 3.5.', fig: function () { return roundPic(3.47, 1); } },
+          { say: '3.47 rounds to <b>3.5</b>.', fig: eq('3.47 &asymp; 3.5'), ms: 2200 }
+        ]),
+        try: lab('rdx', [
+          { do: 'Round <b>12.648</b> to the nearest <b>tenth</b>.', goal: function (h) { return parseFloat(K.v(h, 'rdx')) === 12.648 && K.v(h, 'rdp') === 1; }, yes: '12.648 is between 12.6 and 12.7. Halfway is 12.65, and 12.648 is just below it, so it rounds to <b>12.6</b>.' },
+          { do: 'Type a number that rounds <b>up</b> to <b>4.0</b> at the nearest tenth.', goal: function (h) { var x = parseFloat(K.v(h, 'rdx')); return K.v(h, 'rdp') === 1 && x >= 3.95 && x < 4; }, yes: 'Anything from 3.95 up to 4 rounds to 4.0.' },
+          { do: 'Type a number <b>exactly halfway</b>, like 2.35, and round to the tenth.', goal: function (h) { var c = Math.round(parseFloat(K.v(h, 'rdx')) * 1000); return K.v(h, 'rdp') === 1 && c % 100 === 50 && Math.abs(parseFloat(K.v(h, 'rdx')) * 1000 - c) < 1e-6; }, yes: 'Exactly halfway rounds up.' }
+        ]),
+        key: '<p><b>Between which two? Which is closer? Halfway rounds up.</b></p>',
+        mistake: '<p>Rounding the digit itself instead of the place: 3.47 to the nearest tenth written as 3.5 is right, but 3.47 &rarr; 3.40 or 4 is not. Name the two neighbours out loud first.</p>',
+        check: [function () { return { q: 'Round 5.982 to the nearest tenth.', type: 'num', answer: 6, show: '6.0', hint: 'It is between 5.9 and 6.0. Halfway is 5.95.', explain: '5.982 is past 5.95, so it rounds up to 6.0.' }; }, K.ck('md-round', 1), K.ck('md-round', 2)] },
+      { id: 'digit', title: 'The next-digit shortcut', exp: ['B1.6'], skill: 'md-round', hard: true,
+        body: '<p>A shortcut: look at the <b>digit just to the right</b> of the place you are rounding to. <b>5 or more: round up. Less than 5: round down.</b></p>',
+        watch: K.slides([
+          { say: 'Round 14.065 to the nearest hundredth. The hundredths digit is 6.', fig: eq('14.0<u>6</u>5') },
+          { say: 'Look at the digit to its right: 5.', fig: eq('14.06<b style="color:var(--se)">5</b>') },
+          { say: '5 or more, so round up: the 6 becomes 7.', fig: eq('14.065 &asymp; 14.07') },
+          { say: 'Watch out for 9s. 5.98 to the nearest tenth: the 9 goes up and carries. It becomes <b>6.0</b>.', fig: function () { return roundPic(5.98, 1); }, ms: 2800 }
+        ]),
+        ways: [
+          { label: 'On a number line', html: '<div class="fig">' + roundPic(14.065, 2) + '</div><p>14.065 is exactly halfway between 14.06 and 14.07, so it rounds up.</p>' },
+          { label: 'Rounding money', html: '<p>Money is rounded to the nearest cent (hundredth). $3.746 is between $3.74 and $3.75. The next digit is 6, so it rounds to <b>$3.75</b>.</p>' },
+          { label: 'Rounding with 9s', html: '<p>When a 9 rounds up, it carries like counting: 2.97 to the nearest tenth goes from 2.9 up to <b>3.0</b>. Keep the zero to show you rounded to the tenth.</p>' }
+        ],
+        key: '<p><b>Look one digit to the right. 5 or more, round up.</b></p>',
+        mistake: '<p>Looking at the last digit of the number instead of the digit right after the rounding place. In 2.349 to the tenth, look at the 4, not the 9.</p>',
+        check: [function () { return mc('Round 14.065 to the nearest hundredth.', '14.07', ['14.06', '14.1', '14.00'], 'Look at the thousandths digit.', 'The thousandths digit is 5, so round up: 14.07.'); }, K.ck('md-round', 3), K.ck('md-round', 2)] }
+    ] },
+    { id: 'fxf', title: 'Multiplying fractions', sub: '"Of" means times.', concepts: [
+      { id: 'of', title: 'A fraction of a fraction', exp: ['B2.8'], skill: 'md-fxf',
+        body: '<p>In math, <b>"of" means times</b>. ' + fr(1, 2) + ' of ' + fr(3, 4) + ' is ' + fr(1, 2) + ' &times; ' + fr(3, 4) + '. An <b>area model</b> shows it: the overlap is the answer.</p>',
+        watch: K.slides([
+          { say: 'Find one half of three quarters.', fig: eq(fr(1, 2) + ' of ' + fr(3, 4)) },
+          { say: 'The square is one whole. Three quarters is shaded in rows. One half is shaded in columns.', fig: function () { return areaFr(1, 2, 3, 4); } },
+          { say: 'The overlap is 3 of the 8 small rectangles: <b>three eighths</b>.', fig: function () { return areaFr(1, 2, 3, 4) + eq(fr(1, 2) + ' &times; ' + fr(3, 4) + ' = ' + fr(3, 8)); }, ms: 2600 }
+        ]),
+        try: lab('mfao', [
+          { do: 'Show <b>2/3 &times; 3/5</b>.', goal: function (h) { return K.v(h, 'mfa') === 2 && K.v(h, 'mfb') === 3 && K.v(h, 'mfc') === 3 && K.v(h, 'mfd') === 5; }, yes: 'The overlap is 6 of 15 rectangles: 6/15 = 2/5.' },
+          { do: 'Make an overlap of exactly <b>1/4</b> of the square.', goal: function (h) { var a = Math.min(K.v(h, 'mfa'), K.v(h, 'mfb')), c = Math.min(K.v(h, 'mfc'), K.v(h, 'mfd')); return 4 * a * c === K.v(h, 'mfb') * K.v(h, 'mfd'); }, yes: 'For example 1/2 &times; 1/2 = 1/4.' }
+        ]),
+        key: '<p><b>"Of" means times.</b> The overlap in the area model is the product.</p>',
+        mistake: '<p>Expecting the answer to be bigger. A fraction of a fraction (both less than 1) is <b>smaller</b> than either one.</p>',
+        check: [function () { return fq('Multiply: ' + fr(3, 5) + ' &times; ' + fr(1, 2) + '.', 3, 10, 'Multiply the tops, then the bottoms.', fr('3 &times; 1', '5 &times; 2') + ' = ' + fr(3, 10) + '.'); }, K.ck('md-fxf', 1)] },
+      { id: 'rule', title: 'Tops times tops, bottoms times bottoms', exp: ['B2.8'], skill: 'md-fxf',
+        body: '<p>To multiply fractions, <b>multiply the tops and multiply the bottoms</b>. You do <b>not</b> need a common denominator. Then simplify.</p>',
+        watch: K.slides([
+          { say: 'Two thirds times four fifths.', fig: eq(fr(2, 3) + ' &times; ' + fr(4, 5)) },
+          { say: 'Tops: 2 times 4 is 8.', fig: eq(fr('2 &times; 4', '?') ) },
+          { say: 'Bottoms: 3 times 5 is 15.', fig: eq(fr('2 &times; 4', '3 &times; 5') + ' = ' + fr(8, 15)) },
+          { say: 'The area model agrees: 8 of 15 rectangles.', fig: function () { return areaFr(2, 3, 4, 5); }, ms: 2400 }
+        ]),
+        key: '<p><b>Multiply the tops. Multiply the bottoms. Simplify.</b></p>',
+        mistake: '<p>Finding a common denominator first (a habit from adding), then keeping it: 2/3 &times; 4/5 = 10/15 &times; 12/15 = 120/15. Remind: common denominators are for adding and subtracting.</p>',
+        check: [function () { var o = fq('Multiply: ' + fr(2, 3) + ' &times; ' + fr(9, 10) + '. Simplify your answer.', 3, 5, 'Multiply tops and bottoms, then simplify.', fr(18, 30) + ' = ' + fr(3, 5) + '.'); o.accept = A.lowest(3, 5); return o; }, K.ck('md-fxf', 2), K.ck('md-fxf', 2)] },
+      { id: 'ofwhole', title: 'A fraction of an amount', exp: ['B2.8'], skill: 'md-fxf',
+        body: '<p>To find ' + fr(2, 3) + ' of 12, <b>divide by the bottom, multiply by the top</b>. 12 &divide; 3 = 4, and 2 &times; 4 = 8.</p>',
+        watch: K.slides([
+          { say: 'A class has 12 students. Two thirds walk to school. How many?', fig: eq(fr(2, 3) + ' of 12') },
+          { say: 'Split 12 into 3 equal groups: 4 in each.', fig: eq('12 &divide; 3 = 4') },
+          { say: 'Two of the groups: 2 times 4 is 8.', fig: eq('2 &times; 4 = 8') },
+          { say: 'The rule gives the same: two thirds times 12 over 1 is 24 thirds, which is 8.', fig: eq(fr(2, 3) + ' &times; ' + fr(12, 1) + ' = ' + fr(24, 3) + ' = 8'), ms: 2600 }
+        ]),
+        key: '<p><b>Divide by the bottom, multiply by the top.</b></p>',
+        mistake: '<p>Dividing by the top and multiplying by the bottom (12 &divide; 2 &times; 3 = 18). The answer must be less than 12, because 2/3 is less than 1.</p>',
+        check: [K.ck('md-fxf', 3), function () { var w = R.pick([12, 15, 18, 20, 24, 30]), f = [[1, 2], [1, 3], [2, 3], [3, 4], [2, 5], [5, 6]].filter(function (x) { return w % x[1] === 0; }), p = R.pick(f), a = w * p[0] / p[1]; return { q: 'What is ' + fr(p[0], p[1]) + ' of ' + w + '?', type: 'num', answer: a, hint: 'Divide ' + w + ' by ' + p[1] + ', then multiply by ' + p[0] + '.', explain: w + ' &divide; ' + p[1] + ' = ' + w / p[1] + ', and &times; ' + p[0] + ' = ' + a + '.' }; }] }
+    ] },
+    { id: 'fdf', title: 'Dividing fractions', sub: 'Division asks: how many fit?', concepts: [
+      { id: 'fit', title: 'How many fit?', exp: ['B2.8'], skill: 'md-fdf', hard: true,
+        body: '<p>Division asks <b>"how many fit?"</b> ' + A.mixed(1, 1, 2) + ' &divide; ' + fr(1, 4) + ' asks: how many quarters fit into one and a half?</p>',
+        watch: K.slides([
+          { say: 'Start with one and a half.', fig: eq(A.mixed(1, 1, 2) + ' &divide; ' + fr(1, 4)) },
+          { say: 'Lay quarter pieces under it, one at a time.', fig: function () { return measure(3, 2, 1, 4); } },
+          { say: 'Six quarters fit exactly. So one and a half divided by one quarter is 6.', fig: eq(fr(3, 2) + ' &divide; ' + fr(1, 4) + ' = 6') },
+          { say: 'The answer is <b>bigger</b> than what we started with, because the pieces are smaller than 1.', fig: eq('6 &gt; ' + A.mixed(1, 1, 2)), ms: 2600 }
+        ]),
+        try: lab('dva', [
+          { do: 'How many <b>1/4</b> pieces fit into <b>2</b>?', goal: function (h) { return sel(h, 'dva') === '2,1' && sel(h, 'dvb') === '1,4'; }, yes: '8 quarters fit into 2.' },
+          { do: 'Find a choice where the pieces do <b>not</b> fit exactly.', goal: function (h) { var p = sel(h, 'dva').split(',').map(Number), q = sel(h, 'dvb').split(',').map(Number); return (p[0] * q[1]) % (p[1] * q[0]) !== 0; }, yes: 'Then the answer is a mixed number: some whole pieces and part of one more.' }
+        ]),
+        ways: [
+          { label: 'Count in a common unit', html: '<p>Write both in quarters: ' + A.mixed(1, 1, 2) + ' = ' + fr(6, 4) + '. How many 1-quarters are in 6 quarters? <b>6</b>. With a common denominator, just divide the tops.</p>' },
+          { label: 'Think of scoops', html: '<p>How many ' + fr(1, 3) + '-cup scoops fill 2 cups? Each cup takes 3 scoops, so 2 cups take <b>6</b>.</p><div class="fig">' + measure(2, 1, 1, 3) + '</div>' },
+          { label: 'Use multiplication', html: '<p>Division undoes multiplication. ? &times; ' + fr(1, 4) + ' = ' + A.mixed(1, 1, 2) + '. Since 6 &times; ' + fr(1, 4) + ' = ' + fr(6, 4) + ', the answer is 6.</p>' }
+        ],
+        key: '<p><b>Dividing by a fraction asks how many pieces of that size fit.</b></p>',
+        mistake: '<p>Expecting division to always make smaller. Dividing by a number less than 1 gives a <b>bigger</b> answer.</p>',
+        check: [function () { return { q: 'How many ' + fr(1, 3) + '-cup scoops are in 2 cups?', type: 'num', answer: 6, fig: measure(2, 1, 1, 3), hint: 'Each cup holds 3 thirds.', explain: '2 &divide; ' + fr(1, 3) + ' = 6.' }; }, K.ck('md-fdf', 1), K.ck('md-fdf', 1)] },
+      { id: 'flip', title: 'Multiply by the reciprocal', exp: ['B2.8'], skill: 'md-fdf', hard: true,
+        body: '<p>To divide by a fraction, <b>flip the second fraction and multiply</b>. The flipped fraction is called the <b>reciprocal</b>: the reciprocal of ' + fr(3, 4) + ' is ' + fr(4, 3) + '.</p>',
+        watch: K.slides([
+          { say: 'Five sixths divided by two thirds.', fig: eq(fr(5, 6) + ' &divide; ' + fr(2, 3)) },
+          { say: 'Keep the first fraction. Change divide to times. Flip the second.', fig: eq(fr(5, 6) + ' &times; ' + fr(3, 2)) },
+          { say: 'Multiply: 15 over 12.', fig: eq(fr(5, 6) + ' &times; ' + fr(3, 2) + ' = ' + fr(15, 12)) },
+          { say: 'Simplify: 15 twelfths is <b>1 and one quarter</b>.', fig: eq(fr(15, 12) + ' = ' + A.mixed(1, 1, 4)), ms: 2400 }
+        ]),
+        ways: [
+          { label: 'Why it works', html: '<p>Dividing by ' + fr(1, 4) + ' asks how many quarters fit. Every whole holds 4 quarters, so it is the same as multiplying by 4, which is ' + fr(4, 1) + ', the reciprocal.</p>' },
+          { label: 'Common denominator', html: '<p>Another way: ' + fr(5, 6) + ' &divide; ' + fr(2, 3) + ' = ' + fr(5, 6) + ' &divide; ' + fr(4, 6) + '. How many 4-sixths fit in 5-sixths? 5 &divide; 4 = ' + A.mixed(1, 1, 4) + '. Same answer.</p>' }
+        ],
+        key: '<p><b>Keep, change, flip.</b> Keep the first, change &divide; to &times;, flip the second.</p>',
+        mistake: '<p>Flipping the first fraction instead of the second, or flipping both. Only the divisor (the second number) is flipped.</p>',
+        check: [function () { return { q: 'Divide: ' + fr(5, 6) + ' &divide; ' + fr(2, 3) + '. Type a fraction or mixed number.', type: 'num', answer: 1.25, show: '1 1/4', kb: 'text', tol: 1e-6, hint: 'Flip the second fraction and multiply.', explain: fr(5, 6) + ' &times; ' + fr(3, 2) + ' = ' + fr(15, 12) + ' = ' + A.mixed(1, 1, 4) + '.' }; }, K.ck('md-fdf', 2), K.ck('md-fdf', 3)] },
+      { id: 'compare', title: 'Times or divide?', exp: ['B2.8'], skill: 'md-fdf',
+        body: '<div class="vs"><div><b class="t">' + fr(1, 2) + ' &times; ' + fr(1, 4) + '</b><p>Half <b>of</b> a quarter.</p><p>= ' + fr(1, 8) + ' (smaller)</p></div><div><b class="t">' + fr(1, 2) + ' &divide; ' + fr(1, 4) + '</b><p>How many quarters <b>fit in</b> a half?</p><p>= 2 (bigger)</p></div></div>',
+        watch: K.slides([
+          { say: 'Half of a quarter: the overlap is one eighth.', fig: function () { return areaFr(1, 2, 1, 4); } },
+          { say: 'How many quarters fit in a half? Two.', fig: function () { return measure(1, 2, 1, 4); } },
+          { say: 'Times a fraction less than 1: smaller. Divide by it: bigger.', fig: eq(fr(1, 2) + ' &times; ' + fr(1, 4) + ' = ' + fr(1, 8) + ' &nbsp;&nbsp; ' + fr(1, 2) + ' &divide; ' + fr(1, 4) + ' = 2'), ms: 2600 }
+        ]),
+        key: '<p>With a number less than 1: <b>multiplying makes smaller, dividing makes bigger.</b></p>',
+        mistake: '<p>Choosing the operation by keywords alone. Ask: "a part of something?" (multiply) or "how many fit?" (divide).</p>',
+        check: [function () { return mc('Which is greater?', '6 &divide; ' + fr(1, 2), ['6 &times; ' + fr(1, 2), 'They are equal'], 'How many halves fit in 6? What is half of 6?', '6 &divide; ' + fr(1, 2) + ' = 12 and 6 &times; ' + fr(1, 2) + ' = 3.'); },
+          function () { var n = R.int(2, 5); return mc('A ribbon is ' + n + ' m long. You cut it into pieces ' + fr(1, 4) + ' m long. Which shows the number of pieces?', n + ' &divide; ' + fr(1, 4), [n + ' &times; ' + fr(1, 4), fr(1, 4) + ' &divide; ' + n], '"How many pieces fit?" is division.', n + ' &divide; ' + fr(1, 4) + ' = ' + 4 * n + ' pieces.'); }] }
+    ] },
+    { id: 'dxd', title: 'Multiplying decimals', sub: 'Count the decimal places.', concepts: [
+      { id: 'grid', title: 'Tenths times tenths', exp: ['B2.9'], skill: 'md-dxd',
+        body: '<p>A hundred grid shows 0.3 &times; 0.4. Shade 3 tenths one way and 4 tenths the other. The overlap is 12 small squares: <b>12 hundredths</b>.</p>',
+        watch: K.slides([
+          { say: 'A hundred grid is one whole. Shade 3 tenths across and 4 tenths down.', fig: function () { return grid(3, 4); } },
+          { say: 'The overlap is 12 small squares. Each one is a hundredth: 0.12.', fig: eq('0.3 &times; 0.4 = 0.12'), ms: 2600 }
+        ]),
+        try: lab('mdao', [
+          { do: 'Show <b>0.6 &times; 0.7</b>.', goal: function (h) { return K.v(h, 'mda') === 6 && K.v(h, 'mdb') === 7; }, yes: '42 hundredths: 0.42.' },
+          { do: 'Make the product exactly <b>0.24</b>.', goal: function (h) { return K.v(h, 'mda') * K.v(h, 'mdb') === 24; }, yes: '0.4 &times; 0.6 or 0.3 &times; 0.8 both work.' },
+          { do: 'Set one number to <b>1</b>. What happens?', goal: function (h) { return K.v(h, 'mda') === 10 || K.v(h, 'mdb') === 10; }, yes: 'Times 1 leaves the other number the same.' }
+        ]),
+        key: '<p><b>Tenths times tenths gives hundredths.</b></p>',
+        mistake: '<p>0.3 &times; 0.4 = 1.2 or 0.7. Two numbers less than 1 multiply to a <b>smaller</b> number.</p>',
+        check: [function () { return { q: 'Multiply: 0.6 &times; 0.8', type: 'num', answer: 0.48, hint: '6 &times; 8 = 48 hundredths.', explain: '0.48.' }; }, K.ck('md-dxd', 1)] },
+      { id: 'places', title: 'Count the decimal places', exp: ['B2.9'], skill: 'md-dxd',
+        body: '<p>Multiply as if there were <b>no decimal points</b>. Then count the decimal places in both numbers. The answer has <b>that many</b> places.</p>',
+        watch: K.slides([
+          { say: '2.4 times 1.3.', fig: eq('2.4 &times; 1.3') },
+          { say: 'Ignore the points: 24 times 13 is 312.', fig: eq('24 &times; 13 = 312') },
+          { say: 'One decimal place plus one decimal place is two.', fig: eq('2.<u>4</u> &times; 1.<u>3</u> &rarr; 2 places') },
+          { say: 'Put two places in 312: <b>3.12</b>. Estimate: about 2 times 1.5 is 3. It fits.', fig: eq('2.4 &times; 1.3 = 3.12'), ms: 2800 }
+        ]),
+        key: '<p><b>Multiply the whole numbers. Count the places. Put the point back.</b></p>',
+        mistake: '<p>Lining up the decimal points as in adding. In multiplication, count places instead, and check with an estimate.</p>',
+        check: [function () { return { q: 'Multiply: 3.2 &times; 0.15', type: 'num', answer: 0.48, hint: '32 &times; 15 = 480. Count the decimal places.', explain: '32 &times; 15 = 480. Three places: 0.480 = 0.48.' }; }, K.ck('md-dxd', 2), K.ck('md-dxd', 2)] },
+      { id: 'estimate', title: 'Estimate to check', exp: ['B2.9', 'B1.6'], skill: 'md-dxd',
+        body: '<p>Before you trust an answer, <b>estimate</b>. Round each number to something easy, multiply, and see if your answer is close.</p>',
+        watch: K.slides([
+          { say: 'Gas costs $1.48 a litre. How much for 2.5 L?', fig: eq('1.48 &times; 2.5') },
+          { say: 'Estimate: about 1.50 times 2.5 is about 3.75.', fig: eq('&asymp; 1.50 &times; 2.5 = 3.75') },
+          { say: '148 times 25 is 3700. Three places: 3.700.', fig: eq('148 &times; 25 = 3700 &rarr; 3.700') },
+          { say: 'The cost is <b>$3.70</b>. Close to the estimate, so it makes sense.', fig: eq('$3.70 &asymp; $3.75 &#10003;'), ms: 2600 }
+        ]),
+        key: '<p><b>Estimate first.</b> If the answer is far from the estimate, the decimal point is probably in the wrong place.</p>',
+        mistake: '<p>Accepting $37.00 or $0.37 without checking. An estimate catches a misplaced point every time.</p>',
+        check: [K.ck('md-dxd', 3), function () { return mc('Which is the best estimate for 4.9 &times; 3.1?', 'about 15', ['about 1.5', 'about 150', 'about 8'], 'Round to 5 &times; 3.', '5 &times; 3 = 15.'); }] }
+    ] },
+    { id: 'ddd', title: 'Dividing decimals', sub: 'How many jumps fit?', concepts: [
+      { id: 'jumps', title: 'Count the jumps', exp: ['B2.9'], skill: 'md-ddd',
+        body: '<p>Dividing asks how many fit. 1.2 &divide; 0.3 asks: <b>how many jumps of 0.3 reach 1.2?</b></p>',
+        watch: K.slides([
+          { say: 'How many jumps of 0.3 reach 1.2?', fig: eq('1.2 &divide; 0.3') },
+          { say: 'Two jumps reach 0.6.', fig: function () { return jumps(0.6, 0.3); } },
+          { say: 'Four jumps reach 1.2.', fig: function () { return jumps(1.2, 0.3); } },
+          { say: 'So 1.2 divided by 0.3 is <b>4</b>.', fig: eq('1.2 &divide; 0.3 = 4'), ms: 2200 }
+        ]),
+        try: lab('ddb', [
+          { do: 'Show <b>1.5 &divide; 0.25</b>.', goal: function (h) { return K.v(h, 'ddb') === 0.25 && K.v(h, 'ddn') === 6; }, yes: '6 jumps of 0.25 reach 1.5.' },
+          { do: 'Make the jumps reach exactly <b>3</b>.', goal: function (h) { return Math.abs(K.v(h, 'ddb') * K.v(h, 'ddn') - 3) < 1e-9; }, yes: function (h) { return '3 &divide; ' + K.v(h, 'ddb') + ' = ' + K.v(h, 'ddn') + '.'; } }
+        ]),
+        key: '<p><b>Dividing asks how many jumps of that size fit.</b></p>',
+        mistake: '<p>Dividing the bigger number into the smaller: 1.2 &divide; 0.3 written as 0.25. Read it as "how many 0.3s in 1.2?"</p>',
+        check: [K.ck('md-ddd', 1), K.ck('md-ddd', 1)] },
+      { id: 'shift', title: 'Make the divisor a whole number', exp: ['B2.9'], skill: 'md-ddd', hard: true,
+        body: '<p>Multiply <b>both</b> numbers by 10 (or 100) until you are dividing by a whole number. The answer does not change.</p>',
+        watch: K.slides([
+          { say: '4.5 divided by 0.15. Dividing by a decimal is hard.', fig: eq('4.5 &divide; 0.15') },
+          { say: 'Multiply both by 100. 0.15 becomes 15.', fig: eq('4.5 &times; 100 = 450 &nbsp; 0.15 &times; 100 = 15') },
+          { say: 'Now it is 450 divided by 15.', fig: eq('450 &divide; 15') },
+          { say: 'The answer is <b>30</b>, the same for both.', fig: eq('4.5 &divide; 0.15 = 450 &divide; 15 = 30'), ms: 2400 }
+        ]),
+        ways: [
+          { label: 'Like changing units', html: '<p>How many 15¢ stickers can you buy with $4.50? Change both to cents: 450¢ &divide; 15¢ = 30. Same as 4.5 &divide; 0.15.</p>' },
+          { label: 'Share equally', html: '<p>If 12 cookies are shared among 3 people, each gets 4. If 120 are shared among 30, each still gets 4. Scaling both numbers the same way keeps the answer.</p>' },
+          { label: 'Check by multiplying', html: '<p>30 &times; 0.15 = 4.5. It works, so 4.5 &divide; 0.15 = 30.</p>' }
+        ],
+        key: '<p><b>Scale both numbers by the same power of 10. Then divide.</b></p>',
+        mistake: '<p>Moving the point in only one number (4.5 &divide; 15 = 0.3). Whatever you do to one, do to the other.</p>',
+        check: [function () { return { q: 'Divide: 3.6 &divide; 0.4', type: 'num', answer: 9, hint: 'Multiply both by 10: 36 &divide; 4.', explain: '36 &divide; 4 = 9.' }; }, K.ck('md-ddd', 2), K.ck('md-ddd', 3)] }
+    ] },
+    { id: 'order', title: 'Order of operations', sub: 'Everyone gets the same answer.', concepts: [
+      { id: 'bedmas', title: 'BEDMAS', exp: ['B2.1'], skill: 'md-order',
+        body: '<p>When there is more than one operation, use the same order every time: <b>B</b>rackets, <b>E</b>xponents, <b>D</b>ivide and <b>M</b>ultiply, <b>A</b>dd and <b>S</b>ubtract.</p>',
+        watch: K.slides([
+          { say: '6 + 4 &times; 3. Multiply before adding.', fig: eq('6 + <u>4 &times; 3</u>') },
+          { say: '6 + 12 is <b>18</b>.', fig: eq('6 + 12 = 18') },
+          { say: 'With brackets, (6 + 4) &times; 3: brackets come first.', fig: eq('<u>(6 + 4)</u> &times; 3') },
+          { say: '10 &times; 3 is <b>30</b>. Brackets changed the answer.', fig: eq('10 &times; 3 = 30'), ms: 2400 }
+        ]),
+        try: lab('ooe', [
+          { do: 'Step through <b>20 &minus; 2&sup3; &divide; 4</b> to the end.', goal: function (h) { var b = h.querySelector('#oonext'); return K.v(h, 'ooe') === 2 && b && b.disabled; }, yes: 'Exponent, then divide, then subtract: 18.' },
+          { do: 'Step through <b>24 &divide; 6 &times; 2</b>.', goal: function (h) { var b = h.querySelector('#oonext'); return K.v(h, 'ooe') === 4 && b && b.disabled; }, yes: 'Left to right: 4 &times; 2 = 8.' }
+        ]),
+        key: '<p><b>B, E, then D and M left to right, then A and S left to right.</b></p>',
+        mistake: '<p>Working strictly left to right: 6 + 4 &times; 3 = 30. Underline the first operation to do before writing anything.</p>',
+        check: [K.ck('md-order', 1), K.ck('md-order', 1), K.ck('md-order', 2)] },
+      { id: 'leftright', title: 'Equal partners go left to right', exp: ['B2.1'], skill: 'md-order', hard: true,
+        body: '<p>Divide and multiply are <b>equal partners</b>. So are add and subtract. When partners meet, <b>go left to right</b>.</p>',
+        watch: K.slides([
+          { say: '24 &divide; 6 &times; 2. Divide and multiply are partners.', fig: eq('24 &divide; 6 &times; 2') },
+          { say: 'Go left to right: 24 &divide; 6 first, which is 4.', fig: eq('<u>24 &divide; 6</u> &times; 2 = 4 &times; 2') },
+          { say: '4 &times; 2 is <b>8</b>. Not 2!', fig: eq('= 8'), ms: 2200 }
+        ]),
+        ways: [
+          { label: 'Turn it into one kind', html: '<p>Dividing by 6 is multiplying by ' + fr(1, 6) + '. So 24 &divide; 6 &times; 2 = 24 &times; ' + fr(1, 6) + ' &times; 2 = 8. All multiplication: any order works.</p>' },
+          { label: 'Subtract and add', html: '<p>10 &minus; 3 + 2: left to right gives 7 + 2 = 9. Doing the add first gives 10 &minus; 5 = 5, which is wrong. Think of it as 10, take away 3, then add 2.</p>' }
+        ],
+        key: '<p><b>D and M are partners; A and S are partners. Partners go left to right.</b></p>',
+        mistake: '<p>Reading BEDMAS as "M before D always" or "A before S always". Point out that they are on the same step.</p>',
+        check: [function () { return { q: 'Evaluate: 18 &divide; (2 + 4) &times; 3', type: 'num', answer: 9, hint: 'Brackets first. Then divide and multiply left to right.', explain: '18 &divide; 6 &times; 3 = 3 &times; 3 = 9.' }; }, K.ck('md-order', 2), K.ck('md-order', 2)] },
+      { id: 'story', title: 'Multi-step problems', exp: ['B2.1', 'B2.9'], skill: 'md-order',
+        body: '<p>Many real problems are several steps written as one expression. Write it out, then follow the order of operations.</p>',
+        watch: K.slides([
+          { say: 'You buy 3 notebooks at $2.50 each and pay with a $10 bill. What is your change?', fig: eq('10 &minus; 3 &times; 2.50') },
+          { say: 'Multiply first: 3 &times; 2.50 is 7.50.', fig: eq('10 &minus; 7.50') },
+          { say: 'Then subtract: your change is <b>$2.50</b>.', fig: eq('= $2.50'), ms: 2200 }
+        ]),
+        key: '<p><b>Write the expression, then use BEDMAS.</b> Brackets can make the order clear.</p>',
+        mistake: '<p>Subtracting first: 10 &minus; 3 = 7, then 7 &times; 2.50 = $17.50 in change from $10. Ask: does the answer make sense?</p>',
+        check: [K.ck('md-order', 3), K.ck('md-order', 3)] }
+    ] }
+  ];
+
+
   A.register('mult-div', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Rounding decimals</h2>' +
-'<p>To round, find the two numbers it is between at the place you want. Then ask: which one is it closer to? Exactly halfway rounds <b>up</b>.</p>' +
-'<div class="fig">' + roundPic(3.47, 1) + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Round 3.47 to the nearest tenth. It is between 3.4 and 3.5. Halfway is 3.45. 3.47 is past halfway, so it rounds to <b>3.5</b>.</p><p>Short cut: look at the digit just to the right of the tenths, the 7. It is 5 or more, so round up.</p></div>' +
-'<div class="lab"><span class="lt">Try it: round any decimal</span>' +
-'<div class="ctrl"><label for="rdx">Number<input type="text" inputmode="decimal" id="rdx" value="12.648"></label><label for="rdp">Round to the nearest<select id="rdp"><option value="0">whole number</option><option value="1">tenth</option><option value="2" selected>hundredth</option></select></label></div>' +
-'<div class="fig" id="rdfig"></div><div class="out" id="rdout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>We round to give a sensible answer. Money is rounded to the hundredth (the nearest cent). A runner\'s time might be rounded to the tenth of a second.</p></div>' +
-A.yt({ q: 'Round 5.982 to the nearest tenth.', answer: 6, show: '6.0', hint: 'It is between 5.9 and 6.0. Halfway is 5.95.', explain: '5.982 is past 5.95, so it rounds up to 6.0.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Multiplying fractions</h2>' +
-'<p>In math, <b>"of" means times</b>. ' + fr(1, 2) + ' of ' + fr(3, 4) + ' means ' + fr(1, 2) + ' &times; ' + fr(3, 4) + '. An <b>area model</b> shows it: shade one fraction in columns and the other in rows. The overlap is the answer.</p>' +
-'<div class="fig">' + areaFr(1, 2, 3, 4) + '</div>' +
-'<div class="key"><b class="t">Key idea</b><p>Multiply the tops. Multiply the bottoms. ' + fr(2, 3) + ' &times; ' + fr(4, 5) + ' = ' + fr('2 &times; 4', '3 &times; 5') + ' = ' + fr(8, 15) + '. You do <b>not</b> need a common denominator.</p></div>' +
-'<div class="lab"><span class="lt">Try it: the area model</span>' +
-'<div class="ctrl"><label for="mfa">Columns: <output id="mfao"></output><input type="range" id="mfa" min="1" max="8" value="2"></label><label for="mfb">out of <output id="mfbo"></output><input type="range" id="mfb" min="1" max="8" value="3"></label></div>' +
-'<div class="ctrl"><label for="mfc">Rows: <output id="mfco"></output><input type="range" id="mfc" min="1" max="8" value="3"></label><label for="mfd">out of <output id="mfdo"></output><input type="range" id="mfd" min="1" max="8" value="5"></label></div>' +
-'<div class="fig" id="mffig"></div><div class="out" id="mfout"></div></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>A recipe needs ' + fr(3, 4) + ' cup of flour. You make ' + fr(2, 3) + ' of the recipe. How much flour?</p><p class="math">' + fr(2, 3) + ' &times; ' + fr(3, 4) + ' = ' + fr(6, 12) + ' = ' + fr(1, 2) + ' cup</p></div>' +
-A.yt({ q: 'Multiply: ' + fr(3, 5) + ' &times; ' + fr(1, 2) + '. Type a fraction.', answer: 0.3, show: '3/10', kb: 'text', hint: 'Multiply the tops, then the bottoms.', explain: fr('3 &times; 1', '5 &times; 2') + ' = ' + fr(3, 10) + '.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Dividing fractions</h2>' +
-'<p>Division asks <b>"how many fit?"</b>. ' + A.mixed(1, 1, 2) + ' &divide; ' + fr(1, 4) + ' asks: how many quarters fit into one and a half?</p>' +
-'<div class="fig">' + measure(3, 2, 1, 4) + '</div>' +
-'<p>Six quarters fit, so ' + fr(3, 2) + ' &divide; ' + fr(1, 4) + ' = 6. Notice that the answer is <b>bigger</b> than what you started with. That happens when you divide by a number less than 1.</p>' +
-'<div class="key"><b class="t">Key idea: multiply by the reciprocal</b><p>To divide by a fraction, flip the second fraction and multiply. The flipped fraction is the <b>reciprocal</b>.</p><p class="math">' + fr(3, 2) + ' &divide; ' + fr(1, 4) + ' = ' + fr(3, 2) + ' &times; ' + fr(4, 1) + ' = ' + fr(12, 2) + ' = 6</p></div>' +
-'<div class="vs"><div><b class="t">Multiply: ' + fr(1, 2) + ' &times; ' + fr(1, 4) + '</b><p>Half <b>of</b> a quarter.</p><p>= ' + fr(1, 8) + ' (smaller)</p></div><div><b class="t">Divide: ' + fr(1, 2) + ' &divide; ' + fr(1, 4) + '</b><p>How many quarters <b>fit in</b> a half?</p><p>= 2 (bigger)</p></div></div>' +
-'<div class="lab"><span class="lt">Try it: how many fit?</span>' +
-'<div class="ctrl"><label for="dva">Start with<select id="dva"><option value="1,2">1/2</option><option value="3,4">3/4</option><option value="1,1">1</option><option value="3,2" selected>1 1/2</option><option value="2,1">2</option><option value="5,2">2 1/2</option></select></label>' +
-'<label for="dvb">Pieces of size<select id="dvb"><option value="1,2">1/2</option><option value="1,3">1/3</option><option value="1,4">1/4</option><option value="3,4" selected>3/4</option><option value="1,6">1/6</option><option value="2,3">2/3</option><option value="1,8">1/8</option></select></label></div>' +
-'<div class="fig" id="dvfig"></div><div class="out" id="dvout"></div></div>' +
-A.yt({ q: 'Divide: 3 &divide; ' + fr(3, 4) + '.', answer: 4, hint: 'How many three-quarter pieces fit into 3? Or flip and multiply: 3 &times; ' + fr(4, 3) + '.', explain: '3 &times; ' + fr(4, 3) + ' = ' + fr(12, 3) + ' = 4. Four pieces of ' + fr(3, 4) + ' make 3.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Multiplying decimals</h2>' +
-'<p>A hundred grid shows ' + '0.3 &times; 0.4. Shade 3 tenths one way and 4 tenths the other. The overlap is 12 small squares, which is 12 hundredths.</p>' +
-'<div class="fig">' + grid(3, 4) + '</div>' +
-'<div class="key"><b class="t">Key idea</b><p>Multiply as if there were no decimal points. Then count the decimal places in the two numbers. The answer has that many decimal places.</p><p class="math">2.4 &times; 1.3: 24 &times; 13 = 312. One place + one place = two places. Answer: 3.12</p></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Gas costs $1.48 per litre. How much for 2.5 L? 148 &times; 25 = 3700. Two places + one place = three places: 3.700. Cost: <b>$3.70</b>.</p><p>Estimate to check: about $1.50 &times; 2.5 is about $3.75. Close.</p></div>' +
-'<div class="lab"><span class="lt">Try it: tenths times tenths</span>' +
-'<div class="ctrl"><label for="mda">First: <output id="mdao"></output><input type="range" id="mda" min="1" max="10" value="6"></label><label for="mdb">Second: <output id="mdbo"></output><input type="range" id="mdb" min="1" max="10" value="7"></label></div>' +
-'<div class="fig" id="mdfig"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>0.3 &times; 0.4 is not 1.2 and not 0.7. Multiplying two numbers less than 1 gives a <b>smaller</b> number: 0.12.</p></div>' +
-A.yt({ q: 'Multiply: 0.6 &times; 0.8', answer: 0.48, hint: '6 &times; 8 = 48. How many decimal places in total?', explain: '6 &times; 8 = 48, and there are two decimal places in total: 0.48.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Dividing decimals</h2>' +
-'<p>Dividing asks how many fit. 1.2 &divide; 0.3 asks: how many jumps of 0.3 reach 1.2?</p>' +
-'<div class="fig">' + jumps(1.2, 0.3) + '</div>' +
-'<div class="key"><b class="t">Key idea: make the divisor a whole number</b><p>Multiply <b>both</b> numbers by 10 (or 100) until you divide by a whole number. The answer does not change.</p><p class="math">1.2 &divide; 0.3 = 12 &divide; 3 = 4 &nbsp;&nbsp; 4.5 &divide; 0.15 = 450 &divide; 15 = 30</p></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>A 2.4 m board is cut into pieces 0.6 m long. How many pieces? 2.4 &divide; 0.6 = 24 &divide; 6 = <b>4 pieces</b>.</p></div>' +
-'<div class="lab"><span class="lt">Try it: count the jumps</span>' +
-'<div class="ctrl"><label for="ddb">Jump size<select id="ddb"><option>0.2</option><option selected>0.25</option><option>0.4</option><option>0.5</option><option>0.75</option><option>1.5</option></select></label><label for="ddn">Number of jumps: <output id="ddno"></output><input type="range" id="ddn" min="1" max="12" value="6"></label></div>' +
-'<div class="fig" id="ddfig"></div><div class="out" id="ddout"></div></div>' +
-A.yt({ q: 'Divide: 3.6 &divide; 0.4', answer: 9, hint: 'Multiply both by 10: 36 &divide; 4.', explain: '3.6 &divide; 0.4 = 36 &divide; 4 = 9.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>Order of operations</h2>' +
-'<p>When a question has more than one operation, everyone must do them in the same order, or we get different answers. Remember <b>BEDMAS</b>:</p>' +
-'<div class="tbl"><table><tbody><tr><td><b>B</b></td><td class="l">Brackets first</td></tr><tr><td><b>E</b></td><td class="l">Exponents</td></tr><tr><td><b>D M</b></td><td class="l">Divide and multiply, left to right</td></tr><tr><td><b>A S</b></td><td class="l">Add and subtract, left to right</td></tr></tbody></table></div>' +
-'<div class="vs"><div><b class="t">6 + 4 &times; 3</b><p>Multiply first: 6 + 12 = <b>18</b></p></div><div><b class="t">(6 + 4) &times; 3</b><p>Brackets first: 10 &times; 3 = <b>30</b></p></div></div>' +
-'<div class="lab"><span class="lt">Try it: one step at a time</span>' +
-'<div class="ctrl"><label for="ooe">Expression<select id="ooe">' + EXPR.map(function (x, i) { return '<option value="' + i + '">' + x.e.replace(/<[^>]+>/g, '').replace(/&times;/g, '×').replace(/&divide;/g, '÷').replace(/&minus;/g, '−').replace(/23/, '2³') + '</option>'; }).join('') + '</select></label></div>' +
-'<div class="btnrow"><button type="button" class="btn" id="oonext">Show the next step</button><button type="button" class="btn alt" id="oores">Start again</button></div>' +
-'<ol class="oo" id="ooout"></ol></div>' +
-'<div class="eg"><b class="t">Worked example: a multi-step problem</b><p>You buy 3 notebooks at $2.50 each and pay with a $10 bill. Change: 10 &minus; 3 &times; 2.50 = 10 &minus; 7.50 = <b>$2.50</b>. Multiply before subtracting.</p></div>' +
-A.yt({ q: 'Evaluate: 18 &divide; (2 + 4) &times; 3', answer: 9, hint: 'Brackets first. Then divide and multiply from left to right.', explain: '18 &divide; 6 &times; 3 = 3 &times; 3 = 9.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['rdx', 'rdp'], function () {
-        var x = parseFloat($('#rdx', root).value), p = +$('#rdp', root).value;
-        if (isNaN(x) || x < 0 || x > 1e6) { $('#rdout', root).innerHTML = '<p>Type a number from 0 to 1 000 000.</p>'; $('#rdfig', root).innerHTML = ''; return; }
-        var r = roundTo(x, p), dig = Math.floor(cl(x * Math.pow(10, p + 1))) % 10;
-        $('#rdfig', root).innerHTML = roundPic(x, p);
-        $('#rdout', root).innerHTML = '<p>Look at the digit after the ' + PL[p] + (p ? 's' : 's') + ' place: <b>' + dig + '</b>. ' + (dig >= 5 ? 'It is 5 or more, so round up.' : 'It is less than 5, so round down.') + '</p><p class="big2">' + dec(x) + ' &asymp; ' + r.toFixed(p) + '</p>';
-      });
-      A.bind(root, ['mfa', 'mfb', 'mfc', 'mfd'], function () {
-        var b = +$('#mfb', root).value, d = +$('#mfd', root).value, a = Math.min(+$('#mfa', root).value, b), c = Math.min(+$('#mfc', root).value, d);
-        $('#mfao', root).textContent = a; $('#mfbo', root).textContent = b; $('#mfco', root).textContent = c; $('#mfdo', root).textContent = d;
-        $('#mffig', root).innerHTML = areaFr(a, b, c, d);
-        $('#mfout', root).innerHTML = '<p class="big2">' + fr(a, b) + ' &times; ' + fr(c, d) + ' = ' + fr(a * c, b * d) + (frs(a * c, b * d) !== fr(a * c, b * d) ? ' = ' + frs(a * c, b * d) : '') + '</p>';
-      });
-      A.bind(root, ['dva', 'dvb'], function () {
-        var p = $('#dva', root).value.split(',').map(Number), q = $('#dvb', root).value.split(',').map(Number);
-        $('#dvfig', root).innerHTML = measure(p[0], p[1], q[0], q[1]);
-        $('#dvout', root).innerHTML = '<p class="big2">' + frs(p[0], p[1]) + ' &divide; ' + fr(q[0], q[1]) + ' = ' + frs(p[0], p[1]) + ' &times; ' + fr(q[1], q[0]) + ' = ' + frs(p[0] * q[1], p[1] * q[0]) + '</p>';
-      });
-      A.bind(root, ['mda', 'mdb'], function () {
-        var a = +$('#mda', root).value, b = +$('#mdb', root).value;
-        $('#mdao', root).textContent = dec(a / 10); $('#mdbo', root).textContent = dec(b / 10);
-        $('#mdfig', root).innerHTML = grid(a, b) + '<p class="big2" style="text-align:center">' + dec(a / 10) + ' &times; ' + dec(b / 10) + ' = ' + dec(a * b / 100) + '</p>';
-      });
-      A.bind(root, ['ddb', 'ddn'], function () {
-        var b = parseFloat($('#ddb', root).value), n = +$('#ddn', root).value, a = cl(b * n), k = places(b), m = Math.pow(10, k);
-        $('#ddno', root).textContent = n;
-        $('#ddfig', root).innerHTML = jumps(a, b);
-        $('#ddout', root).innerHTML = '<p class="big2">' + dec(a) + ' &divide; ' + dec(b) + ' = ' + n + '</p><p>Multiply both by ' + m + ': ' + dec(a * m) + ' &divide; ' + dec(b * m) + ' = ' + n + '.</p>';
-      });
-      var step = 0;
-      function oo() {
-        var x = EXPR[+$('#ooe', root).value];
-        $('#ooout', root).innerHTML = x.st.slice(0, step + 1).map(function (s, i) { return '<li><span class="math big2" style="font-size:1.3rem">' + (i ? '= ' : '') + s[0] + '</span>' + (s[1] && i === step ? ' <span class="t2">&larr; ' + s[1] + '</span>' : '') + '</li>'; }).join('');
-        $('#oonext', root).disabled = step >= x.st.length - 1;
-      }
-      $('#ooe', root).addEventListener('change', function () { step = 0; oo(); });
-      $('#oonext', root).addEventListener('click', function () { step++; oo(); });
-      $('#oores', root).addEventListener('click', function () { step = 0; oo(); });
-      oo();
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'Round 14.065 to the nearest hundredth.', type: 'mc', options: ['14.06', '14.07', '14.1', '14.00'], answer: 1, hint: 'Look at the thousandths digit.', explain: 'The thousandths digit is 5, so round the hundredths up: 14.07.' },

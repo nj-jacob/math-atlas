@@ -76,132 +76,256 @@
     return A.svg(180, 170, s, 'A bag with ' + r + ' red' + ', ' + b + ' blue' + (g ? ' and ' + g + ' green' : '') + ' marbles');
   }
 
-  A.register('data-probability', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Kinds of data, and why we use percents</h2>' +
-'<p>Data can be words or numbers. Knowing the kind helps you choose how to show it.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Kind</th><th class="l">What it is</th><th class="l">Example</th></tr></thead><tbody>' +
-'<tr><td class="l"><b>Qualitative</b></td><td class="l">words or categories</td><td class="l">favourite sport, eye colour</td></tr>' +
-'<tr><td class="l"><b>Discrete</b> quantitative</td><td class="l">numbers you count, no in-betweens</td><td class="l">number of pets, goals scored</td></tr>' +
-'<tr><td class="l"><b>Continuous</b> quantitative</td><td class="l">numbers you measure, any value in a range</td><td class="l">height, time, temperature</td></tr></tbody></table></div>' +
-'<p>With big data sets we often use <b>percents</b>. 360 out of 1200 students is hard to picture, but <b>30%</b> is easy: 30 out of every 100. Percents also let you compare groups of different sizes.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>School A: 90 of 300 students bike to school. School B: 150 of 600. Which has the bigger share of bikers?</p><p>A: 90 &divide; 300 = 30%. B: 150 &divide; 600 = 25%. School B has more bikers, but School A has a <b>bigger share</b>.</p></div>' +
-A.yt({ q: 'The time it takes students to run 100 m is which kind of data?', type: 'mc', options: ['Qualitative', 'Discrete', 'Continuous'], answer: 2, hint: 'Is time counted or measured?', explain: 'Time is measured and can be any value, like 14.37 s, so it is continuous.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Circle graphs</h2>' +
-'<p>A <b>circle graph</b> shows how a whole is split into parts. Each slice is a percent of the whole circle. A full circle is 360&deg;, so 1% is 3.6&deg;.</p>' +
-'<div class="fig">' + pie([{ lab: 'Bus', v: 12 }, { lab: 'Walk', v: 9 }, { lab: 'Car', v: 6 }, { lab: 'Bike', v: 3 }], 'How 30 students get to school') + '</div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Bus: 12 of 30 = 12 &divide; 30 = 0.4 = <b>40%</b>. Its slice is 40% of 360&deg; = 0.4 &times; 360 = <b>144&deg;</b>.</p></div>' +
-'<div class="lab"><span class="lt">Try it: build a circle graph</span>' +
-'<div class="ctrl">' + ['Soccer', 'Hockey', 'Basketball', 'Swimming'].map(function (l, i) { return '<label for="pi' + i + '">' + l + ': <output id="pi' + i + 'o"></output><input type="range" id="pi' + i + '" min="0" max="40" value="' + [14, 10, 8, 4][i] + '"></label>'; }).join('') + '</div>' +
-'<div class="fig" id="pifig"></div><div class="out" id="piout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>The percents in a circle graph always add to 100%, and the angles add to 360&deg;. Use a circle graph only when the parts make <b>one whole</b>.</p></div>' +
-A.yt({ q: 'In a circle graph, a slice is 25% of the circle. What is its angle?', answer: 90, unit: '&deg;', hint: '25% is one quarter of 360&deg;.', explain: '0.25 &times; 360 = 90&deg;.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Choosing a graph, and infographics</h2>' +
-'<div class="tbl"><table><thead><tr><th class="l">Graph</th><th class="l">Best for</th></tr></thead><tbody>' +
-'<tr><td class="l">Bar graph</td><td class="l">comparing categories (qualitative or discrete data)</td></tr>' +
-'<tr><td class="l">Circle graph</td><td class="l">parts of one whole, as percents</td></tr>' +
-'<tr><td class="l">Line graph</td><td class="l">change over time (continuous data)</td></tr>' +
-'<tr><td class="l">Histogram</td><td class="l">continuous data grouped into intervals, like heights 140&ndash;149 cm</td></tr>' +
-'<tr><td class="l">Stem-and-leaf plot</td><td class="l">a small set of numbers, keeping every value</td></tr></tbody></table></div>' +
-'<p>Every graph needs a <b>title</b>, <b>labels</b> on the axes, a sensible <b>scale</b>, and the <b>source</b> of the data.</p>' +
-'<p>An <b>infographic</b> tells a story with data. It mixes a few graphs, big numbers and short sentences. Here is a small one about the class from section 2.</p>' +
-'<div class="info"><div class="ihead">Getting to school, Room 7B</div><div class="ibig"><b>70%</b><span>come by bus or on foot</span></div>' +
-'<div class="fig">' + pie([{ lab: 'Bus', v: 12 }, { lab: 'Walk', v: 9 }, { lab: 'Car', v: 6 }, { lab: 'Bike', v: 3 }], '', 70) + '</div>' +
-'<div class="ibig"><b>1 in 10</b><span>bikes, even in winter</span></div><p class="isrc">Source: class survey of 30 students, October</p></div>' +
-'<p class="t2">To make your own: pick a question, collect data, choose 2 or 3 displays, write one headline number, and give your source.</p>' +
-A.yt({ q: 'Which graph is best for showing how a puppy\'s mass changed each month for a year?', type: 'mc', options: ['Circle graph', 'Line graph', 'Bar graph of favourite colours'], answer: 1, hint: 'The data changes over time.', explain: 'Change over time is shown best with a line graph.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Mean, median and mode, and what changes them</h2>' +
-'<div class="tbl"><table><tbody><tr><td class="l"><b>Mean</b></td><td class="l">add all values, divide by how many</td></tr><tr><td class="l"><b>Median</b></td><td class="l">the middle value when the data is in order (the mean of the two middle values if there is an even number)</td></tr><tr><td class="l"><b>Mode</b></td><td class="l">the value that appears most often</td></tr><tr><td class="l"><b>Range</b></td><td class="l">greatest minus least: how spread out the data is</td></tr></tbody></table></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>Goals in 7 games: 2, 3, 3, 4, 5, 6, 12. Mean: 35 &divide; 7 = 5. Median: 4. Mode: 3.</p><p>Remove the 12 (one unusual game, an <b>outlier</b>): mean becomes 23 &divide; 6 &asymp; 3.8, median 3.5. The mean moved a lot. The median moved a little.</p></div>' +
-'<div class="lab"><span class="lt">Try it: add and remove data</span>' +
-'<div class="btnrow"><label for="dpv" class="sr">Value to add</label><input type="number" id="dpv" min="0" max="20" value="18"><button type="button" class="btn" id="dpadd">Add value</button><button type="button" class="btn alt" id="dprem">Remove last value</button><button type="button" class="btn alt" id="dpres">Reset</button></div>' +
-'<div class="fig" id="dpfig"></div><div class="out" id="dpout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>An outlier pulls the <b>mean</b> toward it. The <b>median</b> hardly moves. When data has an outlier, the median often describes the "typical" value better.</p></div>' +
-A.yt({ q: 'Find the median of 8, 3, 10, 5, 7, 4.', answer: 6, hint: 'Put them in order. There are 6 values, so use the two in the middle.', explain: 'In order: 3, 4, 5, 7, 8, 10. The middle two are 5 and 7. Median = (5 + 7) &divide; 2 = 6.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Misleading graphs</h2>' +
-'<p>A graph can be true but still give the wrong idea. Watch for an axis that does <b>not start at 0</b>, a stretched scale, missing labels, or pictures of different sizes.</p>' +
-'<div class="lab"><span class="lt">Try it: same data, two graphs</span>' +
-'<div class="ctrl"><label for="mlz">Vertical axis starts at: <output id="mlzo"></output><input type="range" id="mlz" min="0" max="95" step="5" value="90"></label></div>' +
-'<div class="fig" id="mlfig"></div><div class="out" id="mlout"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Judging by the height of the bars without reading the scale. Always check where the axis starts and what each line is worth.</p></div>' +
-'<p>When you read any data, ask: Who collected it? How big was the sample? Does the graph make a difference look bigger than it is? What might be left out?</p>' +
-A.yt({ q: 'A graph\'s axis starts at 50. Bar A reaches 52 and bar B reaches 56. Bar B looks 3 times as tall. What is B really, compared to A?', type: 'mc', options: ['3 times as much', 'About 8% more', 'Twice as much'], answer: 1, hint: 'Compare the actual values, 52 and 56.', explain: '56 is 4 more than 52. 4 &divide; 52 is about 8%. The cut-off axis makes it look huge.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>Independent and dependent events</h2>' +
-'<p>Two events are <b>independent</b> if the first does not change the chances of the second. Flipping a coin and rolling a die are independent. To find the chance of both, <b>multiply</b> the probabilities.</p>' +
-'<div class="fig">' + tree(['H', 'T'], ['1', '2', '3', '4', '5', '6'], 'coin', 'die') + '</div>' +
-'<p>There are 2 &times; 6 = 12 equally likely outcomes. P(heads and a 6) = ' + fr(1, 2) + ' &times; ' + fr(1, 6) + ' = ' + fr(1, 12) + '.</p>' +
-'<p>Events are <b>dependent</b> if the first changes the second. Picking marbles <b>without putting the first one back</b> is dependent: there is one fewer marble in the bag.</p>' +
-'<div class="row2"><div class="fig">' + bag(3, 2) + '</div><div class="eg"><b class="t">Worked example</b><p>3 red, 2 blue. Pick two without replacing.</p><p>P(red first) = ' + fr(3, 5) + '. Now 2 red of 4 are left: P(red second) = ' + fr(2, 4) + '.</p><p>P(red, red) = ' + fr(3, 5) + ' &times; ' + fr(2, 4) + ' = ' + fr(6, 20) + ' = ' + fr(3, 10) + '.</p><p>With replacing, it would be ' + fr(3, 5) + ' &times; ' + fr(3, 5) + ' = ' + fr(9, 25) + '.</p></div></div>' +
-'<div class="vs"><div><b class="t">Independent</b><p>Put the marble back. The bag is the same for the second pick.</p></div><div><b class="t">Dependent</b><p>Keep the marble. The bag has changed for the second pick.</p></div></div>' +
-'<div class="lab"><span class="lt">Try it: experiment with the bag of 3 red and 2 blue</span>' +
-'<div class="ctrl"><label for="mbr">Put the first marble back?<select id="mbr"><option value="1">Yes (independent)</option><option value="0" selected>No (dependent)</option></select></label></div>' +
-'<div class="btnrow"><button type="button" class="btn" id="mb10">Pick two, 10 times</button><button type="button" class="btn" id="mb500">Pick two, 500 times</button><button type="button" class="btn alt" id="mbclr">Clear</button></div>' +
-'<div class="out" id="mbout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>The <b>experimental</b> probability (from trials) gets closer to the <b>theoretical</b> probability (from reasoning) as the number of trials grows.</p></div>' +
-A.yt({ q: 'A bag has 4 green and 6 yellow cubes. You pick one, keep it, and pick another. What is P(green, green)? Type a fraction.', answer: 2 / 15, show: '2/15', kb: 'text', tol: 1e-6, hint: 'First pick: 4 of 10. Second pick: 3 of 9.', explain: fr(4, 10) + ' &times; ' + fr(3, 9) + ' = ' + fr(12, 90) + ' = ' + fr(2, 15) + '.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['pi0', 'pi1', 'pi2', 'pi3'], function () {
-        var labs = ['Soccer', 'Hockey', 'Basketball', 'Swimming'], items = labs.map(function (l, i) { var v = +$('#pi' + i, root).value; $('#pi' + i + 'o', root).textContent = v; return { lab: l, v: v }; });
-        var tot = items.reduce(function (s, i) { return s + i.v; }, 0);
-        if (!tot) { $('#pifig', root).innerHTML = ''; $('#piout', root).innerHTML = '<p>Add some votes.</p>'; return; }
-        $('#pifig', root).innerHTML = pie(items, 'Favourite sport (' + tot + ' votes)');
-        $('#piout', root).innerHTML = '<div class="tbl"><table><thead><tr><th class="l">Sport</th><th>Votes</th><th>Percent</th><th>Angle</th></tr></thead><tbody>' + items.map(function (i) { return '<tr><td class="l">' + i.lab + '</td><td>' + i.v + '</td><td>' + (Math.round(i.v / tot * 1000) / 10) + '%</td><td>' + (Math.round(i.v / tot * 3600) / 10) + '&deg;</td></tr>'; }).join('') + '<tr><td class="l"><b>Total</b></td><td><b>' + tot + '</b></td><td><b>100%</b></td><td><b>360&deg;</b></td></tr></tbody></table></div>';
-      });
-      var base = [4, 5, 5, 6, 7, 7, 7, 8, 9], data = base.slice();
-      function dp() {
-        var st = stats(data);
-        $('#dpfig', root).innerHTML = dotplot(data, 0, 20);
-        $('#dpout', root).innerHTML = '<p>Data (' + st.n + ' values): ' + st.srt.join(', ') + '</p><div class="tbl"><table><tbody><tr><td class="l">Mean</td><td>' + st.sum + ' &divide; ' + st.n + ' = <b>' + (Math.round(st.mean * 100) / 100) + '</b></td></tr><tr><td class="l">Median</td><td><b>' + dec(st.med) + '</b></td></tr><tr><td class="l">Mode</td><td><b>' + (st.modes.join(' and ') || 'none') + '</b></td></tr><tr><td class="l">Range</td><td><b>' + st.range + '</b></td></tr></tbody></table></div>';
-        $('#dprem', root).disabled = data.length <= 2;
-      }
-      $('#dpadd', root).addEventListener('click', function () { var v = Math.max(0, Math.min(20, Math.round(+$('#dpv', root).value || 0))); if (data.length < 25) data.push(v); dp(); });
-      $('#dprem', root).addEventListener('click', function () { if (data.length > 2) data.pop(); dp(); });
-      $('#dpres', root).addEventListener('click', function () { data = base.slice(); dp(); });
-      dp();
-      A.bind(root, ['mlz'], function () {
-        var z = +$('#mlz', root).value, it = [{ lab: 'Brand A', v: 96 }, { lab: 'Brand B', v: 98 }, { lab: 'Brand C', v: 97 }];
-        $('#mlzo', root).textContent = z;
-        $('#mlfig', root).innerHTML = bars(it, z, 100, 'Customers happy (%)');
-        $('#mlout', root).innerHTML = z > 0 ? '<p>The axis starts at ' + z + ', so Brand B\'s bar looks ' + (Math.round((98 - z) / (96 - z) * 10) / 10) + ' times as tall as Brand A\'s. Really, 98% is only 2 points more than 96%.</p>' : '<p>With the axis at 0, you can see the three brands are almost the same.</p>';
-      });
-      var tally = { rr: 0, rb: 0, br: 0, bb: 0, n: 0 };
-      function pick(n) {
-        var back = $('#mbr', root).value === '1';
-        for (var i = 0; i < n; i++) {
-          var b = ['r', 'r', 'r', 'b', 'b'], k = R.int(0, 4), f = b[k];
-          if (!back) b.splice(k, 1);
-          var s2 = b[R.int(0, b.length - 1)];
-          tally[f + s2]++; tally.n++;
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    pifig: { title: 'build a circle graph', html: 
+      '<div class="ctrl">' + ['Soccer', 'Hockey', 'Basketball', 'Swimming'].map(function (l, i) { return '<label for="pi' + i + '">' + l + ': <output id="pi' + i + 'o"></output><input type="range" id="pi' + i + '" min="0" max="40" value="' + [14, 10, 8, 4][i] + '"></label>'; }).join('') + '</div>' +
+      '<div class="fig" id="pifig"></div><div class="out" id="piout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['pi0', 'pi1', 'pi2', 'pi3'], function () {
+          var labs = ['Soccer', 'Hockey', 'Basketball', 'Swimming'], items = labs.map(function (l, i) { var v = +$('#pi' + i, root).value; $('#pi' + i + 'o', root).textContent = v; return { lab: l, v: v }; });
+          var tot = items.reduce(function (s, i) { return s + i.v; }, 0);
+          if (!tot) { $('#pifig', root).innerHTML = ''; $('#piout', root).innerHTML = '<p>Add some votes.</p>'; return; }
+          $('#pifig', root).innerHTML = pie(items, 'Favourite sport (' + tot + ' votes)');
+          $('#piout', root).innerHTML = '<div class="tbl"><table><thead><tr><th class="l">Sport</th><th>Votes</th><th>Percent</th><th>Angle</th></tr></thead><tbody>' + items.map(function (i) { return '<tr><td class="l">' + i.lab + '</td><td>' + i.v + '</td><td>' + (Math.round(i.v / tot * 1000) / 10) + '%</td><td>' + (Math.round(i.v / tot * 3600) / 10) + '&deg;</td></tr>'; }).join('') + '<tr><td class="l"><b>Total</b></td><td><b>' + tot + '</b></td><td><b>100%</b></td><td><b>360&deg;</b></td></tr></tbody></table></div>';
+        });
+      } },
+    dpv: { title: 'add and remove data', html: 
+      '<div class="btnrow"><label for="dpv" class="sr">Value to add</label><input type="number" id="dpv" min="0" max="20" value="18"><button type="button" class="btn" id="dpadd">Add value</button><button type="button" class="btn alt" id="dprem">Remove last value</button><button type="button" class="btn alt" id="dpres">Reset</button></div>' +
+      '<div class="fig" id="dpfig"></div><div class="out" id="dpout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        var base = [4, 5, 5, 6, 7, 7, 7, 8, 9], data = base.slice();
+        function dp() {
+          var st = stats(data);
+          $('#dpfig', root).innerHTML = dotplot(data, 0, 20);
+          $('#dpout', root).innerHTML = '<p>Data (' + st.n + ' values): ' + st.srt.join(', ') + '</p><div class="tbl"><table><tbody><tr><td class="l">Mean</td><td>' + st.sum + ' &divide; ' + st.n + ' = <b>' + (Math.round(st.mean * 100) / 100) + '</b></td></tr><tr><td class="l">Median</td><td><b>' + dec(st.med) + '</b></td></tr><tr><td class="l">Mode</td><td><b>' + (st.modes.join(' and ') || 'none') + '</b></td></tr><tr><td class="l">Range</td><td><b>' + st.range + '</b></td></tr></tbody></table></div>';
+          $('#dprem', root).disabled = data.length <= 2;
         }
+        $('#dpadd', root).addEventListener('click', function () { var v = Math.max(0, Math.min(20, Math.round(+$('#dpv', root).value || 0))); if (data.length < 25) data.push(v); dp(); });
+        $('#dprem', root).addEventListener('click', function () { if (data.length > 2) data.pop(); dp(); });
+        $('#dpres', root).addEventListener('click', function () { data = base.slice(); dp(); });
+        dp();
+      } },
+    mlzo: { title: 'same data, two graphs', html: 
+      '<div class="ctrl"><label for="mlz">Vertical axis starts at: <output id="mlzo"></output><input type="range" id="mlz" min="0" max="95" step="5" value="90"></label></div>' +
+      '<div class="fig" id="mlfig"></div><div class="out" id="mlout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['mlz'], function () {
+          var z = +$('#mlz', root).value, it = [{ lab: 'Brand A', v: 96 }, { lab: 'Brand B', v: 98 }, { lab: 'Brand C', v: 97 }];
+          $('#mlzo', root).textContent = z;
+          $('#mlfig', root).innerHTML = bars(it, z, 100, 'Customers happy (%)');
+          $('#mlout', root).innerHTML = z > 0 ? '<p>The axis starts at ' + z + ', so Brand B\'s bar looks ' + (Math.round((98 - z) / (96 - z) * 10) / 10) + ' times as tall as Brand A\'s. Really, 98% is only 2 points more than 96%.</p>' : '<p>With the axis at 0, you can see the three brands are almost the same.</p>';
+        });
+      } },
+    mbr: { title: 'experiment with the bag of 3 red and 2 blue', html: 
+      '<div class="ctrl"><label for="mbr">Put the first marble back?<select id="mbr"><option value="1">Yes (independent)</option><option value="0" selected>No (dependent)</option></select></label></div>' +
+      '<div class="btnrow"><button type="button" class="btn" id="mb10">Pick two, 10 times</button><button type="button" class="btn" id="mb500">Pick two, 500 times</button><button type="button" class="btn alt" id="mbclr">Clear</button></div>' +
+      '<div class="out" id="mbout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        var tally = { rr: 0, rb: 0, br: 0, bb: 0, n: 0 };
+        function pick(n) {
+          var back = $('#mbr', root).value === '1';
+          for (var i = 0; i < n; i++) {
+            var b = ['r', 'r', 'r', 'b', 'b'], k = R.int(0, 4), f = b[k];
+            if (!back) b.splice(k, 1);
+            var s2 = b[R.int(0, b.length - 1)];
+            tally[f + s2]++; tally.n++;
+          }
+          show();
+        }
+        function show() {
+          var back = $('#mbr', root).value === '1', th = back ? { rr: 9 / 25, rb: 6 / 25, br: 6 / 25, bb: 4 / 25 } : { rr: 6 / 20, rb: 6 / 20, br: 6 / 20, bb: 2 / 20 };
+          var thS = back ? { rr: '9/25', rb: '6/25', br: '6/25', bb: '4/25' } : { rr: '6/20', rb: '6/20', br: '6/20', bb: '2/20' };
+          var nm = { rr: 'red, red', rb: 'red, blue', br: 'blue, red', bb: 'blue, blue' };
+          $('#mbout', root).innerHTML = '<div class="tbl"><table><thead><tr><th class="l">Outcome</th><th>Times</th><th>Experimental</th><th>Theoretical</th></tr></thead><tbody>' +
+            ['rr', 'rb', 'br', 'bb'].map(function (k) { return '<tr><td class="l">' + nm[k] + '</td><td>' + tally[k] + '</td><td>' + (tally.n ? Math.round(tally[k] / tally.n * 100) + '%' : '&ndash;') + '</td><td>' + thS[k] + ' = ' + Math.round(th[k] * 100) + '%</td></tr>'; }).join('') +
+            '</tbody></table></div><p>' + tally.n + ' trials so far.</p>';
+        }
+        $('#mb10', root).addEventListener('click', function () { pick(10); });
+        $('#mb500', root).addEventListener('click', function () { pick(500); });
+        $('#mbclr', root).addEventListener('click', function () { tally = { rr: 0, rb: 0, br: 0, bb: 0, n: 0 }; show(); });
+        $('#mbr', root).addEventListener('change', function () { tally = { rr: 0, rb: 0, br: 0, bb: 0, n: 0 }; show(); });
         show();
-      }
-      function show() {
-        var back = $('#mbr', root).value === '1', th = back ? { rr: 9 / 25, rb: 6 / 25, br: 6 / 25, bb: 4 / 25 } : { rr: 6 / 20, rb: 6 / 20, br: 6 / 20, bb: 2 / 20 };
-        var thS = back ? { rr: '9/25', rb: '6/25', br: '6/25', bb: '4/25' } : { rr: '6/20', rb: '6/20', br: '6/20', bb: '2/20' };
-        var nm = { rr: 'red, red', rb: 'red, blue', br: 'blue, red', bb: 'blue, blue' };
-        $('#mbout', root).innerHTML = '<div class="tbl"><table><thead><tr><th class="l">Outcome</th><th>Times</th><th>Experimental</th><th>Theoretical</th></tr></thead><tbody>' +
-          ['rr', 'rb', 'br', 'bb'].map(function (k) { return '<tr><td class="l">' + nm[k] + '</td><td>' + tally[k] + '</td><td>' + (tally.n ? Math.round(tally[k] / tally.n * 100) + '%' : '&ndash;') + '</td><td>' + thS[k] + ' = ' + Math.round(th[k] * 100) + '%</td></tr>'; }).join('') +
-          '</tbody></table></div><p>' + tally.n + ' trials so far.</p>';
-      }
-      $('#mb10', root).addEventListener('click', function () { pick(10); });
-      $('#mb500', root).addEventListener('click', function () { pick(500); });
-      $('#mbclr', root).addEventListener('click', function () { tally = { rr: 0, rb: 0, br: 0, bb: 0, n: 0 }; show(); });
-      $('#mbr', root).addEventListener('change', function () { tally = { rr: 0, rb: 0, br: 0, bb: 0, n: 0 }; show(); });
-      show();
-    },
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function tbl(rows) { return '<div class="tbl"><table><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
+  var SCHOOL = [{ lab: 'Bus', v: 12 }, { lab: 'Walk', v: 9 }, { lab: 'Car', v: 6 }, { lab: 'Bike', v: 3 }];
+  function out(h) { return (h.querySelector('#mbout') || {}).textContent || ''; }
+
+  var LESSONS = [
+    { id: 'kinds', title: 'Kinds of data', sub: 'Words, counts and measurements.', concepts: [
+      { id: 'kinds', title: 'Qualitative, discrete, continuous', exp: ['D1.2'], skill: 'dp-type', hard: true,
+        body: tbl([['<b>Qualitative</b>', 'words or categories', 'favourite sport'], ['<b>Discrete</b>', 'numbers you <b>count</b>', 'number of pets'], ['<b>Continuous</b>', 'numbers you <b>measure</b>', 'height, time']]),
+        watch: K.slides([
+          { say: 'Favourite sport: the answers are words. That is <b>qualitative</b> data.', fig: eq('soccer, hockey, swimming, ...') },
+          { say: 'Number of pets: you count them. 0, 1, 2, 3. No 1.5 pets. That is <b>discrete</b>.', fig: eq('0, 1, 2, 3, ...') },
+          { say: 'Time to run 100 m: you measure it. 14.37 s is possible. That is <b>continuous</b>.', fig: eq('14.37 s, 15.2 s, 13.98 s, ...'), ms: 2600 }
+        ]),
+        ways: [
+          { label: 'Ask two questions', html: '<p>1. Is it a number? If not, it is qualitative.<br>2. Can it have any value in between, like 1.5 or 1.53? If yes, continuous. If only whole steps, discrete.</p>' },
+          { label: 'Counted or measured?', html: '<p>Counted things (goals, siblings, cars) are discrete. Measured things (mass, length, time, temperature) are continuous.</p>' }
+        ],
+        key: '<p><b>Words: qualitative. Counted: discrete. Measured: continuous.</b></p>',
+        mistake: '<p>Calling any number data "continuous". Number of siblings is a number, but it is counted, so it is discrete.</p>',
+        check: [function () { return mc('The time it takes students to run 100 m is which kind of data?', 'Continuous', ['Qualitative', 'Discrete'], 'Is time counted or measured?', 'Time is measured and can be any value, so it is continuous.'); }, K.ck('dp-type', 1), K.ck('dp-type', 2)] },
+      { id: 'percent', title: 'Compare groups with percents', exp: ['D1.1'], skill: 'dp-circle',
+        body: '<p>Percents let you compare groups of <b>different sizes</b>. 360 out of 1200 is hard to picture; 30% is easy.</p>',
+        watch: K.slides([
+          { say: 'School A: 90 of 300 students bike. School B: 150 of 600.', fig: eq('A: 90 / 300 &nbsp;&nbsp; B: 150 / 600') },
+          { say: 'B has more bikers. But B is also a bigger school.', fig: eq('150 &gt; 90, but 600 &gt; 300') },
+          { say: 'A: 90 &divide; 300 = 30%. B: 150 &divide; 600 = 25%.', fig: eq('A: 30% &nbsp;&nbsp; B: 25%') },
+          { say: 'School A has the <b>bigger share</b> of bikers.', fig: eq('30% &gt; 25%'), ms: 2400 }
+        ]),
+        key: '<p><b>To compare groups of different sizes, change to percents.</b></p>',
+        mistake: '<p>Comparing the counts (150 &gt; 90) when the groups are different sizes.</p>',
+        check: [K.ck('dp-circle', 1), function () { return mc('Team A won 12 of 20 games. Team B won 15 of 30. Which won a greater percent?', 'Team A', ['Team B', 'They are equal'], 'Change both to percents.', 'A: 60%. B: 50%.'); }] }
+    ] },
+    { id: 'circle', title: 'Circle graphs', sub: 'Parts of one whole.', concepts: [
+      { id: 'slices', title: 'Slices are percents', exp: ['D1.3'], skill: 'dp-circle',
+        body: '<p>A <b>circle graph</b> shows how a whole is split into parts. Each slice is a percent of the circle, and all the slices add to 100%.</p>',
+        watch: K.slides([
+          { say: '30 students say how they get to school.', fig: tbl([['Bus', '12'], ['Walk', '9'], ['Car', '6'], ['Bike', '3']]) },
+          { say: 'Bus: 12 of 30 is 40%. Walk: 30%. Car: 20%. Bike: 10%.', fig: eq('40% + 30% + 20% + 10% = 100%') },
+          { say: 'Each percent becomes a slice of the circle.', fig: function () { return pie(SCHOOL, 'How 30 students get to school'); }, ms: 2600 }
+        ]),
+        try: lab('pifig', [
+          { do: 'Make <b>Soccer exactly half</b> of the circle.', goal: function (h) { var v = [0, 1, 2, 3].map(function (i) { return K.v(h, 'pi' + i); }); return v[0] > 0 && 2 * v[0] === v[0] + v[1] + v[2] + v[3]; }, yes: 'Half of the votes is 50%: a 180° slice.' },
+          { do: 'Make all four sports <b>equal</b>.', goal: function (h) { var v = [0, 1, 2, 3].map(function (i) { return K.v(h, 'pi' + i); }); return v[0] > 0 && v.every(function (x) { return x === v[0]; }); }, yes: 'Four equal slices: 25% and 90° each.' }
+        ]),
+        key: '<p><b>Percents add to 100%. Use a circle graph only when the parts make one whole.</b></p>',
+        mistake: '<p>Using a circle graph for data that is not parts of a whole (like temperatures each month).</p>',
+        check: [K.ck('dp-circle', 1), K.ck('dp-circle', 2)] },
+      { id: 'angles', title: 'From percent to angle', exp: ['D1.3'], skill: 'dp-circle', hard: true,
+        body: '<p>A full circle is 360&deg;. So a slice that is <b>p%</b> of the circle has an angle of <b>p% of 360&deg;</b>. 1% is 3.6&deg;.</p>',
+        watch: K.slides([
+          { say: 'Bus is 40% of the class.', fig: function () { return pie(SCHOOL, ''); } },
+          { say: '40% of 360&deg;: 0.4 &times; 360 = 144&deg;.', fig: eq('0.4 &times; 360&deg; = 144&deg;') },
+          { say: 'Walk, 30%: 108&deg;. Car, 20%: 72&deg;. Bike, 10%: 36&deg;. Together: 360&deg;.', fig: eq('144 + 108 + 72 + 36 = 360'), ms: 2800 }
+        ]),
+        ways: [
+          { label: 'Use fractions', html: '<p>25% is a quarter of the circle: 360 &divide; 4 = 90&deg;. 50% is half: 180&deg;. 10% is a tenth: 36&deg;.</p>' },
+          { label: 'Skip the percent', html: '<p>12 of 30 students: ' + fr(12, 30) + ' of 360&deg; = 12 &times; 12 = 144&deg; (each student is 360 &divide; 30 = 12&deg;).</p>' }
+        ],
+        key: '<p><b>Angle = percent &times; 360&deg;.</b> All angles add to 360&deg;.</p>',
+        mistake: '<p>Using the percent as the angle: a 40% slice drawn as 40&deg;.</p>',
+        check: [function () { return { q: 'In a circle graph, a slice is 25% of the circle. What is its angle?', type: 'num', answer: 90, unit: '&deg;', hint: '25% is one quarter of 360&deg;.', explain: '0.25 &times; 360 = 90&deg;.' }; }, K.ck('dp-circle', 2), K.ck('dp-circle', 3)] }
+    ] },
+    { id: 'display', title: 'Showing data', sub: 'Choose the right graph and tell a story.', concepts: [
+      { id: 'choose', title: 'Choose a graph', exp: ['D1.3'],
+        body: tbl([['Bar graph', 'comparing categories'], ['Circle graph', 'parts of one whole'], ['Line graph', 'change over time'], ['Histogram', 'measured data in intervals'], ['Stem-and-leaf plot', 'a small set of numbers, keeping every value']]),
+        watch: K.slides([
+          { say: 'Favourite sports: compare categories with a <b>bar graph</b>.', fig: function () { return bars([{ lab: 'Soccer', v: 14 }, { lab: 'Hockey', v: 10 }, { lab: 'Swim', v: 4 }], 0, 15, 'Votes'); } },
+          { say: 'How the class gets to school: parts of one whole. A <b>circle graph</b>.', fig: function () { return pie(SCHOOL, ''); } },
+          { say: 'A puppy\'s mass each month: change over time. A <b>line graph</b>.', fig: eq('Jan &rarr; Feb &rarr; Mar &rarr; ...'), ms: 2400 }
+        ]),
+        key: '<p><b>Every graph needs a title, labels, a sensible scale and a source.</b></p>',
+        mistake: '<p>Picking a graph by looks. Ask what the data is: categories, parts of a whole, or change over time?</p>',
+        check: [function () { return mc('Which graph is best for showing how a puppy\'s mass changed each month for a year?', 'Line graph', ['Circle graph', 'Bar graph of favourite colours'], 'The data changes over time.', 'Change over time: a line graph.'); }, function () { return mc('Which graph is best for showing what percent of a budget goes to rent, food and fun?', 'Circle graph', ['Line graph', 'Stem-and-leaf plot'], 'The parts make one whole.', 'Parts of one whole: a circle graph.'); }] },
+      { id: 'info', title: 'Infographics', exp: ['D1.4'],
+        body: '<p>An <b>infographic</b> tells a story with data. It mixes a few graphs, one big headline number, short sentences and the source.</p>',
+        watch: K.slides([
+          { say: 'Start with a question: how does Room 7B get to school?', fig: eq('How does Room 7B get to school?') },
+          { say: 'Pick the headline number: 70% come by bus or on foot.', fig: '<div class="info"><div class="ibig"><b>70%</b><span>come by bus or on foot</span></div></div>' },
+          { say: 'Add a graph, one more fact, and the source.', fig: '<div class="info"><div class="ihead">Getting to school, Room 7B</div><div class="ibig"><b>70%</b><span>come by bus or on foot</span></div><div class="fig">' + pie(SCHOOL, '', 70) + '</div><div class="ibig"><b>1 in 10</b><span>bikes, even in winter</span></div><p class="isrc">Source: class survey of 30 students, October</p></div>', ms: 3000 }
+        ]),
+        key: '<p><b>Question, headline number, 2 or 3 displays, source.</b></p>',
+        mistake: '<p>Leaving out the source or the sample size, so readers cannot judge the data.</p>',
+        check: [function () { return mc('What must every infographic include?', 'The source of the data', ['A circle graph', 'At least 10 numbers'], 'How can a reader check the data?', 'Always give the source.'); }] }
+    ] },
+    { id: 'centre', title: 'Mean, median and mode', sub: 'What is a typical value?', concepts: [
+      { id: 'mmm', title: 'Three kinds of middle', exp: ['D1.5'], skill: 'dp-mmm',
+        body: tbl([['<b>Mean</b>', 'add all values, divide by how many'], ['<b>Median</b>', 'the middle value in order (mean of the middle two if even)'], ['<b>Mode</b>', 'the most common value']]),
+        watch: K.slides([
+          { say: 'Goals in 7 games: 2, 3, 3, 4, 5, 6, 12.', fig: function () { return dotplot([2, 3, 3, 4, 5, 6, 12], 0, 14); } },
+          { say: 'Mean: add them, 35, and divide by 7. Mean = 5.', fig: eq('35 &divide; 7 = 5') },
+          { say: 'Median: the middle of the ordered list, the 4th value. Median = 4.', fig: eq('2, 3, 3, <b>4</b>, 5, 6, 12') },
+          { say: 'Mode: the most common value. Mode = 3.', fig: eq('2, <b>3, 3</b>, 4, 5, 6, 12'), ms: 2400 }
+        ]),
+        key: '<p><b>Mean: share equally. Median: middle in order. Mode: most common.</b></p>',
+        mistake: '<p>Finding the median without putting the data in order first.</p>',
+        check: [function () { return { q: 'Find the median of 8, 3, 10, 5, 7, 4.', type: 'num', answer: 6, hint: 'Put them in order. Use the two middle values.', explain: '3, 4, 5, 7, 8, 10. (5 + 7) &divide; 2 = 6.' }; }, K.ck('dp-mmm', 1), K.ck('dp-mmm', 2)] },
+      { id: 'outlier', title: 'What an outlier does', exp: ['D1.5'], skill: 'dp-change', hard: true,
+        body: '<p>An <b>outlier</b> is a value far from the rest. It pulls the <b>mean</b> toward it. The <b>median</b> hardly moves.</p>',
+        watch: K.slides([
+          { say: 'With the 12: mean 5, median 4.', fig: function () { return dotplot([2, 3, 3, 4, 5, 6, 12], 0, 14); } },
+          { say: 'Remove the 12, one unusual game.', fig: function () { return dotplot([2, 3, 3, 4, 5, 6], 0, 14); } },
+          { say: 'Now the mean is 23 &divide; 6, about 3.8. The median is 3.5.', fig: eq('mean 5 &rarr; 3.8 &nbsp;&nbsp; median 4 &rarr; 3.5') },
+          { say: 'The mean moved a lot. The median moved a little.', fig: eq('outlier: mean moves, median stays'), ms: 2400 }
+        ]),
+        try: lab('dpv', [
+          { do: 'Add a big value, like <b>18</b>. Watch the mean and median.', goal: function (h) { return /Data \(10 values\)/.test(h.querySelector('#dpout').textContent); }, yes: 'The mean jumped up. The median moved by only half a step.' },
+          { do: 'Add <b>0</b> twice. Which one moves more?', goal: function (h) { return /Data \(12 values\): 0, 0/.test(h.querySelector('#dpout').textContent); }, yes: 'Low outliers pull the mean down.' }
+        ]),
+        ways: [
+          { label: 'Sharing equally', html: '<p>The mean is like sharing equally. If one person brings 12 cookies and the others bring 2 to 6, everyone\'s share goes up. The median only cares about the middle person.</p>' },
+          { label: 'Salaries', html: '<p>Ten people earn about $50 000. One earns $5 000 000. The mean is about $500 000, which describes nobody. The median, $50 000, is the typical salary.</p>' }
+        ],
+        key: '<p><b>With an outlier, the median is usually the better "typical" value.</b></p>',
+        mistake: '<p>Always reporting the mean, even when one extreme value makes it misleading.</p>',
+        check: [K.ck('dp-change', 1), K.ck('dp-change', 2)] }
+    ] },
+    { id: 'mislead', title: 'Misleading graphs', sub: 'True numbers, wrong impression.', concepts: [
+      { id: 'axis', title: 'Check where the axis starts', exp: ['D1.6'],
+        body: '<p>A graph can be true but still give the wrong idea. Watch for an axis that does <b>not start at 0</b>, a stretched scale, missing labels, or pictures of different sizes.</p>',
+        watch: K.slides([
+          { say: 'Customers happy: Brand A 96%, Brand B 98%. With the axis at 0, they look the same.', fig: function () { return bars([{ lab: 'Brand A', v: 96 }, { lab: 'Brand B', v: 98 }], 0, 100, 'Customers happy (%)'); } },
+          { say: 'Start the axis at 90, and B looks much bigger.', fig: function () { return bars([{ lab: 'Brand A', v: 96 }, { lab: 'Brand B', v: 98 }], 90, 100, 'Customers happy (%)'); } },
+          { say: 'The data did not change. Only the picture did. Always read the scale.', fig: eq('98 &minus; 96 = only 2 points'), ms: 2600 }
+        ]),
+        try: lab('mlzo', [
+          { do: 'Make Brand B look <b>more than 2 times</b> as tall as Brand A.', goal: function (h) { var z = K.v(h, 'mlz'); return (98 - z) / (96 - z) > 2; }, yes: 'A high starting point makes a small difference look huge.' },
+          { do: 'Now make the graph <b>honest</b>.', goal: function (h) { return K.v(h, 'mlz') === 0; }, yes: 'With the axis at 0, the brands look almost the same, which is true.' }
+        ]),
+        key: '<p><b>Read the scale before you trust the picture.</b> Ask who collected the data and how big the sample was.</p>',
+        mistake: '<p>Judging by bar heights alone without checking where the axis starts.</p>',
+        check: [function () { return mc('A graph\'s axis starts at 50. Bar A reaches 52 and bar B reaches 56. Bar B looks 3 times as tall. What is B really, compared to A?', 'About 8% more', ['3 times as much', 'Twice as much'], 'Compare the actual values, 52 and 56.', '56 is 4 more than 52, about 8% more.'); }, function () { return mc('A bar graph\'s vertical axis starts at 1000. What is the danger?', 'Small differences look much bigger', ['The bars are too short to see', 'The graph has no title'], 'Compare the heights of the bars to the real values.', 'Cutting off the bottom makes differences look bigger.'); }] }
+    ] },
+    { id: 'prob', title: 'Probability of two events', sub: 'Independent and dependent.', concepts: [
+      { id: 'indep', title: 'Independent events', exp: ['D2.1', 'D2.2'], skill: 'dp-indep',
+        body: '<p>Two events are <b>independent</b> if the first does not change the chances of the second. To find the chance of both, <b>multiply</b> the probabilities.</p>',
+        watch: K.slides([
+          { say: 'Flip a coin, then roll a die.', fig: eq('coin: H or T &nbsp;&nbsp; die: 1 to 6') },
+          { say: 'A tree diagram shows every outcome: 2 &times; 6 = 12.', fig: function () { return tree(['H', 'T'], ['1', '2', '3', '4', '5', '6'], 'coin', 'die'); } },
+          { say: 'Heads and a 6 is one of 12 outcomes.', fig: eq('P(H, 6) = ' + fr(1, 12)) },
+          { say: 'Or multiply: one half times one sixth is one twelfth.', fig: eq(fr(1, 2) + ' &times; ' + fr(1, 6) + ' = ' + fr(1, 12)), ms: 2400 }
+        ]),
+        key: '<p><b>Independent: multiply the probabilities.</b></p>',
+        mistake: '<p>Adding the probabilities (1/2 + 1/6). Both events together is less likely than either one, so the answer must be smaller.</p>',
+        check: [function () { return { q: 'You flip a coin and spin a spinner with 4 equal colours. What is P(tails and blue)? Type a fraction.', type: 'num', answer: 0.125, show: '1/8', kb: 'text', tol: 1e-6, hint: 'Multiply.', explain: fr(1, 2) + ' &times; ' + fr(1, 4) + ' = ' + fr(1, 8) + '.' }; }, K.ck('dp-indep', 1), K.ck('dp-indep', 2)] },
+      { id: 'dep', title: 'Dependent events', exp: ['D2.1', 'D2.2'], skill: 'dp-dep', hard: true,
+        body: '<p>Events are <b>dependent</b> if the first changes the second. Picking <b>without putting the first one back</b> is dependent: there is one fewer in the bag.</p>',
+        watch: K.slides([
+          { say: 'A bag has 3 red and 2 blue marbles. Pick one.', fig: function () { return bag(3, 2); } },
+          { say: 'P(red first) = 3 out of 5. Keep that red marble.', fig: function () { return bag(3, 2, 0, 0) + eq('P(red) = ' + fr(3, 5)); } },
+          { say: 'Now only 2 red of 4 are left. P(red second) = 2 out of 4.', fig: function () { return bag(3, 2, 0, 0) + eq('P(red) = ' + fr(2, 4)); } },
+          { say: 'P(red, red) = 3/5 &times; 2/4 = 6/20 = <b>3/10</b>.', fig: eq(fr(3, 5) + ' &times; ' + fr(2, 4) + ' = ' + fr(6, 20) + ' = ' + fr(3, 10)), ms: 2600 }
+        ]),
+        try: lab('mbr', [
+          { do: 'With <b>No</b> selected, pick two <b>500 times</b>. Is red, red close to 30%?', goal: function (h) { return K.v(h, 'mbr') === 0 && /500 trials/.test(out(h)); }, yes: 'The experimental result is close to the theoretical 30%.' },
+          { do: 'Switch to <b>Yes</b> (put it back) and run 500 again. What changes?', goal: function (h) { return K.v(h, 'mbr') === 1 && /500 trials/.test(out(h)); }, yes: 'Putting it back: red, red is now 9/25 = 36%.' }
+        ]),
+        ways: [
+          { label: 'Tree with changing branches', html: '<p>First branch: red 3/5, blue 2/5. After red, the second branch is red 2/4, blue 2/4. After blue, it is red 3/4, blue 1/4. Multiply along the path you want.</p>' },
+          { label: 'Count the pairs', html: '<p>Label the marbles R1, R2, R3, B1, B2. There are 5 &times; 4 = 20 ordered pairs. Red, red pairs: 3 &times; 2 = 6. P = 6/20 = 3/10.</p>' }
+        ],
+        key: '<p><b>Dependent: after the first pick, change the bag, then multiply.</b></p>',
+        mistake: '<p>Using the full bag for the second pick (3/5 &times; 3/5) when the first marble was kept.</p>',
+        check: [function () { return { q: 'A bag has 4 green and 6 yellow cubes. You pick one, keep it, and pick another. What is P(green, green)? Type a fraction.', type: 'num', answer: 2 / 15, show: '2/15', kb: 'text', tol: 1e-6, hint: 'First: 4 of 10. Then 3 of 9.', explain: fr(4, 10) + ' &times; ' + fr(3, 9) + ' = ' + fr(2, 15) + '.' }; }, K.ck('dp-dep', 1), K.ck('dp-dep', 2)] }
+    ] }
+  ];
+
+
+  A.register('data-probability', {
+    lessons: LESSONS,
 
     quiz: [
       { q: 'Which is <b>discrete</b> data?', type: 'mc', options: ['The mass of each apple', 'The number of siblings each student has', 'Students\' favourite music', 'How long each song lasts'], answer: 1, hint: 'Discrete data is counted in whole numbers.', explain: 'You count siblings: 0, 1, 2, ... There is no 1.5 siblings.' },

@@ -73,107 +73,245 @@
   var EQ = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 8], [3, 8], [1, 10], [3, 10], [1, 20], [1, 25], [1, 50], [1, 100]];
   function pctOf(n, d) { return cl(n / d * 100); }
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    hgo: { title: 'shade the grid', html: 
+      '<div class="ctrl"><label for="hgr">Squares shaded: <output id="hgo"></output><input type="range" id="hgr" min="0" max="100" value="35"></label></div>' +
+      '<div class="row2"><div class="fig" id="hgfig"></div><div class="out" id="hgout"></div></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['hgr'], function () {
+          var n = +$('#hgr', root).value, g = gcd(n, 100) || 100;
+          $('#hgo', root).textContent = n;
+          $('#hgfig', root).innerHTML = hgrid(n);
+          $('#hgout', root).innerHTML = '<p class="big2">' + n + '%</p><p><b>Fraction:</b> ' + fr(n, 100) + (g > 1 && n ? ' = ' + frs(n, 100) : '') + '</p><p><b>Decimal:</b> ' + dec(n / 100) + '</p><p><b>In words:</b> ' + n + ' out of every 100.</p>';
+        });
+      } },
+    cvn: { title: 'any fraction as a percent', html: 
+      '<div class="ctrl"><label for="cvn">Top<input type="number" id="cvn" min="0" max="40" value="5"></label><label for="cvd">Bottom<input type="number" id="cvd" min="1" max="40" value="8"></label></div>' +
+      '<div class="fig" id="cvfig"></div><div class="out" id="cvout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['cvn', 'cvd'], function () {
+          var n = Math.max(0, Math.min(40, parseInt($('#cvn', root).value, 10) || 0)), d = Math.max(1, Math.min(40, parseInt($('#cvd', root).value, 10) || 1)), x = n / d;
+          var dstr = Math.abs(x * 1000 - Math.round(x * 1000)) < 1e-9 ? dec(x) : x.toFixed(4) + '...';
+          $('#cvfig', root).innerHTML = n <= d ? pbar(n, d) : '<p class="t2">More than one whole: more than 100%.</p>';
+          $('#cvout', root).innerHTML = '<p class="big2">' + fr(n, d) + ' = ' + n + ' &divide; ' + d + ' = ' + dstr + '</p><p>As a percent: ' + dstr.replace('...', '') + ' &times; 100 = <b>' + (dstr.indexOf('...') > 0 ? 'about ' + (Math.round(x * 1000) / 10) : dec(x * 100)) + '%</b></p>';
+        });
+      } },
+    pcn: { title: 'increase or decrease', html: 
+      '<div class="ctrl"><label for="pcn">Start number<input type="number" id="pcn" min="1" max="10000" value="60"></label><label for="pcp">Percent<select id="pcp"><option>1</option><option>5</option><option selected>10</option><option>25</option><option>50</option><option>100</option></select></label>' +
+      '<label for="pcu">Change<select id="pcu"><option value="1">increase</option><option value="0">decrease</option></select></label></div>' +
+      '<div class="fig" id="pcfig"></div><div class="out" id="pcout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['pcn', 'pcp', 'pcu'], function () {
+          var n = Math.max(1, Math.min(10000, parseFloat($('#pcn', root).value) || 1)), p = +$('#pcp', root).value, up = $('#pcu', root).value === '1', part = cl(n * p / 100), res = cl(up ? n + part : n - part);
+          var how = { 1: n + ' &divide; 100', 5: 'half of 10%: ' + dec(n / 10) + ' &divide; 2', 10: n + ' &divide; 10', 25: n + ' &divide; 4', 50: n + ' &divide; 2', 100: 'the whole number' }[p];
+          $('#pcfig', root).innerHTML = change(n, p, up);
+          $('#pcout', root).innerHTML = '<p>' + p + '% of ' + fmt(n) + ' = ' + how + ' = <b>' + fmt(part) + '</b></p><p class="big2">' + fmt(n) + (up ? ' + ' : ' &minus; ') + fmt(part) + ' = ' + fmt(res) + '</p>';
+        });
+      } },
+    bua: { title: 'compare two sizes', html: 
+      '<div class="ctrl"><label for="bua">Size A (g)<input type="number" id="bua" min="50" max="5000" value="500"></label><label for="bupa">Price A ($)<input type="number" id="bupa" min="0.1" max="100" step="0.01" value="4.50"></label></div>' +
+      '<div class="ctrl"><label for="bub">Size B (g)<input type="number" id="bub" min="50" max="5000" value="750"></label><label for="bupb">Price B ($)<input type="number" id="bupb" min="0.1" max="100" step="0.01" value="6.00"></label></div>' +
+      '<div class="out" id="buout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['bua', 'bupa', 'bub', 'bupb'], function () {
+          var a = parseFloat($('#bua', root).value) || 1, pa = parseFloat($('#bupa', root).value) || 0, b = parseFloat($('#bub', root).value) || 1, pb = parseFloat($('#bupb', root).value) || 0;
+          var ua = pa / a * 100, ub = pb / b * 100;
+          $('#buout', root).innerHTML = '<p><b>A:</b> $' + pa.toFixed(2) + ' &divide; ' + dec(a / 100) + ' = <b>$' + ua.toFixed(2) + ' per 100 g</b></p><p><b>B:</b> $' + pb.toFixed(2) + ' &divide; ' + dec(b / 100) + ' = <b>$' + ub.toFixed(2) + ' per 100 g</b></p>' +
+            '<p class="big2">' + (Math.abs(ua - ub) < 0.005 ? 'Same value' : (ua < ub ? 'A' : 'B') + ' is the better buy') + '</p>';
+        });
+      } },
+    ppmo: { title: 'change the start fee', html: 
+      '<div class="ctrl"><label for="ppm">Cost per km: <output id="ppmo"></output><input type="range" id="ppm" min="0.5" max="3" step="0.5" value="1.5"></label><label for="ppc">Start fee: <output id="ppco"></output><input type="range" id="ppc" min="0" max="8" value="4"></label></div>' +
+      '<div class="fig" id="ppfig"></div><div class="out" id="ppout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['ppm', 'ppc'], function () {
+          var m = +$('#ppm', root).value, c = +$('#ppc', root).value;
+          $('#ppmo', root).textContent = '$' + m.toFixed(2); $('#ppco', root).textContent = '$' + c;
+          $('#ppfig', root).innerHTML = graph([{ m: m, c: c, col: c ? 'var(--se)' : 'var(--sb)', lab: '$' + c + ' + $' + m.toFixed(2) + '/km' }], 10, 40, 'distance (km)', 'cost ($)');
+          var c5 = c + 5 * m, c10 = c + 10 * m;
+          $('#ppout', root).innerHTML = '<p>5 km costs $' + c5.toFixed(2) + '. 10 km costs $' + c10.toFixed(2) + '.</p><p class="big2">' + (c === 0 ? 'Proportional' : 'Not proportional') + '</p><p>' + (c === 0 ? 'Double the distance, double the cost. The line starts at 0.' : 'Double the distance does not double the cost ($' + (2 * c5).toFixed(2) + ' &ne; $' + c10.toFixed(2) + '), because of the $' + c + ' start fee.') + '</p>';
+        });
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function tbl(rows) { return '<div class="tbl"><table><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
+
+  var LESSONS = [
+    { id: 'fdp', title: 'Fractions, decimals and percents', sub: 'Three names for one amount.', concepts: [
+      { id: 'hundred', title: 'Percent means out of 100', exp: ['B1.7'], skill: 'pr-fdp',
+        body: '<p><b>Percent</b> means "out of 100". 35% is 35 out of 100: the same amount as ' + fr(35, 100) + ' and as 0.35.</p>',
+        watch: K.slides([
+          { say: 'A hundred grid is one whole: 100 small squares.', fig: function () { return hgrid(0); } },
+          { say: 'Shade 35 squares. That is 35 out of 100.', fig: function () { return hgrid(35); } },
+          { say: 'As a fraction: 35 hundredths. As a decimal: 0.35. As a percent: 35%.', fig: eq(fr(35, 100) + ' = 0.35 = 35%') },
+          { say: 'Shade all 100 squares and you have 100%: one whole.', fig: function () { return hgrid(100); }, ms: 2400 }
+        ]),
+        try: lab('hgo', [
+          { do: 'Shade <b>40%</b> of the grid.', goal: function (h) { return K.v(h, 'hgr') === 40; }, yes: '40% = 0.4 = 40/100 = 2/5.' },
+          { do: 'Shade <b>one quarter</b> of the grid.', goal: function (h) { return K.v(h, 'hgr') === 25; }, yes: '1/4 = 25/100 = 25%.' },
+          { do: 'Shade <b>0.05</b> of the grid.', goal: function (h) { return K.v(h, 'hgr') === 5; }, yes: '0.05 is 5 hundredths: 5%, not 50%.' }
+        ]),
+        key: '<p><b>Percent means out of 100.</b> ' + fr(35, 100) + ' = 0.35 = 35%.</p>',
+        mistake: '<p>Writing 0.2 as 2%. 0.2 is 2 tenths, which is 20 hundredths: 20%.</p>',
+        check: [function () { return mc('Which is equal to 0.2?', '20%', ['2%', fr(1, 2), fr(1, 20)], '0.2 is 2 tenths, which is 20 hundredths.', '0.2 = ' + fr(20, 100) + ' = 20%.', hgrid(20)); }, K.ck('pr-fdp', 1)] },
+      { id: 'facts', title: 'Equivalents to know', exp: ['B2.2'], skill: 'pr-facts',
+        body: '<p>Some equivalents come up all the time. Learn them like times tables.</p>' + tbl([[fr(1, 2), '0.5', '50%'], [fr(1, 4), '0.25', '25%'], [fr(3, 4), '0.75', '75%'], [fr(1, 5), '0.2', '20%'], [fr(1, 10), '0.1', '10%'], [fr(1, 3), '0.333...', 'about 33.3%']]),
+        watch: K.slides([
+          { say: 'One half is 50 out of 100: 50%.', fig: function () { return hgrid(50); } },
+          { say: 'One quarter is 25 out of 100: 25%.', fig: function () { return hgrid(25); } },
+          { say: 'One fifth is 20 out of 100: 20%.', fig: function () { return hgrid(20); } },
+          { say: 'One tenth is 10%. One twentieth is 5%.', fig: function () { return hgrid(10); } },
+          { say: 'One third does not fit evenly: about 33.3%.', fig: function () { return hgrid(33.3); }, ms: 2400 }
+        ]),
+        key: '<p><b>½ = 50%, ¼ = 25%, ⅕ = 20%, ⅒ = 10%.</b> Build the rest from these.</p>',
+        mistake: '<p>Thinking ⅓ = 30% or ⅕ = 5%. Link each one to the hundred grid.</p>',
+        check: [K.ck('pr-facts', 1), K.ck('pr-facts', 1), K.ck('pr-facts', 2)] }
+    ] },
+    { id: 'convert', title: 'Converting', sub: 'Any fraction as a decimal and a percent.', concepts: [
+      { id: 'divide', title: 'Divide top by bottom', exp: ['B1.7'], skill: 'pr-fdp',
+        body: '<p>A fraction bar means <b>divide</b>. Divide the top by the bottom to get a decimal. Then multiply by 100 to get the percent.</p>',
+        watch: K.slides([
+          { say: 'Three eighths as a percent.', fig: function () { return pbar(3, 8); } },
+          { say: 'Divide: 3 &divide; 8 = 0.375.', fig: eq(fr(3, 8) + ' = 3 &divide; 8 = 0.375') },
+          { say: 'Multiply by 100: 37.5%.', fig: eq('0.375 &times; 100 = 37.5%') },
+          { say: 'The bar agrees: the shaded part reaches 37.5% of the way.', fig: function () { return pbar(3, 8); }, ms: 2400 }
+        ]),
+        try: lab('cvn', [
+          { do: 'Change <b>7/20</b> to a percent.', goal: function (h) { return +K.v(h, 'cvn') === 7 && +K.v(h, 'cvd') === 20; }, yes: '7 ÷ 20 = 0.35 = 35%.' },
+          { do: 'Find a fraction that equals <b>60%</b>.', goal: function (h) { var n = +K.v(h, 'cvn'), d = +K.v(h, 'cvd'); return d > 0 && Math.abs(n / d - 0.6) < 1e-9; }, yes: 'For example 3/5 or 6/10.' },
+          { do: 'Find a fraction <b>more than 100%</b>.', goal: function (h) { var n = +K.v(h, 'cvn'), d = +K.v(h, 'cvd'); return d > 0 && n > d; }, yes: 'When the top is bigger than the bottom, it is more than one whole.' }
+        ]),
+        key: '<p><b>Top &divide; bottom gives the decimal. &times; 100 gives the percent.</b></p>',
+        mistake: '<p>Dividing the bottom by the top (8 &divide; 3). The fraction bar reads "top divided by bottom".</p>',
+        check: [function () { return { q: 'Write ' + fr(7, 20) + ' as a percent.', type: 'num', answer: 35, unit: '%', hint: 'Multiply top and bottom by 5 to get hundredths.', explain: fr(7, 20) + ' = ' + fr(35, 100) + ' = 35%.' }; }, K.ck('pr-fdp', 2), K.ck('pr-fdp', 2)] },
+      { id: 'point', title: 'Move the point two places', exp: ['B1.7'], skill: 'pr-fdp', hard: true,
+        body: '<div class="vs"><div><b class="t">Decimal to percent</b><p>&times; 100: move the point 2 places <b>right</b>.</p><p>0.375 &rarr; 37.5%</p></div><div><b class="t">Percent to decimal</b><p>&divide; 100: move the point 2 places <b>left</b>.</p><p>8% &rarr; 0.08</p></div></div>',
+        watch: K.slides([
+          { say: '0.375 to a percent: move the point 2 places right.', fig: eq('0.375 &rarr; 03.75 &rarr; 037.5 = <b>37.5%</b>') },
+          { say: '8% to a decimal: 8 is really 8.0. Move the point 2 places left.', fig: eq('8.0% &rarr; 0.80 &rarr; <b>0.08</b>') },
+          { say: 'A one-digit percent needs a zero after the point: 5% is 0.05, not 0.5.', fig: eq('5% = 0.05 &nbsp;&nbsp; 50% = 0.5'), ms: 2800 }
+        ]),
+        ways: [
+          { label: 'Think hundredths', html: '<p>8% is 8 hundredths. In a place value chart, 8 hundredths is 0.08: 0 ones, 0 tenths, 8 hundredths.</p>' },
+          { label: 'Use money', html: '<p>A dollar is 100 cents. 8% of a dollar is 8¢, which is $0.08. 50% of a dollar is 50¢, $0.50.</p>' },
+          { label: 'Check with a picture', html: '<p>5% is 5 squares of the hundred grid; 0.5 would be half the grid. They are clearly different.</p><div class="vrow"><figure><figcaption>5%</figcaption>' + hgrid(5) + '</figure><figure><figcaption>0.5 = 50%</figcaption>' + hgrid(50) + '</figure></div>' }
+        ],
+        key: '<p><b>Decimal &rarr; percent: point 2 right. Percent &rarr; decimal: point 2 left.</b></p>',
+        mistake: '<p>Writing 5% as 0.5, or moving the point the wrong way. Ask: is 5% less than half? Then the decimal must be less than 0.5.</p>',
+        check: [function () { return mc('Which decimal equals 8%?', '0.08', ['0.8', '8.0', '0.008'], 'Percent to decimal: move the point 2 places left.', '8% = 8 hundredths = 0.08.'); }, function () { var d = R.int(1, 99) / 1000 * 10, p = Math.round(d * 1000) / 10; return { q: 'Write ' + String(Math.round(d * 1000) / 1000) + ' as a percent.', type: 'num', answer: p, unit: '%', hint: 'Move the point 2 places right.', explain: String(Math.round(d * 1000) / 1000) + ' &times; 100 = ' + p + '%.' }; }, K.ck('pr-fdp', 3)] }
+    ] },
+    { id: 'change', title: 'Percent changes', sub: 'Find percents in your head.', concepts: [
+      { id: 'mental', title: 'Build from 10%', exp: ['B2.3'], skill: 'pr-mental',
+        body: '<p>Some percents are easy to find in your head. <b>10%: divide by 10.</b> Build the others from it.</p>' + tbl([['100%', 'the whole', '240'], ['50%', '&divide; 2', '120'], ['25%', '&divide; 4', '60'], ['10%', '&divide; 10', '24'], ['5%', 'half of 10%', '12'], ['1%', '&divide; 100', '2.4']]),
+        watch: K.slides([
+          { say: 'Find 15% of 240.', fig: eq('15% of 240') },
+          { say: '10% of 240: divide by 10. That is 24.', fig: eq('10% = 24') },
+          { say: '5% is half of 10%: 12.', fig: eq('5% = 12') },
+          { say: '15% = 10% + 5% = 24 + 12 = <b>36</b>.', fig: eq('15% = 24 + 12 = 36'), ms: 2400 }
+        ]),
+        key: '<p><b>Find 10% first.</b> Halve it for 5%, double it for 20%, add pieces for the rest.</p>',
+        mistake: '<p>Dividing by the percent: 15% of 240 as 240 &divide; 15. Only 10% means divide by 10 (and 50% means divide by 2).</p>',
+        check: [function () { var n = R.pick([40, 60, 80, 120, 160, 240, 300]); return { q: 'What is 15% of ' + n + '?', type: 'num', answer: n * 0.15, hint: '10% of ' + n + ' is ' + n / 10 + '. 5% is half of that.', explain: n / 10 + ' + ' + n / 20 + ' = ' + n * 0.15 + '.' }; }, K.ck('pr-mental', 1)] },
+      { id: 'incdec', title: 'Increase and decrease', exp: ['B2.3'], skill: 'pr-mental', hard: true,
+        body: '<p>To <b>increase</b> by a percent, add that part on. To <b>decrease</b>, take it away.</p>',
+        watch: K.slides([
+          { say: 'An $80 jacket is 25% off.', fig: function () { return change(80, 25, false); } },
+          { say: '25% of 80 is 80 &divide; 4 = 20.', fig: eq('25% of $80 = $20') },
+          { say: 'Take it away: 80 &minus; 20 = <b>$60</b>.', fig: eq('$80 &minus; $20 = $60') },
+          { say: 'Increase works the other way: 60 increased by 10% is 60 + 6 = 66.', fig: function () { return change(60, 10, true); }, ms: 2600 }
+        ]),
+        try: lab('pcn', [
+          { do: 'Decrease <b>80</b> by <b>25%</b>.', goal: function (h) { return +K.v(h, 'pcn') === 80 && K.v(h, 'pcp') === 25 && K.v(h, 'pcu') === 0; }, yes: '25% of 80 is 20. 80 − 20 = 60.' },
+          { do: 'Make a number <b>double</b>.', goal: function (h) { return K.v(h, 'pcp') === 100 && K.v(h, 'pcu') === 1; }, yes: 'Increasing by 100% doubles a number.' },
+          { do: 'Make the answer <b>zero</b>.', goal: function (h) { return K.v(h, 'pcp') === 100 && K.v(h, 'pcu') === 0; }, yes: 'Decreasing by 100% leaves nothing.' }
+        ]),
+        ways: [
+          { label: 'Find what is left', html: '<p>25% off means you pay 75%. 75% of 80 = 3 quarters of 80 = 60. One step instead of two.</p>' },
+          { label: 'Bar model', html: '<div class="fig">' + change(80, 25, false) + '</div><p>The dashed part is the 25% taken away.</p>' },
+          { label: 'Shopping', html: '<p>Tax in Ontario is 13%. A $20 item: 10% is $2, 1% is $0.20, so 3% is $0.60. 13% is $2.60. Total $22.60.</p>' }
+        ],
+        key: '<p><b>Find the percent part. Add it for an increase, take it away for a decrease.</b></p>',
+        mistake: '<p>Stopping at the part: answering $20 when asked for the sale price of an $80 jacket at 25% off. Ask: is that what you pay, or what you save?</p>',
+        check: [function () { return { q: 'Increase 70 by 5%.', type: 'num', answer: 73.5, hint: '10% of 70 is 7. 5% is half of that.', explain: '5% of 70 = 3.5. 70 + 3.5 = 73.5.' }; }, K.ck('pr-mental', 2), K.ck('pr-mental', 3)] }
+    ] },
+    { id: 'ratio', title: 'Ratios and rates', sub: 'Compare two amounts.', concepts: [
+      { id: 'ratio', title: 'Ratios', exp: ['B2.10'], skill: 'pr-prop',
+        body: '<p>A <b>ratio</b> compares two amounts of the same kind: 2 cups of juice to 3 cups of water is <b>2 : 3</b>. A double number line keeps them lined up.</p>',
+        watch: K.slides([
+          { say: 'Punch: 2 cups of juice for every 3 cups of water.', fig: function () { return dline(2, 3, 1, 'Juice', 'Water', 1); } },
+          { say: 'A second batch: 4 cups of juice and 6 of water.', fig: function () { return dline(2, 3, 2, 'Juice', 'Water', 2); } },
+          { say: 'Keep going. Each jump adds 2 juice and 3 water.', fig: function () { return dline(2, 3, 5, 'Juice', 'Water', 5); } },
+          { say: 'For 6 cups of juice, you need <b>9 cups of water</b>.', fig: function () { return dline(2, 3, 5, 'Juice', 'Water', 3); }, ms: 2400 }
+        ]),
+        key: '<p><b>Equivalent ratios: multiply both parts by the same number.</b> 2 : 3 = 4 : 6 = 6 : 9.</p>',
+        mistake: '<p>Adding the same amount to both parts: 2 : 3 becomes 6 : 7. The punch would taste different. Multiply, do not add.</p>',
+        check: [function () { var a = R.int(1, 4), b = R.int(a + 1, 6), k = R.int(2, 5); return { q: 'A recipe uses ' + a + ' cup' + (a > 1 ? 's' : '') + ' of juice for ' + b + ' cups of water. How much water for ' + a * k + ' cups of juice?', type: 'num', answer: b * k, hint: a + ' was multiplied by ' + k + '. Do the same to ' + b + '.', explain: b + ' &times; ' + k + ' = ' + b * k + ' cups.' }; }, K.ck('pr-prop', 1)] },
+      { id: 'unit', title: 'Unit rates and the better buy', exp: ['B2.10'], skill: 'pr-unit', hard: true,
+        body: '<p>A <b>rate</b> compares different kinds: 150 km in 2 h. A <b>unit rate</b> is the amount for 1: 75 km per hour. Unit rates make fair comparisons easy.</p>',
+        watch: K.slides([
+          { say: 'Cereal A: 500 g for $4.50. Cereal B: 750 g for $6.00. Which is the better buy?', fig: eq('A: 500 g, $4.50 &nbsp;&nbsp; B: 750 g, $6.00') },
+          { say: 'Find the price for the same amount, 100 g. A: 4.50 &divide; 5 = $0.90.', fig: eq('A: $0.90 per 100 g') },
+          { say: 'B: 6.00 &divide; 7.5 = $0.80.', fig: eq('B: $0.80 per 100 g') },
+          { say: 'B costs less for the same amount. <b>B is the better buy.</b>', fig: eq('$0.80 &lt; $0.90 &rarr; B'), ms: 2400 }
+        ]),
+        try: lab('bua', [
+          { do: 'Make the two sizes <b>exactly as good</b> as each other.', goal: function (h) { var a = +K.v(h, 'bua'), pa = +K.v(h, 'bupa'), b = +K.v(h, 'bub'), pb = +K.v(h, 'bupb'); return a > 0 && b > 0 && Math.abs(pa / a - pb / b) < 1e-9; }, yes: 'Same unit price: neither is a better buy.' },
+          { do: 'Now make <b>size A</b> the better buy.', goal: function (h) { var a = +K.v(h, 'bua'), pa = +K.v(h, 'bupa'), b = +K.v(h, 'bub'), pb = +K.v(h, 'bupb'); return a > 0 && b > 0 && pa / a < pb / b - 1e-9; }, yes: 'A costs less per 100 g.' }
+        ]),
+        ways: [
+          { label: 'Find the amount for $1', html: '<p>A: 500 g &divide; 4.50 &asymp; 111 g per dollar. B: 750 g &divide; 6 = 125 g per dollar. More grams per dollar is better: B.</p>' },
+          { label: 'Scale to the same size', html: '<p>1500 g of A is 3 boxes: $13.50. 1500 g of B is 2 boxes: $12.00. B is cheaper for the same amount.</p>' }
+        ],
+        key: '<p><b>Unit rate = amount &divide; number of units.</b> Compare unit rates to find the better buy.</p>',
+        mistake: '<p>Choosing the cheaper package without looking at size. Compare price for the <b>same</b> amount.</p>',
+        check: [function () { return { q: 'A car goes 240 km in 3 h. What is its speed in km per hour?', type: 'num', answer: 80, unit: 'km/h', hint: 'Find the distance for 1 hour.', explain: '240 &divide; 3 = 80 km/h.' }; }, K.ck('pr-unit', 1), K.ck('pr-unit', 2)] }
+    ] },
+    { id: 'prop', title: 'Proportional situations', sub: 'Double one, double the other.', concepts: [
+      { id: 'isprop', title: 'Proportional or not?', exp: ['B2.10'], skill: 'pr-isprop', hard: true,
+        body: '<p>Two amounts are <b>proportional</b> if one is always the same multiple of the other. On a graph, the points make a straight line that <b>starts at 0</b>.</p>',
+        watch: K.slides([
+          { say: 'Bike rental: $2 per km. 0 km costs $0.', fig: function () { return graph([{ m: 2, c: 0, col: 'var(--sb)', lab: '$2/km' }], 10, 25, 'distance (km)', 'cost ($)'); } },
+          { say: '5 km costs $10, 10 km costs $20. Double the distance, double the cost: proportional.', fig: eq('5 km &rarr; $10 &nbsp;&nbsp; 10 km &rarr; $20') },
+          { say: 'Taxi: $4 to start, then $1.50 per km. Its line starts at 4.', fig: function () { return graph([{ m: 2, c: 0, col: 'var(--sb)', lab: '$2/km' }, { m: 1.5, c: 4, col: 'var(--se)', lab: '$4 + $1.50/km' }], 10, 25, 'distance (km)', 'cost ($)'); } },
+          { say: '5 km costs $11.50, but 10 km costs $19, not double. <b>Not proportional.</b>', fig: eq('5 km &rarr; $11.50 &nbsp;&nbsp; 10 km &rarr; $19'), ms: 2800 }
+        ]),
+        try: lab('ppmo', [
+          { do: 'Make the taxi <b>proportional</b>.', goal: function (h) { return K.v(h, 'ppc') === 0; }, yes: 'With no start fee, the line starts at 0: proportional.' },
+          { do: 'Make a taxi that costs <b>$10 for 4 km</b>.', goal: function (h) { return Math.abs(K.v(h, 'ppc') + 4 * K.v(h, 'ppm') - 10) < 1e-9; }, yes: 'Start fee + 4 × cost per km = $10.' }
+        ]),
+        ways: [
+          { label: 'Make a table', html: tbl([['km', '0', '5', '10'], ['Bike', '$0', '$10', '$20'], ['Taxi', '$4', '$11.50', '$19']]) + '<p>Bike: cost &divide; km is always 2. Taxi: 11.50 &divide; 5 = 2.30 but 19 &divide; 10 = 1.90. Not constant, so not proportional.</p>' },
+          { label: 'Ask about zero', html: '<p>What does nothing cost? If buying 0 still costs something (a joining fee, a start fee), it is not proportional.</p>' }
+        ],
+        key: '<p><b>Proportional: same multiple every time, and 0 goes with 0.</b></p>',
+        mistake: '<p>Thinking any straight line is proportional. It must also pass through 0.</p>',
+        check: [function () { return mc('Which situation is proportional?', 'Notebooks at $3 each', ['A gym: $20 to join, then $10 a month', 'A phone plan: $15 a month plus $0.10 a text'], 'Which one costs $0 when you buy nothing?', 'Notebooks: always 3 times the number. The others have a fee.'); }, K.ck('pr-isprop', 1), K.ck('pr-isprop', 2)] },
+      { id: 'solve', title: 'Solve a proportion', exp: ['B2.10'], skill: 'pr-prop',
+        body: '<p>To solve a proportion, find the <b>unit rate</b>, then multiply.</p>',
+        watch: K.slides([
+          { say: '3 kg of apples cost $7.50. How much do 5 kg cost?', fig: eq('3 kg &rarr; $7.50 &nbsp;&nbsp; 5 kg &rarr; ?') },
+          { say: 'Unit rate: 7.50 &divide; 3 = $2.50 per kg.', fig: eq('1 kg &rarr; $2.50') },
+          { say: '5 kg: 5 &times; 2.50 = <b>$12.50</b>.', fig: eq('5 kg &rarr; $12.50'), ms: 2400 }
+        ]),
+        key: '<p><b>Find the amount for 1. Then multiply.</b></p>',
+        mistake: '<p>Adding instead of scaling: 3 kg is $7.50, so 5 kg is $9.50 ("2 more"). Ask: is the price per kg the same?</p>',
+        check: [K.ck('pr-prop', 2), K.ck('pr-prop', 3)] }
+    ] }
+  ];
+
+
   A.register('percent-ratio', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Fractions, decimals and percents</h2>' +
-'<p><b>Percent</b> means "out of 100". 35% is 35 out of 100. That is the same amount as ' + fr(35, 100) + ' and as 0.35. Three names, one amount.</p>' +
-'<div class="lab"><span class="lt">Try it: shade the grid</span>' +
-'<div class="ctrl"><label for="hgr">Squares shaded: <output id="hgo"></output><input type="range" id="hgr" min="0" max="100" value="35"></label></div>' +
-'<div class="row2"><div class="fig" id="hgfig"></div><div class="out" id="hgout"></div></div></div>' +
-'<h3>Equivalents to know by heart</h3><p>These come up all the time. Learn them like times tables.</p>' +
-'<div class="tbl"><table><thead><tr><th>Fraction</th><th>Decimal</th><th>Percent</th><th>Fraction</th><th>Decimal</th><th>Percent</th></tr></thead><tbody>' +
-'<tr><td>' + fr(1, 2) + '</td><td>0.5</td><td>50%</td><td>' + fr(1, 5) + '</td><td>0.2</td><td>20%</td></tr>' +
-'<tr><td>' + fr(1, 4) + '</td><td>0.25</td><td>25%</td><td>' + fr(1, 10) + '</td><td>0.1</td><td>10%</td></tr>' +
-'<tr><td>' + fr(3, 4) + '</td><td>0.75</td><td>75%</td><td>' + fr(1, 20) + '</td><td>0.05</td><td>5%</td></tr>' +
-'<tr><td>' + fr(1, 3) + '</td><td>0.333...</td><td>about 33.3%</td><td>' + fr(1, 8) + '</td><td>0.125</td><td>12.5%</td></tr>' +
-'<tr><td>' + fr(2, 3) + '</td><td>0.666...</td><td>about 66.7%</td><td>' + fr(1, 100) + '</td><td>0.01</td><td>1%</td></tr></tbody></table></div>' +
-A.yt({ q: 'Which is equal to 0.2?', type: 'mc', options: ['2%', fr(1, 2), '20%', fr(1, 20)], answer: 2, hint: '0.2 is 2 tenths, which is 20 hundredths.', explain: '0.2 = ' + fr(20, 100) + ' = 20% = ' + fr(1, 5) + '.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Converting any fraction</h2>' +
-'<p>A fraction bar means divide. To change a fraction to a decimal, divide the top by the bottom. Then multiply by 100 to get the percent.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p class="math" style="font-size:1.15rem">' + fr(3, 8) + ' = 3 &divide; 8 = 0.375 = 37.5%</p><div class="fig">' + pbar(3, 8) + '</div></div>' +
-'<div class="vs"><div><b class="t">Decimal to percent</b><p>&times; 100: move the point 2 places <b>right</b>.</p><p>0.375 &rarr; 37.5%</p></div><div><b class="t">Percent to decimal</b><p>&divide; 100: move the point 2 places <b>left</b>.</p><p>8% &rarr; 0.08 (not 0.8)</p></div></div>' +
-'<div class="lab"><span class="lt">Try it: any fraction as a percent</span>' +
-'<div class="ctrl"><label for="cvn">Top<input type="number" id="cvn" min="0" max="40" value="5"></label><label for="cvd">Bottom<input type="number" id="cvd" min="1" max="40" value="8"></label></div>' +
-'<div class="fig" id="cvfig"></div><div class="out" id="cvout"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>5% is 0.05, not 0.5. A one-digit percent needs a zero after the decimal point.</p></div>' +
-A.yt({ q: 'Write ' + fr(7, 20) + ' as a percent.', answer: 35, unit: '%', hint: 'Multiply top and bottom by 5 to get hundredths.', explain: fr(7, 20) + ' = ' + fr(35, 100) + ' = 35%.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Quick percent changes in your head</h2>' +
-'<p>A few percents are easy to find mentally. Build the others from them.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Percent</th><th class="l">How to find it</th><th>Of 240</th></tr></thead><tbody>' +
-'<tr><td class="l">100%</td><td class="l">the whole amount</td><td>240</td></tr><tr><td class="l">50%</td><td class="l">half: &divide; 2</td><td>120</td></tr><tr><td class="l">25%</td><td class="l">a quarter: &divide; 4, or half of 50%</td><td>60</td></tr>' +
-'<tr><td class="l">10%</td><td class="l">&divide; 10</td><td>24</td></tr><tr><td class="l">5%</td><td class="l">half of 10%</td><td>12</td></tr><tr><td class="l">1%</td><td class="l">&divide; 100</td><td>2.4</td></tr></tbody></table></div>' +
-'<p>To <b>increase</b> by a percent, add that part on. To <b>decrease</b>, take it away.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>A $80 jacket is 25% off. 25% of 80 is 80 &divide; 4 = 20. New price: 80 &minus; 20 = <b>$60</b>.</p><div class="fig">' + change(80, 25, false) + '</div></div>' +
-'<div class="lab"><span class="lt">Try it: increase or decrease</span>' +
-'<div class="ctrl"><label for="pcn">Start number<input type="number" id="pcn" min="1" max="10000" value="60"></label><label for="pcp">Percent<select id="pcp"><option>1</option><option>5</option><option selected>10</option><option>25</option><option>50</option><option>100</option></select></label>' +
-'<label for="pcu">Change<select id="pcu"><option value="1">increase</option><option value="0">decrease</option></select></label></div>' +
-'<div class="fig" id="pcfig"></div><div class="out" id="pcout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Increasing by 100% <b>doubles</b> a number. Decreasing by 100% leaves <b>zero</b>.</p></div>' +
-A.yt({ q: 'Increase 70 by 5%.', answer: 73.5, hint: '10% of 70 is 7. 5% is half of that.', explain: '5% of 70 = 3.5. 70 + 3.5 = 73.5.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Ratios and rates</h2>' +
-'<p>A <b>ratio</b> compares two amounts of the same kind: 2 cups of juice to 3 cups of water is <b>2 : 3</b>. A <b>rate</b> compares different kinds: 150 km in 2 h, or $4 for 500 g.</p>' +
-'<div class="fig">' + dline(2, 3, 5, 'Juice', 'Water', 3) + '</div>' +
-'<p>A double number line keeps the two amounts lined up. Each jump adds another 2 cups of juice and 3 cups of water. For 6 cups of juice you need 9 cups of water.</p>' +
-'<div class="key"><b class="t">Key idea: the unit rate</b><p>A <b>unit rate</b> is the amount for 1. $4.20 for 6 muffins is 4.20 &divide; 6 = <b>$0.70 per muffin</b>. Unit rates make fair comparisons easy.</p></div>' +
-'<div class="eg"><b class="t">Worked example: the better buy</b><p>Cereal A: 500 g for $4.50. Cereal B: 750 g for $6.00.</p><p>A: 4.50 &divide; 5 = $0.90 per 100 g. B: 6.00 &divide; 7.5 = $0.80 per 100 g. <b>B is the better buy.</b></p></div>' +
-'<div class="lab"><span class="lt">Try it: compare two sizes</span>' +
-'<div class="ctrl"><label for="bua">Size A (g)<input type="number" id="bua" min="50" max="5000" value="500"></label><label for="bupa">Price A ($)<input type="number" id="bupa" min="0.1" max="100" step="0.01" value="4.50"></label></div>' +
-'<div class="ctrl"><label for="bub">Size B (g)<input type="number" id="bub" min="50" max="5000" value="750"></label><label for="bupb">Price B ($)<input type="number" id="bupb" min="0.1" max="100" step="0.01" value="6.00"></label></div>' +
-'<div class="out" id="buout"></div></div>' +
-A.yt({ q: 'A car goes 240 km in 3 h. What is its speed in km per hour?', answer: 80, unit: 'km/h', hint: 'Find the distance for 1 hour.', explain: '240 &divide; 3 = 80 km/h.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Proportional or not?</h2>' +
-'<p>Two amounts are <b>proportional</b> if one is always the same multiple of the other. Double one and the other doubles. On a graph, the points make a straight line that starts at <b>0</b>.</p>' +
-'<div class="fig">' + graph([{ m: 2, c: 0, col: 'var(--sb)', lab: 'Per km: $2/km' }, { m: 1.5, c: 4, col: 'var(--se)', lab: 'Taxi: $4 + $1.50/km' }], 10, 25, 'distance (km)', 'cost ($)') + '</div>' +
-'<div class="vs"><div><b class="t">Proportional</b><p>Bike rental: $2 per km. 0 km costs $0. 5 km costs $10, 10 km costs $20.</p><p>Line starts at 0.</p></div><div><b class="t">Not proportional</b><p>Taxi: $4 to start, then $1.50 per km. 10 km costs $19, not twice the cost of 5 km ($11.50).</p><p>Line starts at 4.</p></div></div>' +
-'<div class="eg"><b class="t">Worked example: solve a proportion</b><p>3 kg of apples cost $7.50. How much do 5 kg cost? Unit rate: 7.50 &divide; 3 = $2.50 per kg. 5 kg: 5 &times; 2.50 = <b>$12.50</b>.</p></div>' +
-'<div class="lab"><span class="lt">Try it: change the start fee</span>' +
-'<div class="ctrl"><label for="ppm">Cost per km: <output id="ppmo"></output><input type="range" id="ppm" min="0.5" max="3" step="0.5" value="1.5"></label><label for="ppc">Start fee: <output id="ppco"></output><input type="range" id="ppc" min="0" max="8" value="4"></label></div>' +
-'<div class="fig" id="ppfig"></div><div class="out" id="ppout"></div></div>' +
-A.yt({ q: 'Which situation is proportional?', type: 'mc', options: ['A gym: $20 to join, then $10 a month', 'Notebooks at $3 each', 'A phone plan: $15 a month plus $0.10 a text'], answer: 1, hint: 'Which one costs $0 when you buy nothing?', explain: 'Notebooks: 0 cost $0, 1 costs $3, 2 cost $6. Always 3 times. The others have a starting fee.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['hgr'], function () {
-        var n = +$('#hgr', root).value, g = gcd(n, 100) || 100;
-        $('#hgo', root).textContent = n;
-        $('#hgfig', root).innerHTML = hgrid(n);
-        $('#hgout', root).innerHTML = '<p class="big2">' + n + '%</p><p><b>Fraction:</b> ' + fr(n, 100) + (g > 1 && n ? ' = ' + frs(n, 100) : '') + '</p><p><b>Decimal:</b> ' + dec(n / 100) + '</p><p><b>In words:</b> ' + n + ' out of every 100.</p>';
-      });
-      A.bind(root, ['cvn', 'cvd'], function () {
-        var n = Math.max(0, Math.min(40, parseInt($('#cvn', root).value, 10) || 0)), d = Math.max(1, Math.min(40, parseInt($('#cvd', root).value, 10) || 1)), x = n / d;
-        var dstr = Math.abs(x * 1000 - Math.round(x * 1000)) < 1e-9 ? dec(x) : x.toFixed(4) + '...';
-        $('#cvfig', root).innerHTML = n <= d ? pbar(n, d) : '<p class="t2">More than one whole: more than 100%.</p>';
-        $('#cvout', root).innerHTML = '<p class="big2">' + fr(n, d) + ' = ' + n + ' &divide; ' + d + ' = ' + dstr + '</p><p>As a percent: ' + dstr.replace('...', '') + ' &times; 100 = <b>' + (dstr.indexOf('...') > 0 ? 'about ' + (Math.round(x * 1000) / 10) : dec(x * 100)) + '%</b></p>';
-      });
-      A.bind(root, ['pcn', 'pcp', 'pcu'], function () {
-        var n = Math.max(1, Math.min(10000, parseFloat($('#pcn', root).value) || 1)), p = +$('#pcp', root).value, up = $('#pcu', root).value === '1', part = cl(n * p / 100), res = cl(up ? n + part : n - part);
-        var how = { 1: n + ' &divide; 100', 5: 'half of 10%: ' + dec(n / 10) + ' &divide; 2', 10: n + ' &divide; 10', 25: n + ' &divide; 4', 50: n + ' &divide; 2', 100: 'the whole number' }[p];
-        $('#pcfig', root).innerHTML = change(n, p, up);
-        $('#pcout', root).innerHTML = '<p>' + p + '% of ' + fmt(n) + ' = ' + how + ' = <b>' + fmt(part) + '</b></p><p class="big2">' + fmt(n) + (up ? ' + ' : ' &minus; ') + fmt(part) + ' = ' + fmt(res) + '</p>';
-      });
-      A.bind(root, ['bua', 'bupa', 'bub', 'bupb'], function () {
-        var a = parseFloat($('#bua', root).value) || 1, pa = parseFloat($('#bupa', root).value) || 0, b = parseFloat($('#bub', root).value) || 1, pb = parseFloat($('#bupb', root).value) || 0;
-        var ua = pa / a * 100, ub = pb / b * 100;
-        $('#buout', root).innerHTML = '<p><b>A:</b> $' + pa.toFixed(2) + ' &divide; ' + dec(a / 100) + ' = <b>$' + ua.toFixed(2) + ' per 100 g</b></p><p><b>B:</b> $' + pb.toFixed(2) + ' &divide; ' + dec(b / 100) + ' = <b>$' + ub.toFixed(2) + ' per 100 g</b></p>' +
-          '<p class="big2">' + (Math.abs(ua - ub) < 0.005 ? 'Same value' : (ua < ub ? 'A' : 'B') + ' is the better buy') + '</p>';
-      });
-      A.bind(root, ['ppm', 'ppc'], function () {
-        var m = +$('#ppm', root).value, c = +$('#ppc', root).value;
-        $('#ppmo', root).textContent = '$' + m.toFixed(2); $('#ppco', root).textContent = '$' + c;
-        $('#ppfig', root).innerHTML = graph([{ m: m, c: c, col: c ? 'var(--se)' : 'var(--sb)', lab: '$' + c + ' + $' + m.toFixed(2) + '/km' }], 10, 40, 'distance (km)', 'cost ($)');
-        var c5 = c + 5 * m, c10 = c + 10 * m;
-        $('#ppout', root).innerHTML = '<p>5 km costs $' + c5.toFixed(2) + '. 10 km costs $' + c10.toFixed(2) + '.</p><p class="big2">' + (c === 0 ? 'Proportional' : 'Not proportional') + '</p><p>' + (c === 0 ? 'Double the distance, double the cost. The line starts at 0.' : 'Double the distance does not double the cost ($' + (2 * c5).toFixed(2) + ' &ne; $' + c10.toFixed(2) + '), because of the $' + c + ' start fee.') + '</p>';
-      });
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'Which is <b>not</b> equal to the others?', type: 'mc', options: [fr(3, 5), '0.6', '60%', '0.06'], answer: 3, hint: 'Change each to a percent.', explain: fr(3, 5) + ' = 0.6 = 60%. But 0.06 = 6%.' },

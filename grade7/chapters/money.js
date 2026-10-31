@@ -65,115 +65,229 @@
     return A.svg(540, H + 70, s, m0(P) + ' at ' + rate + '% for ' + yrs + ' years. Simple interest grows to ' + m(P * (1 + rate / 100 * yrs)) + '. Compound interest grows to ' + m(P * Math.pow(1 + rate / 100, yrs)) + '.');
   }
 
+  /* ---------- interactive drawings used in "Try it" ---------- */
+  var K = A.k7;
+  var W = {
+    xcur: { title: 'convert money', html:
+      '<div class="ctrl"><label for="xcur">Currency<select id="xcur">' + CUR.map(function (c, i) { return '<option value="' + i + '">' + c.n + ' (' + c.c + ')</option>'; }).join('') + '</select></label>' +
+      '<label for="xamt">Amount: <output id="xamto"></output><input type="range" id="xamt" min="0" max="1000" step="10" value="200"></label>' +
+      '<label for="xdir">Direction<select id="xdir"><option value="1">to Canadian dollars</option><option value="-1">from Canadian dollars</option></select></label></div>' +
+      '<div class="fig" id="xfig"></div><div class="out" id="xout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['xcur', 'xamt', 'xdir'], function () {
+          var cur = CUR[+$('#xcur', root).value], a = +$('#xamt', root).value, dir = +$('#xdir', root).value;
+          if (cur.r < 0.1 && dir > 0) a *= 10;
+          $('#xamto', root).innerHTML = dir > 0 ? A.fmt(String(a)) + ' ' + cur.c : m0(a) + ' CAD';
+          var f = dir > 0 ? a : a / cur.r;
+          $('#xfig', root).innerHTML = exch(f, cur);
+          $('#xout', root).innerHTML = '<p class="big2">' + (dir > 0 ? fx(cur, a) + ' = ' + m(a * cur.r) + ' CAD' : m(a) + ' CAD = ' + fx(cur, f)) + '</p>' +
+            '<p>' + (dir > 0 ? 'Multiply by the rate: ' + A.fmt(String(a)) + ' &times; ' + cur.r + ' = ' + A.fmt(r2(a * cur.r).toFixed(2)) + '.' : 'Divide by the rate: ' + A.fmt(String(a)) + ' &divide; ' + cur.r + ' = ' + (cur.c === 'JPY' ? A.fmt(String(Math.round(f))) : A.fmt(r2(f).toFixed(2))) + '.') +
+            (cur.r < 0.1 && dir > 0 ? ' (The slider is times 10 for this currency, because each unit is worth little.)' : '') + '</p>';
+        });
+      } },
+    bgoalo: { title: 'plan a savings goal', html:
+      '<div class="ctrl"><label for="bgoal">Goal: <output id="bgoalo"></output><input type="range" id="bgoal" min="50" max="1000" step="10" value="210"></label>' +
+      '<label for="bsave">Already saved: <output id="bsaveo"></output><input type="range" id="bsave" min="0" max="300" step="5" value="30"></label>' +
+      '<label for="binc">Weekly income: <output id="binco"></output><input type="range" id="binc" min="0" max="100" step="5" value="40"></label>' +
+      '<label for="bexp">Weekly spending: <output id="bexpo"></output><input type="range" id="bexp" min="0" max="100" step="5" value="25"></label></div>' +
+      '<div class="fig" id="bfig"></div><div class="out" id="bout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['bgoal', 'bsave', 'binc', 'bexp'], function () {
+          var g = +$('#bgoal', root).value, sv = +$('#bsave', root).value, inc = +$('#binc', root).value, ex = +$('#bexp', root).value, per = inc - ex;
+          $('#bgoalo', root).innerHTML = m0(g); $('#bsaveo', root).innerHTML = m0(sv); $('#binco', root).innerHTML = m0(inc); $('#bexpo', root).innerHTML = m0(ex);
+          $('#bfig', root).innerHTML = plan(g, sv, per);
+          var need = Math.max(0, g - sv), wk = per > 0 ? Math.ceil(need / per) : 0, h;
+          if (!need) h = '<p class="big2">Goal reached</p><p>You already have enough saved.</p>';
+          else if (per <= 0) h = '<p class="big2">Never, at this rate</p><p>You spend ' + (per ? 'more than' : 'all of') + ' what you earn, so nothing is saved. <b>Adjust:</b> spend less or earn more.</p>';
+          else h = '<p class="big2">' + wk + ' week' + (wk > 1 ? 's' : '') + '</p><p>You save ' + m0(inc) + ' &minus; ' + m0(ex) + ' = ' + m0(per) + ' a week. You need ' + m0(g) + ' &minus; ' + m0(sv) + ' = ' + m0(need) + '. ' + m0(need) + ' &divide; ' + m0(per) + (need % per ? ' = ' + cl(need / per) + ', round up to ' + wk : ' = ' + wk) + '.</p>' +
+            (ex >= 5 ? '<p>If you cut spending by $5 a week: ' + Math.ceil(need / (per + 5)) + ' weeks.</p>' : '') + (wk > 24 ? '<p>The chart shows the first 24 weeks.</p>' : '');
+          $('#bout', root).innerHTML = h;
+        });
+      } },
+    gpo: { title: 'watch savings grow', html:
+      '<div class="ctrl"><label for="gp">Start: <output id="gpo"></output><input type="range" id="gp" min="100" max="5000" step="100" value="1000"></label>' +
+      '<label for="gr">Rate: <output id="gro"></output><input type="range" id="gr" min="1" max="20" value="5"></label>' +
+      '<label for="gy">Years: <output id="gyo"></output><input type="range" id="gy" min="1" max="20" value="10"></label></div>' +
+      '<div class="fig" id="gfig"></div><div class="out" id="gout"></div>',
+      init: function (root) {
+        var $ = A.$;
+        A.bind(root, ['gp', 'gr', 'gy'], function () {
+          var P = +$('#gp', root).value, r = +$('#gr', root).value, t = +$('#gy', root).value, si = P * r / 100 * t, co = P * Math.pow(1 + r / 100, t);
+          $('#gpo', root).innerHTML = m0(P); $('#gro', root).innerHTML = r + '%'; $('#gyo', root).innerHTML = t;
+          $('#gfig', root).innerHTML = growth(P, r, t);
+          $('#gout', root).innerHTML = '<p><b>Simple interest</b> (red bars): I = ' + A.fmt(String(P)) + ' &times; ' + cl(r / 100) + ' &times; ' + t + ' = ' + m(si) + '. Total ' + m(P + si) + '.</p>' +
+            '<p><b>Compound interest</b> (orange dots), added once a year: total ' + m(co) + '. That is ' + m(co - P - si) + ' more than simple interest.</p>';
+        });
+      } },
+  };
+
+  function lab(w, tasks) { return K.lab(W[w].html, W[w].init, tasks); }
+  function mc(q, right, wrong, hint, explain, fig) { var o = R.mc(right, wrong); return { q: q, type: 'mc', options: o.options, answer: o.answer, hint: hint, explain: explain, fig: fig || '' }; }
+  function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
+  function tbl(head, rows) { return '<div class="tbl"><table><thead><tr>' + head.map(function (h, i) { return '<th' + (i ? '' : ' class="l"') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
+  var MAYA = [{ lab: 'Needs', v: 15, col: 'var(--sc)' }, { lab: 'Wants', v: 10, col: 'var(--se)' }, { lab: 'Save', v: 15, col: 'var(--good)' }];
+
+  var LESSONS = [
+    { id: 'exchange', title: 'Exchange rates', sub: 'Convert other money to Canadian dollars and back.', concepts: [
+      { id: 'tocad', title: 'Other money to Canadian', exp: ['F1.1'], skill: 'mo-tocad',
+        body: '<p>An <b>exchange rate</b> tells you how much one currency is worth in another. The rates here are <b>sample rates</b> for practice; real rates change every day. <b>Other money to Canadian: multiply by the rate.</b></p>',
+        watch: K.slides([
+          { say: 'Sample rate: 1 US dollar costs $1.38 Canadian.', fig: eq('1 USD = $1.38 CAD') },
+          { say: 'You have 50 US dollars. Each one is worth $1.38 CAD.', fig: function () { return exch(50, CUR[0]); } },
+          { say: '50 &times; 1.38 = $69.00 CAD.', fig: eq('50 &times; 1.38 = $69.00 CAD'), ms: 2400 }
+        ]),
+        try: lab('xcur', [
+          { do: 'Convert <b>200 euros</b> to Canadian dollars.', goal: function (h) { return K.v(h, 'xcur') === 1 && K.v(h, 'xamt') === 200 && K.v(h, 'xdir') === 1; }, yes: '200 × 1.50 = $300.00 CAD.' },
+          { do: 'Which currency gives the <b>most</b> Canadian dollars for the same amount?', goal: function (h) { return K.v(h, 'xcur') === 2 && K.v(h, 'xdir') === 1; }, yes: 'The British pound has the highest rate here: $1.75 each.' }
+        ]),
+        key: '<p><b>To Canadian dollars: multiply by the rate.</b></p>',
+        mistake: '<p>Dividing when converting to Canadian dollars. One US dollar is worth more than one Canadian dollar, so the Canadian amount should be bigger.</p>',
+        check: [function () { return { q: 'With the sample rate 1 EUR = $1.50 CAD, how many Canadian dollars is 40 EUR?', type: 'num', answer: 60, unit: '$', tol: 0.01, hint: 'Euros to Canadian: multiply by the rate.', explain: '40 &times; 1.50 = $60.00 CAD.' }; }, K.ck('mo-tocad', 1), K.ck('mo-tocad', 2)] },
+      { id: 'fromcad', title: 'Canadian to other money', exp: ['F1.1'], skill: 'mo-fromcad', hard: true,
+        body: '<p>Going the other way, <b>divide by the rate</b>. $69.00 CAD &divide; 1.38 = 50 USD.</p>',
+        watch: K.slides([
+          { say: 'You have $69 CAD and want US dollars. Each US dollar costs $1.38.', fig: eq('$69.00 &divide; 1.38') },
+          { say: 'How many $1.38 pieces fit into $69? 50.', fig: eq('$69.00 &divide; 1.38 = 50 USD') },
+          { say: 'Check it makes sense: a US dollar is worth more, so you get fewer of them.', fig: eq('50 USD &lt; 69 CAD &#10003;'), ms: 2600 }
+        ]),
+        ways: [
+          { label: 'Undo the multiplying', html: '<p>To Canadian you multiply by 1.38. To go back, undo it: divide by 1.38.</p>' },
+          { label: 'Estimate first', html: '<p>Each US dollar costs about $1.40. $70 &divide; 1.40 = 50. So about 50 USD.</p>' },
+          { label: 'Cheaper money', html: '<p>A Mexican peso costs only $0.075. So $30 CAD buys a lot of pesos: 30 &divide; 0.075 = 400 pesos. Cheap currency: you get more of it.</p>' }
+        ],
+        key: '<p><b>From Canadian dollars: divide by the rate.</b> Check: is the answer sensible?</p>',
+        mistake: '<p>Multiplying both ways. Ask: is each foreign unit worth more or less than a Canadian dollar? Then should I get more or fewer?</p>',
+        check: [K.ck('mo-fromcad', 1), K.ck('mo-fromcad', 2), K.ck('mo-fromcad', 3)] },
+      { id: 'banks', title: 'Compare rates and fees', exp: ['F1.1'], skill: 'mo-tocad',
+        body: '<p>Banks sell foreign money at different rates, and some charge a fee. Work out the <b>total cost</b> at each.</p>',
+        watch: K.slides([
+          { say: 'You want 100 USD. Bank A sells at $1.41 each.', fig: eq('A: 100 &times; 1.41 = $141.00') },
+          { say: 'Bank B sells at $1.37 each, plus a $3 fee.', fig: eq('B: 100 &times; 1.37 + 3 = $140.00') },
+          { say: 'Bank B costs $1 less, even with the fee.', fig: eq('$140.00 &lt; $141.00'), ms: 2400 }
+        ]),
+        key: '<p><b>Total cost = amount &times; rate + fees.</b> Compare totals.</p>',
+        mistake: '<p>Choosing the lower rate without adding the fee.</p>',
+        check: [K.ck('mo-tocad', 3)] }
+    ] },
+    { id: 'budget', title: 'Budgets for big goals', sub: 'Plan, track and adjust.', concepts: [
+      { id: 'plan', title: 'Income, expenses, savings', exp: ['F1.3'], skill: 'mo-budget',
+        body: '<p>A <b>budget</b> is a plan for your money: what comes in (<b>income</b>), what goes out (<b>expenses</b>), and what you <b>save</b>.</p>',
+        watch: K.slides([
+          { say: 'Maya earns $40 a week babysitting.', fig: eq('Income: $40 a week') },
+          { say: 'She spends $15 on needs and $10 on wants. She saves the rest: $15.', fig: function () { return split(MAYA); } },
+          { say: 'She has $30 and wants a $210 bike. She still needs $180.', fig: eq('210 &minus; 30 = $180') },
+          { say: 'At $15 a week: 180 &divide; 15 = <b>12 weeks</b>.', fig: function () { return plan(210, 30, 15); }, ms: 2800 }
+        ]),
+        key: '<p><b>Savings = income &minus; expenses.</b></p>',
+        mistake: '<p>Using income instead of savings to count weeks: $180 &divide; $40. Only what is saved goes toward the goal.</p>',
+        check: [K.ck('mo-budget', 1), K.ck('mo-budget', 2)] },
+      { id: 'goal', title: 'How long to reach a goal', exp: ['F1.3'], skill: 'mo-budget', hard: true,
+        body: '<p>Weeks to goal = money still needed &divide; savings per week. If it does not divide evenly, <b>round up</b>.</p>',
+        watch: K.slides([
+          { say: 'Leo needs $150 more. He saves $20 a week.', fig: eq('150 &divide; 20 = 7.5') },
+          { say: 'After 7 weeks he has $140. Still $10 short.', fig: function () { return plan(150, 0, 20); } },
+          { say: 'So he needs <b>8 weeks</b>. Round up.', fig: eq('7.5 &rarr; 8 weeks'), ms: 2400 }
+        ]),
+        try: lab('bgoalo', [
+          { do: 'Reach the goal in <b>10 weeks or less</b>.', goal: function (h) { var need = K.v(h, 'bgoal') - K.v(h, 'bsave'), per = K.v(h, 'binc') - K.v(h, 'bexp'); return need <= 0 || (per > 0 && Math.ceil(need / per) <= 10); }, yes: 'Spending less or earning more speeds it up.' },
+          { do: 'Make a plan that <b>never</b> reaches the goal. Why?', goal: function (h) { return K.v(h, 'binc') <= K.v(h, 'bexp') && K.v(h, 'bgoal') > K.v(h, 'bsave'); }, yes: 'If spending is as big as income, nothing is saved.' }
+        ]),
+        ways: [
+          { label: 'Track and adjust', html: '<ol><li><b>Track</b>: each week, write what you earned, spent and saved.</li><li><b>Compare</b>: are you on plan?</li><li><b>Adjust</b>: spend less on wants, earn more, or move the date.</li></ol>' },
+          { label: 'Count up', html: '<p>$20, $40, $60, ... $140 after 7 weeks, $160 after 8. The first total that reaches $150 is week 8.</p>' }
+        ],
+        key: '<p><b>Needed &divide; saved per week, then round up.</b></p>',
+        mistake: '<p>Rounding 7.5 weeks down to 7. After 7 weeks the money is still short.</p>',
+        check: [function () { return { q: 'Leo needs $150 more for a game console. He saves $20 a week. How many weeks until he has enough?', type: 'num', answer: 8, unit: 'weeks', hint: '150 &divide; 20 = 7.5. Can he buy it after 7 weeks?', explain: 'He needs 8 weeks.' }; }, K.ck('mo-budget', 3)] }
+    ] },
+    { id: 'choices', title: 'Good information and good choices', sub: 'Sources and influences.', concepts: [
+      { id: 'sources', title: 'Reliable sources', exp: ['F1.2'], skill: 'mo-think',
+        body: '<p>Before a big money decision, use <b>reliable sources</b>: accurate, up to date, and not just trying to sell you something.</p><div class="vs"><div><b class="t">More reliable</b><p>Bank and credit union websites</p><p>The Financial Consumer Agency of Canada</p><p>A trusted adult who has done it</p></div><div><b class="t">Less reliable</b><p>An ad saying "Best deal ever!"</p><p>A post from a stranger</p><p>A video paid for by the seller</p></div></div>',
+        watch: K.slides([
+          { say: 'You want a savings account. Where do you look?', fig: eq('Which source can I trust?') },
+          { say: 'Ask: is it accurate and up to date? Can I check it?', fig: eq('accurate &middot; up to date &middot; checkable') },
+          { say: 'Ask: is it trying to sell me something? Compare several sources.', fig: eq('compare, then decide'), ms: 2400 }
+        ]),
+        key: '<p><b>Trust sources you can check and compare. Be careful with anyone selling.</b></p>',
+        mistake: '<p>Trusting one review or ad. Look for at least two sources that agree.</p>',
+        check: [function () { return mc('Which is the most reliable place to learn about savings accounts?', 'The websites of several banks and credit unions', ['A pop-up ad', 'A comment on a video', 'A friend who guesses'], 'Which one gives facts you can check and compare?', 'Bank websites give facts you can compare.'); }, K.ck('mo-think', 1)] },
+      { id: 'influence', title: 'What influences a choice', exp: ['F1.4'], skill: 'mo-think',
+        body: tbl(['Factor', 'Effect'], [['Needs and wants', 'Needs come first; wants can wait.'], ['Friends and family', 'Wanting what friends have can lead to unplanned spending.'], ['Advertising', 'Ads make a want feel like a need.'], ['Inflation', 'The same money buys less over time.'], ['Values', 'You may pay more for local or fair products.'], ['Income changes', 'Less work means changing the budget.']]),
+        watch: K.slides([
+          { say: 'A new phone comes out. Your friends all have it.', fig: eq('Do I need it? Can I afford it? Better price or time?') },
+          { say: 'Need or want? Your phone still works: it is a want.', fig: eq('want') },
+          { say: 'Can you afford it? Is the price lower in a few months? Then decide.', fig: eq('wait, save, compare'), ms: 2400 }
+        ]),
+        key: '<p>Before spending ask: <b>Do I need it? Can I afford it? Is there a better price or a better time?</b></p>',
+        mistake: '<p>Seeing advertising or friends as the reason to buy, not as influences to notice.</p>',
+        check: [K.ck('mo-think', 2), K.ck('mo-think', 3)] }
+    ] },
+    { id: 'interest', title: 'Interest', sub: 'Money paid for using money.', concepts: [
+      { id: 'simple', title: 'Simple interest', exp: ['F1.5'], skill: 'mo-interest',
+        body: '<p><b>Interest</b> is money paid for using money. When you save, the bank pays you. When you borrow, you pay. <span class="math">I = P &times; r &times; t</span>: principal, rate as a decimal, time in years.</p>',
+        watch: K.slides([
+          { say: 'You save $400 at 3% a year for 2 years.', fig: eq('P = 400, r = 0.03, t = 2') },
+          { say: 'One year: 400 &times; 0.03 = $12.', fig: eq('400 &times; 0.03 = $12') },
+          { say: 'Two years: $12 &times; 2 = $24 interest.', fig: eq('I = 400 &times; 0.03 &times; 2 = $24') },
+          { say: 'You end with $424.', fig: eq('400 + 24 = $424'), ms: 2200 }
+        ]),
+        key: '<p><b>I = P &times; r &times; t.</b> Write the rate as a decimal: 3% = 0.03.</p>',
+        mistake: '<p>Using 3 instead of 0.03 for the rate, which gives $2400 interest. Ask: does that make sense?</p>',
+        check: [function () { return { q: 'Find the simple interest on $600 at 5% a year for 3 years.', type: 'num', answer: 90, unit: '$', tol: 0.01, hint: 'I = 600 &times; 0.05 &times; 3.', explain: '30 a year, &times; 3 = $90.' }; }, K.ck('mo-interest', 1), K.ck('mo-interest', 2)] },
+      { id: 'compound', title: 'Compound interest grows faster', exp: ['F1.5'], skill: 'mo-interest', hard: true,
+        body: '<div class="vs"><div><b class="t">Simple</b><p>Interest only on the start amount. The same each year.</p></div><div><b class="t">Compound</b><p>Interest on the start <b>and</b> on past interest. It grows faster every year.</p></div></div>',
+        watch: K.slides([
+          { say: '$1000 at 5% a year. Year 1: both earn $50.', fig: eq('1000 &rarr; 1050') },
+          { say: 'Year 2: simple earns $50 again. Compound earns 5% of $1050: $52.50.', fig: eq('simple 1100 &nbsp;&nbsp; compound 1102.50') },
+          { say: 'Over 10 years the gap grows.', fig: function () { return growth(1000, 5, 10); } },
+          { say: 'A high rate is good when you save, and bad when you borrow.', fig: eq('save: high rate &#10003; &nbsp;&nbsp; borrow: high rate &#10007;'), ms: 2600 }
+        ]),
+        try: lab('gpo', [
+          { do: 'Find a plan where compound interest more than <b>doubles</b> $1000.', goal: function (h) { return K.v(h, 'gp') === 1000 && Math.pow(1 + K.v(h, 'gr') / 100, K.v(h, 'gy')) > 2; }, yes: 'Time and rate together make money grow fast.' },
+          { do: 'Set <b>20%</b> for <b>5 years</b>, like an unpaid credit card.', goal: function (h) { return K.v(h, 'gr') === 20 && K.v(h, 'gy') === 5; }, yes: 'A debt at 20% grows quickly too, but against you.' }
+        ]),
+        ways: [
+          { label: 'Snowball', html: '<p>Compound interest is like a snowball rolling downhill. The bigger it gets, the more snow it picks up each turn.</p>' },
+          { label: 'Year by year', html: '<p>Multiply by 1.05 each year: 1000, 1050, 1102.50, 1157.63, ... Each year\'s interest is a bit more than the last.</p>' }
+        ],
+        key: '<p><b>Compound interest earns interest on interest.</b> Start early when saving; pay off quickly when borrowing.</p>',
+        mistake: '<p>Thinking a high rate is always good. It depends on whether you are saving or borrowing.</p>',
+        check: [function () { return mc('You owe $500 on a credit card at 20% a year. What happens if you pay nothing for 2 years?', 'You owe more than $700', ['You still owe $500', 'You owe exactly $600'], 'Interest is added each year, and next year\'s interest is on the bigger amount.', '500 &times; 1.2 = 600, then 600 &times; 1.2 = 720.'); }, K.ck('mo-interest', 3)] }
+    ] },
+    { id: 'compare', title: 'Comparing accounts and loans', sub: 'Rates and fees together.', concepts: [
+      { id: 'accounts', title: 'Savings accounts', exp: ['F1.6'], skill: 'mo-compare', hard: true,
+        body: '<p>Accounts offer different <b>rates</b> and <b>fees</b>. To compare, work out what <b>you gain</b>: interest minus fees.</p>',
+        watch: K.slides([
+          { say: 'You keep $800 for a year. Account A: 4%, with a $2 monthly fee.', fig: eq('A: 800 &times; 0.04 = $32, fees 12 &times; $2 = $24') },
+          { say: 'A gains only $8.', fig: eq('A: 32 &minus; 24 = $8') },
+          { say: 'Account B: 2%, no fee. It gains $16.', fig: eq('B: 800 &times; 0.02 = $16') },
+          { say: 'The lower rate wins here. The fee ate A\'s interest.', fig: tbl(['Account', 'Gain'], [['A: 4%, $2/month', '$8'], ['B: 2%, no fee', '<b>$16</b>']]), ms: 2600 }
+        ]),
+        ways: [
+          { label: 'With more money', html: '<p>With $5000 saved, A gains 200 &minus; 24 = $176 and B gains $100. Now A wins. The best account depends on how much you keep in it.</p>' },
+          { label: 'Fees per year', html: '<p>Always turn a monthly fee into a yearly one first: $2 &times; 12 = $24. Then compare with a year of interest.</p>' }
+        ],
+        key: '<p><b>Gain = interest &minus; fees.</b> Pick the biggest gain for your amount.</p>',
+        mistake: '<p>Choosing by rate alone and forgetting monthly fees.</p>',
+        check: [function () { return mc('Account C pays 3% a year with a $1 monthly fee. Account D pays 1% with no fee. You keep $500 for a year. Which is better?', 'Account D', ['Account C', 'They are the same'], 'C: 500 &times; 0.03 minus 12 fees of $1. D: 500 &times; 0.01.', 'C gains 15 &minus; 12 = $3. D gains $5.'); }, K.ck('mo-compare', 1), K.ck('mo-compare', 2)] },
+      { id: 'loans', title: 'Loans', exp: ['F1.6'], skill: 'mo-compare',
+        body: '<p>For a loan, find the <b>total cost</b>: interest plus fees. Pick the <b>smallest</b>.</p>',
+        watch: K.slides([
+          { say: 'Borrow $1000 for 2 years. Loan X: 6%, no fee.', fig: eq('X: 1000 &times; 0.06 &times; 2 = $120') },
+          { say: 'Loan Y: 4%, but a $50 fee.', fig: eq('Y: 1000 &times; 0.04 &times; 2 + 50 = $130') },
+          { say: 'Loan X costs less, even with the higher rate.', fig: tbl(['Loan', 'Total cost'], [['X: 6%, no fee', '<b>$120</b>'], ['Y: 4%, $50 fee', '$130']]), ms: 2600 }
+        ]),
+        key: '<p><b>Total cost = interest + fees.</b> For borrowing, pick the least you pay.</p>',
+        mistake: '<p>Picking the lower rate without adding the fee.</p>',
+        check: [K.ck('mo-compare', 3)] }
+    ] }
+  ];
+
+
   A.register('money', {
-    html:
-'<section class="sec"><h2><span class="n">1</span>Exchange rates</h2>' +
-'<p>Other countries use other money. An <b>exchange rate</b> tells you how much one currency is worth in another. Rates change every day. The rates in this chapter are <b>sample rates</b> for practice. For a real trip, look up today&rsquo;s rate from a bank.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Currency</th><th>1 unit costs (sample)</th></tr></thead><tbody>' +
-CUR.map(function (c) { return '<tr><td class="l">1 ' + c.one + ' (' + c.c + ')</td><td>' + (c.r < 0.1 ? '$' + c.r : m(c.r)) + ' CAD</td></tr>'; }).join('') + '</tbody></table></div>' +
-'<div class="key"><b class="t">Key idea</b><p><b>Other money to Canadian:</b> multiply by the rate. 50 USD &times; 1.38 = $69.00 CAD.<br><b>Canadian to other money:</b> divide by the rate. $69.00 &divide; 1.38 = 50 USD.</p></div>' +
-'<div class="fig">' + exch(50, CUR[0]) + '</div>' +
-'<div class="lab"><span class="lt">Try it: convert money</span>' +
-'<div class="ctrl"><label for="xcur">Currency<select id="xcur">' + CUR.map(function (c, i) { return '<option value="' + i + '">' + c.n + ' (' + c.c + ')</option>'; }).join('') + '</select></label>' +
-'<label for="xamt">Amount: <output id="xamto"></output><input type="range" id="xamt" min="0" max="1000" step="10" value="200"></label>' +
-'<label for="xdir">Direction<select id="xdir"><option value="1">to Canadian dollars</option><option value="-1">from Canadian dollars</option></select></label></div>' +
-'<div class="fig" id="xfig"></div><div class="out" id="xout"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Check that the answer makes sense. One US dollar is worth <b>more</b> than one Canadian dollar, so you get <b>fewer</b> US dollars than the Canadian dollars you hand over. If you got more, you multiplied when you should have divided.</p></div>' +
-'<div class="eg"><b class="t">Worked example: compare rates</b><p>You want 100 USD. Bank A sells USD at $1.41 CAD each. Bank B sells them at $1.37 CAD each, with a $3 fee.</p><p>Bank A: 100 &times; 1.41 = $141.00. Bank B: 100 &times; 1.37 + 3 = $140.00. <b>Bank B costs $1 less.</b></p></div>' +
-A.yt({ q: 'With the sample rate 1 EUR = $1.50 CAD, how many Canadian dollars is 40 EUR?', answer: 60, unit: '$', tol: 0.01, hint: 'Euros to Canadian: multiply by the rate.', explain: '40 &times; 1.50 = $60.00 CAD.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Budgets for big goals</h2>' +
-'<p>A <b>budget</b> is a plan for your money: what comes in (<b>income</b>), what goes out (<b>expenses</b>), and what you <b>save</b>. A long-term goal, like a bike or a trip, can take months. A budget shows how long, and what to change if it is too slow.</p>' +
-'<div class="eg"><b class="t">Worked example</b><p>Maya earns $40 a week babysitting. She spends $15 on needs and $10 on wants, and saves the rest.</p><div class="fig">' + split([{ lab: 'Needs', v: 15, col: 'var(--sc)' }, { lab: 'Wants', v: 10, col: 'var(--se)' }, { lab: 'Save', v: 15, col: 'var(--good)' }]) + '</div>' +
-'<p>She has $30 saved and wants a $210 bike. She still needs 210 &minus; 30 = $180. At $15 a week: 180 &divide; 15 = <b>12 weeks</b>.</p></div>' +
-'<div class="steps"><b class="t">Track and adjust</b><ol><li><b>Track</b>: each week, write what you earned, spent and saved.</li><li><b>Compare</b>: are you on plan? Did something cost more?</li><li><b>Adjust</b>: spend less on wants, earn a bit more, or move the date.</li></ol></div>' +
-'<div class="lab"><span class="lt">Try it: plan a savings goal</span>' +
-'<div class="ctrl"><label for="bgoal">Goal: <output id="bgoalo"></output><input type="range" id="bgoal" min="50" max="1000" step="10" value="210"></label>' +
-'<label for="bsave">Already saved: <output id="bsaveo"></output><input type="range" id="bsave" min="0" max="300" step="5" value="30"></label>' +
-'<label for="binc">Weekly income: <output id="binco"></output><input type="range" id="binc" min="0" max="100" step="5" value="40"></label>' +
-'<label for="bexp">Weekly spending: <output id="bexpo"></output><input type="range" id="bexp" min="0" max="100" step="5" value="25"></label></div>' +
-'<div class="fig" id="bfig"></div><div class="out" id="bout"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Weeks to goal = money still needed &divide; savings per week. If it does not divide evenly, <b>round up</b>, because after the last full week you are still short.</p></div>' +
-A.yt({ q: 'Leo needs $150 more for a game console. He saves $20 a week. How many weeks until he has enough?', answer: 8, unit: 'weeks', hint: '150 &divide; 20 = 7.5. Can he buy it after 7 weeks?', explain: '150 &divide; 20 = 7.5. After 7 weeks he has $140, still short. He needs <b>8 weeks</b>.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Good information and good choices</h2>' +
-'<p>Before a big money decision, get information from <b>reliable sources</b>. A reliable source is accurate, up to date, and is not just trying to sell you something.</p>' +
-'<div class="vs"><div><b class="t">More reliable</b><p>A bank or credit union website</p><p>The Financial Consumer Agency of Canada (a government agency)</p><p>A parent, teacher, or trusted adult who has done it</p><p>Price comparison of several stores</p></div><div><b class="t">Less reliable</b><p>An ad that says &ldquo;Best deal ever!&rdquo;</p><p>A social media post from a stranger</p><p>A video paid for by the seller</p><p>One review that you cannot check</p></div></div>' +
-'<p>Many things <b>influence</b> money choices. Some are personal and some come from the world around you.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Factor</th><th class="l">How it can affect a choice</th></tr></thead><tbody>' +
-'<tr><td class="l">Needs and wants</td><td class="l">Needs come first. Wants can wait or be cut.</td></tr>' +
-'<tr><td class="l">Friends and family</td><td class="l">Wanting what friends have can lead to spending you did not plan.</td></tr>' +
-'<tr><td class="l">Advertising</td><td class="l">Ads try to make a want feel like a need.</td></tr>' +
-'<tr><td class="l">Prices going up (inflation)</td><td class="l">The same money buys less, so a goal may cost more later.</td></tr>' +
-'<tr><td class="l">Values</td><td class="l">You may pay more for something made locally or made fairly.</td></tr>' +
-'<tr><td class="l">Income changes</td><td class="l">Losing a job or getting fewer hours means changing the budget.</td></tr></tbody></table></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Ask three questions before you spend: <b>Do I need it? Can I afford it? Is there a better price or a better time?</b></p></div>' +
-A.yt({ q: 'Which is the most reliable place to learn about savings accounts?', type: 'mc', options: ['A pop-up ad', 'The websites of several banks and credit unions', 'A comment on a video', 'A friend who guesses'], answer: 1, hint: 'Which one gives facts you can check and compare?', explain: 'Bank and credit union websites give the real rates and fees, and you can compare several.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Interest</h2>' +
-'<p><b>Interest</b> is money paid for using money. When you <b>save</b>, the bank pays you interest. When you <b>borrow</b>, you pay the lender interest. The <b>interest rate</b> is a percent per year.</p>' +
-'<div class="key"><b class="t">Simple interest</b><p class="math" style="font-size:1.2rem">I = P &times; r &times; t</p><p>P is the starting amount (principal), r is the rate as a decimal, and t is the time in years.</p></div>' +
-'<div class="eg"><b class="t">Worked example</b><p>You save $400 at 3% a year for 2 years.</p><p>I = 400 &times; 0.03 &times; 2 = <b>$24</b>. You end with 400 + 24 = $424.</p></div>' +
-'<div class="vs"><div><b class="t">Simple interest</b><p>Interest only on the starting amount.</p><p>The same amount is added each year.</p></div><div><b class="t">Compound interest</b><p>Interest on the starting amount <b>and</b> on past interest.</p><p>It grows faster every year.</p></div></div>' +
-'<div class="lab"><span class="lt">Try it: watch savings grow</span>' +
-'<div class="ctrl"><label for="gp">Start: <output id="gpo"></output><input type="range" id="gp" min="100" max="5000" step="100" value="1000"></label>' +
-'<label for="gr">Rate: <output id="gro"></output><input type="range" id="gr" min="1" max="20" value="5"></label>' +
-'<label for="gy">Years: <output id="gyo"></output><input type="range" id="gy" min="1" max="20" value="10"></label></div>' +
-'<div class="fig" id="gfig"></div><div class="out" id="gout"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>A high rate is <b>good when you save</b> and <b>bad when you borrow</b>. A credit card at 20% a year can make a $500 purchase cost far more if you take a long time to pay it off.</p></div>' +
-A.yt({ q: 'Find the simple interest on $600 at 5% a year for 3 years.', answer: 90, unit: '$', tol: 0.01, hint: 'I = 600 &times; 0.05 &times; 3.', explain: '600 &times; 0.05 = 30 a year. 30 &times; 3 = $90.' }) +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Comparing accounts and loans</h2>' +
-'<p>Banks and credit unions offer different <b>rates</b> and <b>fees</b>. A fee is a fixed charge, like $4 a month. To find the best option, work out the <b>total</b> for your situation.</p>' +
-'<div class="eg"><b class="t">Worked example: savings accounts</b><p>You will keep $800 in an account for 1 year.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Account</th><th>Interest</th><th>Fees</th><th>You gain</th></tr></thead><tbody>' +
-'<tr><td class="l">A: 4% a year, $2 a month fee</td><td>$32</td><td>12 &times; $2 = $24</td><td>$8</td></tr>' +
-'<tr><td class="l">B: 2% a year, no fee</td><td>$16</td><td>$0</td><td><b>$16</b></td></tr></tbody></table></div>' +
-'<p>The higher rate is not the better deal here. The fee eats the interest. <b>Account B is better</b> for $800. With much more money saved, A could win.</p></div>' +
-'<div class="eg"><b class="t">Worked example: loans</b><p>You borrow $1000 for 2 years.</p>' +
-'<div class="tbl"><table><thead><tr><th class="l">Loan</th><th>Interest</th><th>Fee</th><th>Total cost</th></tr></thead><tbody>' +
-'<tr><td class="l">X: 6% a year, no fee</td><td>1000 &times; 0.06 &times; 2 = $120</td><td>$0</td><td>$120</td></tr>' +
-'<tr><td class="l">Y: 4% a year, $50 fee</td><td>1000 &times; 0.04 &times; 2 = $80</td><td>$50</td><td>$130</td></tr></tbody></table></div>' +
-'<p><b>Loan X costs less</b>, even with the higher rate.</p></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Compare the <b>total</b>: interest plus fees. For saving, pick the most you gain. For borrowing, pick the least you pay.</p></div>' +
-A.yt({ q: 'Account C pays 3% a year with a $1 monthly fee. Account D pays 1% with no fee. You keep $500 for a year. Which is better?', type: 'mc', options: ['Account C', 'Account D', 'They are the same'], answer: 1, hint: 'C: interest 500 &times; 0.03, minus 12 fees of $1. D: 500 &times; 0.01.', explain: 'C: $15 &minus; $12 = $3. D: $5. Account D is better.' }) +
-'</section>',
-
-    init: function (root) {
-      var $ = A.$;
-      A.bind(root, ['xcur', 'xamt', 'xdir'], function () {
-        var cur = CUR[+$('#xcur', root).value], a = +$('#xamt', root).value, dir = +$('#xdir', root).value;
-        if (cur.r < 0.1 && dir > 0) a *= 10;
-        $('#xamto', root).innerHTML = dir > 0 ? A.fmt(String(a)) + ' ' + cur.c : m0(a) + ' CAD';
-        var f = dir > 0 ? a : a / cur.r;
-        $('#xfig', root).innerHTML = exch(f, cur);
-        $('#xout', root).innerHTML = '<p class="big2">' + (dir > 0 ? fx(cur, a) + ' = ' + m(a * cur.r) + ' CAD' : m(a) + ' CAD = ' + fx(cur, f)) + '</p>' +
-          '<p>' + (dir > 0 ? 'Multiply by the rate: ' + A.fmt(String(a)) + ' &times; ' + cur.r + ' = ' + A.fmt(r2(a * cur.r).toFixed(2)) + '.' : 'Divide by the rate: ' + A.fmt(String(a)) + ' &divide; ' + cur.r + ' = ' + (cur.c === 'JPY' ? A.fmt(String(Math.round(f))) : A.fmt(r2(f).toFixed(2))) + '.') +
-          (cur.r < 0.1 && dir > 0 ? ' (The slider is times 10 for this currency, because each unit is worth little.)' : '') + '</p>';
-      });
-      A.bind(root, ['bgoal', 'bsave', 'binc', 'bexp'], function () {
-        var g = +$('#bgoal', root).value, sv = +$('#bsave', root).value, inc = +$('#binc', root).value, ex = +$('#bexp', root).value, per = inc - ex;
-        $('#bgoalo', root).innerHTML = m0(g); $('#bsaveo', root).innerHTML = m0(sv); $('#binco', root).innerHTML = m0(inc); $('#bexpo', root).innerHTML = m0(ex);
-        $('#bfig', root).innerHTML = plan(g, sv, per);
-        var need = Math.max(0, g - sv), wk = per > 0 ? Math.ceil(need / per) : 0, h;
-        if (!need) h = '<p class="big2">Goal reached</p><p>You already have enough saved.</p>';
-        else if (per <= 0) h = '<p class="big2">Never, at this rate</p><p>You spend ' + (per ? 'more than' : 'all of') + ' what you earn, so nothing is saved. <b>Adjust:</b> spend less or earn more.</p>';
-        else h = '<p class="big2">' + wk + ' week' + (wk > 1 ? 's' : '') + '</p><p>You save ' + m0(inc) + ' &minus; ' + m0(ex) + ' = ' + m0(per) + ' a week. You need ' + m0(g) + ' &minus; ' + m0(sv) + ' = ' + m0(need) + '. ' + m0(need) + ' &divide; ' + m0(per) + (need % per ? ' = ' + cl(need / per) + ', round up to ' + wk : ' = ' + wk) + '.</p>' +
-          (ex >= 5 ? '<p>If you cut spending by $5 a week: ' + Math.ceil(need / (per + 5)) + ' weeks.</p>' : '') + (wk > 24 ? '<p>The chart shows the first 24 weeks.</p>' : '');
-        $('#bout', root).innerHTML = h;
-      });
-      A.bind(root, ['gp', 'gr', 'gy'], function () {
-        var P = +$('#gp', root).value, r = +$('#gr', root).value, t = +$('#gy', root).value, si = P * r / 100 * t, co = P * Math.pow(1 + r / 100, t);
-        $('#gpo', root).innerHTML = m0(P); $('#gro', root).innerHTML = r + '%'; $('#gyo', root).innerHTML = t;
-        $('#gfig', root).innerHTML = growth(P, r, t);
-        $('#gout', root).innerHTML = '<p><b>Simple interest</b> (red bars): I = ' + A.fmt(String(P)) + ' &times; ' + cl(r / 100) + ' &times; ' + t + ' = ' + m(si) + '. Total ' + m(P + si) + '.</p>' +
-          '<p><b>Compound interest</b> (orange dots), added once a year: total ' + m(co) + '. That is ' + m(co - P - si) + ' more than simple interest.</p>';
-      });
-    },
+    lessons: LESSONS,
 
     quiz: [
       { q: 'Use the sample rate 1 USD = $1.38 CAD. How many Canadian dollars is 50 USD?', type: 'num', answer: 69, unit: '$', tol: 0.01, hint: 'US dollars to Canadian: multiply by the rate.', explain: '50 &times; 1.38 = $69.00 CAD.' },
