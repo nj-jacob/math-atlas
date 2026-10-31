@@ -444,4 +444,162 @@
       { id: 'a-story', name: 'Story problems to 10', code: 'B2.2', gen: qStory }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return R.pick(PEOPLE); };
+  function sumPair(lv) { var a = R.int(1, lv === 1 ? 4 : 8), b = R.int(1, (lv === 1 ? 5 : 10) - a); return [a, b]; }
+  var SHAPES = {
+    'a-add': [
+      [1, 'tap', function (lv) {
+        var p = sumPair(lv), a = p[0], b = p[1], c = a + b, alts = [b + 1, b - 1, b + 2].filter(function (x) { return x >= 1 && a + x <= 10; }).slice(0, 2), set = R.shuffle([b].concat(alts));
+        return { q: 'Tap the ten frame that shows ' + eqn(a + ' + ' + b) + '.', type: 'tap', tiles: set.map(function (x) { return A.draw.frames(a, { b: x, c: 16 }); }), answer: set.indexOf(b), answerText: 'the frame with ' + a + ' red and ' + b + ' yellow',
+          hint: 'Look for ' + a + ' red counters and ' + b + ' yellow ones.', steps: ['Count the red counters in each frame: ' + a + '.', 'Then count the yellow ones. You want ' + b + '.'],
+          explain: a + ' red and ' + b + ' yellow make ' + c + '.', meta: { k: 'g1-add-tap' } };
+      }],
+      [1, 'line', function (lv) {
+        var p = sumPair(lv), a = p[0], b = p[1];
+        return { q: 'Start at ' + a + '. Jump ' + b + ' more. Put the marker where you land.', type: 'line', min: 0, max: 10, tick: 1, every: 1, snap: 1, answer: a + b,
+          hint: 'Start at ' + a + '. Count on ' + b + '.', steps: ['Start at ' + a + '.', 'Count on ' + b + ': ' + seq(a + 1, b).join(', ') + '.'],
+          explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'g1-add-line' } };
+      }],
+      [2, 'match', function (lv) {
+        var pairs = [], sums = [];
+        while (pairs.length < 3) { var p = sumPair(lv); if (sums.indexOf(p[0] + p[1]) < 0) { sums.push(p[0] + p[1]); pairs.push([p[0] + ' + ' + p[1], String(p[0] + p[1])]); } }
+        return { q: 'Match each sum to its answer.', type: 'match', pairs: pairs, hint: 'Start at the bigger number and count on.', steps: ['Add each pair. Then find its answer.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'g1-add-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var p = sumPair(lv), a = p[0], b = p[1], c = a + b, who = nm(), truth = !R.int(0, 2), said = truth ? c : c + R.pick([1, -1]);
+        var right = a + ' + ' + b + ' = ' + c + '. Start at ' + a + ' and count on ' + b + '.';
+        return G.tf(who + ' says ' + eqn(a + ' + ' + b + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, right,
+          ['Count the first number again when you count on.', 'Adding makes a number smaller.', 'You add by putting the digits side by side.'], { k: 'g1-add-tf' },
+          { hint: 'Work out ' + a + ' + ' + b + ' yourself.' });
+      }]
+    ],
+    'a-ten': [
+      [1, 'tap', function (lv) {
+        var a = R.int(lv === 1 ? 5 : 1, 9), need = 10 - a, set = R.shuffle(G.near(a, 3, 1, 9));
+        return { q: 'Tap the ten frame that needs <b>' + need + '</b> more to make 10.', type: 'tap', tiles: set.map(function (x) { return A.draw.frames(x, { ghost: 10, c: 16 }); }), answer: set.indexOf(a), answerText: 'the frame with ' + a,
+          hint: 'Count the empty boxes in each frame.', steps: ['A full frame is 10.', 'You want ' + need + ' empty boxes.'],
+          explain: a + ' and ' + need + ' make 10.', meta: { k: 'g1-ten10-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var as = [];
+        while (as.length < 3) { var a = R.int(lv === 1 ? 5 : 1, 9); if (as.indexOf(a) < 0) as.push(a); }
+        return { q: 'How many more make 10? Match each frame to its number.', type: 'match', pairs: as.map(function (a) { return [A.draw.frames(a, { ghost: 10, c: 14 }), String(10 - a)]; }),
+          hint: 'Count the empty boxes.', steps: ['The empty boxes show how many more make 10.'],
+          explain: as.map(function (a) { return a + ' + ' + (10 - a) + ' = 10'; }).join('. ') + '.', meta: { k: 'g1-ten10-match' } };
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), c = R.pick([['crayons', 'box'], ['eggs', 'carton'], ['pencils', 'case'], ['muffins', 'tray']]), n = R.int(1, 9);
+        return { q: 'A ' + c[1] + ' holds 10 ' + c[0] + '. ' + who + ' puts ' + n + ' in it. How many more ' + c[0] + ' fit?', type: 'num', answer: 10 - n,
+          hint: 'How many more make 10?', steps: ['Start at ' + n + ' and count on to 10.', 'That is ' + (10 - n) + '.'],
+          explain: n + ' + ' + (10 - n) + ' = 10.', meta: { k: 'g1-ten10-story' } };
+      }],
+      [3, 'pick', function () {
+        var opts = [], good = 0;
+        while (opts.length < 5) {
+          var a = R.int(1, 9), ok = good < 3 && R.int(0, 1), b = ok ? 10 - a : 10 - a + R.pick([1, -1]), t = a + ' + ' + b;
+          if (b < 0 || opts.indexOf(t) >= 0 || (!ok && opts.length - good >= 3)) continue;
+          opts.push(t); if (ok) good++;
+        }
+        if (!good) opts[0] = '4 + 6';
+        var ans = []; opts.forEach(function (t, j) { var p = t.split(' + '); if (+p[0] + +p[1] === 10) ans.push(j); });
+        return { q: 'Pick every pair that makes <b>10</b>.', type: 'pick', options: opts, answer: ans, hint: 'Picture a ten frame. Does each pair fill it?', steps: ['Add each pair.'],
+          explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' make 10.', meta: { k: 'g1-ten10-pick', opts: opts } };
+      }]
+    ],
+    'a-facts': [
+      [1, 'match', function (lv) {
+        var vals = R.shuffle([1, 2, 3, 4, 5]).slice(0, 3);
+        return { q: 'Match each double to its answer.', type: 'match', pairs: vals.map(function (a) { return [a + ' + ' + a, String(a + a)]; }),
+          hint: 'A double is the same number twice.', steps: ['Think of a ten frame with two equal rows.'],
+          explain: vals.map(function (a) { return a + ' + ' + a + ' = ' + (a + a); }).join('. ') + '.', meta: { k: 'g1-facts-match' } };
+      }],
+      [1, 'tap', function (lv) {
+        var a = R.int(2, 5), set = R.shuffle([[a, a], [a, a + 1], [a + 1, a - 1]]);
+        return { q: 'Tap the picture that shows a <b>double</b>.', type: 'tap', tiles: set.map(function (p) { return A.draw.frames(p[0], { b: p[1], c: 16 }); }), answer: set.map(function (p) { return p[0] === p[1]; }).indexOf(true), answerText: 'the frame with ' + a + ' red and ' + a + ' yellow',
+          hint: 'A double has the same number of red and yellow.', steps: ['Count the red, then the yellow, in each frame.'],
+          explain: a + ' + ' + a + ' = ' + (a + a) + ' is a double.', meta: { k: 'g1-facts-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a, b; do { a = R.int(1, 8); b = R.int(1, 10 - a); } while (a === b);
+        var who = nm(), truth = !R.int(0, 2), said = truth ? a + b : a + b + R.pick([1, -1]);
+        var right = 'Turning the numbers around does not change the total. ' + b + ' + ' + a + ' = ' + (a + b) + ' too.';
+        return G.tf(who + ' knows ' + eqn(a + ' + ' + b + ' = ' + (a + b)) + '. ' + who + ' says ' + eqn(b + ' + ' + a + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, right,
+          ['Turning the numbers around changes the total.', 'The first number is always the total.', 'Adding 0 changes the number.'], { k: 'g1-facts-tf' },
+          { hint: 'Does the order of the numbers change the total?' });
+      }]
+    ],
+    'a-sub': [
+      [1, 'line', function (lv) {
+        var n = lv === 1 ? R.int(3, 6) : R.int(5, 10), k = R.int(1, n - 1);
+        return { q: 'Start at ' + n + '. Jump back ' + k + '. Put the marker where you land.', type: 'line', min: 0, max: 10, tick: 1, every: 1, snap: 1, answer: n - k,
+          hint: 'Jumping back is taking away. Count back ' + k + '.', steps: ['Start at ' + n + '.', 'Count back ' + k + ': ' + seq(n - k, k).reverse().join(', ') + '.'],
+          explain: n + ' ' + M + ' ' + k + ' = ' + (n - k) + '.', meta: { k: 'g1-sub-line' } };
+      }],
+      [1, 'tap', function (lv) {
+        var n = lv === 1 ? R.int(3, 6) : R.int(5, 9), k = R.int(1, n - 2), set = R.shuffle([[n, k], [n, k + 1], [n + 1, k]]);
+        return { q: 'Tap the picture that shows ' + eqn(n + ' ' + M + ' ' + k) + '.', type: 'tap', tiles: set.map(function (p) { return A.draw.frames(p[0], { x: p[1], c: 16 }); }), answer: set.map(function (p) { return p.join(); }).indexOf(n + ',' + k), answerText: 'the frame with ' + n + ' counters and ' + k + ' crossed out',
+          hint: 'Look for ' + n + ' counters with ' + k + ' crossed out.', steps: ['Count all the counters: you want ' + n + '.', 'Count the crossed-out ones: you want ' + k + '.'],
+          explain: n + ' take away ' + k + ' leaves ' + (n - k) + '.', meta: { k: 'g1-sub-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(4, 10), k = R.int(1, n - 1), who = nm(), truth = !R.int(0, 2), said = truth ? n - k : n - k + 1;
+        var right = n + ' ' + M + ' ' + k + ' = ' + (n - k) + '. Start at ' + n + ' and count back ' + k + '.';
+        return G.tf(who + ' says ' + eqn(n + ' ' + M + ' ' + k + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, right,
+          ['Count the start number as the first jump back.', 'Taking away makes a number bigger.', 'Subtracting is the same as adding.'], { k: 'g1-sub-tf' },
+          { hint: 'Count back ' + k + ' from ' + n + '.' });
+      }]
+    ],
+    'a-fam': [
+      [1, 'fill', function (lv) {
+        var p = sumPair(lv), a = p[0], b = p[1], c = a + b;
+        return { q: 'Use the adding fact to fill in the blanks.', type: 'fill', fill: eqn(a + ' + ' + b + ' = ' + c) + '<br>' + eqn(c + ' ' + M + ' ' + a + ' = [[]]') + '<br>' + eqn(c + ' ' + M + ' ' + b + ' = [[]]'), answers: [b, a],
+          hint: 'The same three numbers make the whole family.', steps: [c + ' is the whole. ' + a + ' and ' + b + ' are the parts.', 'Take one part from the whole: the other part is left.'],
+          explain: c + ' ' + M + ' ' + a + ' = ' + b + ' and ' + c + ' ' + M + ' ' + b + ' = ' + a + '.', meta: { k: 'g1-fam-fill' } };
+      }],
+      [1, 'pick', function (lv) {
+        var a, b; do { var p = sumPair(lv); a = p[0]; b = p[1]; } while (a === b);
+        var c = a + b, good = [b + ' + ' + a + ' = ' + c, c + ' ' + M + ' ' + a + ' = ' + b, c + ' ' + M + ' ' + b + ' = ' + a], bad = [c + ' + ' + a + ' = ' + (c + a), (c + 1) + ' ' + M + ' ' + a + ' = ' + b, a + ' + ' + c + ' = ' + (a + c)];
+        var opts = R.shuffle(R.shuffle(good).slice(0, 2 + R.int(0, 1)).concat(R.shuffle(bad).slice(0, 2)));
+        var ans = []; opts.forEach(function (o, j) { if (good.indexOf(o) >= 0) ans.push(j); });
+        return { q: 'Pick every fact in the same family as ' + eqn(a + ' + ' + b + ' = ' + c) + '.', type: 'pick', options: opts, answer: ans,
+          hint: 'A family uses only ' + a + ', ' + b + ' and ' + c + ', and every fact is true.', steps: ['Check each fact: does it use only ' + a + ', ' + b + ' and ' + c + '?', 'Is it true?'],
+          explain: 'The family is ' + a + ' + ' + b + ' = ' + c + ', ' + good.join(', ') + '.', meta: { k: 'g1-fam-pick' } };
+      }],
+      [2, 'match', function (lv) {
+        var p = sumPair(lv), a = p[0], b = p[1], c = a + b;
+        if (a === b) { b = b === 1 ? 2 : b - 1; c = a + b; }
+        return { q: 'These are all in the family of ' + eqn(a + ' + ' + b + ' = ' + c) + '. Match each one to its answer.', type: 'match', pairs: [[c + ' ' + M + ' ' + a, String(b)], [c + ' ' + M + ' ' + b, String(a)], [b + ' + ' + a, String(c)]],
+          hint: 'Use the adding fact.', steps: [c + ' is the whole. ' + a + ' and ' + b + ' are the parts.'],
+          explain: c + ' ' + M + ' ' + a + ' = ' + b + '. ' + c + ' ' + M + ' ' + b + ' = ' + a + '. ' + b + ' + ' + a + ' = ' + c + '.', meta: { k: 'g1-fam-match' } };
+      }]
+    ],
+    'a-story': [
+      [1, 'which way', function (lv) {
+        var who = nm(), kind = R.pick(THINGS), add = R.int(0, 1), a = R.int(3, lv === 1 ? 6 : 9), b = R.int(1, add ? 10 - a : a - 1);
+        var verb = add ? R.pick(['gets', 'finds']) + ' ' + b + ' more' : (kind === 'apple' ? R.pick(['eats', 'gives away']) : R.pick(['gives away', 'loses'])) + ' ' + b;
+        var o = R.mc(add ? 'Add' : 'Subtract', [add ? 'Subtract' : 'Add']);
+        return { q: who + ' has ' + A.nm(kind, a) + '. ' + who + ' ' + verb + '. To find how many ' + (add ? 'now' : 'are left') + ', do you add or subtract?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Getting more means add. Losing, eating or giving away means subtract.', steps: [add ? 'There will be more than before, so add.' : 'There will be fewer than before, so subtract.', add ? a + ' + ' + b + ' = ' + (a + b) + '.' : a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.'],
+          explain: add ? 'Add: ' + a + ' + ' + b + ' = ' + (a + b) + '.' : 'Subtract: ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.', meta: { k: 'g1-story-way' } };
+      }],
+      [1, 'fill', function (lv) {
+        var who = nm(), kind = R.pick(THINGS), add = lv === 1 ? 1 : R.int(0, 1), a = R.int(2, lv === 1 ? 5 : 9), b = R.int(1, add ? Math.max(1, (lv === 1 ? 6 : 10) - a) : a - 1);
+        var q = who + ' has ' + A.nm(kind, a) + '. ' + who + (add ? ' gets ' + b + ' more.' : ' gives away ' + b + '.') + ' Write the number sentence.';
+        return { q: q, type: 'fill', fill: eqn(a + ' ' + (add ? '+' : M) + ' ' + b + ' = [[]]'), answers: [add ? a + b : a - b],
+          hint: add ? 'Start at ' + a + ' and count on ' + b + '.' : 'Start at ' + a + ' and count back ' + b + '.', steps: [add ? 'More means add.' : 'Giving away means subtract.'],
+          explain: a + ' ' + (add ? '+' : M) + ' ' + b + ' = ' + (add ? a + b : a - b) + '.', meta: { k: 'g1-story-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var who = nm(), a = R.int(4, 10), b = R.int(1, a - 1), truth = !R.int(0, 2), said = truth ? a - b : a + b;
+        var right = b + ' popped, so take away: ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.';
+        return G.tf('There were ' + a + ' balloons. ' + b + ' popped. ' + who + ' says <b>' + said + '</b> are left. True or false: ' + who + ' is right.', truth, right,
+          ['Always add the two numbers in a story.', 'The answer is always the bigger number.', 'Popped balloons are still left.'], { k: 'g1-story-tf' },
+          { hint: '"Left" means take away.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

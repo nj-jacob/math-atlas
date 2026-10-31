@@ -203,3 +203,32 @@
 })();
 /* make the Grade 1 pieces available by name, like the shared tools: { tool: 'g1objects', opts: {...} } */
 (function () { var M = window.Manip, G = window.G1; M.g1objects = G.objects; M.g1pick = G.pick; M.g1strip = G.strip; M.g1stage = G.stage; })();
+/* More ways to ask (question shapes, see docs/QUESTIONS.md). Each chapter ends with a SHAPES block and calls
+   G1.shapes(chapterId, SHAPES): every practice skill keeps its first way of asking ("plain") and gains the new
+   shapes, which unlock by level. q.meta is read by the automatic answer checks in tests/verify/grade1.js. */
+(function () {
+  var A = window.Atlas, G = window.G1;
+  /* the reasons to pick after a true-or-false answer: the right one plus wrong ones, shuffled */
+  G.why = function (right, wrong) { var o = A.R.mc(right, wrong); return { options: o.options, answer: o.answer }; };
+  /* "someone made a mistake?" A true-or-false question, then why */
+  G.tf = function (q, truth, right, wrong, meta, extra) {
+    return Object.assign({ q: q, type: 'tf', answer: truth, why: G.why(right, wrong), steps: [right], explain: right, meta: meta }, extra || {});
+  };
+  /* up to k different numbers near n (n first), each from lo to hi */
+  G.near = function (n, k, lo, hi, spread) {
+    var out = [n], d = spread || [1, -1, 2, -2, 3, -3];
+    d.forEach(function (x) { var v = n + x; if (out.length < k && v >= lo && v <= hi && out.indexOf(v) < 0) out.push(v); });
+    return out;
+  };
+  G.shapes = function (id, SHAPES) {
+    var ch = A.chapters[id];
+    if (!ch || !A.Q) return;
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  };
+})();
