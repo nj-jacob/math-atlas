@@ -43,7 +43,7 @@ service cloud.firestore {
           && request.resource.data.name is string && request.resource.data.name.size() <= 60
           && emails(request.resource.data.parentEmails) && emails(request.resource.data.tutorEmails))
         || (isLinked(resource.data)
-          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assigned', 'updated']));
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assigned', 'updated', 'planPrefs']));
       allow delete: if isOwner(resource.data);
 
       match /progress/{site} {

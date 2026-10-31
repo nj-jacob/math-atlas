@@ -32,7 +32,8 @@
   const strands = 'BCDEF';
   document.getElementById('grades').innerHTML = Object.keys(SITES).filter((k) => SITES[k].on).map((k, i) =>
     '<a class="card" data-strand="' + strands[i % 5] + '" href="' + SITES[k].path + '"><span class="no">' + k.slice(1) + '</span><h2>' + SITES[k].name +
-    ' Math Atlas</h2><p class="desc">Lessons, adaptive practice, quizzes and a check-up.</p></a>').join('');
+    ' Math Atlas</h2><p class="desc">Lessons, adaptive practice, quizzes and a check-up.</p></a>').join('') +
+    '<a class="card" data-strand="E" href="plan/"><span class="no">+</span><h2>Math Plan: placement check and learning plan</h2><p class="desc">Find where a student is in Grades 1 to 8, then follow a plan with weekly check-ins.</p></a>';
 </script>
 </body>
 </html>

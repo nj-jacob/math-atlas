@@ -173,6 +173,7 @@ async function studentHome() {
   const notes = await getDocs(query(collection(db, 'students', me.sid, 'notes'), orderBy('at', 'desc'), limit(3))).catch(() => ({ docs: [] }));
   let h = '<div class="wrap"><header class="chead"><span class="num">Student</span><h1>Hi, ' + esc(kid.name) + '</h1>' +
     '<p class="lede">Your practice saves to your account, so you can use any device.</p></header><div class="cards">';
+  h += '<a class="card" data-strand="E" href="plan/" data-site="plan"><h2>Math Plan</h2><p class="desc">Placement check and learning plan.</p></a>';
   Object.keys(SITES).filter((k) => SITES[k].on).forEach((k) => {
     h += '<a class="card" data-strand="B" href="' + SITES[k].path + '" data-site="' + k + '"><h2>' + SITES[k].name + ' Math Atlas</h2><p class="desc">Lessons, practice and check-ups.</p></a>';
   });
@@ -239,7 +240,7 @@ function weekLine(w) {
 function activityList(days, max) {
   const out = [];
   days.forEach((d) => {
-    const g = SITES[d.site] ? SITES[d.site].name : d.site;
+    const g = SITES[d.site] ? SITES[d.site].name : d.site === 'plan' ? 'Math Plan' : d.site;
     (d.events || []).forEach((e) => out.push(Object.assign({ g }, e)));
     if (d.n) out.push({ g, kind: 'practice', at: d.updated && d.updated.toMillis ? d.updated.toMillis() : Date.parse(d.date + 'T12:00:00'), n: d.n, ok: d.ok || 0, date: d.date });
   });
@@ -461,6 +462,7 @@ async function studentDetail(sid) {
     (me.role === 'tutor' ? 'Tutor view' : 'Parent view') + '</span><h1>' + esc(kid.name) + '</h1>' +
     '<p class="lede">Username <b>' + esc(kid.username) + '</b> &middot; last active ' + when(lastActive(prog)) + '</p>' +
     '<p><a class="btn" href="live.html?sid=' + encodeURIComponent(sid) + '">Work together</a> <span class="t2 small">See ' + esc(kid.name) + '\'s screen and click on it, after they tap Allow.</span></p>' +
+    '<p><a class="btn alt" href="plan/?sid=' + encodeURIComponent(sid) + '#plan">Math Plan</a> <span class="t2 small">' + esc(kid.name) + '\'s placement check, learning plan and weekly check-in.</span></p>' +
     '<p class="t2 small">Updates by itself every minute. Last updated ' + new Date().toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' }) +
     '. <button type="button" class="btn alt sm" id="refresh">Refresh now</button></p></header>';
 
