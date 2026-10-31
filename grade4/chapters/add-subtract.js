@@ -703,4 +703,186 @@ A.yt({ gen: function () { return gen.words(2); } }) +
       { id: 'as-words', name: 'Word problems', code: 'B2.4', gen: gen.words }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, nm = A.Q && A.Q.name;
+  function op(a, b, sub) { return A.fmt(a) + (sub ? ' &minus; ' : ' + ') + A.fmt(b); }
+  /* the answer you get by forgetting to carry: each column keeps only its ones digit */
+  function noCarry(a, b) { var s = 0; for (var i = 0; i < 5; i++) s += (dg(a, i) + dg(b, i)) % 10 * Math.pow(10, i); return s; }
+  /* the answer you get by taking the smaller digit from the bigger one in every column */
+  function smallFromBig(a, b) { var s = 0; for (var i = 0; i < 5; i++) s += Math.abs(dg(a, i) - dg(b, i)) * Math.pow(10, i); return s; }
+  var ADD_STORY = [['tickets', 'The arena sold', 'tickets on Friday and', 'on Saturday'], ['litres of maple sap', 'A sugar bush collected', 'litres of maple sap last week and', 'this week'], ['kilometres', 'A truck drove', 'km on Monday and', 'km on Tuesday']];
+  var SUB_STORY = [['The stadium has', 'seats.', 'seats are full. How many seats are empty?'], ['A town has', 'voters.', 'voted. How many did not vote?'], ['A book has', 'pages.', 'pages are read. How many pages are left?']];
+  var SHAPES = {
+    'as-add': [
+      [1, 'build', function () {
+        var a, b;
+        do { a = R.int(120, 680); b = R.int(110, 320); } while (a + b > 999 || (dg(a, 0) + dg(b, 0) < 10 && dg(a, 1) + dg(b, 1) < 10));
+        return { q: 'Add <span class="math">' + op(a, b) + '</span> with blocks. Build the total, then press Check.', type: 'build', tool: 'base10', answer: a + b,
+          hint: 'Put the ones together, then the tens, then the hundreds. Trade 10 of a kind for 1 of the next.', steps: addSteps(a, b),
+          explain: op(a, b) + ' = ' + A.fmt(a + b) + '.', meta: { k: 'as-add-build', a: a, b: b } };
+      }],
+      [1, 'mistake', function (lv) {
+        var p = addPair(lv), a = p[0], b = p[1], who = nm(), truth = !R.int(0, 2), said = truth ? a + b : noCarry(a, b);
+        var right = truth ? 'Each column was added and every carry was counted, so ' + op(a, b) + ' = ' + A.fmt(a + b) + '.' : 'A carry was forgotten. ' + op(a, b) + ' = ' + A.fmt(a + b) + '.';
+        return { q: who + ' says <span class="math">' + op(a, b) + ' = ' + A.fmt(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['You never need to carry when you add.', 'Adding always makes the digits smaller.', 'Only the ones column matters.']),
+          hint: 'Add it yourself, column by column. Watch for carries.', steps: addSteps(a, b), explain: right, meta: { k: 'as-add-tf', a: a, b: b, said: said } };
+      }],
+      [2, 'story', function () {
+        var c = R.pick(ADD_STORY), a = R.int(1200, 4800), b = R.int(900, 4200);
+        return { q: c[1] + ' <b>' + A.fmt(a) + '</b> ' + c[2] + ' <b>' + A.fmt(b) + '</b> ' + c[3] + '. How many ' + c[0].split(' ')[0] + ' is that in all?', type: 'num', answer: a + b,
+          fig: barModel(a + b, a, b, 'first', 'second', 'w'), hint: '"In all" means put the two parts together.', steps: addSteps(a, b),
+          explain: op(a, b) + ' = ' + A.fmt(a + b) + '.', meta: { k: 'as-add-story' } };
+      }],
+      [3, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var p = addPair(2), s = p[0] + p[1]; if (seen[s]) continue; seen[s] = 1; pairs.push([op(p[0], p[1]), A.fmt(s)]); }
+        return { q: 'Match each sum to its answer.', type: 'match', pairs: pairs, hint: 'Estimate first to rule some out. Then check the ones digits.',
+          steps: ['Round each sum to the nearest thousand to see which answer is close.', 'The ones digits must match too.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'as-add-match', pairs: pairs } };
+      }]
+    ],
+    'as-sub': [
+      [1, 'mistake', function (lv) {
+        var p = subPair(lv), a = p[0], b = p[1], who = nm(), truth = !R.int(0, 2), said = truth ? a - b : smallFromBig(a, b);
+        var right = truth ? 'Each trade was made, so ' + op(a, b, 1) + ' = ' + A.fmt(a - b) + '. Check: ' + op(a - b, b) + ' = ' + A.fmt(a) + '.' : 'In a column the bottom digit was bigger, so a trade was needed. ' + op(a, b, 1) + ' = ' + A.fmt(a - b) + '.';
+        return { q: who + ' says <span class="math">' + op(a, b, 1) + ' = ' + A.fmt(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['You can take the small digit from the big one in any column.', 'Subtracting never needs a trade.', 'The answer must be bigger than the start.']),
+          hint: 'Check by adding: answer + ' + A.fmt(b) + ' should give ' + A.fmt(a) + '.', steps: subSteps(a, b), explain: right, meta: { k: 'as-sub-tf', a: a, b: b, said: said } };
+      }],
+      [1, 'fill', function (lv) {
+        var p = subPair(lv), a = p[0], b = p[1];
+        return { q: 'Subtract. Then check your answer by adding.', type: 'fill', fill: '<span class="math">' + op(a, b, 1) + ' = [[]]</span><br>Check: <span class="math">[[]] + ' + A.fmt(b) + ' = ' + A.fmt(a) + '</span>', answers: [a - b, a - b],
+          fig: lv === 1 ? subCols(a, b, 0) : '', hint: 'Start with the ones. Trade when the top digit is smaller.', steps: subSteps(a, b),
+          explain: op(a, b, 1) + ' = ' + A.fmt(a - b) + ', and ' + op(a - b, b) + ' = ' + A.fmt(a) + '.', meta: { k: 'as-sub-fill', a: a, b: b } };
+      }],
+      [2, 'story', function () {
+        var c = R.pick(SUB_STORY), a = R.int(3000, 9800), b = R.int(900, a - 600);
+        return { q: c[0] + ' <b>' + A.fmt(a) + '</b> ' + c[1] + ' <b>' + A.fmt(b) + '</b> ' + c[2], type: 'num', answer: a - b,
+          fig: barModel(a, b, a - b, 'known part', 'unknown part', 'b'), hint: 'You know the whole and one part. Subtract.', steps: subSteps(a, b),
+          explain: op(a, b, 1) + ' = ' + A.fmt(a - b) + '.', meta: { k: 'as-sub-story' } };
+      }],
+      [3, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var p = subPair(2), d = p[0] - p[1]; if (seen[d]) continue; seen[d] = 1; pairs.push([op(p[0], p[1], 1), A.fmt(d)]); }
+        return { q: 'Match each subtraction to its answer.', type: 'match', pairs: pairs, hint: 'Check each one by adding back.',
+          steps: ['Answer + the number taken away = the start number.'], explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'as-sub-match', pairs: pairs } };
+      }]
+    ],
+    'as-mental': [
+      [1, 'which', function () {
+        var kind = R.pick(['friendly', 'hundreds', 'countup']), a, b, sub;
+        if (kind === 'friendly') { a = R.int(2, 7) * 1000 - R.int(1, 3); b = R.int(1, 9) * 100 + R.int(11, 89); sub = false; }
+        else if (kind === 'hundreds') { a = R.int(2, 8) * 1000 + R.int(1, 9) * 100; b = R.int(1, 9) * 100; sub = !R.int(0, 1); }
+        else { a = R.int(3, 8) * 1000 + R.int(1, 3) * 10 + R.int(1, 9); b = a - R.int(2, 9) * 100 - R.int(1, 9) * 10; sub = true; }
+        var ways = { friendly: 'Make ' + A.fmt(a) + ' a friendly thousand first', hundreds: 'Think of both numbers as hundreds', countup: 'Count up from ' + A.fmt(b) + ' to ' + A.fmt(a) };
+        var opts = R.shuffle([ways.friendly, ways.hundreds, ways.countup]);
+        return { q: 'Which way is quickest in your head? <span class="math">' + op(a, b, sub) + '</span>', type: 'mc', options: opts, answer: opts.indexOf(ways[kind]),
+          hint: 'Look at the numbers. Is one close to a thousand? Are both whole hundreds? Are they close together?',
+          steps: [kind === 'friendly' ? A.fmt(a) + ' is just ' + (Math.ceil(a / 1000) * 1000 - a) + ' away from ' + A.fmt(Math.ceil(a / 1000) * 1000) + '.' : kind === 'hundreds' ? 'Both numbers are whole hundreds: ' + a / 100 + ' hundreds and ' + b / 100 + ' hundreds.' : 'The numbers are close together, so the gap is small. Count up.'],
+          explain: ways[kind] + '. The answer is ' + A.fmt(sub ? a - b : a + b) + '.', meta: { k: 'as-mental-which', a: a, b: b, sub: sub } };
+      }],
+      [1, 'line', function () {
+        var a = R.int(2, 8) * 1000 + R.int(1, 9) * 100, b = R.int(1, 9) * 100, sub = !R.int(0, 1) && b < a, ans = sub ? a - b : a + b, lo = Math.floor(ans / 1000) * 1000;
+        if (lo === ans) lo -= 1000;
+        return { q: 'Work it out in your head: <span class="math">' + op(a, b, sub) + '</span>. Place the answer on the line.', type: 'line', min: lo, max: lo + 1000, tick: 100, every: 500, snap: 100, answer: ans, tol: 0,
+          hint: 'Think in hundreds: ' + a / 100 + ' hundreds ' + (sub ? 'take away ' : 'and ') + b / 100 + ' hundreds.', steps: [a / 100 + (sub ? ' &minus; ' : ' + ') + b / 100 + ' = ' + ans / 100 + ' hundreds = ' + A.fmt(ans) + '.'],
+          explain: op(a, b, sub) + ' = ' + A.fmt(ans) + '.', meta: { k: 'as-mental-line', a: a, b: b, sub: sub } };
+      }],
+      [2, 'fill', function () {
+        var near = R.int(2, 8) * 1000, x = near - R.int(1, 4), y = R.int(1, 9) * 100 + R.int(11, 89), give = near - x;
+        return { q: 'Use a friendly number. Move ' + give + ' from ' + A.fmt(y) + ' to ' + A.fmt(x) + '.', type: 'fill', fill: '<span class="math">' + op(x, y) + ' = ' + A.fmt(near) + ' + [[]] = [[]]</span>', answers: [y - give, x + y],
+          hint: A.fmt(x) + ' + ' + give + ' = ' + A.fmt(near) + '. Take the same ' + give + ' away from ' + A.fmt(y) + '.', steps: [A.fmt(y) + ' &minus; ' + give + ' = ' + A.fmt(y - give) + '.', A.fmt(near) + ' + ' + A.fmt(y - give) + ' = ' + A.fmt(x + y) + '.'],
+          explain: op(x, y) + ' = ' + A.fmt(x + y) + '.', meta: { k: 'as-mental-fill', x: x, y: y, near: near } };
+      }]
+    ],
+    'as-est': [
+      [1, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) {
+          var a = R.int(110, 890), b = R.int(110, 890);
+          if (a % 100 === 50 || b % 100 === 50) continue;
+          var e = Math.round(a / 100) * 100 + Math.round(b / 100) * 100;
+          if (seen[e]) continue; seen[e] = 1; pairs.push([op(a, b), 'about ' + A.fmt(e)]);
+        }
+        return { q: 'Round each number to the nearest hundred. Match each sum to its estimate.', type: 'match', pairs: pairs,
+          hint: 'Round both numbers first, then add the rounded numbers.', steps: ['Look at the tens digit: 5 or more rounds up.'],
+          explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'as-est-match', pairs: pairs } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a = R.int(1100, 4900), b = R.int(1100, 3900), sub = !R.int(0, 1), who = nm();
+        if (sub && a < b) { var t = a; a = b; b = t; }
+        var exact = sub ? a - b : a + b, truth = !R.int(0, 1), said = truth ? exact : exact + (exact > 2500 ? R.pick([-1000, 1000]) : 1000);
+        var ra = Math.round(a / 100) * 100, rb = Math.round(b / 100) * 100, est = sub ? ra - rb : ra + rb;
+        var right = 'The estimate is ' + op(ra, rb, sub) + ' = ' + A.fmt(est) + '. ' + A.fmt(said) + (truth ? ' is close to it.' : ' is too far from it.');
+        return { q: who + ' says <span class="math">' + op(a, b, sub) + ' = ' + A.fmt(said) + '</span>. Use an estimate. True or false: the answer is reasonable.', type: 'tf', answer: truth,
+          why: why(right, ['Any answer with four digits is reasonable.', 'You cannot check an answer without working it all out.', 'The answer should end in the same digit as the first number.']),
+          hint: 'Round each number to the nearest hundred first.', steps: [right], explain: right + ' The exact answer is ' + A.fmt(exact) + '.', meta: { k: 'as-est-tf', a: a, b: b, sub: sub, said: said } };
+      }],
+      [2, 'pick', function () {
+        var goal = R.int(5, 8) * 1000, opts = [], sums = [];
+        while (opts.length < 5) {
+          var a = R.int(1500, 5500), b = R.int(900, 3500), s = a + b;
+          if (Math.abs(s - goal) < 300 || sums.indexOf(s) >= 0) continue;
+          sums.push(s); opts.push(op(a, b));
+        }
+        var ans = sums.map(function (s, j) { return s > goal ? j : -1; }).filter(function (j) { return j >= 0; });
+        if (!ans.length || ans.length === 5) return SHAPES['as-est'][1][2](2);
+        return { q: 'Estimate. Pick every sum that is <b>more than ' + A.fmt(goal) + '</b>.', type: 'pick', options: opts, answer: ans,
+          hint: 'Round each number to the nearest hundred and add.', steps: ['Round both numbers to the nearest hundred.', 'Add the rounded numbers and compare with ' + A.fmt(goal) + '.'],
+          explain: 'More than ' + A.fmt(goal) + ': ' + ans.map(function (j) { return opts[j]; }).join('; ') + '.', meta: { k: 'as-est-pick', goal: goal } };
+      }]
+    ],
+    'as-inv': [
+      [1, 'fill', function () {
+        var a = R.int(1200, 8000), b = R.int(300, a - 300), c = a - b;
+        return { q: 'Use the subtraction to fill in the addition facts.', type: 'fill', fill: '<span class="math">' + op(a, b, 1) + ' = ' + A.fmt(c) + '</span><br><span class="math">' + A.fmt(c) + ' + [[]] = ' + A.fmt(a) + '</span><br><span class="math">' + A.fmt(b) + ' + [[]] = ' + A.fmt(a) + '</span>', answers: [b, c],
+          fig: barModel(a, c, b, 'answer', 'taken away'), hint: 'The two parts make the whole, ' + A.fmt(a) + '.', steps: ['The parts are ' + A.fmt(c) + ' and ' + A.fmt(b) + '.', 'Add the parts in either order to get ' + A.fmt(a) + '.'],
+          explain: A.fmt(c) + ' + ' + A.fmt(b) + ' = ' + A.fmt(a) + '.', meta: { k: 'as-inv-fill', a: a, b: b } };
+      }],
+      [1, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var a = R.int(1200, 8000), b = R.int(300, a - 300); if (seen[a] || seen[b]) continue; seen[a] = seen[b] = 1; pairs.push([op(a, b, 1) + ' = ' + A.fmt(a - b), op(a - b, b) + ' = ' + A.fmt(a)]); }
+        return { q: 'Match each subtraction to the addition that checks it.', type: 'match', pairs: pairs, hint: 'Answer + the number taken away = the start number.',
+          steps: ['Look for the addition that ends with the subtraction\'s start number.'], explain: pairs.map(function (p) { return p[1] + ' checks ' + p[0]; }).join('. ') + '.', meta: { k: 'as-inv-match', pairs: pairs } };
+      }],
+      [2, 'story', function () {
+        var who = nm(), goal = R.int(3, 9) * 1000, have = R.int(800, goal - 400);
+        return { q: who + '\'s class wants to collect <b>' + A.fmt(goal) + '</b> bottle caps. They have <b>' + A.fmt(have) + '</b>. How many more do they need?', type: 'num', answer: goal - have,
+          fig: barModel(goal, have, goal - have, 'have', 'still need', 'b'), hint: A.fmt(have) + ' + ? = ' + A.fmt(goal) + '. Subtract to find the missing part.',
+          steps: ['Missing part = ' + op(goal, have, 1) + ' = ' + A.fmt(goal - have) + '.', 'Check: ' + op(have, goal - have) + ' = ' + A.fmt(goal) + '.'],
+          explain: 'They need ' + A.fmt(goal - have) + ' more.', meta: { k: 'as-inv-story' } };
+      }]
+    ],
+    'as-words': [
+      [1, 'which', function () {
+        var kind = R.pick(['join', 'left', 'diff', 'join']), two = A.Q.two(), who = two[0], a = R.int(1200, 4800), b = R.int(400, 1100);
+        var text = kind === 'join' ? who + '\'s school raised $' + A.fmt(a) + ' in June and $' + A.fmt(b) + ' in July. How much did it raise in all?'
+          : kind === 'left' ? 'A ferry can carry ' + A.fmt(a) + ' people. ' + A.fmt(b) + ' are on board. How many more can get on?'
+          : who + ' biked ' + A.fmt(a) + ' m. ' + two[1] + ' biked ' + A.fmt(b) + ' m. How much farther did ' + who + ' bike?';
+        var opts = ['Add', 'Subtract'], ans = kind === 'join' ? 0 : 1;
+        return { q: text + ' <b>Which way?</b> Pick the operation.', type: 'mc', options: opts, answer: ans,
+          hint: 'Are you putting parts together, or finding what is left or how much more?',
+          steps: [kind === 'join' ? 'Two parts go together. Add.' : kind === 'left' ? 'You know the whole and one part. Subtract to find the other part.' : 'You are comparing two amounts. Subtract to find the difference.'],
+          explain: (ans ? 'Subtract: ' + op(a, b, 1) + ' = ' + A.fmt(a - b) : 'Add: ' + op(a, b) + ' = ' + A.fmt(a + b)) + '.', meta: { k: 'as-words-which', kind: kind } };
+      }],
+      [1, 'fill', function () {
+        var s0 = R.int(3000, 6000), add = R.int(800, 2500), sp = R.int(1000, s0 - 500);
+        return { q: 'A food bank had <b>' + A.fmt(s0) + '</b> cans. People gave <b>' + A.fmt(add) + '</b> more. Then it gave out <b>' + A.fmt(sp) + '</b>. Fill in each step.', type: 'fill',
+          fill: 'Step 1: <span class="math">' + op(s0, add) + ' = [[]]</span><br>Step 2: <span class="math">[[]] &minus; ' + A.fmt(sp) + ' = [[]]</span>', answers: [s0 + add, s0 + add, s0 + add - sp],
+          hint: 'First add the cans given. Then take away the cans given out.', steps: ['Step 1: ' + op(s0, add) + ' = ' + A.fmt(s0 + add) + '.', 'Step 2: ' + op(s0 + add, sp, 1) + ' = ' + A.fmt(s0 + add - sp) + '.'],
+          explain: 'The food bank has ' + A.fmt(s0 + add - sp) + ' cans now.', meta: { k: 'as-words-fill' } };
+      }],
+      [2, 'mistake', function () {
+        var who = nm(), t = R.int(4000, 9000), u = R.int(1200, t - 900), truth = !R.int(0, 2), said = truth ? t - u : t + u;
+        var right = 'You know the whole (' + A.fmt(t) + ') and one part (' + A.fmt(u) + '), so subtract: ' + op(t, u, 1) + ' = ' + A.fmt(t - u) + '.';
+        return { q: 'A concert hall has ' + A.fmt(t) + ' seats. ' + A.fmt(u) + ' are sold. ' + who + ' says <b>' + A.fmt(said) + '</b> seats are left. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['"Left" always means add.', 'You should add because there are two numbers.', 'Seats left must be more than the seats in the hall.']),
+          hint: 'Can there be more seats left than seats in the hall?', steps: [right], explain: right, meta: { k: 'as-words-tf', t: t, u: u, said: said } };
+      }]
+    ]
+  };
+  K.shapes('add-subtract', SHAPES);
 })();

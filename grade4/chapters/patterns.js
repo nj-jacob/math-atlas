@@ -521,4 +521,158 @@ A.yt({ gen: function () { return gen.code(1); } }) +
       { id: 'pa4-code', name: 'Read and change code', code: 'C3.1, C3.2', gen: gen.code }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  function seq(start, add, n) { var out = []; for (var i = 0; i < n; i++) out.push(start + add * i); return out; }
+  function t1(t) { return (t / 10).toFixed(1); }
+  var SHAPES = {
+    'pa4-next': [
+      [1, 'tap', function () {
+        var core = R.pick([['c', 's'], ['c', 's', 't'], ['c', 'c', 's'], ['t', 's', 's'], ['s', 't', 't', 'c']]), len = core.length * 2 + R.int(1, core.length - 1), list = rep(core, len), next = core[len % core.length];
+        var kinds = ['c', 's', 't'];
+        return { q: 'This pattern repeats. Tap the shape that comes next.', type: 'tap', fig: shapeRow(list, 0), tiles: kinds.map(function (k) { return shapeRow([k], 0, 'a ' + WORD[k]); }), answer: kinds.indexOf(next), answerText: 'the ' + WORD[next],
+          hint: 'Find the core, the part that repeats. Say it out loud.', steps: ['The core is ' + core.map(function (x) { return WORD[x]; }).join(', ') + '.', 'After the last shape, the core goes on with a ' + WORD[next] + '.'],
+          explain: 'The next shape is a ' + WORD[next] + '.', meta: { k: 'pa4-next-tap', core: core, len: len, kinds: kinds } };
+      }],
+      [1, 'fill', function (lv) {
+        var start = R.int(1, lv === 1 ? 6 : 15), add = R.int(2, lv === 1 ? 5 : 9), v = seq(start, add, 5);
+        return { q: 'This pattern grows by the same amount each time. Fill in the next two numbers.', type: 'fill', fill: v.slice(0, 3).join(', ') + ', [[]], [[]]', answers: [v[3], v[4]],
+          fig: lv === 1 ? figures(start, add, 3) : '', hint: 'How much does it grow from one number to the next?', steps: ['It adds ' + add + ' each time.', v[2] + ' + ' + add + ' = ' + v[3] + '. ' + v[3] + ' + ' + add + ' = ' + v[4] + '.'],
+          explain: 'The pattern goes ' + v.join(', ') + '.', meta: { k: 'pa4-next-fill' } };
+      }],
+      [2, 'story', function () {
+        var p = who(), start = R.int(2, 10), add = R.int(2, 8), n = R.int(5, 10);
+        return { q: p + ' has $' + start + ' in week 1. ' + p + ' saves <b>$' + add + '</b> more each week. How much will ' + p + ' have in <b>week ' + n + '</b>?', type: 'num', answer: start + add * (n - 1),
+          fig: table(start, add, 4).replace('Figure number', 'Week').replace('Number of tiles', 'Dollars'), hint: 'From week 1 to week ' + n + ' is ' + (n - 1) + ' more weeks.',
+          steps: ['Each week adds $' + add + '.', 'Week ' + n + ': ' + start + ' + ' + (n - 1) + ' &times; ' + add + ' = ' + (start + add * (n - 1)) + '.'],
+          explain: p + ' will have $' + (start + add * (n - 1)) + ' in week ' + n + '.', meta: { k: 'pa4-next-story', start: start, add: add, n: n } };
+      }]
+    ],
+    'pa4-rule': [
+      [1, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var s = R.int(2, 12), a = R.int(2, 9); if (seen[a]) continue; seen[a] = 1; pairs.push([seq(s, a, 4).join(', ') + ', ...', 'Start at ' + s + ', add ' + a]); }
+        return { q: 'Match each pattern to its rule.', type: 'match', pairs: pairs, hint: 'Look at the first number and how much it grows.',
+          steps: ['Subtract two numbers side by side to find how much it adds.'], explain: pairs.map(function (p) { return p[0] + ' &rarr; ' + p[1]; }).join('. ') + '.', meta: { k: 'pa4-rule-match', pairs: pairs } };
+      }],
+      [1, 'mistake', function () {
+        var start = R.int(2, 15), add = R.int(2, 9), v = seq(start, add, 5), p = who(), truth = !R.int(0, 2), said = truth ? add : R.pick([add + 1, add - 1, start]);
+        if (said === add && !truth) said = add + 2;
+        var right = 'Each number is ' + add + ' more than the one before: ' + v[1] + ' &minus; ' + v[0] + ' = ' + add + '.';
+        return { q: p + ' says the rule for ' + v.join(', ') + ' is <b>add ' + said + '</b> each time. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The rule is always the first number.', 'You find the rule by adding the first two numbers.', 'A pattern can add different amounts each time.']),
+          hint: 'Subtract two numbers side by side.', steps: [right], explain: right, meta: { k: 'pa4-rule-tf', v: v, said: said } };
+      }],
+      [2, 'fill', function () {
+        var start = R.int(2, 15), add = R.int(2, 9), v = seq(start, add, 6);
+        return { q: 'The rule is: start at ' + start + ' and add ' + add + ' each time. Fill in the table.', type: 'fill',
+          fill: '<div class="tbl"><table><tr><th>Term</th><td>1</td><td>2</td><td>3</td><td>4</td><td>6</td></tr><tr><th>Value</th><td>' + v[0] + '</td><td>' + v[1] + '</td><td>[[]]</td><td>[[]]</td><td>[[]]</td></tr></table></div>', answers: [v[2], v[3], v[5]],
+          hint: 'Keep adding ' + add + '. Term 6 comes two steps after term 4.', steps: ['Term 3: ' + v[1] + ' + ' + add + ' = ' + v[2] + '. Term 4: ' + v[3] + '.', 'Term 5 is ' + v[4] + ', so term 6 is ' + v[5] + '.'],
+          explain: 'The values are ' + v.join(', ') + '.', meta: { k: 'pa4-rule-fill', start: start, add: add } };
+      }]
+    ],
+    'pa4-dec': [
+      [1, 'line', function (lv) {
+        var st = R.int(1, 4), step = lv === 1 ? R.int(1, 2) : R.int(2, 4), v = seq(st, step, 5);
+        return { q: 'This pattern grows by the same amount each time: ' + v.slice(0, 4).map(t1).join(', ') + '. Place the next number on the line.', type: 'line', min: 0, max: 2, tick: 0.1, every: 0.5, snap: 0.1, answer: v[4] / 10, tol: 0.01,
+          hint: 'Each step adds ' + t1(step) + ', which is ' + step + ' tenth' + (step > 1 ? 's' : '') + '.', steps: [t1(v[3]) + ' + ' + t1(step) + ' = ' + t1(v[4]) + '.'],
+          explain: 'The next number is ' + t1(v[4]) + '.', meta: { k: 'pa4-dec-line', v: v } };
+      }],
+      [1, 'fill', function () {
+        var s = R.pick([25, 50, 250]), b0 = R.int(1, 8) * s, v = seq(b0, s, 5);
+        return { q: 'Count on. Fill in the next two numbers.', type: 'fill', fill: v.slice(0, 3).map(A.fmt).join(', ') + ', [[]], [[]]', answers: [v[3], v[4]],
+          hint: 'How much does it grow each time?', steps: ['It adds ' + s + ' each time.', A.fmt(v[2]) + ' + ' + s + ' = ' + A.fmt(v[3]) + '.'],
+          explain: 'The pattern goes ' + v.map(A.fmt).join(', ') + '.', meta: { k: 'pa4-dec-fill' } };
+      }],
+      [2, 'mistake', function () {
+        var step = R.int(1, 2), start = 9 - 3 * step, v = seq(start, step, 4), p = who(), truth = !R.int(0, 1), nx = v[3] + step, said = truth ? t1(nx) : '0.' + nx;
+        var right = v[3] + ' tenths + ' + step + ' tenth' + (step > 1 ? 's' : '') + ' = ' + nx + ' tenths, which is ' + t1(nx) + '.';
+        return { q: p + ' says the next number in ' + v.map(t1).join(', ') + ' is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['After 0.9 comes 0.10.', 'Decimals stop at 0.9.', 'The tenths digit can be 10.']),
+          hint: '10 tenths make 1 whole.', steps: [right], explain: right, meta: { k: 'pa4-dec-tf', v: v, said: said } };
+      }]
+    ],
+    'pa4-solve': [
+      [1, 'which', function () {
+        var kind = R.pick(['+', '-', 'x']), a = R.int(2, 9), x = R.int(2, 12), sym = R.pick(['n', '&#9633;']), eq, b;
+        if (kind === '+') { b = x + a; eq = sym + ' + ' + a + ' = ' + b; } else if (kind === '-') { b = x + a; eq = sym + ' &minus; ' + a + ' = ' + x; } else { b = a * x; eq = a + ' &times; ' + sym + ' = ' + b; }
+        var ways = { '+': 'Subtract: ' + b + ' &minus; ' + a, '-': 'Add: ' + x + ' + ' + a, x: 'Divide: ' + b + ' &divide; ' + a };
+        var opts = R.shuffle([ways['+'], ways['-'], ways.x, kind === 'x' ? 'Multiply: ' + b + ' &times; ' + a : 'Add: ' + b + ' + ' + a]);
+        var ans = kind === '+' ? b - a : kind === '-' ? x + a : x;
+        return { q: '<span class="math">' + eq + '</span>. <b>Which way</b> finds ' + sym + '?', type: 'mc', options: opts, answer: opts.indexOf(ways[kind]),
+          hint: 'Do the opposite of what is done to ' + sym + '.', steps: [kind === '+' ? 'Adding is undone by subtracting.' : kind === '-' ? 'Subtracting is undone by adding.' : 'Multiplying is undone by dividing.', sym + ' = ' + ans + '.'],
+          explain: ways[kind] + ' = ' + ans + '.', meta: { k: 'pa4-solve-which', kind: kind, a: a, ans: ans } };
+      }],
+      [1, 'mistake', function () {
+        var a = R.int(3, 15), x = R.int(2, 20), b = x + a, p = who(), truth = !R.int(0, 2), said = truth ? x : b + a;
+        var right = 'Undo the adding: ' + b + ' &minus; ' + a + ' = ' + x + '. Check: ' + x + ' + ' + a + ' = ' + b + '.';
+        return { q: p + ' says <span class="math">n = ' + said + '</span> solves <span class="math">n + ' + a + ' = ' + b + '</span>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Add the two numbers you can see.', 'n is always the biggest number.', 'You can pick any number for n.']),
+          hint: 'Put ' + said + ' in place of n. Is it true?', steps: [right], explain: right, meta: { k: 'pa4-solve-tf', a: a, b: b, said: said } };
+      }],
+      [2, 'story', function () {
+        var p = who(), a = R.int(5, 25), x = R.int(8, 40), b = x + a;
+        return { q: p + ' has some hockey cards. A friend gives ' + p + ' <b>' + a + '</b> more. Now ' + p + ' has <b>' + b + '</b>. How many cards did ' + p + ' have at first?', type: 'num', answer: x,
+          fig: balance('n + ' + a, String(b), 0), hint: 'Write it as n + ' + a + ' = ' + b + '. Undo the adding.', steps: ['n + ' + a + ' = ' + b + '.', 'n = ' + b + ' &minus; ' + a + ' = ' + x + '.'],
+          explain: p + ' had ' + x + ' cards at first.', meta: { k: 'pa4-solve-story' } };
+      }],
+      [2, 'match', function () {
+        var pairs = [], sols = [];
+        while (pairs.length < 3) {
+          var a = R.int(2, 9), x = R.int(2, 12), k = pairs.length, sol = k === 1 ? x + a : x;
+          if (sols.indexOf(sol) >= 0) continue;
+          sols.push(sol);
+          pairs.push([k === 0 ? 'n + ' + a + ' = ' + (x + a) : k === 1 ? 'n &minus; ' + a + ' = ' + x : a + ' &times; n = ' + a * x, 'n = ' + sol]);
+        }
+        return { q: 'Match each equation to its solution.', type: 'match', pairs: pairs, hint: 'Do the opposite operation. Then check by putting the number back in.',
+          steps: ['Adding is undone by subtracting. Subtracting by adding. Multiplying by dividing.'], explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'pa4-solve-match', pairs: pairs } };
+      }]
+    ],
+    'pa4-ineq': [
+      [1, 'pick', function () {
+        var a = R.int(2, 9), b = R.int(a + 4, 20), edge = b - a, opts = R.shuffle([edge - 3, edge - 1, edge, edge + 1, edge + 3].filter(function (v) { return v >= 0; }));
+        var gt = R.int(0, 1) === 1;
+        var ans = opts.map(function (v, j) { return (gt ? v + a > b : v + a < b) ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every value of n that makes this true: <span class="math">n + ' + a + ' ' + (gt ? '&gt;' : '&lt;') + ' ' + b + '</span>', type: 'pick', options: opts.map(String), answer: ans,
+          hint: 'n + ' + a + ' = ' + b + ' when n = ' + edge + '. That one makes both sides equal, so it does not count.', steps: ['Try each number in place of n.', 'Numbers ' + (gt ? 'bigger' : 'smaller') + ' than ' + edge + ' work.'],
+          explain: 'These work: ' + ans.map(function (j) { return opts[j]; }).join(', ') + '.', meta: { k: 'pa4-ineq-pick', a: a, b: b, gt: gt } };
+      }],
+      [1, 'mistake', function () {
+        var a = R.int(2, 9), b = R.int(a + 4, 20), edge = b - a, p = who(), said = R.pick([edge, edge - 1, edge - 2, edge + 1]), truth = said + a < b;
+        var right = said + ' + ' + a + ' = ' + (said + a) + (truth ? ', which is less than ' + b + '.' : ', which is not less than ' + b + '.');
+        return { q: p + ' says <span class="math">n = ' + said + '</span> makes <span class="math">n + ' + a + ' &lt; ' + b + '</span> true. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Any number smaller than ' + b + ' works.', 'Equal counts as less than.', 'n must always be bigger than ' + a + '.']),
+          hint: 'Put ' + said + ' in place of n and work out the left side.', steps: [right], explain: right, meta: { k: 'pa4-ineq-tf', a: a, b: b, said: said } };
+      }],
+      [2, 'line', function () {
+        var a = R.int(2, 9), b = R.int(a + 4, 20);
+        return { q: 'Find the <b>greatest</b> whole number n that makes <span class="math">n + ' + a + ' &lt; ' + b + '</span> true. Place it on the line.', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: b - a - 1, tol: 0,
+          hint: 'n + ' + a + ' = ' + b + ' when n = ' + (b - a) + '. You need something smaller.', steps: ['n = ' + (b - a) + ' makes both sides equal.', 'The next number down, ' + (b - a - 1) + ', works: ' + (b - a - 1) + ' + ' + a + ' = ' + (b - 1) + ' &lt; ' + b + '.'],
+          explain: 'The greatest is n = ' + (b - a - 1) + '.', meta: { k: 'pa4-ineq-line', a: a, b: b } };
+      }]
+    ],
+    'pa4-code': [
+      [1, 'fill', function () {
+        var k = R.int(2, 5), t = R.int(2, 5);
+        return { q: 'The robot must move <b>' + k * t + '</b> squares in all. Fill in the loop.', type: 'fill', fill: '<span class="mono">repeat [[]] times:\n    move forward ' + k + '</span>', answers: [t],
+          hint: 'Each time through the loop the robot moves ' + k + '.', steps: [k * t + ' &divide; ' + k + ' = ' + t + '.'], explain: 'Repeat ' + t + ' times: ' + t + ' &times; ' + k + ' = ' + k * t + '.', meta: { k: 'pa4-code-fill', k2: k } };
+      }],
+      [1, 'mistake', function () {
+        var k = R.int(2, 6), t = R.int(2, 4), p = who(), truth = !R.int(0, 2), said = truth ? k * t : k + t === k * t ? k * t + k : k + t, prog = [{ rep: t, body: fwd(k) }];
+        var right = 'The loop runs ' + t + ' times and moves ' + k + ' each time: ' + t + ' &times; ' + k + ' = ' + k * t + '.';
+        return { q: p + ' says this code moves the robot <b>' + said + '</b> squares. True or false: ' + p + ' is right.<span class="mono">' + codeText(prog) + '</span>', type: 'tf', answer: truth,
+          why: why(right, ['Add the two numbers in the code.', 'A loop runs only once.', 'The robot moves 1 square for each line.']),
+          hint: 'How many times does the loop run?', steps: [right], explain: right, meta: { k: 'pa4-code-tf', k2: k, t: t, said: said } };
+      }],
+      [2, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var k = R.int(1, 5), t = R.int(2, 5); if (seen[k * t]) continue; seen[k * t] = 1; pairs.push(['repeat ' + t + ' times: move forward ' + k, k * t + ' squares']); }
+        return { q: 'Match each loop to how far the robot moves.', type: 'match', pairs: pairs, hint: 'Times the loop runs &times; squares each time.',
+          steps: ['Multiply the two numbers in each loop.'], explain: pairs.map(function (p) { return p[0] + ' moves ' + p[1]; }).join('. ') + '.', meta: { k: 'pa4-code-match', pairs: pairs } };
+      }]
+    ]
+  };
+  K.shapes('patterns', SHAPES);
 })();
