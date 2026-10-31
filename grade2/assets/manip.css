@@ -84,6 +84,14 @@
 .mp-cht{color:var(--mh)}.mp-ctt{color:var(--mt)}.mp-cot{color:color-mix(in srgb,var(--mo) 70%,#000)}
 .mp-words{display:inline-block;font-style:italic;color:var(--ink2,#555)}
 
+/* ---------- clock, area grid, scale ---------- */
+.mp-fill{display:block;width:100%;height:auto;margin:0 auto}
+.mp-clock,.mp-pan{max-width:480px;margin:0 auto}
+.mp-clock{max-width:280px}
+.mp-agrid{display:grid;gap:2px;margin:0 auto}
+.mp-asq{aspect-ratio:1;min-height:30px;border:1.5px solid color-mix(in srgb,var(--mink) 28%,var(--mline));border-radius:4px;background:var(--mcard);padding:0;cursor:pointer;transition:background .25s}
+.mp-asq.on{background:color-mix(in srgb,var(--strand,var(--accent,#1864ab)) 55%,var(--mcard))}
+
 /* ---------- place value disks ---------- */
 .mp-dmat{display:grid;grid-template-columns:repeat(var(--n),minmax(0,1fr));gap:6px;background:var(--mcard);border:3px solid var(--mline);border-radius:calc(var(--mr) + 4px);padding:8px;min-height:190px}
 .mp-dcol{display:flex;flex-direction:column;align-items:center;min-width:0;border-radius:12px;padding:2px 0 4px;transition:background .3s}
@@ -284,6 +292,7 @@
 .pg-bar{flex:1;min-width:120px;height:12px;border-radius:99px;background:var(--line,#ddd);overflow:hidden;display:flex}
 .pg-bar i{display:block;height:100%;transition:width .6s}
 .pg-bar .b3{background:var(--good,#2b8a3e)}.pg-bar .b2{background:color-mix(in srgb,var(--good,#2b8a3e) 55%,var(--card,#fff))}.pg-bar .b1{background:color-mix(in srgb,var(--strand) 45%,var(--card,#fff))}
+.pg-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
 .pg-ch table{width:100%;border-collapse:collapse;font-size:.92rem;margin:4px 0 12px}
 .pg-ch td,.pg-ch th{padding:5px 6px;border-top:2px solid var(--line,#ddd);text-align:left;vertical-align:middle}
 .pg-ch th{font-size:.8rem;color:var(--ink2,#555)}
@@ -312,3 +321,6 @@ html:not(.adult) .mistake{display:none}
 html.adult .mistake{position:relative;border-style:dashed;padding-top:16px;margin-top:22px}
 html.adult .mistake::after{content:"Grown-up view";position:absolute;top:-11px;right:14px;font-size:.7rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;padding:1px 10px;border-radius:99px;background:var(--ink,#222);color:var(--card,#fff)}
 #adultb[aria-pressed="true"]{color:var(--card,#fff);background:var(--ink,#222);border-color:var(--ink,#222)}
+/* keep wide feedback lines and slide-in animations inside a phone screen */
+p.ls-got{display:flex;flex-wrap:wrap;max-width:100%}
+.ls-ways,.ls-card{overflow:hidden}

@@ -986,6 +986,155 @@
     return T;
   };
 
+  /* ================= Clock, area grid and kitchen scale (from Grade 4) =================
+     Manip.clock(el, { t: 540, controls: true })           analog clock with a.m./p.m. readout; t is minutes after midnight. Moves: set(t), advance(min). State {t, h, m, elapsed}.
+     Manip.areagrid(el, { cols: 10, rows: 6, unit: 'cm' }) tap squares to cover them. Moves: fill(l, w), clear(). State {count, l, w, isRect}.
+     Manip.scale(el, { g: 0, max: 5000 })                   a kitchen scale with 1 kg, 100 g and 10 g blocks. Moves: add(kind, n), remove(kind, n). State {g, kg, h, t}. */
+  function abtn(a, label) { return '<button type="button" class="mp-act" data-a="' + a + '">' + label + '</button>'; }
+  function svgBox(w, h, inner, label) { return '<svg viewBox="0 0 ' + w + ' ' + h + '" class="mp-fill" style="max-width:' + w + 'px" role="img" aria-label="' + label + '">' + inner + '</svg>'; }
+  function pulse(el) { if (el) bump(el); }
+
+  /* ================= Clock ================= */
+  function hm(t) { t = ((t % 1440) + 1440) % 1440; var h = Math.floor(t / 60), m = t % 60; return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'a.m.' : 'p.m.'); }
+  function dur(m) { var s = m < 0 ? '&minus;' : ''; m = Math.abs(m); var h = Math.floor(m / 60), r = m % 60; return s + (h ? h + ' h ' : '') + r + ' min'; }
+  M.clock = function (root, o) {
+    o = o || {};
+    var T = base(root, 'clock'), start = o.t == null ? 540 : o.t, t = start, last = '';
+    root.innerHTML = (o.controls === false ? '' : '<div class="mp-acts">' + abtn('-60', '&minus;1 hour') + abtn('-5', '&minus;5 min') + abtn('5', '+5 min') + abtn('60', '+1 hour') + abtn('reset', 'Start again') + '</div>') +
+      '<div class="mp-clock"></div><div class="mp-read" aria-live="polite"></div>';
+    var face = qs('.mp-clock', root), read = qs('.mp-read', root);
+    function draw() {
+      var cx = 120, cy = 120, r = 104, s = '<circle cx="120" cy="120" r="' + r + '" style="fill:var(--card);stroke:var(--ink)" stroke-width="5"/>';
+      for (var i = 0; i < 60; i++) { var b = (90 - i * 6) * Math.PI / 180, r1 = i % 5 ? 97 : 90; s += '<line x1="' + (cx + r1 * Math.cos(b)).toFixed(1) + '" y1="' + (cy - r1 * Math.sin(b)).toFixed(1) + '" x2="' + (cx + 101 * Math.cos(b)).toFixed(1) + '" y2="' + (cy - 101 * Math.sin(b)).toFixed(1) + '" style="stroke:var(--ink)" stroke-width="' + (i % 5 ? 1.5 : 3) + '"/>'; }
+      for (i = 1; i <= 12; i++) { var a = (90 - i * 30) * Math.PI / 180; s += '<text x="' + (cx + 72 * Math.cos(a)).toFixed(1) + '" y="' + (cy - 72 * Math.sin(a) + 8).toFixed(1) + '" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--ink)">' + i + '</text>'; }
+      /* the minutes passed since the start, as a shaded wedge */
+      var el = t - start;
+      if (el > 0 && el < 60) {
+        var a0 = (90 - (start % 60) * 6) * Math.PI / 180, a1 = (90 - (t % 60) * 6) * Math.PI / 180;
+        s += '<path d="M120 120 L' + (cx + 86 * Math.cos(a0)).toFixed(1) + ' ' + (cy - 86 * Math.sin(a0)).toFixed(1) + ' A86 86 0 ' + (el > 30 ? 1 : 0) + ' 1 ' + (cx + 86 * Math.cos(a1)).toFixed(1) + ' ' + (cy - 86 * Math.sin(a1)).toFixed(1) + ' Z" style="fill:color-mix(in srgb,var(--accent) 22%,transparent)"/>';
+      }
+      var m = t % 60, h = (t / 60) % 12, am = (90 - m * 6) * Math.PI / 180, ah = (90 - h * 30) * Math.PI / 180;
+      s += '<line x1="120" y1="120" x2="' + (cx + 52 * Math.cos(ah)).toFixed(1) + '" y2="' + (cy - 52 * Math.sin(ah)).toFixed(1) + '" style="stroke:var(--ink)" stroke-width="8" stroke-linecap="round"/>';
+      s += '<line x1="120" y1="120" x2="' + (cx + 82 * Math.cos(am)).toFixed(1) + '" y2="' + (cy - 82 * Math.sin(am)).toFixed(1) + '" style="stroke:var(--strand,var(--accent))" stroke-width="5" stroke-linecap="round"/><circle cx="120" cy="120" r="7" style="fill:var(--ink)"/>';
+      face.innerHTML = svgBox(240, 240, s, 'Clock showing ' + hm(t).replace(/\./g, ''));
+      read.innerHTML = '<p><span class="mp-num">' + hm(t) + '</span>' + (t !== start ? ' &nbsp;<span class="t2">' + dur(t - start) + ' since ' + hm(start) + '</span>' : '') + '</p>';
+    }
+    function change() { draw(); if (o.onChange) o.onChange(T.state(), T); }
+    T.state = function () { return { t: t, h: Math.floor(((t % 1440) + 1440) % 1440 / 60), m: ((t % 60) + 60) % 60, elapsed: t - start, last: last }; };
+    T.set = function (v) { t = v; last = 'set'; change(); return T.wait(300); };
+    /* move the hands minute by minute, so the clock visibly runs */
+    T.advance = function (mins) {
+      var ep = T.ep, dir = mins < 0 ? -1 : 1, left = Math.abs(mins), stepM = left > 120 ? 5 : 1;
+      last = 'advance';
+      if (T.fast) { t += mins; change(); return Promise.resolve(); }
+      function one() {
+        if (!T.alive(ep) || left <= 0) return Promise.resolve();
+        var k = Math.min(stepM, left); t += dir * k; left -= k; change();
+        return T.wait(Math.max(8, 700 / Math.abs(mins) * k)).then(one);
+      }
+      return one();
+    };
+    T.reset = function () { T.ep++; t = start; last = ''; change(); };
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-a]'); if (!b || !root.contains(b)) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'reset') T.reset(); else { T.ep++; t += +a; last = 'step'; change(); pulse(read.firstChild); }
+    });
+    draw();
+    return T;
+  };
+
+  /* ================= Area grid ================= */
+  M.areagrid = function (root, o) {
+    o = o || {};
+    var T = base(root, 'area'), C = o.cols || 10, Rw = o.rows || 6, unit = o.unit || 'cm', on = {}, last = '';
+    root.innerHTML = '<div class="mp-acts">' + abtn('clear', 'Clear') + '</div><div class="mp-agrid" style="grid-template-columns:repeat(' + C + ',minmax(0,1fr));gap:2px;max-width:' + (C * 46) + 'px"></div><div class="mp-read" aria-live="polite"></div>';
+    var g = qs('.mp-agrid', root), read = qs('.mp-read', root), h = '';
+    for (var r = 0; r < Rw; r++) for (var c = 0; c < C; c++) h += '<button type="button" class="mp-asq" data-r="' + r + '" data-c="' + c + '" aria-pressed="false" aria-label="Square ' + (r + 1) + ', ' + (c + 1) + '"></button>';
+    g.innerHTML = h;
+    function cell(r, c) { return qs('[data-r="' + r + '"][data-c="' + c + '"]', g); }
+    function shape() {
+      var k = Object.keys(on); if (!k.length) return { l: 0, w: 0, rect: false };
+      var rs = k.map(function (x) { return +x.split(',')[0]; }), cs = k.map(function (x) { return +x.split(',')[1]; });
+      var l = Math.max.apply(null, cs) - Math.min.apply(null, cs) + 1, w = Math.max.apply(null, rs) - Math.min.apply(null, rs) + 1;
+      return { l: l, w: w, rect: l * w === k.length };
+    }
+    function paint(r, c) { var b = cell(r, c), v = !!on[r + ',' + c]; b.classList.toggle('on', v); b.setAttribute('aria-pressed', String(v)); }
+    function readout() {
+      var n = Object.keys(on).length, sh = shape();
+      read.innerHTML = '<p><span class="mp-num">' + n + ' ' + unit + '<sup>2</sup></span>' + (sh.rect && n ? ' &nbsp;<span class="t2">a rectangle ' + sh.l + ' by ' + sh.w + ': ' + sh.l + ' &times; ' + sh.w + ' = ' + n + '</span>' : '') + '</p>';
+    }
+    function change() { readout(); if (o.onChange) o.onChange(T.state(), T); }
+    T.state = function () { var sh = shape(); return { count: Object.keys(on).length, l: sh.l, w: sh.w, isRect: sh.rect, last: last }; };
+    T.clear = function () { on = {}; for (var r = 0; r < Rw; r++) for (var c = 0; c < C; c++) paint(r, c); last = 'clear'; change(); return T.wait(200); };
+    /* cover an l by w rectangle row by row, so the rows can be counted */
+    T.fill = function (l, w) {
+      var ep = T.ep, r = 0; last = 'fill';
+      function row() {
+        if (!T.alive(ep) || r >= Math.min(w, Rw)) return Promise.resolve();
+        for (var c = 0; c < Math.min(l, C); c++) { on[r + ',' + c] = 1; paint(r, c); }
+        pulse(cell(r, 0)); r++; change();
+        return T.wait(350).then(row);
+      }
+      return row();
+    };
+    T.reset = function () { T.ep++; on = {}; for (var r = 0; r < Rw; r++) for (var c = 0; c < C; c++) paint(r, c); last = ''; if (o.l && o.w) { for (r = 0; r < o.w; r++) for (c = 0; c < o.l; c++) { on[r + ',' + c] = 1; paint(r, c); } } change(); };
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('.mp-asq'); if (!b) return;
+      var k = b.getAttribute('data-r') + ',' + b.getAttribute('data-c');
+      if (on[k]) delete on[k]; else on[k] = 1;
+      paint(+b.getAttribute('data-r'), +b.getAttribute('data-c')); if (on[k]) pulse(b); last = 'tap'; change();
+    });
+    qs('[data-a="clear"]', root).addEventListener('click', function () { T.ep++; T.clear(); });
+    T.reset();
+    return T;
+  };
+
+  /* ================= Kitchen scale with mass blocks ================= */
+  var MB = { kg: 1000, h: 100, t: 10 }, MBL = { kg: '1 kg', h: '100 g', t: '10 g' };
+  M.scale = function (root, o) {
+    o = o || {};
+    var T = base(root, 'scale'), max = o.max || 5000, n = { kg: 0, h: 0, t: 0 }, last = '';
+    root.innerHTML = '<div class="mp-acts">' + ['kg', 'h', 't'].map(function (k) { return abtn('+' + k, '+ ' + MBL[k]) + abtn('-' + k, '&minus; ' + MBL[k]); }).join('') + '</div><div class="mp-pan"></div><div class="mp-read" aria-live="polite"></div>';
+    var pan = qs('.mp-pan', root), read = qs('.mp-read', root);
+    function g() { return n.kg * 1000 + n.h * 100 + n.t * 10; }
+    function draw() {
+      var s = '', x = 20, y = 150, W = 460, gv = g();
+      /* blocks sit on the pan, biggest first */
+      [['kg', 70, 'var(--strand,var(--accent))'], ['h', 40, 'var(--hi,var(--accent))'], ['t', 24, 'var(--accent)']].forEach(function (b) {
+        for (var i = 0; i < n[b[0]]; i++) {
+          if (x + b[1] > W - 20) { x = 20; y -= 74; }
+          s += '<rect x="' + x + '" y="' + (y - b[1]) + '" width="' + b[1] + '" height="' + b[1] + '" rx="6" style="fill:color-mix(in srgb,' + b[2] + ' 45%,var(--card));stroke:var(--ink)" stroke-width="2"/>';
+          if (b[0] !== 't') s += '<text x="' + (x + b[1] / 2) + '" y="' + (y - b[1] / 2 + 6) + '" text-anchor="middle" font-size="' + (b[0] === 'kg' ? 18 : 12) + '" font-weight="700" style="fill:var(--ink)">' + MBL[b[0]] + '</text>';
+          x += b[1] + 6;
+        }
+      });
+      s += '<rect x="6" y="152" width="' + (W - 12) + '" height="12" rx="6" style="fill:var(--ink)"/><rect x="' + (W / 2 - 90) + '" y="164" width="180" height="56" rx="10" style="fill:var(--card);stroke:var(--ink)" stroke-width="3"/>';
+      s += '<text x="' + W / 2 + '" y="202" text-anchor="middle" font-size="28" font-weight="700" style="fill:var(--ink)">' + fmt(gv) + ' g</text>';
+      pan.innerHTML = svgBox(W, 226, s, 'A scale showing ' + gv + ' grams');
+      var kg = Math.floor(gv / 1000), rest = gv % 1000;
+      read.innerHTML = '<p><span class="mp-num">' + gv + ' g</span>' + (kg ? ' &nbsp;<span class="t2">= ' + kg + ' kg' + (rest ? ' ' + rest + ' g' : '') + '</span>' : '') + '</p>';
+      qsa('[data-a]', root).forEach(function (b) { var a = b.getAttribute('data-a'), k = a.slice(1); b.disabled = a.charAt(0) === '+' ? gv + MB[k] > max : !n[k]; });
+    }
+    function change() { draw(); if (o.onChange) o.onChange(T.state(), T); }
+    T.state = function () { return { g: g(), kg: n.kg, h: n.h, t: n.t, last: last }; };
+    T.add = function (k, c) {
+      var ep = T.ep, i = 0; c = c || 1; last = 'add';
+      function one() { if (!T.alive(ep) || i >= c || g() + MB[k] > max) return Promise.resolve(); i++; n[k]++; change(); return T.wait(220).then(one); }
+      return one();
+    };
+    T.remove = function (k, c) { n[k] = Math.max(0, n[k] - (c || 1)); last = 'remove'; change(); return T.wait(250); };
+    T.reset = function () { T.ep++; var v = o.g || 0; n = { kg: Math.floor(v / 1000), h: Math.floor(v % 1000 / 100), t: Math.floor(v % 100 / 10) }; last = ''; change(); };
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-a]'); if (!b || !root.contains(b)) return;
+      var a = b.getAttribute('data-a'), k = a.slice(1);
+      T.ep++; if (a.charAt(0) === '+') { n[k]++; last = 'add'; } else { n[k] = Math.max(0, n[k] - 1); last = 'remove'; }
+      change(); pulse(read.firstChild);
+    });
+    T.reset();
+    return T;
+  };
+
   /* ================= Place value disks (from Grade 5) =================
      options: places (high to low: 5 = hundred thousands ... 0 = ones, -1 tenths, -2 hundredths; default [4,3,2,1,0]),
      start {place: count}, controls, max per column (default 19), onChange(state, tool).
@@ -1222,5 +1371,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['base10', 'disks', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

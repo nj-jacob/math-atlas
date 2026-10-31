@@ -3,6 +3,7 @@
   'use strict';
   var Atlas = (window.Atlas = {
     grade: 1,
+    tools: ['counters', 'tenframe', 'base10', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard'],
     chapters: {},
     strands: { B: 'Number', C: 'Algebra', D: 'Data', E: 'Spatial Sense', F: 'Financial Literacy' },
     meta: [

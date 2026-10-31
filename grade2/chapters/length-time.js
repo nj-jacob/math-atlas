@@ -264,6 +264,7 @@
         try: hourLab,
         ways: [
           { label: 'Hop on a line', html: '<p>Put the hours on a line. Start at 2 and hop to 5. Count the hops.</p>', tool: 'numberline', opts: { min: 0, max: 12, start: 2, step: [1] } },
+          { label: 'Turn the clock', html: '<p>Start at 2 o\'clock. Press "+1 hour" and count each press until the clock shows 5 o\'clock.</p>', tool: 'clock', opts: { t: 840 } },
           { label: 'Use your fingers', html: '<p>Say the start hour with a closed fist. Put up one finger for each hour after it: 3, 4, 5. Three fingers: 3 hours.</p>' }
         ],
         key: '<p>Count the jumps from start to end.</p>',

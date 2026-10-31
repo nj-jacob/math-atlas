@@ -362,5 +362,3 @@ html.bigtext .opts{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
 .g1-grid{display:grid;grid-template-columns:repeat(6,46px);gap:3px;justify-content:center;margin:8px 0}
 .g1-grid button{width:46px;height:46px;border:2px solid var(--line);border-radius:6px;background:var(--card);cursor:pointer;transition:background .2s}
 .g1-grid button.on{background:var(--p1);border-color:color-mix(in srgb,var(--p1) 70%,#000);animation:mp-pop .3s cubic-bezier(.3,1.6,.5,1)}
-p.ls-got{display:flex;flex-wrap:wrap;max-width:100%}
-html,body{overflow-x:clip}

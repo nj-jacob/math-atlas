@@ -361,5 +361,3 @@ footer.site{border-top:2px solid var(--line)}
 .k8-eq{text-align:center;font-family:var(--display);font-weight:700;font-size:1.3rem;margin:.6em 0}
 @media (max-width:520px){.bar nav{flex-wrap:wrap;gap:4px 12px;font-size:.86rem}.bar nav a{white-space:nowrap}}
 .k8-reuse{border:0;padding:0;margin:0;background:none}
-/* progress tables on phones: drop the lesson column so the table fits */
-@media (max-width:520px){.pg-ch table{width:100%;font-size:.88rem}.pg-ch table th:nth-child(2):not(:last-child),.pg-ch table td:nth-child(2):not(:last-child){display:none}.pg-ch td,.pg-ch th{overflow-wrap:anywhere}}
