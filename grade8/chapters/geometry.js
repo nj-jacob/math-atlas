@@ -425,5 +425,5 @@ A.yt({ q: 'A map has a scale of 1 cm : 2 m. A path is 7.5 cm on the map. How lon
       }]
     ]
   };
-  K.shapes('geometry', SHAPES);
+  Atlas.Q.shapes('geometry', SHAPES);
 })();

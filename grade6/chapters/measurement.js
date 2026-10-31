@@ -757,6 +757,6 @@ A.yt({ q: 'A cube has edges of 4 cm. What is its surface area?', type: 'num', an
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

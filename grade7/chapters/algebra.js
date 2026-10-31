@@ -481,7 +481,7 @@
   /* ---------- question shapes: more ways to practise each skill ---------- */
   function holds(x, op, v) { return op === '<' ? x < v : op === '<=' ? x <= v : op === '>' ? x > v : x >= v; }
   function loop(s, d, k) { return 'total = ' + s + '\nrepeat ' + k + ' times:\n    total = total ' + (d < 0 ? '&minus; ' + (-d) : '+ ' + d) + '\nshow total'; }
-  K.shapes('algebra', {
+  Atlas.Q.shapes('algebra', {
     'al-pattern': [
       [1, 'fill', function (lv) {
         var m = R.int(2, lv === 1 ? 5 : 9), c = R.int(0, 9), t = [1, 2, 3, 4].map(function (n) { return m * n + c; });

@@ -3,6 +3,8 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Grade 5 place value: the "match each underlined digit" question never shows the same number twice.
+- Tidy-up: every grade now uses the one shared `Atlas.Q.shapes` helper (the copies in Grades 1 to 8 are gone). Grade 7 power-of-ten matching goes up to 10⁹ again. The checks now catch two answer checks that share a key. Match cards give the longer side more room, and fill-the-blank sentences always wrap on a phone.
 - Grade 6 "Numbers and integers": every practice skill asks in 4 or more ways (tap the digit, match, number line, order, mistakes to spot). Fresh chapter quiz every time.
 - Grade 6 "Decimals": every practice skill asks in 4 or more ways (tap the digit, order, number line, pick all, mistakes to spot). Fresh chapter quiz every time.
 - Grade 6 "Fractions": every practice skill asks in 4 or more ways (match, fill the blanks, pick all, number line, stories, mistakes to spot). Fresh chapter quiz every time.

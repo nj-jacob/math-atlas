@@ -372,7 +372,7 @@
 
   /* ---------- question shapes: more ways to practise each skill ---------- */
   var EQV = [['1 L', '1000 mL'], ['1 m', '100 cm'], ['1 km', '1000 m'], ['1 kg', '1000 g'], ['1 cm&sup3;', '1 mL'], ['1 m&sup2;', '10 000 cm&sup2;'], ['1 cm', '10 mm']];
-  K.shapes('circles-volume', {
+  Atlas.Q.shapes('circles-volume', {
     'cv-circ': [
       [1, 'match', function () {
         var ds = K.uniq(3, function () { return R.int(2, 20); }), pairs = ds.map(function (d) { return ['diameter ' + d + ' cm', dec(PI * d) + ' cm']; });

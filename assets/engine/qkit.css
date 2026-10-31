@@ -30,7 +30,7 @@ html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
 .qk-slot .qk-n{background:transparent;color:var(--ink2)}
 .qk-end{font-size:.85rem;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .qk-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:50px}
-.qk-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
+.qk-cols{display:grid;grid-template-columns:fit-content(45%) minmax(0,1fr);gap:12px}
 .qk-col{display:flex;flex-direction:column;gap:8px}
 .qk-col .qk-card{justify-content:flex-start;text-align:left;width:100%;min-width:0;overflow-wrap:break-word;hyphens:auto}
 .qk-col .qk-card svg{max-width:100%;height:auto}
@@ -47,7 +47,8 @@ html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
 .qk-nudge{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:6px}
 .qk-nudge .btn{min-width:48px;min-height:44px}
 .qk-at{min-width:9em;text-align:center;color:var(--ink2);font-variant-numeric:tabular-nums}
-/* fill the blanks */
+/* fill the blanks: the sentence may always wrap on a phone, even round a blank inside a math span */
+.qk-fill .math{white-space:normal}
 .qk-fill{font-size:1.25rem;line-height:2.4;font-variant-numeric:tabular-nums}
 .qk-fill input.qk-blank{font:inherit;width:4.6em!important;min-width:0!important;max-width:6em!important;height:auto!important;min-height:44px!important;display:inline-block!important;text-align:center;padding:4px 6px;border:1.5px solid var(--at-line2,var(--line));border-radius:10px;background:var(--card);color:var(--ink);margin:0 4px}
 .qk-blank:focus{outline:3px solid var(--focus);outline-offset:1px}

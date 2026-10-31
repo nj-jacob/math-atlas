@@ -518,6 +518,6 @@ A.yt({ q: '4 &divide; ' + A.fr(1, 3) + ' = ?', type: 'num', answer: 12,
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

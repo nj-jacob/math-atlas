@@ -571,5 +571,5 @@ A.yt({ gen: function () { return gen.refl(1); } }) +
       }]
     ]
   };
-  K.shapes('shapes', SHAPES);
+  Atlas.Q.shapes('shapes', SHAPES);
 })();

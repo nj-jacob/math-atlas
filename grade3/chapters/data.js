@@ -747,13 +747,6 @@
         }]
       ]
     };
-    var ch = A.chapters[CH];
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
-      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
+    Q.shapes(CH, SHAPES);
   })();
 })();

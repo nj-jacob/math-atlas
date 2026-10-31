@@ -739,8 +739,8 @@
         var pairs = [], items = [], seen = {};
         while (pairs.length < 3) {
           var n = big(lv), i = nonzero(n), val = +String(n).charAt(i) * Math.pow(10, String(n).length - 1 - i);
-          if (seen[val]) continue;
-          seen[val] = 1; items.push([n, i]); pairs.push([under(n, i), A.fmt(val)]);
+          if (seen[val] || seen['n' + n]) continue; /* a number twice would show two cards that look the same */
+          seen[val] = 1; seen['n' + n] = 1; items.push([n, i]); pairs.push([under(n, i), A.fmt(val)]);
         }
         return { q: 'Match each underlined digit to its value.', type: 'match', pairs: pairs,
           hint: 'For each number, name the place of the underlined digit.', steps: ['Ones are worth 1, tens 10, hundreds 100, thousands 1000, ten thousands 10 000.', 'Multiply the digit by the value of its place.'],
@@ -928,5 +928,5 @@
       }]
     ]
   };
-  K.shapes('place-value', SHAPES);
+  Atlas.Q.shapes('place-value', SHAPES);
 })();

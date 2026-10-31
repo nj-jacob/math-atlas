@@ -543,5 +543,5 @@ A.stepHtml('hf1', 'Parts to colour', 1) + '<div class="fig" id="hffig"></div><di
       }]
     ]
   };
-  G.shapes(CH, SHAPES);
+  Atlas.Q.shapes(CH, SHAPES);
 })();

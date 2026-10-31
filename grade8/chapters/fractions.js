@@ -393,5 +393,5 @@ A.yt({ q: 'A recipe uses ' + raw(2, 3) + ' cup of flour for one batch. You make 
       }]
     ]
   };
-  K.shapes('fractions', SHAPES);
+  Atlas.Q.shapes('fractions', SHAPES);
 })();

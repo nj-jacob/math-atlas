@@ -723,5 +723,5 @@
       }]
     ]
   };
-  K.shapes('decimals', SHAPES);
+  Atlas.Q.shapes('decimals', SHAPES);
 })();

@@ -353,7 +353,7 @@ builder('bk', [100, 200, 500, 1000, 2000, 5000, 10000]) +
   function coin(v) { return WAL([v], { W: 80, label: 'a ' + CASH[v].n }); }
   /* the fewest quarters, dimes and nickels that make x cents (x a multiple of 5) */
   function coinsFor(x) { var out = []; [25, 10, 5].forEach(function (v) { while (x >= v) { out.push(v); x -= v; } }); return out; }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'f2-coins': [
       [1, 'match', function (lv) {
         var set = R.shuffle(COINS).slice(0, 3);

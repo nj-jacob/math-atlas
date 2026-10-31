@@ -980,5 +980,5 @@ A.yt({ q: 'About how many squares of the picture would 3000 fill?', type: 'num',
     ]
   };
   function H4round(n, p) { var lo = Math.floor(n / p) * p; return n - lo >= p / 2 ? lo + p : lo; }
-  K.shapes('numbers', SHAPES);
+  Atlas.Q.shapes('numbers', SHAPES);
 })();

@@ -780,13 +780,6 @@
     };
     /* reads "12 &times; 3" or "12 × 3" back into [a, op, b] */
     function parse(s) { var t = s.replace(/<[^>]+>/g, '').replace('&times;', 'x').replace('&divide;', '/').replace('&minus;', '-').split(' '); return [+t[0], t[1], +t[2]]; }
-    var ch = A.chapters[CH];
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
-      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
+    Q.shapes(CH, SHAPES);
   })();
 })();

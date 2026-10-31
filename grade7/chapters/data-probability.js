@@ -428,7 +428,7 @@
   var KNAME = ['qualitative', 'discrete', 'continuous'];
   function median(d) { var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
   function sum(d) { return d.reduce(function (a, b) { return a + b; }, 0); }
-  K.shapes('data-probability', {
+  Atlas.Q.shapes('data-probability', {
     'dp-type': [
       [1, 'match', function () {
         var pick = [0, 1, 2].map(function (k) { return R.pick(KINDS.filter(function (it) { return it[1] === k; })); });

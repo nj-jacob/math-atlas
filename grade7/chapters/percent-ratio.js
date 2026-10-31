@@ -421,7 +421,7 @@
   var BENCH = [[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 10], [3, 10], [7, 10], [9, 10], [1, 20], [1, 25]];
   function pc(f) { return cl(f[0] / f[1] * 100); }
   function pts(a, b, ks) { return ks.map(function (k) { return '(' + a * k + ', ' + b * k + ')'; }); }
-  K.shapes('percent-ratio', {
+  Atlas.Q.shapes('percent-ratio', {
     'pr-fdp': [
       [1, 'match', function () {
         var fs = R.shuffle(BENCH).slice(0, 3), pairs = fs.map(function (f) { return [fr(f[0], f[1]), dec(pc(f)) + '%']; });

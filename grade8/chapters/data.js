@@ -350,5 +350,5 @@ A.yt({ q: 'If the line changes to <code>if t &gt;= 3:</code>, what does the prog
       }]
     ]
   };
-  K.shapes('data', SHAPES);
+  Atlas.Q.shapes('data', SHAPES);
 })();

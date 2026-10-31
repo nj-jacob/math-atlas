@@ -555,6 +555,6 @@ A.yt({ q: 'A spinner has 4 equal parts: red, blue, green, yellow. You spin it an
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

@@ -651,5 +651,5 @@ A.yt({ gen: function () { return gen.rate(1); } }) +
       }]
     ]
   };
-  K.shapes('multiply-divide', SHAPES);
+  Atlas.Q.shapes('multiply-divide', SHAPES);
 })();

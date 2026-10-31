@@ -744,5 +744,5 @@
       }]
     ]
   };
-  G1.shapes('counting', SHAPES);
+  Atlas.Q.shapes('counting', SHAPES);
 })();

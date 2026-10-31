@@ -647,5 +647,5 @@ A.yt({ gen: function () { return gen.unit(2); } }) +
   };
   /* fraction html as plain text, e.g. "2 3/4", for steps and explanations */
   function H(html) { return String(html).replace(/<span class="fr"[^>]*><sup>(\d+)<\/sup><sub>(\d+)<\/sub><\/span>/g, '$1/$2'); }
-  K.shapes('fractions', SHAPES);
+  Atlas.Q.shapes('fractions', SHAPES);
 })();

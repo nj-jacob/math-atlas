@@ -521,6 +521,6 @@ A.yt({ q: 'Point (2, 5) is reflected in the y-axis. Where does it land?', type: 
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

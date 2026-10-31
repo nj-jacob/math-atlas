@@ -334,5 +334,5 @@ A.yt({ q: 'If you flip two coins 400 times, about how many times would you expec
       }]
     ]
   };
-  K.shapes('probability', SHAPES);
+  Atlas.Q.shapes('probability', SHAPES);
 })();

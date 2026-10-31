@@ -429,7 +429,7 @@
   function cmText(cm) { return cm % 100 === 0 ? cm / 100 + ' m' : cm > 100 ? Math.floor(cm / 100) + ' m and ' + cm % 100 + ' cm' : cm + ' cm'; }
   /* one event for each unit of time, shortest first */
   function eventsByUnit() { return TIME.map(function (u) { return R.pick(EVENTS.filter(function (e) { return e[1] === u; })); }); }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'l2-units': [
       [1, 'tap', function (lv) {
         var u = R.pick(['cube', 'eraser']), set = R.shuffle(['crayon', 'pencil', 'book', 'ribbon']).slice(0, 3), o = set[0], n = OBJ[o].cm / UNIT[u].cm;

@@ -619,7 +619,7 @@
   function bigNum(len) { var s = String(R.int(1, 9)); for (var i = 1; i < len; i++) s += R.int(0, 9); return +s; }
   function digitAt(n, e) { return Math.floor(n / Math.pow(10, e)) % 10; }
   var PLACE = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands', 'millions', 'ten millions', 'hundred millions', 'billions'];
-  K.shapes('powers-factors', {
+  Atlas.Q.shapes('powers-factors', {
     'pf-read': [
       [1, 'tap', function () {
         return K.retry(function () {
@@ -653,7 +653,7 @@
     ],
     'pf-expand': [
       [1, 'match', function () {
-        var ks = R.shuffle([2, 3, 4, 5, 6, 7]).slice(0, 4), pairs = ks.map(function (k) { return [pw(10, k), fmt(Math.pow(10, k))]; });
+        var ks = R.shuffle([2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 4), pairs = ks.map(function (k) { return [pw(10, k), fmt(Math.pow(10, k))]; });
         return { q: 'Match each power of ten to its standard form.', type: 'match', pairs: pairs,
           hint: 'The exponent counts the zeros after the 1.', steps: ['10<sup>3</sup> is 1 followed by 3 zeros: 1000.'],
           explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'pf-pow10-match', ks: ks } };

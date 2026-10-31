@@ -411,7 +411,7 @@
   var NEEDS = [['A warm winter coat', 1], ['Rent or a place to live', 1], ['Groceries for the week', 1], ['A bus pass to get to school', 1], ['A third pair of sneakers', 0], ['A new game skin', 0], ['Concert tickets', 0], ['A fancy phone case', 0]];
   var SRC = [['A bank&rsquo;s website', 1], ['The Financial Consumer Agency of Canada', 1], ['Comparing prices at several stores', 1], ['A pop-up ad for fast cash', 0], ['A video paid for by a lender', 0], ['A stranger&rsquo;s comment online', 0]];
   function cur3() { return R.pick(CUR.slice(0, 3)); }
-  K.shapes('money', {
+  Atlas.Q.shapes('money', {
     'mo-tocad': [
       [1, 'which', function () {
         var c = cur3(), right = 'Multiply by ' + rs(c.r), o = R.mc(right, ['Divide by ' + rs(c.r), 'Add ' + rs(c.r)]);

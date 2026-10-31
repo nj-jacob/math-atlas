@@ -390,7 +390,7 @@
     return R.shuffle(set);
   }
   function unitBar(d) { return rect(d, 1, 220, false, 'A bar cut into ' + d + ' equal parts, 1 shaded'); }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'r2-name': [
       [1, 'tap', function (lv) {
         var den = R.pick(lv === 1 ? [2, 4] : [2, 3, 4, 6]), num = lv === 1 ? 1 : R.int(1, den - 1), set = partSet(num, den, lv);
