@@ -43,16 +43,15 @@ Give every practice skill several shapes, so a child meets the same idea asked i
 
 Shapes unlock by level: `[minLevel, 'name', fn]`. Keep level 1 gentle and pictorial.
 
+At the end of the chapter file, one line wires the shapes into every practice skill and turns on fresh quizzes:
+
 ```
-var ch = Atlas.chapters['numbers-1000'];
-ch.quizFresh = true;
-ch.practice.forEach(function (sk) {
-  var plain = sk.gen, extra = SHAPES[sk.id] || [];
-  sk.gen = function (lv) { return Atlas.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-});
+Atlas.Q.shapes('numbers-1000', SHAPES);
 ```
 
-`grade3/chapters/numbers-1000.js` is the worked example. Grade 1 wraps this in `G1.shapes(chapterId, SHAPES)` and builds mistake questions with `G1.tf(...)` (both in `grade1/assets/g1kit.js`).
+Each skill keeps its first way of asking as `plain`. Don't copy this loop into a grade: use the shared helper.
+
+`grade3/chapters/numbers-1000.js` is the worked example. Grade 1 still uses its own `G1.shapes` (in `grade1/assets/g1kit.js`) until it moves to the shared helper.
 
 ## Answer checks (required)
 
