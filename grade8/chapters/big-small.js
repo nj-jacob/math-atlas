@@ -402,4 +402,158 @@ A.yt({ q: 'Which is smaller?', opts: ['6 &times; 10<sup>&minus;7</sup>', '2 &tim
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  /* powers written with superscript characters, so they read the same in answers and reveals */
+  var SUP = { '-': '\u207b', 0: '\u2070', 1: '\u00b9', 2: '\u00b2', 3: '\u00b3', 4: '\u2074', 5: '\u2075', 6: '\u2076', 7: '\u2077', 8: '\u2078', 9: '\u2079' };
+  function supU(e) { return '10' + String(e).split('').map(function (c) { return SUP[c]; }).join(''); }
+  function sciU(a, e) { return a + ' &times; ' + supU(e); }
+  function exps(n, a, b) { var out = []; while (out.length < n) { var e = R.int(a, b); if (out.indexOf(e) < 0) out.push(e); } return out; }
+  function sciTrio(sign) {
+    var out = [], seen = {};
+    while (out.length < 3) { var c = String(R.int(11, 99) / 10), e = sign * R.int(2, 7), v = c + '|' + e; if (!seen[parseFloat(std(c, e))]) { seen[parseFloat(std(c, e))] = 1; out.push({ a: c, e: e, v: parseFloat(std(c, e)) }); } }
+    return out;
+  }
+  var STORY_BIG = [['The CN Tower gets about', 'visitors a year'], ['A maple syrup farm in Quebec taps about', 'litres of sap a year'], ['A city library lends out about', 'books a year'], ['A hydro dam makes about', 'kilowatt-hours a day']];
+  var STORY_SMALL = [['A grain of pollen is about', 'm wide'], ['A raindrop has a mass of about', 'kg'], ['A strand of spider silk is about', 'm thick'], ['A dust speck has a mass of about', 'g']];
+  var SHAPES = {
+    'bs-pow': [
+      [1, 'match', function (lv) {
+        var es = exps(3, lv === 1 ? 1 : -4, 6);
+        return { q: 'Match each power of ten to its value.', type: 'match', pairs: es.map(function (e) { return [supU(e), F(std('1', e))]; }),
+          hint: 'A positive exponent counts zeros after the 1. A negative one counts places after the point.', steps: ['For example, ' + supU(es[0]) + ' = ' + F(std('1', es[0])) + '.'], explain: es.map(function (e) { return supU(e) + ' = ' + F(std('1', e)); }).join(', ') + '.', meta: { k: 'bp-match' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), e = R.int(2, 6), truth = R.int(0, 1), said = truth ? Math.pow(10, e) : 10 * e;
+        return K.tf({ q: who + ' says <span class="math">' + supU(e) + ' = ' + F(String(said)) + '</span>. True or false?', truth: truth,
+          right: supU(e) + ' means ' + e + ' tens multiplied together, which is ' + F(std('1', e)) + '.', wrong: [supU(e) + ' means 10 &times; ' + e + '.', supU(e) + ' means 10 + ' + e + '.'],
+          hint: 'The exponent says how many tens to multiply.', meta: { k: 'bp-tf', e: e, said: said } });
+      }],
+      [1, 'order', function (lv) {
+        var es = exps(lv === 1 ? 3 : 4, lv === 1 ? 1 : -5, 7).sort(function (a, b) { return a - b; });
+        return { q: 'Put these in order, least to greatest.', type: 'order', items: es.map(supU), first: 'least', last: 'greatest',
+          hint: 'The bigger the exponent, the bigger the number. Negative exponents give numbers less than 1.', steps: es.map(function (e) { return supU(e) + ' = ' + F(std('1', e)); }), explain: es.map(supU).join(' &lt; ') + '.', meta: { k: 'bp-order' } };
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var es = exps(5, -6, 6);
+          return K.pickAll({ q: 'Pick every number that is <b>less than 1</b>.', opts: es.map(function (e) { return [supU(e), e < 0]; }), hint: 'Which exponents make a number smaller than 1?', steps: ['10<sup>0</sup> = 1. Negative exponents give numbers less than 1.'], explain: 'The ones with a negative exponent are less than 1.', meta: { k: 'bp-pick' } });
+        });
+      }]
+    ],
+    'bs-shift': [
+      [1, 'match', function (lv) {
+        var n = String(lv === 1 ? R.int(2, 99) : R.int(11, 999) / 10), ks = R.shuffle([1, 2, 3]);
+        return { q: 'Match each one to its answer.', type: 'match', pairs: ks.map(function (k) { return [F(n) + ' &times; ' + std('1', k), F(shift(n, k))]; }),
+          hint: 'Each zero moves the digits one place left.', steps: ['&times; 10: one place. &times; 100: two places. &times; 1000: three places.'], explain: ks.map(function (k) { return F(n) + ' &times; ' + std('1', k) + ' = ' + F(shift(n, k)); }).join('. ') + '.', meta: { k: 'bh-match' } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), k = R.pick([1, 2, 3]), c = R.pick([['pencils', 'box', 'boxes'], ['granola bars', 'case', 'cases'], ['stickers', 'sheet', 'sheets']]), n = R.int(2, 48);
+        return { q: who + ' orders <b>' + std('1', k) + ' ' + c[2] + '</b> of ' + c[0] + ' for the school. Each ' + c[1] + ' has <b>' + n + '</b>. How many ' + c[0] + ' is that?', type: 'num', answer: n * Math.pow(10, k), show: F(shift(String(n), k)),
+          hint: 'Multiply ' + n + ' by ' + std('1', k) + '.', steps: [n + ' &times; ' + std('1', k) + ': move the digits ' + k + ' place' + (k > 1 ? 's' : '') + ' left.', 'That is ' + F(shift(String(n), k)) + ' ' + c[0] + '.'], explain: n + ' &times; ' + std('1', k) + ' = ' + F(shift(String(n), k)) + '.', meta: { k: 'bh-story', n: n, k2: k } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), n = String((R.int(1, 9) * 10 + R.int(1, 9)) / 10), k = R.pick([2, 3]), truth = R.int(0, 1), said = truth ? F(shift(n, k)) : n + std('1', k).slice(1);
+        return K.tf({ q: who + ' says <span class="math">' + n + ' &times; ' + std('1', k) + ' = ' + said + '</span>. True or false?', truth: truth,
+          right: 'Every digit moves ' + k + ' places left, so ' + n + ' &times; ' + std('1', k) + ' = ' + F(shift(n, k)) + '.', wrong: ['To multiply by ' + std('1', k) + ', just write ' + (k === 2 ? 'two' : 'three') + ' zeros on the end.', 'Multiplying a decimal by ' + std('1', k) + ' does not change it.'],
+          hint: 'Adding zeros after a decimal does not change its value.', meta: { k: 'bh-tf', n: +n, k2: k, said: said } });
+      }],
+      [2, 'fill', function (lv) {
+        var n = String(R.int(11, 999) / 10), k = R.pick([1, 2, 3]);
+        return { q: 'What number goes in the blank?', type: 'fill', fill: '<span class="math">' + F(n) + ' &divide; [[]] = ' + F(shift(n, -k)) + '</span>', answers: [Math.pow(10, k)],
+          hint: 'How many places did the digits move to the right?', steps: ['The digits moved ' + k + ' place' + (k > 1 ? 's' : '') + ' right.', 'So it was divided by ' + std('1', k) + '.'], explain: F(n) + ' &divide; ' + std('1', k) + ' = ' + F(shift(n, -k)) + '.', meta: { k: 'bh-fill', n: +n, r: +shift(n, -k) } };
+      }]
+    ],
+    'bs-sci-big': [
+      [1, 'tap', function (lv) {
+        var c = coef(2), e = R.int(3, 8), t = [sciU(c, e), sciU(shift(c, 1), e - 1), sciU(shift(c, -1), e + 1)], tiles = R.shuffle(t);
+        return { q: 'These all show ' + F(std(c, e)) + '. Tap the one written in proper <b>scientific notation</b>.', type: 'tap', tiles: tiles, answer: tiles.indexOf(t[0]), answerText: t[0],
+          hint: 'The first part must be at least 1 and less than 10.', steps: [c + ' is between 1 and 10, so ' + t[0] + ' is in scientific notation.'], explain: F(std(c, e)) + ' = ' + t[0] + '.', meta: { k: 'bb-tap' } };
+      }],
+      [1, 'story', function (lv) {
+        var s = R.pick(STORY_BIG), c = coef(2), e = R.int(4, 8), num = std(c, e);
+        return { q: s[0] + ' <b>' + F(num) + '</b> ' + s[1] + '. Write it in scientific notation.', type: 'fill', fill: '<span class="math">' + c + ' &times; 10<sup>[[]]</sup></span>', answers: [e],
+          hint: 'Count how many places the point moves to sit after the first digit.', steps: ['Put the point after the first digit: ' + c + '.', 'It moved ' + e + ' places, so the exponent is ' + e + '.'], explain: F(num) + ' = ' + sciU(c, e) + '.', meta: { k: 'bb-story', c: +c, n: +num } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), c = coef(2), e = R.int(4, 8), num = std(c, e), truth = R.int(0, 1), se = truth ? e : e + R.pick([-1, 1]);
+        return K.tf({ q: who + ' says <span class="math">' + F(num) + ' = </span>' + sciU(c, se) + '. True or false?', truth: truth,
+          right: 'From ' + c + ', the point moves ' + e + ' places to give ' + F(num) + ', so it is ' + sciU(c, e) + '.', wrong: ['The exponent is the number of digits in the number.', 'The exponent is the number of zeros at the end.'],
+          hint: 'Count the places the point moves, not the digits.', meta: { k: 'bb-tf', c: +c, e: se, n: +num } });
+      }],
+      [2, 'match', function (lv) {
+        var list = sciTrio(1);
+        return { q: 'Match each number to its scientific notation.', type: 'match', pairs: list.map(function (x) { return [F(std(x.a, x.e)), sciU(x.a, x.e)]; }),
+          hint: 'Count the places after the first digit.', steps: ['The exponent is how many places the point moves.'], explain: list.map(function (x) { return F(std(x.a, x.e)) + ' = ' + sciU(x.a, x.e); }).join('. ') + '.', meta: { k: 'bb-match' } };
+      }]
+    ],
+    'bs-sci-small': [
+      [1, 'tap', function (lv) {
+        var c = coef(2), e = -R.int(2, 6), t = [sciU(c, e), sciU(shift(c, 1), e - 1), sciU(shift(c, -1), e + 1)], tiles = R.shuffle(t);
+        return { q: 'These all show ' + F(std(c, e)) + '. Tap the one written in proper <b>scientific notation</b>.', type: 'tap', tiles: tiles, answer: tiles.indexOf(t[0]), answerText: t[0],
+          hint: 'The first part must be at least 1 and less than 10.', steps: [c + ' is between 1 and 10, so ' + t[0] + ' is in scientific notation.'], explain: F(std(c, e)) + ' = ' + t[0] + '.', meta: { k: 'bb-tap' } };
+      }],
+      [1, 'story', function (lv) {
+        var s = R.pick(STORY_SMALL), c = String(R.int(1, 9)), e = -R.int(3, 6), num = std(c, e);
+        return { q: s[0] + ' <b>' + F(num) + '</b> ' + s[1] + '. Write it in scientific notation.', type: 'fill', fill: '<span class="math">' + c + ' &times; 10<sup>[[]]</sup></span>', answers: [e],
+          hint: 'The number is less than 1, so the exponent is negative. Count the hops to get past the ' + c + '.', steps: ['The point hops ' + -e + ' places right to sit after the ' + c + '.', 'Right means negative: the exponent is ' + e + '.'], explain: F(num) + ' = ' + sciU(c, e) + '.', meta: { k: 'bb-story', c: +c, n: +num } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), c = coef(2), e = -R.int(2, 6), num = std(c, e), truth = R.int(0, 1), se = truth ? e : -e;
+        return K.tf({ q: who + ' says <span class="math">' + F(num) + ' = </span>' + sciU(c, se) + '. True or false?', truth: truth,
+          right: F(num) + ' is less than 1, so the exponent is negative: ' + sciU(c, e) + '.', wrong: ['Exponents are always positive.', 'The exponent counts the zeros after the point, so it is positive.'],
+          hint: 'Is ' + F(num) + ' bigger or smaller than 1?', meta: { k: 'bb-tf', c: +c, e: se, n: +num } });
+      }],
+      [2, 'match', function (lv) {
+        var list = sciTrio(-1);
+        return { q: 'Match each number to its scientific notation.', type: 'match', pairs: list.map(function (x) { return [F(std(x.a, x.e)), sciU(x.a, x.e)]; }),
+          hint: 'Count the hops to get past the first non-zero digit.', steps: ['Small numbers have negative exponents.'], explain: list.map(function (x) { return F(std(x.a, x.e)) + ' = ' + sciU(x.a, x.e); }).join('. ') + '.', meta: { k: 'bb-match' } };
+      }]
+    ],
+    'bs-prefix': [
+      [1, 'match', function (lv) {
+        var list = R.shuffle(PRE.filter(function (p) { return p[2] !== 0 && Math.abs(p[2]) <= (lv === 1 ? 6 : 12); })).slice(0, 3);
+        return { q: 'Match each prefix to its power of ten.', type: 'match', pairs: list.map(function (p) { return [p[0] + ' (' + p[1] + ')', supU(p[2])]; }),
+          hint: 'Big prefixes: kilo, mega, giga, tera. Small ones: milli, micro, nano, pico.', steps: ['Each step on the prefix stairs is 3 powers of ten.'], explain: list.map(function (p) { return p[0] + ' = ' + supU(p[2]); }).join(', ') + '.', meta: { k: 'bx-match' } };
+      }],
+      [1, 'order', function (lv) {
+        var u = R.pick(['m', 'g', 'W']), list = R.shuffle(PRE.filter(function (p) { return Math.abs(p[2]) <= (lv === 1 ? 6 : 12); })).slice(0, lv === 1 ? 3 : 4).sort(function (a, b) { return a[2] - b[2]; });
+        return { q: 'Put these units in order, smallest to largest.', type: 'order', items: list.map(function (p) { return '1 ' + p[1] + u; }), first: 'smallest', last: 'largest',
+          hint: 'Use the prefix stairs: pico, nano, micro, milli, base, kilo, mega, giga, tera.', steps: list.map(function (p) { return '1 ' + p[1] + u + ' = ' + supU(p[2]) + ' ' + u; }), explain: list.map(function (p) { return p[1] + u; }).join(' &lt; ') + '.', meta: { k: 'bx-order' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), u = R.pick(['m', 'g']), big = R.pick(PRE.filter(function (p) { return p[2] === 3 || p[2] === 6; })), truth = R.int(0, 1), said = truth ? Math.pow(10, big[2]) : Math.pow(10, big[2] - 1);
+        return K.tf({ q: who + ' says <span class="math">1 ' + big[1] + u + ' = ' + F(String(said)) + ' ' + u + '</span>. True or false?', truth: truth,
+          right: big[0] + ' means 10<sup>' + big[2] + '</sup>, so 1 ' + big[1] + u + ' = ' + F(String(Math.pow(10, big[2]))) + ' ' + u + '.', wrong: [big[0] + ' always means 100.', 'Each prefix is 10 times the one before.'],
+          hint: 'What power of ten does ' + big[0] + ' stand for?', meta: { k: 'bx-tf', from: big[1] + u, to: u, said: said } });
+      }],
+      [2, 'story', function (lv) {
+        var who = K.name(), g = R.pick([32, 64, 128, 256]);
+        return { q: who + '\'s phone has <b>' + g + ' GB</b> of storage. How many <b>MB</b> is that?', type: 'num', answer: g * 1000, show: F(String(g * 1000)), unit: 'MB',
+          hint: 'Giga is 10<sup>9</sup> and mega is 10<sup>6</sup>: 3 steps apart.', steps: ['1 GB = 1000 MB.', g + ' &times; 1000 = ' + F(String(g * 1000)) + ' MB.'], explain: g + ' GB = ' + F(String(g * 1000)) + ' MB.', meta: { k: 'bx-story', from: 'GB', to: 'MB', v: g } };
+      }]
+    ],
+    'bs-compare': [
+      [1, 'tap', function (lv) {
+        var list = sciTrio(lv === 1 ? 1 : R.pick([1, -1])), big = list.slice().sort(function (a, b) { return b.v - a.v; })[0], tiles = list.map(function (x) { return sciU(x.a, x.e); });
+        return { q: 'Tap the <b>biggest</b> number.', type: 'tap', tiles: tiles, answer: list.indexOf(big), answerText: sciU(big.a, big.e),
+          hint: 'Compare the exponents first.', steps: ['The biggest exponent wins. If two match, compare the first parts.'], explain: sciU(big.a, big.e) + ' = ' + F(std(big.a, big.e)) + ' is the biggest.', meta: { k: 'bc-tap' } };
+      }],
+      [1, 'order', function (lv) {
+        var list = sciTrio(lv === 1 ? 1 : R.pick([1, -1])).sort(function (a, b) { return a.v - b.v; });
+        return { q: 'Put these in order, least to greatest.', type: 'order', items: list.map(function (x) { return sciU(x.a, x.e); }), first: 'least', last: 'greatest',
+          hint: 'Sort by exponent first. Use the first parts only to break a tie.', steps: list.map(function (x) { return sciU(x.a, x.e) + ' = ' + F(std(x.a, x.e)); }), explain: 'In order: ' + list.map(function (x) { return F(std(x.a, x.e)); }).join(' &lt; ') + '.', meta: { k: 'bc-order' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), e = R.int(3, 7), a = String(R.int(51, 99) / 10), b = String(R.int(11, 49) / 10), truth = R.int(0, 1);
+        var x = { a: a, e: e }, y = { a: b, e: truth ? e : e + 1 };
+        return K.tf({ q: who + ' says ' + sciU(x.a, x.e) + ' is bigger than ' + sciU(y.a, y.e) + ', because ' + a + ' is bigger than ' + b + '. True or false?', truth: truth,
+          right: truth ? 'The exponents are the same, so compare the first parts: ' + a + ' &gt; ' + b + '.' : 'Compare the exponents first. ' + sciU(y.a, y.e) + ' = ' + F(std(y.a, y.e)) + ' is bigger than ' + F(std(x.a, x.e)) + '.',
+          wrong: ['The bigger first part always means the bigger number.', 'They are equal because both are in scientific notation.'],
+          hint: 'Write both in standard form.', meta: { k: 'bc-tf', a: +x.a, e: x.e, b: +y.a, f: y.e } });
+      }]
+    ]
+  };
+  K.shapes('big-small', SHAPES);
 })();

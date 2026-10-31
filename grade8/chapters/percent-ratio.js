@@ -240,4 +240,182 @@ A.yt({ q: 'Work out (&minus;2 + 5) &times; 1.5 &minus; 4 &divide; 0.5.', a: -3.5
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  function distinct(n, gen) { var out = [], seen = {}; for (var i = 0; out.length < n && i < 200; i++) { var v = gen(); if (!seen[v]) { seen[v] = 1; out.push(v); } } return out; }
+  var SHAPES = {
+    'pr-convert': [
+      [1, 'match', function (lv) {
+        var ps = distinct(3, function () { return lv === 1 ? R.pick([5, 10, 20, 25, 40, 50, 75, 80]) : R.pick([0.5, 2.5, 12.5, 110, 125, 150, 175, 35]); });
+        return { q: 'Match each percent to its decimal.', type: 'match', pairs: ps.map(function (p) { return [pct(p), F(String(cl(p / 100)))]; }),
+          hint: 'Percent means out of 100: divide by 100.', steps: ['Move the digits 2 places to the right.'], explain: ps.map(function (p) { return pct(p) + ' = ' + cl(p / 100); }).join(', ') + '.', meta: { k: 'pc-match' } };
+      }],
+      [1, 'line', function (lv) {
+        var p = R.int(1, 19) * 5;
+        return { q: 'Place <b>' + p + '%</b> on the number line.', type: 'line', min: 0, max: 1, tick: 0.05, every: 0.25, snap: 0.05, answer: cl(p / 100),
+          hint: '100% is the whole, at 1. 50% is halfway.', steps: [p + '% = ' + cl(p / 100) + '.', 'Count ' + p / 5 + ' small steps of 0.05 from 0.'], explain: p + '% = ' + cl(p / 100) + '.', meta: { k: 'pc-line', p: p } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), p = R.pick([2, 3, 4, 5, 6, 7, 8, 9]), truth = R.int(0, 1), said = truth ? cl(p / 100) : cl(p / 10);
+        return K.tf({ q: who + ' says <b>' + p + '% = ' + said + '</b>. True or false?', truth: truth,
+          right: p + '% means ' + p + ' out of 100, which is ' + cl(p / 100) + '.', wrong: ['Put a decimal point in front of the number.', p + '% means ' + p + ' out of 10.'],
+          hint: 'Divide by 100, not by 10.', meta: { k: 'pc-tf', p: p, said: said } });
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var base = R.int(3, 8) * 10, items = [[base + '%', base / 100], [String(cl((base + R.int(1, 4)) / 100)), 0], [R.pick([[1, 2], [3, 4], [2, 5], [3, 5], [7, 10], [4, 5]]), 0]];
+          items[1][1] = +items[1][0]; var f = items[2][0]; items[2] = [f[0] + '/' + f[1], f[0] / f[1]];
+          if (Math.abs(items[2][1] - items[0][1]) < 0.001 || Math.abs(items[2][1] - items[1][1]) < 0.001) return null;
+          items.sort(function (a, b) { return a[1] - b[1]; });
+          return { q: 'Put these in order, least to greatest.', type: 'order', items: items.map(function (x) { return x[0]; }), first: 'least', last: 'greatest',
+            hint: 'Change them all to decimals first.', steps: items.map(function (x) { return x[0] + ' = ' + cl(x[1]); }), explain: items.map(function (x) { return x[0]; }).join(' &lt; ') + '.', meta: { k: 'pc-order' } };
+        });
+      }]
+    ],
+    'pr-of': [
+      [1, 'story', function (lv) {
+        var who = K.name(), p = R.pick([10, 20, 25, 50, 75]), n = R.int(2, 9) * 4 * (p === 10 || p === 20 ? 5 : 1);
+        return { q: 'There are <b>' + n + '</b> students in ' + who + '\'s grade. <b>' + p + '%</b> of them take the bus. How many take the bus?', type: 'num', answer: cl(p / 100 * n),
+          hint: p + '% = ' + cl(p / 100) + '. Multiply by ' + n + '.', steps: [cl(p / 100) + ' &times; ' + n + ' = ' + cl(p / 100 * n) + '.'], explain: p + '% of ' + n + ' = ' + cl(p / 100 * n) + ' students.', meta: { k: 'po-story', p: p, n: n } };
+      }],
+      [1, 'fill', function (lv) {
+        var n = R.int(2, 40) * 10, k = R.pick([2, 3, 4, 6, 7, 9]);
+        return { q: 'Use 10% to find ' + k * 10 + '%.', type: 'fill', fill: '10% of ' + n + ' = [[]], so ' + k * 10 + '% of ' + n + ' = [[]]', answers: [n / 10, n / 10 * k],
+          hint: '10% is one tenth: divide by 10.', steps: ['10% of ' + n + ' = ' + n / 10 + '.', k * 10 + '% is ' + k + ' times as much: ' + n / 10 * k + '.'], explain: k * 10 + '% of ' + n + ' = ' + n / 10 * k + '.', meta: { k: 'po-fill', n: n, p: k * 10 } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), p = R.pick([110, 120, 125, 150, 200, 40, 60, 75]), n = R.int(2, 20) * 20, more = p > 100, claim = R.int(0, 1);
+        return K.tf({ q: who + ' says ' + p + '% of ' + n + ' is <b>' + (claim ? 'more' : 'less') + '</b> than ' + n + '. True or false?', truth: claim ? more : !more,
+          right: p + '% is ' + (more ? 'more' : 'less') + ' than 100%, so ' + p + '% of ' + n + ' = ' + cl(p / 100 * n) + ' is ' + (more ? 'more' : 'less') + ' than ' + n + '.', wrong: ['A percent of a number is always less than the number.', 'A percent of a number is always more than the number.'],
+          hint: 'Compare ' + p + '% with 100%.', meta: { k: 'po-tf', p: p, n: n, more: !!claim } });
+      }],
+      [2, 'match', function (lv) {
+        var n = R.int(2, 20) * 20, ps = distinct(3, function () { return R.pick([5, 10, 15, 25, 50, 75, 120, 150]); });
+        return { q: 'Match each percent of ' + n + ' to its value.', type: 'match', pairs: ps.map(function (p) { return [p + '% of ' + n, F(String(cl(p / 100 * n)))]; }),
+          hint: 'Change each percent to a decimal and multiply.', steps: ['10% of ' + n + ' is ' + n / 10 + '. Build the others from it.'], explain: ps.map(function (p) { return p + '% of ' + n + ' = ' + cl(p / 100 * n); }).join(', ') + '.', meta: { k: 'po-match' } };
+      }]
+    ],
+    'pr-change': [
+      [1, 'way', function (lv) {
+        var price = R.pick([R.int(4, 19), R.int(21, 30)]) * 5, p = R.pick([10, 15, 20, 25, 30, 40]), keep = cl(1 - p / 100);
+        return K.pick1({ q: 'A $' + price + ' jacket is <b>' + p + '% off</b>. Which way finds the sale price?', right: price + ' &times; ' + keep, wrong: [price + ' &times; ' + cl(p / 100), price + ' &minus; ' + p, price + ' &times; ' + cl(1 + p / 100)],
+          hint: p + '% off leaves ' + (100 - p) + '% of the price.', steps: ['100% &minus; ' + p + '% = ' + (100 - p) + '% = ' + keep + '.', 'Sale price = ' + price + ' &times; ' + keep + ' = ' + m(price * keep) + '.'], explain: 'Multiply by ' + keep + ': ' + m(price * keep) + '.', meta: { k: 'pg-way', price: price, p: p } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), price = R.pick([R.int(4, 19), R.int(21, 30)]) * 5, p = R.pick([10, 20, 25, 50]), right = c2(price * (1 + p / 100)), truth = R.int(0, 1), said = truth ? right : price + p;
+        return K.tf({ q: 'A $' + price + ' bike goes up by ' + p + '%. ' + who + ' says the new price is <b>' + m(said) + '</b>. True or false?', truth: truth,
+          right: p + '% of $' + price + ' is ' + m(price * p / 100) + ', so the new price is ' + m(right) + '.', wrong: ['Add ' + p + ' dollars, because it is ' + p + '%.', 'A percent increase never changes the price much.'],
+          hint: 'Find ' + p + '% of ' + price + ' first.', meta: { k: 'pg-tf', price: price, p: p, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), price = R.int(20, 180), what = R.pick(['hockey skates', 'a winter coat', 'a backpack', 'headphones']), tax = c2(price * 0.13);
+        return { q: who + ' buys ' + what + ' for <b>$' + price + '</b> in Ontario. HST is <b>13%</b>. How much is the tax? Round to the cent.', type: 'num', unit: '$', answer: tax, tol: 0.006, show: m(tax),
+          hint: '13% = 0.13. Multiply.', steps: [price + ' &times; 0.13 = ' + cl(price * 0.13) + '.', 'The tax is ' + m(tax) + '.'], explain: 'Tax: ' + m(tax) + '.', meta: { k: 'pg-story', price: price } };
+      }],
+      [2, 'fill', function (lv) {
+        var p = R.pick([5, 10, 15, 20, 25, 30, 35, 40, 60]), up = R.int(0, 1), mult = cl(up ? 1 + p / 100 : 1 - p / 100);
+        return { q: 'What do you multiply by?', type: 'fill', fill: 'A ' + p + '% ' + (up ? 'increase' : 'decrease') + ': multiply by [[]]', answers: [mult], tol: 0.001,
+          hint: up ? '100% + ' + p + '%.' : '100% &minus; ' + p + '%.', steps: [(up ? 100 + p : 100 - p) + '% = ' + mult + '.'], explain: 'Multiply by ' + mult + '.', meta: { k: 'pg-fill', p: p, up: !!up } };
+      }]
+    ],
+    'pr-prop': [
+      [1, 'fill', function (lv) {
+        var a = R.int(2, 9), b = R.int(2, 9), k = R.int(2, 6);
+        while (a === b) b++;
+        return { q: 'Fill in the missing number.', type: 'fill', fill: '<span class="math">' + a + ' : ' + b + ' = ' + a * k + ' : [[]]</span>', answers: [b * k],
+          hint: 'What was ' + a + ' multiplied by? Do the same to ' + b + '.', steps: [a + ' &times; ' + k + ' = ' + a * k + '.', b + ' &times; ' + k + ' = ' + b * k + '.'], explain: a + ' : ' + b + ' = ' + a * k + ' : ' + b * k + '.', meta: { k: 'pp-fill', a: a, b: b, c: a * k } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), a = R.int(2, 5), b = R.int(3, 8), k = R.int(2, 5);
+        while (a === b) b++;
+        return { q: who + ' mixes <b>' + a + ' scoops</b> of iced tea powder with <b>' + b + ' cups</b> of water. How many cups of water go with <b>' + a * k + ' scoops</b>?', type: 'num', answer: b * k, unit: 'cups',
+          hint: a * k + ' scoops is ' + k + ' times as many.', steps: [a + ' &times; ' + k + ' = ' + a * k + '.', b + ' &times; ' + k + ' = ' + b * k + ' cups.'], explain: a + ' : ' + b + ' = ' + a * k + ' : ' + b * k + '.', meta: { k: 'pp-story', a: a, b: b, c: a * k } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(2, 6), b = R.int(3, 9), k = R.int(2, 4);
+        while (a === b) b++;
+        var c = a * k, truth = R.int(0, 1), said = truth ? b * k : b + (c - a);
+        return K.tf({ q: 'The ratio is ' + a + ' : ' + b + '. ' + who + ' says ' + c + ' : ' + said + ' is the same ratio, because ' + (truth ? 'both parts were multiplied by ' + k : a + ' and ' + b + ' both went up by ' + (c - a)) + '. True or false?', truth: truth,
+          right: 'Equal ratios multiply both parts by the same number: ' + a + ' : ' + b + ' = ' + c + ' : ' + b * k + '.', wrong: ['Equal ratios add the same number to both parts.', 'Any two ratios with the same first part are equal.'],
+          hint: 'Multiply, do not add.', meta: { k: 'pp-tf', a: a, b: b, c: c, said: said } });
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var a = R.int(2, 6), b = R.int(3, 9);
+          if (a === b || A.gcd(a, b) > 1) return null;
+          var opts = [2, 3, 5].map(function (k) { return [a * k + ' : ' + b * k, true]; }).concat([[(a + 2) + ' : ' + (b + 2), false], [b + ' : ' + a, false], [a * 2 + ' : ' + (b * 2 + 1), false]]);
+          return K.pickAll({ q: 'Pick every ratio equal to <b>' + a + ' : ' + b + '</b>.', opts: R.shuffle(opts).slice(0, 5), hint: 'Is each one ' + a + ' : ' + b + ' with both parts multiplied by the same number?', steps: ['Divide both parts by the same number to see if you get back to ' + a + ' : ' + b + '.'], explain: 'Equal ratios multiply both parts by the same number.', meta: { k: 'pp-pick', a: a, b: b } });
+        });
+      }]
+    ],
+    'pr-rate': [
+      [1, 'tap', function (lv) {
+        return K.until(function () {
+          var item = R.pick(['granola bars', 'juice boxes', 'apples']), offers = distinct(3, function () { return R.pick([4, 5, 6, 8, 10, 12]); }).map(function (q) { return [q, c2(q * (R.int(40, 120) / 100))]; });
+          var unit = offers.map(function (o) { return o[1] / o[0]; }), lo = Math.min.apply(null, unit);
+          if (unit.filter(function (u) { return Math.abs(u - lo) < 0.005; }).length > 1) return null;
+          var tiles = offers.map(function (o) { return o[0] + ' for $' + o[1].toFixed(2); });
+          return { q: 'Which pack of ' + item + ' is the best buy? Tap it.', type: 'tap', tiles: tiles, answer: unit.indexOf(lo), answerText: tiles[unit.indexOf(lo)],
+            hint: 'Find the price of one item in each pack.', steps: offers.map(function (o) { return '$' + o[1].toFixed(2) + ' &divide; ' + o[0] + ' &asymp; $' + (o[1] / o[0]).toFixed(3) + ' each.'; }), explain: 'The lowest price for one is the best buy.', meta: { k: 'pa-tap' } };
+        });
+      }],
+      [1, 'fill', function (lv) {
+        var q = R.int(2, 8), u = R.int(105, 495) / 100, tot = c2(q * u);
+        u = c2(tot / q); tot = c2(u * q);
+        return { q: 'Find the unit price.', type: 'fill', fill: q + ' L of milk cost $' + tot.toFixed(2) + ', so 1 L costs $[[]]', answers: [u], tol: 0.006,
+          hint: 'Divide the cost by the number of litres.', steps: [tot.toFixed(2) + ' &divide; ' + q + ' = ' + u.toFixed(2) + '.'], explain: '1 L costs ' + m(u) + '.', meta: { k: 'pa-fill', q: q, tot: tot } };
+      }],
+      [1, 'mistake', function (lv) {
+        return K.until(function () {
+          var who = K.name(), s1 = R.pick([300, 400, 500]), s2 = s1 * 2, p1 = R.int(200, 500) / 100, p2 = c2(p1 * 2 + R.pick([-1, 1]) * R.int(20, 90) / 100), big = p2 / s2 < p1 / s1;
+          if (Math.abs(p2 / s2 - p1 / s1) < 0.0001) return null;
+          return K.tf({ q: 'Cereal comes as ' + s1 + ' g for $' + p1.toFixed(2) + ' or ' + s2 + ' g for $' + p2.toFixed(2) + '. ' + who + ' says the bigger box is the better buy, because bigger is always cheaper. Is the bigger box the better buy here?', truth: big,
+            right: 'Per 100 g: $' + (p1 / s1 * 100).toFixed(3) + ' vs $' + (p2 / s2 * 100).toFixed(3) + '. The ' + (big ? 'bigger' : 'smaller') + ' box costs less per 100 g.', wrong: ['Bigger packages are always the better buy.', 'The cheaper price tag is always the better buy.'],
+            hint: 'Compare the price for the same amount, like 100 g.', meta: { k: 'pa-tf', s1: s1, p1: p1, s2: s2, p2: p2 } });
+        });
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var offers = distinct(3, function () { return R.pick([2, 3, 4, 5, 6]); }).map(function (h) { return [h, R.int(12, 30) * 5 * h]; });
+          var sp = offers.map(function (o) { return o[1] / o[0]; });
+          if (new Set(sp).size < 3) return null;
+          offers.sort(function (a, b) { return a[1] / a[0] - b[1] / b[0]; });
+          return { q: 'Three trains. Put them in order of speed, slowest to fastest.', type: 'order', items: offers.map(function (o) { return o[1] + ' km in ' + o[0] + ' h'; }), first: 'slowest', last: 'fastest',
+            hint: 'Find the speed of each: distance &divide; time.', steps: offers.map(function (o) { return o[1] + ' &divide; ' + o[0] + ' = ' + o[1] / o[0] + ' km/h.'; }), explain: 'Speeds: ' + offers.map(function (o) { return o[1] / o[0]; }).join(', ') + ' km/h.', meta: { k: 'pa-order' } };
+        });
+      }]
+    ],
+    'pr-order': [
+      [1, 'which', function (lv) {
+        var a = R.int(2, 9), b = R.int(2, 6), c = R.int(2, 5), br = R.int(0, 1), ex = br ? '(' + a + ' + ' + b + ') &times; ' + c : a + ' + ' + b + ' &times; ' + c;
+        return K.pick1({ q: 'In <span class="math">' + ex + '</span>, what do you do first?', right: br ? 'Add ' + a + ' + ' + b + ' in the brackets' : 'Multiply ' + b + ' &times; ' + c, wrong: br ? ['Multiply ' + b + ' &times; ' + c, 'Multiply ' + a + ' &times; ' + c] : ['Add ' + a + ' + ' + b, 'Work left to right'],
+          hint: 'BEDMAS: brackets first, then &times; and &divide;, then + and &minus;.', steps: [br ? 'Brackets come first.' : 'There are no brackets, so multiply before you add.'], explain: ex.replace(/&times;/g, '&times;') + ' = ' + (br ? (a + b) * c : a + b * c) + '.', meta: { k: 'pq-first', ex: ex } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(2, 9), b = R.int(2, 6), c = R.int(2, 5), ex = a + ' + ' + b + ' &times; ' + c, truth = R.int(0, 1), said = truth ? a + b * c : (a + b) * c;
+        return K.tf({ q: who + ' says <span class="math">' + ex + ' = ' + said + '</span>. True or false?', truth: truth,
+          right: 'Multiply first: ' + b + ' &times; ' + c + ' = ' + b * c + '. Then add ' + a + ': ' + (a + b * c) + '.', wrong: ['Always work left to right.', 'Add first because + comes first.'],
+          hint: 'Which comes first in BEDMAS: + or &times;?', meta: { k: 'pq-tf', ex: ex, said: said } });
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.int(10, 30), b = R.int(2, 6), c = R.int(2, 5);
+        return { q: 'Work it out one step at a time.', type: 'fill', fill: '<span class="math">' + a + ' &minus; ' + b + ' &times; ' + c + ' = ' + a + ' &minus; [[]] = [[]]</span>', answers: [b * c, a - b * c],
+          hint: 'Multiply before you subtract.', steps: [b + ' &times; ' + c + ' = ' + b * c + '.', a + ' &minus; ' + b * c + ' = ' + (a - b * c) + '.'], explain: 'The answer is ' + A.neg(a - b * c) + '.', meta: { k: 'pq-fill', a: a, b: b, c: c } };
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var list = [], seen = {};
+          for (var i = 0; i < 3; i++) {
+            var a = R.int(2, 9), b = R.int(2, 6), c = R.int(2, 5), t = R.int(0, 2), ex = [a + ' + ' + b + ' &times; ' + c, '(' + a + ' + ' + b + ') &times; ' + c, a * b + ' &divide; ' + b + ' &times; ' + c][t], v = [a + b * c, (a + b) * c, a * c][t];
+            if (seen[v]) return null; seen[v] = 1; list.push([ex, v]);
+          }
+          list.sort(function (x, y) { return x[1] - y[1]; });
+          return { q: 'Put these in order of value, least to greatest.', type: 'order', items: list.map(function (x) { return x[0]; }), first: 'least', last: 'greatest',
+            hint: 'Use BEDMAS to work out each one.', steps: list.map(function (x) { return x[0] + ' = ' + x[1]; }), explain: 'In order: ' + list.map(function (x) { return x[1]; }).join(', ') + '.', meta: { k: 'pq-order' } };
+        });
+      }]
+    ]
+  };
+  K.shapes('percent-ratio', SHAPES);
 })();
