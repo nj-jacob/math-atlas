@@ -454,4 +454,156 @@ A.yt({ q: 'x = 10. repeat while x &gt; 0: say x, then x = x &minus; 3. How many 
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name;
+    var opH = { '<': '&lt;', '>': '&gt;', '≤': '&le;', '≥': '&ge;' };
+    function holds(v, op, c) { return op === '<' ? v < c : op === '>' ? v > c : op === '≤' ? v <= c : v >= c; }
+    function term(a, v) { return (a === 1 ? '' : a) + v; }
+    function codeTxt(s, lim, st) { return '<code class="mono">x = ' + s + '\nrepeat while x &lt; ' + lim + ':\n    say x\n    x = x + ' + st + '</code>'; }
+    function code3() { var s = R.int(1, 6), st = R.pick([2, 3, 4, 5]), lim = s + st * R.int(3, 5) + R.int(-1, 1); return [s, lim, st]; }
+    function said(s, lim, st) { var out = []; for (var x = s; x < lim; x += st) out.push(x); return out; }
+    var SHAPES = {
+      'pa-next': [
+        [1, 'line', function () {
+          var m = R.int(2, 5), b = R.int(0, 5), t = [1, 2, 3, 4].map(function (n) { return m * n + b; });
+          return { q: 'Place the next term of the pattern <span class="math">' + t.join(', ') + ', ?</span> on the line.', type: 'line', min: 0, max: 40, tick: 1, every: 10, snap: 1, answer: m * 5 + b, fig: b <= 5 ? figs(m, b, 4) : '',
+            hint: 'Find the change from one term to the next.', steps: ['The change is ' + m + ' each time.', t[3] + ' + ' + m + ' = ' + (m * 5 + b) + '.'], explain: 'The next term is ' + (m * 5 + b) + '.', meta: { k: 'g6-next-line', t: t } };
+        }],
+        [1, 'fill', function () {
+          var m = R.int(2, 9), b = R.int(-3, 9), t = [1, 2, 3, 4, 5].map(function (n) { return m * n + b; });
+          return { q: 'Fill in the missing terms of the pattern.', type: 'fill', fill: f(t[0]) + ', [[]], ' + f(t[2]) + ', [[]], ' + f(t[4]), answers: [t[1], t[3]],
+            hint: 'The change from ' + f(t[0]) + ' to ' + f(t[2]) + ' takes two steps.', steps: [f(t[2]) + ' &minus; ' + f(t[0]) + ' = ' + 2 * m + ', so each step is ' + m + '.', 'The missing terms are ' + f(t[1]) + ' and ' + f(t[3]) + '.'], explain: t.map(f).join(', ') + '.', meta: { k: 'g6-next-fill' } };
+        }],
+        [1, 'mistake', function () {
+          var m = R.int(2, 9), b = R.int(1, 9), k = R.int(8, 20), t = [1, 2, 3, 4].map(function (n) { return m * n + b; }), who = nm(), truth = !R.int(0, 2), s = truth ? m * k + b : t[0] * k;
+          return { q: 'The pattern is <span class="math">' + t.join(', ') + ', &hellip;</span> ' + who + ' says term ' + k + ' is <b>' + s + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('The rule is ' + expr(m, b) + ', so term ' + k + ' is ' + m + ' &times; ' + k + ' + ' + b + ' = ' + (m * k + b) + '.', ['Multiply term 1 by ' + k + '.', 'Count on by 1 for each term.']),
+            hint: 'Find the rule first. Check it with term 1.', steps: ['Rule: ' + expr(m, b) + '.', m + ' &times; ' + k + ' + ' + b + ' = ' + (m * k + b) + '.'], explain: 'Term ' + k + ' is ' + (m * k + b) + '.', meta: { k: 'g6-next-tf', t: t, n: k, said: s } };
+        }]
+      ],
+      'pa-rule': [
+        [1, 'match', function () {
+          var rs = R.shuffle([2, 3, 4, 5, 6]).slice(0, 3).map(function (m) { return [m, R.int(1, 6)]; });
+          return { q: 'Match each rule to the start of its pattern.', type: 'match', pairs: rs.map(function (r) { return [expr(r[0], r[1]), [1, 2, 3].map(function (n) { return r[0] * n + r[1]; }).join(', ')]; }),
+            hint: 'Put n = 1, 2 and 3 into each rule.', steps: rs.map(function (r) { return expr(r[0], r[1]) + ': ' + [1, 2, 3].map(function (n) { return r[0] * n + r[1]; }).join(', ') + '.'; }), explain: 'Check each rule with n = 1.', meta: { k: 'g6-rule-match' } };
+        }],
+        [1, 'mistake', function () {
+          var m = R.int(2, 6), b = R.int(1, 9), t = [1, 2, 3, 4].map(function (n) { return m * n + b; }), who = nm(), truth = !R.int(0, 2), r = truth ? [m, b] : [1, m];
+          return { q: 'The pattern is <span class="math">' + t.join(', ') + ', &hellip;</span> ' + who + ' says the rule is <b>' + expr(r[0], r[1]) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('The change is ' + m + ', so the rule starts ' + m + 'n. Term 1 is ' + t[0] + ', so the rule is ' + expr(m, b) + '.', ['Add the change to n.', 'The rule only needs to work for term 1.']),
+            hint: 'Test the rule with n = 1 and n = 2.', steps: ['The change is ' + m + '.', 'Rule: ' + expr(m, b) + '.'], explain: 'The rule is ' + expr(m, b) + '.', meta: { k: 'g6-rule-tf', t: t, rule: r } };
+        }],
+        [2, 'pick', function () {
+          var m = R.int(2, 6), b = R.int(1, 9), inP = R.shuffle([2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 3).map(function (n) { return m * n + b; }), opts = inP.slice();
+          while (opts.length < 6) { var y = R.int(m + b + 1, m * 10 + b); if (opts.indexOf(y) < 0 && (y - b) % m) opts.push(y); }
+          opts = R.shuffle(opts);
+          return { q: 'The rule is <span class="math">' + expr(m, b) + '</span>. Pick every number that is a term in this pattern.', type: 'pick', options: opts.map(String), answer: opts.map(function (y, j) { return inP.indexOf(y) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; }),
+            hint: 'Take ' + b + ' away. Is the result a multiple of ' + m + '?', steps: ['Terms: ' + inP.slice().sort(function (x, y) { return x - y; }).join(', ') + '.'], explain: 'A term minus ' + b + ' is a multiple of ' + m + '.', meta: { k: 'g6-rule-pick', m: m, b: b } };
+        }]
+      ],
+      'pa-eval': [
+        [1, 'fill', function () {
+          var a = R.int(2, 9), b = R.int(1, 20), x = R.int(2, 10), v = R.pick(['x', 'y', 'n']);
+          return { q: 'Evaluate <span class="math">' + a + v + ' + ' + b + '</span> when ' + v + ' = ' + x + '.', type: 'fill', fill: a + ' &times; ' + x + ' = [[]], so ' + a + v + ' + ' + b + ' = [[]]', answers: [a * x, a * x + b],
+            hint: 'Multiply first, then add.', steps: [a + ' &times; ' + x + ' = ' + a * x + '.', a * x + ' + ' + b + ' = ' + (a * x + b) + '.'], explain: a * x + b + '.', meta: { k: 'g6-eval-fill', a: a, b: b, x: x } };
+        }],
+        [1, 'mistake', function () {
+          var a = R.int(2, 9), b = R.int(1, 20), x = R.int(2, 9), who = nm(), truth = !R.int(0, 2), s = truth ? a * x + b : +(a + '' + x) + b;
+          return { q: who + ' says <span class="math">' + a + 'x + ' + b + '</span> is <b>' + s + '</b> when x = ' + x + '. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(a + 'x means ' + a + ' &times; x, so it is ' + a + ' &times; ' + x + ' + ' + b + ' = ' + (a * x + b) + '.', [a + 'x means put the digits side by side: ' + a + x + '.', 'Add first, then multiply.']),
+            hint: a + 'x means ' + a + ' &times; x.', steps: [a + ' &times; ' + x + ' + ' + b + ' = ' + (a * x + b) + '.'], explain: 'The value is ' + (a * x + b) + '.', meta: { k: 'g6-eval-tf', a: a, b: b, x: x, said: s } };
+        }],
+        [1, 'story', function () {
+          var a = R.int(2, 4), b = R.int(3, 6), x = R.int(3, 15);
+          return { q: 'A taxi charges $' + b + ' to start, plus $' + a + ' for each kilometre. The cost is <span class="math">' + a + 'k + ' + b + '</span> dollars for k km. What does a ' + x + ' km ride cost?', type: 'num', unit: '$', answer: a * x + b,
+            hint: 'Put k = ' + x + ' into the expression.', steps: [a + ' &times; ' + x + ' = ' + a * x + '.', a * x + ' + ' + b + ' = ' + (a * x + b) + '.'], explain: 'The ride costs $' + (a * x + b) + '.', meta: { k: 'g6-eval-story', a: a, b: b, x: x } };
+        }],
+        [2, 'match', function () {
+          var a = R.int(2, 9), b = R.int(1, 20), xs = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 3);
+          return { q: 'Match each value of n to the value of <span class="math">' + a + 'n + ' + b + '</span>.', type: 'match', pairs: xs.map(function (x) { return ['n = ' + x, String(a * x + b)]; }),
+            hint: 'Multiply n by ' + a + ', then add ' + b + '.', steps: xs.map(function (x) { return a + ' &times; ' + x + ' + ' + b + ' = ' + (a * x + b) + '.'; }), explain: 'Replace n each time.', meta: { k: 'g6-eval-match', a: a, b: b } };
+        }]
+      ],
+      'pa-combine': [
+        [1, 'tap', function () {
+          var v = R.pick(['x', 'a', 'm', 'p']), c = R.int(2, 9), terms = [term(R.int(1, 9), v), term(R.int(2, 9), v), term(R.int(1, 9), v), String(c)];
+          terms = R.shuffle(terms);
+          return { q: 'Tap the term that is <b>not</b> a like term with the others.', type: 'tap', tiles: terms, answer: terms.indexOf(String(c)), answerText: 'the ' + c,
+            hint: 'Like terms have the same letter.', steps: ['The ' + v + ' terms are like terms. The ' + c + ' has no ' + v + '.'], explain: c + ' is a number on its own, not a ' + v + ' term.', meta: { k: 'g6-comb-tap', v: v } };
+        }],
+        [1, 'fill', function () {
+          var v = R.pick(['x', 'a', 'm', 'p']), a = R.int(2, 9), b = R.int(2, 9), c = R.int(1, 9);
+          return { q: 'Simplify <span class="math">' + term(a, v) + ' + ' + c + ' + ' + term(b, v) + '</span>.', type: 'fill', fill: '[[]]' + v + ' + [[]]', answers: [a + b, c], fig: atiles(a + b, c),
+            hint: 'Add the ' + v + ' terms. The number stays on its own.', steps: [a + ' + ' + b + ' = ' + (a + b) + ', so ' + (a + b) + v + '.', 'The ' + c + ' stays.'], explain: (a + b) + v + ' + ' + c + '.', meta: { k: 'g6-comb-fill', a: a, b: b, c: c } };
+        }],
+        [1, 'mistake', function () {
+          var v = R.pick(['x', 'a', 'm', 'p']), a = R.int(2, 9), b = R.int(2, 9), c = R.int(1, 9), who = nm(), truth = !R.int(0, 2);
+          var s = truth ? [a + b, c] : [a + b + c, 0];
+          return { q: who + ' simplifies <span class="math">' + term(a, v) + ' + ' + term(b, v) + ' + ' + c + '</span> to <b>' + s[0] + v + (s[1] ? ' + ' + s[1] : '') + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Only the ' + v + ' terms join: ' + term(a, v) + ' + ' + term(b, v) + ' = ' + (a + b) + v + '. The ' + c + ' stays on its own.', ['Every number in an expression can be added together.', 'The ' + c + ' becomes ' + c + v + '.']),
+            hint: 'Can a number on its own join the ' + v + ' terms?', steps: [term(a, v) + ' + ' + term(b, v) + ' = ' + (a + b) + v + '.', 'Answer: ' + (a + b) + v + ' + ' + c + '.'], explain: (a + b) + v + ' + ' + c + '.', meta: { k: 'g6-comb-tf', a: a, b: b, c: c, said: s } };
+        }]
+      ],
+      'pa-solve': [
+        [1, 'order', function () {
+          var x = R.int(2, 12), a = R.int(2, 9), b = R.int(1, 30), c = a * x + b;
+          return { q: 'Put the steps for solving <span class="math">' + a + 'x + ' + b + ' = ' + c + '</span> in order.', type: 'order',
+            items: ['Subtract ' + b + ' from both sides: ' + a + 'x = ' + (c - b) + '.', 'Divide both sides by ' + a + ': x = ' + x + '.', 'Check: ' + a + ' &times; ' + x + ' + ' + b + ' = ' + c + '.'], first: 'first', last: 'last',
+            hint: 'Undo the adding first, then the multiplying.', steps: ['Subtract, divide, then check.'], explain: 'x = ' + x + '.', meta: { k: 'g6-solve-order', a: a, b: b, c: c } };
+        }],
+        [1, 'mistake', function () {
+          var x = R.int(2, 12), a = R.int(2, 9), b = R.int(1, 30), c = a * x + b, who = nm(), truth = !R.int(0, 2), s = truth ? x : (c + b) / a;
+          if (!truth && s === x) s = x + 1;
+          return { q: who + ' solves <span class="math">' + a + 'x + ' + b + ' = ' + c + '</span> and gets <b>x = ' + f(s) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Subtract ' + b + ' from both sides, then divide by ' + a + ': x = ' + x + '. Check: ' + a + ' &times; ' + x + ' + ' + b + ' = ' + c + '.', ['Add ' + b + ' to both sides first.', 'Divide only the ' + c + ' by ' + a + '.']),
+            hint: 'Put the answer back into the equation to check it.', steps: [a + 'x = ' + (c - b) + '.', 'x = ' + x + '.'], explain: 'x = ' + x + '.', meta: { k: 'g6-solve-tf', a: a, b: b, c: c, said: s } };
+        }],
+        [1, 'story', function () {
+          var x = R.int(3, 12), a = R.int(2, 6), b = R.int(2, 9), c = a * x + b, who = nm();
+          return { q: who + ' buys ' + a + ' books that cost the same, and a $' + b + ' bookmark. The total is $' + c + '. Solve <span class="math">' + a + 'x + ' + b + ' = ' + c + '</span> to find the price of one book.', type: 'num', unit: '$', answer: x,
+            hint: 'Take away the bookmark first.', steps: [c + ' &minus; ' + b + ' = ' + (c - b) + '.', (c - b) + ' &divide; ' + a + ' = ' + x + '.'], explain: 'Each book costs $' + x + '.', meta: { k: 'g6-solve-story', a: a, b: b, c: c } };
+        }]
+      ],
+      'pa-ineq': [
+        [1, 'line', function () {
+          var x = R.int(2, 14), a = R.int(1, 5), b = R.int(1, 20), c = a * x + b, op = R.pick(['<', '>']);
+          return { q: 'Solve <span class="math">' + term(a, 'x') + ' + ' + b + ' ' + opH[op] + ' ' + c + '</span>. Place the boundary number on the line.', type: 'line', min: 0, max: 15, tick: 1, every: 5, snap: 1, answer: x,
+            hint: 'Solve it like an equation.', steps: ['Subtract ' + b + ': ' + term(a, 'x') + ' ' + opH[op] + ' ' + (c - b) + '.', a > 1 ? 'Divide by ' + a + ': x ' + opH[op] + ' ' + x + '.' : 'x ' + opH[op] + ' ' + x + '.'], explain: 'x ' + opH[op] + ' ' + x + '. The boundary is ' + x + '.', meta: { k: 'g6-ineq-line', a: a, b: b, c: c } };
+        }],
+        [1, 'pick', function () {
+          var x = R.int(3, 10), a = R.int(1, 4), b = R.int(1, 15), c = a * x + b, op = R.pick(['<', '>', '≤', '≥']), opts = R.shuffle([x - 2, x - 1, x, x + 1, x + 2, x + 3]).slice(0, 5);
+          var ans = opts.map(function (v, j) { return holds(a * v + b, op, c) ? j : -1; }).filter(function (j) { return j >= 0; });
+          if (!ans.length || ans.length === opts.length) { opts = [x - 2, x - 1, x, x + 1, x + 2]; ans = opts.map(function (v, j) { return holds(a * v + b, op, c) ? j : -1; }).filter(function (j) { return j >= 0; }); }
+          return { q: 'Pick every value of x that makes <span class="math">' + term(a, 'x') + ' + ' + b + ' ' + opH[op] + ' ' + c + '</span> true.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'Solve it first: x ' + opH[op] + ' ' + x + '.', steps: ['x ' + opH[op] + ' ' + x + '.'], explain: 'x ' + opH[op] + ' ' + x + '. ' + (op === '<' || op === '>' ? x + ' itself does not work.' : x + ' itself works.'), meta: { k: 'g6-ineq-pick', a: a, b: b, c: c, op: op } };
+        }],
+        [1, 'mistake', function () {
+          var x = R.int(3, 12), a = R.int(1, 5), b = R.int(1, 15), c = a * x + b, op = R.pick(['<', '>']), who = nm(), s = R.pick([x, x, x - 1, x + 1]);
+          return { q: who + ' says x = <b>' + s + '</b> is a solution of <span class="math">' + term(a, 'x') + ' + ' + b + ' ' + opH[op] + ' ' + c + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: holds(a * s + b, op, c),
+            why: why('The solution is x ' + opH[op] + ' ' + x + '. ' + (s === x ? x + ' makes both sides equal, so it does not count.' : 'Test it: ' + a * s + ' + ' + b + ' = ' + (a * s + b) + '.'), ['The boundary number always counts.', 'Any number near ' + x + ' works.']),
+            hint: 'Put ' + s + ' in for x and test it.', steps: [a + ' &times; ' + s + ' + ' + b + ' = ' + (a * s + b) + '.'], explain: 'x ' + opH[op] + ' ' + x + '.', meta: { k: 'g6-ineq-tf', a: a, b: b, c: c, op: op, said: s } };
+        }]
+      ],
+      'pa-code': [
+        [1, 'fill', function () {
+          var p = code3(), v = said(p[0], p[1], p[2]);
+          return { q: 'Trace this code. Fill in the first three numbers it says.' + codeTxt(p[0], p[1], p[2]), type: 'fill', fill: '[[]], [[]], [[]], &hellip;', answers: v.slice(0, 3),
+            hint: 'Start at ' + p[0] + ' and add ' + p[2] + ' each time.', steps: ['It says ' + v.join(', ') + '.'], explain: v.slice(0, 3).join(', ') + '.', meta: { k: 'g6-code-fill', s: p[0], lim: p[1], st: p[2] } };
+        }],
+        [1, 'mistake', function () {
+          var p = code3(), v = said(p[0], p[1], p[2]), who = nm(), truth = !R.int(0, 2), last = v[v.length - 1], s = truth ? last : last + p[2];
+          return { q: who + ' says the <b>last</b> number this code says is <b>' + s + '</b>. True or false: ' + who + ' is right.' + codeTxt(p[0], p[1], p[2]), type: 'tf', answer: truth,
+            why: why('The values are ' + v.join(', ') + '. The next one, ' + (last + p[2]) + ', is not less than ' + p[1] + ', so the code stops.', ['The code says one more number after the limit.', 'The last number is always the limit.']),
+            hint: 'Check each value against "less than ' + p[1] + '".', steps: ['Values: ' + v.join(', ') + '.'], explain: 'The last number is ' + last + '.', meta: { k: 'g6-code-tf', s: p[0], lim: p[1], st: p[2], said: s } };
+        }],
+        [1, 'order', function () {
+          var p = code3(), v = said(p[0], p[1], p[2]).slice(0, 4);
+          return { q: 'Put the numbers in the order this code says them.' + codeTxt(p[0], p[1], p[2]), type: 'order', items: v.map(String), first: 'first', last: 'last',
+            hint: 'Trace it one line at a time.', steps: ['It says ' + v.join(', ') + ', &hellip;'], explain: v.join(', ') + '.', meta: { k: 'g6-code-order', s: p[0], lim: p[1], st: p[2] } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

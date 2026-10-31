@@ -628,4 +628,135 @@ A.yt({ q: 'A cube has edges of 4 cm. What is its surface area?', type: 'num', an
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var KIT = A.Q, why = G6.why, nm = KIT.name;
+    var PAIRS = [['km', 'm'], ['m', 'cm'], ['cm', 'mm'], ['m', 'mm'], ['kg', 'g'], ['g', 'mg'], ['L', 'mL']];
+    var KINDS = [['acute', 40], ['right', 90], ['obtuse', 130], ['straight', 180], ['reflex', 250]];
+    function deg(d) { return d + '&deg;'; }
+    function faces(name) { var s = SOL.filter(function (x) { return x[0] === name; })[0]; return nfaces(s); }
+    var SHAPES = {
+      'me-convert': [
+        [1, 'line', function () {
+          var cm = R.int(5, 45) * 10;
+          return { q: 'A board is <b>' + fmt(cm) + ' cm</b> long. Place its length in metres on the line.', type: 'line', min: 0, max: 5, tick: 0.1, every: 1, snap: 0.1, answer: cl(cm / 100), fig: ladder('cm', 'm'),
+            hint: '100 cm make 1 m.', steps: [fmt(cm) + ' &divide; 100 = ' + fmt(cl(cm / 100)) + '.'], explain: fmt(cm) + ' cm = ' + fmt(cl(cm / 100)) + ' m.', meta: { k: 'g6-conv-line', cm: cm } };
+        }],
+        [1, 'mistake', function () {
+          var pr = R.pick(PAIRS), v = R.int(2, 25), f = conv(1, pr[0], pr[1]), who = nm(), truth = !R.int(0, 2), said = truth ? v * f : v * (f === 10 ? 100 : f / 10);
+          return { q: who + ' says <b>' + v + ' ' + pr[0] + ' = ' + fmt(said) + ' ' + pr[1] + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: ladder(pr[0], pr[1]),
+            why: why('1 ' + pr[0] + ' = ' + fmt(f) + ' ' + pr[1] + ', so ' + v + ' ' + pr[0] + ' = ' + fmt(v * f) + ' ' + pr[1] + '.', ['Every metric change is &times; 100.', 'Going to a smaller unit means divide.']),
+            hint: 'How many ' + pr[1] + ' make 1 ' + pr[0] + '?', steps: [v + ' &times; ' + fmt(f) + ' = ' + fmt(v * f) + '.'], explain: v + ' ' + pr[0] + ' = ' + fmt(v * f) + ' ' + pr[1] + '.', meta: { k: 'g6-conv-tf', v: v, from: pr[0], to: pr[1], said: said } };
+        }],
+        [1, 'match', function () {
+          var prs = R.shuffle(PAIRS.filter(function (p) { return conv(1, p[0], p[1]) !== 100; })).slice(0, 3), vs = R.shuffle([2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3);
+          return { q: 'Match the equal amounts.', type: 'match', pairs: prs.map(function (p, j) { return [vs[j] + ' ' + p[0], fmt(vs[j] * conv(1, p[0], p[1])) + ' ' + p[1]]; }),
+            hint: 'kilo means 1000. milli means one thousandth.', steps: prs.map(function (p, j) { return vs[j] + ' ' + p[0] + ' = ' + fmt(vs[j] * conv(1, p[0], p[1])) + ' ' + p[1] + '.'; }), explain: 'Multiply by 10 or 1000 to go to the smaller unit.', meta: { k: 'g6-conv-match' } };
+        }],
+        [2, 'order', function () {
+          var m = R.shuffle([1200, 1500, 1800, 2100, 2400, 900, 600]).slice(0, 3).sort(function (x, y) { return x - y; }), us = R.shuffle(['m', 'cm', 'mm']);
+          var items = m.map(function (mm, j) { return fmt(conv(mm, 'mm', us[j])) + ' ' + us[j]; });
+          return { q: 'Put these lengths in order from <b>shortest</b> to longest.', type: 'order', items: items, first: 'shortest', last: 'longest',
+            hint: 'Change them all to the same unit first.', steps: m.map(function (mm, j) { return items[j] + ' = ' + fmt(mm / 10) + ' cm.'; }), explain: items.join(', ') + '.', meta: { k: 'g6-conv-order' } };
+        }]
+      ],
+      'me-angle': [
+        [1, 'tap', function () {
+          var want = R.pick(KINDS), list = R.shuffle([want].concat(R.shuffle(KINDS.filter(function (k) { return k !== want; })).slice(0, 2)));
+          var ds = list.map(function (k) { return k[0] === 'acute' ? R.int(3, 16) * 5 : k[0] === 'obtuse' ? R.int(20, 34) * 5 : k[0] === 'reflex' ? R.int(38, 68) * 5 : k[1]; });
+          return { q: 'Tap the <b>' + want[0] + '</b> angle.', type: 'tap', tiles: ds.map(function (d) { return angleFig(d, 'ccw', {}); }), answer: list.indexOf(want), answerText: 'the ' + want[0] + ' angle',
+            hint: 'Compare each angle with a square corner (90&deg;) and a straight line (180&deg;).', steps: ['The ' + want[0] + ' angle is ' + deg(ds[list.indexOf(want)]) + '.'], explain: 'It is ' + deg(ds[list.indexOf(want)]) + '.', meta: { k: 'g6-ang-tap', want: want[0], ds: ds } };
+        }],
+        [1, 'mistake', function () {
+          var d = R.pick([R.int(2, 17) * 5, R.int(19, 35) * 5, R.int(37, 70) * 5]), right = kind(d), who = nm(), truth = !R.int(0, 2);
+          var said = truth ? right : R.pick(['acute', 'obtuse', 'reflex'].filter(function (x) { return x !== right; }));
+          return { q: who + ' says a <b>' + deg(d) + '</b> angle is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: angleFig(d, 'ccw', { label: deg(d) }),
+            why: why(deg(d) + ' is ' + (d < 90 ? 'less than 90&deg;' : d < 180 ? 'between 90&deg; and 180&deg;' : 'between 180&deg; and 360&deg;') + ', so it is ' + right + '.', ['Any angle more than 90&deg; is reflex.', 'Obtuse angles are smaller than acute ones.']),
+            hint: 'Compare with 90&deg; and 180&deg;.', steps: [deg(d) + ' is ' + right + '.'], explain: 'It is ' + right + '.', meta: { k: 'g6-ang-tf', d: d, said: said } };
+        }],
+        [1, 'line', function () {
+          var x = R.int(2, 16) * 10;
+          return { q: 'Ray B is ' + deg(x) + ' counterclockwise from ray A. Place the angle from A to B going <b>clockwise</b>.', type: 'line', min: 0, max: 360, tick: 10, every: 90, snap: 10, answer: 360 - x, fig: angleFig(x, 'ccw', { label: deg(x) }),
+            hint: 'Both ways around make a full turn.', steps: ['360 &minus; ' + x + ' = ' + (360 - x) + '.'], explain: deg(360 - x) + '.', meta: { k: 'g6-ang-line', x: x } };
+        }]
+      ],
+      'me-relate': [
+        [1, 'fill', function () {
+          var a = R.int(25, 95), b = R.int(20, 155 - a);
+          return { q: 'Two angles of a triangle are ' + deg(a) + ' and ' + deg(b) + '. Find the third.', type: 'fill', fill: a + ' + ' + b + ' = [[]]&deg; &nbsp; Third angle: [[]]&deg;', answers: [a + b, 180 - a - b], fig: triFig(a, b, { A: deg(a), B: deg(b), C: '?' }),
+            hint: 'The angles of a triangle add to 180&deg;.', steps: [a + ' + ' + b + ' = ' + (a + b) + '.', '180 &minus; ' + (a + b) + ' = ' + (180 - a - b) + '.'], explain: deg(180 - a - b) + '.', meta: { k: 'g6-rel-fill', a: a, b: b } };
+        }],
+        [1, 'mistake', function () {
+          var x = R.int(15, 75), who = nm(), truth = !R.int(0, 2), said = truth ? 180 - x : 90 - x;
+          return { q: 'One angle is ' + deg(x) + '. ' + who + ' says its <b>supplement</b> is <b>' + deg(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: splitFig(180, x, deg(x), '?'),
+            why: why('Supplementary angles add to 180&deg;: 180 &minus; ' + x + ' = ' + (180 - x) + '.', ['Supplementary angles add to 90&deg;.', 'The supplement is the same size.']),
+            hint: 'Supplementary angles make a straight line.', steps: ['180 &minus; ' + x + ' = ' + (180 - x) + '.'], explain: deg(180 - x) + '.', meta: { k: 'g6-rel-tf', x: x, said: said } };
+        }],
+        [1, 'match', function () {
+          var x = R.int(10, 80);
+          return { q: 'An angle is ' + deg(x) + '. Match each angle to its size.', type: 'match', pairs: [['Its complement', deg(90 - x)], ['Its supplement', deg(180 - x)], ['The rest of a full turn', deg(360 - x)]],
+            hint: 'Complement: 90&deg;. Supplement: 180&deg;. Full turn: 360&deg;.', steps: ['90 &minus; ' + x + ' = ' + (90 - x) + '.', '180 &minus; ' + x + ' = ' + (180 - x) + '.', '360 &minus; ' + x + ' = ' + (360 - x) + '.'], explain: 'Subtract from 90, 180 and 360.', meta: { k: 'g6-rel-match', x: x } };
+        }]
+      ],
+      'me-area': [
+        [1, 'fill', function () {
+          var a = R.int(2, 10), b = a + R.int(2, 8), h = R.int(2, 10); if ((a + b) * h % 2) h++;
+          return { q: 'Find the area of this trapezoid.', type: 'fill', fill: a + ' + ' + b + ' = [[]] &nbsp; Times ' + h + ': [[]] &nbsp; Half of that: [[]] cm²', answers: [a + b, (a + b) * h, (a + b) * h / 2], fig: trapFig(a, b, h),
+            hint: 'Add the parallel sides, times the height, then halve.', steps: [a + ' + ' + b + ' = ' + (a + b) + '.', (a + b) + ' &times; ' + h + ' = ' + (a + b) * h + '.', (a + b) * h + ' &divide; 2 = ' + (a + b) * h / 2 + '.'], explain: (a + b) * h / 2 + ' cm².', meta: { k: 'g6-area-fill', a: a, b: b, h: h } };
+        }],
+        [1, 'mistake', function () {
+          var d1 = R.int(3, 14), d2 = R.int(2, 12), who = nm(), truth = !R.int(0, 2); if (d1 * d2 % 2) d1++;
+          var said = truth ? d1 * d2 / 2 : d1 * d2;
+          return { q: 'A kite has diagonals of ' + d1 + ' cm and ' + d2 + ' cm. ' + who + ' says its area is <b>' + said + ' cm²</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: diagFig(d1, d2, true, true),
+            why: why('The kite fills half of the ' + d1 + ' by ' + d2 + ' rectangle: ' + d1 * d2 + ' &divide; 2 = ' + d1 * d2 / 2 + ' cm².', ['Multiply the diagonals. That is the area.', 'Add the diagonals.']),
+            hint: 'Does the kite fill the whole rectangle around it?', steps: [d1 + ' &times; ' + d2 + ' &divide; 2 = ' + d1 * d2 / 2 + '.'], explain: d1 * d2 / 2 + ' cm².', meta: { k: 'g6-area-tf', d1: d1, d2: d2, said: said } };
+        }],
+        [1, 'story', function () {
+          var d1 = R.int(4, 16), d2 = R.int(3, 12); if (d1 * d2 % 2) d1++;
+          return { q: 'A flower bed is shaped like a rhombus. Its diagonals are ' + d1 + ' m and ' + d2 + ' m. How many square metres of soil does it cover?', type: 'num', unit: 'm²', answer: d1 * d2 / 2, fig: diagFig(d1, d2, false),
+            hint: 'Diagonal times diagonal, then divide by 2.', steps: [d1 + ' &times; ' + d2 + ' = ' + d1 * d2 + '.', d1 * d2 + ' &divide; 2 = ' + d1 * d2 / 2 + '.'], explain: d1 * d2 / 2 + ' m².', meta: { k: 'g6-area-story', d1: d1, d2: d2 } };
+        }]
+      ],
+      'me-faces': [
+        [1, 'match', function () {
+          var by = {}; SOL.forEach(function (s) { (by[nfaces(s)] = by[nfaces(s)] || []).push(s[0]); });
+          var ns = R.shuffle(Object.keys(by)).slice(0, 3), names = ns.map(function (n) { return R.pick(by[n]); });
+          return { q: 'Match each solid to its number of faces.', type: 'match', pairs: names.map(function (n) { return [n.charAt(0).toUpperCase() + n.slice(1), faces(n) + ' faces']; }),
+            hint: 'Prism: 2 bases + one face per side. Pyramid: 1 base + one triangle per side.', steps: names.map(function (n) { return 'A ' + n + ' has ' + faces(n) + '.'; }), explain: 'Count the bases, then the sides.', meta: { k: 'g6-faces-match' } };
+        }],
+        [1, 'mistake', function () {
+          var s = R.pick(SOL), n = nfaces(s), who = nm(), truth = !R.int(0, 2), said = truth ? n : s[1] === 'prism' ? s[2] + 1 : s[2] + 2;
+          if (s[0] === 'cube' && !truth) said = 8;
+          return { q: who + ' says a <b>' + s[0] + '</b> has <b>' + said + '</b> faces. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('A ' + s[0] + ' has ' + fdesc(s) + ': ' + n + ' faces.', ['Prisms have 1 base and pyramids have 2.', 'Every solid has 6 faces.']),
+            hint: s[1] === 'prism' ? 'A prism has 2 bases.' : 'A pyramid has 1 base.', steps: [fdesc(s) + '.'], explain: n + ' faces.', meta: { k: 'g6-faces-tf', s: s[0], said: said } };
+        }],
+        [2, 'pick', function () {
+          var n = R.pick([5, 6, 7]), names = SOL.map(function (s) { return s[0]; });
+          return { q: 'Pick every solid with exactly <b>' + n + ' faces</b>.', type: 'pick', options: names, answer: names.map(function (x, j) { return faces(x) === n ? j : -1; }).filter(function (j) { return j >= 0; }),
+            hint: 'Count bases and side faces for each one.', steps: ['With ' + n + ' faces: ' + names.filter(function (x) { return faces(x) === n; }).join(' and ') + '.'], explain: 'A prism and a pyramid can have the same number of faces.', meta: { k: 'g6-faces-pick', n: n } };
+        }]
+      ],
+      'me-sa': [
+        [1, 'fill', function () {
+          var l = R.int(3, 12), w = R.int(2, 9), h = R.int(2, 9);
+          return { q: 'A box is ' + l + ' cm by ' + w + ' cm by ' + h + ' cm. Find the area of each kind of face, then the surface area.', type: 'fill', fill: 'Top: [[]] &nbsp; Front: [[]] &nbsp; Side: [[]] &nbsp; Total: [[]] cm²', answers: [l * w, l * h, w * h, 2 * (l * w + l * h + w * h)], fig: boxNet(l, w, h, 'dims'),
+            hint: 'Each kind of face comes twice.', steps: [l + ' &times; ' + w + ' = ' + l * w + ', ' + l + ' &times; ' + h + ' = ' + l * h + ', ' + w + ' &times; ' + h + ' = ' + w * h + '.', '2 &times; (' + l * w + ' + ' + l * h + ' + ' + w * h + ') = ' + 2 * (l * w + l * h + w * h) + '.'], explain: fmt(2 * (l * w + l * h + w * h)) + ' cm².', meta: { k: 'g6-sa-fill', l: l, w: w, h: h } };
+        }],
+        [1, 'mistake', function () {
+          var e = R.int(2, 9), who = nm(), truth = !R.int(0, 2), said = truth ? 6 * e * e : e * e * e;
+          if (said === 6 * e * e && !truth) said = 4 * e * e;
+          return { q: 'A cube has edges of ' + e + ' cm. ' + who + ' says its surface area is <b>' + fmt(said) + ' cm²</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: boxNet(e, e, e, 'dims'),
+            why: why('A cube has 6 square faces of ' + e * e + ' cm² each: 6 &times; ' + e * e + ' = ' + 6 * e * e + ' cm².', ['Multiply the three edges together.', 'A cube has 4 faces.']),
+            hint: 'How many faces does a cube have?', steps: ['6 &times; ' + e + ' &times; ' + e + ' = ' + 6 * e * e + '.'], explain: fmt(6 * e * e) + ' cm².', meta: { k: 'g6-sa-tf', e: e, said: said } };
+        }],
+        [1, 'story', function () {
+          var l = R.int(10, 30), w = R.int(5, 20), h = R.int(3, 12), sa = 2 * (l * w + l * h + w * h);
+          return { q: 'You wrap a gift box that is ' + l + ' cm long, ' + w + ' cm wide and ' + h + ' cm high. With no overlap, how much paper covers it?', type: 'num', unit: 'cm²', answer: sa,
+            hint: 'Find the surface area of the box.', steps: [l + ' &times; ' + w + ' = ' + l * w + ', ' + l + ' &times; ' + h + ' = ' + l * h + ', ' + w + ' &times; ' + h + ' = ' + w * h + '.', '2 &times; (' + l * w + ' + ' + l * h + ' + ' + w * h + ') = ' + fmt(sa) + '.'], explain: fmt(sa) + ' cm².', meta: { k: 'g6-sa-story', l: l, w: w, h: h } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();
