@@ -88,4 +88,110 @@
   set('g2-which', (q, m) => q.options[q.answer] === (/in all\?/.test(q.q) ? 'Put equal groups together' : 'Share out equally') ? '' : 'way');
   set('g2-story-tap', (q, m) => { const n = H.strip(q.q).match(/\d+/g).map(Number); const hits = m.set.map((p, i) => (p[0] === n[1] && p[1] === n[0] ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === q.answer ? '' : 'picture'; });
   set('g2-story-tf', (q, m) => (m.g * m.n === m.said) === q.answer ? '' : 'truth');
+  /* ---- Fractions (written in words) ---- */
+  const WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six'];
+  const PART = { half: 2, halves: 2, third: 3, thirds: 3, fourth: 4, fourths: 4, sixth: 6, sixths: 6, whole: 1 };
+  /* "two sixths" -> [2, 6] */
+  const frac = t => { const m = /\b(zero|one|two|three|four|five|six) (halves|half|thirds|third|fourths|fourth|sixths|sixth|whole)\b/.exec(H.strip(t)); return [WORD.indexOf(m[1]), PART[m[2]]]; };
+  const fracs = t => (H.strip(t).match(/\b(one|two|three|four|five|six) (halves|half|thirds|third|fourths|fourth|sixths|sixth)\b/g) || []).map(frac);
+  const eq = (a, b) => a[0] * b[1] === b[0] * a[1];
+  /* "2 wholes and one half" -> how much, as [top, bottom] */
+  const share = t => { const s = H.strip(t), w = /(\d+) wholes?/.exec(s), f = fracs(s)[0] || [0, 1]; return [(w ? +w[1] : 0) * f[1] + f[0], f[1]]; };
+  /* read a drawing's label: parts in all, parts shaded, equal or not */
+  const drawing = h => { const l = /aria-label="([^"]*)"/.exec(h)[1], m = /cut into (\d+) (equal|unequal) parts(?:, (\d+) shaded)?/.exec(l); return { d: +m[1], fair: m[2] === 'equal', n: m[3] == null ? null : +m[3] }; };
+  const only = (list, ok, ans) => { const hits = list.map((x, i) => (ok(x) ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === ans; };
+  set('r2-name-tap', (q, m) => { const f = frac(bold(q)), pics = q.tiles.map(drawing); return only(pics, p => eq([p.n, p.d], f), q.answer) && pics[q.answer].d === f[1] ? '' : 'picture'; });
+  set('r2-name-match', (q, m) => q.pairs.every(p => { const g = drawing(p[0]), f = frac(p[1]); return g.n === f[0] && g.d === f[1]; }) ? '' : 'pairs');
+  set('r2-name-tf', (q, m) => { const g = drawing(q.fig), f = frac(bold(q)); return (g.n === f[0] && g.d === f[1]) === q.answer ? '' : 'truth'; });
+  set('r2-fair-tap', (q, m) => only(q.tiles.map(drawing), p => p.fair && p.d === m.d, q.answer) && bold(q).includes(m.d + ' people') ? '' : 'picture');
+  set('r2-fair-tf', (q, m) => drawing(q.fig).fair === q.answer ? '' : 'truth');
+  set('r2-fair-pick', (q, m) => same(q.options.map((o, j) => (drawing(o).fair ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('r2-cmp-tap', (q, m) => { const d = q.tiles.map(t => drawing(t).d); return bold(q) === 'biggest' && d[q.answer] === Math.min(...d) ? '' : 'biggest'; });
+  set('r2-cmp-tf', (q, m) => { const [a, b] = fracs(q.q); return (a[1] < b[1]) === q.answer ? '' : 'truth'; });
+  set('r2-cmp-order', (q, m) => { const d = q.items.map(t => frac(t)[1]); return ascending(d) ? '' : 'order'; });
+  set('r2-share-story', (q, m) => { const s = H.strip(q.q), n = +/shares (\d+)/.exec(s)[1], p = +/That is (\d+) people/.exec(s)[1]; let left = n, w = 0; while (left >= p) { left -= p; w++; } return w === q.answer ? '' : 'wholes'; });
+  set('r2-share-tf', (q, m) => { const s = H.strip(q.q), x = /(\d+) bars are shared equally by (\d+)/.exec(s), v = share(bold(q)); return (v[0] * +x[2] === +x[1] * v[1]) === q.answer ? '' : 'truth'; });
+  set('r2-share-match', (q, m) => q.pairs.every(p => { const x = /(\d+) bars for (\d+)/.exec(p[0]), v = share(p[1]); return v[0] * +x[2] === +x[1] * v[1]; }) ? '' : 'pairs');
+  set('r2-thirds-match', (q, m) => q.pairs.every(p => eq(frac(p[0]), frac(p[1]))) ? '' : 'pairs');
+  set('r2-thirds-tf', (q, m) => { const [a, b] = fracs(q.q); return eq(a, b) === q.answer ? '' : 'truth'; });
+  set('r2-thirds-pick', (q, m) => { const t = /whole/.test(bold(q)) ? [1, 1] : frac(bold(q)); return same(q.options.map((o, j) => (eq(frac(o), t) ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks'; });
+  /* ---- Patterns ---- */
+  const label = h => /aria-label="([^"]*)"/.exec(h)[1];
+  const piecesOf = h => label(h).replace(/^A pattern: /, '').split(', ').filter(x => x !== 'missing');
+  /* the next n pieces: find the shortest part that repeats, then keep going */
+  const nextOf = (list, n) => { let p = 1; while (!list.every((x, i) => i < p || x === list[i - p])) p++; const out = list.slice(); while (out.length < list.length + n) out.push(out[out.length - p]); return out.slice(list.length); };
+  const lettersFor = list => { const m = {}; return list.map(x => (m[x] = m[x] || 'ABCD'[Object.keys(m).length])).join(' '); };
+  const mathOf = q => H.strip((q.q.match(/<span class="math[^"]*">(.*?)<\/span>/) || [])[1] || '');
+  const eqTrue = t => { const [l, r] = H.strip(t).split(' = '); return H.sum(l) === H.sum(r); };
+  const steady = v => v.length > 2 && v[1] !== v[0] && v.every((x, i) => !i || x - v[i - 1] === v[1] - v[0]);
+  set('p2-rep-tap', (q, m) => only(q.tiles.map(label), x => x === nextOf(piecesOf(q.fig), 1)[0], q.answer) ? '' : 'next piece');
+  set('p2-rep-tf', (q, m) => (bold(q) === nextOf(piecesOf(q.fig), 1)[0]) === q.answer ? '' : 'truth');
+  set('p2-rep-order', (q, m) => nextOf(piecesOf(q.fig), q.items.length).join() === q.items.join() ? '' : 'order');
+  set('p2-tr-match', (q, m) => q.pairs.every(p => lettersFor(piecesOf(p[0])) === p[1]) ? '' : 'pairs');
+  set('p2-tr-tap', (q, m) => only(q.tiles, t => lettersFor(piecesOf(t)) === bold(q), q.answer) ? '' : 'pattern');
+  set('p2-tr-tf', (q, m) => (lettersFor(piecesOf(q.fig)) === bold(q)) === q.answer ? '' : 'truth');
+  set('p2-num-line', (q, m) => { const v = bold(q).split(', ').map(Number); return steady(v) && q.answer === 2 * v[v.length - 1] - v[v.length - 2] ? '' : 'next'; });
+  set('p2-num-fill', (q, m) => { const a = q.answers.slice(), v = H.strip(q.fill.replace(/\[\[\]\]/g, '#')).split(', ').map(x => (x === '#' ? a.shift() : +x)); return steady(v) ? '' : 'sequence'; });
+  set('p2-num-order', (q, m) => { const v = q.items.map(Number); return steady(v) && v[1] - v[0] === +bold(q) ? '' : 'order'; });
+  set('p2-num-tf', (q, m) => { const v = mathOf(q).split(', ').map(Number), r = /^(add|subtract) (\d+)$/.exec(bold(q)), d = (r[1] === 'add' ? 1 : -1) * r[2]; return (steady(v) && v[1] - v[0] === d) === q.answer ? '' : 'truth'; });
+  set('p2-sym-build', (q, m) => eqTrue(mathOf(q).replace('□', q.answer)) ? '' : 'box');
+  set('p2-sym-match', (q, m) => q.pairs.every(p => eqTrue(p[0].replace('&#9633;', p[1]))) ? '' : 'pairs');
+  set('p2-sym-tf', (q, m) => eqTrue(mathOf(q).replace('□', bold(q))) === q.answer ? '' : 'truth');
+  set('p2-eq-pick', (q, m) => same(q.options.map((o, j) => (eqTrue(o) ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('p2-eq-tf', (q, m) => eqTrue(mathOf(q).replace('□', bold(q))) === q.answer ? '' : 'truth');
+  set('p2-eq-match', (q, m) => q.pairs.every(p => H.sum(p[0]) === H.sum(p[1])) ? '' : 'pairs');
+  /* ---- Shapes (checked from the drawings' corner points) ---- */
+  const SIDES = { triangle: 3, quadrilateral: 4, pentagon: 5, hexagon: 6, octagon: 8 };
+  const polys = h => [...String(h).matchAll(/<polygon points="([^"]+)"/g)].map(x => x[1].split(' ').map(p => p.split(',').map(Number)));
+  const dist = (a, b) => Math.hypot(a[0] - b[0], a[1] - b[1]);
+  const edges = p => p.map((a, i) => dist(a, p[(i + 1) % p.length]));
+  const squareCorners = p => p.filter((b, i) => { const a = p[(i + p.length - 1) % p.length], c = p[(i + 1) % p.length], u = [a[0] - b[0], a[1] - b[1]], v = [c[0] - b[0], c[1] - b[1]]; return Math.abs(u[0] * v[0] + u[1] * v[1]) < 0.02 * Math.hypot(...u) * Math.hypot(...v); }).length;
+  const allEqual = p => { const e = edges(p); return Math.max(...e) - Math.min(...e) < 0.5; };
+  /* does folding p on the line through o in direction d map every corner onto a corner? */
+  const foldsOnto = (p, o, d) => { const n = Math.hypot(...d), ux = d[0] / n, uy = d[1] / n; return p.every(q => { const x = q[0] - o[0], y = q[1] - o[1], t = x * ux + y * uy, r = [o[0] + 2 * t * ux - x, o[1] + 2 * t * uy - y]; return p.some(s => dist(s, r) < 1); }); };
+  const symCount = p => { const o = [p.reduce((s, q) => s + q[0], 0) / p.length, p.reduce((s, q) => s + q[1], 0) / p.length]; const dirs = p.concat(p.map((a, i) => [(a[0] + p[(i + 1) % p.length][0]) / 2, (a[1] + p[(i + 1) % p.length][1]) / 2])).map(q => [q[0] - o[0], q[1] - o[1]]).filter(d => Math.hypot(...d) > 0.5); const seen = new Set(); dirs.forEach(d => { if (foldsOnto(p, o, d)) seen.add(Math.round(((Math.atan2(d[1], d[0]) + 2 * Math.PI) % Math.PI) * 100) % 314); }); return seen.size; };
+  const lineOf = h => { const m = /<line x1="([\d.-]+)" y1="([\d.-]+)" x2="([\d.-]+)" y2="([\d.-]+)"/.exec(h).slice(1).map(Number); return [[m[0], m[1]], [m[2] - m[0], m[3] - m[1]]]; };
+  const congruent = h => { const [a, b] = polys(h).map(p => edges(p).sort((x, y) => x - y)); return a.length === b.length && a.every((x, i) => Math.abs(x - b[i]) < 0.5); };
+  const squaresIn = (h, col) => (String(h).match(new RegExp('<rect[^>]*fill:' + col.replace(/[()-]/g, '\\$&'), 'g')) || []).length;
+  set('s2-name-tap', (q, m) => only(q.tiles, t => polys(t)[0].length === SIDES[bold(q)], q.answer) ? '' : 'shape');
+  set('s2-name-match', (q, m) => q.pairs.every(p => polys(p[0])[0].length === SIDES[p[1]]) ? '' : 'pairs');
+  set('s2-name-tf', (q, m) => (polys(q.fig)[0].length === SIDES[bold(q)]) === q.answer ? '' : 'truth');
+  set('s2-sort-pick', (q, m) => { const want = p => (m.ask === 'sq' ? squareCorners(p) > 0 : m.ask === 'eq' ? allEqual(p) : p.length === m.ask); return same(q.options.map((o, j) => (want(polys(o)[0]) ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks'; });
+  set('s2-sort-order', (q, m) => ascending(q.items.map(t => SIDES[t])) ? '' : 'order');
+  set('s2-sort-tf', (q, m) => (squareCorners(polys(q.fig)[0]) === +bold(q)) === q.answer ? '' : 'truth');
+  set('s2-sym-tap', (q, m) => only(q.tiles, t => { const [o, d] = lineOf(t); return foldsOnto(polys(t)[0], o, d); }, q.answer) ? '' : 'fold');
+  set('s2-sym-tf', (q, m) => (symCount(polys(q.fig)[0]) === +bold(q)) === q.answer ? '' : 'truth');
+  set('s2-sym-pick', (q, m) => same(q.options.map((o, j) => (symCount(polys(o)[0]) > 0 ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('s2-comp-tap', (q, m) => only(q.tiles, t => polys(t).length === parseInt(bold(q), 10), q.answer) ? '' : 'hexagon');
+  set('s2-comp-match', (q, m) => q.pairs.every(p => polys(p[0]).length === parseInt(p[1], 10)) ? '' : 'pairs');
+  set('s2-comp-tf', (q, m) => (squaresIn(q.fig, 'var(--strand)') === squaresIn(q.fig, 'var(--se)')) === q.answer ? '' : 'truth');
+  set('s2-cong-tap', (q, m) => only(q.tiles, congruent, q.answer) ? '' : 'pair');
+  set('s2-cong-tf', (q, m) => congruent(q.fig) === q.answer ? '' : 'truth');
+  set('s2-cong-pick', (q, m) => same(q.options.map((o, j) => (congruent(o) ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  /* ---- Maps and Code ---- */
+  const bolds = q => (q.q.match(/<b>([^<]+)<\/b>/g) || []).map(H.strip);
+  const shelfRows = h => { const l = label(h); return [/Top row from left to right: ([^.]+)\./.exec(l)[1].split(', '), /Bottom row: ([^.]+)\./.exec(l)[1].split(', ')]; };
+  const places = h => { const o = {}; for (const x of label(h).matchAll(/(\w+) at column (\d+), row (\d+)/g)) o[x[1]] = [+x[2], +x[3]]; return o; };
+  const STEP = { right: [1, 0], left: [-1, 0], down: [0, 1], up: [0, -1] };
+  /* follow "move right 2, then move down 1" from a square; null if it leaves the grid */
+  const follow = (t, at, size) => { const out = [at.slice()]; for (const x of H.strip(t).matchAll(/move (\w+) (\d+)/g)) for (let i = 0; i < +x[2]; i++) { const c = out[out.length - 1], n = [c[0] + STEP[x[1]][0], c[1] + STEP[x[1]][1]]; if (size && (n[0] < 0 || n[1] < 0 || n[0] >= size || n[1] >= size)) return null; out.push(n); } return out; };
+  const onTrack = (t, at) => { let x = at; for (const m of H.strip(t).matchAll(/move (\w+) (\d+)/g)) x += (m[1] === 'right' ? 1 : -1) * m[2]; return x; };
+  const pathCells = h => /<polyline points="([^"]+)"/.exec(h)[1].split(' ').map(p => p.split(',').map(v => Math.round((v - 30) / 56)));
+  const starAt = h => { const m = /a star (\d+) right and (\d+) down/.exec(label(h)); return [+m[1], +m[2]]; };
+  const reaches = (t, star) => { const p = follow(t, [0, 0], 5); return !!p && p[p.length - 1].join() === star.join(); };
+  set('m2-pos-tap', (q, m) => { const top = shelfRows(q.fig)[0], at = top.indexOf(/ of the (\w+)\./.exec(H.strip(q.q))[1]), ans = top[at + (bold(q) === 'left' ? -1 : 1)]; return only(q.tiles.map(label), x => x === ans, q.answer) ? '' : 'thing'; });
+  set('m2-pos-tf', (q, m) => { const top = shelfRows(q.fig)[0], x = /says the (\w+) is just to the (\w+) of the (\w+)/.exec(H.strip(q.q)); return ((top.indexOf(x[1]) - top.indexOf(x[3])) === (x[2] === 'left' ? -1 : 1)) === q.answer ? '' : 'truth'; });
+  set('m2-pos-order', (q, m) => { const row = shelfRows(q.fig)[bold(q).startsWith('top') ? 0 : 1]; return row.slice().reverse().join() === q.items.join() ? '' : 'order'; });
+  set('m2-map-tap', (q, m) => { const P = places(q.fig), [from, go] = bolds(q), end = follow(go.replace(/(\d+) (\w+)/g, 'move $2 $1'), P[from]).pop(); return only(q.tiles.map(label), x => P[x] && P[x].join() === end.join(), q.answer) ? '' : 'place'; });
+  set('m2-map-fill', (q, m) => { const P = places(q.fig), [a, b] = bolds(q).map(x => P[x]); return q.answers[0] === Math.abs(a[0] - b[0]) && q.answers[1] === Math.abs(a[1] - b[1]) ? '' : 'squares'; });
+  set('m2-map-tf', (q, m) => { const P = places(q.fig), x = /from the (\w+) to the (\w+),/.exec(H.strip(q.q)), a = P[x[1]], b = P[x[2]]; return (Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1]) === +bold(q)) === q.answer ? '' : 'truth'; });
+  set('m2-code-tap', (q, m) => { const want = follow(bold(q), [0, 0]).join('|'); return only(q.tiles, t => pathCells(t).join('|') === want, q.answer) ? '' : 'path'; });
+  set('m2-code-line', (q, m) => { const [at, code] = bolds(q); return onTrack(code, +at) === q.answer ? '' : 'end'; });
+  set('m2-code-tf', (q, m) => { const s = H.strip(q.q); return (onTrack(bold(q), +/is at (\d+)/.exec(s)[1]) === +/ends at (\d+)/.exec(s)[1]) === q.answer ? '' : 'truth'; });
+  set('m2-dbg-tf', (q, m) => reaches(bold(q), starAt(q.fig)) === q.answer ? '' : 'truth');
+  set('m2-dbg-fill', (q, m) => reaches('move right ' + q.answers[0] + ', then move down ' + q.answers[1], starAt(q.fig)) ? '' : 'fix');
+  set('m2-dbg-pick', (q, m) => same(q.options.map((o, j) => (reaches(o, starAt(q.fig)) ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('m2-tog-fill', (q, m) => { const a = +bold(q); let t = 0; return q.answers.every(x => (t += a) === x) ? '' : 'distance'; });
+  set('m2-tog-match', (q, m) => q.pairs.every(p => { const [a, n] = p[0].match(/\d+/g).map(Number); let t = 0; for (let i = 0; i < n; i++) t += a; return t === parseInt(p[1], 10); }) ? '' : 'pairs');
+  set('m2-tog-tf', (q, m) => { const s = H.strip(q.q), a = +/A moves (\d+)/.exec(s)[1], b = +/B moves (\d+)/.exec(s)[1], n = +/after (\d+) steps/.exec(s)[1]; let t = 0; for (let i = 0; i < n; i++) t += a + b; return (t === +bold(q)) === q.answer ? '' : 'truth'; });
 })(window.__verify, window.__H);

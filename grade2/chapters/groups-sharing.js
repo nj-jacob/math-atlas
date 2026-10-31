@@ -388,7 +388,7 @@
           explain: g + ' plates with ' + n + ' on each plate is ' + g + ' groups of ' + n + '.', meta: { k: 'g2-grp-tap', set: set, g: g, n: n } };
       }],
       [1, 'fill', function (lv) {
-        var g = R.int(3, lv === 1 ? 4 : 6), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 6), blanks = [];
+        var g = R.int(3, lv === 1 ? 4 : 5), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 6), blanks = [];
         for (var i = 2; i <= g; i++) blanks.push(i * n);
         return { q: 'Skip count to find <b>' + g + ' groups of ' + n + '</b>.', type: 'fill', fill: '<span class="math">' + n + ', ' + blanks.map(function () { return '[[]]'; }).join(', ') + '</span>', answers: blanks, fig: plates(g, n, 'dot'),
           hint: 'Count by ' + n + 's, once for each plate.', steps: ['Start at ' + n + '. Add ' + n + ' each time.'],
