@@ -6,7 +6,8 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 
 | Folder or file | What it is |
 | --- | --- |
-| `index.html`, `curriculum.html` | Home page ("My plan", or "Plans" with one card per child for parents and tutors) and the Curriculum page (every grade and chapter). Both share the top bar and sign-in from `assets/home.js` and `home.css`. |
+| `index.html`, `curriculum.html` | Atlas home page (Math plan and Language side by side; for parents and tutors, one card per child with both subjects) and the Curriculum page (Math and Language, every grade and chapter). Both share the top bar and sign-in from `assets/home.js` and `home.css`. `assets/curriculum.js` runs the Math / Language switch and builds the Language list. |
+| `language/` (not in this repository) | The Language pages, from the `language-atlas` repository. The publish workflow copies them in before publishing (see "One app, two repositories" below and `SETUP.md`). |
 | `family.html`, `live.html` | Family sign-in and parent and tutor pages, and the "Work together" page |
 | `404.html` | The "page not found" page. Firebase shows it for any address that does not exist. It uses `/` paths so it works at any depth. |
 | `plan/` | Math Plan: placement test and learning plans, Grades 1 to 8 |
@@ -55,3 +56,21 @@ Atlas.register('numbers-1000', {
 ## Saved progress
 
 Progress is kept in the browser (`localStorage`, prefix `gNatlas:`). When a child is signed in, `assets/sync.js` copies it to Firebase so parents and tutors see it.
+
+## One app, two repositories
+
+Atlas is one website at https://ontario-math-atlas.web.app with one sign-in, but its code lives in two repositories so a change to one subject cannot break the other:
+
+- **math-atlas** (this one): the home page, Curriculum page, sign-in, family pages, Math Plan and the Math grades.
+- **language-atlas**: the Language grades, with their own engine, checks and changelog. Published under `/language/`.
+
+How publishing works:
+1. A merge to `main` in either repository runs that repository's checks.
+2. language-atlas then sends a `language-updated` event to this repository. Its publish workflow (`.github/workflows/deploy.yml`) runs on that event too.
+3. The publish workflow copies language-atlas `main` into `language/` and publishes the whole site once. Both repositories need the `ATLAS_TOKEN` secret (`SETUP.md`).
+
+What they share at runtime (same website, so same browser storage and sign-in):
+- Language pages load `assets/sync.js`, `fb.js` and `family.css` from here, so their progress saves to the family account as `students/{id}/progress/l1` … `l8`. `SITES` in `assets/fb.js` lists every Math (`g1`…) and Language (`l1`…) grade, and the family page and home page show both.
+- The Curriculum page reads `language/index.html` to see which Language grades are ready, then each `language/gradeN/grade.js` for its chapters. Keep `Atlas.setup({ grade, chapters: [{ id, title, sub, strand }] })` in that shape.
+- Browser storage: Math grades use `gNatlas:` keys, Language grades `lang-gN:`. Both use `atlas:adult` for the grown-up view.
+

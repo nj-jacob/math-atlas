@@ -1,5 +1,5 @@
-/* Math Atlas top bar and home page, loaded by index.html and curriculum.html: the sign-in pop-over, the account menu,
-   the "My plan" panel (home page only) and the "Your grade" tag on the curriculum list (curriculum page only).
+/* Atlas top bar and home page, loaded by index.html and curriculum.html: the sign-in pop-over, the account menu,
+   the Math plan and Language panels (home page only) and the "Your grade" tag on the curriculum list (curriculum page only).
    Both pages are plain HTML that works even if this file cannot load. */
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
@@ -72,7 +72,7 @@ async function showPlan(st, who) {
   if (!body()) return;
   if (S.kind === 'none') {
     if (who && who.role === 'student') {
-      setHead('My plan', 'Find your starting point');
+      setHead('Math', 'Find your starting point');
       body().innerHTML = '<p>A short check finds the right place to start in each part of math. Then you get a plan with a few ideas each week.</p>' +
         '<ol class="steps"><li><b>Placement check</b><span>About 30 questions. It gets easier or harder as you go. Take your time.</span></li>' +
         '<li><b>Weekly plan</b><span>Four ideas at a time, each with its lesson.</span></li>' +
@@ -82,13 +82,13 @@ async function showPlan(st, who) {
     return;
   }
   if (S.kind === 'placing') {
-    setHead('My plan', 'Placement check in progress');
+    setHead('Math', 'Placement check in progress');
     body().innerHTML = '<p>' + plural(S.n, 'question') + ' answered so far. It takes about 30, and it saves as you go.</p>' +
       '<div class="bar" style="margin:14px 0 18px" role="img" aria-label="About ' + Math.min(100, Math.round(S.n / 30 * 100)) + '% done"><i style="width:' + Math.min(100, Math.round(S.n / 30 * 100)) + '%"></i></div>' +
       '<p><a class="hbtn" href="plan/">Continue the check</a></p>';
     return;
   }
-  setHead('My plan', S.name && who && who.role !== 'student' ? S.name + '’s plan' : 'This week’s plan');
+  setHead('Math', S.name && who && who.role !== 'student' ? S.name + '’s plan' : 'This week’s plan');
   body().innerHTML = '<p class="loading">Loading the plan…</p>';
   const by = await loadLadder(), t = S.today && by[S.today], total = S.mastered + S.left;
   let h = '';
@@ -109,6 +109,7 @@ async function showPlan(st, who) {
 function markGrade(g) {
   g = +g;
   if (!(g >= 1 && g <= 8)) return;
+  document.documentElement.dataset.grade = g;
   $$('.grade').forEach((d) => { const on = +d.dataset.g === g; d.classList.toggle('mine', on); $('.gtag', d).hidden = !on; });
 }
 
@@ -119,6 +120,37 @@ function suggestions(kid) {
     const g = /^g(\d)$/.exec(a.site || '');
     return '<li><a href="' + (g ? 'grade' + g[1] + '/' : '') + '#' + esc(a.ch) + '/practice/' + esc(a.sk) + '">' + esc(a.name) + '</a> <span class="t3">' + (g ? 'Grade ' + g[1] : '') + '</span></li>';
   }).join('') + '</ul>';
+}
+
+/* ---------- Language: which grade a student is working in ---------- */
+/* saved Language progress on the student's account, newest first: [{ g, data, catalog }] */
+async function langProgress(F, sid) {
+  const rows = await Promise.all([1, 2, 3, 4, 5, 6, 7, 8].map(async (g) => {
+    const p = await F.getDoc(F.doc(F.db, 'students', sid, 'progress', 'l' + g)).catch(() => null);
+    const d = p && p.exists() ? p.data() : null;
+    return d && d.data && Object.keys(d.data).length ? { g, data: d.data, catalog: d.catalog || [], at: d.updated && d.updated.toMillis ? d.updated.toMillis() : 0 } : null;
+  }));
+  return rows.filter(Boolean).sort((a, b) => b.at - a.at);
+}
+/* without an account: the highest Language grade with progress saved in this browser */
+function localLangGrade() {
+  let g = 0;
+  try { for (let i = 0; i < localStorage.length; i++) { const m = /^lang-g(\d):/.exec(localStorage.key(i)); if (m) g = Math.max(g, +m[1]); } } catch (e) { /* storage blocked */ }
+  return g;
+}
+function showLanguage(g) {
+  const b = $('#lang-body');
+  if (!b || !g) return;
+  $('#lang-h').textContent = 'Grade ' + g + ' Language';
+  b.innerHTML = '<p>Pick up where you left off, or choose another grade.</p>' +
+    '<div class="acts"><a class="hbtn" href="language/grade' + g + '/">Open Grade ' + g + ' Language</a><a class="hbtn ghost" href="curriculum.html#language">All grades</a></div>';
+}
+function langLine(rows) {
+  const r = rows[0];
+  if (!r) return 'Language: not started yet.';
+  let total = 0, secure = 0;
+  r.catalog.forEach((ch) => ch.skills.forEach((sk) => { total++; if ((parse(r.data['sk:' + sk.id], {}) || {}).secure) secure++; }));
+  return 'Language: Grade ' + r.g + (total ? ', ' + secure + ' of ' + plural(total, 'skill') + ' secure.' : '.');
 }
 
 /* ---------- parents and tutors: one card per student ---------- */
@@ -138,19 +170,19 @@ async function showKids(F, me) {
   const rows = await Promise.all(kids.map(async (k) => {
     const snap = await F.getDoc(F.doc(F.db, 'students', k.id, 'progress', 'plan')).catch(() => null);
     const data = snap && snap.exists() ? snap.data() : null;
-    return { k, S: summary(parse(data && data.data ? data.data.state : null, null)), upd: data && data.updated };
+    return { k, S: summary(parse(data && data.data ? data.data.state : null, null)), upd: data && data.updated, lang: await langProgress(F, k.id) };
   }));
-  body().innerHTML = '<ul class="kids">' + rows.map(({ k, S, upd }) => {
+  body().innerHTML = '<ul class="kids">' + rows.map(({ k, S, upd, lang }) => {
     let status = '', chips = '';
-    if (S.kind === 'none') status = 'Has not taken the placement check yet.';
-    else if (S.kind === 'placing') status = 'Placement check in progress: ' + plural(S.n, 'question') + ' answered.';
+    if (S.kind === 'none') status = 'Math: has not taken the placement check yet.';
+    else if (S.kind === 'placing') status = 'Math: placement check in progress, ' + plural(S.n, 'question') + ' answered.';
     else {
-      status = S.mastered + ' mastered, ' + S.left + ' to go. ' + (S.checkIn ? 'Check-in in ' + plural(S.checkIn, 'day') + '.' : 'Weekly check-in is due.');
+      status = 'Math: ' + S.mastered + ' mastered, ' + S.left + ' to go. ' + (S.checkIn ? 'Check-in in ' + plural(S.checkIn, 'day') + '.' : 'Weekly check-in is due.');
       chips = '<p class="kf">This week: ' + S.week.map((id) => '<span>' + esc(by[id] ? 'Grade ' + by[id].g + ' ' + String(by[id].topic).trim() : id) + (S.C[id].st === 'mastered' ? ' ✓' : '') + '</span>').join('') + '</p>';
     }
     const seen = upd && upd.toDate ? ' Last plan activity ' + upd.toDate().toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + '.' : '';
     return '<li class="kid"><div class="kh"><span class="av" aria-hidden="true">' + initial(k.name) + '</span><div><h3>' + esc(k.name) + '</h3>' +
-      '<p class="ks">' + status + seen + '</p></div></div>' + chips +
+      '<p class="ks">' + status + seen + '</p><p class="ks">' + esc(langLine(lang)) + '</p></div></div>' + chips +
       '<div class="acts"><a class="hbtn sm" href="plan/?sid=' + encodeURIComponent(k.id) + '">' + (S.kind === 'plan' ? 'Open plan' : 'Go to Math Plan') + '</a>' +
       '<a class="hbtn ghost sm" href="family.html#s/' + encodeURIComponent(k.id) + '">Progress and notes</a></div></li>';
   }).join('') + '</ul><div class="acts"><a class="hbtn ghost sm" href="family.html#add">Add a student</a></div>';
@@ -291,7 +323,7 @@ const localPlan = () => { try { return parse(localStorage.getItem('mathplan:stat
 const acct = $('#acct');
 async function start() {
   try { F = await import('./fb.js'); } catch (e) { F = null; }
-  if (!F || !F.configured) { F = null; wireSignin(); showPlan(localPlan(), null); return; }
+  if (!F || !F.configured) { F = null; wireSignin(); showPlan(localPlan(), null); showLanguage(localLangGrade()); return; }
   wireSignin();
   acct.classList.add('wait');
   const reveal = setTimeout(() => acct.classList.remove('wait'), 2500);
@@ -302,7 +334,7 @@ async function start() {
     clearTimeout(reveal); acct.classList.remove('wait');
     if (!first && !me) { location.reload(); return; }
     first = false;
-    if (!me) { showPlan(localPlan(), null); return; }
+    if (!me) { showPlan(localPlan(), null); showLanguage(localLangGrade()); return; }
     if (me.role) try { localStorage.setItem('atlas:adult', me.role === 'student' ? '0' : '1'); } catch (e) { /* storage blocked */ }
     accountMenu(me);
     greet(me);
@@ -315,8 +347,12 @@ async function start() {
       await showPlan(remote || localPlan(), me);
       const kid = k && k.exists() ? k.data() : null, sug = suggestions(kid);
       if (sug && body()) body().insertAdjacentHTML('beforeend', sug);
+      const lang = await langProgress(F, me.sid);
+      showLanguage(lang.length ? lang[0].g : localLangGrade());
     } else if (me.role) {
       $('#nav-plan').textContent = 'Plans';
+      /* parents and tutors see only their children here; both subjects are in each child's card */
+      if ($('#lang')) { $('#lang').hidden = true; $('.layout').classList.remove('two'); }
       if (body()) await showKids(F, me);
     } else if (body()) {
       body().insertAdjacentHTML('afterbegin', '<div class="msg"><b>One more step</b>Finish setting up your account on the <a href="family.html">family page</a>.</div>');

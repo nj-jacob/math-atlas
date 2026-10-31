@@ -9,7 +9,7 @@
 div.anote{border-top:1px solid var(--line);padding:8px 0}
 div.anote p{margin:.2em 0}
 
-.brand i.m::after{content:"M"}
+.brand i.m::after{content:"A"}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
 @media (max-width:640px){.two{grid-template-columns:1fr}}
 .two .sec{margin:12px 0}

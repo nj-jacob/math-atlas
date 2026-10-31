@@ -174,10 +174,9 @@ async function studentHome() {
   const notes = await getDocs(query(collection(db, 'students', me.sid, 'notes'), orderBy('at', 'desc'), limit(3))).catch(() => ({ docs: [] }));
   let h = '<div class="wrap"><header class="chead"><span class="num">Student</span><h1>Hi, ' + esc(kid.name) + '</h1>' +
     '<p class="lede">Your practice saves to your account, so you can use any device.</p></header><div class="cards">';
-  h += '<a class="card" data-strand="E" href="plan/" data-site="plan"><h2>Math Plan</h2><p class="desc">Placement check and learning plan.</p></a>';
-  Object.keys(SITES).filter((k) => SITES[k].on).forEach((k) => {
-    h += '<a class="card" data-strand="B" href="' + SITES[k].path + '" data-site="' + k + '"><h2>' + SITES[k].name + ' Math Atlas</h2><p class="desc">Lessons, practice and check-ups.</p></a>';
-  });
+  h += '<a class="card" data-strand="E" href="plan/" data-site="plan"><h2>Math Plan</h2><p class="desc">Placement check and learning plan.</p></a>' +
+    '<a class="card" data-strand="B" href="curriculum.html"><h2>Math</h2><p class="desc">Every grade: lessons, practice and check-ups.</p></a>' +
+    '<a class="card" data-strand="C" href="curriculum.html#language"><h2>Language</h2><p class="desc">Reading, writing, words and talking.</p></a>';
   h += '</div>';
   const mine = kid.assigned || [];
   if (mine.length) {
@@ -211,10 +210,10 @@ async function myStudents() {
 
 async function loadKid(sid) {
   const prog = {}, from = daysAgo(27);
-  for (const k of Object.keys(SITES)) {
+  await Promise.all(Object.keys(SITES).map(async (k) => {
     const p = await getDoc(doc(db, 'students', sid, 'progress', k)).catch(() => null);
     if (p && p.exists()) prog[k] = p.data();
-  }
+  }));
   const days = await getDocs(query(collection(db, 'students', sid, 'days'), where('date', '>=', from))).catch(() => ({ docs: [] }));
   return { prog, days: days.docs.map((d) => d.data()) };
 }
@@ -468,7 +467,7 @@ async function studentDetail(sid) {
     '. <button type="button" class="btn alt sm" id="refresh">Refresh now</button></p></header>';
 
   /* only grades the student has actually used */
-  const sites = Object.keys(prog).filter((k) => Object.keys(prog[k].data || {}).length || days.some((d) => d.site === k));
+  const sites = Object.keys(SITES).filter((k) => prog[k] && (Object.keys(prog[k].data || {}).length || days.some((d) => d.site === k)));
   h += '<section class="sec" data-strand="C"><h2>Recent activity</h2>' + activityList(days, 12) + '</section>';
   if (!sites.length) {
     h += '<div class="start"><p>No practice saved yet. ' + esc(kid.name) + ' signs in at <b>' + esc(HOME) + '</b> with the username <b>' + esc(kid.username) + '</b>, then opens a grade and starts practising.</p></div>';
@@ -486,7 +485,7 @@ async function studentDetail(sid) {
       if (s && s.n >= 5 && !s.secure && s.lv === 1 && s.ok / s.n < 0.6) stuck.push({ ch, sk, s });
     }));
     const last = checks[checks.length - 1];
-    h += '<section class="sec" data-strand="D"><h2>' + esc(SITES[site] ? SITES[site].name : site) + ' Math Atlas</h2>' +
+    h += '<section class="sec" data-strand="D"><h2>' + esc(SITES[site] ? SITES[site].name : site) + '</h2>' +
       '<div class="tiles">' +
       '<div class="tile"><b>' + w.n + '</b><span>questions this week (practice, quizzes, check-ups)</span></div>' +
       '<div class="tile"><b>' + pct(w.ok, w.n) + '</b><span>right on the first try this week</span></div>' +

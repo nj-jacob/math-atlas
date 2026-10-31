@@ -31,6 +31,20 @@ Claude can do this on your computer for you if you allow it. To do it yourself:
 
 Run step 4 again whenever the site changes. It also installs the privacy rules (`firestore.rules`) that keep each family's data private.
 
+## Language pages (one-time, about 5 minutes)
+
+Atlas shows Language at `/language/`. Those pages live in a second repository, `nj-jacob/language-atlas`. Each time either repository changes, the publish step copies the Language pages in and publishes everything together. It needs one GitHub key so the two repositories can talk to each other:
+
+1. Open https://github.com/settings/personal-access-tokens/new (GitHub > your picture > Settings > Developer settings > Fine-grained tokens > Generate new token).
+2. **Token name**: `Atlas publish`. **Expiration**: the longest offered (or "No expiration").
+3. **Repository access**: choose **Only select repositories** and pick **math-atlas** and **language-atlas**.
+4. **Permissions** > **Repository permissions** > **Contents**: choose **Read and write**. Leave everything else as it is.
+5. Click **Generate token** and copy it (it starts with `github_pat_`).
+6. In **math-atlas** on GitHub: **Settings > Secrets and variables > Actions > New repository secret**. Name `ATLAS_TOKEN`, paste the token, **Add secret**.
+7. Do the same in **language-atlas**: a secret named `ATLAS_TOKEN` with the same token.
+
+Until this is done, the site still publishes, just without Language (the Curriculum page says so). When the token expires, make a new one the same way and paste it into both secrets.
+
 ## First use
 
 1. Open `https://YOUR-PROJECT-ID.web.app/family.html`, choose **Create a parent or tutor account**, and click the link in the confirmation email (check spam; it comes from `noreply@YOUR-PROJECT-ID.firebaseapp.com`).
