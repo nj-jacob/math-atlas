@@ -505,7 +505,7 @@
       [1, 'pick', function (lv) {
         var opts = [], seen = {};
         while (opts.length < 5) {
-          var a = R.int(1, 9), b = opts.length < 2 ? a : R.pick([a, a + 1, a - 1]);
+          var a = R.int(1, 9), b = opts.length < 2 ? a : opts.length === 4 ? a + 1 : R.pick([a, a + 1, a - 1]);
           if (b < 1) b = a + 1;
           var s = a + ' + ' + b; if (!seen[s]) { seen[s] = 1; opts.push(s); }
         }

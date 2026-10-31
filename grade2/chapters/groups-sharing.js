@@ -390,7 +390,7 @@
       [1, 'fill', function (lv) {
         var g = R.int(3, lv === 1 ? 4 : 5), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 6), blanks = [];
         for (var i = 2; i <= g; i++) blanks.push(i * n);
-        return { q: 'Skip count to find <b>' + g + ' groups of ' + n + '</b>.', type: 'fill', fill: '<span class="math">' + n + ', ' + blanks.map(function () { return '[[]]'; }).join(', ') + '</span>', answers: blanks, fig: plates(g, n, 'dot'),
+        return { q: 'Skip count to find <b>' + g + ' groups of ' + n + '</b>.', type: 'fill', fill: n + ', ' + blanks.map(function () { return '[[]]'; }).join(', '), answers: blanks, fig: plates(g, n, 'dot'),
           hint: 'Count by ' + n + 's, once for each plate.', steps: ['Start at ' + n + '. Add ' + n + ' each time.'],
           explain: skip(g, n) + '. So ' + g + ' groups of ' + n + ' is ' + g * n + '.', meta: { k: 'g2-grp-fill', g: g, n: n } };
       }],
@@ -475,7 +475,7 @@
           explain: n + ' in groups of ' + k + ' makes ' + n / k + ' groups.', meta: { k: 'g2-take-story', n: n, per: k } };
       }],
       [2, 'mistake', function (lv) {
-        var k = R.int(2, 5), g = R.int(2, 5), n = k * g, name = who(), truth = !R.int(0, 2), said = truth ? g : n - k;
+        var k = R.int(2, 5), g = R.int(2, 5), n = k * g, name = who(), truth = !R.int(0, 2), said = truth ? g : n - k === g ? g + 1 : n - k;
         var right = 'Take away ' + k + ' at a time: ' + Array.apply(null, Array(g + 1)).map(function (_, i) { return n - i * k; }).join(', ') + '. That is ' + g + ' groups.';
         return { q: name + ' puts ' + n + ' crayons in boxes of ' + k + ' and says that makes <b>' + said + ' boxes</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
           why: why(right, ['Take away ' + k + ' just once.', 'The number of boxes is the number of crayons.', 'Add ' + k + ' to the number of crayons.']),
