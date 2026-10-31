@@ -1,7 +1,8 @@
 /* Grade 2 lesson helpers (this grade only; the shared engine is lesson.js + manip.js).
    K.clip(steps): a "Watch" clip built from drawings. Each step shows one frame; parts marked with K.pop() appear one after another.
    K.lab(html, init, text): a "Try it" activity made from one of this grade's own drawings and controls.
-   K.T(chapter, key) and K.P(chapter, skill, level): reuse "Your turn" and practice questions as quick checks. */
+   K.T(chapter, key) and K.P(chapter, skill, level): reuse "Your turn" and practice questions as quick checks.
+   K.shapes(chapter, SHAPES): more ways to ask each practice skill (see docs/QUESTIONS.md). K.why and K.who help write them. */
 (function () {
   var A = window.Atlas, K = (A.kit = {});
   K.stage = function (el) {
@@ -46,6 +47,22 @@
       return s.gen(typeof lv === 'function' ? lv() : lv || 1);
     };
   };
+  /* ---------- question shapes ----------
+     SHAPES = { skillId: [[minLevel, 'name', fn(lv)], ...] }. The skill's own question stays as the 'plain' shape.
+     Every shape sets meta.k, checked again in tests/verify/grade2.js. */
+  K.shapes = function (ch, SHAPES) {
+    var c = A.chapters[ch];
+    c.quizFresh = true;
+    c.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+  };
+  /* the "why" choices for a true-or-false question: the right reason plus wrong ones, shuffled */
+  K.why = function (right, wrong) { var o = A.R.mc(right, wrong); return { options: o.options, answer: o.answer }; };
+  /* a child's name for a story or a mistake */
+  K.who = function () { return A.Q.name(); };
   /* a "this, not that" box */
   K.vs = function (a, b) { return '<div class="vs"><div><b class="t">This</b><p>' + a + '</p></div><div><b class="t">Not that</b><p>' + b + '</p></div></div>'; };
 })();

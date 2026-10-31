@@ -406,4 +406,157 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  var NEEDS = [['A warm winter coat', 1], ['Rent or a place to live', 1], ['Groceries for the week', 1], ['A bus pass to get to school', 1], ['A third pair of sneakers', 0], ['A new game skin', 0], ['Concert tickets', 0], ['A fancy phone case', 0]];
+  var SRC = [['A bank&rsquo;s website', 1], ['The Financial Consumer Agency of Canada', 1], ['Comparing prices at several stores', 1], ['A pop-up ad for fast cash', 0], ['A video paid for by a lender', 0], ['A stranger&rsquo;s comment online', 0]];
+  function cur3() { return R.pick(CUR.slice(0, 3)); }
+  K.shapes('money', {
+    'mo-tocad': [
+      [1, 'which', function () {
+        var c = cur3(), right = 'Multiply by ' + rs(c.r), o = R.mc(right, ['Divide by ' + rs(c.r), 'Add ' + rs(c.r)]);
+        return { q: 'Which way? The rate is 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. To change ' + c.n + ' into Canadian dollars, what do you do?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Each ' + c.one + ' is worth $' + rs(c.r) + ' CAD.', steps: ['10 ' + c.c + ' is 10 lots of $' + rs(c.r) + ', so multiply.'],
+          explain: 'Multiply the ' + c.n + ' by ' + rs(c.r) + '.', meta: { k: 'mo-dir-which', to: 'CAD' } };
+      }],
+      [1, 'fill', function () {
+        var c = cur3(), f = R.int(2, 40) * 5, cad = r2(f * c.r);
+        return { q: 'Use the rate 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. Fill in the blank.', type: 'fill', fill: fx(c, f) + ' = ' + f + ' &times; ' + rs(c.r) + ' = $[[]] CAD', answers: [cad], tol: 0.01, fig: exch(f, c),
+          hint: 'Multiply ' + f + ' by ' + rs(c.r) + '.', steps: [f + ' &times; ' + rs(c.r) + ' = ' + cad.toFixed(2) + '.'],
+          explain: fx(c, f) + ' = ' + m(cad) + ' CAD.', meta: { k: 'mo-to-fill', f: f, rate: c.r } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), c = cur3(), f = R.int(2, 20) * 5, cad = r2(f * c.r);
+        return { q: who + ' comes home from a trip with <b>' + fx(c, f) + '</b> left over. The bank rate is 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. How many Canadian dollars is that?', type: 'num', unit: '$', answer: cad, tol: 0.01,
+          hint: 'Multiply by the rate.', steps: [f + ' &times; ' + rs(c.r) + ' = ' + cad.toFixed(2) + '.'],
+          explain: 'That is ' + m(cad) + ' CAD.', meta: { k: 'mo-to-story', f: f, rate: c.r } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), c = cur3(), f = R.int(4, 40) * 5, truth = R.int(0, 1), said = truth ? r2(f * c.r) : r2(f / c.r);
+        var right = 'Each ' + c.one + ' is worth more than $1 CAD, so you get more Canadian dollars: ' + f + ' &times; ' + rs(c.r) + ' = ' + m(f * c.r) + '.';
+        return { q: 'The rate is 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. ' + who + ' says ' + fx(c, f) + ' is <b>' + m(said) + ' CAD</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['To get Canadian dollars, divide by the rate.', 'The amount stays the same in any currency.']),
+          hint: 'Should the number of Canadian dollars be bigger or smaller?', steps: [right], explain: right, meta: { k: 'mo-to-tf', f: f, rate: c.r, said: said } };
+      }]
+    ],
+    'mo-fromcad': [
+      [1, 'which', function () {
+        var c = cur3(), right = 'Divide by ' + rs(c.r), o = R.mc(right, ['Multiply by ' + rs(c.r), 'Take away ' + rs(c.r)]);
+        return { q: 'Which way? The rate is 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. To change Canadian dollars into ' + c.n + ', what do you do?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'How many lots of $' + rs(c.r) + ' fit in your Canadian dollars?', steps: ['"How many fit?" means divide.'],
+          explain: 'Divide the Canadian dollars by ' + rs(c.r) + '.', meta: { k: 'mo-dir-which', to: 'other' } };
+      }],
+      [1, 'fill', function () {
+        var c = cur3(), f = R.int(2, 40) * 5, cad = r2(f * c.r);
+        return { q: 'Use the rate 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. Fill in the blank.', type: 'fill', fill: m(cad) + ' CAD &divide; ' + rs(c.r) + ' = [[]] ' + c.c, answers: [f], tol: 0.01,
+          hint: 'Divide by the rate.', steps: [cad.toFixed(2) + ' &divide; ' + rs(c.r) + ' = ' + f + '.'],
+          explain: m(cad) + ' CAD buys ' + fx(c, f) + '.', meta: { k: 'mo-from-fill', cad: cad, rate: c.r } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), c = cur3(), f = R.int(4, 40) * 5, cad = r2(f * c.r), truth = R.int(0, 1), said = truth ? f : r2(cad * c.r);
+        var right = 'Each ' + c.one + ' costs $' + rs(c.r) + ' CAD, so you get fewer of them: ' + cad.toFixed(2) + ' &divide; ' + rs(c.r) + ' = ' + f + ' ' + c.c + '.';
+        return { q: 'The rate is 1 ' + c.c + ' = $' + rs(c.r) + ' CAD. ' + who + ' says ' + m(cad) + ' CAD buys <b>' + said + ' ' + c.c + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Multiply by the rate to get the other money.', 'You always get the same number of dollars back.']),
+          hint: 'Should you get more or fewer ' + c.n + ' than Canadian dollars?', steps: [right], explain: right, meta: { k: 'mo-from-tf', cad: cad, rate: c.r, said: said } };
+      }]
+    ],
+    'mo-budget': [
+      [1, 'fill', function () {
+        var per = R.pick([5, 10, 15, 20, 25]), n = R.int(3, 15), goal = per * n;
+        return { q: 'A goal of ' + m0(goal) + ', saving ' + m0(per) + ' a week. Fill in the number of weeks.', type: 'fill', fill: m0(goal) + ' = ' + m0(per) + ' &times; [[]] weeks', answers: [n], fig: plan(goal, 0, per),
+          hint: 'How many lots of ' + m0(per) + ' make ' + m0(goal) + '?', steps: [goal + ' &divide; ' + per + ' = ' + n + '.'],
+          explain: 'It takes ' + n + ' weeks.', meta: { k: 'mo-weeks-fill', goal: goal, per: per } };
+      }],
+      [1, 'line', function () {
+        var who = K.name(), per = R.pick([10, 15, 20, 25]), goal = per * R.int(3, 18) - R.pick([0, 5]), n = Math.ceil(goal / per);
+        return { q: who + ' saves ' + m0(per) + ' a week for a ' + m0(goal) + ' goal. Place the number of weeks until there is enough.', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: n,
+          hint: 'Count by ' + per + 's until you reach ' + goal + ' or more.', steps: [goal + ' &divide; ' + per + ' = ' + cl(goal / per) + '.', goal % per ? 'Round up: a part week is not enough, so ' + n + ' weeks.' : 'That is ' + n + ' weeks.'],
+          explain: who + ' needs ' + n + ' weeks.', meta: { k: 'mo-weeks-line', goal: goal, per: per } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), per = R.pick([15, 20, 25, 30]), n = R.int(4, 10), goal = per * n - R.int(1, per - 1), truth = R.int(0, 1), said = truth ? n : n - 1;
+        var right = per + ' &times; ' + (n - 1) + ' = ' + per * (n - 1) + ', which is not enough. ' + per + ' &times; ' + n + ' = ' + per * n + ' is. So it takes ' + n + ' weeks.';
+        return { q: who + ' saves ' + m0(per) + ' a week for a ' + m0(goal) + ' goal and says it takes <b>' + said + ' weeks</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Always round down when you divide.', 'The number of weeks is the goal minus the savings.']),
+          hint: 'Multiply to check: is there enough after that many weeks?', steps: [right], explain: right, meta: { k: 'mo-weeks-tf', goal: goal, per: per, said: said } };
+      }]
+    ],
+    'mo-interest': [
+      [1, 'fill', function () {
+        var P = R.int(2, 20) * 100, r = R.int(2, 9);
+        return { q: 'Find the simple interest on ' + m0(P) + ' at ' + r + '% for one year. Fill in the blanks.', type: 'fill', fill: '1% of ' + m0(P) + ' = $[[]], so ' + r + '% = $[[]]', answers: [P / 100, P * r / 100],
+          hint: '1% is one hundredth: divide by 100.', steps: [P + ' &divide; 100 = ' + P / 100 + '.', P / 100 + ' &times; ' + r + ' = ' + P * r / 100 + '.'],
+          explain: 'The interest is ' + m0(P * r / 100) + '.', meta: { k: 'mo-int-fill', P: P, r: r } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), P = R.int(2, 20) * 100, r = R.int(2, 5), t = R.int(1, 4), I = P * r / 100 * t;
+        return { q: who + ' puts <b>' + m0(P) + '</b> in a GIC that pays <b>' + r + '%</b> simple interest a year, for <b>' + t + ' year' + (t > 1 ? 's' : '') + '</b>. How much interest does ' + who + ' earn?', type: 'num', unit: '$', answer: I, tol: 0.01,
+          hint: 'I = P &times; r &times; t.', steps: [r + '% of ' + P + ' = ' + P * r / 100 + ' a year.', P * r / 100 + ' &times; ' + t + ' = ' + I + '.'],
+          explain: who + ' earns ' + m(I) + '.', meta: { k: 'mo-int-story', P: P, r: r, t: t } };
+      }],
+      [1, 'match', function () {
+        var list = K.uniq(3, function () { return [R.int(1, 10) * 100, R.int(1, 6), R.int(1, 3)]; }, function (x) { return x[0] * x[1] * x[2]; });
+        var pairs = list.map(function (x) { return [m0(x[0]) + ' at ' + x[1] + '% for ' + x[2] + ' yr', m0(x[0] * x[1] * x[2] / 100)]; });
+        return { q: 'Match each savings plan to the simple interest it earns.', type: 'match', pairs: pairs,
+          hint: 'Interest = amount &times; rate &times; years.', steps: ['$200 at 3% for 2 years: 200 &times; 0.03 &times; 2 = $12.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'mo-int-match', list: list } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), P = R.int(2, 20) * 100, r = R.int(2, 8), t = R.int(2, 5), truth = R.int(0, 1), said = truth ? P * r / 100 * t : P * r / 100;
+        var right = 'Simple interest is earned every year: ' + m0(P * r / 100) + ' &times; ' + t + ' = ' + m0(P * r / 100 * t) + '.';
+        return { q: who + ' saves ' + m0(P) + ' at ' + r + '% simple interest for ' + t + ' years and says the interest is <b>' + m0(said) + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Interest is only paid in the first year.', 'Interest is the rate times the years, in dollars.']),
+          hint: 'How many years is the money saved?', steps: [right], explain: right, meta: { k: 'mo-int-tf', P: P, r: r, t: t, said: said } };
+      }]
+    ],
+    'mo-compare': [
+      [1, 'tap', function () {
+        return K.retry(function () {
+          var S = R.int(5, 30) * 100, acc = K.uniq(3, function () { return [R.int(1, 6), R.pick([0, 0, 1, 2, 3])]; }, String);
+          var net = acc.map(function (a) { return S * a[0] / 100 - 12 * a[1]; }), best = net.indexOf(Math.max.apply(null, net));
+          if (net.filter(function (v) { return Math.abs(v - net[best]) < 0.005; }).length > 1) return null;
+          return { q: 'You keep <b>' + m0(S) + '</b> in savings for a year. Tap the account that leaves you with the most money.', type: 'tap', tiles: acc.map(function (a) { return a[0] + '% a year<br>' + (a[1] ? m0(a[1]) + ' monthly fee' : 'no fee'); }), answer: best, answerText: acc[best][0] + '% a year, ' + (acc[best][1] ? m0(acc[best][1]) + ' monthly fee' : 'no fee'),
+            hint: 'For each one: interest for the year, minus 12 monthly fees.', steps: acc.map(function (a, i) { return a[0] + '%: ' + m(S * a[0] / 100) + ' &minus; ' + m(12 * a[1]) + ' = ' + m(net[i]) + '.'; }),
+            explain: 'The best one gains ' + m(net[best]) + ' in the year.', meta: { k: 'mo-acc-tap', S: S, acc: acc } };
+        });
+      }],
+      [1, 'fill', function () {
+        var S = R.int(5, 30) * 100, r = R.int(2, 6), fee = R.int(1, 3);
+        return { q: 'An account pays ' + r + '% a year with a ' + m0(fee) + ' monthly fee. You keep ' + m0(S) + ' in it for a year. Fill in the blanks.', type: 'fill', fill: 'Interest $[[]] &nbsp; Fees for the year $[[]] &nbsp; Gain $[[]]', answers: [S * r / 100, 12 * fee, S * r / 100 - 12 * fee],
+          hint: 'There are 12 monthly fees in a year.', steps: [r + '% of ' + S + ' = ' + S * r / 100 + '.', '12 &times; ' + fee + ' = ' + 12 * fee + '.', 'Gain: ' + S * r / 100 + ' &minus; ' + 12 * fee + ' = ' + (S * r / 100 - 12 * fee) + '.'],
+          explain: 'You gain ' + m(S * r / 100 - 12 * fee) + '.', meta: { k: 'mo-acc-fill', S: S, r: r, fee: fee } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), S = R.int(3, 20) * 100, ra = R.int(3, 6), fee = R.int(1, 4), rb = R.int(1, ra - 1), ga = S * ra / 100 - 12 * fee, gb = S * rb / 100;
+        var right = 'Account A gains ' + m(S * ra / 100) + ' &minus; ' + m(12 * fee) + ' = ' + m(ga) + '. Account B gains ' + m(gb) + '. So ' + (ga > gb ? 'A' : 'B') + ' is better.';
+        return { q: 'You keep ' + m0(S) + ' for a year. Account A pays ' + ra + '% with a ' + m0(fee) + ' monthly fee. Account B pays ' + rb + '% with no fee. ' + who + ' says <b>A is better</b>, because its rate is higher. True or false?', type: 'tf', answer: ga > gb,
+          why: K.why(right, ['A higher rate is always better.', 'Fees never matter for savings.']),
+          hint: 'Take the fees away from the interest.', steps: [right], explain: right, meta: { k: 'mo-acc-tf', S: S, a: [ra, fee], b: [rb, 0] } };
+      }]
+    ],
+    'mo-think': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var opts = R.shuffle(NEEDS).slice(0, 5), ans = K.picks(opts, function (x) { return x[1]; });
+          if (!ans) return null;
+          return { q: 'Pick every <b>need</b>. (The others are wants.)', type: 'pick', options: opts.map(function (x) { return x[0]; }), answer: ans,
+            hint: 'A need is something you must have to live, stay safe or get to school.', steps: ['Ask: could I go without it?'],
+            explain: 'Needs: ' + ans.map(function (j) { return opts[j][0].toLowerCase(); }).join(', ') + '.', meta: { k: 'mo-need-pick' } };
+        });
+      }],
+      [1, 'tap', function () {
+        var good = R.pick(SRC.filter(function (x) { return x[1]; })), bad = R.shuffle(SRC.filter(function (x) { return !x[1]; })), tiles = R.shuffle([good].concat(bad));
+        return { q: 'Tap the most <b>reliable</b> source of money information.', type: 'tap', tiles: tiles.map(function (x) { return x[0]; }), answer: tiles.indexOf(good), answerText: good[0].replace(/&rsquo;/g, '’'),
+          hint: 'Reliable sources check their facts and are not trying to sell you something.', steps: ['Cross out anything that is an ad or a stranger.'],
+          explain: good[0] + ' gives facts without a sales pitch.', meta: { k: 'mo-src-tap' } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), it = R.pick(SRC);
+        var right = it[1] ? it[0] + ' gives checked facts and is not selling you anything.' : it[0] + ' wants something from you, so check the facts elsewhere.';
+        return { q: who + ' says <b>' + it[0].charAt(0).toLowerCase() + it[0].slice(1) + '</b> is a reliable source of money information. True or false?', type: 'tf', answer: !!it[1],
+          why: K.why(right, ['Anything online is reliable.', 'Only ads tell you the real price.']),
+          hint: 'Is it trying to sell you something?', steps: [right], explain: right, meta: { k: 'mo-src-tf' } };
+      }]
+    ]
+  });
 })();

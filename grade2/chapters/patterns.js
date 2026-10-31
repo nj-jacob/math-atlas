@@ -424,4 +424,148 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who, BOX = '&#9633;';
+  /* a repeating pattern from one of the cores, with the pieces picked at random */
+  function makePat(cores) {
+    var letters = R.shuffle(['A', 'B', 'C', 'D']), core = R.pick(cores).split('').map(function (c) { return letters['ABCD'.indexOf(c)]; }).join('');
+    var shown = 2 * core.length + R.int(0, core.length - 1), full = extend(core, shown + core.length);
+    return { core: core, str: full.slice(0, shown), next: full.slice(shown) };
+  }
+  function piece(ch) { return A.svg(48, 48, shape(PIECE[ch].k, 24, 24, 18, PIECE[ch].c), PIECE[ch].n); }
+  function names(core) { return core.split('').map(function (c) { return PIECE[c].n; }).join(', '); }
+  /* "ABB" -> "A B B A B B": letters for the first six pieces */
+  function lettersOf(core) { var m = {}, n = 0; return extend(core, 6).split('').map(function (x) { if (!m[x]) m[x] = 'ABCD'.charAt(n++); return m[x]; }).join(' '); }
+  function dressed(core) { var letters = R.shuffle(['A', 'B', 'C', 'D']); return extend(core, 6).split('').map(function (c) { return letters['ABCD'.indexOf(c)]; }).join(''); }
+  var TCORES = ['AB', 'ABB', 'AAB', 'ABC', 'AABB'];
+  function sum(a, b) { return a + ' + ' + b; }
+  K.shapes(CH, {
+    'p2-repeat': [
+      [1, 'tap', function (lv) {
+        var p = makePat(lv === 1 ? ['AB', 'ABB', 'AAB'] : CORES), ans = p.next.charAt(0), set = R.shuffle(['A', 'B', 'C', 'D']).slice(0, 3);
+        if (set.indexOf(ans) < 0) set[0] = ans;
+        set = R.shuffle(set);
+        return { q: 'Tap the piece that comes next.', type: 'tap', fig: row(p.str + '?'), tiles: set.map(piece), answer: set.indexOf(ans), answerText: PIECE[ans].n,
+          hint: 'Find the part that repeats. Where are you in it now?', steps: ['The part that repeats is: ' + names(p.core) + '.', 'Mark each repeat.<div class="fig">' + row(p.str, p.core.length) + '</div>'],
+          explain: 'The pattern repeats ' + names(p.core) + ', so a ' + PIECE[ans].n + ' comes next.', meta: { k: 'p2-rep-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var p = makePat(lv === 1 ? ['AB', 'ABB', 'AAB'] : CORES), ans = p.next.charAt(0), name = who(), truth = !R.int(0, 2);
+        var said = truth ? ans : R.pick(p.core.split('').filter(function (c) { return c !== ans; }));
+        var right = 'The part that repeats is ' + names(p.core) + ', so a ' + PIECE[ans].n + ' comes next.';
+        return { q: name + ' says a <b>' + PIECE[said].n + '</b> comes next. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: row(p.str + '?'),
+          why: why(right, ['It is always the same as the last piece.', 'It is always the first piece in the row.', 'Any piece can come next.']),
+          hint: 'Say the pattern out loud from the start. Keep going one more.', steps: [right], explain: right, meta: { k: 'p2-rep-tf' } };
+      }],
+      [2, 'order', function (lv) {
+        var p = makePat(['ABC', 'ABCD']);
+        return { q: 'Put these pieces in order to make the <b>next ' + p.core.length + '</b> pieces of the pattern.', type: 'order', fig: row(p.str), items: p.next.split('').map(function (c) { return PIECE[c].n; }), first: 'next', last: 'after that',
+          hint: 'Look at the last piece shown. What comes after it in the repeat?', steps: ['The part that repeats is: ' + names(p.core) + '.', 'Start right after the last piece shown.'],
+          explain: 'Next come ' + names(p.next) + '.', meta: { k: 'p2-rep-order' } };
+      }]
+    ],
+    'p2-translate': [
+      [1, 'match', function (lv) {
+        var cores = R.shuffle(lv === 1 ? TCORES.slice(0, 3) : TCORES).slice(0, 3);
+        var p = cores.map(function (c) { return [row(dressed(c)), lettersOf(c)]; });
+        return { q: 'Match each pattern to its letters.', type: 'match', pairs: p,
+          hint: 'The first piece is A. The next new piece is B. The same piece keeps the same letter.', steps: ['Blue, yellow, yellow, blue, yellow, yellow is A B B A B B.'],
+          explain: 'Each pattern gets the letters for the way it repeats.', meta: { k: 'p2-tr-match' } };
+      }],
+      [1, 'tap', function (lv) {
+        var cores = R.shuffle(lv === 1 ? TCORES.slice(0, 3) : TCORES).slice(0, 3), target = cores[0], tiles = R.shuffle(cores);
+        return { q: 'Tap the pattern that is <b>' + lettersOf(target) + '</b>.', type: 'tap', tiles: tiles.map(function (c) { return row(dressed(c)); }), answer: tiles.indexOf(target), answerText: 'the pattern that repeats like ' + lettersOf(target),
+          hint: 'Give the first piece the letter A. Give the next new piece B.', steps: ['Change each pattern into letters.', 'Find the one that reads ' + lettersOf(target) + '.'],
+          explain: 'That pattern reads ' + lettersOf(target) + '.', meta: { k: 'p2-tr-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var c = R.pick(TCORES), name = who(), truth = !R.int(0, 2), said = truth ? lettersOf(c) : lettersOf(R.pick(TCORES.filter(function (x) { return x !== c; })));
+        var right = 'The first piece is A and each new piece gets the next letter, so it is ' + lettersOf(c) + '.';
+        return { q: name + ' says this pattern is <b>' + said + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: row(dressed(c)),
+          why: why(right, ['Every pattern is A B A B.', 'Each piece gets a new letter.', 'Letters only work for circles.']),
+          hint: 'Turn the pieces into letters yourself, then compare.', steps: [right], explain: right, meta: { k: 'p2-tr-tf' } };
+      }]
+    ],
+    'p2-number': [
+      [1, 'line', function (lv) {
+        var by = lv === 1 ? R.pick([2, 5, 10]) : R.pick([3, 4, 5, 10]), st = R.int(0, 100 - 4 * by), seq = [0, 1, 2].map(function (i) { return st + i * by; });
+        return { q: 'The pattern goes <b>' + seq.join(', ') + '</b>. Show the next number on the line.', type: 'line', min: 0, max: 100, tick: 5, every: 10, snap: 1, answer: st + 3 * by, hideValue: true,
+          hint: 'How much does it go up each time?', steps: ['It goes up by ' + by + ' each time.', seq[2] + ' + ' + by + ' = ' + (st + 3 * by) + '.'],
+          explain: 'The next number is ' + (st + 3 * by) + '.', meta: { k: 'p2-num-line' } };
+      }],
+      [1, 'fill', function (lv) {
+        var by = lv === 1 ? R.pick([2, 5, 10]) : R.pick([3, 4, 9, 11]), up = lv < 3 || R.int(0, 1), st = up ? R.int(1, 30) : R.int(60, 99);
+        var seq = [0, 1, 2, 3, 4, 5].map(function (i) { return up ? st + i * by : st - i * by; }), gaps = lv === 1 ? [4, 5] : R.shuffle([1, 2, 3, 4, 5]).slice(0, 2).sort();
+        return { q: 'Fill in the missing numbers.', type: 'fill', fill: '<span class="math">' + seq.map(function (v, i) { return gaps.indexOf(i) >= 0 ? '[[]]' : v; }).join(', ') + '</span>', answers: gaps.map(function (i) { return seq[i]; }),
+          hint: 'Find how much it changes from one number to the next.', steps: ['The rule is ' + (up ? 'add ' : 'subtract ') + by + ' each time.'],
+          explain: 'The pattern is ' + seq.join(', ') + '.', meta: { k: 'p2-num-fill' } };
+      }],
+      [1, 'order', function (lv) {
+        var by = lv === 1 ? R.pick([2, 5, 10]) : R.pick([3, 4, 5, 11]), st = R.int(1, 40), seq = [0, 1, 2, 3].map(function (i) { return st + i * by; });
+        return { q: 'Put the numbers in order to make a pattern that goes up by <b>' + by + '</b>.', type: 'order', items: seq.map(String), first: 'first', last: 'last',
+          hint: 'Start with the smallest. Add ' + by + ' to find the next.', steps: ['Start at ' + st + '.', st + ' + ' + by + ' = ' + (st + by) + '.'],
+          explain: seq.join(', ') + '. Each number is ' + by + ' more.', meta: { k: 'p2-num-order' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var by = R.pick([2, 3, 4, 5, 10]), up = lv === 2 || R.int(0, 1), st = up ? R.int(1, 40) : R.int(60, 99), name = who(), truth = !R.int(0, 2);
+        var seq = [0, 1, 2, 3].map(function (i) { return up ? st + i * by : st - i * by; });
+        var said = truth ? (up ? 'add ' : 'subtract ') + by : R.pick([(up ? 'subtract ' : 'add ') + by, (up ? 'add ' : 'subtract ') + (by + 1)]);
+        var right = 'Each number is ' + by + (up ? ' more' : ' less') + ', so the rule is ' + (up ? 'add ' : 'subtract ') + by + '.';
+        return { q: name + ' says the rule for <span class="math">' + seq.join(', ') + '</span> is <b>' + said + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The rule is the first number.', 'Numbers always go up in a pattern.', 'The rule is the biggest number.']),
+          hint: 'Look at two numbers side by side. Bigger or smaller? By how much?', steps: [right], explain: right, meta: { k: 'p2-num-tf' } };
+      }]
+    ],
+    'p2-symbol': [
+      [1, 'build', function (lv) {
+        var a = R.int(3, lv === 1 ? 9 : 40), b = R.int(2, lv === 1 ? 9 : 30), w = a + b;
+        return { q: 'Show the number that ' + BOX + ' stands for with base-ten blocks. <span class="math big">' + sum(a, BOX) + ' = ' + w + '</span>', type: 'build', tool: 'base10', answer: b,
+          hint: 'Count up from ' + a + ' to ' + w + '.', steps: ['The whole is ' + w + '. One part is ' + a + '.', w + ' ' + M + ' ' + a + ' = ' + b + '.'],
+          explain: a + ' + ' + b + ' = ' + w + ', so ' + BOX + ' is ' + b + '.', meta: { k: 'p2-sym-build' } };
+      }],
+      [1, 'match', function (lv) {
+        var p = [], seen = {};
+        while (p.length < 3) { var a = R.int(2, lv === 1 ? 9 : 30), b = R.int(1, lv === 1 ? 9 : 20); if (seen[b]) continue; seen[b] = 1; p.push([sum(a, BOX) + ' = ' + (a + b), String(b)]); }
+        return { q: 'Match each number sentence to the number that goes in the box.', type: 'match', pairs: p,
+          hint: 'Count up from the first number to the total.', steps: ['5 + ' + BOX + ' = 8: count 6, 7, 8. That is 3.'],
+          explain: p.map(function (x) { return x[0].replace(BOX, x[1]); }).join('. ') + '.', meta: { k: 'p2-sym-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(3, lv === 2 ? 9 : 40), b = R.int(2, lv === 2 ? 9 : 30), w = a + b, name = who(), truth = !R.int(0, 2), said = truth ? b : a + w;
+        var right = a + ' + ' + b + ' = ' + w + ', so ' + BOX + ' is ' + b + '.';
+        return { q: name + ' says ' + BOX + ' is <b>' + said + '</b> in <span class="math">' + sum(a, BOX) + ' = ' + w + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Add the two numbers you can see.', BOX + ' is always the biggest number.', BOX + ' is the same as the total.']),
+          hint: 'Put ' + name + '’s number in the box. Does it make ' + w + '?', steps: [right], explain: right, meta: { k: 'p2-sym-tf' } };
+      }]
+    ],
+    'p2-equal': [
+      [1, 'pick', function (lv) {
+        var top = lv === 1 ? 9 : 30, opts = [], seen = {};
+        while (opts.length < 4) {
+          var a = R.int(2, top), b = R.int(2, top), c = R.int(1, a + b - 1), t = opts.length < 2 ? 0 : R.pick([-1, 1]), d = a + b - c + t;
+          var e = sum(a, b) + ' = ' + sum(c, d);
+          if (seen[e] || d < 1 || c === a || c === b) continue; seen[e] = 1; opts.push([e, !t]);
+        }
+        opts = R.shuffle(opts);
+        return { q: 'Pick every number sentence that is <b>true</b>.', type: 'pick', options: opts.map(function (o) { return o[0]; }), answer: opts.map(function (o, j) { return o[1] ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: 'Work out each side. True means both sides are the same.', steps: ['6 + 4 = 5 + 5 is true: both sides are 10.'],
+          explain: 'The true ones have the same total on both sides.', meta: { k: 'p2-eq-pick' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a = R.int(3, 9), b = R.int(3, 9), c = R.int(2, Math.min(a, b) + 2), name = who(), truth = !R.int(0, 2), said = truth ? a + b - c : a + b;
+        var right = a + ' + ' + b + ' = ' + (a + b) + ', and ' + (a + b - c) + ' + ' + c + ' = ' + (a + b) + '. The box is ' + (a + b - c) + '.';
+        return { q: name + ' says the box is <b>' + said + '</b>. <span class="math big">' + sum(a, b) + ' = ' + sum(BOX, c) + '</span> True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          fig: lv === 1 ? balance(sum(a, b), sum('?', c), 0).replace('It is level, so both sides are equal.', 'It must be level.') : '',
+          why: why(right, ['The box is the answer to ' + a + ' + ' + b + '.', 'The box is always the first number.', 'The equal sign means "write the answer next".']),
+          hint: 'The equal sign means both sides are the same amount.', steps: [right], explain: right, meta: { k: 'p2-eq-tf' } };
+      }],
+      [2, 'match', function (lv) {
+        var p = [], seen = {}, top = lv === 2 ? 9 : 30;
+        while (p.length < 3) { var a = R.int(2, top), b = R.int(2, top), c = R.int(1, a + b - 1); if (seen[a + b] || c === a || c === b) continue; seen[a + b] = 1; p.push([sum(a, b), sum(c, a + b - c)]); }
+        return { q: 'Match the sides that are equal.', type: 'match', pairs: p,
+          hint: 'Work out each side first.', steps: ['7 + 5 is 12, and 10 + 2 is 12, so they match.'],
+          explain: p.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'p2-eq-match' } };
+      }]
+    ]
+  });
 })();

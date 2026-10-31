@@ -546,4 +546,212 @@
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var K = A.kit, nm = function () { return A.Q.name(); };
+  function f(n, d) { return n + '/' + d; }
+  function mf(x) { return '<span class="math">' + x + '</span>'; }
+  /* k fractions [n, d] from make(), no two of equal value */
+  function fracSet(k, make) {
+    var out = [], seen = {}, t = 0;
+    while (out.length < k && t++ < 80) { var x = make(); if (!seen[x[0] / x[1]]) { seen[x[0] / x[1]] = 1; out.push(x); } }
+    return out;
+  }
+  function list(set) { return set.map(function (x) { return f(x[0], x[1]); }).join(', '); }
+  var SHAPES = {
+    'fr-name': [
+      [1, 'tap', function (lv) {
+        var d = R.pick([3, 4, 5, 6, 8]), n = R.int(1, d - 1);
+        var others = fracSet(4, function () { return R.pick([[d - n, d], [n, d + 2], [n < d - 1 ? n + 1 : n - 1, d], [n, d + 1]]); }).filter(function (x) { return x[0] > 0 && x[0] * d !== n * x[1]; });
+        var set = R.shuffle([[n, d]].concat(others.slice(0, 2)));
+        return { q: 'Tap the bar that shows <b>' + f(n, d) + '</b>.', type: 'tap', tiles: set.map(function (x) { return A.draw.bar(x[0], x[1], 240); }), answer: set.map(String).indexOf(String([n, d])), answerText: 'the bar with ' + n + ' of ' + d + ' parts shaded',
+          hint: 'Look for a bar cut into ' + d + ' equal parts.', steps: ['The bottom number, ' + d + ', is the number of equal parts.', 'The top number, ' + n + ', is how many are shaded.'],
+          explain: f(n, d) + ' means ' + n + ' of ' + d + ' equal parts are shaded.', meta: { k: 'g5fr-tap' } };
+      }],
+      [1, 'line', function (lv) {
+        var d = R.pick(lv === 1 ? [2, 3, 4, 5] : [3, 4, 5, 6, 8, 10]), n = R.int(1, d - 1);
+        return { q: 'Put <b>' + f(n, d) + '</b> on the number line.', type: 'line', min: 0, max: 1, tick: 1 / d, every: 1, snap: 1 / d, answer: n / d, tol: 1e-4, place: f(n, d), hideValue: true,
+          hint: 'The line from 0 to 1 is cut into ' + d + ' equal jumps.', steps: ['Each jump is 1/' + d + '.', 'Count ' + n + ' jumps from 0.'],
+          explain: f(n, d) + ' is ' + n + ' jumps of 1/' + d + ' from 0.', meta: { k: 'g5fr-line' } };
+      }],
+      [1, 'match', function (lv) {
+        var set = fracSet(3, function () { var d = R.pick([2, 3, 4, 5, 6, 8]); return [R.int(1, d - 1), d]; });
+        return { q: 'Match each bar to its fraction.', type: 'match', pairs: set.map(function (x) { return [A.draw.bar(x[0], x[1], 150), f(x[0], x[1])]; }),
+          hint: 'Count all the parts for the bottom. Count the shaded parts for the top.', steps: ['Bottom: how many equal parts in all.', 'Top: how many are shaded.'],
+          explain: 'Each fraction is shaded parts over all parts: ' + list(set) + '.', meta: { k: 'g5fr-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var d = R.pick([5, 6, 8, 10]), n = R.int(1, d - 1), who = nm();
+        if (n * 2 === d) n++;
+        var truth = !R.int(0, 2), said = truth ? f(n, d) : R.pick([f(n, d - n), f(d - n, d)]);
+        var right = 'There are ' + d + ' equal parts and ' + n + ' are shaded, so the fraction is ' + f(n, d) + '.';
+        return K.tf(who, 'the shaded part is <b>' + said + '</b>.', truth, right,
+          ['The bottom number is how many parts are not shaded.', 'Count the white parts for the top.', 'The fraction is always 1 over the number of parts.'],
+          { fig: A.draw.bar(n, d, 360), hint: 'Count all the parts, then the shaded parts.', meta: { k: 'g5fr-tf', said: said } });
+      }]
+    ],
+    'fr-equiv': [
+      [1, 'pick', function (lv) {
+        var d = R.pick([2, 3, 4, 5]), n = R.int(1, d - 1), opts = [];
+        [2, 3, 4].forEach(function (k) { opts.push(f(n * k, d * k)); });
+        opts = R.shuffle(opts).slice(0, R.int(1, 3));
+        [f(n + 1, d + 1), f(n * 2, d + 2), f(n + 2, d * 2), f(n * 3, d * 2)].forEach(function (x) { var t = x.split('/'); if (opts.length < 5 && +t[0] * d !== n * +t[1] && opts.indexOf(x) < 0) opts.push(x); });
+        opts = R.shuffle(opts);
+        return K.pick('Pick every fraction equal to <b>' + f(n, d) + '</b>.', opts, function (x) { var t = x.split('/'); return +t[0] * d === n * +t[1]; }, String, {
+          hint: 'An equal fraction multiplies the top and the bottom by the same number.', steps: ['For each one, ask: is the bottom ' + d + ' times something?', 'Is the top ' + n + ' times the same number?'],
+          explain: 'Fractions equal to ' + f(n, d) + ' come from multiplying ' + n + ' and ' + d + ' by the same number.', meta: { k: 'g5fr-equivpick' } });
+      }],
+      [1, 'match', function (lv) {
+        var set = fracSet(3, function () { var d = R.pick([2, 3, 4, 5]); return [R.int(1, d - 1), d]; }), k = lv === 1 ? 2 : R.int(2, 4);
+        return { q: 'Match each fraction to an equal fraction.', type: 'match', pairs: set.map(function (x) { return [f(x[0], x[1]), f(x[0] * k, x[1] * k)]; }),
+          hint: 'Multiply the top and bottom by the same number.', steps: ['Each pair uses the same multiplier: ' + k + '.'],
+          explain: set.map(function (x) { return f(x[0], x[1]) + ' = ' + f(x[0] * k, x[1] * k); }).join('. ') + '.', meta: { k: 'g5fr-equivmatch' } };
+      }],
+      [1, 'fill', function (lv) {
+        var d = R.pick([2, 3, 4, 5]), n = R.int(1, d - 1), k2 = lv === 1 ? 3 : R.int(3, 5);
+        return { q: 'Fill in the blanks to make equal fractions.', type: 'fill', fill: (f(n, d) + ' = [[]]/' + d * 2 + ' = ' + n * k2 + '/[[]]'), answers: [n * 2, d * k2],
+          fig: A.draw.bar(n, d, 300) + A.draw.bar(n * 2, d * 2, 300),
+          hint: 'What was ' + d + ' multiplied by? Do the same to the top.', steps: [d + ' &times; 2 = ' + d * 2 + ', so the top is ' + n + ' &times; 2 = ' + n * 2 + '.', n + ' &times; ' + k2 + ' = ' + n * k2 + ', so the bottom is ' + d + ' &times; ' + k2 + ' = ' + d * k2 + '.'],
+          explain: f(n, d) + ' = ' + f(n * 2, d * 2) + ' = ' + f(n * k2, d * k2) + '.', meta: { k: 'g5fr-equivfill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var d = R.pick([3, 4, 5]), n = R.int(1, d - 1), k = R.int(2, 3), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? f(n * k, d * k) : f(n + k, d + k);
+        var right = 'Equal fractions multiply the top and bottom by the same number: ' + f(n, d) + ' = ' + f(n * k, d * k) + '.';
+        return K.tf(who, mf(f(n, d) + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['Adding the same number to the top and bottom keeps a fraction equal.', 'Bigger numbers always make a bigger fraction.', 'Only the bottom number changes.'],
+          { hint: 'Draw both as bars. Are they the same length?', meta: { k: 'g5fr-equivtf' } });
+      }]
+    ],
+    'fr-mixed': [
+      [1, 'line', function (lv) {
+        var d = R.pick(lv === 1 ? [2, 3, 4] : [3, 4, 5, 6]), w = R.int(1, 2), r = R.int(1, d - 1), imp = lv > 1 && !R.int(0, 1);
+        var label = imp ? f(w * d + r, d) : w + '&nbsp;' + f(r, d);
+        return { q: 'Put <b>' + label + '</b> on the number line.', type: 'line', min: 0, max: 3, tick: 1 / d, every: 1, snap: 1 / d, answer: w + r / d, tol: 1e-4, place: label, hideValue: true,
+          hint: imp ? d + ' pieces make 1 whole. How many wholes are in ' + f(w * d + r, d) + '?' : 'Go to ' + w + ', then count ' + r + ' more jumps of 1/' + d + '.',
+          steps: [imp ? f(w * d + r, d) + ' = ' + w + ' ' + f(r, d) + '.' : w + ' ' + f(r, d) + ' is ' + w + ' wholes and ' + r + ' more pieces.', 'Find ' + w + ' on the line. Then count ' + r + ' jumps of 1/' + d + ' past it.'],
+          explain: w + ' ' + f(r, d) + ' is ' + r + ' jumps past ' + w + '.', meta: { k: 'g5fr-mixline', label: label } };
+      }],
+      [1, 'match', function (lv) {
+        var set = [], seen = {};
+        while (set.length < 3) { var d = R.pick(lv === 1 ? [2, 3, 4] : [3, 4, 5, 6, 8]), w = R.int(1, 3), r = R.int(1, d - 1), N = w * d + r; if (!seen[N / d]) { seen[N / d] = 1; set.push([N, d, w, r]); } }
+        return { q: 'Match each improper fraction to its mixed number.', type: 'match', pairs: set.map(function (x) { return [f(x[0], x[1]), x[2] + ' ' + f(x[3], x[1])]; }),
+          hint: 'How many groups of the bottom number fit in the top?', steps: ['Divide the top by the bottom.', 'The answer is the wholes. The remainder is the pieces left.'],
+          explain: set.map(function (x) { return f(x[0], x[1]) + ' = ' + x[2] + ' ' + f(x[3], x[1]); }).join('. ') + '.', meta: { k: 'g5fr-mixmatch' } };
+      }],
+      [1, 'fill', function (lv) {
+        var d = R.pick(lv === 1 ? [2, 3, 4] : [3, 4, 5, 6, 8]), w = R.int(1, lv === 3 ? 6 : 3), r = R.int(1, d - 1), N = w * d + r;
+        return { q: 'Write <span class="math">' + f(N, d) + '</span> as a mixed number.', type: 'fill', fill: (f(N, d) + ' = [[]] and [[]]/' + d), answers: [w, r],
+          fig: lv === 1 ? A.draw.wholes(N, d) : '', hint: 'How many groups of ' + d + ' fit in ' + N + '?', steps: [N + ' &divide; ' + d + ' = ' + w + ' remainder ' + r + '.', 'So ' + f(N, d) + ' = ' + w + ' ' + f(r, d) + '.'],
+          explain: f(N, d) + ' = ' + w + ' ' + f(r, d) + '.', meta: { k: 'g5fr-mixfill', N: N, d: d } };
+      }],
+      [2, 'mistake', function (lv) {
+        var d = R.pick([3, 4, 5, 6]), w = R.int(2, 4), r = R.int(1, d - 1), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? w * d + r : w + r;
+        var right = w + ' wholes are ' + w + ' &times; ' + d + ' = ' + w * d + ' pieces. Add ' + r + ' more to get ' + (w * d + r) + ', so it is ' + f(w * d + r, d) + '.';
+        return K.tf(who, mf(w + '&nbsp;' + f(r, d) + ' = <b>' + f(said, d) + '</b>') + '.', truth, right,
+          ['Add the whole number to the top.', 'Multiply the whole number by the top.', 'The whole number goes on the bottom.'],
+          { hint: 'How many 1/' + d + ' pieces are in one whole?', meta: { k: 'g5fr-mixtf', w: w, r: r, d: d, said: said } });
+      }]
+    ],
+    'fr-compare': [
+      [1, 'order', function (lv) {
+        var set, d, n;
+        if (lv === 1) { d = R.pick([6, 8, 10, 12]); set = R.shuffle([1, 2, 3, 4, 5]).slice(0, 3).sort(function (a, b) { return a - b; }).map(function (x) { return [x, d]; }); }
+        else if (lv === 2) { n = R.int(1, 2); set = R.shuffle([3, 4, 5, 6, 8, 10]).slice(0, 3).sort(function (a, b) { return b - a; }).map(function (x) { return [n, x]; }); }
+        else set = fracSet(4, function () { var dd = R.pick([2, 3, 4, 5, 6, 8]); return [R.int(1, dd - 1), dd]; }).sort(function (a, b) { return a[0] / a[1] - b[0] / b[1]; });
+        return { q: 'Put these fractions in order from <b>least to greatest</b>.', type: 'order', items: set.map(function (x) { return f(x[0], x[1]); }), first: 'least', last: 'greatest',
+          hint: lv === 1 ? 'Same size pieces: compare the tops.' : lv === 2 ? 'Same tops: a bigger bottom means smaller pieces.' : 'Is each one more or less than 1/2?',
+          steps: [lv === 1 ? 'The pieces are all 1/' + d + '. Fewer pieces is less.' : lv === 2 ? 'More equal parts means each part is smaller.' : 'Compare each fraction with 1/2 first, then compare the close ones.', 'In order: ' + list(set) + '.'],
+          explain: 'From least to greatest: ' + list(set) + '.', meta: { k: 'g5fr-order' } };
+      }],
+      [1, 'story', function (lv) {
+        var who = A.Q.two(), c = R.pick(['pizza', 'pan of lasagna', 'loaf of bannock']), a, b, x, y;
+        if (lv === 1) { b = y = R.pick([6, 8, 10]); a = R.int(1, b - 2); x = R.int(a + 1, b - 1); if (R.int(0, 1)) { var t = a; a = x; x = t; } }
+        else { a = x = R.int(1, 3); b = R.pick([4, 5, 6]); y = R.pick([8, 10, 12]); if (R.int(0, 1)) { var t2 = b; b = y; y = t2; } }
+        return { q: who[0] + ' ate ' + f(a, b) + ' of a ' + c + '. ' + who[1] + ' ate ' + f(x, y) + ' of the same size ' + c + '. Who ate more?', type: 'mc', options: who, answer: a / b > x / y ? 0 : 1,
+          fig: A.draw.fbars([{ n: a, d: b, label: who[0] }, { n: x, d: y, label: who[1], col: 'var(--hi)' }], { w: 440, lw: 80 }),
+          hint: b === y ? 'Same size pieces. Who has more pieces?' : 'Same number of pieces. Whose pieces are bigger?', steps: [b === y ? 'Both are cut into ' + b + ' pieces, so compare the tops.' : 'Both ate ' + a + ' pieces. Fewer cuts make bigger pieces.', 'Look at the bars to check.'],
+          explain: (a / b > x / y ? who[0] : who[1]) + ' ate more.', meta: { k: 'g5fr-story', a: a, b: b, x: x, y: y } };
+      }],
+      [1, 'mistake', function (lv) {
+        var p = R.pick([2, 3, 4, 5]), q2 = p * 2, who = nm(), truth = !R.int(0, 2);
+        var claim = truth ? mf('1/' + p + ' &gt; 1/' + q2) + ' because cutting into more parts makes smaller pieces.' : mf('1/' + q2 + ' &gt; 1/' + p) + ' because ' + q2 + ' is bigger than ' + p + '.';
+        var right = 'Cutting into ' + q2 + ' parts makes smaller pieces than cutting into ' + p + ', so 1/' + p + ' is greater than 1/' + q2 + '.';
+        return K.tf(who, claim, truth, right, ['A bigger bottom number always means a bigger fraction.', 'All unit fractions are equal.', 'You cannot compare fractions with different bottoms.'],
+          { fig: A.draw.fbars([{ n: 1, d: p }, { n: 1, d: q2, col: 'var(--hi)' }], { w: 400 }), hint: 'Look at the bars. Which piece is longer?', meta: { k: 'g5fr-cmptf', p: p, q: q2, big: truth ? p : q2 } });
+      }],
+      [2, 'pick', function (lv) {
+        var set = fracSet(5, function () { var d = R.pick([3, 4, 5, 6, 8, 10]); return [R.int(1, d - 1), d]; }).filter(function (x) { return x[0] * 2 !== x[1]; });
+        var fits = function (x) { return x[0] * 2 > x[1]; };
+        if (!set.some(fits)) set.push([7, 9]);
+        if (set.every(fits)) set.push([2, 9]);
+        return K.pick('Pick every fraction <b>greater than 1/2</b>.', set, fits, function (x) { return f(x[0], x[1]); }, {
+          hint: 'Find half of the bottom number. Is the top more than that?', steps: ['For each fraction, find half of the bottom.', 'If the top is more than half the bottom, the fraction is greater than 1/2.'],
+          explain: 'Greater than 1/2: ' + list(set.filter(fits)) + '.', meta: { k: 'g5fr-half' } });
+      }]
+    ],
+    'fr-add': [
+      [1, 'fill', function (lv) {
+        var d = R.pick([4, 5, 6, 8, 10]), a = R.int(1, d - 2), b = R.int(1, d - 1 - a), sub = lv > 1 && !R.int(0, 1);
+        if (sub) a += b;
+        var r = sub ? a - b : a + b, op = sub ? ' &minus; ' : ' + ';
+        return { q: 'Fill in the blank.', type: 'fill', fill: (f(a, d) + op + f(b, d) + ' = [[]]/' + d), answers: [r],
+          fig: lv === 1 ? A.draw.bar(a, d, 300) + A.draw.bar(b, d, 300) : '', hint: 'The pieces are the same size. ' + (sub ? 'Take away' : 'Add') + ' the tops only.',
+          steps: [a + op + b + ' = ' + r + ' pieces of size 1/' + d + '.', 'The bottom stays ' + d + '.'],
+          explain: f(a, d) + op + f(b, d) + ' = ' + f(r, d) + '.', meta: { k: 'g5fr-addfill', a: a, b: b, d: d, sub: sub } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), d = R.pick([4, 5, 8, 10]), a = R.int(1, d - 2), b = R.int(1, d - 1 - a), c = R.pick([['walked', 'km to school', 'km to the park', 'km'], ['poured', 'L of juice into one jug', 'L into another', 'L'], ['read', 'of a book on Monday', 'of it on Tuesday', 'of the book']]);
+        return { q: who + ' ' + c[0] + ' ' + f(a, d) + ' ' + c[1] + ' and ' + f(b, d) + ' ' + c[2] + '. How much is that in all?', type: 'fill', fill: '[[]]/' + d + ' ' + c[3], answers: [a + b],
+          hint: 'Add the two fractions. The bottom stays ' + d + '.', steps: [f(a, d) + ' + ' + f(b, d) + ': add the tops, ' + a + ' + ' + b + ' = ' + (a + b) + '.', 'The answer is ' + f(a + b, d) + '.'],
+          explain: f(a, d) + ' + ' + f(b, d) + ' = ' + f(a + b, d) + '.', meta: { k: 'g5fr-addstory', a: a, b: b, d: d } };
+      }],
+      [1, 'mistake', function (lv) {
+        var d = R.pick([4, 5, 6, 8]), a = R.int(1, d - 2), b = R.int(1, d - 1 - a), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? f(a + b, d) : f(a + b, d * 2);
+        var right = 'The pieces stay the same size, 1/' + d + '. Add only the tops: ' + f(a, d) + ' + ' + f(b, d) + ' = ' + f(a + b, d) + '.';
+        return K.tf(who, mf(f(a, d) + ' + ' + f(b, d) + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['Add the tops and add the bottoms.', 'Multiply the bottoms together.', 'Fractions cannot be added.'],
+          { hint: 'When you put two slices of pizza together, does each slice get smaller?', meta: { k: 'g5fr-addtf', a: a, b: b, d: d, said: said } });
+      }],
+      [2, 'which', function (lv) {
+        var who = nm(), d = R.pick([5, 6, 8, 10]), a = R.int(3, d - 1), b = R.int(1, a - 1), sub = !R.int(0, 1);
+        var q = sub ? who + ' had ' + f(a, d) + ' of a cake. The family ate ' + f(b, d) + ' of the cake. How much is left?' : who + ' painted ' + f(b, d) + ' of a fence in the morning and ' + f(a - b, d) + ' after lunch. How much is painted?';
+        var right = sub ? f(a, d) + ' &minus; ' + f(b, d) : f(b, d) + ' + ' + f(a - b, d), wrong = sub ? [f(a, d) + ' + ' + f(b, d), f(b, d) + ' &minus; ' + f(a, d)] : [f(a - b, d) + ' &minus; ' + f(b, d), f(b, d) + ' &times; ' + f(a - b, d)];
+        return K.mc('Which number sentence solves this? ' + q, right, wrong, {
+          hint: sub ? 'Some is taken away. Which operation is that?' : 'Two parts are put together. Which operation is that?', steps: [sub ? '"Left" after eating means take away.' : '"Painted in all" means put the parts together.', 'So the sentence is ' + right + '.'],
+          explain: right + ' = ' + f(sub ? a - b : a, d) + '.', meta: { k: 'g5fr-which', sub: sub } });
+      }]
+    ],
+    'fr-unit': [
+      [1, 'fill', function (lv) {
+        var w = R.int(2, 9), d = R.pick([2, 3, 4, 5, 6, 8]);
+        return { q: 'Fill in the blank.', type: 'fill', fill: (w + ' &times; 1/' + d + ' = [[]]/' + d), answers: [w], fig: A.draw.wholes(w, d),
+          hint: w + ' groups of one 1/' + d + ' piece.', steps: ['Each group is one 1/' + d + ' piece.', w + ' groups make ' + w + ' pieces: ' + f(w, d) + '.'],
+          explain: w + ' &times; 1/' + d + ' = ' + f(w, d) + '.', meta: { k: 'g5fr-unitfill', w: w, d: d } };
+      }],
+      [1, 'tap', function (lv) {
+        var w = R.int(2, 5), d = R.pick([3, 4, 5, 6]), set = R.shuffle([[w, d], [w + 1, d], [w, d + 2]]);
+        return { q: 'Which picture shows <b>' + w + ' &times; 1/' + d + '</b>? Tap it.', type: 'tap', tiles: set.map(function (x) { return A.draw.wholes(x[0], x[1]); }), answer: set.map(String).indexOf(String([w, d])), answerText: w + ' pieces of size 1/' + d,
+          hint: 'Look for ' + w + ' shaded pieces, each 1/' + d + ' of a bar.', steps: [w + ' &times; 1/' + d + ' means ' + w + ' pieces of size 1/' + d + '.', 'Count the shaded pieces. Check the bar is cut into ' + d + ' parts.'],
+          explain: w + ' &times; 1/' + d + ' = ' + f(w, d) + '.', meta: { k: 'g5fr-unittap', w: w, d: d } };
+      }],
+      [1, 'story', function (lv) {
+        var w = R.int(2, lv === 1 ? 4 : 8), d = R.pick([2, 3, 4]), c = R.pick([['A scoop holds 1/' + d + ' cup of flour.', 'scoops fill', 'cups'], ['A ribbon is cut into pieces 1/' + d + ' m long.', 'pieces come from', 'm of ribbon'], ['Each glass holds 1/' + d + ' L.', 'glasses can you fill from', 'L of milk']]);
+        return { q: c[0] + ' How many ' + c[1] + ' ' + w + ' ' + c[2] + '?', type: 'num', answer: w * d,
+          fig: A.draw.wholes(w * d, d), hint: 'How many 1/' + d + ' parts are in 1 whole? Then in ' + w + '?', steps: ['1 whole holds ' + d + ' parts of 1/' + d + '.', w + ' wholes hold ' + w + ' &times; ' + d + ' = ' + w * d + '.'],
+          explain: w + ' &divide; 1/' + d + ' = ' + w * d + '.', meta: { k: 'g5fr-unitstory', w: w, d: d } };
+      }],
+      [2, 'which', function (lv) {
+        var w = R.int(2, 6), d = R.pick([3, 4, 5]), mul = !R.int(0, 1);
+        var q = mul ? 'Each of ' + w + ' friends drinks 1/' + d + ' L of milk. How much milk do they drink in all?' : 'How many 1/' + d + ' L cups can you fill from ' + w + ' L of milk?';
+        var right = mul ? w + ' &times; 1/' + d : w + ' &divide; 1/' + d;
+        return K.mc('Which way solves this? ' + q, right, [mul ? w + ' &divide; 1/' + d : w + ' &times; 1/' + d, w + ' + 1/' + d], {
+          hint: mul ? 'The same amount, many times over: which operation?' : 'How many fit inside: which operation?', steps: [mul ? w + ' groups of 1/' + d + ' is multiplying.' : '"How many 1/' + d + ' fit in ' + w + '" is dividing.', 'So use ' + right + '.'],
+          explain: right + ' = ' + (mul ? f(w, d) + ' L' : w * d + ' cups') + '.', meta: { k: 'g5fr-unitwhich', mul: mul, w: w, d: d } });
+      }]
+    ]
+  };
+  K.shapes('fractions', SHAPES);
 })();

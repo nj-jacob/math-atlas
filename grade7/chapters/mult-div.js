@@ -420,7 +420,7 @@
 
     quiz: [
       { q: 'Round 14.065 to the nearest hundredth.', type: 'mc', options: ['14.06', '14.07', '14.1', '14.00'], answer: 1, hint: 'Look at the thousandths digit.', explain: 'The thousandths digit is 5, so round the hundredths up: 14.07.' },
-      { q: 'Multiply: ' + fr(2, 3) + ' &times; ' + fr(9, 10) + '. Type a fraction in simplest form.', type: 'num', answer: 0.6, show: '3/5', kb: 'text', accept: A.lowest(3, 5), hint: 'Multiply tops and bottoms, then simplify.', explain: fr(18, 30) + ' = ' + fr(3, 5) + '.' },
+      { q: 'Multiply, and give the answer in simplest form.', type: 'fill', fill: '<span class="math">' + fr(2, 3) + ' &times; ' + fr(9, 10) + ' = </span>[[]] <span class="math">/</span> [[]]', answers: [3, 5], hint: 'Multiply tops and bottoms, then simplify.', explain: fr(18, 30) + ' = ' + fr(3, 5) + '.', meta: { k: 'md-fxf-simplest', a: [2, 3], c: [9, 10] } },
       { q: 'How many ' + fr(1, 3) + '-cup scoops are in 2 cups?', type: 'num', answer: 6, fig: measure(2, 1, 1, 3), hint: 'Each cup holds 3 thirds.', explain: '2 &divide; ' + fr(1, 3) + ' = 2 &times; 3 = 6 scoops.' },
       { q: 'Divide: ' + fr(5, 6) + ' &divide; ' + fr(2, 3) + '. Type a fraction or mixed number.', type: 'num', answer: 1.25, show: '1 1/4', kb: 'text', hint: 'Flip the second fraction and multiply.', explain: fr(5, 6) + ' &times; ' + fr(3, 2) + ' = ' + fr(15, 12) + ' = ' + A.mixed(1, 1, 4) + '.' },
       { q: 'Multiply: 3.2 &times; 0.15', type: 'num', answer: 0.48, hint: '32 &times; 15 = 480. Count the decimal places.', explain: '32 &times; 15 = 480. Three decimal places: 0.480 = 0.48.' },
@@ -519,6 +519,158 @@
         return { q: 'Evaluate: <span class="math">' + q + '</span>', type: 'num', answer: ans,
           hint: 'BEDMAS: brackets, exponents, then divide and multiply left to right, then add and subtract left to right.', steps: steps, explain: 'The answer is ' + dec(ans) + '.' };
       } }
+    ]
+  });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  function money(x) { return '$' + x.toFixed(2); }
+  function opMc(op) { var names = { add: 'Add', sub: 'Subtract', mul: 'Multiply', div: 'Divide' }, o = R.mc(names[op], ['Add', 'Subtract', 'Multiply', 'Divide'].filter(function (w) { return w !== names[op]; })); return o; }
+  K.shapes('mult-div', {
+    'md-round': [
+      [1, 'tap', function (lv) {
+        var p = lv === 1 ? 1 : R.int(1, 2), u = Math.pow(10, p), lo = R.int(1, 99) + R.int(0, u - 1) / u, d = R.pick([1, 2, 3, 4, 6, 7, 8, 9]), x = cl(lo + d / (u * 10)), hi = cl(lo + 1 / u);
+        var tiles = [lo.toFixed(p), hi.toFixed(p)];
+        return { q: 'Is <b>' + dec(x) + '</b> closer to ' + tiles[0] + ' or ' + tiles[1] + '? Tap it.', type: 'tap', tiles: tiles, answer: d < 5 ? 0 : 1, fig: roundPic(x, p),
+          hint: 'Look at the digit after the ' + PL[p] + 's place.', steps: ['The next digit is ' + d + '.', d < 5 ? 'Less than 5: round down.' : '5 or more: round up.'],
+          explain: dec(x) + ' rounds to ' + tiles[d < 5 ? 0 : 1] + '.', meta: { k: 'md-round-tap', x: x, p: p, lo: lo, hi: hi } };
+      }],
+      [1, 'match', function () {
+        var xs = K.uniq(3, function () { return cl(R.int(10, 99) / 10 + R.int(1, 9) / 100); }, function (x) { return roundTo(x, 1); });
+        var pairs = xs.map(function (x) { return [dec(x), roundTo(x, 1).toFixed(1)]; });
+        return { q: 'Match each number to its value rounded to the nearest <b>tenth</b>.', type: 'match', pairs: pairs,
+          hint: 'Look at the hundredths digit.', steps: ['Hundredths digit 5 or more: round up. Less than 5: round down.'],
+          explain: pairs.map(function (q) { return q[0] + ' rounds to ' + q[1]; }).join('. ') + '.', meta: { k: 'md-round-match', xs: xs } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), w = R.int(1, 30), t = R.int(1, 8), h = R.int(5, 9), x = cl(w + t / 10 + h / 100), truth = R.int(0, 1), said = truth ? cl(w + (t + 1) / 10) : cl(w + t / 10);
+        var right = 'The hundredths digit is ' + h + ', which is 5 or more, so ' + dec(x) + ' rounds up to ' + cl(w + (t + 1) / 10).toFixed(1) + '.';
+        return { q: who + ' rounded ' + dec(x) + ' to the nearest tenth and got <b>' + said.toFixed(1) + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['To round, just drop the last digit.', 'Look at the tenths digit to decide.']),
+          hint: 'Which digit decides the rounding?', steps: [right], explain: right, meta: { k: 'md-round-tf', x: x, said: said } };
+      }]
+    ],
+    'md-fxf': [
+      [1, 'fill', function (lv) {
+        var b = R.int(2, lv === 1 ? 6 : 10), d = R.int(2, lv === 1 ? 6 : 10), a = R.int(1, b - 1), c = R.int(1, d - 1);
+        return { q: 'Multiply. Tops times tops, bottoms times bottoms.', type: 'fill', fill: '<span class="math">' + fr(a, b) + ' &times; ' + fr(c, d) + ' = </span>[[]] <span class="math">/</span> [[]]', answers: [a * c, b * d],
+          fig: lv === 1 ? areaFr(a, b, c, d) : '', hint: 'Multiply the two tops. Then multiply the two bottoms.', steps: [a + ' &times; ' + c + ' = ' + a * c + '.', b + ' &times; ' + d + ' = ' + b * d + '.'],
+          explain: fr(a, b) + ' &times; ' + fr(c, d) + ' = ' + fr(a * c, b * d) + (gcd(a * c, b * d) > 1 ? ' = ' + frs(a * c, b * d) : '') + '.', meta: { k: 'md-fxf-fill', a: [a, b], c: [c, d] } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), b = R.pick([2, 3, 4, 5]), a = R.int(1, b - 1), d = R.pick([2, 3, 4, 6, 8]), c = R.int(1, d - 1), N = a * c, D = b * d;
+        var it = R.pick([['kg bag of trail mix', 'eats'], ['L bottle of water', 'drinks'], ['m roll of tape', 'uses']]);
+        return { q: who + ' has a ' + fr(c, d) + ' ' + it[0] + ' and ' + it[1] + ' ' + fr(a, b) + ' of it. How much is that? Type a fraction.', type: 'num', answer: N / D, show: plain(N, D), kb: 'text', tol: 1e-6,
+          hint: '"' + fr(a, b) + ' of" means multiply by ' + fr(a, b) + '.', steps: [fr(a, b) + ' &times; ' + fr(c, d) + ' = ' + fr(N, D) + '.'],
+          explain: fr(a, b) + ' of ' + fr(c, d) + ' is ' + frs(N, D) + '.', meta: { k: 'md-fxf-story', a: [a, b], c: [c, d] } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), b = R.int(2, 6), a = R.int(1, b - 1), c = R.int(1, b - 1), truth = R.int(0, 1), said = truth ? [a * c, b * b] : [a * c, b];
+        var right = 'Multiply the bottoms too: ' + fr(a, b) + ' &times; ' + fr(c, b) + ' = ' + fr(a * c, b * b) + '. A part of a part is smaller.';
+        return { q: who + ' says <span class="math">' + fr(a, b) + ' &times; ' + fr(c, b) + ' = ' + fr(said[0], said[1]) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['When the bottoms match, keep the bottom, as when you add.', 'Multiplying always makes a number bigger.']),
+          hint: 'Multiplying is not like adding. What happens to the bottoms?', steps: [right], explain: right, meta: { k: 'md-fxf-tf', a: [a, b], c: [c, b], said: said } };
+      }]
+    ],
+    'md-fdf': [
+      [1, 'which', function () {
+        var who = K.name(), n = R.int(2, 6), d = R.pick([2, 3, 4]);
+        var st = R.pick([['div', who + ' has ' + n + ' cups of flour. Each batch of muffins needs ' + fr(1, d) + ' cup. How many batches can ' + who + ' make?'],
+          ['mul', who + ' makes ' + n + ' batches of muffins. Each batch needs ' + fr(1, d) + ' cup of sugar. How much sugar is that?'],
+          ['div', 'A ' + n + ' m board is cut into pieces ' + fr(1, d) + ' m long. How many pieces?'],
+          ['mul', who + ' walks ' + fr(1, d) + ' km to school, ' + n + ' times a week. How far is that?']]);
+        var o = opMc(st[0]);
+        return { q: 'Which way? ' + st[1] + ' Pick the operation.', type: 'mc', options: o.options, answer: o.answer,
+          hint: st[0] === 'div' ? 'How many of the small parts fit in the whole amount?' : 'The same amount, several times.', steps: [st[0] === 'div' ? '"How many fit?" means divide: ' + n + ' &divide; ' + fr(1, d) + ' = ' + n * d + '.' : 'Equal groups means multiply: ' + n + ' &times; ' + fr(1, d) + ' = ' + frs(n, d) + '.'],
+          explain: st[0] === 'div' ? 'Divide: ' + n + ' &divide; ' + fr(1, d) + ' = ' + n * d + '.' : 'Multiply: ' + n + ' &times; ' + fr(1, d) + ' = ' + frs(n, d) + '.', meta: { k: 'md-op-which', op: st[0] } };
+      }],
+      [1, 'fill', function () {
+        var b = R.int(2, 9), d = R.int(2, 9), a = R.int(1, b - 1), c = R.int(1, d - 1);
+        while (gcd(c, d) !== 1) c = R.int(1, d - 1);
+        return { q: 'Dividing by a fraction is multiplying by its reciprocal. Fill in the reciprocal.', type: 'fill', fill: '<span class="math">' + fr(a, b) + ' &divide; ' + fr(c, d) + ' = ' + fr(a, b) + ' &times; </span>[[]] <span class="math">/</span> [[]]', answers: [d, c],
+          hint: 'Flip the second fraction upside down.', steps: ['The reciprocal of ' + fr(c, d) + ' is ' + fr(d, c) + '.'],
+          explain: fr(a, b) + ' &divide; ' + fr(c, d) + ' = ' + fr(a, b) + ' &times; ' + fr(d, c) + '.', meta: { k: 'md-recip-fill', c: [c, d] } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), n = R.int(2, 6), d = R.int(2, 5), truth = R.int(0, 1), said = truth ? [n * d, 1] : [n, d];
+        var right = 'Count how many ' + fr(1, d) + 's fit in ' + n + ': ' + d + ' in each whole, so ' + n + ' &times; ' + d + ' = ' + n * d + '.';
+        return { q: who + ' says <span class="math">' + n + ' &divide; ' + fr(1, d) + ' = ' + (said[1] === 1 ? said[0] : fr(said[0], said[1])) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Dividing always makes a number smaller.', 'Dividing by ' + fr(1, d) + ' is the same as dividing by ' + d + '.']),
+          hint: 'How many ' + fr(1, d) + 's are in one whole?', steps: [right], explain: right, meta: { k: 'md-fdf-tf', n: n, d: d, said: said } };
+      }]
+    ],
+    'md-dxd': [
+      [1, 'match', function () {
+        var ps = K.uniq(3, function () { return [R.int(1, 9) / 10, R.int(2, 9) / 10 * R.pick([1, 10])]; }, function (p) { return cl(p[0] * p[1]); });
+        var pairs = ps.map(function (p) { return [dec(p[0]) + ' &times; ' + dec(p[1]), dec(cl(p[0] * p[1]))]; });
+        return { q: 'Match each product to its answer.', type: 'match', pairs: pairs,
+          hint: 'Multiply as whole numbers, then count the decimal places in the question.', steps: ['0.3 &times; 0.2: 3 &times; 2 = 6, and there are 2 decimal places, so 0.06.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'md-dxd-match', ps: ps } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), kg = R.int(2, 9) / (lv === 1 ? 2 : 10) + (lv === 1 ? 0 : R.int(1, 3)), price = R.int(150, 600) / 100, it = R.pick(['apples', 'grapes', 'cheese', 'carrots']);
+        var cost = Math.round(Math.round(kg * 100) * Math.round(price * 100) / 100) / 100; /* whole cents, so 8.595 rounds up to 8.60 */
+        return { q: who + ' buys ' + dec(kg) + ' kg of ' + it + ' at ' + money(price) + ' per kilogram. How much does it cost? Round to the nearest cent.', type: 'num', answer: cost, show: cost.toFixed(2),
+          hint: 'Multiply the mass by the price per kilogram.', steps: [dec(kg) + ' &times; ' + price.toFixed(2) + ' = ' + dec(cl(kg * price)) + '.', 'Round to cents: ' + money(cost) + '.'],
+          explain: dec(kg) + ' kg &times; ' + money(price) + '/kg = ' + money(cost) + '.', meta: { k: 'md-dxd-story', kg: kg, price: price } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(2, 9), b = R.int(2, 9), x = a / 10, y = b / 10, truth = R.int(0, 1), said = truth ? cl(x * y) : cl(a * b / 10);
+        var right = a + ' &times; ' + b + ' = ' + a * b + '. There are 2 decimal places in the question, so the answer is ' + dec(cl(x * y)) + '.';
+        return { q: who + ' says <span class="math">' + dec(x) + ' &times; ' + dec(y) + ' = ' + dec(said) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Keep one decimal place, because each number has one.', 'Multiplying always gives a bigger number.']),
+          hint: 'Is the answer less than both numbers? It should be.', steps: [right], explain: right, meta: { k: 'md-dxd-tf', x: x, y: y, said: said } };
+      }]
+    ],
+    'md-ddd': [
+      [1, 'which', function () {
+        var who = K.name(), p = R.int(2, 9) * 0.25, n = R.int(3, 8), tot = cl(p * n);
+        var st = R.pick([['div', who + ' and ' + (n - 1) + ' friends share a ' + money(tot) + ' bill equally. How much does each person pay?'],
+          ['mul', 'Each bus ticket costs ' + money(p) + '. ' + who + ' buys ' + n + ' tickets. What is the total?'],
+          ['div', 'A ' + dec(tot) + ' m rope is cut into pieces ' + dec(p) + ' m long. How many pieces?'],
+          ['mul', who + ' runs ' + dec(p) + ' km each day for ' + n + ' days. How far is that?']]);
+        var o = opMc(st[0]);
+        return { q: 'Which way? ' + st[1] + ' Pick the operation.', type: 'mc', options: o.options, answer: o.answer,
+          hint: st[0] === 'div' ? 'Sharing or "how many fit" means divide.' : 'The same amount several times means multiply.', steps: [st[0] === 'div' ? 'Divide.' : 'Multiply.'],
+          explain: st[0] === 'div' ? 'Divide.' : 'Multiply: ' + dec(p) + ' &times; ' + n + ' = ' + dec(tot) + '.', meta: { k: 'md-op-which', op: st[0] } };
+      }],
+      [1, 'fill', function () {
+        var b = R.int(2, 9) / 10, n = R.int(2, 12), a = cl(b * n);
+        return { q: 'Make the divisor a whole number. Multiply both numbers by 10.', type: 'fill', fill: '<span class="math">' + dec(a) + ' &divide; ' + dec(b) + ' = </span>[[]]<span class="math"> &divide; </span>[[]]<span class="math"> = </span>[[]]', answers: [cl(a * 10), cl(b * 10), n],
+          hint: 'Multiplying both numbers by 10 keeps the answer the same.', steps: [dec(a) + ' &times; 10 = ' + dec(cl(a * 10)) + ' and ' + dec(b) + ' &times; 10 = ' + dec(cl(b * 10)) + '.', dec(cl(a * 10)) + ' &divide; ' + dec(cl(b * 10)) + ' = ' + n + '.'],
+          explain: dec(a) + ' &divide; ' + dec(b) + ' = ' + n + '.', meta: { k: 'md-ddd-fill', a: a, b: b } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), b = R.int(2, 9), n = R.int(2, 9), a = b * n / 10, truth = R.int(0, 1), said = truth ? n : n / 10;
+        var right = 'Multiply both by 10: ' + dec(a) + ' &divide; ' + dec(b / 10) + ' = ' + dec(a * 10) + ' &divide; ' + b + ' = ' + n + '.';
+        return { q: who + ' says <span class="math">' + dec(a) + ' &divide; ' + dec(b / 10) + ' = ' + dec(said) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Dividing always gives a smaller number.', 'Keep the decimal point where it was in the first number.']),
+          hint: 'How many ' + dec(b / 10) + 's fit in ' + dec(a) + '?', steps: [right], explain: right, meta: { k: 'md-ddd-tf', a: a, b: b / 10, said: said } };
+      }]
+    ],
+    'md-order': [
+      [1, 'tap', function () {
+        var a = R.int(2, 9), b = R.int(2, 9), c = R.int(2, 9), ops = R.pick([['+', '&times;'], ['&times;', '+'], ['&minus;', '&times;'], ['&times;', '&minus;']]), br = R.int(0, 2) === 0;
+        var first = br || ops[0] === '&times;' ? 0 : 1, words = { '+': '+', '&minus;': '−', '&times;': '×' };
+        var expr = br ? '(' + a + ' ' + ops[0] + ' ' + b + ') ' + ops[1] + ' ' + c : a + ' ' + ops[0] + ' ' + b + ' ' + ops[1] + ' ' + c;
+        var tiles = [a + ' ' + ops[0] + ' ' + b, b + ' ' + ops[1] + ' ' + c];
+        return { q: 'In <span class="math">' + expr + '</span>, tap the part you work out first.', type: 'tap', tiles: tiles, answer: first, answerText: first ? b + ' ' + words[ops[1]] + ' ' + c : a + ' ' + words[ops[0]] + ' ' + b,
+          hint: 'Brackets first. Then multiply and divide. Then add and subtract.', steps: [br ? 'The brackets come first.' : 'Multiply before you add or subtract.'],
+          explain: 'Work out ' + tiles[first] + ' first.', meta: { k: 'md-order-tap', o1: ops[0], o2: ops[1], br: br } };
+      }],
+      [1, 'fill', function () {
+        var a = R.int(2, 20), b = R.int(2, 9), c = R.int(2, 9), op = R.pick(['+', '&minus;']);
+        if (op === '&minus;' && a < b * c) a += b * c;
+        return { q: 'Work it out in two steps.', type: 'fill', fill: '<span class="math">' + a + ' ' + op + ' ' + b + ' &times; ' + c + ' = ' + a + ' ' + op + ' </span>[[]]<span class="math"> = </span>[[]]', answers: [b * c, op === '+' ? a + b * c : a - b * c],
+          hint: 'Multiply first.', steps: [b + ' &times; ' + c + ' = ' + b * c + '.', a + ' ' + op + ' ' + b * c + ' = ' + (op === '+' ? a + b * c : a - b * c) + '.'],
+          explain: 'Multiply before you ' + (op === '+' ? 'add' : 'subtract') + '.', meta: { k: 'md-order-fill', a: a, b: b, c: c, op: op === '+' ? 1 : -1 } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(2, 12), b = R.int(2, 9), c = R.int(2, 9), right = a + b * c, wrong = (a + b) * c, truth = R.int(0, 1), said = truth ? right : wrong;
+        var why1 = 'Multiply first: ' + b + ' &times; ' + c + ' = ' + b * c + ', then ' + a + ' + ' + b * c + ' = ' + right + '.';
+        return { q: who + ' says <span class="math">' + a + ' + ' + b + ' &times; ' + c + ' = ' + said + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(why1, ['Always work from left to right.', 'Add first, because + comes first.']),
+          hint: 'Which comes first: + or &times;?', steps: [why1], explain: why1, meta: { k: 'md-order-tf', a: a, b: b, c: c, said: said } };
+      }]
     ]
   });
 })();

@@ -348,4 +348,129 @@ builder('bk', [100, 200, 500, 1000, 2000, 5000, 10000]) +
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  function coin(v) { return WAL([v], { W: 80, label: 'a ' + CASH[v].n }); }
+  /* the fewest quarters, dimes and nickels that make x cents (x a multiple of 5) */
+  function coinsFor(x) { var out = []; [25, 10, 5].forEach(function (v) { while (x >= v) { out.push(v); x -= v; } }); return out; }
+  K.shapes(CH, {
+    'f2-coins': [
+      [1, 'match', function (lv) {
+        var set = R.shuffle(COINS).slice(0, 3);
+        return { q: 'Match each coin to what it is worth.', type: 'match', pairs: set.map(function (v) { return [coin(v), CASH[v].t]; }),
+          hint: 'Nickel 5¢, dime 10¢, quarter 25¢, loonie $1, toonie $2.', steps: ['Look at the picture on each coin.'],
+          explain: set.map(function (v) { return 'A ' + CASH[v].n + ' is ' + CASH[v].t; }).join('. ') + '.', meta: { k: 'f2-coin-match' } };
+      }],
+      [1, 'tap', function (lv) {
+        var set = R.shuffle(COINS).slice(0, lv === 1 ? 3 : 4), v = R.pick(set);
+        return { q: 'Tap the <b>' + CASH[v].n + '</b>.', type: 'tap', tiles: set.map(coin), answer: set.indexOf(v), answerText: 'the ' + CASH[v].n + ' (' + CASH[v].t + ')',
+          hint: 'A ' + CASH[v].n + ' is worth ' + CASH[v].t + '.', steps: ['Look at the size, colour and picture of each coin.'], explain: 'That is the ' + CASH[v].n + '.', meta: { k: 'f2-coin-tap' } };
+      }],
+      [2, 'order', function (lv) {
+        var set = R.shuffle(COINS).slice(0, lv === 2 ? 3 : 4).sort(function (a, b) { return a - b; });
+        return { q: 'Put the coins in order from <b>least</b> to most value.', type: 'order', items: set.map(function (v) { return CASH[v].n; }), first: 'least', last: 'most',
+          hint: 'Nickel 5¢, dime 10¢, quarter 25¢, loonie $1, toonie $2.', steps: ['Think of what each coin is worth.'],
+          explain: set.map(function (v) { return CASH[v].n + ' ' + CASH[v].t; }).join(', ') + '.', meta: { k: 'f2-coin-order' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var name = who(), truth = !R.int(0, 1), x = truth ? 10 : 5, y = truth ? 5 : 10;
+        var right = 'A dime is worth 10¢ and a nickel is worth 5¢. The smaller coin is worth more.';
+        return { q: name + ' says a <b>' + CASH[x].n + '</b> is worth more than a ' + CASH[y].n + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: '<div class="vrow">' + coin(5) + coin(10) + '</div>',
+          why: why(right, ['Bigger coins are always worth more.', 'All silver coins are worth the same.', 'Coins are worth how many there are.']),
+          hint: 'Size does not tell you the value. Think of what each coin is worth.', steps: [right], explain: right, meta: { k: 'f2-coin-tf' } };
+      }]
+    ],
+    'f2-count': [
+      [1, 'tap', function (lv) {
+        var set = [], seen = {}, tries = 0;
+        while (set.length < 3 && tries++ < 40) { var L = lv === 1 ? randCoins([10, 5], R.int(2, 5), 50) : randCoins([25, 10, 5], R.int(3, 5), 100), t = sum(L); if (!seen[t]) { seen[t] = 1; set.push(L); } }
+        var want = R.pick(set);
+        return { q: 'Tap the coins that make <b>' + c(sum(want)) + '</b>.', type: 'tap', tiles: set.map(wcoins), answer: set.indexOf(want), answerText: names(want),
+          hint: 'Count each group, biggest coin first.', steps: ['Count on: ' + run(want, c) + '.'],
+          explain: names(want) + ' make ' + c(sum(want)) + '.', meta: { k: 'f2-count-tap' } };
+      }],
+      [1, 'fill', function (lv) {
+        var L = (lv === 1 ? randCoins([10, 5], 3, 50) : randCoins([25, 10, 5], R.int(3, 4), 100)).sort(function (a, b) { return b - a; });
+        if (L.length < 3) L = [10, 10, 5];
+        var t = 0, totals = L.map(function (v) { t += v; return t; });
+        return { q: 'Count on from the biggest coin. Fill in each total.', type: 'fill', fig: wcoins(L), fill: totals.map(function () { return '[[]]¢'; }).join(', '), answers: totals,
+          hint: 'Start with ' + L[0] + '. Add each coin as you go.', steps: ['Count on: ' + run(L, c) + '.'], explain: 'The total is ' + c(t) + '.', meta: { k: 'f2-count-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var L = randCoins([25, 10, 5], R.int(3, 5), 100), t = sum(L), name = who(), truth = !R.int(0, 2), said = truth ? t : L.length * 10 === t ? t + 5 : L.length * 10;
+        var right = 'Count on from the biggest coin: ' + run(L, c) + '. The total is ' + c(t) + '.';
+        return { q: name + ' says these coins make <b>' + c(said) + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: wcoins(L),
+          why: why(right, ['Every coin is worth 10¢.', 'Count how many coins there are.', 'Only the biggest coin counts.']),
+          hint: 'Count on from the biggest coin.', steps: [right], explain: right, meta: { k: 'f2-count-tf' } };
+      }]
+    ],
+    'f2-same': [
+      [1, 'pick', function (lv) {
+        var amt = R.pick(lv === 1 ? [25, 50] : [50, 75, 100]), ways = R.shuffle(SAME[amt]).slice(0, 2), bad = [ways[0].concat([5]), ways[1].slice(1).length ? ways[1].slice(1) : [10, 10]];
+        var opts = R.shuffle(ways.concat(bad).map(names).filter(function (x, i, a) { return a.indexOf(x) === i; }));
+        var ok = ways.map(names);
+        return { q: 'Pick every group of coins that makes <b>' + c(amt) + '</b>.', type: 'pick', options: opts, answer: opts.map(function (o, j) { return ok.indexOf(o) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: 'Count each group, biggest coin first.', steps: ['Count each group on its own.', 'Keep the ones that reach exactly ' + c(amt) + '.'],
+          explain: ok.join(' and ') + ' both make ' + c(amt) + '.', meta: { k: 'f2-same-pick' } };
+      }],
+      [1, 'match', function (lv) {
+        var amts = R.shuffle(lv === 1 ? [25, 50, 75] : [50, 75, 100, 150]).slice(0, 3);
+        return { q: 'Match each group of coins to its total.', type: 'match', pairs: amts.map(function (a) { return [names(R.pick(SAME[a])), c(a)]; }),
+          hint: 'Count each group, biggest coin first.', steps: ['2 quarters, 1 dime: 25, 50, 60.'], explain: 'Each group adds up to its total.', meta: { k: 'f2-same-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var amt = R.pick([50, 75, 100]), ways = R.shuffle(SAME[amt]), a = ways[0], same = !R.int(0, 1), b = same ? ways[1] : ways[1].concat([R.pick([5, 10])]), name = who();
+        var right = 'The first group makes ' + c(sum(a)) + ' and the second makes ' + c(sum(b)) + '.';
+        return { q: name + ' says these two groups make the <b>same amount</b>. True or false: ' + name + ' is right.', type: 'tf', answer: same, fig: '<div class="vrow"><figure>' + wcoins(a) + '</figure><figure>' + wcoins(b) + '</figure></div>',
+          why: why(right, ['Groups with more coins always make more.', 'Groups with the same coins in them are always different.', 'You only need to count the quarters.']),
+          hint: 'Count each group, biggest coin first.', steps: [right], explain: right + (same ? ' They are the same.' : ' They are different.'), meta: { k: 'f2-same-tf' } };
+      }]
+    ],
+    'f2-bills': [
+      [1, 'fill', function (lv) {
+        var L = (lv === 1 ? randCoins([500, 200, 100], 3, 1500) : randCoins([2000, 1000, 500, 200], R.int(3, 4), 5000)).sort(function (a, b) { return b - a; });
+        if (L.length < 3) L = [1000, 500, 200];
+        var t = 0, totals = L.map(function (v) { t += v; return t / 100; });
+        return { q: 'Count on from the biggest. Fill in each total in dollars.', type: 'fill', fig: wbills(L), fill: totals.map(function () { return '$[[]]'; }).join(', '), answers: totals,
+          hint: 'Start with ' + d(L[0]) + '. Add each one as you go.', steps: ['Count on: ' + run(L, d) + '.'], explain: 'The total is ' + d(t) + '.', meta: { k: 'f2-bills-fill' } };
+      }],
+      [1, 'tap', function (lv) {
+        var make = function () { return lv === 1 ? randCoins([200, 100, 500], R.int(2, 4), 1500) : randCoins([1000, 500, 200, 100], R.int(2, 4), 5000); };
+        var set = [], seen = {}, tries = 0;
+        while (set.length < 3 && tries++ < 40) { var L = make(), t = sum(L); if (!seen[t]) { seen[t] = 1; set.push(L); } }
+        var want = R.pick(set);
+        return { q: 'Tap the money that makes <b>' + d(sum(want)) + '</b>.', type: 'tap', tiles: set.map(wbills), answer: set.indexOf(want), answerText: names(want),
+          hint: 'Count each one, biggest first.', steps: ['Count on: ' + run(want, d) + '.'], explain: names(want) + ' make ' + d(sum(want)) + '.', meta: { k: 'f2-bills-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var L = randCoins([2000, 1000, 500, 200], R.int(3, 4), 5000), t = sum(L), name = who(), truth = !R.int(0, 2), said = truth ? t : t + 500;
+        var right = 'Count on from the biggest: ' + run(L, d) + '. The total is ' + d(t) + '.';
+        return { q: name + ' says this is <b>' + d(said) + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: wbills(L),
+          why: why(right, ['Count each bill as $5.', 'Count how many bills there are.', 'Only count the biggest bill.']),
+          hint: 'Start with the biggest. Count on by each one’s value.', steps: [right], explain: right, meta: { k: 'f2-bills-tf' } };
+      }]
+    ],
+    'f2-make': [
+      [1, 'tap', function (lv) {
+        var g = lv === 1 ? R.pick([30, 40, 50]) : R.pick([75, 100]), h = randCoins(lv === 1 ? [10, 5] : [25, 10], R.int(1, 2), g - 10), miss = g - sum(h);
+        var need = coinsFor(miss), set = R.shuffle([need, coinsFor(miss + 5), coinsFor(miss > 10 ? miss - 5 : miss + 10)]);
+        return { q: 'You have the coins below. Tap the coins you <b>still need</b> to make <b>' + c(g) + '</b>.', type: 'tap', fig: wcoins(h), tiles: set.map(wcoins), answer: set.indexOf(need), answerText: names(need),
+          hint: 'Count what you have. Then count up to ' + c(g) + '.', steps: ['You have ' + c(sum(h)) + '.', 'From ' + sum(h) + ' to ' + g + ' is ' + miss + '.'],
+          explain: 'You need ' + c(miss) + ' more: ' + names(need) + '.', meta: { k: 'f2-make-tap' } };
+      }],
+      [1, 'story', function (lv) {
+        var name = who(), price = lv === 1 ? R.pick([30, 40, 50]) : R.pick([65, 75, 90]), have = price - 5 * R.int(1, lv === 1 ? 4 : 8), thing = R.pick(['an apple', 'a pencil', 'a sticker', 'a bookmark']);
+        return { q: name + ' has <b>' + c(have) + '</b>. ' + thing.charAt(0).toUpperCase() + thing.slice(1) + ' costs <b>' + c(price) + '</b>. How many more cents does ' + name + ' need?', type: 'num', answer: price - have, unit: '¢',
+          hint: 'Count up from ' + have + ' to ' + price + '.', steps: ['Count up from ' + have + ' to ' + price + '.', price + ' − ' + have + ' = ' + (price - have) + '.'],
+          explain: name + ' needs ' + c(price - have) + ' more.', meta: { k: 'f2-make-story' } };
+      }],
+      [2, 'which', function (lv) {
+        var name = who(), a = 5 * R.int(6, 18), b = 5 * R.int(1, 5), add = !R.int(0, 1);
+        var o = { options: ['Add', 'Subtract'], answer: add ? 0 : 1 };
+        return { q: add ? name + ' has ' + c(a) + ' and gets ' + c(b) + ' more from a friend. Which way finds how much ' + name + ' has now?' : name + ' has ' + c(a) + ' and spends ' + c(b) + ' on a sticker. Which way finds how much is left?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Getting more makes the amount bigger. Spending makes it smaller.', steps: [add ? 'Getting more: add. ' + a + ' + ' + b + ' = ' + (a + b) + '.' : 'Spending: subtract. ' + a + ' − ' + b + ' = ' + (a - b) + '.'],
+          explain: add ? 'Add: ' + c(a + b) + '.' : 'Subtract: ' + c(a - b) + ' is left.', meta: { k: 'f2-make-which' } };
+      }]
+    ]
+  });
 })();

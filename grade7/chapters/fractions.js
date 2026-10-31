@@ -597,4 +597,196 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  function sl(n, d) { return n + '/' + d; } /* a fraction on one line, for number line labels */
+  function frac(maxD) { var d = R.int(2, maxD); return [R.int(1, d - 1), d]; }
+  function val(f) { return f[0] / f[1]; }
+  K.shapes('fractions', {
+    'fr-equiv': [
+      [1, 'fill', function (lv) {
+        var d = R.int(2, lv === 1 ? 6 : 12), n = R.int(1, d - 1), k = R.int(2, lv === 1 ? 4 : 8);
+        return { q: 'Fill in the missing numerator.', type: 'fill', fill: '<span class="math">' + fr(n, d) + ' = </span>[[]] <span class="math">/ ' + d * k + '</span>', answers: [n * k],
+          fig: lv === 1 ? stack([[n, d, 'var(--sb)'], [n * k, d * k, 'var(--se)']]) : '',
+          hint: 'What do you multiply ' + d + ' by to get ' + d * k + '? Do the same to the top.', steps: [d + ' &times; ' + k + ' = ' + d * k + '.', n + ' &times; ' + k + ' = ' + n * k + '.'],
+          explain: fr(n, d) + ' = ' + fr(n * k, d * k) + '.', meta: { k: 'fr-equiv-fill', n: n, d: d, D: d * k } };
+      }],
+      [1, 'match', function (lv) {
+        var base = K.uniq(3, function () { var f = frac(lv === 1 ? 6 : 10), g = gcd(f[0], f[1]); return [f[0] / g, f[1] / g]; }, val);
+        var ks = base.map(function () { return R.int(2, 4); }), pairs = base.map(function (f, i) { return [fr(f[0], f[1]), fr(f[0] * ks[i], f[1] * ks[i])]; });
+        return { q: 'Match each fraction to an equivalent fraction.', type: 'match', pairs: pairs,
+          hint: 'Equivalent fractions multiply the top and the bottom by the same number.', steps: ['Look at the bottoms: which one is a multiple of which?'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'fr-equiv-match', pairs: base.map(function (f, i) { return [f, [f[0] * ks[i], f[1] * ks[i]]]; }) } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), d = R.int(3, 9), n = R.int(1, d - 1), k = R.int(2, 4), truth = R.int(0, 1), t = truth ? [n * k, d * k] : [n + k, d + k];
+        var right = 'To make an equivalent fraction, multiply the top and the bottom by the same number. ' + fr(n, d) + ' = ' + fr(n * k, d * k) + '.';
+        return { q: who + ' says <span class="math">' + fr(n, d) + ' = ' + fr(t[0], t[1]) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Adding the same number to the top and the bottom keeps the fraction the same.', 'Two fractions are equal only when their bottoms match.']),
+          hint: 'Did ' + who + ' multiply or add?', steps: [right], explain: right, meta: { k: 'fr-equiv-tf', a: [n, d], b: t } };
+      }]
+    ],
+    'fr-simplify': [
+      [1, 'tap', function () {
+        return K.retry(function () {
+          var tiles = K.uniq(4, function () { var f = frac(12); if (gcd(f[0], f[1]) === 1) { var k = R.int(2, 3); f = [f[0] * k, f[1] * k]; } return f; }, function (f) { return f.join('/'); });
+          var at = R.int(0, 3), s = frac(9); while (gcd(s[0], s[1]) !== 1) s = frac(9);
+          tiles[at] = s;
+          if (tiles.filter(function (f) { return gcd(f[0], f[1]) === 1; }).length !== 1 || new Set(tiles.map(String)).size !== 4) return null;
+          return { q: 'Tap the fraction that is in <b>simplest form</b>.', type: 'tap', tiles: tiles.map(function (f) { return fr(f[0], f[1]); }), answer: at, answerText: f2(s),
+            hint: 'In simplest form, the top and bottom have no common factor except 1.', steps: ['Check each fraction: can you divide the top and the bottom by the same number?'],
+            explain: fr(s[0], s[1]) + ' cannot be simplified. Each of the others can.', meta: { k: 'fr-simplest-tap', tiles: tiles } };
+        });
+      }],
+      [1, 'fill', function (lv) {
+        var n, d; do { d = R.int(2, lv === 1 ? 8 : 12); n = R.int(1, d - 1); } while (gcd(n, d) !== 1);
+        var k = R.int(2, lv === 1 ? 5 : 9);
+        return { q: 'Simplify <span class="math">' + fr(n * k, d * k) + '</span>. Fill in the top and the bottom.', type: 'fill', fill: '<span class="math">' + fr(n * k, d * k) + ' = </span>[[]] <span class="math">/</span> [[]]', answers: [n, d],
+          hint: 'Find the greatest common factor of ' + n * k + ' and ' + d * k + '.', steps: ['The GCF is ' + k + '.', n * k + ' &divide; ' + k + ' = ' + n + ' and ' + d * k + ' &divide; ' + k + ' = ' + d + '.'],
+          explain: fr(n * k, d * k) + ' = ' + fr(n, d) + ' in simplest form.', meta: { k: 'fr-simplify-fill', n: n * k, d: d * k } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), n, d; do { d = R.int(3, 9); n = R.int(1, d - 1); } while (gcd(n, d) !== 1);
+        var k = R.pick([4, 6, 8, 9]), p = k === 9 ? 3 : 2, truth = R.int(0, 1), said = truth ? [n, d] : [n * k / p, d * k / p];
+        var right = 'The GCF of ' + n * k + ' and ' + d * k + ' is ' + k + '. Dividing both by ' + k + ' gives ' + fr(n, d) + '.';
+        return { q: who + ' says <span class="math">' + fr(n * k, d * k) + '</span> in simplest form is <span class="math">' + fr(said[0], said[1]) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Dividing the top and bottom by any common factor always gives simplest form.', 'A fraction is in simplest form when its bottom is less than 10.']),
+          hint: 'Can ' + fr(said[0], said[1]) + ' be simplified any more?', steps: [right], explain: right, meta: { k: 'fr-simplify-tf', f: [n * k, d * k], said: said } };
+      }]
+    ],
+    'fr-compare': [
+      [1, 'order', function (lv) {
+        var list = K.uniq(lv === 1 ? 3 : 4, function () { return frac(lv === 1 ? 8 : 12); }, val).sort(function (x, y) { return val(x) - val(y); });
+        return { q: 'Put the fractions in order from <b>least</b> to <b>greatest</b>.', type: 'order', items: list.map(function (f) { return fr(f[0], f[1]); }), first: 'least', last: 'greatest',
+          hint: 'Compare each one with 0, one half and 1. Or use a common denominator.', steps: ['Close to 0, near one half, or close to 1?', 'For two that are close, use a common denominator.'],
+          explain: 'In order: ' + list.map(function (f) { return fr(f[0], f[1]); }).join(', ') + '.', meta: { k: 'fr-order', list: list } };
+      }],
+      [1, 'line', function () {
+        var d = R.pick([2, 4, 5, 8, 10]), n = R.int(1, d - 1);
+        return { q: 'Place <span class="math">' + fr(n, d) + '</span> on the number line.', type: 'line', min: 0, max: 1, tick: 1 / d, every: 1, snap: 1 / d, tol: 0.25 / d, answer: n / d, label: function (v) { return v === 0 || v === 1 ? String(v) : sl(Math.round(v * d), d); },
+          hint: 'The line from 0 to 1 is cut into ' + d + ' equal parts.', steps: ['Count ' + n + ' parts from 0.'],
+          explain: fr(n, d) + ' is ' + n + ' of the ' + d + ' equal parts from 0 to 1.', meta: { k: 'fr-line', n: n, d: d } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(2, 6), b;
+        do { b = R.int(2, 9); } while (b === a);
+        var n = R.int(1, Math.min(a, b) - 1);
+        var big = Math.max(a, b), small = Math.min(a, b);
+        var claim = R.int(0, 1) ? [n, big, n, small] : [n, small, n, big]; /* claim: first > second */
+        var truth = claim[1] < claim[3];
+        var right = 'The tops are the same, so compare the piece sizes. ' + fr(1, big) + ' is smaller than ' + fr(1, small) + '. So ' + fr(n, small) + ' is greater.';
+        return { q: who + ' says <span class="math">' + fr(claim[0], claim[1]) + ' &gt; ' + fr(claim[2], claim[3]) + '</span>. True or false?', type: 'tf', answer: truth,
+          why: K.why(right, ['A bigger bottom number means a bigger fraction.', 'They are equal because the tops are the same.']),
+          hint: 'Same tops: which pieces are bigger?', steps: [right], explain: right, meta: { k: 'fr-cmp-tf', a: [claim[0], claim[1]], b: [claim[2], claim[3]] } };
+      }]
+    ],
+    'fr-between': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var d = R.int(6, 12), lo = R.int(1, d - 5), hi = lo + R.int(3, 4);
+          var opts = K.uniq(5, function () { return [R.int(1, d - 1), d]; }, val).sort(function (x, y) { return x[0] - y[0]; });
+          var ans = K.picks(opts, function (f) { return f[0] > lo && f[0] < hi; });
+          if (!ans) return null;
+          return { q: 'Pick every fraction between <span class="math">' + fr(lo, d) + '</span> and <span class="math">' + fr(hi, d) + '</span>.', type: 'pick', options: opts.map(function (f) { return fr(f[0], f[1]); }), answer: ans,
+            hint: 'The bottoms are all ' + d + '. Compare the tops.', steps: ['A fraction is between them when its top is between ' + lo + ' and ' + hi + '.'],
+            explain: ans.map(function (j) { return fr(opts[j][0], d); }).join(', ') + ' are between ' + fr(lo, d) + ' and ' + fr(hi, d) + '.', meta: { k: 'fr-between-pick', lo: [lo, d], hi: [hi, d], opts: opts } };
+        });
+      }],
+      [1, 'tap', function () {
+        return K.retry(function () {
+          var p, q; do { p = frac(6); q = frac(6); } while (val(p) >= val(q) || val(q) - val(p) < 0.15);
+          var D = lcm(p[1], q[1]) * 2, inside = null;
+          for (var t = Math.floor(val(p) * D) + 1; t < val(q) * D; t++) { if (t / D > val(p) && t / D < val(q)) { inside = [t, D]; break; } }
+          if (!inside) return null;
+          var g = gcd(inside[0], inside[1]); inside = [inside[0] / g, inside[1] / g];
+          var outs = K.uniq(3, function () { var f = frac(12); return f; }, val).filter(function (f) { return !(val(f) > val(p) && val(f) < val(q)) && val(f) !== val(inside); });
+          if (outs.length < 3) return null;
+          var tiles = R.shuffle([inside].concat(outs));
+          return { q: 'Tap the fraction that is between <span class="math">' + fr(p[0], p[1]) + '</span> and <span class="math">' + fr(q[0], q[1]) + '</span>.', type: 'tap', tiles: tiles.map(function (f) { return fr(f[0], f[1]); }), answer: tiles.indexOf(inside), answerText: f2(inside),
+            hint: 'Write the fractions with a common denominator, then compare.', steps: ['Use the denominator ' + D + ': ' + fr(p[0] * D / p[1], D) + ' and ' + fr(q[0] * D / q[1], D) + '.'],
+            explain: fr(inside[0], inside[1]) + ' is between them.', meta: { k: 'fr-between-tap', p: p, q: q, tiles: tiles } };
+        });
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), d = R.int(3, 8), n = R.int(1, d - 2);
+        var right = 'Write both with a bigger denominator: ' + fr(n, d) + ' = ' + fr(2 * n, 2 * d) + ' and ' + fr(n + 1, d) + ' = ' + fr(2 * n + 2, 2 * d) + '. ' + fr(2 * n + 1, 2 * d) + ' is between them.';
+        return { q: who + ' says there is <b>no</b> fraction between <span class="math">' + fr(n, d) + '</span> and <span class="math">' + fr(n + 1, d) + '</span>, because the tops are next to each other. True or false?', type: 'tf', answer: false,
+          why: K.why(right, ['There is nothing between two numbers whose tops are next to each other.', 'Only whole numbers can be between two fractions.']),
+          hint: 'Try doubling the top and the bottom of both.', steps: [right], explain: right, meta: { k: 'fr-between-tf', lo: [n, d], hi: [n + 1, d], mid: [2 * n + 1, 2 * d] } };
+      }]
+    ],
+    'fr-add': [
+      [1, 'which', function () {
+        var b = R.int(2, 10), d = R.int(0, 1) ? b : R.int(2, 10), a = R.int(1, b - 1), c = R.int(1, d - 1), same = b === d;
+        var A1 = 'Add the tops and keep the bottom', A2 = 'Find a common denominator first', A3 = 'Add the tops and add the bottoms';
+        var o = R.mc(same ? A1 : A2, [same ? A2 : A1, A3]);
+        return { q: 'Which way? What is the right first step to add <span class="math">' + fr(a, b) + ' + ' + fr(c, d) + '</span>?', type: 'mc', options: o.options, answer: o.answer,
+          hint: same ? 'Are the pieces already the same size?' : 'The pieces are different sizes.', steps: [same ? 'The bottoms match, so the pieces are the same size. Just add the tops.' : 'The bottoms are different. Rename both fractions with a common denominator first.'],
+          explain: same ? 'Same bottoms: add the tops and keep the bottom.' : 'Different bottoms: find a common denominator, then add the tops.', meta: { k: 'fr-add-which', b: b, d: d } };
+      }],
+      [1, 'fill', function (lv) {
+        var b, d; do { b = R.int(2, lv === 1 ? 6 : 10); d = R.int(2, lv === 1 ? 6 : 10); } while (b === d || lcm(b, d) > 30);
+        var a = R.int(1, b - 1), c = R.int(1, d - 1), L = lcm(b, d);
+        return { q: 'Fill in the blanks to add <span class="math">' + fr(a, b) + ' + ' + fr(c, d) + '</span>.', type: 'fill',
+          fill: '<span class="math">' + fr(a, b) + ' = </span>[[]]<span class="math"> / ' + L + '</span><br><span class="math">' + fr(c, d) + ' = </span>[[]]<span class="math"> / ' + L + '</span><br><span class="math">' + fr(a, b) + ' + ' + fr(c, d) + ' = </span>[[]]<span class="math"> / ' + L + '</span>', answers: [a * L / b, c * L / d, a * L / b + c * L / d],
+          hint: 'Rename each fraction with the bottom ' + L + '.', steps: [fr(a, b) + ' = ' + fr(a * L / b, L) + '.', fr(c, d) + ' = ' + fr(c * L / d, L) + '.', 'Add the tops.'],
+          explain: fr(a * L / b, L) + ' + ' + fr(c * L / d, L) + ' = ' + fr(a * L / b + c * L / d, L) + '.', meta: { k: 'fr-add-fill', a: [a, b], c: [c, d], L: L } };
+      }],
+      [1, 'story', function (lv) {
+        var two = K.two(), b, d; do { b = R.pick([2, 3, 4, 6, 8]); d = R.pick([2, 3, 4, 6, 8]); } while (lv > 1 && b === d);
+        var a = R.int(1, b - 1), c = R.int(1, d - 1), L = lcm(b, d), N = a * L / b + c * L / d;
+        var it = R.pick([['of a pizza', 'ate', 'How much of the pizza did they eat altogether?'], ['of the lawn', 'mowed', 'How much of the lawn did they mow altogether?'], ['of a hiking trail', 'walked', 'How much of the trail did they walk altogether?']]);
+        return { q: two[0] + ' ' + it[1] + ' ' + fr(a, b) + ' ' + it[0] + ' and ' + two[1] + ' ' + it[1] + ' ' + fr(c, d) + '. ' + it[2] + ' Type a fraction.', type: 'num', answer: N / L, show: plain(N, L), kb: 'text', tol: 1e-6,
+          hint: 'Add the two fractions. Use a common denominator.', steps: ['Common denominator: ' + L + '.', fr(a * L / b, L) + ' + ' + fr(c * L / d, L) + ' = ' + fr(N, L) + '.'],
+          explain: 'Altogether: ' + frs(N, L) + '.', meta: { k: 'fr-add-story', a: [a, b], c: [c, d] } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), b, d; do { b = R.int(2, 6); d = R.int(2, 6); } while (b === d);
+        var a = R.int(1, b - 1), c = R.int(1, d - 1), L = lcm(b, d), N = a * L / b + c * L / d, g = gcd(N, L), truth = R.int(0, 1), said = truth ? [N / g, L / g] : [a + c, b + d];
+        var right = 'Use a common denominator: ' + fr(a * L / b, L) + ' + ' + fr(c * L / d, L) + ' = ' + frs(N, L) + '.';
+        return { q: who + ' says <span class="math">' + fr(a, b) + ' + ' + fr(c, d) + ' = ' + fr(said[0], said[1]) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Add the tops and add the bottoms.', 'The answer must have the bigger of the two bottoms.']),
+          hint: 'Is the answer bigger than each fraction on its own?', steps: [right], explain: right, meta: { k: 'fr-add-tf', a: [a, b], c: [c, d], said: said } };
+      }]
+    ],
+    'fr-sub': [
+      [1, 'which', function () {
+        var who = K.name(), b, d, a, c;
+        do { b = R.pick([2, 3, 4, 6, 8]); d = R.pick([2, 3, 4, 6, 8]); a = R.int(1, b - 1); c = R.int(1, d - 1); } while (a / b <= c / d);
+        var st = R.pick([
+          ['sub', who + ' had ' + fr(a, b) + ' of a tank of gas, then used ' + fr(c, d) + ' of a tank. How much is left?'],
+          ['add', who + ' painted ' + fr(a, b) + ' of a fence on Saturday and ' + fr(c, d) + ' of it on Sunday. How much is painted?'],
+          ['sub', 'A jug holds ' + fr(a, b) + ' L of juice. ' + who + ' pours out ' + fr(c, d) + ' L. How much is in the jug now?'],
+          ['add', who + ' read ' + fr(a, b) + ' of a book, then ' + fr(c, d) + ' of it more. How much has ' + who + ' read?']]);
+        var o = R.mc(st[0] === 'sub' ? 'Subtract' : 'Add', [st[0] === 'sub' ? 'Add' : 'Subtract', 'Multiply', 'Divide']);
+        return { q: 'Which way? ' + st[1] + ' Pick the operation.', type: 'mc', options: o.options, answer: o.answer,
+          hint: st[0] === 'sub' ? 'Something is taken away.' : 'Two amounts are put together.', steps: [st[0] === 'sub' ? 'Taking away means subtract.' : 'Putting together means add.'],
+          explain: (st[0] === 'sub' ? 'Subtract: ' + fr(a, b) + ' &minus; ' + fr(c, d) : 'Add: ' + fr(a, b) + ' + ' + fr(c, d)) + '.', meta: { k: 'fr-op-which', op: st[0] } };
+      }],
+      [1, 'fill', function (lv) {
+        var b, d, a, c, L; do { b = R.int(2, lv === 1 ? 6 : 10); d = R.int(2, lv === 1 ? 6 : 10); a = R.int(1, b - 1); c = R.int(1, d - 1); L = lcm(b, d); } while (b === d || L > 30 || a / b <= c / d);
+        return { q: 'Fill in the blanks to subtract <span class="math">' + fr(a, b) + ' &minus; ' + fr(c, d) + '</span>.', type: 'fill',
+          fill: '<span class="math">' + fr(a, b) + ' = </span>[[]]<span class="math"> / ' + L + '</span><br><span class="math">' + fr(c, d) + ' = </span>[[]]<span class="math"> / ' + L + '</span><br><span class="math">' + fr(a, b) + ' &minus; ' + fr(c, d) + ' = </span>[[]]<span class="math"> / ' + L + '</span>', answers: [a * L / b, c * L / d, a * L / b - c * L / d],
+          hint: 'Rename each fraction with the bottom ' + L + '.', steps: [fr(a, b) + ' = ' + fr(a * L / b, L) + '.', fr(c, d) + ' = ' + fr(c * L / d, L) + '.', 'Subtract the tops.'],
+          explain: fr(a * L / b, L) + ' &minus; ' + fr(c * L / d, L) + ' = ' + fr(a * L / b - c * L / d, L) + '.', meta: { k: 'fr-sub-fill', a: [a, b], c: [c, d], L: L } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), b, d, a, c; do { b = R.pick([2, 3, 4, 5, 6, 8]); d = R.pick([2, 3, 4, 6, 8, 10]); a = R.int(1, b - 1); c = R.int(1, d - 1); } while (a / b <= c / d);
+        var L = lcm(b, d), N = a * L / b - c * L / d;
+        var it = R.pick([['m of ribbon', 'cuts off'], ['L of milk', 'uses'], ['kg of flour', 'bakes with']]);
+        return { q: who + ' has ' + fr(a, b) + ' ' + it[0] + ' and ' + it[1] + ' ' + fr(c, d) + ' ' + it[0].split(' ')[0] + '. How much is left? Type a fraction.', type: 'num', answer: N / L, show: plain(N, L), kb: 'text', tol: 1e-6,
+          hint: 'Subtract. Use a common denominator.', steps: ['Common denominator: ' + L + '.', fr(a * L / b, L) + ' &minus; ' + fr(c * L / d, L) + ' = ' + fr(N, L) + '.'],
+          explain: frs(N, L) + ' ' + it[0].split(' ')[0] + ' is left.', meta: { k: 'fr-sub-story', a: [a, b], c: [c, d] } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), b, d, a, c; do { b = R.int(2, 8); d = R.int(2, 8); a = R.int(1, b - 1); c = R.int(1, d - 1); } while (b === d || a / b <= c / d || a <= c || b <= d);
+        var L = lcm(b, d), N = a * L / b - c * L / d, g = gcd(N, L), truth = R.int(0, 1), said = truth ? [N / g, L / g] : [a - c, b - d];
+        var right = 'Use a common denominator: ' + fr(a * L / b, L) + ' &minus; ' + fr(c * L / d, L) + ' = ' + frs(N, L) + '.';
+        return { q: who + ' says <span class="math">' + fr(a, b) + ' &minus; ' + fr(c, d) + ' = ' + fr(said[0], said[1]) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Subtract the tops and subtract the bottoms.', 'Keep the first bottom and subtract the tops.']),
+          hint: 'Rename both with a common denominator, then check.', steps: [right], explain: right, meta: { k: 'fr-sub-tf', a: [a, b], c: [c, d], said: said } };
+      }]
+    ]
+  });
+  function f2(f) { return f[0] + '/' + f[1]; }
 })();

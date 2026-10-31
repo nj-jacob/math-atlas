@@ -593,4 +593,174 @@ moves() +
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  /* a 0 to 10 grid with labelled points that can be tapped (data-hit = the label); one grid square is 30 px */
+  function tapGrid(points, lines) {
+    var u = 30, o = 40, b = 10 + 10 * u, s = '';
+    for (var i = 0; i <= 10; i++) {
+      s += '<line x1="' + (o + i * u) + '" y1="10" x2="' + (o + i * u) + '" y2="' + b + '" style="stroke:var(--line)" stroke-width="1"/><line x1="' + o + '" y1="' + (10 + i * u) + '" x2="' + (o + 10 * u) + '" y2="' + (10 + i * u) + '" style="stroke:var(--line)" stroke-width="1"/>' +
+        '<text x="' + (o + i * u) + '" y="' + (b + 18) + '" text-anchor="middle" font-size="13" class="t2">' + i + '</text><text x="' + (o - 8) + '" y="' + (b - i * u + 4) + '" text-anchor="end" font-size="13" class="t2">' + i + '</text>';
+    }
+    (lines || []).forEach(function (l) { s += '<line x1="' + (o + l[0] * u) + '" y1="' + (b - l[1] * u) + '" x2="' + (o + l[2] * u) + '" y2="' + (b - l[3] * u) + '" style="stroke:var(--bad)" stroke-width="2.5" stroke-dasharray="6 4"/>'; });
+    points.forEach(function (p) {
+      var cx = o + p.x * u, cy = b - p.y * u, body = '<circle cx="' + cx + '" cy="' + cy + '" r="9" style="fill:' + (p.fixed ? 'var(--strand)' : 'var(--hi)') + ';stroke:var(--ink)" stroke-width="2"/><text x="' + (cx + 12) + '" y="' + (cy - 10) + '" font-size="16" font-weight="700">' + p.label + '</text>';
+      s += p.fixed ? body : '<g data-hit="' + p.label + '" aria-label="point ' + p.label + '">' + body + '</g>';
+    });
+    return A.svg(o + 10 * u + 16, b + 26, s, 'Coordinate grid from 0 to 10 with points ' + points.map(function (p) { return p.label; }).join(', '));
+  }
+  function xy(x, y) { return '(' + x + ', ' + y + ')'; }
+  /* where a point lands: t is 'tr' (dx, dy), 'rv' (mirror line x = 5) or 'rh' (mirror line y = 5) */
+  function moveTo(x, y, t, dx, dy) { return t === 'tr' ? [x + dx, y + dy] : t === 'rv' ? [10 - x, y] : [x, 10 - y]; }
+  function moveText(t, dx, dy) { return t === 'tr' ? 'translated ' + dx + ' right and ' + dy + ' up' : t === 'rv' ? 'reflected in the line x = 5' : 'reflected in the line y = 5'; }
+  function triSides(k) { var s = R.int(3, 9); return R.shuffle(k === 'equilateral' ? [s, s, s] : k === 'isosceles' ? [s, s, s + R.int(1, 3)] : [s, s + 1, s + R.int(2, 3)]); }
+  var SHAPES = {
+    'sg-tri': [
+      [1, 'match', function (lv) {
+        var kinds = ['equilateral', 'isosceles', 'scalene'];
+        return { q: 'Match each triangle to its name. The numbers are side lengths in cm.', type: 'match', pairs: kinds.map(function (k) { return [triSides(k).join(', '), k]; }),
+          hint: 'Count the equal sides in each one.', steps: ['3 equal sides: equilateral.', 'Exactly 2 equal sides: isosceles.', 'No equal sides: scalene.'],
+          explain: 'Equilateral has 3 equal sides, isosceles has 2, scalene has none.', meta: { k: 'g5sg-trimatch' } };
+      }],
+      [1, 'tap', function (lv) {
+        var want = R.pick(['equilateral', 'isosceles', 'scalene']), kinds = R.shuffle(['equilateral', 'isosceles', 'scalene']), sets = kinds.map(triSides);
+        return { q: 'Tap the <b>' + want + '</b> triangle.', type: 'tap', tiles: sets.map(function (sd) { return sideTri(sd[0], sd[1], sd[2]); }), answer: kinds.indexOf(want), answerText: 'the triangle with sides ' + sets[kinds.indexOf(want)].join(', ') + ' cm',
+          hint: want === 'equilateral' ? 'Look for 3 equal sides.' : want === 'isosceles' ? 'Look for exactly 2 equal sides.' : 'Look for no equal sides.', steps: ['Read the three side lengths on each triangle.', 'Count how many are equal.'],
+          explain: 'The ' + want + ' triangle has sides ' + sets[kinds.indexOf(want)].join(', ') + ' cm.', meta: { k: 'g5sg-tritap', sets: sets } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = nm(), x = R.pick([30, 40, 50]), y = R.pick([20, 30, 40, 50, 60, 70]), z = 180 - x - y, truth = byAngles(x, y, z) === 'acute';
+        var right = 'The biggest angle is ' + Math.max(x, y, z) + '&deg;. ' + (truth ? 'It is less than 90&deg;, so the triangle is acute.' : 'It is ' + (Math.max(x, y, z) === 90 ? 'exactly' : 'more than') + ' 90&deg;, so the triangle is ' + byAngles(x, y, z) + ', not acute.');
+        return KIT.tf(who, 'a triangle with angles ' + x + '&deg;, ' + y + '&deg; and ' + z + '&deg; is <b>acute</b>.', truth, right,
+          ['If two angles are acute, the triangle is acute.', 'Every triangle is acute.', 'Look at the smallest angle to decide.'],
+          { fig: angTri(x, y, z), hint: 'An acute triangle has all three angles less than 90&deg;.', meta: { k: 'g5sg-tritf', a: [x, y, z] } });
+      }],
+      [2, 'fill', function (lv) {
+        var a = R.int(3, 14) * 5, b = R.int(3, 14) * 5;
+        while (a + b >= 170) b = R.int(3, 10) * 5;
+        return { q: 'Find the missing angle.', type: 'fill', fig: angTri(a, b, 180 - a - b, 2), fill: a + '&deg; + ' + b + '&deg; + [[]]&deg; = 180&deg;', answers: [180 - a - b],
+          hint: 'The three angles of a triangle add to 180&deg;.', steps: [a + ' + ' + b + ' = ' + (a + b) + '.', '180 &minus; ' + (a + b) + ' = ' + (180 - a - b) + '.'],
+          explain: 'The missing angle is ' + (180 - a - b) + '&deg;.', meta: { k: 'g5sg-trifill' } };
+      }]
+    ],
+    'sg-cong': [
+      [1, 'pick', function (lv) {
+        var w = R.int(3, 8), h = R.int(2, 6);
+        if (w === h) w++;
+        var opts = R.shuffle([[w, h], [h, w], [w * 2, h * 2], [w, h + 1], [w + 1, h - 1 || h + 2]].filter(function (r, i, a) { return a.map(String).indexOf(String(r)) === i; }));
+        return KIT.pick('Which rectangles are congruent to one that is <b>' + w + ' cm by ' + h + ' cm</b>? Pick every one.', opts, function (r) { return (r[0] === w && r[1] === h) || (r[0] === h && r[1] === w); }, function (r) { return r[0] + ' cm by ' + r[1] + ' cm'; }, {
+          hint: 'Congruent means exactly the same side lengths. Turning is allowed.', steps: ['Look for sides ' + w + ' cm and ' + h + ' cm, in either order.', 'Bigger copies are similar, not congruent.'],
+          explain: w + ' by ' + h + ' and ' + h + ' by ' + w + ' are the same rectangle turned.', meta: { k: 'g5sg-congpick' } });
+      }],
+      [1, 'tap', function (lv) {
+        var w = R.int(3, 6), h = R.int(2, 4);
+        if (w === h) w++;
+        var set = R.shuffle([[h, w], [w + 1, h], [w, h + 1]]);
+        return { q: 'Tap the rectangle that is congruent to this one. It may be turned.', fig: pair([{ w: w, h: h, label: w + ' by ' + h }]), type: 'tap', tiles: set.map(function (r) { return pair([{ w: r[0], h: r[1], label: r[0] + ' by ' + r[1] }]); }), answer: set.map(String).indexOf(String([h, w])), answerText: h + ' by ' + w,
+          hint: 'Find the one with sides ' + w + ' and ' + h + '.', steps: ['Turning a shape does not change its side lengths.', h + ' by ' + w + ' is the same rectangle turned.'],
+          explain: h + ' by ' + w + ' is congruent: the same rectangle, turned.', meta: { k: 'g5sg-congtap', w: w, h: h, set: set } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = nm(), p = R.pick([[[6, 4], [8, 3]], [[12, 2], [6, 4]], [[9, 4], [12, 3]], [[10, 3], [6, 5]]]), truth = false;
+        var right = 'They have the same area, ' + p[0][0] * p[0][1] + ' square cm, but different side lengths, so they are not congruent.';
+        return KIT.tf(who, 'a ' + p[0][0] + ' cm by ' + p[0][1] + ' cm rectangle and a ' + p[1][0] + ' cm by ' + p[1][1] + ' cm rectangle are congruent because they have the same area.', truth, right,
+          ['Same area means congruent.', 'All rectangles are congruent.', 'Congruent shapes only need the same number of sides.'],
+          { fig: pair([{ w: p[0][0], h: p[0][1], label: p[0][0] + ' by ' + p[0][1] }, { w: p[1][0], h: p[1][1], label: p[1][0] + ' by ' + p[1][1] }]), hint: 'Congruent means the same size and shape. Compare the sides.', meta: { k: 'g5sg-congtf', p: p } });
+      }]
+    ],
+    'sg-views': [
+      [1, 'fill', function (lv) {
+        var h = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+        for (var y = 0; y < 3; y++) for (var x = 0; x < 3; x++) h[y][x] = R.int(0, lv === 1 ? 2 : 3);
+        h[2][R.int(0, 2)] = Math.max(1, h[2][1]);
+        var f = front(h);
+        return { q: 'The top view shows how many cubes are in each stack. The front is at the bottom. How tall is each column of the <b>front view</b>, from left to right?', type: 'fill', fig: top(h, true), fill: '[[]], [[]], [[]]', answers: f,
+          hint: 'Look down each column of the top view. The front view shows the tallest stack.', steps: ['Left column: tallest is ' + f[0] + '. Middle: ' + f[1] + '. Right: ' + f[2] + '.', view(f, 'The front view')],
+          explain: 'The front view has columns ' + f.join(', ') + ' tall.', meta: { k: 'g5sg-viewfill', h: h } };
+      }],
+      [1, 'tap', function (lv) {
+        var h = [[0, 0, 0], [0, 0, 0], [0, 0, 0]], f, s2;
+        do { for (var y = 0; y < 3; y++) for (var x = 0; x < 3; x++) h[y][x] = R.int(0, 3); f = front(h); s2 = side(h); } while (f.join() === s2.join() || f.join() === s2.slice().reverse().join() || f.join() === f.slice().reverse().join() || !f.every(function (v) { return v; }));
+        var set = R.shuffle([f, f.slice().reverse(), s2]).filter(function (v, i, a) { return a.map(String).indexOf(String(v)) === i; });
+        return { q: 'Tap the <b>front view</b> of this building. The front is at the bottom of the top view.', fig: top(h, true), type: 'tap', tiles: set.map(function (c) { return view(c, 'A view with columns ' + c.join(', ')); }), answer: set.map(String).indexOf(String(f)), answerText: 'the view with columns ' + f.join(', '),
+          hint: 'Find the tallest stack in each column, left to right.', steps: ['Tallest stacks, left to right: ' + f.join(', ') + '.'],
+          explain: 'The front view has columns ' + f.join(', ') + ' tall.', meta: { k: 'g5sg-viewtap', h: h } };
+      }],
+      [2, 'mistake', function (lv) {
+        var h = [[0, 0, 0], [0, 0, 0], [0, 0, 0]];
+        for (var y = 0; y < 3; y++) for (var x = 0; x < 3; x++) h[y][x] = R.int(1, 3);
+        h[0][0] = 2;
+        var cubes = h.reduce(function (t, r) { return t + r.reduce(function (a, b) { return a + b; }, 0); }, 0), who = nm(), truth = !R.int(0, 2), said = truth ? cubes : 9;
+        var right = 'Each number is the height of one stack. Add them all: ' + cubes + ' cubes.';
+        return KIT.tf(who, 'this building has <b>' + said + '</b> cubes.', truth, right,
+          ['Count the squares in the top view.', 'Multiply the biggest number by 3.', 'The top view only shows the top layer, so count 9.'],
+          { fig: top(h, true), hint: 'What does each number in the top view mean?', meta: { k: 'g5sg-viewtf', h: h, said: said } });
+      }]
+    ],
+    'sg-coord': [
+      [1, 'tap', function (lv) {
+        var pts = [], seen = {}, labels = ['A', 'B', 'C', 'D'];
+        var x = R.int(1, 9), y = R.int(1, 9);
+        while (x === y) y = R.int(1, 9);
+        [[x, y], [y, x], [x, y + (y < 9 ? 1 : -1)], [x + (x < 9 ? 1 : -1), y]].forEach(function (p) { if (!seen[p]) { seen[p] = 1; pts.push(p); } });
+        pts = R.shuffle(pts);
+        var ans = labels[pts.map(String).indexOf(String([x, y]))];
+        return { q: 'Tap the point at <b>' + xy(x, y) + '</b>.', type: 'tap', pic: tapGrid(pts.map(function (p, i) { return { x: p[0], y: p[1], label: labels[i] }; })), answer: ans, answerText: 'point ' + ans,
+          hint: 'Go across ' + x + ' first, then up ' + y + '.', steps: ['Start at (0, 0).', 'Go right ' + x + ', then up ' + y + '.'],
+          explain: 'Point ' + ans + ' is at ' + xy(x, y) + '.', meta: { k: 'g5sg-coordtap' } };
+      }],
+      [1, 'fill', function (lv) {
+        var sc = lv === 1 ? 1 : R.pick([1, 2]), x = R.int(1, 9), y = R.int(1, 9);
+        while (x === y) y = R.int(1, 9);
+        return { q: 'Write the coordinates of point A.' + (sc > 1 ? ' The grid counts by ' + sc + 's.' : ''), type: 'fill', fig: grid(sc, [{ x: x, y: y, label: 'A', c: 'var(--strand)' }], [], 24), fill: 'A = ([[]], [[]])', answers: [x * sc, y * sc],
+          hint: 'Across first (x), then up (y).', steps: ['Across: ' + x * sc + '.', 'Up: ' + y * sc + '.'],
+          explain: 'A is at ' + xy(x * sc, y * sc) + '.', meta: { k: 'g5sg-coordfill', x: x * sc, y: y * sc } };
+      }],
+      [1, 'mistake', function (lv) {
+        var x = R.int(1, 9), y = R.int(1, 9), who = nm(), truth = !R.int(0, 2);
+        while (x === y) y = R.int(1, 9);
+        var said = truth ? [x, y] : [y, x], right = 'Go across first, then up. A is ' + x + ' across and ' + y + ' up, so A is at ' + xy(x, y) + '.';
+        return KIT.tf(who, 'point A is at <b>' + xy(said[0], said[1]) + '</b>.', truth, right,
+          ['Go up first, then across.', 'The order of the numbers does not matter.', 'Count the squares, not the lines.'],
+          { fig: grid(1, [{ x: x, y: y, label: 'A', c: 'var(--strand)' }], [], 24), hint: 'Which number comes first: across or up?', meta: { k: 'g5sg-coordtf', x: x, y: y, said: said } });
+      }]
+    ],
+    'sg-trans': [
+      [1, 'fill', function (lv) {
+        var t = lv === 1 ? 'tr' : R.pick(['tr', 'rv', 'rh']), x = R.int(1, 4), y = R.int(1, 4), dx = R.int(1, 5), dy = R.int(1, 5), im = moveTo(x, y, t, dx, dy);
+        return { q: 'Point P' + xy(x, y) + ' is ' + moveText(t, dx, dy) + '. Where is its image?', type: 'fill', fig: grid(1, [{ x: x, y: y, label: 'P', c: 'var(--strand)' }], t === 'rv' ? [{ pts: [[5, 0], [5, 10]], fill: 'none', stroke: 'var(--bad)', dash: true }] : t === 'rh' ? [{ pts: [[0, 5], [10, 5]], fill: 'none', stroke: 'var(--bad)', dash: true }] : [], 24), fill: "P' = ([[]], [[]])", answers: im,
+          hint: t === 'tr' ? 'Right adds to x. Up adds to y.' : 'Count the distance to the mirror line. Go the same distance on the other side.', steps: [t === 'tr' ? x + ' + ' + dx + ' = ' + im[0] + ', ' + y + ' + ' + dy + ' = ' + im[1] + '.' : 'The image is the same distance from the mirror line, on the other side.', 'The image is ' + xy(im[0], im[1]) + '.'],
+          explain: "P' is at " + xy(im[0], im[1]) + '.', meta: { k: 'g5sg-transfill' } };
+      }],
+      [1, 'tap', function (lv) {
+        var t = lv === 1 ? 'tr' : R.pick(['rv', 'rh']), x = R.int(1, 4), y = R.int(1, 4), dx = R.int(1, 4), dy = dx === 4 ? R.int(1, 3) : dx + R.int(1, 4 - dx), im = moveTo(x, y, t, dx, dy), labels = ['A', 'B', 'C'];
+        var cand = [im, t === 'tr' ? [x + dy, y + dx] : moveTo(x, y, t === 'rv' ? 'rh' : 'rv'), [im[0] + 1, im[1]]], uniq = [];
+        cand.forEach(function (p) { if (uniq.map(String).indexOf(String(p)) < 0 && !(p[0] === x && p[1] === y)) uniq.push(p); });
+        if (uniq.length < 3) uniq.push([im[0], im[1] + 1]);
+        uniq = R.shuffle(uniq);
+        var ans = labels[uniq.map(String).indexOf(String(im))];
+        return { q: 'P' + xy(x, y) + ' is ' + moveText(t, dx, dy) + '. Tap its image.', type: 'tap', pic: tapGrid([{ x: x, y: y, label: 'P', fixed: true }].concat(uniq.map(function (p, i) { return { x: p[0], y: p[1], label: labels[i] }; })), t === 'rv' ? [[5, 0, 5, 10]] : t === 'rh' ? [[0, 5, 10, 5]] : []),
+          answer: ans, answerText: 'point ' + ans + ' at ' + xy(im[0], im[1]),
+          hint: t === 'tr' ? 'Start at P. Count ' + dx + ' right, then ' + dy + ' up.' : 'Count from P to the red line. Go the same distance past it.', steps: ['The image is at ' + xy(im[0], im[1]) + '.'],
+          explain: 'The image of P is ' + ans + ', at ' + xy(im[0], im[1]) + '.', meta: { k: 'g5sg-transtap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var x = R.int(1, 4), y = R.int(1, 4), dx = R.int(1, 5), dy = R.int(1, 5), who = nm(), truth = !R.int(0, 2);
+        if (dx === dy) dy = dx === 5 ? 4 : dx + 1;
+        var said = truth ? [x + dx, y + dy] : [x + dy, y + dx], right = 'Right changes x and up changes y: (' + x + ' + ' + dx + ', ' + y + ' + ' + dy + ') = ' + xy(x + dx, y + dy) + '.';
+        return KIT.tf(who, 'P' + xy(x, y) + ' translated ' + dx + ' right and ' + dy + ' up lands at <b>' + xy(said[0], said[1]) + '</b>.', truth, right,
+          ['Right changes y and up changes x.', 'Add both numbers to x.', 'A translation does not move the point.'],
+          { hint: 'Which coordinate changes when you move right?', meta: { k: 'g5sg-transtf', said: said } });
+      }],
+      [2, 'match', function (lv) {
+        var x, y, dx = R.int(1, 3), dy = R.int(1, 3), list, ims;
+        do { x = R.int(1, 4); y = R.int(1, 4); list = [['tr', dx, dy], ['rv'], ['rh']]; ims = list.map(function (m) { return moveTo(x, y, m[0], m[1], m[2]); }); } while (new Set(ims.map(String)).size < 3);
+        return { q: 'P is at ' + xy(x, y) + '. Match each move to where P lands.', type: 'match', pairs: list.map(function (m, i) { return [moveText(m[0], m[1], m[2]).replace(/^./, function (c) { return c.toUpperCase(); }), xy(ims[i][0], ims[i][1])]; }),
+          fig: grid(1, [{ x: x, y: y, label: 'P', c: 'var(--strand)' }], [], 24), hint: 'Do each move on its own, starting from P.', steps: ['A translation slides. A reflection flips over the line.'],
+          explain: list.map(function (m, i) { return moveText(m[0], m[1], m[2]) + ': ' + xy(ims[i][0], ims[i][1]); }).join('. ') + '.', meta: { k: 'g5sg-transmatch' } };
+      }]
+    ]
+  };
+  KIT.shapes('shapes-grids', SHAPES);
 })();
