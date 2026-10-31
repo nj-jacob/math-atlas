@@ -1,0 +1,12 @@
+{
+  "name": "math-atlas-checks",
+  "private": true,
+  "description": "Automatic checks for the Math Atlas sites. Run: npm test (from this folder).",
+  "scripts": {
+    "test": "node run.js",
+    "quick": "node run.js --quick"
+  },
+  "devDependencies": {
+    "playwright": "1.48.2"
+  }
+}
