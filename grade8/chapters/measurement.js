@@ -415,4 +415,145 @@ A.yt({ q: 'A box is 2 cm by 3 cm by 4 cm. What is its surface area?', a: 52, uni
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  var SHAPES = {
+    'ms-hyp': [
+      [1, 'fill', function (lv) {
+        var t = triple(1), a = t[0], b = t[1];
+        return { q: 'A right triangle has legs of ' + a + ' cm and ' + b + ' cm. Find the hypotenuse c, one step at a time.', type: 'fill', fill: 'c' + SQ + ' = ' + a + SQ + ' + ' + b + SQ + ' = [[]] + [[]] = [[]], so c = [[]] cm', answers: [a * a, b * b, a * a + b * b, t[2]], fig: rtri(a, b, a + ' cm', b + ' cm', 'c = ?', 'c'),
+          hint: 'Square each leg. Add. Then take the square root.', steps: [a + SQ + ' = ' + a * a + ', ' + b + SQ + ' = ' + b * b + '.', a * a + ' + ' + b * b + ' = ' + (a * a + b * b) + '.', sqrtS(a * a + b * b) + ' = ' + t[2] + '.'], explain: 'c = ' + t[2] + ' cm.', meta: { k: 'mh-fill', a: a, b: b } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), t = triple(lv), k = 10;
+        return { q: who + ' cuts straight across a rectangular park that is <b>' + t[0] * k + ' m</b> long and <b>' + t[1] * k + ' m</b> wide, from corner to corner. How long is the shortcut?', type: 'num', answer: t[2] * k, unit: 'm', fig: rtri(t[0], t[1], t[0] * k + ' m', t[1] * k + ' m', '?', 'c'),
+          hint: 'The sides of the park are the legs. The shortcut is the hypotenuse.', steps: [t[0] * k + SQ + ' + ' + t[1] * k + SQ + ' = ' + A.fmt(t[2] * t[2] * k * k) + '.', sqrtS(t[2] * t[2] * k * k) + ' = ' + t[2] * k + '.'], explain: 'The shortcut is ' + t[2] * k + ' m.', meta: { k: 'mh-story', a: t[0] * k, b: t[1] * k } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), t = triple(lv), truth = R.int(0, 1), said = truth ? t[2] : t[0] + t[1];
+        return K.tf({ q: 'A right triangle has legs of ' + t[0] + ' cm and ' + t[1] + ' cm. ' + who + ' says the hypotenuse is <b>' + said + ' cm</b>. True or false?', truth: truth, fig: rtri(t[0], t[1], t[0] + ' cm', t[1] + ' cm', 'c = ?', 'c'),
+          right: 'Square, add, then square root: ' + sqrtS(t[0] * t[0] + t[1] * t[1]) + ' = ' + t[2] + ' cm. A straight line is shorter than going around two sides.', wrong: ['The hypotenuse is the two legs added together.', 'The hypotenuse is the longer leg doubled.'],
+          hint: 'Use a' + SQ + ' + b' + SQ + ' = c' + SQ + '.', meta: { k: 'mh-tf', a: t[0], b: t[1], said: said } });
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var opts = R.shuffle(TRIPLES).slice(0, 3).map(function (t) { var k = R.pick([1, 2]); return [t[0] * k + ', ' + t[1] * k + ', ' + t[2] * k, true]; })
+            .concat([[R.int(4, 8) + ', ' + R.int(9, 12) + ', ' + R.int(13, 16), false], [R.int(2, 5) + ', ' + R.int(6, 8) + ', ' + R.int(10, 12), false]]);
+          return K.pickAll({ q: 'Each set gives the three sides of a triangle in cm. Pick every set that makes a <b>right</b> triangle.', opts: opts, hint: 'Square the two shorter sides and add. Does it equal the longest side squared?', steps: ['A right triangle has a' + SQ + ' + b' + SQ + ' = c' + SQ + '.'], explain: 'The right triangles are the ones where the squares match.', meta: { k: 'mh-pick' } });
+        });
+      }]
+    ],
+    'ms-leg': [
+      [1, 'fill', function (lv) {
+        var t = triple(1);
+        return { q: 'A right triangle has a hypotenuse of ' + t[2] + ' cm and a leg of ' + t[1] + ' cm. Find the other leg.', type: 'fill', fill: 'a' + SQ + ' = ' + t[2] + SQ + ' &minus; ' + t[1] + SQ + ' = [[]], so a = [[]] cm', answers: [t[0] * t[0], t[0]], fig: rtri(t[0], t[1], 'a = ?', t[1] + ' cm', t[2] + ' cm', 'a'),
+          hint: 'Subtract the squares, then take the square root.', steps: [t[2] * t[2] + ' &minus; ' + t[1] * t[1] + ' = ' + t[0] * t[0] + '.', sqrtS(t[0] * t[0]) + ' = ' + t[0] + '.'], explain: 'The other leg is ' + t[0] + ' cm.', meta: { k: 'ml-fill', c: t[2], b: t[1] } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), t = triple(lv), truth = R.int(0, 1), said = truth ? t[0] : t[2] - t[1];
+        if (said === t[0]) truth = 1;
+        return K.tf({ q: 'A right triangle has a hypotenuse of ' + t[2] + ' cm and a leg of ' + t[1] + ' cm. ' + who + ' says the other leg is <b>' + said + ' cm</b>. True or false?', truth: truth,
+          right: 'Subtract the squares: ' + t[2] + SQ + ' &minus; ' + t[1] + SQ + ' = ' + t[0] * t[0] + ', and ' + sqrtS(t[0] * t[0]) + ' = ' + t[0] + ' cm.', wrong: ['Just subtract the two lengths.', 'Add the squares to find a leg.'],
+          hint: 'Use c' + SQ + ' &minus; b' + SQ + ', not c &minus; b.', meta: { k: 'ml-tf', c: t[2], b: t[1], said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), t = R.pick([[3, 4, 5], [6, 8, 10], [9, 12, 15]]), k = R.pick([10, 12]);
+        return { q: who + '\'s TV has a diagonal of <b>' + t[2] * k + ' cm</b> and is <b>' + t[1] * k + ' cm</b> wide. How tall is it?', type: 'num', answer: t[0] * k, unit: 'cm',
+          hint: 'The diagonal is the hypotenuse. Find the missing leg.', steps: [A.fmt(t[2] * t[2] * k * k) + ' &minus; ' + A.fmt(t[1] * t[1] * k * k) + ' = ' + A.fmt(t[0] * t[0] * k * k) + '.', sqrtS(t[0] * t[0] * k * k) + ' = ' + t[0] * k + '.'], explain: 'The TV is ' + t[0] * k + ' cm tall.', meta: { k: 'ml-story', c: t[2] * k, b: t[1] * k } };
+      }]
+    ],
+    'ms-circle': [
+      [1, 'match', function (lv) {
+        var rs = []; while (rs.length < 3) { var v = R.int(2, 12); if (rs.indexOf(v) < 0) rs.push(v); }
+        return { q: 'Match each radius to the circumference (to one decimal place).', type: 'match', pairs: rs.map(function (r) { return ['r = ' + r + ' cm', f1(2 * Math.PI * r) + ' cm']; }),
+          hint: 'C = 2&pi;r, or &pi; times the diameter.', steps: ['A bigger radius gives a bigger circumference.'], explain: rs.map(function (r) { return 'r = ' + r + ': C &asymp; ' + f1(2 * Math.PI * r); }).join(', ') + '.', meta: { k: 'mc-match' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), r = R.int(2, 10), truth = R.int(0, 1), right = r1(Math.PI * r * r), said = truth ? right : r1(Math.PI * 4 * r * r);
+        return K.tf({ q: 'A circle has a diameter of ' + 2 * r + ' cm. ' + who + ' says its area is about <b>' + A.fmt(said) + ' cm' + SQ + '</b>. True or false?', truth: truth,
+          right: 'Use the radius, ' + r + ' cm: A = &pi; &times; ' + r + SQ + ' &asymp; ' + A.fmt(right) + ' cm' + SQ + '.', wrong: ['Use the diameter in A = &pi;r' + SQ + '.', 'Area and circumference use the same formula.'],
+          hint: 'A = &pi;r' + SQ + ' needs the radius, not the diameter.', meta: { k: 'mc-tf', d: 2 * r, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), d = R.pick([50, 60, 66, 70]), C = Math.PI * d;
+        return approx({ q: who + '\'s bike wheel has a diameter of <b>' + d + ' cm</b>. How far does the bike roll in one full turn of the wheel?' + ROUND, type: 'num', answer: C, unit: 'cm',
+          hint: 'One turn rolls out the circumference: C = &pi;d.', steps: ['C = &pi; &times; ' + d + ' &asymp; ' + f1(C) + ' cm.'], explain: 'About ' + f1(C) + ' cm per turn.', meta: { k: 'mc-story', d: d } }, 'cm');
+      }],
+      [2, 'fill', function (lv) {
+        var d = R.int(2, 15) * 2;
+        return { q: 'A circle has a diameter of ' + d + ' cm. Fill in the blanks.', type: 'fill', fill: 'r = [[]] cm, and A = &pi; &times; [[]] cm' + SQ, answers: [d / 2, d * d / 4],
+          hint: 'The radius is half the diameter. Then square it.', steps: ['r = ' + d + ' &divide; 2 = ' + d / 2 + '.', 'r' + SQ + ' = ' + d * d / 4 + '.'], explain: 'A = &pi; &times; ' + d * d / 4 + ' &asymp; ' + f1(Math.PI * d * d / 4) + ' cm' + SQ + '.', meta: { k: 'mc-fill', d: d } };
+      }]
+    ],
+    'ms-composite': [
+      [1, 'fill', function (lv) {
+        var w = R.int(3, 10) * 2, h = R.int(3, 9), t = R.int(2, 6);
+        return { q: 'Find the area of the house shape in two parts.', type: 'fill', fill: 'Rectangle: [[]] cm' + SQ + ' &nbsp; Triangle: [[]] cm' + SQ + ' &nbsp; Total: [[]] cm' + SQ, answers: [w * h, w * t / 2, w * h + w * t / 2], fig: comp('house', { w: w, h: h, t: t }),
+          hint: 'Rectangle: width &times; height. Triangle: base &times; height &divide; 2.', steps: [w + ' &times; ' + h + ' = ' + w * h + '.', w + ' &times; ' + t + ' &divide; 2 = ' + w * t / 2 + '.'], explain: 'Total: ' + (w * h + w * t / 2) + ' cm' + SQ + '.', meta: { k: 'mp-fill', w: w, h: h, t: t } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), W = R.int(8, 14), H = R.int(6, 10), cw = R.int(2, W - 3), ch = R.int(2, H - 3), truth = R.int(0, 1), said = truth ? W * H - cw * ch : W * H + cw * ch;
+        return K.tf({ q: who + ' says the area of this L shape is <b>' + said + ' cm' + SQ + '</b>. True or false?', truth: truth, fig: comp('L', { W: W, H: H, cw: cw, ch: ch }),
+          right: 'Whole rectangle minus the cut-out corner: ' + W * H + ' &minus; ' + cw * ch + ' = ' + (W * H - cw * ch) + ' cm' + SQ + '.', wrong: ['Add the corner to the whole rectangle.', 'Multiply all four lengths.'],
+          hint: 'Is the corner part of the shape, or cut away?', meta: { k: 'mp-tf', W: W, H: H, cw: cw, ch: ch, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), W = R.int(8, 14), H = R.int(6, 10), cw = R.int(2, W - 3), ch = R.int(2, H - 3);
+        return { q: who + '\'s backyard is a ' + W + ' m by ' + H + ' m rectangle, but a ' + cw + ' m by ' + ch + ' m shed sits in one corner. How much area needs new sod?', type: 'num', answer: W * H - cw * ch, unit: 'm' + SQ, fig: comp('L', { W: W, H: H, cw: cw, ch: ch }).replace(/cm/g, 'm'),
+          hint: 'Whole yard minus the shed.', steps: [W + ' &times; ' + H + ' = ' + W * H + '.', cw + ' &times; ' + ch + ' = ' + cw * ch + '.', W * H + ' &minus; ' + cw * ch + ' = ' + (W * H - cw * ch) + '.'], explain: (W * H - cw * ch) + ' m' + SQ + ' needs sod.', meta: { k: 'mp-story', W: W, H: H, cw: cw, ch: ch } };
+      }],
+      [2, 'way', function (lv) {
+        var W = R.int(8, 14), H = R.int(6, 10), cw = R.int(2, W - 3), ch = R.int(2, H - 3);
+        return K.pick1({ q: 'Which way finds the area of this L shape?', fig: comp('L', { W: W, H: H, cw: cw, ch: ch }), right: W + ' &times; ' + H + ' &minus; ' + cw + ' &times; ' + ch, wrong: [W + ' &times; ' + H + ' + ' + cw + ' &times; ' + ch, W + ' + ' + H + ' &minus; ' + cw + ' &minus; ' + ch, '2 &times; (' + W + ' + ' + H + ')'],
+          hint: 'Start with the whole rectangle. What was taken away?', steps: ['Whole rectangle minus the cut-out corner.'], explain: W * H + ' &minus; ' + cw * ch + ' = ' + (W * H - cw * ch) + ' cm' + SQ + '.', meta: { k: 'mp-way', W: W, H: H, cw: cw, ch: ch } });
+      }]
+    ],
+    'ms-volume': [
+      [1, 'fill', function (lv) {
+        var l = R.int(2, 12), w = R.int(2, 10), h = R.int(2, 10);
+        return { q: 'Find the volume of the box in two steps.', type: 'fill', fill: 'Base: ' + l + ' &times; ' + w + ' = [[]] cm' + SQ + ' &nbsp; Volume: [[]] &times; ' + h + ' = [[]] cm' + CU, answers: [l * w, l * w, l * w * h], fig: solid('box', { l: l, w: w, h: h }, { l: l + ' cm', w: w + ' cm', h: h + ' cm' }),
+          hint: 'Base area first, then times the height.', steps: [l + ' &times; ' + w + ' = ' + l * w + '.', l * w + ' &times; ' + h + ' = ' + l * w * h + '.'], explain: 'V = ' + A.fmt(l * w * h) + ' cm' + CU + '.', meta: { k: 'mv-fill', l: l, w: w, h: h } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), l = R.pick([20, 25, 30]), w = R.pick([5, 6, 8]), h = R.pick([25, 30, 35]);
+        return { q: who + ' designs a cereal box that is ' + l + ' cm long, ' + w + ' cm deep and ' + h + ' cm tall. What volume of cereal fits inside?', type: 'num', answer: l * w * h, unit: 'cm' + CU, fig: solid('box', { l: l / 5, w: w / 2, h: h / 5 }, { l: l + ' cm', w: w + ' cm', h: h + ' cm' }),
+          hint: 'Volume = length &times; width &times; height.', steps: [l + ' &times; ' + w + ' = ' + l * w + '.', l * w + ' &times; ' + h + ' = ' + A.fmt(l * w * h) + '.'], explain: 'It holds ' + A.fmt(l * w * h) + ' cm' + CU + '.', meta: { k: 'mv-story', l: l, w: w, h: h } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), k = R.pick([2, 3]), truth = R.int(0, 1), said = truth ? k * k * k : k;
+        return K.tf({ q: 'Every edge of a box is made ' + k + ' times as long. ' + who + ' says the volume becomes <b>' + said + ' times</b> as big. True or false?', truth: truth,
+          right: 'Length, width and height each grow ' + k + ' times: ' + k + ' &times; ' + k + ' &times; ' + k + ' = ' + k * k * k + ' times the volume.', wrong: ['The volume grows by the same factor as each edge.', 'Only the height changes the volume.'],
+          hint: 'Try it with a 1 by 1 by 1 cube.', meta: { k: 'mv-tf', k2: k, said: said } });
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var list = [0, 1, 2].map(function () { return [R.int(2, 9), R.int(2, 9), R.int(2, 9)]; }), v = list.map(function (b) { return b[0] * b[1] * b[2]; });
+          if (new Set(v).size < 3) return null;
+          list.sort(function (a, b) { return a[0] * a[1] * a[2] - b[0] * b[1] * b[2]; });
+          return { q: 'Three boxes have these edges, in cm. Put them in order of volume, smallest to largest.', type: 'order', items: list.map(function (b) { return b.join(' &times; '); }), first: 'smallest', last: 'largest',
+            hint: 'Multiply the three edges of each box.', steps: list.map(function (b) { return b.join(' &times; ') + ' = ' + b[0] * b[1] * b[2] + ' cm' + CU; }), explain: 'Volumes: ' + list.map(function (b) { return b[0] * b[1] * b[2]; }).join(', ') + ' cm' + CU + '.', meta: { k: 'mv-order' } };
+        });
+      }]
+    ],
+    'ms-surface': [
+      [1, 'fill', function (lv) {
+        var l = R.int(2, 10), w = R.int(2, 8), h = R.int(2, 8);
+        return { q: 'Find the surface area of the box. First find one face of each kind.', type: 'fill', fill: 'l &times; w = [[]], l &times; h = [[]], w &times; h = [[]]. Surface area = [[]] cm' + SQ, answers: [l * w, l * h, w * h, 2 * (l * w + l * h + w * h)], fig: solid('box', { l: l, w: w, h: h }, { l: l + ' cm', w: w + ' cm', h: h + ' cm' }),
+          hint: 'A box has two of each face. Add the three faces, then double.', steps: ['Faces: ' + l * w + ', ' + l * h + ', ' + w * h + '.', '2 &times; ' + (l * w + l * h + w * h) + ' = ' + 2 * (l * w + l * h + w * h) + '.'], explain: 'SA = ' + 2 * (l * w + l * h + w * h) + ' cm' + SQ + '.', meta: { k: 'ma-fill', l: l, w: w, h: h } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), l = R.int(2, 10), w = R.int(2, 8), h = R.int(2, 8), one = l * w + l * h + w * h, truth = R.int(0, 1), said = truth ? 2 * one : one;
+        return K.tf({ q: 'A box is ' + l + ' cm by ' + w + ' cm by ' + h + ' cm. ' + who + ' says its surface area is <b>' + said + ' cm' + SQ + '</b>. True or false?', truth: truth, fig: solid('box', { l: l, w: w, h: h }, { l: l + ' cm', w: w + ' cm', h: h + ' cm' }),
+          right: 'There are 6 faces, two of each kind: 2 &times; (' + l * w + ' + ' + l * h + ' + ' + w * h + ') = ' + 2 * one + ' cm' + SQ + '.', wrong: ['A box has only 3 faces.', 'Surface area is length &times; width &times; height.'],
+          hint: 'How many faces does a box have?', meta: { k: 'ma-tf', l: l, w: w, h: h, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), l = R.int(10, 30), w = R.int(5, 20), h = R.int(5, 15), sa = 2 * (l * w + l * h + w * h);
+        return { q: who + ' wraps a gift box that is ' + l + ' cm by ' + w + ' cm by ' + h + ' cm. How much wrapping paper covers it exactly, with no overlap?', type: 'num', answer: sa, unit: 'cm' + SQ,
+          hint: 'The paper covers all 6 faces: the surface area.', steps: ['Faces: ' + l * w + ', ' + l * h + ', ' + w * h + '.', '2 &times; ' + (l * w + l * h + w * h) + ' = ' + A.fmt(sa) + '.'], explain: A.fmt(sa) + ' cm' + SQ + ' of paper.', meta: { k: 'ma-story', l: l, w: w, h: h } };
+      }]
+    ]
+  };
+  K.shapes('measurement', SHAPES);
 })();
