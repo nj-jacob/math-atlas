@@ -178,7 +178,138 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  var SURVEY = [['Favourite season?', 0], ['How many siblings?', 1], ['Colour of your backpack?', 0], ['Minutes read each day?', 1], ['Height in centimetres?', 1], ['Favourite sport?', 0]];
+  function surveyFig(st) {
+    var s = '';
+    SURVEY.forEach(function (q, i) {
+      var y = 4 + i * 50, on = st.lit[i];
+      s += '<g data-k="' + i + '"><rect x="4" y="' + y + '" width="400" height="42" rx="12" style="fill:' + (on ? 'color-mix(in srgb,var(--strand) 30%,var(--card))' : 'var(--card)') + ';stroke:' + (on ? 'var(--strand)' : 'var(--line)') + '" stroke-width="2.5"/><text x="20" y="' + (y + 28) + '" font-size="19"' + (on ? ' class="tb"' : '') + '>' + q[0] + '</text></g>';
+    });
+    return A.svg(408, SURVEY.length * 50, s, 'Six survey questions. Tap the ones whose answers are numbers.');
+  }
+  var CATS = ['Soccer', 'Hockey', 'Swim', 'Dance'], G4 = [6, 4, 8, 3];
+
+  var LESSONS = [
+    { id: 'collect', title: 'Data and displays', sub: 'Kinds of data, and a plot that keeps every value.', concepts: [
+      { id: 'kinds', title: 'Words or numbers?', exp: ['D1.1'], skill: 'da4-kind',
+        body: '<p><b>Qualitative</b> data are words or categories: favourite colour. <b>Quantitative</b> data are numbers you count or measure: how many pets.</p>',
+        watch: K.watch([
+          ['"What is your favourite season?" Answers like <i>summer</i>: words. <b>Qualitative</b>.', '<p class="big">"Summer", "Winter", "Fall"</p>', 2200],
+          ['"How many siblings do you have?" Answers like <i>2</i>: numbers. <b>Quantitative</b>.', '<p class="big">0, 2, 1, 3</p>', 2200]
+        ]),
+        try: K.tap({ render: surveyFig, label: function (st) { return '<p>' + st.order.length + ' chosen</p>'; },
+          tasks: [{ do: 'Tap every question whose answers are <b>numbers</b>.', goal: function (st) { return SURVEY.every(function (q, i) { return !!st.lit[i] === !!q[1]; }); }, yes: 'Siblings, minutes and height are counts or measures: quantitative.' }] }),
+        key: '<p>Words or categories: <b>qualitative</b>. Counts or measures: <b>quantitative</b>.</p>',
+        check: [T('kind', 1), T('kind', 2)] },
+
+      { id: 'stem-leaf', title: 'Stem-and-leaf plots', exp: ['D1.2', 'D1.6'], skill: 'da4-stem', hard: true,
+        body: '<p>A <b>stem-and-leaf plot</b> splits each number: the tens are the <b>stem</b>, the ones are the <b>leaf</b>. Every value is kept, in order.</p>',
+        watch: K.watch([
+          ['Seconds balancing on one foot: 23, 35, 41, 38, 27.', '<p class="math big">23, 35, 41, 38, 27</p>', 1800],
+          ['23: stem 2, leaf 3. 27: stem 2, leaf 7.', stemLeaf([23, 27]), 1800],
+          ['35 and 38 go on stem 3.', stemLeaf([23, 27, 35, 38]), 1800],
+          ['41 goes on stem 4. Least: 23. Greatest: 41.', stemLeaf([23, 27, 35, 38, 41], [23, 41]), 2400]
+        ]),
+        ways: [
+          { label: 'Like a bar graph on its side', html: '<p>Turn your head: each row of leaves is a bar. The longest row shows where most of the values are.</p>' + stemLeaf([12, 15, 21, 23, 24, 27, 29, 33, 36]) },
+          { label: 'Read it back', html: '<p>Put each stem in front of each of its leaves. Stem 2 with leaves 1, 3, 4 is <b>21, 23, 24</b>.</p>' }
+        ],
+        key: '<p><b>Stem = tens, leaf = ones.</b> Leaves go in order.</p>',
+        mistake: '<p>Reading only the leaves (a leaf 5 on stem 3 read as 5, not 35), or forgetting rows with no leaves. Have your child read a value back aloud.</p>',
+        check: [T('stem', 1), T('stem', 2), T('stem', 3)] }
+    ] },
+
+    { id: 'graphs', title: 'Double bar graphs', sub: 'Compare two groups side by side.', concepts: [
+      { id: 'double-bar', title: 'Two groups, one graph', exp: ['D1.3', 'D1.6'], skill: 'da4-graph',
+        body: '<p>A <b>double bar graph</b> puts two groups side by side. The <b>legend</b> tells which colour is which group.</p>',
+        watch: K.watch([
+          ['Grade 4 favourite sports.', dbar(CATS, G4, [0, 0, 0, 0], 'Grade 4', 'Grade 5', 'Favourite sports'), 1800],
+          ['Add Grade 5 beside them. Now compare: Grade 4 likes Swim more; Grade 5 likes Hockey more.', dbar(CATS, G4, [5, 9, 6, 4], 'Grade 4', 'Grade 5', 'Favourite sports'), 2600]
+        ]),
+        try: K.lab({ controls: CATS.map(function (c, i) { return { id: 'b' + i, label: 'Grade 5: ' + c, min: 0, max: 10, value: [5, 2, 6, 1][i] }; }),
+          render: function (s) { s.b = [s.b0, s.b1, s.b2, s.b3]; return { fig: dbar(CATS, G4, s.b, 'Grade 4', 'Grade 5', 'Favourite sports'), out: '' }; },
+          tasks: [
+            { do: 'Make Grade 5 choose Dance exactly <b>3 more</b> than Grade 4.', goal: function (s) { return s.b[3] === G4[3] + 3; }, yes: 'Grade 4: 3. Grade 5: 6.' },
+            { do: 'Make <b>Hockey</b> the most popular when you add both classes.', goal: function (s) { var t = s.b.map(function (v, i) { return v + G4[i]; }); return t[1] > t[0] && t[1] > t[2] && t[1] > t[3]; }, yes: 'Hockey has the biggest total.' }
+          ] }),
+        key: '<p>Check the <b>legend</b>, then read each bar across to the scale.</p>',
+        check: [T('graph', 1), T('graph', 2), T('graph', 3)] }
+    ] },
+
+    { id: 'average', title: 'Mean, median and mode', sub: 'Three ways to describe a typical value.', concepts: [
+      { id: 'median-mode', title: 'Median and mode', exp: ['D1.5'], skill: 'da4-mmm',
+        body: '<p>The <b>median</b> is the middle value when the data are in order. The <b>mode</b> is the value that appears most often.</p>',
+        watch: K.watch([
+          ['Goals in 5 games: 3, 7, 2, 3, 5.', towers([3, 7, 2, 3, 5]), 1600],
+          ['Put them in order: 2, 3, 3, 5, 7.', towers([2, 3, 3, 5, 7]), 1800],
+          ['The middle one is <b>3</b>: the median. 3 also appears most often: the mode is <b>3</b>.', towers([2, 3, 3, 5, 7]) + '<p class="math big">2, 3, <b>3</b>, 5, 7</p>', 2400]
+        ]),
+        try: K.lab({ controls: [0, 1, 2, 3, 4].map(function (i) { return { id: 'v' + i, label: 'Game ' + (i + 1), min: 1, max: 9, value: [3, 7, 2, 3, 5][i] }; }),
+          render: function (s) { var d = [s.v0, s.v1, s.v2, s.v3, s.v4], mo = modes(d); s.med = median(d); s.mo = mo; return { fig: towers(d), out: '<p class="math">In order: ' + sorted(d).join(', ') + '</p><p>Median: <b>' + s.med + '</b>. Mode: <b>' + (mo.length ? mo.join(' and ') : 'none') + '</b></p>' }; },
+          tasks: [
+            { do: 'Make the <b>median 6</b>.', goal: function (s) { return s.med === 6; }, yes: '6 is in the middle when sorted.' },
+            { do: 'Make the <b>mode 8</b>, the only mode.', goal: function (s) { return s.mo.length === 1 && s.mo[0] === 8; }, yes: '8 appears most often.' }
+          ] }),
+        key: '<p><b>Median: middle in order. Mode: most often.</b></p>',
+        mistake: '<p>Finding the middle without sorting first. Ask: "Are they in order yet?"</p>',
+        check: [T('mmm', 1), T('mmm', 1)] },
+
+      { id: 'mean', title: 'The mean: level it out', exp: ['D1.5'], skill: 'da4-mmm', hard: true,
+        body: '<p>The <b>mean</b> is what each value would be if you shared everything out equally. Add all the values, then divide by how many there are.</p>',
+        watch: K.watch([
+          ['Towers of 2, 6, 4, 8, 5.', towers([2, 6, 4, 8, 5]), 1600],
+          ['Total: 25 cubes. 5 towers.', towers([2, 6, 4, 8, 5], true), 2000],
+          ['Share them out: every tower is <b>5</b>. 25 &divide; 5 = 5: the mean.', towers([5, 5, 5, 5, 5]), 2400]
+        ]),
+        try: K.lab({ controls: [0, 1, 2, 3, 4].map(function (i) { return { id: 'v' + i, label: 'Tower ' + (i + 1), min: 1, max: 9, value: [2, 6, 4, 8, 5][i] }; }),
+          render: function (s) { var d = [s.v0, s.v1, s.v2, s.v3, s.v4]; s.d = d; s.sum = sum(d); return { fig: towers(d, true), out: '<p class="math">' + d.join(' + ') + ' = ' + s.sum + '. ' + s.sum + ' &divide; 5 = <b>' + A.clean(Math.round(s.sum / 5 * 10) / 10) + '</b></p>' }; },
+          tasks: [
+            { do: 'Make the mean exactly <b>6</b>.', goal: function (s) { return s.sum === 30; }, yes: 'Total 30, shared by 5 = 6.' },
+            { do: 'Make the mean <b>4</b> with <b>no</b> tower of 4.', goal: function (s) { return s.sum === 20 && s.d.indexOf(4) < 0; }, yes: 'The mean does not have to be one of the values.' }
+          ] }),
+        ways: [
+          { label: 'Move cubes', html: '<p>Take cubes from tall towers and give them to short ones until all are the same. That height is the mean. 2, 6, 4, 8, 5: move 3 from the 8 to the 2, 1 from the 6 to the 4. All 5.</p>' },
+          { label: 'Fair share', html: '<p>Five friends have $2, $6, $4, $8 and $5. Put it all in one pile: $25. Share it fairly: $5 each. That is the mean.</p>' }
+        ],
+        key: '<p><b>Mean = total &divide; how many.</b></p>',
+        mistake: '<p>Dividing by the wrong number (by the biggest value, or forgetting to divide). Ask: "How many towers are sharing?"</p>',
+        check: [T('mmm', 2), T('mmm', 3)] }
+    ] },
+
+    { id: 'chance', title: 'Chance and predictions', sub: 'How likely, and what to expect.', concepts: [
+      { id: 'likely', title: 'How likely is it?', exp: ['D2.1'], skill: 'da4-prob',
+        body: '<p>Chance goes from <b>impossible</b> to <b>certain</b>. On a spinner with equal sections, more orange sections means orange is more likely.</p>',
+        watch: K.watch([0, 1, 4, 6, 8].map(function (k) { return ['Orange: ' + k + ' of 8 sections. <b>' + word(k, 8) + '</b>.', '<div style="display:flex;justify-content:center">' + spinner(k, 8, 200) + '</div>' + probLine(k / 8), 1700]; })),
+        try: K.lab({ controls: [
+          { id: 'n', label: 'Sections', type: 'select', options: [['4', '4'], ['6', '6'], ['8', '8']] },
+          { id: 'k', label: 'Orange', min: 0, max: 8, value: 0 },
+          { id: 'spin', label: 'Spin 20 times', type: 'action', act: function (s) { var n = +s.n, k = Math.min(s.k, n), c = 0; for (var i = 0; i < 20; i++) if (Math.random() * n < k) c++; s.res = c; s.ang = Math.floor(Math.random() * 360); } }],
+          init: function (s) { s.res = null; s.ang = 200; s.key = ''; },
+          render: function (s) { var n = +s.n, k = Math.min(s.k, n), key = n + ',' + k; if (key !== s.key) { s.res = null; s.key = key; } s.w = word(k, n); return { fig: '<div style="display:flex;justify-content:center">' + spinner(k, n, s.ang) + '</div>' + probLine(k / n), out: '<p>Orange is <b>' + s.w + '</b>.' + (s.res !== null ? ' In 20 spins: orange <b>' + s.res + '</b> times.' : '') + '</p>' }; },
+          tasks: [
+            { do: 'Make orange <b>unlikely</b> but not impossible.', goal: function (s) { return s.w === 'unlikely'; }, yes: 'Fewer than half the sections.' },
+            { do: 'Make orange <b>equally likely</b>, then spin 20 times.', goal: function (s) { return s.w === 'equally likely' && s.res !== null; }, yes: function (s) { return 'Orange came up ' + s.res + ' times: close to 10, but chance rarely gives exactly half.'; } }
+          ] }),
+        key: '<p>Compare the orange sections with <b>half</b>: fewer is unlikely, more is likely.</p>',
+        check: [T('prob', 1), T('prob', 2), T('prob', 3)] },
+
+      { id: 'groups', title: 'Predict and compare groups', exp: ['D2.2'], skill: 'da4-pop',
+        body: '<p>Use what you know about two groups to <b>predict</b> how their data compare. A very big new value <b>pulls the mean up</b>.</p>',
+        watch: K.watch([
+          ['Mean of 4, 6, 5, 3, 7 is 5.', towers([4, 6, 5, 3, 7], true), 1800],
+          ['Add a 17. The total jumps to 42; 6 values share it. Mean 7.', towers([4, 6, 5, 3, 7, 17], true), 2400]
+        ]),
+        key: '<p>A value <b>above</b> the mean pulls it up; <b>below</b> pulls it down.</p>',
+        mistake: '<p>Expecting two different groups (Grade 1 and Grade 8 heights) to give the same results. Ask: "What do you know about these groups?"</p>',
+        check: [T('pop', 1), T('pop', 2)] }
+    ] }
+  ];
+
   A.register('data', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Two kinds of data</h2>' +
 '<p><b>Data</b> are facts we collect to answer a question. There are two kinds:</p>' +

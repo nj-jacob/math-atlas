@@ -154,7 +154,144 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  var QN = ['rectangle', 'parallelogram', 'square', 'kite', 'trapezoid'];
+  function quadRow(st) {
+    var u = 16, s = '';
+    QN.forEach(function (nm, i) {
+      var P = QUADS[nm], ox = 10 + (i % 3) * 120, oy = 10 + Math.floor(i / 3) * 110, on = st && st.lit[i];
+      s += '<g data-k="' + i + '"><rect x="' + (ox - 6) + '" y="' + (oy - 6) + '" width="112" height="100" rx="12" style="fill:' + (on ? 'color-mix(in srgb,var(--strand) 22%,var(--card))' : 'transparent') + ';stroke:' + (on ? 'var(--strand)' : 'var(--line)') + '" stroke-width="2"/>' +
+        '<polygon points="' + P.map(function (p) { return (ox + 4 + p[0] * u).toFixed(1) + ',' + (oy + 4 + (5 - p[1]) * u).toFixed(1); }).join(' ') + '" style="fill:color-mix(in srgb,var(--strand) 18%,var(--card));stroke:var(--ink)" stroke-width="2.5" stroke-linejoin="round"/></g>';
+    });
+    return A.svg(370, 220, s, 'Five four-sided shapes: rectangle, parallelogram, square, kite, trapezoid');
+  }
+  var START = move(TRI, 2, 2);
+
+  var LESSONS = [
+    { id: 'angles', title: 'Angles', sub: 'Compare with a square corner.', concepts: [
+      { id: 'kinds', title: 'Kinds of angles', exp: ['E2.4'], skill: 'sh4-angle',
+        body: '<p>An angle is how far two lines <b>open</b>. A <b>right angle</b> is a square corner, like the corner of a page. Compare other angles with it.</p>',
+        watch: K.watch([[30, 'Acute: <b>less</b> than a right angle.'], [90, 'Right: a <b>square corner</b>, 90&deg;.'], [135, 'Obtuse: <b>more</b> than a right angle, less than straight.'], [180, 'Straight: a <b>straight line</b>, 180&deg;.']].map(function (p) { return [p[1], angle(p[0], 0, null, false, true), 2000]; })),
+        try: K.lab({ controls: [{ id: 't', label: 'Opening', min: 5, max: 180, step: 5, value: 45, fmt: function (v) { return v + '&deg;'; } }, { id: 'r', label: 'Turn the drawing', min: 0, max: 330, step: 30, value: 0, fmt: function (v) { return v + '&deg;'; } }],
+          render: function (s) { s.k = kind(s.t); return { fig: angle(s.t, s.r, null, false, true), out: '<p><span class="big">' + s.k + '</span> ' + KDESC[s.k] + '</p>' }; },
+          tasks: [
+            { do: 'Make an <b>obtuse</b> angle.', goal: function (s) { return s.k === 'obtuse'; }, yes: 'More than a square corner.' },
+            { do: 'Make a <b>right</b> angle, then <b>turn</b> the drawing.', goal: function (s) { return s.k === 'right' && s.r > 0; }, yes: 'Still a right angle: turning does not change it.' }
+          ] }),
+        key: '<p>Compare with a <b>square corner</b>: smaller is acute, bigger is obtuse.</p>',
+        check: [T('angle', 1), T('angle', 1)] },
+
+      { id: 'turned', title: 'Turned and tricky angles', exp: ['E2.4'], skill: 'sh4-angle', hard: true,
+        body: '<p>An angle\'s kind does not change when it is <b>turned</b> or when its lines are <b>longer</b>. Only the opening matters.</p>',
+        watch: K.watch([
+          ['An obtuse angle.', angle(120, 0, null, false, true), 1600],
+          ['Turned: still 120&deg;, still obtuse.', angle(120, 100, null, false, true), 1800],
+          ['Turned again. Hold a square corner against it to check.', angle(120, 220, null, false, true), 2000]
+        ]),
+        ways: [
+          { label: 'Paper corner test', html: '<p>Fold any paper twice to make a perfect square corner. Put one edge on one line of the angle. If the other line is <b>inside</b> the corner, it is acute. <b>Outside</b>, obtuse.</p>' },
+          { label: 'Arms', html: '<p>Hold one arm straight out in front and the other straight up: right angle. Close them a little: acute. Open them wider: obtuse. Out flat: straight.</p>' }
+        ],
+        key: '<p><b>Only the opening matters</b>, not the length or the direction.</p>',
+        mistake: '<p>Thinking a turned right angle is not right, or that longer lines make a bigger angle. Turn the page so one line is flat and check again.</p>',
+        check: [T('angle', 2), T('angle', 3)] }
+    ] },
+
+    { id: 'quads', title: 'Rectangles and symmetry', sub: 'Right angles, parallel sides, lines of symmetry.', concepts: [
+      { id: 'rect-props', title: 'What makes a rectangle', exp: ['E1.1'], skill: 'sh4-rect',
+        body: '<p>A <b>rectangle</b> has 4 right angles. Its opposite sides are <b>parallel</b> (they never meet) and equal. Sides that meet are <b>perpendicular</b>.</p>',
+        watch: K.watch([
+          ['A rectangle.', rect(5, 3, {}), 1400],
+          ['4 right angles: every corner is square.', rect(5, 3, { right: true }), 1800],
+          ['Opposite sides are parallel: matching arrows.', rect(5, 3, { par: true }), 2000]
+        ]),
+        key: '<p>Rectangle: <b>4 right angles</b>, opposite sides <b>parallel</b>.</p>',
+        check: [T('rect', 1), T('rect', 3)] },
+
+      { id: 'is-rect', title: 'Is it a rectangle?', exp: ['E1.1'], skill: 'sh4-rect',
+        body: '<p>To decide, <b>check every corner</b>. All 4 must be right angles. A square is a special rectangle.</p>',
+        watch: K.watch([
+          ['A parallelogram: parallel sides, but its corners are not square. <b>Not</b> a rectangle.', quad('parallelogram', 150), 2200],
+          ['A square: 4 right angles. It <b>is</b> a rectangle, with all sides equal too.', quad('square', 150), 2200]
+        ]),
+        try: K.tap({ render: quadRow, label: function (st) { return '<p>' + st.order.length + ' chosen</p>'; },
+          tasks: [{ do: 'Tap <b>every</b> shape that is a rectangle.', goal: function (st) { var k = Object.keys(st.lit).sort().join(); return k === '0,2'; }, yes: 'The rectangle and the square: both have 4 right angles.' }] }),
+        key: '<p><b>4 right angles = rectangle.</b> Squares count.</p>',
+        mistake: '<p>Leaving the square out ("it is a square, not a rectangle"), or counting a parallelogram because it "looks like a pushed-over rectangle". Check the corners.</p>',
+        check: [T('rect', 2), T('rect', 2)] },
+
+      { id: 'symmetry', title: 'Lines of symmetry', exp: ['E1.1'], skill: 'sh4-sym',
+        body: '<p>A <b>line of symmetry</b> folds a shape so both halves match exactly.</p>',
+        watch: K.watch([
+          ['A rectangle folds top to bottom and side to side: <b>2</b> lines.', rect(5, 3, { sym: true }), 2200],
+          ['A square also folds corner to corner: <b>4</b> lines.', rect(3, 3, { sym: true }), 2200],
+          ['A kite folds only one way: <b>1</b> line.', quad('kite', 150), 2000]
+        ]),
+        key: '<p>Fold it in your mind: <b>do the halves match exactly?</b></p>',
+        mistake: '<p>Counting the diagonals of a rectangle as lines of symmetry. Cut a paper rectangle and fold it corner to corner: the halves do not match.</p>',
+        check: [T('sym', 1), T('sym', 2)] }
+    ] },
+
+    { id: 'grid', title: 'Grids and moves', sub: 'Ordered pairs, slides and flips.', concepts: [
+      { id: 'plot', title: 'Ordered pairs', exp: ['E1.2'], skill: 'sh4-coord', hard: true,
+        body: '<p>(3, 5) means go <b>across 3</b>, then <b>up 5</b>. Across always comes first.</p>',
+        watch: K.watch([
+          ['(3, 5). Start at 0.', grid(10, [], null, []), 1400],
+          ['Across 3.', grid(10, [], null, [[0, 0, 3, 0]]), 1600],
+          ['Then up 5. That is <b>(3, 5)</b>.', grid(10, [{ x: 3, y: 5, l: 'A' }], null, [[0, 0, 3, 0], [3, 0, 3, 5]]), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'x', label: 'Across', min: 0, max: 10, value: 0 }, { id: 'y', label: 'Up', min: 0, max: 10, value: 0 }],
+          render: function (s) { return { fig: grid(10, [{ x: s.x, y: s.y, l: 'P' }]), out: '<p class="big math">P (' + s.x + ', ' + s.y + ')</p>' }; },
+          tasks: [
+            { do: 'Plot <b>(4, 7)</b>.', goal: function (s) { return s.x === 4 && s.y === 7; }, yes: 'Across 4, up 7.' },
+            { do: 'Now plot <b>(7, 4)</b>. Notice how far it is from (4, 7).', goal: function (s) { return s.x === 7 && s.y === 4; }, yes: 'A different point: the order matters.' }
+          ] }),
+        ways: [
+          { label: 'Walk, then climb', html: '<p>Walk along the hallway (across), then take the elevator (up). You cannot take the elevator before you reach it.</p>' },
+          { label: 'Alphabetical', html: '<p>The pair is (x, y). <b>x</b> comes before <b>y</b> in the alphabet, and across comes before up.</p>' }
+        ],
+        key: '<p><b>Across first, then up.</b></p>',
+        mistake: '<p>Swapping the numbers: plotting (4, 7) at across 7, up 4. Ask: "Which way did you go first?"</p>',
+        check: [T('coord', 1), T('coord', 2), T('coord', 3)] },
+
+      { id: 'translate', title: 'Slides', exp: ['E1.2', 'E1.3'], skill: 'sh4-trans',
+        body: '<p>A <b>translation</b> slides a shape without turning it. Every corner moves the same way: right and left change the first number, up and down change the second.</p>',
+        watch: K.watch([
+          ['A triangle.', grid(10, [], [{ pts: START, fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }]), 1400],
+          ['Slide it 4 right and 3 up. Every corner moves the same.', grid(10, [], [{ pts: START, fill: 'transparent', dash: true }, { pts: move(START, 4, 3), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], [[2, 2, 6, 5]]), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'dx', label: 'Right (+) or left (&minus;)', min: -2, max: 6, value: 0 }, { id: 'dy', label: 'Up (+) or down (&minus;)', min: -2, max: 5, value: 0 }],
+          render: function (s) { return { fig: grid(10, [{ x: 2 + s.dx, y: 2 + s.dy, c: 'var(--accent)' }], [{ pts: START, fill: 'transparent', dash: true }, { pts: move(START, s.dx, s.dy), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], s.dx || s.dy ? [[2, 2, 2 + s.dx, 2 + s.dy]] : []), out: '<p>' + dirWords(s.dx, s.dy) + '. Corner: (2, 2) &rarr; <b>(' + (2 + s.dx) + ', ' + (2 + s.dy) + ')</b></p>' }; },
+          tasks: [
+            { do: 'Slide the triangle <b>3 right and 2 up</b>.', goal: function (s) { return s.dx === 3 && s.dy === 2; }, yes: 'The corner moved from (2, 2) to (5, 4).' },
+            { do: 'Slide it so the orange corner lands on <b>(1, 6)</b>.', goal: function (s) { return s.dx === -1 && s.dy === 4; }, yes: '1 left and 4 up.' }
+          ] }),
+        key: '<p>Right/left: <b>first number</b>. Up/down: <b>second number</b>.</p>',
+        check: [T('trans', 1), T('trans', 2), T('trans', 3)] },
+
+      { id: 'reflect', title: 'Flips', exp: ['E1.3'], skill: 'sh4-refl', hard: true,
+        body: '<p>A <b>reflection</b> flips a shape over a mirror line. Each point lands the <b>same distance</b> on the other side.</p>',
+        watch: K.watch([
+          ['A flag and a mirror line at 5.', grid(10, [], [{ pts: move(FLAG, 2, 4), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], null, { v: 5 }), 1600],
+          ['The pole is 3 from the line. Its image is 3 on the other side: at 8. The flag faces the other way.', grid(10, [], [{ pts: move(FLAG, 2, 4), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }, { pts: reflV(move(FLAG, 2, 4), 5), fill: 'color-mix(in srgb,var(--btn) 35%,var(--card))' }], null, { v: 5 }), 2600]
+        ]),
+        try: K.lab({ controls: [{ id: 'x', label: 'P across', min: 0, max: 5, value: 1 }, { id: 'y', label: 'P up', min: 0, max: 10, value: 2 }],
+          render: function (s) { var ix = 10 - s.x; return { fig: grid(10, [{ x: s.x, y: s.y, l: 'P' }, { x: ix, y: s.y, l: "P'", c: 'var(--btn)' }], null, null, { v: 5 }), out: '<p>P (' + s.x + ', ' + s.y + ') is ' + (5 - s.x) + ' from the line. Image: <b>(' + ix + ', ' + s.y + ')</b></p>' }; },
+          tasks: [{ do: 'Move P so its image lands on <b>(8, 4)</b>.', goal: function (s) { return s.x === 2 && s.y === 4; }, yes: 'P at (2, 4) is 3 left of the line; the image is 3 right.' }] }),
+        ways: [
+          { label: 'Fold the paper', html: '<p>Fold along the mirror line. The point and its image touch when folded.</p>' },
+          { label: 'Count to the line', html: '<p>Count squares from the point straight to the line. Keep counting the same number past it. That is the image.</p>' }
+        ],
+        key: '<p><b>Same distance from the mirror line, on the other side.</b></p>',
+        mistake: '<p>Sliding the shape across instead of flipping it, so it faces the same way. In a reflection, the image faces the opposite way.</p>',
+        check: [T('refl', 1), T('refl', 3)] }
+    ] }
+  ];
+
   A.register('shapes', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Kinds of angles</h2>' +
 '<p>An <b>angle</b> is made where two lines meet. Its size is how far it opens, measured in degrees (&deg;). The <b>corner of a sheet of paper</b> is a right angle. Use it to check other angles.</p>' +

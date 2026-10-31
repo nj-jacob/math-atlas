@@ -154,7 +154,214 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  var DENS = DEN.map(function (d) { return [String(d), NAME[d][1]]; });
+  /* k copies of 1/d, shaded across as many wholes as needed, two wholes to a row */
+  function unitFig(k, d) {
+    var nb = Math.max(1, Math.ceil(k / d)), w = 250, s = '';
+    for (var b = 0; b < nb; b++) s += barAt(2 + (b % 2) * (w + 16), 2 + Math.floor(b / 2) * 56, w, 44, Math.min(d, k - b * d), d);
+    return A.svg(2 * w + 20, Math.ceil(nb / 2) * 56, s, k + ' copies of one ' + NAME[d][0] + ' shaded');
+  }
+  function mixedOf(c, d) { return c % d === 0 ? String(c / d) : c > d ? A.mixed(Math.floor(c / d), c % d, d) : fr(c, d); }
+  /* a set of 8 markers; data-k parts can be tapped */
+  function setFig(st) {
+    var s = '';
+    for (var i = 0; i < 8; i++) {
+      var x = 20 + i * 62, on = st.lit[i];
+      s += '<g data-k="' + i + '"><rect x="' + x + '" y="20" width="40" height="120" rx="8" style="fill:' + (on ? 'var(--bad)' : 'var(--card)') + ';stroke:var(--ink)" stroke-width="2"/><rect x="' + (x + 8) + '" y="4" width="24" height="20" rx="4" style="fill:var(--ink2)"/></g>';
+    }
+    return A.svg(520, 150, s, '8 markers, ' + Object.keys(st.lit).length + ' red');
+  }
+
+  var LESSONS = [
+    { id: 'parts', title: 'What a fraction means', sub: 'Equal parts of a whole or a set.', concepts: [
+      { id: 'equal-parts', title: 'Equal parts', exp: ['B1.4'], skill: 'fr4-mean',
+        body: '<p>A fraction names part of a whole. The whole must be cut into <b>equal</b> parts.</p>',
+        watch: { tool: 'fractions', opts: { choices: [] }, steps: [
+          { say: 'Here is one whole.', act: function (t) { return t.wait(600); }, ms: 1200 },
+          { say: 'Cut it into 4 <b>equal</b> parts: fourths.', act: function (t) { return t.split(4); } },
+          { say: 'Shade 1 part: <b>one fourth</b>.', act: function (t) { return t.shade(1); } },
+          { say: 'Shade 3 parts: <b>three fourths</b>.', act: function (t) { return t.split(4).then(function () { return t.shade(3); }); }, ms: 1800 }
+        ] },
+        try: { tool: 'fractions', opts: { choices: [2, 3, 4, 5, 6, 8, 10] }, tasks: [
+          { do: 'Show <b>three fifths</b>.', goal: function (s) { return s[0].d === 5 && s[0].n === 3; }, yes: '3 of 5 equal parts.' },
+          { do: 'Show <b>one whole</b> using eighths.', goal: function (s) { return s[0].d === 8 && s[0].n === 8; }, yes: '8 eighths make 1 whole.' }
+        ] },
+        key: '<p>Fractions need <b>equal parts</b>.</p>',
+        mistake: '<p>Calling any piece a "fourth" even when the 4 parts are different sizes. Ask: "Are all the parts the same size?"</p>',
+        check: [T('meaning', 2), T('name', 1)] },
+
+      { id: 'num-den', title: 'Numerator and denominator', exp: ['B1.4'], skill: 'fr4-name',
+        body: '<p>The <b>denominator</b> (bottom) says how many equal parts make the whole. The <b>numerator</b> (top) counts the parts we are talking about.</p>',
+        watch: K.watch([
+          ['A pizza cut into 8 equal slices. The denominator is <b>8</b>.', pie(0, 8), 1800],
+          ['5 slices are eaten. The numerator is <b>5</b>.', pie(5, 8), 1800],
+          ['<b>5/8</b> of the pizza is eaten: five eighths.', '<div style="display:flex;gap:18px;align-items:center;justify-content:center">' + pie(5, 8) + '<span class="big">' + fr(5, 8) + '</span></div>', 2000]
+        ]),
+        try: K.lab({ controls: [{ id: 'd', label: 'Equal parts', type: 'select', options: DENS }, { id: 'n', label: 'Shaded parts', min: 0, max: 10, value: 1 }],
+          render: function (s) { var d = +s.d, n = Math.min(s.n, d); s.f = n + '/' + d; return { fig: '<div style="display:flex;gap:18px;align-items:center;justify-content:center;flex-wrap:wrap">' + pie(n, d) + bar(n, d, 260) + '</div>', out: '<p><span class="big">' + fr(n, d) + '</span> ' + nm(n, d) + (s.n > d ? ' <span class="t2">(only ' + d + ' parts to shade)</span>' : '') + '</p>' }; },
+          tasks: [
+            { do: 'Show <b>' + fr(3, 8) + '</b>.', goal: function (s) { return s.f === '3/8'; }, yes: 'Three eighths.' },
+            { do: 'Show a fraction where the numerator and denominator are the <b>same</b>.', goal: function (s) { return +s.n === +s.d; }, yes: 'All the parts are shaded: that is 1 whole.' }
+          ] }),
+        key: '<p><b>Bottom: how many equal parts in the whole. Top: how many we count.</b></p>',
+        check: [T('name', 1), T('meaning', 1)] },
+
+      { id: 'sets', title: 'A fraction of a set', exp: ['B1.4'], skill: 'fr4-mean',
+        body: '<p>The whole can be a <b>set</b> of things. In a set of 8 markers, each marker is <b>1/8</b> of the set.</p>',
+        watch: K.watch([
+          ['A set of 8 markers. Each one is 1/8 of the set.', setFig({ lit: {} }), 1800],
+          ['3 markers are red: <b>3/8</b> of the set.', setFig({ lit: { 0: 1, 1: 1, 2: 1 } }), 2000]
+        ]),
+        try: K.tap({ render: setFig, label: function (st) { var n = st.order.length; return '<p><span class="big">' + fr(n, 8) + '</span> of the set is red</p>'; },
+          tasks: [
+            { do: 'Tap markers to make <b>' + fr(5, 8) + '</b> of the set red.', goal: function (st) { return st.order.length === 5; }, yes: '5 of the 8 markers.' },
+            { do: 'Now make <b>half</b> the set red.', goal: function (st) { return st.order.length === 4; }, yes: '4 of 8 is half: ' + fr(4, 8) + '.' }
+          ] }),
+        key: '<p>In a set, <b>the denominator is how many things are in the whole set</b>.</p>',
+        check: [T('meaning', 3), T('name', 3)] }
+    ] },
+
+    { id: 'sharing', title: 'Fair shares', sub: 'Share wholes equally.', concepts: [
+      { id: 'share', title: 'Share wholes equally', exp: ['B1.5'], skill: 'fr4-share', hard: true,
+        body: '<p>To share 3 pizzas among 4 friends, cut <b>each</b> pizza into 4 equal pieces. Each friend gets 1 piece from each pizza.</p>',
+        watch: K.watch([
+          ['3 pizzas, 4 friends.', fairShare(3, 1), 1600],
+          ['Cut each pizza into 4 pieces. Each colour is one friend.', fairShare(3, 4), 2000],
+          ['One friend gets 1 piece from each pizza: 3 pieces of 1/4. That is <b>' + fr(3, 4) + '</b>.', fairShare(3, 4, true), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Wholes', min: 1, max: 6, value: 2 }, { id: 'k', label: 'People', type: 'select', options: DEN.map(function (d) { return [String(d), String(d)]; }) }],
+          render: function (s) { var k = +s.k; return { fig: fairShare(s.n, k), out: '<p>Each person gets ' + s.n + ' piece' + (s.n > 1 ? 's' : '') + ' of ' + fr(1, k) + ': <span class="big">' + mixedOf(s.n, k) + '</span></p>' }; },
+          tasks: [
+            { do: 'Share <b>2</b> granola bars among <b>5</b> friends.', goal: function (s) { return s.n === 2 && s.k === '5'; }, yes: 'Each gets ' + fr(2, 5) + '.' },
+            { do: 'Find a share where each person gets <b>' + fr(3, 4) + '</b>.', goal: function (s) { return s.n === 3 && s.k === '4'; }, yes: '3 wholes among 4 people.' },
+            { do: 'Find a share where each person gets <b>more than 1</b> whole.', goal: function (s) { return s.n > +s.k; }, yes: function (s) { return s.n + ' among ' + s.k + ' is ' + mixedOf(s.n, +s.k) + ' each.'; } }
+          ] }),
+        ways: [
+          { label: 'Wholes on top', html: '<p>Share <b>3</b> wholes among <b>4</b> people: each gets <b>' + fr(3, 4) + '</b>. The number of wholes goes on top. The number of people goes on the bottom.</p>' },
+          { label: 'One at a time', html: '<p>Share one pizza at a time. Pizza 1: each gets ' + fr(1, 4) + '. Pizza 2: another ' + fr(1, 4) + '. Pizza 3: another ' + fr(1, 4) + '. Each has 3 fourths.</p><div class="fig">' + fairShare(3, 4, true) + '</div>' }
+        ],
+        key: '<p><b>n wholes shared among k people: each gets n/k.</b></p>',
+        mistake: '<p>Flipping the fraction (4/3 instead of 3/4), or answering 1/4 because each piece is a fourth. Ask: "How many pieces does each person end up with?"</p>',
+        check: [T('share', 1), T('share', 2)] },
+
+      { id: 'big-share', title: 'Shares bigger than one', exp: ['B1.5'], skill: 'fr4-share',
+        body: '<p>When there are more wholes than people, each person gets <b>more than 1 whole</b>. 5 sandwiches among 4: each gets 1 whole and 1/4.</p>',
+        watch: K.watch([
+          ['5 sandwiches among 4 friends. Each gets 1 whole sandwich.', fairShare(5, 1), 1800],
+          ['Cut the last one into 4. Each friend also gets 1/4.', fairShare(5, 4, true), 2000],
+          ['Each gets 5/4 = <b>' + A.mixed(1, 1, 4) + '</b>.', fairShare(5, 4, true) + '<p class="big">' + fr(5, 4) + ' = ' + A.mixed(1, 1, 4) + '</p>', 2200]
+        ]),
+        key: '<p>5 among 4 is <b>5/4</b>, which is <b>1 and 1/4</b>.</p>',
+        check: [T('share', 3), T('share', 3)] }
+    ] },
+
+    { id: 'comparing', title: 'Comparing fractions', sub: 'Same-size pieces, or the same number of pieces.', concepts: [
+      { id: 'same-den', title: 'Same denominator', exp: ['B1.5'], skill: 'fr4-compare',
+        body: '<p>When the denominators are the same, the pieces are the <b>same size</b>. More pieces is more.</p>',
+        watch: { tool: 'fractions', opts: { wall: [8, 8] }, steps: [
+          { say: 'Two strips, both cut into eighths.', act: function (t) { return t.wait(500); }, ms: 1200 },
+          { say: 'Shade 3/8.', act: function (t) { return t.shade(3, 0); } },
+          { say: 'Shade 5/8. Same-size pieces, more of them: <b>5/8 &gt; 3/8</b>.', act: function (t) { return t.shade(5, 1); }, ms: 2000 }
+        ] },
+        try: { tool: 'fractions', opts: { wall: [6, 6] }, tasks: [
+          { do: 'Shade <b>' + fr(4, 6) + '</b> on top and <b>' + fr(2, 6) + '</b> below.', goal: function (s) { return s[0].n === 4 && s[1].n === 2; }, yes: fr(4, 6) + ' &gt; ' + fr(2, 6) + '.' }
+        ] },
+        key: '<p>Same denominator: <b>compare the numerators</b>.</p>',
+        check: [T('compare', 2), T('compare', 2)] },
+
+      { id: 'same-num', title: 'Same numerator', exp: ['B1.5'], skill: 'fr4-compare', hard: true,
+        body: '<p>When the numerators are the same, look at the size of the pieces. <b>More parts in the whole means smaller parts.</b></p>',
+        watch: { tool: 'fractions', opts: { wall: [2, 3, 4, 6, 8] }, steps: [
+          { say: 'One half.', act: function (t) { return t.shade(1, 0); } },
+          { say: 'One third: smaller.', act: function (t) { return t.shade(1, 1); } },
+          { say: 'One fourth: smaller again.', act: function (t) { return t.shade(1, 2); } },
+          { say: 'One sixth. One eighth. <b>The bigger the denominator, the smaller the piece.</b>', act: function (t) { return t.shade(1, 3).then(function () { return t.shade(1, 4); }); }, ms: 2200 }
+        ] },
+        try: { tool: 'fractions', opts: { wall: [3, 5] }, tasks: [
+          { do: 'Shade <b>' + fr(2, 3) + '</b> on top and <b>' + fr(2, 5) + '</b> below. Which is more?', goal: function (s) { return s[0].n === 2 && s[1].n === 2; }, yes: 'Thirds are bigger than fifths, so ' + fr(2, 3) + ' &gt; ' + fr(2, 5) + '.' }
+        ] },
+        ways: [
+          { label: 'Sharing a pizza', html: '<p>A pizza shared by 3 friends, or the same pizza shared by 8 friends? With 8 friends, everyone gets a <b>smaller</b> slice. So ' + fr(1, 3) + ' &gt; ' + fr(1, 8) + '.</p><div style="display:flex;gap:18px;justify-content:center">' + pie(1, 3) + pie(1, 8) + '</div>' },
+          { label: 'Same strip length', html: '<div class="fig">' + A.svg(404, 108, barAt(2, 2, 400, 44, 2, 3) + barAt(2, 60, 400, 44, 2, 5, 'var(--btn)'), fr(2, 3) + ' and ' + fr(2, 5)) + '</div><p>Both are 2 pieces. The thirds are longer pieces.</p>' }
+        ],
+        key: '<p>Same numerator: <b>the smaller denominator is the bigger fraction</b>.</p>',
+        mistake: '<p>Thinking 1/8 is bigger than 1/3 "because 8 is bigger than 3". Ask: "Would you rather share a pizza with 2 friends or 7 friends?"</p>',
+        check: [T('compare', 1), T('compare', 3)] }
+    ] },
+
+    { id: 'counting', title: 'Counting by fractions', sub: 'Jump along a number line.', concepts: [
+      { id: 'count-by', title: 'Count by fourths', exp: ['B1.6'], skill: 'fr4-count',
+        body: '<p>Counting by fourths: each jump is <b>1/4</b>. Four jumps make 1 whole.</p>',
+        watch: K.watch([1, 2, 3, 4, 5, 6].map(function (c) { return [c === 4 ? '4/4 = <b>1 whole</b>.' : c + '/4', countLine(4, 2, c), c === 4 ? 1800 : 900]; })),
+        try: K.lab({ controls: [
+          { id: 'd', label: 'Count by', type: 'select', options: [['2', 'halves'], ['3', 'thirds'], ['4', 'fourths'], ['5', 'fifths'], ['6', 'sixths'], ['8', 'eighths']] },
+          { id: 'up', label: '+ 1 jump', type: 'action', act: function (s) { s.c++; }, can: function (s) { return s.c < 3 * s.d; } },
+          { id: 'down', label: '&minus; 1 jump', type: 'action', act: function (s) { s.c--; }, can: function (s) { return s.c > 0; } },
+          { id: 'zero', label: 'Back to 0', type: 'action', act: function (s) { s.c = 0; }, can: function (s) { return s.c > 0; } }],
+          init: function (s) { s.c = 0; s.dk = ''; },
+          render: function (s) { if (s.dk !== s.d) { s.c = 0; s.dk = s.d; } var d = +s.d; return { fig: countLine(d, 3, s.c, true), out: '<p class="big">' + (s.c ? s.c + '/' + d + (s.c >= d ? ' = ' + mixedOf(s.c, d) : '') : '0') + '</p>' }; },
+          tasks: [
+            { do: 'Count by fourths to <b>' + A.mixed(1, 2, 4) + '</b>.', setup: function (api) { api.set('d', '4'); }, goal: function (s) { return s.d === '4' && s.c === 6; }, yes: '6 fourths = 1 and 2/4.' },
+            { do: 'Count by thirds to <b>2</b>.', setup: function (api) { api.set('d', '3'); }, goal: function (s) { return s.d === '3' && s.c === 6; }, yes: '6 thirds = 2 wholes.' }
+          ] }),
+        key: '<p><b>d jumps of 1/d make 1 whole.</b></p>',
+        check: [T('count', 1), T('count', 2)] },
+
+      { id: 'mixed', title: 'Past one whole', exp: ['B1.6'], skill: 'fr4-count', hard: true,
+        body: '<p>Past 1, we can write wholes and parts together: 7/4 is <b>1 and 3/4</b>, a <b>mixed number</b>.</p>',
+        watch: K.watch([
+          ['Count 7 fourths.', countLine(4, 2, 7, false), 1600],
+          ['The first 4 make 1 whole. 3 more fourths.', countLine(4, 2, 7, true), 2000],
+          ['7/4 = <b>' + A.mixed(1, 3, 4) + '</b>.', unitFig(7, 4) + '<p class="big">' + fr(7, 4) + ' = ' + A.mixed(1, 3, 4) + '</p>', 2200]
+        ]),
+        ways: [
+          { label: 'Make wholes first', html: '<p>Take out groups of 4 fourths. Each group is 1 whole. 11/4: two groups (8/4 = 2), 3 left: <b>' + A.mixed(2, 3, 4) + '</b>.</p><div class="fig">' + unitFig(11, 4) + '</div>' },
+          { label: 'Like money', html: '<p>4 quarters make $1. 7 quarters are $1 and 3 quarters: $1.75. That is 1 and 3/4 dollars.</p>' }
+        ],
+        key: '<p><b>Group the parts into wholes. What is left is the fraction part.</b></p>',
+        mistake: '<p>Reading 1 3/4 as "13 fourths", or counting the tick marks instead of the jumps. Point at each jump while counting.</p>',
+        check: [T('count', 3), T('count', 3)] }
+    ] },
+
+    { id: 'units', title: 'Groups of unit fractions', sub: 'n copies of 1/d.', concepts: [
+      { id: 'add-units', title: 'Copies of one piece', exp: ['B2.7'], skill: 'fr4-unit',
+        body: '<p>A <b>unit fraction</b> has 1 on top: 1/5. Three copies of 1/5 is <b>3 &times; 1/5 = 3/5</b>.</p>',
+        watch: { tool: 'fractions', opts: { parts: 5, choices: [] }, steps: [
+          { say: 'One fifth.', act: function (t) { return t.shade(1); } },
+          { say: '1/5 + 1/5 = 2/5.', act: function (t) { return t.split(5).then(function () { return t.shade(2); }); } },
+          { say: '1/5 + 1/5 + 1/5 = <b>3 &times; 1/5 = 3/5</b>. The piece size stays fifths.', act: function (t) { return t.split(5).then(function () { return t.shade(3); }); }, ms: 2200 }
+        ] },
+        try: K.lab({ controls: [{ id: 'k', label: 'Copies', min: 1, max: 24, value: 3 }, { id: 'd', label: 'Of', type: 'select', options: DEN.map(function (d) { return [String(d), '1/' + d]; }) }],
+          render: function (s) { var d = +s.d; return { fig: unitFig(s.k, d), out: '<p class="big math">' + s.k + ' &times; ' + fr(1, d) + ' = ' + fr(s.k, d) + (s.k >= d ? ' = ' + mixedOf(s.k, d) : '') + '</p>' }; },
+          tasks: [
+            { do: 'Make <b>4 &times; ' + fr(1, 6) + '</b>.', goal: function (s) { return s.k === 4 && s.d === '6'; }, yes: fr(4, 6) + '.' },
+            { do: 'Make exactly <b>2 wholes</b> with eighths.', goal: function (s) { return s.k === 16 && s.d === '8'; }, yes: '16 &times; ' + fr(1, 8) + ' = 2.' }
+          ] }),
+        key: '<p><b>n &times; 1/d = n/d.</b> The denominator stays the same.</p>',
+        check: [T('unit', 1), T('unit', 2)] },
+
+      { id: 'recipe', title: 'More than a whole', exp: ['B2.7'], skill: 'fr4-unit', hard: true,
+        body: '<p>A muffin needs 1/4 cup of oats. 7 muffins need <b>7 &times; 1/4 = 7/4</b> cups, which is 1 and 3/4 cups.</p>',
+        watch: K.watch([
+          ['Each muffin: 1/4 cup.', unitFig(1, 4), 1400],
+          ['4 muffins: 4/4 = 1 cup.', unitFig(4, 4), 1600],
+          ['7 muffins: 7/4 = <b>' + A.mixed(1, 3, 4) + ' cups</b>.', unitFig(7, 4), 2200]
+        ]),
+        ways: [
+          { label: 'Count by fourths', html: '<div class="fig">' + countLine(4, 2, 7, true) + '</div><p>7 jumps of 1/4 land on ' + A.mixed(1, 3, 4) + '.</p>' },
+          { label: 'Make full cups', html: '<p>Every 4 muffins use a full cup. 7 muffins = 4 muffins (1 cup) + 3 muffins (3/4 cup).</p>' }
+        ],
+        key: '<p>Multiply to get <b>n/d</b>, then <b>make wholes</b>.</p>',
+        mistake: '<p>Multiplying the denominator too (7 &times; 1/4 = 7/28). Ask: "Did the size of the piece change?"</p>',
+        check: [T('unit', 3), T('unit', 3)] }
+    ] }
+  ];
+
   A.register('fractions', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Numerator and denominator</h2>' +
 '<p>A fraction names part of a whole. The whole must be cut into <b>equal</b> parts.</p>' +

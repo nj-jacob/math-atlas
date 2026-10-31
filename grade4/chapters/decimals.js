@@ -159,7 +159,145 @@
     return s;
   }
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  var FRS = [[1, 2], [1, 5], [2, 5], [3, 5], [4, 5]];
+
+  var LESSONS = [
+    { id: 'tenths', title: 'Tenths', sub: 'One whole cut into 10 equal parts.', concepts: [
+      { id: 'tenth', title: 'What a tenth is', exp: ['B1.7'], skill: 'de4-read',
+        body: '<p>Cut one whole into <b>10 equal parts</b>. Each part is <b>one tenth</b>: ' + fr(1, 10) + ', written <b>0.1</b>.</p>',
+        watch: K.watch([
+          ['One whole, cut into 10 equal parts.', tenthBars(0), 1600],
+          ['One part is one tenth: ' + fr(1, 10) + ' = <b>0.1</b>.', tenthBars(1), 1800],
+          ['Three parts: three tenths = <b>0.3</b>.', tenthBars(3), 1800],
+          ['Ten tenths make <b>1 whole</b>: 1.0.', tenthBars(10), 2000]
+        ]),
+        try: { tool: 'fractions', opts: { parts: 10, choices: [] }, tasks: [
+          { do: 'Shade <b>0.7</b> of the strip.', goal: function (s) { return s[0].d === 10 && s[0].n === 7; }, yes: '7 tenths = 0.7.' },
+          { do: 'Shade the whole strip. What decimal is it?', goal: function (s) { return s[0].n === 10; }, yes: '10 tenths = 1.0 = 1 whole.' }
+        ] },
+        key: '<p><b>10 tenths make 1 whole.</b> 0.1 is one tenth.</p>',
+        check: [T('read', 1), T('frac', 1)] },
+
+      { id: 'point', title: 'Wholes and tenths', exp: ['B1.7'], skill: 'de4-read',
+        body: '<p>The <b>decimal point</b> separates the wholes from the tenths. 2.3 is 2 wholes and 3 tenths: "two and three tenths".</p>',
+        watch: K.watch([
+          ['2 wholes.', tenthBars(20) + chart(20), 1600],
+          ['And 3 tenths. The tenths go <b>after the point</b>.', tenthBars(23) + chart(23, -1), 2000],
+          ['<b>2.3</b>: two and three tenths.', tenthBars(23) + chart(23), 1800]
+        ]),
+        try: K.lab({ controls: [{ id: 'w', label: 'Wholes', min: 0, max: 5, value: 1 }, { id: 't', label: 'Tenths', min: 0, max: 9, value: 4 }],
+          render: function (s) { s.v = s.w * 10 + s.t; return { fig: tenthBars(Math.max(s.v, 0)) + chart(s.v), out: '<p><span class="big">' + ds(s.v) + '</span> ' + words(s.v) + '</p>' }; },
+          tasks: [
+            { do: 'Show <b>2.3</b>.', goal: function (s) { return s.v === 23; }, yes: 'Two and three tenths.' },
+            { do: 'Show <b>three and six tenths</b>.', goal: function (s) { return s.v === 36; }, yes: '3.6.' },
+            { do: 'Show <b>4.0</b>.', goal: function (s) { return s.v === 40; }, yes: '4.0 is 4 wholes and no tenths: the same as 4.' }
+          ] }),
+        key: '<p><b>Wholes . tenths.</b> Read the point as "and".</p>',
+        mistake: '<p>Reading 2.3 as "two point thirty" or thinking 2.3 means 23. Ask: "How many whole bars? How many tenths in the last bar?"</p>',
+        check: [T('read', 2), T('read', 3)] },
+
+      { id: 'fractions', title: 'Fractions as decimals', exp: ['B1.9'], skill: 'de4-frac', hard: true,
+        body: '<p>Tenths are easy: ' + fr(7, 10) + ' = 0.7. Halves and fifths can be cut into tenths too: <b>' + fr(1, 2) + ' = ' + fr(5, 10) + ' = 0.5</b>.</p>',
+        watch: K.watch([
+          [fr(1, 2) + ' of a strip.', A.svg(404, 108, barsTwo(1, 2, 0), 'one half'), 1600],
+          ['Below it, tenths. 5 tenths are just as long: ' + fr(1, 2) + ' = <b>0.5</b>.', A.svg(404, 108, barsTwo(1, 2, 5), 'one half equals 5 tenths'), 2200],
+          [fr(1, 5) + ' is 2 tenths: <b>0.2</b>.', A.svg(404, 108, barsTwo(1, 5, 2), 'one fifth equals 2 tenths'), 2000],
+          [fr(3, 5) + ' is 6 tenths: <b>0.6</b>.', A.svg(404, 108, barsTwo(3, 5, 6), 'three fifths equals 6 tenths'), 2000]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'f', label: 'Fraction', type: 'select', options: FRS.map(function (p, i) { return [String(i), p[0] + '/' + p[1]]; }) },
+          { id: 't', label: 'Tenths', min: 0, max: 10, value: 0 }],
+          render: function (s) { var p = FRS[+s.f], ok = s.t * p[1] === p[0] * 10; s.ok = ok; return { fig: A.svg(404, 108, barsTwo(p[0], p[1], s.t), p[0] + '/' + p[1] + ' above ' + s.t + ' tenths'), out: '<p class="big">' + fr(p[0], p[1]) + (ok ? ' = ' : ' &ne; ') + ds(s.t) + '</p>' }; },
+          tasks: [
+            { do: 'Make the tenths match <b>' + fr(1, 2) + '</b>.', setup: function (api) { api.set('f', '0'); }, goal: function (s) { return s.f === '0' && s.ok; }, yes: fr(1, 2) + ' = 0.5.' },
+            { do: 'Make the tenths match <b>' + fr(2, 5) + '</b>.', setup: function (api) { api.set('f', '2'); }, goal: function (s) { return s.f === '2' && s.ok; }, yes: fr(2, 5) + ' = 0.4.' },
+            { do: 'Make the tenths match <b>' + fr(4, 5) + '</b>.', setup: function (api) { api.set('f', '4'); }, goal: function (s) { return s.f === '4' && s.ok; }, yes: fr(4, 5) + ' = 0.8.' }
+          ] }),
+        ways: [
+          { label: 'With money', html: '<p>Half a dollar is 50¢ = $0.50. A fifth of a dollar is 20¢ = $0.20. Tenths of a dollar are dimes.</p>' },
+          { label: 'Each fifth is 2 tenths', html: '<p>A whole has 5 fifths or 10 tenths, so <b>1 fifth = 2 tenths</b>. 3 fifths = 6 tenths = 0.6.</p>' }
+        ],
+        key: '<p><b>Find how many tenths are the same length.</b> 1/2 = 0.5; 1/5 = 0.2.</p>',
+        mistake: '<p>Writing ' + fr(1, 2) + ' as 1.2 or ' + fr(1, 5) + ' as 0.15 (using the digits of the fraction). Ask: "How many tenths fit in this piece?"</p>',
+        check: [T('frac', 2), T('frac', 3)] }
+    ] },
+
+    { id: 'compare', title: 'Compare and round', sub: 'Use the number line.', concepts: [
+      { id: 'compare', title: 'Compare decimals', exp: ['B1.7'], skill: 'de4-compare',
+        body: '<p>Compare the <b>wholes</b> first. If they are the same, compare the <b>tenths</b>. On a number line, greater is further right.</p>',
+        watch: K.watch([
+          ['1.8 and 2.3. Compare the wholes: 1 and 2.', line(10, 30, [{ t: 18, l: '1.8' }]), 1800],
+          ['2 wholes is more: <b>2.3 &gt; 1.8</b>, even though 8 tenths is more than 3 tenths.', line(10, 30, [{ t: 18, l: '1.8' }, { t: 23, l: '2.3', c: 'var(--strand)' }]), 2400],
+          ['2.3 and 2.7: same wholes, so compare tenths. <b>2.7 &gt; 2.3</b>.', line(20, 30, [{ t: 23, l: '2.3' }, { t: 27, l: '2.7', c: 'var(--strand)' }]), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'a', label: 'First', min: 0, max: 50, value: 18, fmt: ds }, { id: 'b', label: 'Second', min: 0, max: 50, value: 23, fmt: ds }],
+          render: function (s) { var sym = s.a > s.b ? '&gt;' : s.a < s.b ? '&lt;' : '='; return { fig: line(0, 50, [{ t: s.a, l: ds(s.a) }, { t: s.b, l: ds(s.b), c: 'var(--strand)' }]), out: '<p class="big math">' + ds(s.a) + ' ' + sym + ' ' + ds(s.b) + '</p>' }; },
+          tasks: [
+            { do: 'Make the first number greater, with the <b>same whole number</b> in both.', goal: function (s) { return Math.floor(s.a / 10) === Math.floor(s.b / 10) && s.a > s.b; }, yes: 'Same wholes, so the tenths decide.' },
+            { do: 'Make the first number greater even though it has <b>fewer tenths</b>.', goal: function (s) { return s.a > s.b && s.a % 10 < s.b % 10; }, yes: 'More wholes wins, whatever the tenths say.' }
+          ] }),
+        key: '<p><b>Wholes first, then tenths.</b></p>',
+        mistake: '<p>Thinking 1.8 &gt; 2.3 because 8 is bigger than 3. Ask: "How many wholes does each have?"</p>',
+        check: [T('compare', 1), T('compare', 2), T('compare', 3)] },
+
+      { id: 'round', title: 'Round to a whole number', exp: ['B1.8'], skill: 'de4-round',
+        body: '<p>Picture a hill between two whole numbers. Tenths of <b>5 or more</b> roll up. Less than 5 roll back down.</p>',
+        watch: K.watch([
+          ['3.2 is before the top. It rolls back to <b>3</b>.', hill(32, 'dew1'), 2000],
+          ['3.7 is past the top. It rolls up to <b>4</b>.', hill(37, 'dew1'), 2000],
+          ['3.5 is exactly at the top. It rounds <b>up</b> to 4.', hill(35, 'dew1'), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 't', label: 'Number', min: 10, max: 59, value: 32, fmt: ds }],
+          render: function (s) { s.r = Math.floor(s.t / 10) + (s.t % 10 >= 5 ? 1 : 0); return { fig: hill(s.t, 'detry'), out: '<p class="big math">' + ds(s.t) + ' &asymp; ' + s.r + '</p>' }; },
+          tasks: [
+            { do: 'Find a number that rounds <b>up</b> to 4.', goal: function (s) { return s.r === 4 && s.t < 40; }, yes: function (s) { return ds(s.t) + ' rolls up to 4.'; } },
+            { do: 'Find the number at the very <b>top</b> of the hill between 2 and 3.', goal: function (s) { return s.t === 25; }, yes: '2.5 rounds up to 3.' }
+          ] }),
+        key: '<p>Tenths digit <b>5 or more: round up.</b> Less than 5: round down.</p>',
+        check: [T('round', 1), T('round', 3)] }
+    ] },
+
+    { id: 'add-sub', title: 'Add and subtract tenths', sub: 'Think in tenths; line up the points.', concepts: [
+      { id: 'add', title: 'Add tenths', exp: ['B2.3', 'B2.4'], skill: 'de4-add',
+        body: '<p>Think in tenths. 0.7 + 0.5 is 7 tenths + 5 tenths = 12 tenths. <b>10 tenths make 1 whole</b>, so 12 tenths = 1.2.</p>',
+        watch: K.watch([
+          ['0.7: 7 tenths.', tenthBars(7, null, 540), 1500],
+          ['Add 0.5: 5 more tenths. 12 tenths in all.', tenthBars(12, null, 540), 2000],
+          ['10 tenths fill a whole. <b>0.7 + 0.5 = 1.2</b>.', tenthBars(12, null, 540) + '<div class="fig">' + cols(7, 5, '+', true) + '</div>', 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'a', label: 'First', min: 0, max: 30, value: 7, fmt: ds }, { id: 'b', label: 'Second', min: 0, max: 30, value: 5, fmt: ds }],
+          render: function (s) { s.s = s.a + s.b; return { fig: tenthBars(s.s, null, 540) + '<div class="fig">' + cols(s.a, s.b, '+', true) + '</div>', out: '<p class="big math">' + ds(s.a) + ' + ' + ds(s.b) + ' = ' + ds(s.s) + '</p>' }; },
+          tasks: [
+            { do: 'Show <b>1.6 + 2.7</b>.', goal: function (s) { return s.a === 16 && s.b === 27; }, yes: '16 + 27 = 43 tenths = 4.3.' },
+            { do: 'Make a sum of exactly <b>2</b>, where neither number is a whole number.', goal: function (s) { return s.s === 20 && s.a % 10 && s.b % 10; }, yes: function (s) { return ds(s.a) + ' + ' + ds(s.b) + ': the tenths made a whole.'; } }
+          ] }),
+        key: '<p><b>Add the tenths. 10 tenths make 1 whole.</b> Line up the decimal points.</p>',
+        mistake: '<p>Writing 0.7 + 0.5 = 0.12. Ask: "How many tenths is that? Is it more than a whole?"</p>',
+        check: [T('add', 1), T('add', 2)] },
+
+      { id: 'sub', title: 'Subtract tenths', exp: ['B2.3', 'B2.4'], skill: 'de4-sub', hard: true,
+        body: '<p>Think in tenths again. 4.2 &minus; 1.7 is 42 tenths &minus; 17 tenths = <b>25 tenths = 2.5</b>.</p>',
+        watch: K.watch([
+          ['4.2 &minus; 1.7. Line up the points.', cols(42, 17, '-', false), 1800],
+          ['In tenths: 42 &minus; 17 = 25.', cols(42, 17, '-', false) + '<p class="math big">42 &minus; 17 = 25 tenths</p>', 2000],
+          ['25 tenths = <b>2.5</b>.', cols(42, 17, '-', true), 2000]
+        ]),
+        ways: [
+          { label: 'Count up', html: '<p>From 1.7 up to 2 is 0.3. From 2 up to 4.2 is 2.2. 0.3 + 2.2 = <b>2.5</b>.</p><div class="fig">' + line(10, 50, [{ t: 17, l: '1.7' }, { t: 20 }, { t: 42, l: '4.2', c: 'var(--strand)' }]) + '</div>' },
+          { label: 'With money', html: '<p>$4.20 &minus; $1.70. Take away $1: $3.20. Take away 70¢: $2.50.</p>' },
+          { label: 'Trade a whole', html: '<p>2 tenths is not enough to take 7. Trade 1 whole for 10 tenths: 3 wholes and 12 tenths. 12 &minus; 7 = 5 tenths, 3 &minus; 1 = 2 wholes: <b>2.5</b>.</p>' }
+        ],
+        key: '<p><b>Line up the points and think in tenths.</b> Trade a whole for 10 tenths if you need to.</p>',
+        mistake: '<p>Taking the smaller tenths digit from the bigger one (4.2 &minus; 1.7 = 3.5). Ask: "Can you take 7 tenths from 2 tenths?"</p>',
+        check: [T('sub', 1), T('sub', 2), T('sub', 3)] }
+    ] }
+  ];
+
   A.register('decimals', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>What is a tenth?</h2>' +
 '<p>Cut 1 whole into 10 equal parts. Each part is <b>one tenth</b>. We can write it as a fraction, ' + fr(1, 10) + ', or as a decimal, <b>0.1</b>.</p>' +

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-CA">
+<html lang="en-CA" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -12,13 +12,14 @@
 <link rel="stylesheet" href="../assets/family.css">
 <meta name="atlas-site" content="g4">
 <meta name="atlas-prefix" content="g4atlas:">
+<link rel="stylesheet" href="assets/manip.css">
 </head>
 <body>
 <a class="skip" href="#app">Skip to content</a>
 <header class="bar"><div class="wrap">
   <a class="brand" href="#home"><i aria-hidden="true"></i>Grade 4 Math Atlas</a>
-  <nav aria-label="Main"><a href="#home">Chapters</a><a href="#check-up">Check-up</a><a href="#fact-sheet">Fact sheet</a></nav>
-  <div class="tools" role="group" aria-label="Display settings"><button type="button" id="bigb" aria-pressed="false">Text: normal</button><button type="button" id="themeb">Theme: auto</button></div>
+  <nav aria-label="Main"><a href="#home">Chapters</a><a href="#check-up">Check-up</a><a href="#progress">My progress</a><a href="#tools">Toolbox</a><a href="#fact-sheet">Fact sheet</a></nav>
+  <div class="tools" role="group" aria-label="Display settings"><button type="button" id="bigb" aria-pressed="false">Text: normal</button><button type="button" id="themeb">Theme: light</button><button type="button" id="adultb" aria-pressed="false" title="Shows coaching notes, like common mistakes, for a parent or tutor">Grown-up view: off</button></div>
 </div></header>
 <main id="app" tabindex="-1"></main>
 <footer class="site"><div class="wrap">
@@ -26,6 +27,9 @@
   <p>A study aid only. Check details against the Ontario Ministry of Education's 2020 Mathematics curriculum.</p>
 </div></footer>
 <script src="assets/site.js"></script>
+<script src="assets/manip.js"></script>
+<script src="assets/lesson.js"></script>
+<script src="assets/g4kit.js"></script>
 <script src="chapters/numbers.js"></script>
 <script src="chapters/add-subtract.js"></script>
 <script src="chapters/multiply-divide.js"></script>

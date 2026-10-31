@@ -227,7 +227,115 @@
     ['Headphones', [['Brand A', 12], ['Brand B', 30]], 'Brand A is cheaper, but read reviews. If A breaks in a month and B lasts years, B may be the better value.'],
     ['Pencil crayons', [['24 on sale', 12], ['12 regular', 15]], '24 for $12 means you get 2 crayons for every $1, so each one costs less than $1. 12 for $15 means each one costs more than $1. The sale box is the better buy, if you will use that many.']];
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  function payCard(p) { return '<div class="key" style="margin:6px 0"><p><b>' + cap(p[0]) + '</b>: ' + p[1] + '</p><p class="t2">' + p[2] + '</p></div>'; }
+
+  var LESSONS = [
+    { id: 'paying', title: 'Paying and change', sub: 'Ways to pay, totals, and counting up for change.', concepts: [
+      { id: 'ways', title: 'Ways to pay', exp: ['F1.1'], skill: 'mo4-pay',
+        body: '<p>We can pay with <b>cash</b>, a <b>debit card</b>, a <b>credit card</b>, a <b>gift card</b>, a phone tap or an <b>e-transfer</b>. They all move real money.</p>',
+        watch: K.watch(PAY.map(function (p) { return [cap(p[0]) + '.', payCard(p), 2200]; })),
+        key: '<p><b>Debit</b>: your money, right away. <b>Credit</b>: borrowed, pay it back later.</p>',
+        mistake: '<p>Thinking a card or phone tap is "free" money. Point out that every tap comes from a bank account or a loan that must be paid back.</p>',
+        check: [T('pay', 1), T('pay', 2), T('pay', 3)] },
+
+      { id: 'totals', title: 'Find the total', exp: ['F1.2'], skill: 'mo4-total',
+        body: '<p>Add the prices to find the <b>total</b>. Estimate first: round each price to the nearest $10.</p>',
+        watch: K.watch([
+          ['A book and a puzzle.', tags(SHOP.slice(0, 1).concat([SHOP[3]])), 1600],
+          ['Estimate: $10 + $20 = $30. Exact: $12 + $19 = <b>$31</b>.', tags(SHOP.slice(0, 1).concat([SHOP[3]])) + cash(31), 2400]
+        ]),
+        try: K.lab({ controls: SHOP.map(function (it, i) { return { id: 'i' + i, label: cap(it[0]) + ' $' + it[1], type: 'toggle' }; }),
+          render: function (s) { var pick = SHOP.filter(function (it, i) { return s['i' + i]; }); s.t = pick.reduce(function (p, it) { return p + it[1]; }, 0); return { fig: pick.length ? tags(pick) : '<p class="t2">Tap items to put them in the basket.</p>', out: '<p class="big">Total: ' + $s(s.t) + '</p>' + (s.t ? cash(s.t) : '') }; },
+          tasks: [
+            { do: 'Choose items that cost exactly <b>$20</b>.', goal: function (s) { return s.t === 20; }, yes: 'Exactly $20.' },
+            { do: 'Now choose items that cost exactly <b>$50</b>.', goal: function (s) { return s.t === 50; }, yes: 'Exactly $50.' }
+          ] }),
+        key: '<p><b>Estimate, then add.</b> The total should be close to the estimate.</p>',
+        check: [T('total', 1), T('total', 2), T('total', 3)] },
+
+      { id: 'change', title: 'Count up for change', exp: ['F1.2'], skill: 'mo4-change', hard: true,
+        body: '<p>To find change, <b>count up</b> from the price to the money you paid, like a cashier. Add the jumps.</p>',
+        watch: K.watch([
+          ['A $37 game. You pay with $50.', cash(50), 1800],
+          ['Count up: $37 to $40 is $3. $40 to $50 is $10.', countUp(37, 50), 2400],
+          ['$3 + $10 = <b>$13 change</b>.', countUp(37, 50) + cash(13), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 't', label: 'Price', min: 1, max: 99, value: 26, fmt: $s }, { id: 'p', label: 'You pay with', type: 'select', options: [['20', '$20'], ['50', '$50'], ['100', '$100']] }],
+          render: function (s) { var p = +s.p; s.ok = s.t < p; if (!s.ok) return { fig: cash(p), out: '<p>That is not enough money. Pick a bigger bill.</p>' }; return { fig: countUp(s.t, p), out: '<p class="big">Change: ' + $s(p - s.t) + '</p>' + cash(p - s.t) }; },
+          tasks: [
+            { do: 'A toy costs <b>$37</b>. Pay with <b>$50</b>.', goal: function (s) { return s.t === 37 && s.p === '50'; }, yes: '$13 change.' },
+            { do: 'Find a price that gives exactly <b>$25</b> change from $100.', goal: function (s) { return s.ok && s.p === '100' && s.t === 75; }, yes: '$75 + $25 = $100.' }
+          ] }),
+        ways: [
+          { label: 'Subtract', html: '<p>Change = money paid &minus; price. $50 &minus; $37 = <b>$13</b>. Counting up and subtracting give the same answer.</p>' },
+          { label: 'Hand it back', html: '<p>A cashier says: "$37 ... $38, $39, $40" (three loonies) "... and $50" (a $10 bill). The change is what was handed back: $13.</p>' }
+        ],
+        key: '<p><b>Count up from the price to the money paid.</b></p>',
+        mistake: '<p>Subtracting the wrong way (37 &minus; 50) or forgetting the small first jump. Practise with real coins: say the amounts out loud while counting up.</p>',
+        check: [T('change', 1), T('change', 2), T('change', 3)] }
+    ] },
+
+    { id: 'choices', title: 'Money choices', sub: 'Earn, spend, save, invest, donate.', concepts: [
+      { id: 'five-ways', title: 'Where money goes', exp: ['F1.3'], skill: 'mo4-con',
+        body: '<p>Money we <b>earn</b> can be <b>spent</b>, <b>saved</b> for later, <b>invested</b> so it can grow, or <b>donated</b> to help others.</p>',
+        watch: K.watch([
+          ['Leo earns $40 mowing lawns.', jars({ earn: 40 }), 1800],
+          ['He spends $10, saves $20, invests $5 and donates $5.', jars({ earn: 40, spend: 10, save: 20, invest: 5, donate: 5 }), 2600]
+        ]),
+        try: K.lab({ controls: [['spend', 'Spend'], ['save', 'Save'], ['invest', 'Invest'], ['donate', 'Donate']].map(function (c) { return { id: c[0], label: c[1], min: 0, max: 40, step: 5, value: c[0] === 'spend' ? 40 : 0, fmt: $s }; }),
+          render: function (s) { s.tot = s.spend + s.save + s.invest + s.donate; return { fig: jars({ earn: 40, spend: s.spend, save: s.save, invest: s.invest, donate: s.donate }), out: '<p>' + (s.tot === 40 ? 'All $40 has a job.' : s.tot < 40 ? $s(40 - s.tot) + ' still needs a job.' : 'That is ' + $s(s.tot - 40) + ' more than you earned.') + '</p>' }; },
+          tasks: [{ do: 'Split $40: <b>save half</b>, <b>donate $5</b>, and use the rest however you like.', goal: function (s) { return s.tot === 40 && s.save === 20 && s.donate === 5; }, yes: 'Every dollar has a job, and half is saved.' }] }),
+        key: '<p><b>Earn</b> comes in. <b>Spend, save, invest, donate</b> go out.</p>',
+        mistake: '<p>Mixing up saving and investing. Saving keeps money safe for later; investing uses money so it might grow, with some risk.</p>',
+        check: [T('con', 1), T('con', 2), T('con', 3)] },
+
+      { id: 'goal', title: 'Saving for a goal', exp: ['F1.4'], skill: 'mo4-save',
+        body: '<p>Set a <b>goal</b>, then save the same amount each week. Divide to find how many weeks. A remainder means <b>one more week</b>.</p>',
+        watch: K.watch([
+          ['A $30 kite. Save $5 a week.', goalBar(30, 5), 1800],
+          ['$30 &divide; $5 = <b>6 weeks</b>.', goalBar(30, 5), 1800],
+          ['A $32 kite? 6 weeks gives $30: not enough. <b>7 weeks</b>.', goalBar(32, 5), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'g', label: 'Goal', min: 10, max: 60, step: 1, value: 20, fmt: $s }, { id: 'p', label: 'Save each week', min: 1, max: 10, value: 4, fmt: $s }, { id: 'h', label: 'Already have', min: 0, max: 9, value: 0, fmt: $s }],
+          render: function (s) { s.w = Math.max(0, Math.ceil((s.g - s.h) / s.p)); return { fig: goalBar(s.g, s.p, s.h), out: '<p class="big">' + s.w + ' week' + (s.w === 1 ? '' : 's') + '</p>' }; },
+          tasks: [
+            { do: 'Plan for a <b>$45</b> game, saving <b>$5</b> a week, starting with nothing.', goal: function (s) { return s.g === 45 && s.p === 5 && s.h === 0; }, yes: '9 weeks.' },
+            { do: 'Same game, but you already have <b>$6</b>. How many weeks now?', goal: function (s) { return s.g === 45 && s.p === 5 && s.h === 6; }, yes: '$39 more: 7 R4, so 8 weeks.' }
+          ] }),
+        key: '<p><b>Still needed &divide; amount each week.</b> Leftover? Add a week.</p>',
+        check: [T('save', 1), T('save', 2), T('save', 3)] },
+
+    ] },
+
+    { id: 'smart', title: 'Smart buying', sub: 'Needs, wants and good value.', concepts: [
+      { id: 'needs', title: 'Needs and wants', exp: ['F1.3'], skill: 'mo4-con',
+        body: '<p>A <b>need</b> is something you must have, like food or a winter coat. A <b>want</b> is nice to have. Before you spend, ask: <b>"Do I need it, or do I just want it?"</b></p>',
+        watch: K.watch([
+          ['Winter boots for a Canadian winter: a <b>need</b>.', tags([['winter boots', 45]]), 2000],
+          ['A second video game: a <b>want</b>. It can wait, or be saved for.', tags([['video game', 30]]), 2200],
+          ['Needs first. Then decide which wants are worth saving for.', tags([['winter boots', 45], ['video game', 30]]), 2200]
+        ]),
+        key: '<p><b>Needs first, then wants.</b></p>',
+        check: [T('con', 3), T('con', 3)] },
+
+      { id: 'value', title: 'Good value', exp: ['F1.5'], skill: 'mo4-value', hard: true,
+        body: '<p>The cheapest price is not always the best value. Compare the <b>price for one</b>, add <b>extra costs</b> like shipping, and think about <b>quality</b>.</p>',
+        watch: K.watch(DEALS.map(function (d) { return [d[2], '<p class="tb">' + d[0] + '</p>' + tags(d[1]), 3200]; })),
+        ways: [
+          { label: 'Price for one', html: '<p>A pack of 4 for $8: $8 &divide; 4 = $2 each. One alone for $3. The pack is cheaper per item, <b>if</b> you will use all 4.</p>' },
+          { label: 'Total cost', html: '<p>Online $30 + $8 shipping = $38. Local store $35. The local store costs less in all.</p>' }
+        ],
+        key: '<p>Compare <b>the same amount</b> and <b>the full cost</b>. Then think: will it last?</p>',
+        mistake: '<p>Picking the biggest pack or the lowest sticker price without checking cost per item, shipping, or whether it will all get used.</p>',
+        check: [T('value', 1), T('value', 2), T('value', 3)] }
+    ] }
+  ];
+
   A.register('money', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Ways to pay</h2>' +
 '<p>There are many ways to pay for things. Each one gets money from a different place.</p>' +

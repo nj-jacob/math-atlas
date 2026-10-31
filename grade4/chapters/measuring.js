@@ -283,7 +283,158 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  function fmtMin(v) { return fmtT(v); }
+
+  var LESSONS = [
+    { id: 'mass-cap', title: 'Mass and capacity', sub: 'Grams and kilograms, millilitres and litres.', concepts: [
+      { id: 'grams-kg', title: 'Grams and kilograms', exp: ['E2.1'], skill: 'me4-mass',
+        body: '<p><b>Mass</b> is how heavy something is. Light things are measured in <b>grams (g)</b>, heavy things in <b>kilograms (kg)</b>. <b>1 kg = 1000 g.</b></p>',
+        watch: K.watch([
+          ['A paper clip is about 1 gram. A dictionary is about 1 kilogram.', massBlocks(1, 0), 1800],
+          ['Ten 100 g blocks balance 1 kg: 10 &times; 100 = 1000.', massBlocks(1, 0) + massBlocks(0, 10), 2200],
+          ['2 kg and 300 g is 2000 + 300 = <b>2300 g</b>.', massBlocks(2, 3), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'k', label: 'Kilogram blocks', min: 0, max: 4, value: 0 }, { id: 'h', label: '100 g blocks', min: 0, max: 10, value: 0 }],
+          render: function (s) { s.g = s.k * 1000 + s.h * 100; return { fig: massBlocks(s.k, s.h), out: '<p class="big">' + A.fmt(s.g) + ' g</p>' }; },
+          tasks: [
+            { do: 'Put <b>2300 g</b> on the scale.', goal: function (s) { return s.g === 2300; }, yes: '2 kg and 300 g.' },
+            { do: 'Make exactly <b>1 kg</b> with no kilogram blocks.', goal: function (s) { return s.k === 0 && s.h === 10; }, yes: '10 &times; 100 g = 1000 g = 1 kg.' }
+          ] }),
+        key: '<p><b>1 kg = 1000 g.</b></p>',
+        mistake: '<p>Thinking 1 kg = 100 g. Ask: "How many 100 g blocks balance a kilogram?"</p>',
+        check: [T('mass', 1), T('mass', 2), T('mass', 3)] },
+
+      { id: 'read-scale', title: 'Read a scale', exp: ['E2.1'], skill: 'me4-mass',
+        body: '<p>Find the numbered mark <b>just before</b> the needle, then count the small marks after it. On this scale each small mark is <b>50 g</b>.</p>',
+        watch: K.watch([[300, 'The needle is on 300: <b>300 g</b>.'], [350, 'Halfway past 300, on the small mark: <b>350 g</b>.'], [650, 'One small mark past 600: <b>650 g</b>.']].map(function (p) { return [p[1], dial(p[0], 1000), 2000]; })),
+        try: K.lab({ controls: [{ id: 'g', label: 'Mass', min: 0, max: 1000, step: 50, value: 100, fmt: function (v) { return v + ' g'; } }],
+          render: function (s) { return { fig: dial(s.g, 1000), out: '' }; },
+          tasks: [
+            { do: 'Make the scale show <b>750 g</b>.', goal: function (s) { return s.g === 750; }, yes: '750 g: halfway between 700 and 800.' },
+            { do: 'Make it show <b>half a kilogram</b>.', goal: function (s) { return s.g === 500; }, yes: 'Half of 1000 g is 500 g.' }
+          ] }),
+        key: '<p><b>Numbered mark before the needle, then count on.</b></p>',
+        check: [T('mass', 2), T('mass', 2)] },
+
+      { id: 'litres', title: 'Litres and millilitres', exp: ['E2.1'], skill: 'me4-cap',
+        body: '<p><b>Capacity</b> is how much a container holds. A teaspoon is about 5 mL. A milk carton is 1 L. <b>1 L = 1000 mL.</b></p>',
+        watch: K.watch([
+          ['From a teaspoon to a milk carton.', capLine(), 2400],
+          ['A jug with 250 mL.', jug(250, 100), 1600],
+          ['Fill it to the top line: 1000 mL = <b>1 L</b>.', jug(1000, 100), 2000]
+        ]),
+        try: K.lab({ controls: [{ id: 'm', label: 'Water', min: 0, max: 1000, step: 50, value: 200, fmt: function (v) { return v + ' mL'; } }],
+          render: function (s) { return { fig: jug(s.m, 100), out: '<p>' + s.m + ' mL. ' + (s.m < 1000 ? (1000 - s.m) + ' mL more fills 1 L.' : 'Full: 1 L.') + '</p>' }; },
+          tasks: [
+            { do: 'Pour <b>750 mL</b>.', goal: function (s) { return s.m === 750; }, yes: '750 mL. 250 mL more makes 1 L.' },
+            { do: 'Fill the jug to <b>1 L</b>.', goal: function (s) { return s.m === 1000; }, yes: '1000 mL = 1 L.' }
+          ] }),
+        key: '<p><b>1 L = 1000 mL.</b></p>',
+        check: [T('cap', 1), T('cap', 2), T('cap', 3)] },
+
+      { id: 'units', title: 'Choose the unit and the tool', exp: ['E2.2'], skill: 'me4-unit', hard: true,
+        body: '<p>First ask: <b>length, mass or capacity?</b> Then: <b>small or large?</b> That tells you the unit and the tool.</p>',
+        watch: K.watch([
+          ['Length: mm, cm, m, km. 1 m = 100 cm, 1 cm = 10 mm.', metre(), 2600],
+          ['Capacity: mL for small amounts, L for big ones.', capLine(), 2200]
+        ]),
+        ways: [
+          { label: 'A table to keep', html: '<div class="tbl"><table><thead><tr><th>What</th><th>Small</th><th>Large</th><th>Tool</th></tr></thead><tbody><tr><td>Length</td><td>mm, cm</td><td>m, km</td><td>ruler, tape</td></tr><tr><td>Mass</td><td>g</td><td>kg</td><td>scale</td></tr><tr><td>Capacity</td><td>mL</td><td>L</td><td>measuring cup or jug</td></tr></tbody></table></div>' },
+          { label: 'Body benchmarks', html: '<p>A fingernail is about <b>1 cm</b> wide. A big step is about <b>1 m</b>. A paper clip is about <b>1 g</b>. A full water bottle is about <b>500 mL</b>.</p>' }
+        ],
+        key: '<p><b>What kind? How big?</b> Then pick the unit.</p>',
+        mistake: '<p>Using a length unit for mass ("the cat is 4 m"), or a huge unit for a small thing. Ask: "Are we measuring how long, how heavy, or how much it holds?"</p>',
+        check: [T('unit', 1), T('unit', 2), T('unit', 3)] }
+    ] },
+
+    { id: 'time', title: 'Time', sub: 'Units of time and elapsed time.', concepts: [
+      { id: 'time-units', title: 'Units of time', exp: ['E2.3'], skill: 'me4-time',
+        body: '<p>60 seconds = 1 minute. <b>60 minutes = 1 hour.</b> 24 hours = 1 day. 7 days = 1 week.</p>',
+        watch: K.watch([
+          ['The minute hand goes all the way round: 60 minutes.', clock(9 * 60, '9:00'), 1600],
+          ['One full turn later: 1 hour has passed.', clock(10 * 60, '10:00'), 1800],
+          ['A quarter turn: 15 minutes. A half turn: 30 minutes.', clock(10 * 60 + 30, '10:30'), 2000]
+        ]),
+        try: { tool: 'clock', opts: { t: 9 * 60 + 30 }, tasks: [
+          { do: 'Move the clock on by <b>1 hour</b>.', goal: function (s) { return s.elapsed === 60; }, yes: 'The minute hand went all the way round once: 60 minutes.' },
+          { do: 'From 9:30, move the clock to <b>11:15 a.m.</b>', goal: function (s) { return s.h === 11 && s.m === 15; }, yes: '1 hour 45 minutes later.' }
+        ] },
+        key: '<p><b>60 minutes in an hour</b>, not 100.</p>',
+        check: [T('time', 1), T('time', 1)] },
+
+      { id: 'elapsed', title: 'How long did it take?', exp: ['E2.3'], skill: 'me4-time', hard: true,
+        body: '<p>To find elapsed time, use a <b>time line</b>. Jump to the next hour, then whole hours, then the minutes that are left. Add the jumps.</p>',
+        watch: K.watch([
+          ['Start 9:40, end 11:15.', clocks(9 * 60 + 40, 11 * 60 + 15), 1800],
+          ['Jump 20 min to 10:00, 1 hour to 11:00, 15 min to 11:15.', timeLine(9 * 60 + 40, 11 * 60 + 15), 2600],
+          ['20 + 60 + 15 = 95 minutes = <b>1 hour 35 minutes</b>.', timeLine(9 * 60 + 40, 11 * 60 + 15), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'a', label: 'Start', min: 480, max: 900, step: 5, value: 585, fmt: fmtMin }, { id: 'd', label: 'Lasts', min: 5, max: 180, step: 5, value: 50, fmt: dur }],
+          render: function (s) { s.b = s.a + s.d; return { fig: clocks(s.a, s.b) + timeLine(s.a, s.b), out: '<p>' + fmtT(s.a) + ' to <b>' + fmtT(s.b) + '</b>: ' + dur(s.d) + '</p>' }; },
+          tasks: [
+            { do: 'A swim lesson starts at <b>9:45 a.m.</b> and lasts <b>50 minutes</b>. Show it.', goal: function (s) { return s.a === 585 && s.d === 50; }, yes: 'It ends at 10:35 a.m.' },
+            { do: 'Make an activity that starts at 10:40 a.m. and ends at exactly <b>12:00 noon</b>.', goal: function (s) { return s.a === 640 && s.b === 720; }, yes: '1 hour 20 minutes.' }
+          ] }),
+        ways: [
+          { label: 'Count on the clock', html: '<p>Start at 9:40. Move the minute hand to 10:00 (20 min). One full turn to 11:00 (1 hour). Then to 11:15 (15 min).</p>' },
+          { label: 'Hours, then minutes', html: '<p>9:40 to 10:40 is 1 hour. 10:40 to 11:15 is 35 minutes (20 to 11:00, then 15). Total: <b>1 hour 35 minutes</b>.</p>' }
+        ],
+        key: '<p><b>Jump to the next hour first.</b> Then whole hours, then minutes.</p>',
+        mistake: '<p>Subtracting clock times like ordinary numbers (11:15 &minus; 9:40 = 1:75 or 175). An hour has 60 minutes, not 100. Use a time line.</p>',
+        check: [T('time', 2), T('time', 3)] }
+    ] },
+
+    { id: 'area', title: 'Area', sub: 'Count square units; multiply length by width.', concepts: [
+      { id: 'squares', title: 'Area is square units', exp: ['E2.5'], skill: 'me4-area',
+        body: '<p><b>Area</b> is how much surface a shape covers. Count the <b>square units</b>: each small square is 1 cm' + SQ + '.</p>',
+        watch: K.watch([
+          ['A rectangle covered in 1 cm' + SQ + ' squares.', areaPic(6, 4, { grid: true }), 1600],
+          ['Count one row: 6 squares. There are 4 rows.', areaPic(6, 4, { grid: true, rows: true }), 2000],
+          ['4 rows of 6 = <b>24 cm' + SQ + '</b>.', areaPic(6, 4, { grid: true, rows: true, area: 24 }), 2000]
+        ]),
+        try: K.lab({ controls: [{ id: 'l', label: 'Length', min: 1, max: 10, value: 3 }, { id: 'w', label: 'Width', min: 1, max: 6, value: 2 }],
+          render: function (s) { s.a = s.l * s.w; return { fig: areaPic(s.l, s.w, { grid: true, rows: true }), out: '<p class="big">' + s.w + ' rows of ' + s.l + ' = ' + s.a + ' cm' + SQ + '</p>' }; },
+          tasks: [
+            { do: 'Make a rectangle with an area of <b>24 cm' + SQ + '</b>.', goal: function (s) { return s.a === 24; }, yes: function (s) { return s.l + ' by ' + s.w + '.'; } },
+            { do: 'Make a <b>different</b> rectangle with the same area, 24 cm' + SQ + '.', goal: function (s) { return s.a === 24 && s.l !== s._l1; }, setup: function (api) { api.state._l1 = api.state.l; }, yes: 'Different shape, same area.' }
+          ] }),
+        ways: [{ label: 'Cover it yourself', html: '<p>Tap squares to cover a rectangle. Count the squares, then check: rows &times; number in each row.</p>', tool: 'areagrid', opts: { cols: 8, rows: 5 } }],
+        key: '<p>Area = <b>how many square units</b> cover the shape.</p>',
+        check: [T('area', 1), T('area', 1)] },
+
+      { id: 'formula', title: 'Length times width', exp: ['E2.5'], skill: 'me4-area', hard: true,
+        body: '<p>You do not need to count every square. <b>Area = length &times; width</b>: the number of rows times the number in each row.</p>',
+        watch: K.watch([
+          ['8 m long, 5 m wide. Just the first row and column.', areaPic(8, 5, { grid: true, partial: true, unit: 'm' }), 2000],
+          ['5 rows of 8: 8 &times; 5 = <b>40 m' + SQ + '</b>.', areaPic(8, 5, { grid: true, rows: true, unit: 'm', area: 40 }), 2200]
+        ]),
+        ways: [
+          { label: 'It is an array', html: '<p>The squares are an array: rows &times; number in each row. Same as 5 &times; 8 dots.</p>' },
+          { label: 'Not the edge', html: '<p>Walking around the edge is the <b>perimeter</b>: 8 + 5 + 8 + 5 = 26 m. Area is the <b>inside</b>: 40 m' + SQ + '. Different questions, different answers.</p>' }
+        ],
+        key: '<p><b>Area = length &times; width</b>, in square units.</p>',
+        mistake: '<p>Adding the sides (8 + 5 = 13) or finding the perimeter instead. Ask: "Are we covering the inside or walking around the edge?"</p>',
+        check: [T('area', 2), T('area', 3)] },
+
+      { id: 'missing-side', title: 'Find a missing side', exp: ['E2.6'], skill: 'me4-side',
+        body: '<p>If you know the area and one side, <b>divide</b>: area &divide; the side you know = the other side.</p>',
+        watch: K.watch([
+          ['Area 36 m' + SQ + '. Width 4 m. Length?', areaPic(9, 4, { unit: 'm', unknown: 'l', area: 36 }), 2000],
+          ['? &times; 4 = 36. 36 &divide; 4 = <b>9 m</b>.', areaPic(9, 4, { unit: 'm', grid: true, rows: true, area: 36 }), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'l', label: 'Length', min: 1, max: 12, value: 3 }],
+          render: function (s) { return { fig: areaPic(s.l, 4, { unit: 'm', grid: true, rows: true, area: s.l * 4 }), out: '<p>' + s.l + ' &times; 4 = ' + s.l * 4 + ' m' + SQ + '</p>' }; },
+          tasks: [{ do: 'A garden is 4 m wide with an area of <b>36 m' + SQ + '</b>. Find its length.', goal: function (s) { return s.l === 9; }, yes: '36 &divide; 4 = 9 m.' }] }),
+        key: '<p><b>Missing side = area &divide; known side.</b></p>',
+        check: [T('side', 1), T('side', 2), T('side', 3)] }
+    ] }
+  ];
+
   A.register('measuring', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Grams and kilograms</h2>' +
 '<p><b>Mass</b> tells how heavy something is. Small things are measured in <b>grams (g)</b>. Heavier things are measured in <b>kilograms (kg)</b>.</p>' +

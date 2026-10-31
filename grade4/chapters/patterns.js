@@ -206,7 +206,177 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  function rep(core, n) { var l = []; for (var i = 0; i < n; i++) l.push(core[i % core.length]); return l; }
+  /* tappable number line 0 to 20 */
+  function tapLine(st) {
+    var s = '<line x1="20" y1="44" x2="540" y2="44" style="stroke:var(--ink)" stroke-width="2.5"/>';
+    for (var i = 0; i <= 20; i++) {
+      var x = 20 + 26 * i, on = st.lit[i];
+      s += '<g data-k="' + i + '"><rect x="' + (x - 13) + '" y="14" width="26" height="76" fill="transparent"/><circle cx="' + x + '" cy="44" r="' + (on ? 10 : 6) + '" style="fill:' + (on ? 'var(--strand)' : 'var(--card)') + ';stroke:var(--ink)" stroke-width="1.5"/><text x="' + x + '" y="80" text-anchor="middle" font-size="16"' + (on ? ' class="tb"' : ' class="t2"') + '>' + i + '</text></g>';
+    }
+    return A.svg(560, 92, s, 'Number line from 0 to 20. Tap numbers to mark them.');
+  }
+  var EQS = [['n + 5', 12, function (n) { return n + 5; }], ['n &minus; 4', 9, function (n) { return n - 4; }], ['3 &times; n', 18, function (n) { return 3 * n; }]];
+
+  var LESSONS = [
+    { id: 'patterns', title: 'Repeating and growing', sub: 'A core that repeats, or the same amount added.', concepts: [
+      { id: 'repeat', title: 'Repeating patterns', exp: ['C1.1'], skill: 'pa4-next',
+        body: '<p>A <b>repeating pattern</b> has a <b>core</b>: the part that repeats again and again.</p>',
+        watch: K.watch([
+          ['The core: circle, square, triangle.', shapeRow(['c', 's', 't']), 1600],
+          ['It repeats.', shapeRow(rep(['c', 's', 't'], 6)), 1400],
+          ['And repeats. What comes next? Say it: circle, square, triangle, circle, square ... <b>triangle</b>.', shapeRow(rep(['c', 's', 't'], 9)), 2400]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'ac', label: '+ circle', type: 'action', act: function (s) { s.l.push('c'); }, can: function (s) { return s.l.length < 11; } },
+          { id: 'as', label: '+ square', type: 'action', act: function (s) { s.l.push('s'); }, can: function (s) { return s.l.length < 11; } },
+          { id: 'at', label: '+ triangle', type: 'action', act: function (s) { s.l.push('t'); }, can: function (s) { return s.l.length < 11; } },
+          { id: 'un', label: 'Undo', type: 'action', act: function (s) { s.l.pop(); }, can: function (s) { return s.l.length > 0; } }],
+          init: function (s) { s.l = []; },
+          render: function (s) { s.k = s.l.join(''); return { fig: s.l.length ? shapeRow(s.l) : '<p class="t2">Add shapes to build a pattern.</p>', out: '' }; },
+          tasks: [
+            { do: 'Build the core <b>circle, square, square</b> three times.', goal: function (s) { return s.k === 'csscsscss'; }, yes: 'The core repeats 3 times.' },
+            { do: 'Keep going: add the next <b>two</b> shapes.', goal: function (s) { return s.k === 'csscsscsscs'; }, yes: 'Circle, square: the core starts again.' }
+          ] }),
+        key: '<p><b>Find the core, then say the pattern out loud.</b></p>',
+        check: [T('next', 1), T('next', 1)] },
+
+      { id: 'grow', title: 'Growing patterns', exp: ['C1.1', 'C1.3'], skill: 'pa4-next',
+        body: '<p>A <b>growing pattern</b> adds the <b>same amount</b> each time. The orange tiles are the new ones.</p>',
+        watch: K.watch([1, 2, 3, 4].map(function (n) { return [n === 1 ? 'Figure 1: 3 tiles.' : n === 4 ? 'Figure 4: 9 tiles. <b>Start at 3, add 2</b> each time.' : 'Add 2 tiles: ' + (1 + 2 * n) + '.', figures(3, 2, n), n === 4 ? 2200 : 1300]; })),
+        try: K.lab({ controls: [{ id: 'st', label: 'Figure 1 has', min: 1, max: 10, value: 3 }, { id: 'ad', label: 'Add each time', min: 1, max: 6, value: 2 }],
+          render: function (s) { s.f4 = s.st + 3 * s.ad; return { fig: figures(s.st, s.ad, 4), out: '<p class="math">' + [0, 1, 2, 3].map(function (k) { return s.st + s.ad * k; }).join(', ') + ', ...</p>' }; },
+          tasks: [
+            { do: 'Make the pattern <b>4, 7, 10, 13</b>.', goal: function (s) { return s.st === 4 && s.ad === 3; }, yes: 'Start at 4, add 3.' },
+            { do: 'Make figure 4 have exactly <b>20</b> tiles.', goal: function (s) { return s.f4 === 20; }, yes: function (s) { return 'Start at ' + s.st + ', add ' + s.ad + ': ' + s.st + ' + 3 &times; ' + s.ad + ' = 20.'; } }
+          ] }),
+        key: '<p>Growing pattern: <b>the same number of new tiles each time</b>.</p>',
+        check: [T('next', 2), T('next', 2)] }
+    ] },
+
+    { id: 'rules', title: 'Pattern rules', sub: 'Tables, graphs and predictions.', concepts: [
+      { id: 'table', title: 'Tables and predictions', exp: ['C1.2', 'C1.3'], skill: 'pa4-rule', hard: true,
+        body: '<p>A <b>table of values</b> lists each figure and its number. The <b>pattern rule</b> says how to make it: "start at 3, add 2 each time". Use it to predict far ahead.</p>',
+        watch: K.watch([
+          ['The table for start at 3, add 2.', table(3, 2, 5), 1800],
+          ['The same numbers as a graph: the points climb by the same step.', table(3, 2, 5) + graph([3, 5, 7, 9, 11]), 2200],
+          ['Figure 10? From figure 1 to 10 is <b>9 steps</b>. 3 + 9 &times; 2 = <b>21</b>.', graph([3, 5, 7, 9, 11, 13, 15, 17, 19, 21]), 2600]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'st', label: 'Start at', type: 'number', min: 0, max: 20, value: 3 }, { id: 'ad', label: 'Add each time', type: 'number', min: 1, max: 10, value: 2 }, { id: 'n', label: 'Predict figure', type: 'number', min: 1, max: 50, value: 10 }],
+          render: function (s) { var v = s.st + s.ad * (s.n - 1); return { fig: table(s.st, s.ad, 5) + graph([0, 1, 2, 3, 4].map(function (k) { return s.st + s.ad * k; })), out: '<p>Figure ' + s.n + ': ' + s.st + ' + ' + (s.n - 1) + ' &times; ' + s.ad + ' = <span class="big">' + v + '</span></p>' }; },
+          tasks: [
+            { do: 'Start at 5, add 4. Predict <b>figure 20</b>.', goal: function (s) { return s.st === 5 && s.ad === 4 && s.n === 20; }, yes: '5 + 19 &times; 4 = 81.' }
+          ] }),
+        ways: [
+          { label: 'Count the steps', html: '<p>Figure 1 is the start. Every figure after it is one more step. Figure 10 is <b>9 steps</b> past figure 1: 3 + 9 &times; 2 = 21.</p>' },
+          { label: 'Keep counting on', html: '<p>Count on by 2s from 3: 3, 5, 7, 9, 11, 13, 15, 17, 19, <b>21</b>. Ten numbers: figure 10 is 21. Slower, but it proves the rule.</p>' }
+        ],
+        key: '<p>Figure n = <b>start + (n &minus; 1) steps</b>.</p>',
+        mistake: '<p>Multiplying the figure number by the step (10 &times; 2 = 20), forgetting the start. Ask: "How many steps are there from figure 1 to figure 10?"</p>',
+        check: [T('rule', 1), T('rule', 2), T('next', 3)] },
+
+      { id: 'missing', title: 'Missing terms', exp: ['C1.3'], skill: 'pa4-rule',
+        body: '<p>To find a missing number, find the rule from two numbers <b>side by side</b>.</p>',
+        watch: K.watch([
+          ['5, 9, &#9633;, 17, 21.', '<p class="math big">5, 9, &#9633;, 17, 21</p>', 1600],
+          ['9 &minus; 5 = 4. The rule adds 4.', '<p class="math big">5, 9, &#9633;, 17, 21</p><p class="math">+4 each time</p>', 1800],
+          ['9 + 4 = <b>13</b>. Check: 13 + 4 = 17.', '<p class="math big">5, 9, <b>13</b>, 17, 21</p><p class="math">+4 each time</p>', 2000]
+        ]),
+        key: '<p><b>Subtract two neighbours to find the step.</b> Check with the next number.</p>',
+        check: [T('rule', 3), T('rule', 3)] },
+
+      { id: 'tenths', title: 'Patterns with tenths', exp: ['C1.4'], skill: 'pa4-dec',
+        body: '<p>0.2, 0.4, 0.6, 0.8 ... adds 2 tenths each time. <b>Think in tenths</b>: 2, 4, 6, 8 tenths.</p>',
+        watch: K.watch([
+          ['0.2, 0.4, 0.6, 0.8 ...', '<p class="math big">0.2, 0.4, 0.6, 0.8, &#9633;</p>', 1600],
+          ['In tenths: 2, 4, 6, 8. Next: 10 tenths.', '<p class="math big">2, 4, 6, 8, 10 tenths</p>', 1800],
+          ['10 tenths is 1 whole: <b>1.0</b>.', '<p class="math big">0.2, 0.4, 0.6, 0.8, <b>1.0</b></p>', 2000]
+        ]),
+        key: '<p><b>Think in tenths.</b> 10 tenths make 1 whole.</p>',
+        mistake: '<p>Going 0.8, 0.9, 0.10 (writing 10 tenths as 0.10). 10 tenths is 1.0.</p>',
+        check: [T('dec', 1), T('dec', 2), T('dec', 3)] }
+    ] },
+
+    { id: 'equations', title: 'Equations and inequalities', sub: 'Keep it balanced.', concepts: [
+      { id: 'balance', title: 'Keep it balanced', exp: ['C2.1', 'C2.2'], skill: 'pa4-solve',
+        body: '<p>An equation is like a balance: <b>both sides are equal</b>. n + 5 = 12 asks: what number makes the sides level?</p>',
+        watch: K.watch([
+          ['n + 5 = 12. Try n = 4: 9 is lighter than 12.', balance('4 + 5', '12', -3), 1800],
+          ['Try n = 9: 14 is too heavy.', balance('9 + 5', '12', 2), 1800],
+          ['Try n = 7: 12 = 12. Level! <b>n = 7</b>.', balance('7 + 5', '12', 0), 2000]
+        ]),
+        try: K.lab({ controls: [{ id: 'e', label: 'Equation', type: 'select', options: EQS.map(function (q, i) { return [String(i), q[0] + ' = ' + q[1]]; }) }, { id: 'n', label: 'n', min: 0, max: 20, value: 0 }],
+          render: function (s) { var q = EQS[+s.e], v = q[2](s.n); s.ok = v === q[1]; return { fig: balance(q[0].replace('n', s.n), String(q[1]), v - q[1]), out: '<p>' + (s.ok ? '<b>Level.</b> n = ' + s.n : v < q[1] ? 'Too light.' : 'Too heavy.') + '</p>' }; },
+          tasks: [
+            { do: 'Make <b>n + 5 = 12</b> level.', setup: function (api) { api.set('e', '0'); }, goal: function (s) { return s.e === '0' && s.ok; }, yes: 'n = 7.' },
+            { do: 'Make <b>n &minus; 4 = 9</b> level.', setup: function (api) { api.set('e', '1'); }, goal: function (s) { return s.e === '1' && s.ok; }, yes: 'n = 13.' },
+            { do: 'Make <b>3 &times; n = 18</b> level.', setup: function (api) { api.set('e', '2'); }, goal: function (s) { return s.e === '2' && s.ok; }, yes: 'n = 6.' }
+          ] }),
+        key: '<p>The answer makes <b>both sides equal</b>.</p>',
+        check: [T('solve', 1), T('solve', 1)] },
+
+      { id: 'undo', title: 'Undo it', exp: ['C2.2'], skill: 'pa4-solve', hard: true,
+        body: '<p>To solve, <b>do the opposite</b>. Adding is undone by subtracting. Multiplying is undone by dividing.</p>',
+        watch: K.watch([
+          ['4 &times; n = 28.', balance('4 &times; n', '28', 0), 1600],
+          ['Undo the &times; 4: divide. 28 &divide; 4 = 7.', '<p class="math big">n = 28 &divide; 4 = 7</p>', 2000],
+          ['Check: 4 &times; 7 = 28. <b>n = 7</b>.', balance('4 &times; 7', '28', 0), 2000]
+        ]),
+        ways: [
+          { label: 'Think of the fact', html: '<p>4 &times; n = 28: "4 times what is 28?" You know 4 &times; 7 = 28, so n = 7.</p>' },
+          { label: 'Guess and check', html: '<p>Try n = 5: 4 &times; 5 = 20, too small. Try 8: 32, too big. Try 7: 28. Yes.</p>' },
+          { label: 'Bar model', html: '<p>n &minus; 4 = 9 means n is a whole made of 4 and 9. So n = 9 + 4 = <b>13</b>.</p>' }
+        ],
+        key: '<p><b>Do the opposite operation.</b> Then check.</p>',
+        mistake: '<p>Doing the same operation instead of the opposite (n &minus; 4 = 9, so n = 5). The check catches it: 5 &minus; 4 is not 9.</p>',
+        check: [T('solve', 2), T('solve', 3)] },
+
+      { id: 'ineq', title: 'Inequalities', exp: ['C2.3'], skill: 'pa4-ineq',
+        body: '<p>n + 4 &lt; 11 has <b>many</b> answers: every number that makes the left side smaller than 11.</p>',
+        watch: K.watch([
+          ['n + 4 &lt; 11. First, when are they equal? n = 7.', solLine([7], 20), 1800],
+          ['7 is not less, so it does not count. Smaller numbers do: 0 to 6.', solLine([0, 1, 2, 3, 4, 5, 6], 20), 2200]
+        ]),
+        try: K.tap({ render: tapLine, label: function (st) { return '<p>' + st.order.length + ' number' + (st.order.length === 1 ? '' : 's') + ' marked</p>'; },
+          tasks: [
+            { do: 'Tap <b>every</b> whole number that makes <b>n + 3 &lt; 9</b> true.', goal: function (st) { var k = Object.keys(st.lit).map(Number).sort(function (a, b) { return a - b; }); return k.join() === '0,1,2,3,4,5'; }, yes: '0 to 5. At 6 the two sides are equal.' }
+          ] }),
+        key: '<p>Find where the sides are <b>equal</b>, then go the way the sign points.</p>',
+        check: [T('ineq', 1), T('ineq', 2), T('ineq', 3)] }
+    ] },
+
+    { id: 'coding', title: 'Coding', sub: 'Loops repeat steps.', concepts: [
+      { id: 'loops', title: 'Loops', exp: ['C3.1', 'C3.2'], skill: 'pa4-code',
+        body: '<p>A <b>loop</b> repeats the steps inside it. "repeat 4 times: move forward 3, turn right" draws a square.</p>',
+        watch: K.watch([1, 2, 3, 4].map(function (t) { var p = [{ rep: t, body: fwd(3).concat(['R']) }]; return [t === 4 ? 'Four times: a closed <b>square</b>.' : 'Loop ' + t + ': forward 3, turn right.', robotPic(p) + '<pre class="mono">' + codeText([{ rep: t, body: fwd(3).concat(['R']) }]) + '</pre>', t === 4 ? 2200 : 1400]; })),
+        try: K.lab({ controls: [{ id: 'k', label: 'Move forward', min: 1, max: 5, value: 2 }, { id: 't', label: 'Repeat', min: 1, max: 6, value: 2 }, { id: 'r', label: 'Turn right after', type: 'toggle', value: true }],
+          render: function (s) { var p = [{ rep: s.t, body: fwd(s.k).concat(s.r ? ['R'] : []) }]; return { fig: robotPic(p), out: '<pre class="mono">' + codeText(p) + '</pre><p>Moves: ' + s.t + ' &times; ' + s.k + ' = <b>' + s.t * s.k + '</b> squares</p>' }; },
+          tasks: [
+            { do: 'Draw a closed <b>square with sides of 3</b>.', goal: function (s) { return s.r && s.k === 3 && s.t === 4; }, yes: 'Repeat 4 times: forward 3, turn right.' },
+            { do: 'Move <b>12 squares in a straight line</b> using the loop.', goal: function (s) { return !s.r && s.k * s.t === 12; }, yes: function (s) { return s.t + ' &times; ' + s.k + ' = 12, no turns.'; } }
+          ] }),
+        key: '<p><b>A loop runs its steps again and again.</b> Total = times &times; steps inside.</p>',
+        check: [T('code', 1), T('code', 2)] },
+
+      { id: 'nested', title: 'A loop inside a loop', exp: ['C3.1', 'C3.2'], skill: 'pa4-code', hard: true,
+        body: '<p>A <b>nested loop</b> is a loop inside a loop. The inside loop runs fully, <b>every time</b> the outside loop runs once.</p>',
+        watch: K.watch([1, 2, 3].map(function (t) { var p = [{ rep: t, body: [{ rep: 2, body: fwd(2) }, 'R'] }]; return [t === 3 ? 'Outside loop 3 times. Moves: 3 &times; 2 &times; 2 = <b>12</b>.' : 'Outside loop ' + t + ': inside loop moves 2, twice. Then turn.', robotPic(p) + '<pre class="mono">' + codeText([{ rep: 3, body: [{ rep: 2, body: fwd(2) }, 'R'] }]) + '</pre>', t === 3 ? 2400 : 1600]; })),
+        ways: [
+          { label: 'Unroll it', html: '<p>Write out what the computer does: move 2, move 2, turn; move 2, move 2, turn; move 2, move 2, turn. Count the moves: <b>12</b>.</p>' },
+          { label: 'Multiply', html: '<p>Inside: 2 &times; 2 = 4 moves. Outside runs it 3 times: 3 &times; 4 = <b>12</b>.</p>' }
+        ],
+        key: '<p>Nested loop total = <b>outside times &times; inside total</b>.</p>',
+        mistake: '<p>Adding the repeat numbers (3 + 2) instead of multiplying. Have your child "be the robot" and step it out.</p>',
+        check: [T('code', 3), T('code', 3)] }
+    ] }
+  ];
+
   A.register('patterns', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Repeating and growing patterns</h2>' +
 '<p>A <b>repeating pattern</b> has a <b>core</b> that repeats again and again. A <b>growing pattern</b> gets bigger by the same amount each time.</p>' +

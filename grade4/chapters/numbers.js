@@ -256,7 +256,303 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit, M = window.Manip;
+  /* place value disks in a 2 by 2 block: thousands and hundreds on top, tens and ones below */
+  function disksFig(c) {
+    var gap = 30, r = 13, colW = 150, s = '', rowsTop = Math.max(1, Math.ceil(c[3] / 4), Math.ceil(c[2] / 4)), rowsBot = Math.max(1, Math.ceil(c[1] / 4), Math.ceil(c[0] / 4));
+    var topH = 38 + rowsTop * gap + 10, total = 0;
+    [3, 2, 1, 0].forEach(function (q, i) {
+      var x0 = (i % 2) * colW + 4, y0 = i < 2 ? 0 : topH;
+      total += c[q] * Math.pow(10, q);
+      s += '<rect x="' + x0 + '" y="' + (y0 + 2) + '" width="' + (colW - 10) + '" height="26" rx="8" style="fill:var(--p' + q + ')"/>' +
+        '<text x="' + (x0 + (colW - 10) / 2) + '" y="' + (y0 + 21) + '" text-anchor="middle" font-size="16" font-weight="700" style="fill:' + (q ? '#fff' : '#2a211b') + '">' + c[q] + ' ' + (c[q] === 1 ? A.PLACE1[q] : A.PLACES[q]) + '</text>';
+      for (var j = 0; j < c[q]; j++) s += A.draw.disk(x0 + 20 + (j % 4) * gap, y0 + 48 + Math.floor(j / 4) * gap, r, q);
+    });
+    return A.svg(2 * colW, topH + 38 + rowsBot * gap + 6, s, c[3] + ' thousands, ' + c[2] + ' hundreds, ' + c[1] + ' tens and ' + c[0] + ' ones: ' + total);
+  }
+  function cOf(n) { return [n % 10, Math.floor(n / 10) % 10, Math.floor(n / 100) % 10, Math.floor(n / 1000)]; }
+  function val(c) { return c[0] + 10 * c[1] + 100 * c[2] + 1000 * c[3]; }
+  function expParts(n) {
+    var parts = [], s = String(n);
+    for (var k = 0; k < s.length; k++) { var p = s.length - 1 - k; if (s.charAt(k) !== '0') parts.push('<b class="c' + p + 't">' + A.fmt(+s.charAt(k) * Math.pow(10, p)) + '</b>'); }
+    return parts.join(' + ') || '0';
+  }
+  /* two numbers lined up by place, with the compared place lit */
+  function cmpCharts(a, b, upto) {
+    var sa = ('0000' + a).slice(-5), sb = ('0000' + b).slice(-5), s = '';
+    for (var i = 0; i < 5; i++) {
+      var x = 30 + i * 100, p = 4 - i, on = i === upto, done = i < upto;
+      s += '<rect x="' + (x - 4) + '" y="4" width="92" height="28" rx="8" style="fill:var(--p' + p + ')"/><text x="' + (x + 42) + '" y="24" text-anchor="middle" font-size="15" font-weight="700" style="fill:' + (p ? '#fff' : '#2a211b') + '">' + ['ones', 'tens', 'hund.', 'thous.', 'ten th.'][p] + '</text>';
+      if (on) s += '<rect x="' + (x - 4) + '" y="38" width="92" height="104" rx="10" style="fill:color-mix(in srgb,var(--hi) 40%,transparent);stroke:var(--accent)" stroke-width="3"/>';
+      [sa, sb].forEach(function (str, r) {
+        var lead = str.slice(0, i + 1).replace(/0/g, '') === '' && i < 4;
+        s += '<text x="' + (x + 42) + '" y="' + (78 + r * 50) + '" text-anchor="middle" font-size="34" font-weight="700" style="font-family:var(--display);fill:' + (lead ? 'var(--line)' : done ? 'var(--ink2)' : 'var(--ink)') + '">' + str.charAt(i) + '</text>';
+      });
+    }
+    return A.svg(530, 150, s, A.fmt(a) + ' above ' + A.fmt(b) + ', lined up by place');
+  }
+  function firstDiff(a, b) { var sa = ('0000' + a).slice(-5), sb = ('0000' + b).slice(-5); for (var i = 0; i < 5; i++) if (sa.charAt(i) !== sb.charAt(i)) return i; return -1; }
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+
+  var LESSONS = [
+    { id: 'places', title: 'Places up to 10 000', sub: 'Each place is worth 10 of the place to its right.', concepts: [
+      { id: 'ten-times', title: 'Each place is 10 times bigger', exp: ['B1.1'], skill: 'n4-blocks',
+        body: '<p>Ten of one block make the next block. <b>10 ones</b> make a ten, <b>10 tens</b> make a hundred, <b>10 hundreds</b> make a thousand.</p>',
+        watch: { tool: 'base10', opts: { o: 0 }, steps: [
+          { say: 'Here are 10 one cubes.', act: function (t) { return t.add('o', 10, 120); } },
+          { say: 'Ten ones slide together to make <b>1 ten</b>.', act: function (t) { return t.group('o'); } },
+          { say: 'Add tens until there are 10 tens: 10, 20, 30 ... 100.', act: function (t) { return t.add('t', 9, 260); } },
+          { say: 'Ten tens slide together to make <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
+          { say: 'The pattern keeps going. <b>10 hundreds make 1 thousand.</b>', act: function (t) { return t.pulseCol('h'); }, ms: 1800 }
+        ] },
+        ways: [
+          { label: 'The block stairs', html: '<div class="fig">' + stairs() + '</div><p>Each step up is <b>&times; 10</b>: 1, 10, 100, 1000, 10 000.</p>' },
+          { label: 'With money', html: '<p>Ten $1 coins trade for a $10 bill. Ten $10 bills trade for a $100 bill. Ten $100 bills make $1000.</p><p>' + M.cashHtml(1000) + ' = ' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function () { return M.cashHtml(100); }).join('') + '</p>' }
+        ],
+        try: { tool: 'base10', opts: { controls: true, t: 8 }, tasks: [
+          { do: 'Add tens until you have 10 tens. Then press <b>Group 10 tens</b>.', goal: function (s) { return s.h >= 1; }, yes: 'Yes. 10 tens became 1 hundred.' },
+          { do: 'Press <b>Break a hundred</b>. How many tens do you get?', reset: false, goal: function (s) { return s.last === 'split-h'; }, yes: '10 tens. Still 100.' }
+        ] },
+        key: '<p><b>10 of a place make 1 of the next place to the left.</b></p>',
+        check: [function () {
+          var p = R.int(1, 3), o = R.mc(A.fmt(Math.pow(10, p)), [A.fmt(Math.pow(10, p - 1)), A.fmt(Math.pow(10, p + 1)), String(10 + Math.pow(10, p - 1))]);
+          return { q: '10 ' + A.PLACES[p - 1] + ' make how much?', type: 'mc', options: o.options, answer: o.answer, hint: '10 of a place make 1 of the next place to the left.', explain: '10 ' + A.PLACES[p - 1] + ' make 1 ' + A.PLACE1[p] + ', which is ' + A.fmt(Math.pow(10, p)) + '.' };
+        }, function () {
+          var n = R.int(2, 9);
+          return { q: 'How many hundreds make ' + n + ' thousand?', type: 'num', answer: n * 10, hint: '1 thousand is 10 hundreds.', explain: n + ' thousand is ' + n + ' &times; 10 = ' + n * 10 + ' hundreds.', steps: ['1 thousand = 10 hundreds.', n + ' thousands = ' + n + ' &times; 10 hundreds = ' + n * 10 + ' hundreds.'] };
+        }] },
+
+      { id: 'build', title: 'Build a number to 10 000', exp: ['B1.1'], skill: 'n4-value',
+        body: '<p>A <b>place value chart</b> shows how many of each block a number has. The place of a digit decides what it is worth.</p>',
+        watch: K.watch([
+          ['Let\'s build 3245. Start with an empty chart.', chart(0, { cols: 4, vals: true })],
+          ['3 thousands: worth 3000.', chart(3000, { cols: 4, vals: true })],
+          ['2 hundreds: worth 200.', chart(3200, { cols: 4, vals: true })],
+          ['4 tens: worth 40.', chart(3240, { cols: 4, vals: true })],
+          ['5 ones: worth 5. The number is <b>3245</b>.', chart(3245, { cols: 4, vals: true }), 2000]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'th', label: 'Thousands', min: 0, max: 9, value: 2 }, { id: 'h', label: 'Hundreds', min: 0, max: 9, value: 4 },
+          { id: 't', label: 'Tens', min: 0, max: 9, value: 1 }, { id: 'o', label: 'Ones', min: 0, max: 9, value: 3 }],
+          render: function (s) { var n = s.th * 1000 + s.h * 100 + s.t * 10 + s.o; s.n = n; return { fig: chart(n, { cols: 4, vals: true }) + '<div class="fig">' + A.draw.blocks(n, null, 520) + '</div>', out: '<p><span class="big">' + A.fmt(n) + '</span> = <span class="math">' + expParts(n) + '</span></p>' }; },
+          tasks: [
+            { do: 'Build <b>5372</b>.', goal: function (s) { return s.n === 5372; }, yes: '5 thousands, 3 hundreds, 7 tens and 2 ones make 5372.' },
+            { do: 'Build <b>8016</b>.', goal: function (s) { return s.n === 8016; }, yes: '8016: no hundreds, so the hundreds place shows 0.' },
+            { do: 'Build the greatest number you can.', goal: function (s) { return s.n === 9999; }, yes: '9999. One more would be 10 000, which needs a new place.' }
+          ] }),
+        key: '<p>The <b>place</b> of a digit decides its value. In 3245, the 3 is worth <b>3000</b>.</p>',
+        check: [T('value', 1), T('value', 2)] },
+
+      { id: 'zero', title: 'Zero holds a place', exp: ['B1.1'], skill: 'n4-forms', hard: true,
+        body: '<p>When a place is empty, we write a <b>0</b> there. The zero keeps the other digits in their places.</p>' + chart(4107, { vals: true }),
+        watch: K.watch([
+          ['Four thousand one hundred seven. Thousands: 4.', chart(4000, { cols: 4, vals: true })],
+          ['Hundreds: 1.', chart(4100, { cols: 4, vals: true })],
+          ['Tens: none. The tens place still gets a digit: <b>0</b>.', chart(4100, { cols: 4, vals: true, hl: 2 })],
+          ['Ones: 7. We write <b>4107</b>, not 417.', chart(4107, { cols: 4, vals: true }), 2200]
+        ]),
+        ways: [
+          { label: 'Count the digits', html: '<p>Any number from 1000 to 9999 has <b>4 digits</b>: thousands, hundreds, tens, ones. Write one digit for each place.</p><p class="math big">4 _ _ 7 &rarr; 4 1 0 7</p><p>417 has only 3 digits, so it is a much smaller number.</p>' },
+          { label: 'With money', html: '<p>$4107 is four $1000 piles, one $100 bill, <b>no $10 bills</b>, and seven loonies.</p><p>$417 is far less: no $1000 piles at all.</p>' },
+          { label: 'Say it in parts', html: '<div class="tbl"><table><thead><tr><th>We say</th><th>Th</th><th>H</th><th>T</th><th>O</th><th>We write</th></tr></thead><tbody>' +
+            [[4107, 'four thousand one hundred seven'], [6030, 'six thousand thirty'], [9005, 'nine thousand five']].map(function (r) { var d = ('000' + r[0]).slice(-4); return '<tr><td>' + r[1] + '</td><td class="c3t"><b>' + d[0] + '</b></td><td class="c2t"><b>' + d[1] + '</b></td><td class="c1t"><b>' + d[2] + '</b></td><td class="c0t"><b>' + d[3] + '</b></td><td><b>' + r[0] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' }
+        ],
+        key: '<p>An empty place gets a <b>0</b>. Every place needs a digit.</p>',
+        mistake: '<p>Leaving out the zero: writing "four thousand one hundred seven" as <b>417</b>, or adding extra zeros: <b>4000107</b>. Ask: how many digits should a number in the thousands have?</p>',
+        check: [T('words', 2), T('forms', 2)] }
+    ] },
+
+    { id: 'forms', title: 'Three ways to write a number', sub: 'Standard, expanded and word form.', concepts: [
+      { id: 'expanded', title: 'Expanded form', exp: ['B1.1'], skill: 'n4-forms',
+        body: '<p><b>Expanded form</b> shows what each digit is worth, added together. 5236 = 5000 + 200 + 30 + 6.</p>',
+        watch: K.watch([
+          ['5236. Each coloured digit drops to the value it stands for.', expanded(5236), 2600],
+          ['A zero adds nothing: 7048 = 7000 + 40 + 8.', expanded(7048), 2600]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Slide to pick a number:', min: 1000, max: 9999, value: 4306, fmt: A.fmt }],
+          render: function (s) { return { fig: expanded(s.n), out: '<p class="math">' + A.fmt(s.n) + ' = ' + expParts(s.n) + '</p>' }; },
+          tasks: [
+            { do: 'Find a number whose expanded form has exactly <b>2 parts</b>.', goal: function (s) { return String(s.n).replace(/0/g, '').length === 2; }, yes: function (s) { return A.fmt(s.n) + ' has two zeros, so only 2 parts.'; } },
+            { do: 'Find a number with <b>6000 + 50</b> in it.', goal: function (s) { return Math.floor(s.n / 1000) === 6 && Math.floor(s.n / 10) % 10 === 5; }, yes: 'Yes: 6 thousands and 5 tens.' }
+          ] }),
+        key: '<p>Expanded form adds up the <b>value of each digit</b>. Skip the zeros.</p>',
+        check: [T('forms', 1), T('forms', 3)] },
+
+      { id: 'words', title: 'Word form', exp: ['B1.1'], skill: 'n4-words',
+        body: '<p>Say the <b>thousands</b> first, then the rest, like a 3-digit number. 3045 is "three thousand forty-five".</p>',
+        watch: K.watch([
+          ['2 thousands: "two thousand".', chart(2000, { cols: 4 })],
+          ['5 hundreds: "two thousand five hundred".', chart(2500, { cols: 4 })],
+          ['6 tens and 8 ones: "two thousand five hundred sixty-eight".', chart(2568, { cols: 4 }), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Slide to pick a number:', min: 1000, max: 9999, value: 2568, fmt: A.fmt }],
+          render: function (s) { return { fig: chart(s.n, { cols: 4 }), out: '<p class="big">' + words(s.n) + '</p>' }; },
+          tasks: [
+            { do: 'Find <b>four thousand twelve</b>.', goal: function (s) { return s.n === 4012; }, yes: '4012. The hundreds place is 0.' },
+            { do: 'Find <b>seven thousand seven hundred</b>.', goal: function (s) { return s.n === 7700; }, yes: '7700.' }
+          ] }),
+        key: '<p>Read the thousands, then the hundreds, tens and ones. Do not say "and".</p>',
+        mistake: '<p>Saying "and" inside a whole number ("three thousand and forty-five"). In math, "and" is saved for the decimal point.</p>',
+        check: [T('words', 1), T('words', 3)] },
+
+      { id: 'trade', title: 'Trade without changing the number', exp: ['B1.1'], skill: 'n4-blocks', hard: true,
+        body: '<p>You can break a disk into <b>10 of the next smaller</b> disk. The parts change, but the number stays the same.</p>',
+        watch: K.watch([
+          ['1362: 1 thousand, 3 hundreds, 6 tens, 2 ones.', disksFig([2, 6, 3, 1])],
+          ['Break the thousand into 10 hundreds.', disksFig([2, 6, 13, 0])],
+          ['Now 13 hundreds, 6 tens and 2 ones. Still <b>1362</b>.', disksFig([2, 6, 13, 0]), 2200],
+          ['Break a ten into 10 ones: 13 hundreds, 5 tens, 12 ones. Still 1362.', disksFig([12, 5, 13, 0]), 2400]
+        ]),
+        try: K.lab({ init: function (s) { s.c = [2, 6, 3, 1]; }, controls: [
+          { id: 'b3', type: 'action', label: 'Break a thousand', act: function (s) { s.c[3]--; s.c[2] += 10; }, can: function (s) { return s.c && s.c[3] > 0 && s.c[2] <= 19; } },
+          { id: 'b2', type: 'action', label: 'Break a hundred', act: function (s) { s.c[2]--; s.c[1] += 10; }, can: function (s) { return s.c && s.c[2] > 0 && s.c[1] <= 19; } },
+          { id: 'b1', type: 'action', label: 'Break a ten', act: function (s) { s.c[1]--; s.c[0] += 10; }, can: function (s) { return s.c && s.c[1] > 0 && s.c[0] <= 19; } },
+          { id: 'g0', type: 'action', label: 'Group 10 ones', act: function (s) { s.c[0] -= 10; s.c[1]++; }, can: function (s) { return s.c && s.c[0] >= 10; } },
+          { id: 'g1', type: 'action', label: 'Group 10 tens', act: function (s) { s.c[1] -= 10; s.c[2]++; }, can: function (s) { return s.c && s.c[1] >= 10; } },
+          { id: 'g2', type: 'action', label: 'Group 10 hundreds', act: function (s) { s.c[2] -= 10; s.c[3]++; }, can: function (s) { return s.c && s.c[2] >= 10; } }],
+          render: function (s) { if (!s.c) return {}; return { fig: disksFig(s.c), out: '<p>' + [3, 2, 1, 0].filter(function (k) { return s.c[k]; }).map(function (k) { return '<b class="c' + k + 't">' + s.c[k] + ' ' + (s.c[k] === 1 ? A.PLACE1[k] : A.PLACES[k]) + '</b>'; }).join(' + ') + ' = <span class="big">' + A.fmt(val(s.c)) + '</span></p>' }; },
+          tasks: [
+            { do: 'Show 1362 with <b>no thousand disk</b>.', goal: function (s) { return s.c && s.c[3] === 0; }, yes: '13 hundreds, 6 tens, 2 ones. Still 1362.' },
+            { do: 'Now show it with <b>more than 9 ones</b>.', goal: function (s) { return s.c && s.c[0] > 9; }, yes: 'The ones changed, but the number did not.' },
+            { do: 'Group everything back so each place has 9 or fewer.', goal: function (s) { return s.c && s.c[3] === 1 && s.c[0] === 2; }, yes: 'Back to 1 thousand, 3 hundreds, 6 tens, 2 ones.' }
+          ] }),
+        ways: [
+          { label: 'With money', html: '<p>$1362 could be one $1000 pile, three $100 bills, six $10 bills and two loonies. Or <b>136 ten-dollar bills and a toonie</b>. Same money.</p>' },
+          { label: 'With numbers', html: '<p class="math">1000 + 300 + 60 + 2 = 1362</p><p class="math">1300 + 60 + 2 = 1362</p><p class="math">1300 + 50 + 12 = 1362</p>' }
+        ],
+        key: '<p>Trading 1 of a place for 10 of the next smaller place <b>does not change the number</b>.</p>',
+        mistake: '<p>Thinking 13 hundreds is "13 hundred-dollar mistake" and not a real way to write 1300. Encourage trading with real or paper money.</p>',
+        check: [T('blocks', 2), T('value', 3)] }
+    ] },
+
+    { id: 'compare', title: 'Compare and order', sub: 'Start at the left.', concepts: [
+      { id: 'left', title: 'Start at the left', exp: ['B1.2'], skill: 'n4-compare',
+        body: '<p>Line the numbers up by place. Compare from the <b>left</b>. The first place where the digits differ decides.</p>',
+        watch: K.watch([
+          ['Which is greater, 6482 or 6428? Line them up by place.', cmpCharts(6482, 6428, -1)],
+          ['Thousands: 6 and 6. The same, so keep going.', cmpCharts(6482, 6428, 1)],
+          ['Hundreds: 4 and 4. The same again.', cmpCharts(6482, 6428, 2)],
+          ['Tens: 8 and 2. Different! 8 tens is more, so <b>6482 &gt; 6428</b>.', cmpCharts(6482, 6428, 3), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'a', type: 'number', label: 'First number', min: 0, max: 10000, value: 4519 }, { id: 'b', type: 'number', label: 'Second number', min: 0, max: 10000, value: 4591 }],
+          render: function (s) { var d = firstDiff(s.a, s.b); s.d = d; return { fig: cmpCharts(s.a, s.b, d) + cmpLine(s.a, s.b), out: '<p class="big">' + A.fmt(s.a) + ' ' + (s.a > s.b ? '&gt;' : s.a < s.b ? '&lt;' : '=') + ' ' + A.fmt(s.b) + '</p><p>' + (d < 0 ? 'Every digit matches.' : 'The first difference is in the <b>' + A.PLACES[4 - d] + '</b> place.') + '</p>' }; },
+          tasks: [
+            { do: 'Make two numbers that first differ in the <b>ones</b> place.', goal: function (s) { return s.d === 4; }, yes: 'Only the ones differ, so the ones decide.' },
+            { do: 'Make the first number greater, even though its <b>ones digit is smaller</b>.', goal: function (s) { return s.a > s.b && s.a % 10 < s.b % 10; }, yes: 'Yes. A bigger place on the left matters more than the ones.' }
+          ] }),
+        key: '<p>Compare from the <b>left</b>. The first different digit decides.</p>',
+        mistake: '<p>Comparing the last digits first: thinking 3999 &gt; 4001 because 9 &gt; 1. Have the child point to the leftmost place first.</p>',
+        check: [T('compare', 1), T('compare', 2)] },
+
+      { id: 'symbols', title: 'Greater than and less than', exp: ['B1.2'], skill: 'n4-compare',
+        body: '<p>The symbol opens toward the <b>greater</b> number. <span class="math">7 &gt; 2</span> says "7 is greater than 2". <span class="math">2 &lt; 7</span> says "2 is less than 7".</p>',
+        watch: K.watch([
+          ['On a number line, greater numbers are further <b>right</b>.', cmpLine(3600, 5100)],
+          ['5100 is right of 3600, so <b>5100 &gt; 3600</b>, and <b>3600 &lt; 5100</b>.', cmpLine(3600, 5100), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'a', label: 'First:', min: 0, max: 10000, step: 100, value: 2400, fmt: A.fmt }, { id: 'b', label: 'Second:', min: 0, max: 10000, step: 100, value: 7100, fmt: A.fmt }],
+          render: function (s) { return { fig: cmpLine(s.a, s.b), out: '<p class="big">' + A.fmt(s.a) + ' ' + (s.a > s.b ? '&gt;' : s.a < s.b ? '&lt;' : '=') + ' ' + A.fmt(s.b) + '</p>' }; },
+          tasks: [
+            { do: 'Make the sentence use <b>&gt;</b>.', goal: function (s) { return s.a > s.b; }, yes: 'The first number is further right, so it is greater.' },
+            { do: 'Make the two numbers <b>equal</b>.', goal: function (s) { return s.a === s.b; }, yes: 'Same spot on the line: they are equal.' }
+          ] }),
+        key: '<p>The symbol <b>opens toward the greater number</b>.</p>',
+        check: [T('compare', 1), T('compare', 2)] },
+
+      { id: 'order', title: 'Put numbers in order', exp: ['B1.2'], skill: 'n4-compare',
+        body: '<p>To order numbers from least to greatest, compare the thousands first. If two are tied, compare the hundreds, and so on.</p>',
+        watch: K.watch([
+          ['Order 5280, 3890, 5208 and 4730. Look at the thousands: 5, 3, 5, 4.', orderLine([5280, 3890, 5208, 4730], 0)],
+          ['3890 is least, then 4730.', orderLine([5280, 3890, 5208, 4730], 2)],
+          ['5280 and 5208 tie on thousands and hundreds. Tens: 0 &lt; 8, so 5208 comes first.', orderLine([5280, 3890, 5208, 4730], 4), 2600]
+        ]),
+        key: '<p>Order by comparing <b>from the left</b>, one place at a time.</p>',
+        check: [T('compare', 3), T('compare', 3)] }
+    ] },
+
+    { id: 'round', title: 'Rounding', sub: 'Find the nearest friendly number.', concepts: [
+      { id: 'hill', title: 'The rounding hill', exp: ['B1.3'], skill: 'n4-round',
+        body: '<p>Picture a hill between two friendly numbers. Past the top, a number rolls <b>up</b>. Before the top, it rolls back <b>down</b>. Exactly at the top, it rounds up.</p>',
+        watch: K.watch([
+          ['Round 3200 to the nearest thousand. It sits between 3000 and 4000.', hill(3200, 1000, 'nmw1')],
+          ['3200 is before the top, so it rolls down to <b>3000</b>.', hill(3200, 1000, 'nmw1'), 1600],
+          ['Now 3700. It is past the top, so it rolls up to <b>4000</b>.', hill(3700, 1000, 'nmw1')],
+          ['3500 is exactly at the top. It rounds <b>up</b> to 4000.', hill(3500, 1000, 'nmw1'), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Number:', min: 3000, max: 4000, step: 50, value: 3250, fmt: A.fmt }],
+          render: function (s) { s.r = s.n - 3000 >= 500 ? 4000 : 3000; return { fig: hill(s.n, 1000, 'nmw2'), out: '<p class="big">' + A.fmt(s.n) + ' &#8776; ' + A.fmt(s.r) + '</p>' }; },
+          tasks: [
+            { do: 'Find a number that rounds <b>up</b> to 4000.', goal: function (s) { return s.r === 4000 && s.n < 4000; }, yes: 'It is past the top, so it rolls up.' },
+            { do: 'Find the <b>smallest</b> number on this hill that rounds up.', goal: function (s) { return s.n === 3500; }, yes: '3500, exactly halfway, rounds up.' }
+          ] }),
+        key: '<p>Halfway or past: round <b>up</b>. Before halfway: round <b>down</b>.</p>',
+        check: [T('round', 1), T('round', 1)] },
+
+      { id: 'rule', title: 'The digit to the right decides', exp: ['B1.3'], skill: 'n4-round',
+        body: '<p>Look at the digit just <b>right</b> of the rounding place. <b>5 or more: round up. Less than 5: round down.</b></p>',
+        watch: K.watch([
+          ['Round 3650 to the nearest hundred. The hundreds digit is 6.', hill(3650, 100, 'nmw3')],
+          ['The digit to its right is 5. 5 or more, so round up: <b>3700</b>.', hill(3650, 100, 'nmw3'), 2000],
+          ['To the nearest thousand: the digit right of the 3 is 6. Round up: <b>4000</b>.', hill(3650, 1000, 'nmw3'), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', type: 'number', label: 'Number (0 to 10000)', min: 0, max: 10000, value: 4271 }, { id: 'p', type: 'select', label: 'Round to the nearest', options: [['10', 'ten'], ['100', 'hundred'], ['1000', 'thousand']] }],
+          render: function (s) { var p = +s.p, lo = Math.floor(s.n / p) * p; s.r = s.n - lo >= p / 2 ? lo + p : lo; return { fig: hill(s.n, p, 'nmw4'), out: '<p class="big">' + A.fmt(s.n) + ' &#8776; ' + A.fmt(s.r) + '</p>' }; },
+          tasks: [
+            { do: 'Round <b>4271</b> to the nearest hundred.', goal: function (s) { return s.n === 4271 && s.p === '100'; }, yes: '7 is 5 or more, so 4271 rounds up to 4300.' },
+            { do: 'Find a number that rounds to <b>6000</b> to the nearest thousand.', goal: function (s) { return s.p === '1000' && s.r === 6000; }, yes: function (s) { return A.fmt(s.n) + ' rounds to 6000.'; } }
+          ] }),
+        key: '<p><b>5 or more, round up. Less than 5, round down.</b></p>',
+        check: [T('round', 2), T('round', 2)] },
+
+      { id: 'carry', title: 'When rounding up carries over', exp: ['B1.3'], skill: 'n4-round', hard: true,
+        body: '<p>Sometimes rounding up makes the next place grow. 2970 to the nearest hundred is <b>3000</b>.</p>',
+        watch: K.watch([
+          ['2970 to the nearest hundred. It is between 2900 and 3000.', hill(2970, 100, 'nmw5')],
+          ['The tens digit is 7, so round up. 29 hundreds + 1 hundred = 30 hundreds = <b>3000</b>.', hill(2970, 100, 'nmw5'), 2600]
+        ]),
+        ways: [
+          { label: 'Count by hundreds', html: '<p>Count up by hundreds from 2900: <b>2900, 3000</b>. The next hundred after 2900 is 3000, not 2100 or 21000.</p>' },
+          { label: 'With disks', html: '<div class="fig">' + disksFig([0, 7, 9, 2]) + '</div><p>Rounding up adds 1 hundred to the 9 hundreds: 10 hundreds, which group into 1 more thousand. So 2 thousands become 3 thousands: <b>3000</b>.</p>' }
+        ],
+        key: '<p>If rounding up makes 10 in a place, <b>group it</b> into the next place.</p>',
+        mistake: '<p>Writing 2970 &#8776; "21000" or "2100". Ask what the hundred after 2900 is.</p>',
+        check: [T('round', 3), T('round', 3)] }
+    ] },
+
+    { id: 'big', title: 'How big is 10 000?', sub: 'Numbers in everyday life.', concepts: [
+      { id: 'ten-thousand', title: '10 000 is 100 hundreds', exp: ['B1.1'], skill: 'n4-value',
+        body: '<p>10 000 is <b>10 thousands</b>, or <b>100 hundreds</b>. In the picture each square is 100, and the whole picture is 10 000.</p>',
+        watch: K.watch([
+          ['One square is 100.', grid10k(100)],
+          ['A row of 10 squares is 1000.', grid10k(1000)],
+          ['Half the squares: 5000.', grid10k(5000)],
+          ['All 100 squares: <b>10 000</b>.', grid10k(10000), 2000]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Number:', min: 0, max: 10000, step: 100, value: 1400, fmt: A.fmt }],
+          render: function (s) { return { fig: grid10k(s.n), out: '<p><b>' + A.fmt(s.n) + '</b> fills ' + s.n / 100 + ' of 100 squares.</p>' }; },
+          tasks: [
+            { do: 'Show <b>half</b> of 10 000.', goal: function (s) { return s.n === 5000; }, yes: '5000 fills 50 squares: half.' },
+            { do: 'There are 1440 minutes in a day. Show about that many.', goal: function (s) { return Math.abs(s.n - 1440) <= 60; }, yes: 'About 14 squares. A day is less than a sixth of 10 000 minutes.' }
+          ] }),
+        key: '<p><b>10 000 = 10 thousands = 100 hundreds.</b></p>',
+        check: [function () { var t = R.int(1, 9); return { q: 'How many squares of 100 does ' + A.fmt(t * 1000) + ' fill?', type: 'num', answer: t * 10, fig: grid10k(t * 1000), hint: 'Each square is 100. Each row of 10 is 1000.', explain: A.fmt(t * 1000) + ' is ' + t * 10 + ' hundreds.', steps: ['Each row is 1000.', t + ' rows = ' + t * 10 + ' squares.'] }; }, T('value', 3)] }
+    ] }
+  ];
+  function orderLine(pts, stage) {
+    var sorted = pts.slice().sort(function (a, b) { return a - b; }), s = '<line x1="24" y1="70" x2="536" y2="70" style="stroke:var(--ink)" stroke-width="2"/>';
+    for (var v = 3000; v <= 6000; v += 500) { var x = 24 + 512 * (v - 3000) / 3000; s += '<line x1="' + x + '" y1="63" x2="' + x + '" y2="77" style="stroke:var(--ink)" stroke-width="2"/><text x="' + x + '" y="100" text-anchor="middle" font-size="18">' + v + '</text>'; }
+    sorted.slice(0, stage).forEach(function (p, k) {
+      var x = 24 + 512 * (p - 3000) / 3000;
+      s += '<circle cx="' + x + '" cy="70" r="8" style="fill:var(--strand);stroke:var(--ink)" stroke-width="2"/><text x="' + (x + (p === 5208 ? -18 : p === 5280 ? 18 : 0)) + '" y="' + (k % 2 ? 26 : 48) + '" text-anchor="middle" font-size="19" class="tb">' + p + '</text>';
+    });
+    s += '<text x="280" y="20" text-anchor="middle" font-size="18" class="t2">' + (stage ? 'least &rarr; greatest' : pts.join(', ')) + '</text>';
+    return A.svg(560, 110, s, 'Number line from 3000 to 6000' + (stage ? ' with ' + sorted.slice(0, stage).join(', ') + ' placed' : ''));
+  }
+
+
   A.register('numbers', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Places up to 10 000</h2>' +
 '<p>Every digit in a number has a <b>place</b>. The place decides what the digit is worth. Each place is worth <b>10 times</b> the place to its right.</p>' +

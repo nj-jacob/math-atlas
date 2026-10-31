@@ -145,7 +145,7 @@
         return { q: ctx.t, type: 'num', answer: ctx.a, hint: 'Divide first: ' + n + ' &divide; ' + d + ' = ' + q + ' R' + r + '. Then think: what does the leftover mean here?',
           steps: [n + ' &divide; ' + d + ' = ' + q + ' R' + r + '.', ctx.e], explain: ctx.e };
       }
-      var right = A.mixed(q, r, d), o = R.mc(right, [A.mixed(q, r, 10) === right ? A.mixed(q + 1, 0, d) : A.mixed(q, r, 10), A.mixed(q, d - r === r ? r + 1 : d - r, d), A.mixed(r, q, d) === right ? A.mixed(q + 1, r, d) : A.mixed(r, q, d)]);
+      var right = A.mixed(q, r, d), o = R.mc(right, [A.mixed(q, r, 10) === right ? A.mixed(q + 1, 0, d) : A.mixed(q, r, 10), d - r === r ? A.mixed(q + 1, r, d) : A.mixed(q, d - r, d), A.mixed(r, q, d) === right ? A.mixed(q + 1, r, d) : A.mixed(r, q, d)]);
       return { q: n + ' ' + things[0] + ' are shared equally among ' + d + ' ' + things[1] + '. The leftovers are cut into equal pieces too. How much does each get?', type: 'mc', options: o.options, answer: o.answer,
         fig: lv === 1 ? share(n, d) : '', hint: 'Divide: each gets ' + q + ' whole, and ' + r + ' are left. Those ' + r + ' are shared among ' + d + ', so each gets ' + r + ' of ' + d + ' equal parts.',
         steps: [n + ' &divide; ' + d + ' = ' + q + ' R' + r + '.', 'The ' + r + ' left over are cut and shared among ' + d + '. Each gets ' + fr(r, d) + ' more.', 'Each gets ' + right + '.'],
@@ -165,7 +165,212 @@
     }
   };
 
+  /* ---------- one idea at a time ---------- */
+  var K = A.kit;
+  function T(name, lv) { return function () { return gen[name](lv); }; }
+  var OPS = [['1', '&times; 10'], ['2', '&times; 100'], ['3', '&times; 1000']];
+
+  var LESSONS = [
+    { id: 'facts', title: 'Facts with arrays', sub: 'Equal rows, broken into facts you know.', concepts: [
+      { id: 'arrays', title: 'Arrays: equal rows', exp: ['B2.2'], skill: 'md4-facts',
+        body: '<p>An <b>array</b> is objects in equal rows. 4 rows of 6 is <span class="math">4 &times; 6 = 24</span>. Turn it on its side: 6 rows of 4 is still 24.</p>',
+        watch: K.watch([
+          ['4 rows of 6.', array(4, 6), 1600],
+          ['Count by 6s: 6, 12, 18, <b>24</b>. So 4 &times; 6 = 24.', array(4, 6, undefined, '4 rows of 6 is 24'), 2000],
+          ['Turn it: 6 rows of 4. Still <b>24</b>. 6 &times; 4 = 4 &times; 6.', array(6, 4), 2200]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'r', label: 'Rows', min: 1, max: 10, value: 4 }, { id: 'c', label: 'In each row', min: 1, max: 10, value: 6 }],
+          render: function (s) { return { fig: array(s.r, s.c), out: '<p class="big math">' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</p>' }; },
+          tasks: [
+            { do: 'Make <b>24</b> with an array that is not 4 rows of 6.', goal: function (s) { return s.r * s.c === 24 && s.r !== 4; }, yes: function (s) { return s.r + ' rows of ' + s.c + ' is also 24.'; } },
+            { do: 'Make an array with <b>7 rows</b> that has <b>56</b> dots.', goal: function (s) { return s.r === 7 && s.c === 8; }, yes: '7 &times; 8 = 56.' },
+            { do: 'Find a <b>square</b> array with 49 dots.', goal: function (s) { return s.r === 7 && s.c === 7; }, yes: '7 &times; 7 = 49. Same rows and columns.' }
+          ] }),
+        key: '<p><b>Rows &times; number in each row = total.</b> The order does not change the product.</p>',
+        check: [T('facts', 1), T('facts', 1)] },
+
+      { id: 'break-apart', title: 'Break a fact apart', exp: ['B2.2'], skill: 'md4-facts', hard: true,
+        body: '<p>For a fact you do not know yet, <b>break the array</b> into two facts you do know. Then add.</p>',
+        watch: K.watch([
+          ['7 &times; 8. Hard to count.', array(7, 8), 1600],
+          ['Break the 7 rows into 5 and 2.', array(7, 8, 5), 1800],
+          ['5 &times; 8 = 40 and 2 &times; 8 = 16.', array(7, 8, 5, '5 rows of 8 is 40, 2 rows of 8 is 16'), 2000],
+          ['40 + 16 = <b>56</b>. So 7 &times; 8 = 56.', array(7, 8, 5, '7 times 8 is 56'), 2000]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'r', label: 'Rows', min: 2, max: 10, value: 7 }, { id: 'c', label: 'In each row', min: 1, max: 10, value: 8 }, { id: 'k', label: 'Break after row', min: 1, max: 9, value: 5 }],
+          render: function (s) {
+            var k = Math.min(s.k, s.r - 1);
+            return { fig: array(s.r, s.c, k), out: '<p class="math"><b style="color:var(--strand)">' + k + ' &times; ' + s.c + ' = ' + k * s.c + '</b> and ' + (s.r - k) + ' &times; ' + s.c + ' = ' + (s.r - k) * s.c + '</p><p class="big math">' + k * s.c + ' + ' + (s.r - k) * s.c + ' = ' + s.r * s.c + '</p>' };
+          },
+          tasks: [
+            { do: 'Show <b>6 &times; 9</b> broken into <b>5 &times; 9</b> and <b>1 &times; 9</b>.', goal: function (s) { return s.r === 6 && s.c === 9 && Math.min(s.k, 5) === 5; }, yes: '45 + 9 = 54.' },
+            { do: 'Show <b>8 &times; 7</b> broken into two equal halves.', goal: function (s) { return s.r === 8 && s.c === 7 && s.k === 4; }, yes: '4 &times; 7 = 28, twice: 28 + 28 = 56.' }
+          ] }),
+        ways: [
+          { label: 'Double a fact', html: '<p>6 &times; 7 is double 3 &times; 7. 3 &times; 7 = 21, and 21 + 21 = <b>42</b>.</p><div class="fig">' + array(6, 7, 3) + '</div>' },
+          { label: 'Start from 10', html: '<p>9 &times; 6 is one row less than 10 &times; 6. 10 &times; 6 = 60, then take away one 6: 60 &minus; 6 = <b>54</b>.</p>' },
+          { label: 'Use the 5s', html: '<p>Fives are easy: count by 5s. 7 &times; 6 = 5 &times; 6 + 2 &times; 6 = 30 + 12 = <b>42</b>.</p>' }
+        ],
+        key: '<p><b>Break the rows into two facts you know, then add.</b></p>',
+        mistake: '<p>Breaking the rows but then multiplying by the wrong number, or forgetting to add the two parts. Have your child point to each part of the array and say its fact.</p>',
+        check: [T('facts', 2), T('facts', 2)] },
+
+      { id: 'family', title: 'Fact families', exp: ['B2.2'], skill: 'md4-facts',
+        body: '<p>One array gives <b>four facts</b>: two multiplications and two divisions. Division undoes multiplication.</p>',
+        watch: K.watch([
+          ['7 rows of 8 is 56: 7 &times; 8 = 56.', array(7, 8) + '<p class="math big">7 &times; 8 = 56</p>', 1800],
+          ['8 &times; 7 = 56 too.', array(7, 8) + '<p class="math big">7 &times; 8 = 56<br>8 &times; 7 = 56</p>', 1600],
+          ['56 shared into 7 rows: 8 in each. 56 &divide; 7 = 8.', array(7, 8) + '<p class="math big">7 &times; 8 = 56<br>8 &times; 7 = 56<br>56 &divide; 7 = 8</p>', 1800],
+          ['And 56 &divide; 8 = 7.', array(7, 8) + '<p class="math big">7 &times; 8 = 56<br>8 &times; 7 = 56<br>56 &divide; 7 = 8<br>56 &divide; 8 = 7</p>', 2000]
+        ]),
+        key: '<p>To divide, <b>think of the multiplication fact</b>. 56 &divide; 8: 8 &times; what = 56?</p>',
+        check: [T('facts', 3), T('facts', 3)] }
+    ] },
+
+    { id: 'tens', title: 'Times 10, 100 and 1000', sub: 'Digits move; zeros fill the gaps.', concepts: [
+      { id: 'times10', title: 'Multiply by 10, 100, 1000', exp: ['B2.3'], skill: 'md4-tens',
+        body: '<p>Times 10 makes every digit worth 10 times as much, so each digit moves <b>one place left</b>. Times 100: two places. Times 1000: three places.</p>',
+        watch: K.watch([
+          ['46 &times; 10: each digit moves 1 place left. A 0 fills the ones.', shift(46, 1, 'x'), 2200],
+          ['46 &times; 100: 2 places left.', shift(46, 2, 'x'), 2000],
+          ['46 &times; 1000: 3 places left. <b>46 000</b>.', shift(46, 3, 'x'), 2200]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'n', label: 'Number', type: 'number', min: 1, max: 99, value: 46 }, { id: 'k', label: 'Operation', type: 'select', options: OPS }],
+          render: function (s) { var k = +s.k; s.res = s.n * Math.pow(10, k); return { fig: shift(s.n, k, 'x'), out: '<p class="big math">' + s.n + ' &times; ' + A.fmt(Math.pow(10, k)) + ' = ' + A.fmt(s.res) + '</p>' }; },
+          tasks: [
+            { do: 'Make <b>3700</b>.', goal: function (s) { return s.res === 3700; }, yes: '37 &times; 100 = 3700.' },
+            { do: 'Make <b>8000</b> using <b>&times; 100</b>.', goal: function (s) { return s.res === 8000 && s.k === '2'; }, yes: '80 &times; 100 = 8000. Also 8 &times; 1000.' }
+          ] }),
+        key: '<p>Times 10, 100, 1000: <b>each digit moves 1, 2 or 3 places left</b>. Zeros fill the empty places.</p>',
+        check: [T('tens', 1), T('tens', 2)] },
+
+      { id: 'divide10', title: 'Divide by 10', exp: ['B2.3'], skill: 'md4-tens',
+        body: '<p>Dividing by 10 does the opposite: each digit moves <b>one place right</b>. The 0 in the ones place drops off.</p>',
+        watch: K.watch([
+          ['460 &divide; 10.', shift(460, 0, 'x').replace(/each digit moves 0 places? left/, ''), 1400],
+          ['Each digit moves 1 place right. 460 &divide; 10 = <b>46</b>.', shift(460, 1, 'd'), 2200]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Number', min: 10, max: 990, step: 10, value: 460 }],
+          render: function (s) { return { fig: shift(s.n, 1, 'd'), out: '<p class="big math">' + s.n + ' &divide; 10 = ' + s.n / 10 + '</p>' }; },
+          tasks: [{ do: 'Find the number that gives <b>64</b> when you divide by 10.', goal: function (s) { return s.n === 640; }, yes: '640 &divide; 10 = 64.' }] }),
+        key: '<p>Divide by 10: <b>each digit moves 1 place right</b>.</p>',
+        mistake: '<p>"Just add a zero" also for dividing (460 &divide; 10 = 4600). Ask: "Should the answer be bigger or smaller?"</p>',
+        check: [T('tens', 3), T('tens', 3)] }
+    ] },
+
+    { id: 'multiplying', title: 'Multiplying bigger numbers', sub: 'Break, multiply, add.', concepts: [
+      { id: 'two-digit', title: 'Break it into tens and ones', exp: ['B2.5'], skill: 'md4-mult', hard: true,
+        body: '<p>To multiply 34 &times; 6, <b>break</b> 34 into 30 + 4. <b>Multiply</b> each part by 6. <b>Add</b> the parts.</p>',
+        watch: K.watch([
+          ['34 &times; 6. Break 34 into 30 and 4.', areaModel(34, 6, true), 2000],
+          ['30 &times; 6 = 180 and 4 &times; 6 = 24.', areaModel(34, 6), 2200],
+          ['Add the parts: 180 + 24 = <b>204</b>.', areaModel(34, 6) + '<p class="math big">180 + 24 = 204</p>', 2200]
+        ]),
+        ways: [
+          { label: 'Repeated groups', html: '<p>34 &times; 6 is six groups of 34. Six 30s are 180. Six 4s are 24. Together: <b>204</b>.</p>' },
+          { label: 'With money', html: '<p>6 friends each pay $34. Each pays three $10 bills and four loonies. Bills: 18 &times; $10 = $180. Loonies: 24 &times; $1 = $24. Total: <b>$204</b>.</p>' }
+        ],
+        key: '<p><b>Break. Multiply each part. Add.</b></p>',
+        mistake: '<p>Multiplying only the ones (34 &times; 6 = 3 tens and 24 = 54), or 3 &times; 6 instead of 30 &times; 6. Point to the 3 and ask: "What is this 3 really worth?"</p>',
+        check: [T('mult', 1), T('mult', 2)] },
+
+      { id: 'three-digit', title: 'Three-digit numbers', exp: ['B2.5'], skill: 'md4-mult',
+        body: '<p>The same three steps work for bigger numbers: 246 = 200 + 40 + 6.</p>',
+        watch: K.watch([
+          ['246 &times; 3. Break 246 into 200, 40 and 6.', areaModel(246, 3, true), 2000],
+          ['Multiply each part: 600, 120, 18.', areaModel(246, 3), 2200],
+          ['600 + 120 + 18 = <b>738</b>.', areaModel(246, 3) + '<p class="math big">600 + 120 + 18 = 738</p>', 2200]
+        ]),
+        try: K.lab({ controls: [
+          { id: 'a', label: 'Number (10 to 999)', type: 'number', min: 10, max: 999, value: 128 }, { id: 'b', label: 'Times', min: 1, max: 9, value: 4 }],
+          render: function (s) { var pa = parts(s.a); s.p = s.a * s.b; return { fig: areaModel(s.a, s.b), out: '<p class="math">' + pa.map(function (p) { return A.fmt(p * s.b); }).join(' + ') + ' = <b class="big">' + A.fmt(s.p) + '</b></p>' }; },
+          tasks: [
+            { do: 'Show <b>246 &times; 3</b>.', goal: function (s) { return s.a === 246 && s.b === 3; }, yes: '738.' },
+            { do: 'Find a product between <b>1000 and 1100</b>.', goal: function (s) { return s.p >= 1000 && s.p <= 1100; }, yes: function (s) { return s.a + ' &times; ' + s.b + ' = ' + A.fmt(s.p) + '.'; } }
+          ] }),
+        key: '<p><b>Break. Multiply each part. Add.</b> Every part gets multiplied.</p>',
+        check: [T('mult', 3), T('mult', 3)] }
+    ] },
+
+    { id: 'dividing', title: 'Dividing and leftovers', sub: 'Share equally; decide what leftovers mean.', concepts: [
+      { id: 'share', title: 'Share into equal groups', exp: ['B2.6'], skill: 'md4-div',
+        body: '<p>Dividing means sharing into equal groups. What cannot be shared is the <b>remainder</b>. 14 &divide; 4 = 3 R2.</p>',
+        watch: K.watch([
+          ['14 counters, 4 plates. Deal one to each plate.', share(4, 4), 1300],
+          ['Deal again.', share(8, 4), 1100],
+          ['And again.', share(12, 4), 1100],
+          ['2 are left. Not enough for every plate. 14 &divide; 4 = <b>3 R2</b>.', share(14, 4), 2400]
+        ]),
+        try: K.lab({ controls: [{ id: 'n', label: 'Counters', min: 1, max: 60, value: 14 }, { id: 'd', label: 'Groups', min: 1, max: 10, value: 4 }],
+          render: function (s) { var q = Math.floor(s.n / s.d), r = s.n % s.d; return { fig: share(s.n, s.d), out: '<p class="big math">' + s.n + ' &divide; ' + s.d + ' = ' + q + (r ? ' R' + r : '') + '</p><p class="t2">Check: ' + s.d + ' &times; ' + q + (r ? ' + ' + r : '') + ' = ' + s.n + '</p>' }; },
+          tasks: [
+            { do: 'Share <b>20</b> counters into <b>6</b> groups.', goal: function (s) { return s.n === 20 && s.d === 6; }, yes: '3 each, 2 left over: 20 &divide; 6 = 3 R2.' },
+            { do: 'Find more than 30 counters that share into <b>4</b> groups with <b>none</b> left over.', goal: function (s) { return s.d === 4 && s.n > 30 && s.n % 4 === 0; }, yes: function (s) { return s.n + ' &divide; 4 = ' + s.n / 4 + ', no remainder.'; } }
+          ] }),
+        key: '<p><b>Groups &times; number in each + remainder = start number.</b></p>',
+        check: [T('div', 1), T('div', 1)] },
+
+      { id: 'bigger', title: 'Divide bigger numbers', exp: ['B2.6'], skill: 'md4-div', hard: true,
+        body: '<p>For 87 &divide; 3, use a fact with <b>tens</b> first: 3 &times; 20 = 60. Then divide what is left.</p>',
+        watch: K.watch([
+          ['87 &divide; 3. Think: 3 &times; what is close to 87? 3 &times; 20 = 60.', areaModel(20, 3), 2200],
+          ['87 &minus; 60 = 27 left. 3 &times; 9 = 27.', areaModel(29, 3), 2200],
+          ['20 + 9 = <b>29</b>. So 87 &divide; 3 = 29.', areaModel(29, 3) + '<p class="math big">87 &divide; 3 = 29</p>', 2200]
+        ]),
+        ways: [
+          { label: 'Share the blocks', html: '<p>87 is 8 tens and 7 ones. Share 8 tens among 3: each gets 2 tens, and 2 tens are left. Break them into 20 ones: now 27 ones. Each gets 9. Each has 2 tens and 9 ones: <b>29</b>.</p>' },
+          { label: 'Check by multiplying', html: '<p>Guess, then check. Is it 30? 3 &times; 30 = 90, too big by 3. So take one away: 29. 3 &times; 29 = <b>87</b>.</p>' }
+        ],
+        key: '<p><b>Use a tens fact first, then divide what is left.</b> Add the two answers.</p>',
+        mistake: '<p>Dividing each digit on its own (87 &divide; 3 as 8 &divide; 3 and 7 &divide; 3) and losing the leftovers. Ask: "What happens to the tens that do not share evenly?"</p>',
+        check: [T('div', 2), T('div', 3)] },
+
+      { id: 'leftovers', title: 'What do the leftovers mean?', exp: ['B2.6'], skill: 'md4-rem', hard: true,
+        body: '<p>The story decides what to do with a remainder. <b>Round up</b> when everyone needs a spot. <b>Drop it</b> when only full groups count. <b>Share it</b> when it can be cut.</p>',
+        watch: K.watch([
+          ['26 students, 4 per van. 26 &divide; 4 = 6 R2.', share(26, 4), 2000],
+          ['The 2 extra students still need a ride: <b>7 vans</b>.', share(26, 4) + '<p class="big">Round up: 7 vans</p>', 2200],
+          ['26 eggs in boxes of 4? Only <b>6</b> boxes are full.', share(26, 4) + '<p class="big">Full boxes only: 6</p>', 2200],
+          ['26 pizzas among 4? Cut the 2 extra: each gets <b>6 ' + fr(2, 4) + '</b>.', share(26, 4) + '<p class="big">Share it: 6 ' + fr(2, 4) + '</p>', 2400]
+        ]),
+        ways: [
+          { label: 'Ask a question', html: '<p>After dividing, ask: <b>"Can the leftovers be left out, do they need their own group, or can they be cut?"</b></p><div class="tbl"><table><thead><tr><th>Story</th><th>Leftovers</th></tr></thead><tbody><tr><td>Vans, tables, boxes needed</td><td>Round up</td></tr><tr><td>Full boxes, full teams</td><td>Drop them</td></tr><tr><td>Pizza, bread, money</td><td>Cut and share</td></tr></tbody></table></div>' }
+        ],
+        key: '<p><b>The story decides:</b> round up, drop the remainder, or share it.</p>',
+        mistake: '<p>Writing "6 R2 vans". A remainder is not an answer to a real question. Ask: "Where do the 2 extra students sit?"</p>',
+        check: [T('rem', 1), T('rem', 3)] }
+    ] },
+
+    { id: 'rates', title: 'Rates', sub: 'The same amount for each one.', concepts: [
+      { id: 'rate', title: 'The same amount each time', exp: ['B2.8'], skill: 'md4-rate',
+        body: '<p>A <b>rate</b> says how much for each one: 6 juice boxes in each pack. Multiply to find the amount for any number of packs.</p>',
+        watch: K.watch([1, 2, 3, 4].map(function (n) { return [n === 4 ? '4 packs: 4 &times; 6 = <b>24</b> juice boxes.' : n + ' pack' + (n > 1 ? 's' : '') + ': ' + 6 * n + ' juice boxes.', rateLine(6, n, 'packs', 'juice boxes'), n === 4 ? 2200 : 1300]; })),
+        try: K.lab({ controls: [{ id: 'p', label: 'Amount for 1', min: 1, max: 12, value: 6 }, { id: 'n', label: 'How many', min: 1, max: 10, value: 4 }],
+          render: function (s) { return { fig: rateLine(s.p, s.n, 'weeks', 'dollars'), out: '<p class="big math">' + s.n + ' &times; $' + s.p + ' = $' + s.p * s.n + '</p>' }; },
+          tasks: [
+            { do: 'Sam saves <b>$5 each week</b>. Show how much after <b>7 weeks</b>.', goal: function (s) { return s.p === 5 && s.n === 7; }, yes: '7 &times; $5 = $35.' },
+            { do: 'At $5 a week, how many weeks to save <b>$45</b>? Show it.', goal: function (s) { return s.p === 5 && s.n === 9; }, yes: '9 weeks. 45 &divide; 5 = 9.' }
+          ] }),
+        key: '<p>Know the amount for 1? <b>Multiply</b> to find more. Know the total? <b>Divide</b>.</p>',
+        check: [T('rate', 1), T('rate', 2)] },
+
+      { id: 'how-many', title: 'How many to reach a total?', exp: ['B2.8'], skill: 'md4-rate',
+        body: '<p>If you know the total and the amount for each one, <b>divide</b> (or count by the rate) to find how many.</p>',
+        watch: K.watch([
+          ['A cyclist rides 8 km each hour. How many hours to ride 40 km?', rateLine(8, 5, 'hours', 'kilometres', true).replace('>?<', '>40<'), 2200],
+          ['Count by 8s: 8, 16, 24, 32, 40. That is <b>5 hours</b>. 40 &divide; 8 = 5.', rateLine(8, 5, 'hours', 'kilometres'), 2400]
+        ]),
+        key: '<p>Total &divide; amount for each = <b>how many</b>.</p>',
+        mistake: '<p>Multiplying when the total is already known (8 &times; 40). Ask: "Do we know the total, or the amount for one?"</p>',
+        check: [T('rate', 3), T('rate', 3)] }
+    ] }
+  ];
+
   A.register('multiply-divide', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Multiplication facts with arrays</h2>' +
 '<p>An <b>array</b> is objects in equal rows. 4 rows of 6 is <span class="math">4 &times; 6 = 24</span>. Turn the array on its side and it is 6 rows of 4: still 24. The order of the numbers does not change the product.</p>' +
