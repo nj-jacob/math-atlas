@@ -52,7 +52,7 @@ ch.practice.forEach(function (sk) {
 });
 ```
 
-`grade3/chapters/numbers-1000.js` is the worked example.
+`grade3/chapters/numbers-1000.js` is the worked example. Grade 1 wraps this in `G1.shapes(chapterId, SHAPES)` and builds mistake questions with `G1.tf(...)` (both in `grade1/assets/g1kit.js`).
 
 ## Answer checks (required)
 

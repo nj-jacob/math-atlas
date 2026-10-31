@@ -349,4 +349,145 @@
       { id: 'p-change', name: 'Changes or stays the same', code: 'C2.1', gen: qChange }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  /* a row of shapes where each shape can be tapped */
+  function rowTap(seq) {
+    var z = 40, g = 8, per = Math.min(seq.length, 8), s = '';
+    seq.forEach(function (k, i) {
+      var x = 4 + (i % per) * (z + g) + z / 2, y = 4 + Math.floor(i / per) * (z + g + 10) + z / 2;
+      s += '<g data-hit="' + i + '" aria-label="' + SH[k].n + ', shape ' + (i + 1) + '"><rect x="' + (x - z / 2) + '" y="' + (y - z / 2) + '" width="' + z + '" height="' + z + '" rx="8" style="fill:transparent;stroke:transparent" stroke-width="2"/>' + shape(k, x, y, z - 4) + '</g>';
+    });
+    return A.svg(per * (z + g) + 4, Math.ceil(seq.length / per) * (z + g + 10) - 2, s, 'Pattern: ' + seq.map(function (k) { return SH[k].n; }).join(', '));
+  }
+  function notPattern(core, n) {
+    var s; do { s = []; for (var i = 0; i < n; i++) s.push(R.pick(core.concat(R.pick(KEYS)))); } while (periodic(s));
+    return s;
+  }
+  function periodic(s) { for (var p = 1; p <= s.length / 2; p++) { var ok = true; for (var i = p; i < s.length; i++) if (s[i] !== s[i - p]) { ok = false; break; } if (ok) return true; } return false; }
+  /* towers that grow by 1 or 2 each day; the first three are never taller than 5 blocks */
+  function towerRule(lv) { var by = lv === 1 ? 1 : R.pick([1, 2]), st = by === 2 ? 1 : R.int(1, 2); return [st, st + by, st + 2 * by, st + 3 * by]; }
+  var SHAPES = {
+    'p-next': [
+      [1, 'mistake', function (lv) {
+        var type = R.pick(CORES[lv === 1 ? 1 : 2]), core = makeCore(type), len = core.length * 2 + R.int(0, core.length - 1), seq = rep(core, len), ans = core[len % core.length];
+        var truth = !R.int(0, 2), said = truth ? ans : R.pick(core.filter(function (k) { return k !== ans; }).concat(KEYS.filter(function (k) { return core.indexOf(k) < 0; }).slice(0, 1))), who = nm();
+        var right = 'The core is ' + core.map(function (k) { return SH[k].n; }).join(', ') + '. Next comes a ' + SH[ans].n + '.';
+        return G.tf(who + ' says a <b>' + SH[said].n + '</b> comes next. True or false: ' + who + ' is right.', truth, right,
+          ['The next shape is always the first shape.', 'Any shape can come next.', 'The next shape is always new.'], { k: 'g1-pnext-tf' },
+          { fig: row(seq, { more: 1 }), hint: 'Say the pattern out loud. What comes after the last one?' });
+      }],
+      [1, 'tap', function (lv) {
+        var type = R.pick(CORES[lv]), core = makeCore(type), len = core.length * 2 + R.int(0, core.length - 1), seq = rep(core, len), ans = core[len % core.length];
+        var wrong = KEYS.filter(function (k) { return k !== ans; }), ends = R.shuffle([ans].concat(R.shuffle(core.filter(function (k) { return k !== ans; }).concat(wrong)).filter(function (k, i, a) { return k !== ans && a.indexOf(k) === i; }).slice(0, 2)));
+        return { q: 'Tap the row that keeps the pattern going.', type: 'tap', tiles: ends.map(function (k) { return row(seq.concat([k]), { per: 8 }); }), answer: ends.indexOf(ans), answerText: 'the row that ends with a ' + SH[ans].n,
+          hint: 'Find the part that repeats. What comes after the last shape?', steps: ['The core is ' + core.map(function (k) { return SH[k].n; }).join(', ') + '.', 'Next comes a ' + SH[ans].n + '.'],
+          explain: 'The pattern goes on with a ' + SH[ans].n + '.', meta: { k: 'g1-pnext-tap' } };
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), cols = R.shuffle(['red', 'blue', 'yellow', 'green']).slice(0, 2), type = lv === 2 ? 'AB' : R.pick(['AB', 'AAB', 'ABB']), core = type.split('').map(function (L) { return cols[L === 'A' ? 0 : 1]; });
+        var pos = R.int(core.length * 2 + 1, 10), ans = core[(pos - 1) % core.length], o = R.mc(ans, cols.filter(function (c) { return c !== ans; }).concat(['purple']));
+        return { q: who + ' makes a bead necklace: ' + rep(core, core.length * 2).join(', ') + ', and so on. What colour is bead number <b>' + pos + '</b>?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Keep saying the pattern and count the beads.', steps: ['Say the core: ' + core.join(', ') + '.', 'Keep going until bead ' + pos + '.'],
+          explain: 'Bead ' + pos + ' is ' + ans + '.', meta: { k: 'g1-pnext-story' } };
+      }]
+    ],
+    'p-missing': [
+      [1, 'tap', function (lv) {
+        var type = R.pick(CORES[lv]), core = makeCore(type), seq = rep(core, core.length * 3), at = R.int(core.length, seq.length - 1), right = seq[at];
+        seq[at] = R.pick(KEYS.filter(function (k) { return k !== right; }));
+        return { q: 'One shape is wrong. Tap it.', type: 'tap', pic: rowTap(seq), answer: String(at), answerText: 'the ' + SH[seq[at]].n + ' (shape ' + (at + 1) + ')',
+          hint: 'Find the part that repeats. Then check each shape.', steps: ['The core is ' + core.map(function (k) { return SH[k].n; }).join(', ') + '.', 'Shape ' + (at + 1) + ' should be a ' + SH[right].n + '.'],
+          explain: 'Shape ' + (at + 1) + ' should be a ' + SH[right].n + '.', meta: { k: 'g1-pmiss-tap', p: core.length } };
+      }],
+      [1, 'mistake', function (lv) {
+        var type = R.pick(CORES[lv]), core = makeCore(type), seq = rep(core, core.length * 3), gap = R.int(core.length, seq.length - 2), ans = seq[gap];
+        var truth = !R.int(0, 2), said = truth ? ans : R.pick(KEYS.filter(function (k) { return k !== ans; })), who = nm();
+        var right = 'The core is ' + core.map(function (k) { return SH[k].n; }).join(', ') + ', so a ' + SH[ans].n + ' is missing.';
+        return G.tf(who + ' says a <b>' + SH[said].n + '</b> is missing. True or false: ' + who + ' is right.', truth, right,
+          ['The missing shape is always the last one.', 'Any shape fits in a gap.', 'The missing shape is always new.'], { k: 'g1-pmiss-tf' },
+          { fig: row(seq, { gap: gap }), hint: 'Say the pattern out loud. What goes in the box?' });
+      }],
+      [2, 'match', function () {
+        var core = makeCore(R.pick(['AB', 'ABC'])), pairs = [], used = {};
+        for (var t = 0; t < 20 && pairs.length < Math.min(3, core.length); t++) {
+          var seq = rep(core, core.length * 2 + 1), gap = R.int(0, seq.length - 1);
+          if (used[seq[gap]]) continue; used[seq[gap]] = 1;
+          pairs.push([row(seq, { gap: gap }), SH[seq[gap]].n]);
+        }
+        if (pairs.length < 2) pairs = [[row(['rc', 'bs', 'rc', 'bs', 'rc'], { gap: 1 }), SH.bs.n], [row(['rc', 'bs', 'rc', 'bs', 'rc'], { gap: 2 }), SH.rc.n]];
+        return { q: 'Match each pattern to its missing shape.', type: 'match', pairs: pairs, hint: 'Say each pattern out loud.', steps: ['Find the core, then the box.'],
+          explain: pairs.map(function (p) { return p[1]; }).join(', ') + '.', meta: { k: 'g1-pmiss-match' } };
+      }]
+    ],
+    'p-core': [
+      [1, 'tap', function (lv) {
+        var core = makeCore(R.pick(CORES[lv === 1 ? 1 : 2])), good = rep(core, 6), set = R.shuffle([good, notPattern(core, 6), notPattern(core, 6)]);
+        return { q: 'Tap the row that is a <b>repeating pattern</b>.', type: 'tap', tiles: set.map(function (s) { return row(s); }), answer: set.indexOf(good), answerText: 'the row that repeats ' + core.map(function (k) { return SH[k].n; }).join(', '),
+          hint: 'A pattern has a part that repeats again and again.', steps: ['Look for the same shapes in the same order, over and over.'],
+          explain: 'That row repeats ' + core.map(function (k) { return SH[k].n; }).join(', ') + '.', meta: { k: 'g1-pcore-tap' } };
+      }],
+      [1, 'match', function () {
+        var types = R.shuffle(['AB', 'AAB', 'ABB', 'ABC']).slice(0, 3);
+        return { q: 'Match each pattern to its letters.', type: 'match', pairs: types.map(function (t) { return [row(rep(makeCore(t), t.length * 2), { per: 8 }), t.split('').join(' ')]; }),
+          hint: 'Give the first shape the letter A. A new shape gets the next letter.', steps: ['Find the core of each pattern. Then name it with letters.'],
+          explain: 'Each core gets letters: same shape, same letter.', meta: { k: 'g1-pcore-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var type = R.pick(CORES[3]), core = makeCore(type), seq = rep(core, core.length * 3), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? core : core.slice(0, core.length - 1);
+        if (!truth && said.length < 2) said = core.concat(core[0]);
+        var right = 'The core is ' + core.map(function (k) { return SH[k].n; }).join(', ') + '. It repeats again and again.';
+        return G.tf(who + ' says the core is <b>' + said.map(function (k) { return SH[k].n; }).join(', ') + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['The core is always the first two shapes.', 'The core is the whole row.', 'A core never has the same shape twice.'], { k: 'g1-pcore-tf' },
+          { fig: row(seq), hint: 'Find the shortest part that repeats.' });
+      }]
+    ],
+    'p-num': [
+      [1, 'fill', function (lv) {
+        var by = lv === 1 ? R.pick([1, 10]) : lv === 2 ? R.pick([2, 5]) : R.pick([-1, -10, 3]), st = by > 0 ? (by === 10 ? R.int(1, 9) : R.int(1, 20)) : R.int(42, 50), s = [];
+        for (var i = 0; i < 5; i++) s.push(st + i * by);
+        return { q: 'Fill in the missing numbers.', type: 'fill', fill: '<span class="math">' + s[0] + ', ' + s[1] + ', [[]], ' + s[3] + ', [[]]</span>', answers: [s[2], s[4]],
+          hint: 'How much does it change each time?', steps: ['From ' + s[0] + ' to ' + s[1] + ' is ' + (by > 0 ? 'add ' + by : 'take away ' + -by) + '.', 'Keep doing that.'],
+          explain: s.join(', ') + '. The rule is ' + (by > 0 ? 'add ' + by : 'take away ' + -by) + '.', meta: { k: 'g1-pnum-fill' } };
+      }],
+      [1, 'order', function (lv) {
+        var by = lv === 1 ? R.pick([1, 10]) : R.pick([2, 5]), st = by === 10 ? R.int(1, 9) : R.int(1, 25), s = [];
+        for (var i = 0; i < 4; i++) s.push(st + i * by);
+        return { q: 'Put the cards in order to make a pattern that <b>adds ' + by + '</b>.', type: 'order', items: s.map(String),
+          hint: 'Start with the smallest. Then add ' + by + ' each time.', steps: ['The smallest is ' + st + '.', 'Add ' + by + ': ' + s.join(', ') + '.'],
+          explain: s.join(', ') + '.', meta: { k: 'g1-pnum-order' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var by = R.pick([2, 5, 10]), st = R.int(1, 10), s = [], who = nm(), truth = !R.int(0, 2), said = truth ? by : R.pick([2, 5, 10].filter(function (x) { return x !== by; }));
+        for (var i = 0; i < 4; i++) s.push(st + i * by);
+        var right = 'Each number is ' + by + ' more than the one before, so the rule is add ' + by + '.';
+        return G.tf('Look at <span class="math">' + s.join(', ') + '</span>. ' + who + ' says the rule is <b>add ' + said + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['The rule is the first number.', 'The rule is how many numbers there are.', 'The rule is the last number.'], { k: 'g1-pnum-tf' },
+          { hint: 'How much does it grow each time?' });
+      }]
+    ],
+    'p-change': [
+      [1, 'tap', function (lv) {
+        var grow = towerRule(lv).slice(0, 3), flat = grow.map(function () { return grow[1]; }), wantChange = R.int(0, 1), set = R.shuffle([grow, flat]);
+        return { q: 'Tap the towers that <b>' + (wantChange ? 'change' : 'stay the same') + '</b> each day.', type: 'tap', tiles: set.map(tower), answer: set.indexOf(wantChange ? grow : flat), answerText: wantChange ? 'the towers that grow' : 'the towers that stay the same',
+          hint: 'Look at the numbers on top of the towers.', steps: ['One set grows each day.', 'The other set is the same every day.'],
+          explain: wantChange ? 'Those towers grow: ' + grow.join(', ') + '.' : 'Those towers stay at ' + flat[0] + '.', meta: { k: 'g1-pchg-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var grow = towerRule(lv).slice(0, 3), flat = [3, 3, 3];
+        return { q: 'Match the towers to the words.', type: 'match', pairs: [[tower(grow), 'It changes'], [tower(flat), 'It stays the same']],
+          hint: 'Do the towers get taller?', steps: ['Look at the numbers on top.'],
+          explain: grow.join(', ') + ' changes. 3, 3, 3 stays the same.', meta: { k: 'g1-pchg-match' } };
+      }],
+      [2, 'fill', function (lv) {
+        var s = towerRule(lv), by = s[1] - s[0];
+        return { q: 'The towers grow each day. Fill in the blanks.', type: 'fill', fig: tower(s.slice(0, 3)), fill: '<span class="math">' + s[0] + ', ' + s[1] + ', ' + s[2] + ', [[]]</span>. The rule is add [[]].', answers: [s[3], by],
+          hint: 'How many blocks are added each day?', steps: ['From ' + s[0] + ' to ' + s[1] + ' is ' + by + ' more.', s[2] + ' + ' + by + ' = ' + s[3] + '.'],
+          explain: 'The rule is add ' + by + '. Next is ' + s[3] + '.', meta: { k: 'g1-pchg-fill' } };
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

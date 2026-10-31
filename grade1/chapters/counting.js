@@ -602,4 +602,147 @@
       { id: 'c-est', name: 'Estimate how many', code: 'B1.4', gen: qEst }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  function countRange(lv) { return lv === 1 ? R.int(3, 10) : lv === 2 ? R.int(11, 20) : R.int(21, 30); }
+  function rowPic(kind, n, s) { return A.draw.row(kind, n, { per: 10, group: 5, s: s || 26 }); }
+  function framePic(n, c) { return A.draw.frames(n, { c: c || 18, r: 2, min: 1 }); }
+  function heap(n, kind, w, h) { return A.draw.scatter(n, R.int(1, 99999), { kind: kind, w: w || 220, h: h || 150, r: n > 30 ? 7 : n > 12 ? 8 : 10 }); }
+  var SHAPES = {
+    'c-count': [
+      [1, 'tap', function (lv) {
+        var kind = R.pick(KINDS), n = countRange(lv), set = R.shuffle(G1.near(n, 3, 2, 40));
+        return { q: 'Tap the picture with <b>' + n + '</b> ' + A.NAMES[kind][1] + '.', type: 'tap', tiles: set.map(function (v) { return A.draw.row(kind, v, { per: 5, s: 24 }); }), answer: set.indexOf(n), answerText: 'the picture with ' + A.nm(kind, n),
+          hint: 'Count each picture. Touch each one once.', steps: ['Count the first picture. Say one number for each one.', 'Keep going until you find ' + n + '.'],
+          explain: 'That picture has ' + A.nm(kind, n) + '.', meta: { k: 'g1-count-tap', n: n } };
+      }],
+      [1, 'mistake', function (lv) {
+        var kind = R.pick(KINDS), n = countRange(lv), who = nm(), truth = !R.int(0, 2), said = truth ? n : n + R.pick([1, -1]);
+        var right = 'There are ' + n + '. Touch each one once, and the last number you say is how many.';
+        return G1.tf(who + ' counted the ' + A.NAMES[kind][1] + ' and said <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Counting fast is fine, even if you skip one.', 'You can count the first one twice.', 'Only the top row counts.'], { k: 'g1-count-tf', n: n, said: said },
+          { fig: rowPic(kind, n), hint: 'Count them yourself. Touch each one once.' });
+      }],
+      [2, 'line', function (lv) {
+        var kind = R.pick(KINDS), n = countRange(lv), hi = lv === 3 ? 30 : 20;
+        return { q: 'Count the ' + A.NAMES[kind][1] + '. Put the marker on that number.', type: 'line', min: 0, max: hi, tick: 1, every: 5, snap: 1, answer: n, fig: rowPic(kind, n),
+          hint: 'Count first. Then find that number on the line.', steps: ['There are ' + n + '.', 'Find ' + n + ' on the number line.'],
+          explain: 'There are ' + n + ', so the marker goes on ' + n + '.', meta: { k: 'g1-count-line' } };
+      }]
+    ],
+    'c-frames': [
+      [1, 'tap', function (lv) {
+        var n = countRange(lv) - (lv === 1 ? 2 : 0), set = R.shuffle(G1.near(n, 3, 1, 40));
+        return { q: 'Tap the ten frame that shows <b>' + n + '</b>.', type: 'tap', tiles: set.map(function (v) { return framePic(v, 16); }), answer: set.indexOf(n), answerText: 'the frames with ' + n,
+          hint: n > 10 ? 'A full frame is 10. Count on from 10.' : 'A full row is 5. Count on from 5.', steps: ['Look at each picture.', 'Find the one that shows ' + n + '.'],
+          explain: 'That frame shows ' + n + '.', meta: { k: 'g1-frames-tap', n: n } };
+      }],
+      [1, 'match', function (lv) {
+        var lo = lv === 1 ? 1 : lv === 2 ? 11 : 21, hi = lv === 1 ? 10 : lv === 2 ? 20 : 40, vals = [];
+        while (vals.length < 3) { var v = R.int(lo, hi); if (vals.indexOf(v) < 0) vals.push(v); }
+        return { q: 'Match each ten frame to its number.', type: 'match', pairs: vals.map(function (v) { return [framePic(v, 14), String(v)]; }),
+          hint: 'Count the full rows or frames first.', steps: ['A full row is 5. A full frame is 10.'],
+          explain: 'The frames show ' + vals.join(', ') + '.', meta: { k: 'g1-frames-match' } };
+      }],
+      [2, 'fill', function (lv) {
+        var n = lv === 2 ? R.int(11, 19) : R.int(21, 49), t = Math.floor(n / 10), o = n % 10;
+        return { q: 'Fill in the blanks.', type: 'fill', fig: framePic(n, 18), fill: '[[]] full frames and [[]] more make [[]].', answers: [t, o, n],
+          hint: 'A full frame is 10. Count the full frames, then the extra counters.', steps: ['There ' + (t === 1 ? 'is 1 full frame' : 'are ' + t + ' full frames') + ' and ' + o + ' more.', t * 10 + ' and ' + o + ' make ' + n + '.'],
+          explain: t + ' full frames and ' + o + ' more make ' + n + '.', meta: { k: 'g1-frames-fill' } };
+      }]
+    ],
+    'c-words': [
+      [1, 'match', function (lv) {
+        var lo = lv === 1 ? 0 : lv === 2 ? 11 : 20, hi = lv === 1 ? 10 : lv === 2 ? 19 : 50, vals = [];
+        while (vals.length < 3) { var v = R.int(lo, hi); if (vals.indexOf(v) < 0) vals.push(v); }
+        return { q: 'Match each word to its number.', type: 'match', pairs: vals.map(function (v) { return [W(v), String(v)]; }),
+          hint: 'Say each word out loud. Which number sounds the same?', steps: ['"Teen" means ten and some more. "Ty" means tens.'],
+          explain: vals.map(function (v) { return W(v) + ' is ' + v; }).join('. ') + '.', meta: { k: 'g1-words-match' } };
+      }],
+      [1, 'tap', function (lv) {
+        var n = lv === 1 ? R.int(1, 10) : R.int(11, 19), set = R.shuffle(G1.near(n, 3, 1, 20));
+        return { q: 'Tap the ten frame that shows <b>' + W(n) + '</b>.', type: 'tap', tiles: set.map(function (v) { return framePic(v, 16); }), answer: set.indexOf(n), answerText: 'the frame with ' + n,
+          hint: W(n) + ' is ' + n + '. Find the frame with ' + n + '.', steps: [W(n) + ' is the number ' + n + '.', 'Count the counters in each frame.'],
+          explain: W(n) + ' is ' + n + '.', meta: { k: 'g1-words-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(13, 19), t = n % 10, who = nm(), truth = !R.int(0, 2), said = truth ? n : t * 10;
+        var right = W(n) + ' is 10 and ' + t + ', so it is written ' + n + '.';
+        return G1.tf(who + ' wrote <b>' + W(n) + '</b> as <span class="math">' + said + '</span>. True or false: ' + who + ' is right.', truth, right,
+          ['The word starts with "' + W(t) + '", so the ' + t + ' goes first.', '"Teen" numbers are all tens.', 'Number words never sound like their numbers.'], { k: 'g1-words-tf', w: W(n), said: said },
+          { hint: '"Teen" means ten and some more.' });
+      }]
+    ],
+    'c-next': [
+      [1, 'line', function (lv) {
+        var n = lv === 1 ? R.int(2, 18) : R.int(20, 48), after = R.int(0, 1), lo = Math.max(0, n - 5), ans = after ? n + 1 : n - 1;
+        return { q: 'Put the marker on the number just <b>' + (after ? 'after' : 'before') + '</b> ' + n + '.', type: 'line', min: lo, max: lo + 10, tick: 1, every: lv === 1 ? 1 : 5, snap: 1, answer: ans,
+          hint: after ? 'After means one more. One jump to the right.' : 'Before means one less. One jump to the left.', steps: ['Find ' + n + '.', 'Move one step ' + (after ? 'right' : 'left') + ': ' + ans + '.'],
+          explain: ans + ' comes just ' + (after ? 'after' : 'before') + ' ' + n + '.', meta: { k: 'g1-next-line', n: n, after: after } };
+      }],
+      [1, 'fill', function (lv) {
+        var n = lv === 1 ? R.int(2, 19) : R.int(20, 49);
+        return { q: 'Fill in the numbers just before and just after.', type: 'fill', fill: '<span class="math">[[]], <b>' + n + '</b>, [[]]</span>', answers: [n - 1, n + 1],
+          hint: 'Before is one less. After is one more.', steps: ['One less than ' + n + ' is ' + (n - 1) + '.', 'One more than ' + n + ' is ' + (n + 1) + '.'],
+          explain: (n - 1) + ', ' + n + ', ' + (n + 1) + '.', meta: { k: 'g1-next-fill', n: n } };
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), c = R.pick([['stickers', 'gets'], ['marbles', 'finds'], ['shells', 'picks up'], ['pine cones', 'finds']]), st = R.int(lv === 2 ? 8 : 20, lv === 2 ? 19 : 45), k = R.int(1, 3);
+        return { q: who + ' has ' + st + ' ' + c[0] + '. ' + who + ' ' + c[1] + ' ' + k + ' more. Count on. How many now?', type: 'num', answer: st + k,
+          hint: 'Start at ' + st + '. Count on ' + k + '.', steps: ['Say ' + st + ' in your head.', 'Count on ' + k + ': ' + skipList(1, st + 1, k).join(', ') + '.'],
+          explain: st + ' and ' + k + ' more is ' + (st + k) + '.', meta: { k: 'g1-next-story', st: st, add: k } };
+      }]
+    ],
+    'c-skip': [
+      [1, 'order', function (lv) {
+        var by = lv === 1 ? 10 : lv === 2 ? 5 : R.pick([2, 5, 10]), len = 4, start = by * R.int(1, Math.floor(50 / by) - len + 1);
+        return { q: 'Count by <b>' + by + 's</b>. Put the cards in order.', type: 'order', items: skipList(by, start, len).map(String),
+          hint: 'Start with the smallest. Each card is ' + by + ' more.', steps: ['Find the smallest number: ' + start + '.', 'Then add ' + by + ' each time.'],
+          explain: 'Counting by ' + by + 's: ' + skipList(by, start, len).join(', ') + '.', meta: { k: 'g1-skip-order', by: by } };
+      }],
+      [1, 'fill', function (lv) {
+        var by = lv === 1 ? 10 : lv === 2 ? 5 : 2, len = 5, start = by === 10 ? 10 : by * R.int(1, Math.floor(50 / by) - len + 1), s = skipList(by, start, len);
+        return { q: 'Count by <b>' + by + 's</b>. Fill in the missing numbers.', type: 'fill', fill: '<span class="math">' + s[0] + ', ' + s[1] + ', [[]], ' + s[3] + ', [[]]</span>', answers: [s[2], s[4]],
+          hint: 'Each number is ' + by + ' more than the one before.', steps: [s[1] + ' and ' + by + ' more is ' + s[2] + '.', s[3] + ' and ' + by + ' more is ' + s[4] + '.'],
+          explain: s.join(', ') + '.', meta: { k: 'g1-skip-fill', by: by } };
+      }],
+      [2, 'pick', function (lv) {
+        var by = lv === 2 ? R.pick([5, 10]) : R.pick([2, 5]), opts = [], right = 0;
+        while (opts.length < 5) {
+          var v = R.int(2, 50), fits = v % by === 0;
+          if (opts.indexOf(v) >= 0 || (fits && right >= 3) || (!fits && opts.length - right >= 3)) continue;
+          opts.push(v); if (fits) right++;
+        }
+        var ans = []; opts.forEach(function (v, j) { if (v % by === 0) ans.push(j); });
+        return { q: 'Pick every number you say when you count by <b>' + by + 's</b>.', type: 'pick', options: opts.map(String), answer: ans,
+          hint: 'Say the ' + by + 's: ' + skipList(by, by, 5).join(', ') + '...', steps: ['Count by ' + by + 's out loud.', 'Pick each number you say.'],
+          explain: 'Counting by ' + by + 's, you say ' + ans.map(function (j) { return opts[j]; }).sort(function (a, b) { return a - b; }).join(', ') + '.', meta: { k: 'g1-skip-pick', by: by, opts: opts } };
+      }]
+    ],
+    'c-est': [
+      [1, 'tap', function (lv) {
+        var marks = lv === 1 ? [5, 20, 50] : [10, 25, 40], target = R.pick(marks), kind = R.pick(['apple', 'star', 'flower', 'leaf']);
+        var counts = marks.map(function (m) { return Math.max(3, m + R.int(-2, 2)); }), order = R.shuffle([0, 1, 2]);
+        return { q: 'Do not count every one. Tap the picture with <b>about ' + target + '</b>.', type: 'tap', tiles: order.map(function (i) { return heap(counts[i], kind); }), answer: order.indexOf(marks.indexOf(target)), answerText: 'the picture with about ' + target,
+          hint: 'Picture what 10 looks like. Which group looks closest to ' + target + '?', steps: ['Find the smallest group and the biggest group.', target + ' is ' + (target === marks[0] ? 'the smallest' : target === marks[2] ? 'the biggest' : 'in the middle') + '.'],
+          explain: 'That picture has ' + counts[marks.indexOf(target)] + ', which is about ' + target + '.', meta: { k: 'g1-est-tap', target: target, marks: marks } };
+      }],
+      [1, 'match', function (lv) {
+        var marks = lv === 1 ? [5, 20, 50] : [10, 25, 40], kind = R.pick(['apple', 'star', 'flower', 'leaf']);
+        return { q: 'Do not count every one. Match each picture to the best estimate.', type: 'match', pairs: marks.map(function (m) { return [heap(Math.max(3, m + R.int(-2, 2)), kind, 200, 120), 'about ' + m]; }),
+          hint: 'The smallest group goes with the smallest number.', steps: ['Find the smallest group and the biggest group first.'],
+          explain: 'The smallest group is about ' + marks[0] + ' and the biggest is about ' + marks[2] + '.', meta: { k: 'g1-est-match', marks: marks } };
+      }],
+      [2, 'mistake', function (lv) {
+        var marks = lv === 2 ? [5, 20, 50] : [10, 25, 40], c = R.pick(marks), n = Math.max(3, c + R.int(-2, 2)), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? c : R.pick(marks.filter(function (m) { return m !== c; })), kind = R.pick(['apple', 'star', 'flower', 'leaf']);
+        var right = 'There are about ' + c + '. An estimate should be close to the real number.';
+        return G1.tf(who + ' did not count every one and said "about <b>' + said + '</b>". Is that a good estimate?', truth, right,
+          ['Any number is a good estimate.', 'An estimate must be exactly right.', 'Bigger guesses are always better.'], { k: 'g1-est-tf', said: said, marks: marks },
+          { fig: heap(n, kind, 300, 180), hint: 'Picture a group of 10. About how many groups of 10 are there?' });
+      }]
+    ]
+  };
+  G1.shapes('counting', SHAPES);
 })();

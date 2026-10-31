@@ -427,4 +427,121 @@ A.stepHtml('hf1', 'Parts to colour', 1) + '<div class="fig" id="hffig"></div><di
       { id: 'g-compare', name: 'Bigger or smaller piece', code: 'B1.8', gen: qCompare }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return R.pick(PEOPLE); };
+  function groupSize(lv) { var g = lv === 1 ? 2 : R.int(2, 4), k = R.int(1, lv === 1 ? 5 : Math.floor(10 / g)); return [g, k]; }
+  /* two plates side by side, for "is it fair?" */
+  function twoPlates(a, b) { return '<div class="vrow">' + plates(1, a, { label: a + ' cookies' }) + plates(1, b, { label: b + ' cookies' }) + '</div>'; }
+  var SHAPES = {
+    'g-groups': [
+      [1, 'tap', function (lv) {
+        var p = groupSize(lv), g = p[0], k = p[1], set = R.shuffle([[g, k], [g, k === 1 ? 2 : k - 1], [g + 1, k]]);
+        return { q: 'Tap the picture that shows <b>' + g + ' groups of ' + k + '</b>.', type: 'tap', tiles: set.map(function (x) { return plates(x[0], x[1]); }), answer: set.map(function (x) { return x.join(); }).indexOf(g + ',' + k), answerText: g + ' plates with ' + k + ' on each',
+          hint: 'Count the plates. Then count the cookies on one plate.', steps: ['You want ' + g + ' plates.', 'Each plate needs ' + k + ' cookie' + (k > 1 ? 's' : '') + '.'],
+          explain: g + ' groups of ' + k + ' make ' + g * k + '.', meta: { k: 'g1-groups-tap' } };
+      }],
+      [1, 'story', function (lv) {
+        var p = groupSize(lv), g = p[0], k = p[1], c = R.pick([['bags', 'apples'], ['boxes', 'crayons'], ['nests', 'eggs'], ['vases', 'flowers']]);
+        return { q: 'There are ' + g + ' ' + c[0] + '. Each has ' + k + ' ' + c[1] + '. How many ' + c[1] + ' in all?', type: 'num', answer: g * k,
+          hint: 'Count by ' + k + 's, one number for each of the ' + c[0] + '.', steps: ['Add ' + k + ', ' + g + ' times.'],
+          explain: g + ' groups of ' + k + ' make ' + g * k + '.', meta: { k: 'g1-groups-story' } };
+      }],
+      [2, 'fill', function (lv) {
+        var p = groupSize(lv), g = Math.max(2, p[0]), k = Math.max(1, Math.min(p[1], Math.floor(10 / g))), blanks = [];
+        for (var i = 0; i < g; i++) blanks.push('[[]]');
+        var ans = blanks.map(function () { return k; }).concat([g * k]);
+        return { q: 'Fill in the adding sentence for the picture.', type: 'fill', fig: plates(g, k), fill: blanks.join(' + ') + ' = [[]]', answers: ans,
+          hint: 'Write how many are on each plate. Then add.', steps: ['Each plate has ' + k + '.', 'Add them: ' + ans.slice(0, g).join(' + ') + ' = ' + g * k + '.'],
+          explain: ans.slice(0, g).join(' + ') + ' = ' + g * k + '.', meta: { k: 'g1-groups-fill' } };
+      }]
+    ],
+    'g-share': [
+      [1, 'tap', function (lv) {
+        var each = R.int(2, lv === 1 ? 3 : 5), set = R.shuffle([[each, each], [each + 1, each - 1], [each - 1, each + 1]]);
+        return { q: (each * 2) + ' cookies are shared by 2 friends. Tap the <b>fair</b> share.', type: 'tap', tiles: set.map(function (x) { return twoPlates(x[0], x[1]); }), answer: set.map(function (x) { return x[0] === x[1]; }).indexOf(true), answerText: each + ' cookies each',
+          hint: 'Fair means each plate has the same number.', steps: ['Count the cookies on each plate.', 'Fair means both plates match.'],
+          explain: 'Fair: ' + each + ' and ' + each + '.', meta: { k: 'g1-share-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var n = R.int(2, 5) * 2 + (lv === 1 ? 0 : 1), each = Math.floor(n / 2), left = n % 2, who = nm(), truth = !R.int(0, 2), said = truth ? each : each + 1;
+        var right = n + ' shared by 2 is ' + each + ' each' + (left ? ', with 1 left over.' : '.');
+        return G.tf(who + ' shares ' + n + ' cookies fairly with a friend. ' + who + ' says each gets <b>' + said + '</b> whole cookies. True or false: ' + who + ' is right.', truth, right,
+          ['The one who shares gets more.', 'Fair means everyone gets ' + n + '.', 'Leftovers go to one person.'], { k: 'g1-share-tf', n: n, said: said },
+          { hint: 'Deal them out one at a time.' });
+      }],
+      [2, 'fill', function (lv) {
+        var p = lv === 3 ? R.pick([2, 4]) : 2, each = R.int(1, 4), left = R.int(0, p - 1), n = p * each + left;
+        return { q: n + ' cookies are shared fairly by ' + p + ' friends. Fill in the blanks.', type: 'fill', fill: 'Each gets [[]] whole cookies. [[]] left over.', answers: [each, left],
+          hint: 'Deal them out one at a time.', steps: ['Give one to each friend, round and round.', 'Each gets ' + each + '. ' + left + ' left over.'],
+          explain: n + ' shared by ' + p + ' is ' + each + ' each, with ' + left + ' left over.', meta: { k: 'g1-share-fill' } };
+      }]
+    ],
+    'g-half': [
+      [1, 'pick', function (lv) {
+        var n = lv === 1 ? 2 : 4, m = n === 2 ? 4 : 2, all = [[bar(n, 0, { w: 120, h: 40 }), 1], [bar(n, 0, { w: 120, h: 40, bad: true }), 0], [bar(m, 0, { w: 120, h: 40 }), 1], [bar(m, 0, { w: 120, h: 40, bad: true }), 0]];
+        all = R.shuffle(all);
+        var opts = all.map(function (x) { return x[0]; }), ans = []; all.forEach(function (x, j) { if (x[1]) ans.push(j); });
+        return { q: 'Pick every sandwich cut into <b>equal</b> parts.', type: 'pick', options: opts, answer: ans,
+          hint: 'Equal parts are all the same size.', steps: ['Look at each part. Are they all the same size?'],
+          explain: 'Equal parts are all the same size, however many there are.', meta: { k: 'g1-half-pick' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var n = lv === 1 ? 2 : 4, truth = !R.int(0, 2), who = nm(), name = n === 2 ? 'halves' : 'fourths';
+        var right = truth ? 'There are ' + n + ' equal parts, so they are ' + name + '.' : 'The parts are not the same size, so they are not ' + name + '.';
+        return G.tf(who + ' says this sandwich is cut into <b>' + name + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Any ' + n + ' parts are ' + name + '.', 'Big parts are always ' + name + '.', 'The number of parts does not matter.'], { k: 'g1-half-tf' },
+          { fig: bar(n, 0, { w: 200, h: 56, bad: !truth }), hint: name + ' must be equal parts.' });
+      }],
+      [2, 'match', function () {
+        var list = R.shuffle([[1, 'one whole'], [2, 'halves'], [4, 'fourths']]);
+        return { q: 'Match each sandwich to its name.', type: 'match', pairs: list.map(function (x) { return [bar(x[0], 0, { w: 120, h: 40 }), x[1]]; }),
+          hint: 'Count the equal parts.', steps: ['2 equal parts are halves. 4 equal parts are fourths.'],
+          explain: 'Not cut is one whole. 2 equal parts are halves. 4 equal parts are fourths.', meta: { k: 'g1-half-match' } };
+      }]
+    ],
+    'g-parts': [
+      [1, 'match', function () {
+        var list = R.shuffle([[1, 'one whole'], [2, 'one half'], [4, 'one fourth']]);
+        return { q: 'Match each shaded part to its name.', type: 'match', pairs: list.map(function (x) { return [pizza(x[0], 1, { r: 34 }), x[1]]; }),
+          hint: 'Count the equal parts of each pizza.', steps: ['2 equal parts: each is one half. 4 equal parts: each is one fourth.'],
+          explain: 'One of 2 equal parts is one half. One of 4 equal parts is one fourth.', meta: { k: 'g1-pname-match' } };
+      }],
+      [1, 'tap', function () {
+        var want = R.pick([2, 4]), set = R.shuffle([[2, 1], [4, 1], [4, 2]]).filter(function (x) { return !(want === 2 && x[0] === 4 && x[1] === 2); });
+        if (set.length < 3) set.push([1, 1]);
+        set = R.shuffle(set);
+        return { q: 'Tap the pizza with <b>' + FR[want] + '</b> shaded.', type: 'tap', tiles: set.map(function (x) { return pizza(x[0], x[1], { r: 40 }); }), answer: set.map(function (x) { return x.join(); }).indexOf(want + ',1'), answerText: 'the pizza cut into ' + want + ' with one part shaded',
+          hint: FR[want] + ' is one of ' + want + ' equal parts.', steps: ['Count the parts of each pizza.', 'Find ' + want + ' parts with one shaded.'],
+          explain: FR[want] + ' is one part out of ' + want + ' equal parts.', meta: { k: 'g1-pname-tap' } };
+      }],
+      [2, 'fill', function () {
+        return { q: 'Fill in the blanks.', type: 'fill', fill: '[[]] halves make one whole. [[]] fourths make one whole.', answers: [2, 4], fig: '<div class="vrow">' + pizza(2, 2, { r: 34 }) + pizza(4, 4, { r: 34 }) + '</div>',
+          hint: 'Count the equal parts in each whole pizza.', steps: ['A pizza cut in halves has 2 parts.', 'A pizza cut in fourths has 4 parts.'],
+          explain: '2 halves make one whole. 4 fourths make one whole.', meta: { k: 'g1-pname-fill' } };
+      }]
+    ],
+    'g-compare': [
+      [1, 'tap', function (lv) {
+        var a = 2, b = lv === 1 ? 4 : R.int(3, 6), big = R.int(0, 1), set = R.shuffle([a, b]), ans = big ? a : b;
+        return { q: 'Both pizzas are the same size. Tap the <b>' + (big ? 'bigger' : 'smaller') + '</b> shaded piece.', type: 'tap', tiles: set.map(function (n) { return pizza(n, 1, { r: 44 }); }), answer: set.indexOf(ans), answerText: FR[ans],
+          hint: 'More pieces means smaller pieces.', steps: ['Count the pieces in each pizza.', 'The pizza with fewer pieces has bigger pieces.'],
+          explain: FR[2] + ' is bigger than ' + FR[b] + '.', meta: { k: 'g1-pcmp-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var b = lv === 1 ? 4 : R.int(3, 8), who = nm(), truth = !R.int(0, 2), x = truth ? 2 : b, y = truth ? b : 2;
+        var right = FR[2] + ' is bigger than ' + FR[b] + '. Fewer equal parts means bigger parts.';
+        return G.tf(who + ' says <b>' + FR[x] + '</b> of a pizza is bigger than <b>' + FR[y] + '</b> of the same pizza. True or false: ' + who + ' is right.', truth, right,
+          [b + ' is more than 2, so ' + FR[b] + ' is bigger.', 'All pieces are the same size.', 'The piece with the longer name is bigger.'], { k: 'g1-pcmp-tf' },
+          { hint: 'Picture the pizza cut into 2, then into ' + b + '.' });
+      }],
+      [2, 'order', function (lv) {
+        var ds = R.shuffle([2, 3, 4, 5, 6, 8]).slice(0, 3).sort(function (a, b) { return a - b; });
+        return { q: 'Put the pieces of the same pizza in order from <b>biggest to smallest</b>.', type: 'order', items: ds.map(function (d) { return FR[d]; }), first: 'biggest', last: 'smallest',
+          hint: 'Fewer parts means bigger parts.', steps: ['The fewest parts make the biggest piece: ' + FR[ds[0]] + '.'],
+          explain: ds.map(function (d) { return FR[d]; }).join(', ') + '.', meta: { k: 'g1-pcmp-order' } };
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

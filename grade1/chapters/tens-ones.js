@@ -454,4 +454,174 @@
       { id: 't-order', name: 'Put in order', code: 'B1.3', gen: qOrder }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  function numIn(lv) { return lv === 1 ? R.int(11, 19) : R.int(21, 49); }
+  function tenOnes(n) { return pl(tn(n), 'ten') + ' and ' + pl(on(n), 'one'); }
+  function three(lv, gap) {
+    var v = [];
+    while (v.length < 3) { var x = lv === 1 ? R.int(1, 20) : R.int(10, 50); if (v.every(function (y) { return Math.abs(y - x) >= (gap || 1); })) v.push(x); }
+    return v;
+  }
+  var SHAPES = {
+    't-read': [
+      [1, 'build', function (lv) {
+        var n = numIn(lv);
+        return { q: 'Show <b>' + n + '</b> with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', opts: { cols: ['t', 'o'] }, answer: n,
+          hint: 'A rod is 10. A small cube is 1. ' + n + ' needs ' + pl(tn(n), 'rod') + '.', steps: [n + ' is ' + tenOnes(n) + '.', 'Add ' + pl(tn(n), 'rod') + ' and ' + pl(on(n), 'small cube') + '.'],
+          explain: tenOnes(n) + ' make ' + n + '.', meta: { k: 'g1-read-build' } };
+      }],
+      [1, 'tap', function (lv) {
+        var n = numIn(lv), alt = [on(n) * 10 + tn(n), n + 1, n - 1, n + 10, n - 10].filter(function (v) { return v !== n && v > 0 && v <= 50 && on(v) <= 9; }), set = R.shuffle([n].concat(alt.slice(0, 2)));
+        return { q: 'Tap the blocks that show <b>' + n + '</b>.', type: 'tap', tiles: set.map(function (v) { return blocks(v); }), answer: set.indexOf(n), answerText: 'the blocks with ' + tenOnes(n),
+          hint: 'Count the rods by 10s, then count on the small cubes.', steps: [n + ' is ' + tenOnes(n) + '.', 'Look for ' + pl(tn(n), 'rod') + ' and ' + pl(on(n), 'small cube') + '.'],
+          explain: tenOnes(n) + ' make ' + n + '.', meta: { k: 'g1-read-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var v = three(lv, 2);
+        return { q: 'Match the blocks to their numbers.', type: 'match', pairs: v.map(function (x) { return [blocks(x), String(x)]; }),
+          hint: 'Count the rods by 10s, then count on the small cubes.', steps: ['A rod is 10. A small cube is 1.'],
+          explain: v.map(function (x) { return x + ' is ' + tenOnes(x); }).join('. ') + '.', meta: { k: 'g1-read-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n; do { n = R.int(12, 49); } while (on(n) === 0 || on(n) === tn(n));
+        var who = nm(), truth = !R.int(0, 2), said = truth ? n : on(n) * 10 + tn(n);
+        var right = 'There ' + (tn(n) === 1 ? 'is 1 rod' : 'are ' + tn(n) + ' rods') + ' and ' + pl(on(n), 'small cube') + ', so the blocks show ' + n + '.';
+        return G.tf(who + ' says these blocks show <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Count the small cubes first, then the rods.', 'Every block is worth 1.', 'Rods are worth 1 and cubes are worth 10.'], { k: 'g1-read-tf', said: said },
+          { fig: blocks(n), hint: 'Count the rods by 10s first.' });
+      }]
+    ],
+    't-parts': [
+      [1, 'fill', function (lv) {
+        var n = numIn(lv);
+        return { q: 'Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] tens and [[]] ones', answers: [tn(n), on(n)], fig: lv === 1 ? blocks(n) : '',
+          hint: 'The first digit is the tens. The last digit is the ones.', steps: [n + ' is ' + tenOnes(n) + '.'],
+          explain: n + ' = ' + tenOnes(n) + '.', meta: { k: 'g1-parts-fill' } };
+      }],
+      [1, 'build', function (lv) {
+        var t = lv === 1 ? 1 : R.int(2, 4), o = R.int(1, 9);
+        return { q: 'Build <b>' + pl(t, 'ten') + ' and ' + pl(o, 'one') + '</b>. Then press Check.', type: 'build', tool: 'base10', opts: { cols: ['t', 'o'] }, answer: t * 10 + o,
+          hint: 'A ten is a rod. A one is a small cube.', steps: ['Add ' + pl(t, 'rod') + '.', 'Add ' + pl(o, 'small cube') + '.'],
+          explain: pl(t, 'ten') + ' and ' + pl(o, 'one') + ' make ' + (t * 10 + o) + '.', meta: { k: 'g1-parts-build' } };
+      }],
+      [2, 'match', function (lv) {
+        var v = three(lv, 1).map(function (x) { return x < 10 ? x + 10 : x; });
+        if (new Set(v).size < 3) v = [14, 27, 41];
+        return { q: 'Match each one to its number.', type: 'match', pairs: v.map(function (x) { return [tenOnes(x), String(x)]; }),
+          hint: 'The tens give the first digit. The ones give the last digit.', steps: ['3 tens and 4 ones is 34.'],
+          explain: v.map(function (x) { return tenOnes(x) + ' is ' + x; }).join('. ') + '.', meta: { k: 'g1-parts-match' } };
+      }]
+    ],
+    't-ten': [
+      [1, 'line', function (lv) {
+        var n = lv === 1 ? R.int(1, 4) * 10 : R.int(11, 40), more = n <= 10 ? 1 : n > 40 ? 0 : R.int(0, 1), ans = more ? n + 10 : n - 10;
+        return { q: 'Put the marker on <b>ten ' + (more ? 'more' : 'less') + '</b> than ' + n + '.', type: 'line', min: 0, max: 50, tick: 1, every: 10, snap: 1, answer: ans,
+          hint: 'Ten ' + (more ? 'more' : 'less') + ' is one big jump ' + (more ? 'right' : 'left') + '.', steps: ['Start at ' + n + '.', 'Jump 10 ' + (more ? 'right' : 'left') + ': ' + ans + '.'],
+          explain: 'Ten ' + (more ? 'more' : 'less') + ' than ' + n + ' is ' + ans + '.', meta: { k: 'g1-ten-line' } };
+      }],
+      [1, 'fill', function (lv) {
+        var n = lv === 1 ? R.int(1, 3) * 10 + (R.int(0, 1) ? 0 : R.int(1, 9)) : R.int(11, 39);
+        if (n < 11) n += 10;
+        return { q: 'Fill in ten less and ten more.', type: 'fill', fill: '<span class="math">[[]] &larr; <b>' + n + '</b> &rarr; [[]]</span>', answers: [n - 10, n + 10],
+          hint: 'Take away one ten. Then add one ten. The ones digit stays the same.', steps: ['Ten less than ' + n + ' is ' + (n - 10) + '.', 'Ten more than ' + n + ' is ' + (n + 10) + '.'],
+          explain: (n - 10) + ', ' + n + ', ' + (n + 10) + '. The ones digit stays ' + on(n) + '.', meta: { k: 'g1-ten-fill' } };
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), c = R.pick(['stickers', 'cards', 'beads']), n = R.int(11, 39), more = R.int(0, 1);
+        var q = more ? who + ' has ' + n + ' ' + c + '. ' + who + ' gets a pack of 10 more. How many ' + c + ' now?' : who + ' has ' + n + ' ' + c + '. ' + who + ' gives a pack of 10 to a friend. How many ' + c + ' are left?';
+        return { q: q, type: 'num', answer: more ? n + 10 : n - 10, hint: 'A pack of 10 is one ten.', steps: [(more ? 'Ten more' : 'Ten less') + ' than ' + n + '.', 'The ones digit stays ' + on(n) + '.'],
+          explain: (more ? 'Ten more' : 'Ten less') + ' than ' + n + ' is ' + (more ? n + 10 : n - 10) + '.', meta: { k: 'g1-ten-story', more: more } };
+      }]
+    ],
+    't-split': [
+      [1, 'match', function (lv) {
+        var whole = lv === 1 ? 10 : lv === 2 ? R.int(11, 20) : R.int(21, 30), as = [];
+        while (as.length < 3) { var a = R.int(1, whole - 1); if (as.indexOf(a) < 0) as.push(a); }
+        return { q: 'Each one makes <b>' + whole + '</b>. Match it to its missing part.', type: 'match', pairs: as.map(function (a) { return [a + ' + ?', String(whole - a)]; }),
+          hint: 'Count on from the first number to ' + whole + '.', steps: ['For ' + as[0] + ' + ?, count on from ' + as[0] + ' to ' + whole + ': ' + (whole - as[0]) + '.'],
+          explain: as.map(function (a) { return a + ' + ' + (whole - a) + ' = ' + whole; }).join('. ') + '.', meta: { k: 'g1-split-match', whole: whole } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), c = R.pick([['apples', 'red', 'green'], ['socks', 'blue', 'white'], ['crayons', 'long', 'short'], ['boots', 'black', 'red']]);
+        var whole = lv === 1 ? R.int(5, 10) : lv === 2 ? R.int(11, 20) : R.int(21, 40), a = lv === 3 ? R.int(1, 3) * 10 : R.int(1, whole - 1);
+        if (a >= whole) a = 10;
+        return { q: who + ' has ' + whole + ' ' + c[0] + '. ' + a + ' are ' + c[1] + '. The rest are ' + c[2] + '. How many are ' + c[2] + '?', type: 'num', answer: whole - a,
+          hint: 'The whole is ' + whole + '. One part is ' + a + '. Find the other part.', steps: ['Start at ' + a + ' and count on to ' + whole + '.', 'That is ' + (whole - a) + '.'],
+          explain: a + ' and ' + (whole - a) + ' make ' + whole + '.', meta: { k: 'g1-split-story' } };
+      }],
+      [2, 'pick', function (lv) {
+        var whole = lv === 2 ? 10 : R.int(12, 20), opts = [], good = 0;
+        while (opts.length < 5) {
+          var a = R.int(1, whole - 1), ok = good < 3 && R.int(0, 1), b = ok ? whole - a : whole - a + R.pick([1, -1, 2]), t = a + ' + ' + b;
+          if (b < 1 || opts.indexOf(t) >= 0 || (!ok && opts.length - good >= 3)) continue;
+          opts.push(t); if (ok) good++;
+        }
+        if (!good) opts[0] = '5 + ' + (whole - 5);
+        var ans = []; opts.forEach(function (t, j) { var p = t.split(' + '); if (+p[0] + +p[1] === whole) ans.push(j); });
+        return { q: 'Pick every pair that makes <b>' + whole + '</b>.', type: 'pick', options: opts, answer: ans,
+          hint: 'Add each pair. Does it make ' + whole + '?', steps: ['Count on from the first number in each pair.'],
+          explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' make ' + whole + '.', meta: { k: 'g1-split-pick', opts: opts } };
+      }]
+    ],
+    't-compare': [
+      [1, 'tap', function (lv) {
+        var a = numIn(lv), b; do { b = numIn(lv); } while (b === a);
+        var more = R.int(0, 1), ans = more ? Math.max(a, b) : Math.min(a, b), set = R.shuffle([a, b]);
+        return { q: 'Tap the blocks that show the <b>' + (more ? 'greater' : 'lesser') + '</b> number.', type: 'tap', tiles: set.map(function (v) { return blocks(v); }), answer: set.indexOf(ans), answerText: 'the blocks for ' + ans,
+          hint: 'Compare the rods first. More rods means a greater number.', steps: ['Count the rods in each picture.', tn(a) === tn(b) ? 'The rods are the same, so compare the small cubes.' : 'The one with more rods is greater.'],
+          explain: Math.max(a, b) + ' is greater than ' + Math.min(a, b) + '.', meta: { k: 'g1-cmp-tap', more: more } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a, b; do { a = numIn(lv); b = numIn(lv); } while (a === b || (lv > 1 && tn(a) === tn(b)));
+        var who = nm(), big = Math.max(a, b), small = Math.min(a, b), truth = !R.int(0, 2), x = truth ? big : small, y = truth ? small : big;
+        var right = big + ' is greater than ' + small + (tn(a) !== tn(b) ? ', because it has more tens.' : ', because it has more ones.');
+        return G.tf(who + ' says <b>' + x + '</b> is greater than <b>' + y + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['The number with the bigger ones digit is always greater.', 'Numbers that start with 1 are always least.', 'They are the same size.'], { k: 'g1-cmp-tf', x: x, y: y },
+          { fig: pair(x, y), hint: 'Compare the tens first.' });
+      }],
+      [2, 'pick', function (lv) {
+        var x = R.int(15, 35), more = R.int(0, 1), opts = [], good = 0;
+        while (opts.length < 5) {
+          var v = R.int(Math.max(1, x - 15), Math.min(50, x + 15)), fits = more ? v > x : v < x;
+          if (v === x || opts.indexOf(v) >= 0 || (fits && good >= 3) || (!fits && opts.length - good >= 3)) continue;
+          opts.push(v); if (fits) good++;
+        }
+        var ans = []; opts.forEach(function (v, j) { if (more ? v > x : v < x) ans.push(j); });
+        return { q: 'Pick every number <b>' + (more ? 'greater' : 'less') + '</b> than ' + x + '.', type: 'pick', options: opts.map(String), answer: ans,
+          hint: 'Compare the tens first. If the tens are the same, compare the ones.', steps: ['Look at each number. Is it ' + (more ? 'greater' : 'less') + ' than ' + x + '?'],
+          explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' ' + (ans.length === 1 ? 'is ' : 'are ') + (more ? 'greater' : 'less') + ' than ' + x + '.', meta: { k: 'g1-cmp-pick', x: x, more: more, opts: opts } };
+      }]
+    ],
+    't-order': [
+      [1, 'order', function (lv) {
+        var v = three(lv, 2), sorted = v.slice().sort(function (a, b) { return a - b; });
+        if (lv > 1) { v.push(sorted[1] + 1 <= 50 && v.indexOf(sorted[1] + 1) < 0 ? sorted[1] + 1 : sorted[0] + 1); sorted = v.slice().sort(function (a, b) { return a - b; }); }
+        return { q: 'Put the numbers in order from <b>least to greatest</b>.', type: 'order', items: sorted.map(String), first: 'least', last: 'greatest',
+          hint: 'Find the number with the fewest tens first.', steps: ['Compare the tens. Then compare the ones.'],
+          explain: sorted.join(', ') + '.', meta: { k: 'g1-order-up' } };
+      }],
+      [1, 'story', function (lv) {
+        var names = A.Q ? A.Q.two() : ['Ava', 'Kai'], third = nm(); while (names.indexOf(third) >= 0) third = nm();
+        names.push(third);
+        var v = three(lv, 2), most = R.int(0, 1), c = R.pick(['apples', 'pine cones', 'shells', 'leaves']);
+        var ans = v.indexOf(most ? Math.max.apply(null, v) : Math.min.apply(null, v)), o = R.mc(names[ans], names.filter(function (x, i) { return i !== ans; }));
+        return { q: names.map(function (x, i) { return x + ' picked ' + v[i] + ' ' + c; }).join('. ') + '. Who picked the <b>' + (most ? 'most' : 'fewest') + '</b>?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Find the ' + (most ? 'greatest' : 'least') + ' number.', steps: ['Compare ' + v.join(', ') + '.', 'The ' + (most ? 'greatest' : 'least') + ' is ' + v[ans] + '.'],
+          explain: names[ans] + ' picked ' + v[ans] + ', the ' + (most ? 'most' : 'fewest') + '.', meta: { k: 'g1-order-story', most: most, v: v, names: names } };
+      }],
+      [2, 'mistake', function (lv) {
+        var t = R.int(1, 4), o; do { o = R.int(1, 9); } while (o === t || o * 10 + t > 50);
+        var v = [t * 10 + o, o * 10 + t, o * 10], sorted = v.slice().sort(function (a, b) { return a - b; }), who = nm(), truth = !R.int(0, 2);
+        var shown = truth ? sorted : [sorted[0], sorted[2], sorted[1]];
+        if (!truth && shown.join() === sorted.join()) shown = [sorted[1], sorted[0], sorted[2]];
+        var right = 'From least to greatest is ' + sorted.join(', ') + '. Compare the tens first, then the ones.';
+        return G.tf(who + ' put these in order from least to greatest: <span class="math">' + shown.join(', ') + '</span>. True or false: ' + who + ' is right.', truth, right,
+          ['Order the numbers by their ones digits.', 'Numbers that look alike are equal.', 'The first number is always the greatest.'], { k: 'g1-order-tf', shown: shown },
+          { hint: 'Compare the tens first.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

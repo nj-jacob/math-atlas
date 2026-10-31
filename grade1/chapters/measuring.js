@@ -443,4 +443,163 @@
       { id: 'm-cal', name: 'The calendar', code: 'E2.3', gen: qCal }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  var ASK = [['Which bag is heavier?', 'mass'], ['Which pencil is longer?', 'length'], ['Which jug holds more water?', 'capacity'], ['Which rug covers more floor?', 'area'],
+    ['How tall is the door?', 'length'], ['How much juice fits in the bottle?', 'capacity'], ['Which watermelon weighs the most?', 'mass'], ['How much of the table does the placemat cover?', 'area']];
+  var COLNAME = ['red', 'blue', 'green', 'purple'];
+  function someRibbons(k, lv) {
+    var ns = R.shuffle([2, 3, 4, 5, 6, 7, 8]).slice(0, k), names = R.shuffle(COLNAME).slice(0, k);
+    return ns.map(function (n, i) { return { n: n, c: COLS[COLNAME.indexOf(names[i])], name: names[i] }; });
+  }
+  function sizes(k, lo, hi) { var v = []; while (v.length < k) { var x = R.int(lo, hi); if (v.indexOf(x) < 0) v.push(x); } return v; }
+  var SHAPES = {
+    'm-attr': [
+      [1, 'match', function () {
+        var byKind = {}; R.shuffle(ASK).forEach(function (a) { if (!byKind[a[1]]) byKind[a[1]] = a; });
+        var list = R.shuffle(Object.keys(byKind)).slice(0, 3).map(function (k) { return byKind[k]; });
+        return { q: 'What does each question measure? Match them.', type: 'match', pairs: list.map(function (a) { return [a[0], a[1]]; }),
+          hint: 'Heavy is mass. Long or tall is length. Holds is capacity. Covers is area.', steps: ['Look for the measuring word in each question.'],
+          explain: list.map(function (a) { return '"' + a[0] + '" is about ' + a[1]; }).join('. ') + '.', meta: { k: 'g1-attr-match' } };
+      }],
+      [1, 'pick', function () {
+        var want = R.pick(['length', 'mass', 'capacity', 'area']), good = R.shuffle(ASK.filter(function (a) { return a[1] === want; })), bad = R.shuffle(ASK.filter(function (a) { return a[1] !== want; })).slice(0, 2), all = R.shuffle(good.concat(bad));
+        var ans = []; all.forEach(function (a, j) { if (a[1] === want) ans.push(j); });
+        return { q: 'Pick every question about <b>' + want + '</b>.', type: 'pick', options: all.map(function (a) { return a[0]; }), answer: ans,
+          hint: { length: 'Length is how long or tall.', mass: 'Mass is how heavy.', capacity: 'Capacity is how much it holds.', area: 'Area is how much it covers.' }[want], steps: ['Look for the measuring word in each question.'],
+          explain: ans.map(function (j) { return '"' + all[j][0] + '"'; }).join(' and ') + ' ' + (ans.length > 1 ? 'are' : 'is') + ' about ' + want + '.', meta: { k: 'g1-attr-pick' } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.pick(ASK), who = nm(), truth = !R.int(0, 2), said = truth ? a[1] : R.pick(['length', 'mass', 'capacity', 'area'].filter(function (x) { return x !== a[1]; }));
+        var right = '"' + a[0] + '" is about ' + a[1] + '.';
+        return G.tf(who + ' says "' + a[0] + '" is about <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Every question is about length.', 'Big things are always about mass.', 'Capacity and area are the same.'], { k: 'g1-attr-tf' },
+          { hint: 'Find the measuring word.' });
+      }]
+    ],
+    'm-length': [
+      [1, 'tap', function (lv) {
+        var items = someRibbons(lv === 1 ? 2 : 3), longest = R.int(0, 1), best = items.slice().sort(function (a, b) { return longest ? b.n - a.n : a.n - b.n; })[0];
+        return { q: 'Tap the <b>' + (longest ? 'longest' : 'shortest') + '</b> ribbon.', type: 'tap', tiles: items.map(function (it) { return ribbons([{ n: it.n, c: it.c, name: it.name }], { label: 'The ' + it.name + ' ribbon' }); }), answer: items.indexOf(best), answerText: 'the ' + best.name + ' ribbon',
+          hint: 'The ribbons all start at the dashed line. Which one ends ' + (longest ? 'furthest' : 'soonest') + '?', steps: ['Line up the ends. Compare where they stop.'],
+          explain: 'The ' + best.name + ' ribbon is the ' + (longest ? 'longest' : 'shortest') + '.', meta: { k: 'g1-len-tap' } };
+      }],
+      [1, 'line', function (lv) {
+        var it = someRibbons(1)[0];
+        return { q: 'How many cubes long is the ' + it.name + ' ribbon? Put the marker on that number.', type: 'line', min: 0, max: 10, tick: 1, every: 1, snap: 1, answer: it.n, fig: ribbons([it], { cubes: true }),
+          hint: 'Count the cubes under the ribbon.', steps: ['Count the cubes: ' + it.n + '.'],
+          explain: 'The ribbon is ' + it.n + ' cubes long.', meta: { k: 'g1-len-line' } };
+      }],
+      [2, 'order', function (lv) {
+        var items = someRibbons(3), sorted = items.slice().sort(function (a, b) { return a.n - b.n; });
+        return { q: 'Put the ribbons in order from <b>shortest to longest</b>.', type: 'order', items: sorted.map(function (it) { return it.name; }), first: 'shortest', last: 'longest', fig: ribbons(items, { cubes: lv === 2 }),
+          hint: 'They all start at the dashed line. Compare where they end.', steps: ['The shortest is ' + sorted[0].name + '.'],
+          explain: sorted.map(function (it) { return it.name + ' (' + it.n + ')'; }).join(', ') + '.', meta: { k: 'g1-len-order' } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.int(4, 6), b = a + R.int(1, 2), names = R.shuffle(COLNAME).slice(0, 2), who = nm();
+        var items = [{ n: a, c: COLS[COLNAME.indexOf(names[0])], name: names[0], off: 3 }, { n: b, c: COLS[COLNAME.indexOf(names[1])], name: names[1], off: 0 }];
+        var right = 'The ' + names[1] + ' ribbon is longer. It is ' + b + ' cubes long, and the ' + names[0] + ' one is ' + a + '. The ' + names[0] + ' one just starts further along.';
+        return G.tf('The ribbons do not start at the same place. ' + who + ' says the <b>' + names[0] + '</b> ribbon is longer because it reaches further. True or false: ' + who + ' is right.', false, right,
+          ['The ribbon that reaches further is always longer.', 'Ribbons that start later are longer.', 'You cannot compare ribbons.'], { k: 'g1-len-tf' },
+          { fig: ribbons(items, { cubes: true }), hint: 'Count the cubes under each ribbon.' });
+      }]
+    ],
+    'm-area': [
+      [1, 'tap', function (lv) {
+        var ns = sizes(3, 3, lv === 1 ? 10 : 9), more = R.int(0, 1), ans = more ? Math.max.apply(null, ns) : Math.min.apply(null, ns), cols = ['#e04b3a', '#2c68cf', '#2f9a4c'];
+        return { q: 'Tap the shape that covers the <b>' + (more ? 'most' : 'fewest') + '</b> squares.', type: 'tap', tiles: ns.map(function (n, i) { return gridShape(blob(n), cols[i], 'A shape'); }), answer: ns.indexOf(ans), answerText: 'the shape with ' + ans + ' squares',
+          hint: 'Count the coloured squares in each shape.', steps: ['Count each shape: ' + ns.join(', ') + '.'],
+          explain: 'That shape covers ' + ans + ' squares.', meta: { k: 'g1-area-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a = R.int(4, 6), b = a + R.int(2, 3), who = nm();
+        var long = []; for (var i = 0; i < a; i++) long.push([i, 0]);
+        var tall = []; for (var j = 0; j < b; j++) tall.push([j % 3, Math.floor(j / 3)]);
+        var right = 'Count the squares: the red shape covers ' + a + ' and the blue shape covers ' + b + '. Blue covers more.';
+        return G.tf(who + ' says the <b>red</b> shape covers more because it is longer. True or false: ' + who + ' is right.', false, right,
+          ['Longer shapes always cover more.', 'Taller shapes always cover less.', 'You cannot count squares.'], { k: 'g1-area-tf' },
+          { fig: '<div class="vrow"><figure>' + gridShape(long, '#e04b3a', 'Red shape') + '<figcaption>red</figcaption></figure><figure>' + gridShape(tall, '#2c68cf', 'Blue shape') + '<figcaption>blue</figcaption></figure></div>', hint: 'Count the squares in each shape.' });
+      }],
+      [2, 'order', function () {
+        var ns = sizes(3, 3, 10).sort(function (a, b) { return a - b; }), cols = ['#e04b3a', '#2c68cf', '#2f9a4c'];
+        return { q: 'Put the shapes in order from <b>covers least</b> to <b>covers most</b>.', type: 'order', items: ns.map(function (n, i) { return gridShape(blob(n), cols[i], 'A shape'); }), first: 'least', last: 'most',
+          hint: 'Count the coloured squares in each shape.', steps: ['The shapes cover ' + ns.join(', ') + ' squares.'],
+          explain: ns.join(', ') + ' squares, from least to most.', meta: { k: 'g1-area-order' } };
+      }]
+    ],
+    'm-mass': [
+      [1, 'tap', function (lv) {
+        var p = R.shuffle(HEAVY.slice()).slice(0, 2).sort(function (x, y) { return HEAVY.indexOf(x) - HEAVY.indexOf(y); }), flip = R.int(0, 1), L = flip ? p[1] : p[0], Rr = flip ? p[0] : p[1], heavier = R.int(0, 1);
+        var ans = heavier ? p[1] : p[0];
+        return { q: 'Look at the balance. Tap the <b>' + (heavier ? 'heavier' : 'lighter') + '</b> one.', type: 'tap', fig: scale(L, Rr, flip ? 'L' : 'R'), tiles: [L, Rr].map(function (k) { return A.svg(80, 60, OBJ[k].draw(40, 30), 'the ' + OBJ[k].n); }), answer: ans === L ? 0 : 1, answerText: 'the ' + OBJ[ans].n,
+          hint: 'The heavier side goes down.', steps: ['Which side is lower? That one is heavier.'],
+          explain: 'The ' + OBJ[p[1]].n + ' is heavier. The ' + OBJ[p[0]].n + ' is lighter.', meta: { k: 'g1-mass-tap' } };
+      }],
+      [1, 'mistake', function () {
+        var p = R.shuffle(HEAVY.slice()).slice(0, 2).sort(function (x, y) { return HEAVY.indexOf(x) - HEAVY.indexOf(y); }), flip = R.int(0, 1), L = flip ? p[1] : p[0], Rr = flip ? p[0] : p[1], who = nm(), truth = !R.int(0, 2);
+        var said = truth ? p[1] : p[0];
+        var right = 'The side with the ' + OBJ[p[1]].n + ' goes down, so the ' + OBJ[p[1]].n + ' is heavier.';
+        return G.tf(who + ' says the <b>' + OBJ[said].n + '</b> is heavier. True or false: ' + who + ' is right.', truth, right,
+          ['The side that goes up is heavier.', 'Bigger things are always heavier.', 'A balance cannot show heavier.'], { k: 'g1-mass-tf' },
+          { fig: scale(L, Rr, flip ? 'L' : 'R'), hint: 'The heavier side goes down.' });
+      }],
+      [2, 'order', function () {
+        var p = R.shuffle(['feather', 'apple', 'book', 'pumpkin']).slice(0, 3).sort(function (x, y) { return HEAVY.indexOf(x) - HEAVY.indexOf(y); });
+        return { q: 'Put these in order from <b>lightest to heaviest</b>.', type: 'order', items: p.map(function (k) { return OBJ[k].n; }), first: 'lightest', last: 'heaviest',
+          hint: 'Picture holding each one in your hand.', steps: ['The lightest is the ' + OBJ[p[0]].n + '.'],
+          explain: p.map(function (k) { return OBJ[k].n; }).join(', ') + '.', meta: { k: 'g1-mass-order' } };
+      }]
+    ],
+    'm-cap': [
+      [1, 'tap', function (lv) {
+        var cups = sizes(lv === 1 ? 2 : 3, 2, 8), most = R.int(0, 1), ans = most ? Math.max.apply(null, cups) : Math.min.apply(null, cups), names = ['A', 'B', 'C'];
+        return { q: 'Each blue band is one cup. Tap the jug that holds the <b>' + (most ? 'most' : 'least') + '</b>.', type: 'tap', tiles: cups.map(function (c, i) { return jugs([{ cups: c, name: names[i] }]); }), answer: cups.indexOf(ans), answerText: 'jug ' + names[cups.indexOf(ans)],
+          hint: 'Count the blue bands in each jug.', steps: ['The jugs hold ' + cups.join(', ') + ' cups.'],
+          explain: 'Jug ' + names[cups.indexOf(ans)] + ' holds ' + ans + ' cups, the ' + (most ? 'most' : 'least') + '.', meta: { k: 'g1-cap-tap' } };
+      }],
+      [1, 'fill', function () {
+        var cups = sizes(2, 2, 8);
+        return { q: 'Each blue band is one cup. Fill in the blanks.', type: 'fill', fig: jugs([{ cups: cups[0], name: 'A' }, { cups: cups[1], name: 'B' }]), fill: 'Jug A holds [[]] cups. Jug B holds [[]] cups.', answers: cups,
+          hint: 'Count the blue bands in each jug.', steps: ['Jug A: ' + cups[0] + '. Jug B: ' + cups[1] + '.'],
+          explain: 'Jug A holds ' + cups[0] + ' cups and jug B holds ' + cups[1] + '.', meta: { k: 'g1-cap-fill' } };
+      }],
+      [2, 'mistake', function () {
+        var cups = sizes(2, 2, 8), who = nm(), truth = !R.int(0, 2), more = cups[0] > cups[1] ? 'A' : 'B', said = truth ? more : (more === 'A' ? 'B' : 'A');
+        var right = 'Jug ' + more + ' holds ' + Math.max.apply(null, cups) + ' cups, so it holds more.';
+        return G.tf(who + ' says jug <b>' + said + '</b> holds more. True or false: ' + who + ' is right.', truth, right,
+          ['The jug on the left always holds more.', 'All jugs hold the same.', 'Fewer bands means more water.'], { k: 'g1-cap-tf' },
+          { fig: jugs([{ cups: cups[0], name: 'A' }, { cups: cups[1], name: 'B' }]), hint: 'Count the bands.' });
+      }]
+    ],
+    'm-cal': [
+      [1, 'order', function () {
+        var i = R.int(0, 6), list = [0, 1, 2, 3].map(function (k) { return DAYS[(i + k) % 7]; });
+        return { q: 'Put the days in order.', type: 'order', items: list, hint: 'Say the days of the week: Sunday, Monday, Tuesday...', steps: ['Start with ' + list[0] + '.'],
+          explain: list.join(', ') + '.', meta: { k: 'g1-cal-order' } };
+      }],
+      [1, 'match', function () {
+        var by = { winter: [11, 0, 1], spring: [2, 3, 4], summer: [5, 6, 7], fall: [8, 9, 10] }, seasons = R.shuffle(Object.keys(by)).slice(0, 3);
+        return { q: 'In Ontario, which season is each month in? Match them.', type: 'match', pairs: seasons.map(function (s) { return [MONTHS[R.pick(by[s])], s]; }),
+          hint: 'Winter is cold and snowy. Summer is hot.', steps: ['December to February is winter. March to May is spring. June to August is summer. September to November is fall.'],
+          explain: 'Each month belongs to one season.', meta: { k: 'g1-cal-match' } };
+      }],
+      [2, 'fill', function () {
+        var yr = 2026, mo = R.int(0, 11), dn = R.int(0, 6), days = new Date(yr, mo + 1, 0).getDate(), count = 0;
+        for (var d = 1; d <= days; d++) if (new Date(yr, mo, d).getDay() === dn) count++;
+        return { q: 'Look at the calendar. Fill in the blanks.', type: 'fill', fig: calendar(yr, mo), fill: MONTHS[mo] + ' has [[]] days. [[]] of them are ' + DAYS[dn] + 's.', answers: [days, count],
+          hint: 'The last number is how many days. Count down the ' + DAYS[dn] + ' column.', steps: ['The last day is ' + days + '.', 'Count the ' + DAYS[dn] + 's: ' + count + '.'],
+          explain: MONTHS[mo] + ' ' + yr + ' has ' + days + ' days and ' + count + ' ' + DAYS[dn] + 's.', meta: { k: 'g1-cal-fill', yr: yr, mo: mo } };
+      }],
+      [2, 'mistake', function () {
+        var i = R.int(0, 6), after = R.int(0, 1), right = DAYS[(i + (after ? 1 : 6)) % 7], who = nm(), truth = !R.int(0, 2), said = truth ? right : DAYS[(i + (after ? 2 : 5)) % 7];
+        var why = right + ' comes just ' + (after ? 'after ' : 'before ') + DAYS[i] + '.';
+        return G.tf(who + ' says <b>' + said + '</b> comes just ' + (after ? 'after' : 'before') + ' ' + DAYS[i] + '. True or false: ' + who + ' is right.', truth, why,
+          ['The days go in any order.', 'Weekends come in the middle of the week.', 'Every day comes after Sunday.'], { k: 'g1-cal-tf' },
+          { hint: 'Say the days of the week in order.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();
