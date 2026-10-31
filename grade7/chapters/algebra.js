@@ -477,4 +477,161 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  function holds(x, op, v) { return op === '<' ? x < v : op === '<=' ? x <= v : op === '>' ? x > v : x >= v; }
+  function loop(s, d, k) { return 'total = ' + s + '\nrepeat ' + k + ' times:\n    total = total ' + (d < 0 ? '&minus; ' + (-d) : '+ ' + d) + '\nshow total'; }
+  K.shapes('algebra', {
+    'al-pattern': [
+      [1, 'fill', function (lv) {
+        var m = R.int(2, lv === 1 ? 5 : 9), c = R.int(0, 9), t = [1, 2, 3, 4].map(function (n) { return m * n + c; });
+        return { q: 'The rule is ' + expr(m, c) + '. Fill in terms 5 and 6.', type: 'fill', fill: '<span class="math">' + t.join(', ') + ', </span>[[]], [[]]', answers: [m * 5 + c, m * 6 + c],
+          fig: lv === 1 && m * 4 + c <= 36 ? tiles(m, c, 3) : '', hint: 'Each term adds ' + m + '.', steps: ['Term 5: ' + m + ' &times; 5 + ' + c + ' = ' + (5 * m + c) + '.', 'Term 6: add ' + m + ' more.'],
+          explain: 'Terms 5 and 6 are ' + (5 * m + c) + ' and ' + (6 * m + c) + '.', meta: { k: 'al-pat-fill', m: m, c: c } };
+      }],
+      [1, 'match', function () {
+        var rules = K.uniq(3, function () { return [R.int(2, 6), R.int(0, 8)]; }, function (r) { return r[0] + r[1]; }); /* different first terms, so no two patterns look alike */
+        var pairs = rules.map(function (r) { return [[1, 2, 3].map(function (n) { return r[0] * n + r[1]; }).join(', ') + ', ...', expr(r[0], r[1])]; });
+        return { q: 'Match each pattern (terms 1, 2, 3) to its rule.', type: 'match', pairs: pairs,
+          hint: 'The rate is what is added each time. Then find the starting value at term 0.', steps: ['For 5, 8, 11: add 3 each time, and term 0 is 5 &minus; 3 = 2. Rule: 3<i>n</i> + 2.'],
+          explain: pairs.map(function (p) { return p[0] + ' has the rule ' + p[1]; }).join('. ') + '.', meta: { k: 'al-pat-match', rules: rules } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), c = R.int(2, 6) * 5, m = R.int(2, 9) * 5, k = R.int(3, 12);
+        return { q: 'A climbing gym costs <b>$' + c + '</b> to join, plus <b>$' + m + '</b> each month. ' + who + ' joins and goes for <b>' + k + ' months</b>. What is the total cost?', type: 'num', unit: '$', answer: c + m * k,
+          hint: 'The rule is ' + m + '<i>n</i> + ' + c + '.', steps: [m + ' &times; ' + k + ' = ' + m * k + '.', m * k + ' + ' + c + ' = ' + (m * k + c) + '.'],
+          explain: 'Total: $' + (m * k + c) + '.', meta: { k: 'al-pat-story', c: c, m: m, n: k } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), m = R.int(2, 6), c = R.int(1, 9), t = [1, 2, 3].map(function (n) { return m * n + c; }), truth = R.int(0, 1), sc = truth ? c : t[0];
+        var right = 'Term 0 comes before term 1: ' + t[0] + ' &minus; ' + m + ' = ' + c + '. So the rule is ' + expr(m, c) + '.';
+        return { q: 'The pattern goes ' + t.join(', ') + ', ... (term 1 is ' + t[0] + '). ' + who + ' says the rule is <b>' + expr(m, sc) + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The number added on is always the first term.', 'The rule is the first term times n.']),
+          hint: 'Test the rule with n = 1.', steps: [right], explain: right, meta: { k: 'al-pat-tf', t: t, m: m, said: sc } };
+      }]
+    ],
+    'al-like': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var v = R.pick(['x', 'y', 'n']), kinds = [v, v, v, R.pick(['x', 'y', 'n'].filter(function (u) { return u !== v; })), v + '2', ''];
+          var opts = K.uniq(5, function () { return [R.int(1, 9), R.pick(kinds)]; }, function (t) { return t.join(); });
+          var ans = K.picks(opts, function (t) { return t[1] === v; });
+          if (!ans) return null;
+          var show = function (t) { return t[1] === '' ? String(t[0]) : t[1].length > 1 ? (t[0] === 1 ? '' : t[0]) + '<i>' + t[1][0] + '</i><sup>2</sup>' : term(t[0], t[1]); };
+          return { q: 'Pick every term that is a <b>like term</b> with <span class="math">' + term(R.int(2, 9), v) + '</span>.', type: 'pick', options: opts.map(show), answer: ans,
+            hint: 'Like terms have the same variable, with the same exponent.', steps: ['Look only at the letter part. It must be exactly <i>' + v + '</i>.'],
+            explain: 'The like terms are ' + ans.map(function (j) { return show(opts[j]); }).join(', ') + '.', meta: { k: 'al-like-pick', v: v, opts: opts } };
+        });
+      }],
+      [1, 'fill', function (lv) {
+        var v = R.pick(['x', 'y', 'n']), a = R.int(2, 9), b = R.int(1, lv === 1 ? 9 : 12), sub = lv > 1 && R.int(0, 1);
+        if (sub && b >= a) b = R.int(1, a - 1);
+        return { q: 'Combine the like terms.', type: 'fill', fill: '<span class="math">' + term(a, v) + (sub ? ' &minus; ' : ' + ') + term(b, v) + ' = </span>[[]]<span class="math"><i>' + v + '</i></span>', answers: [sub ? a - b : a + b],
+          fig: !sub && a + b <= 12 ? atiles(a + b, 0, v) : '', hint: (sub ? 'Subtract' : 'Add') + ' the numbers in front. Keep the <i>' + v + '</i>.', steps: [a + (sub ? ' &minus; ' : ' + ') + b + ' = ' + (sub ? a - b : a + b) + '.'],
+          explain: term(a, v) + (sub ? ' &minus; ' : ' + ') + term(b, v) + ' = ' + term(sub ? a - b : a + b, v) + '.', meta: { k: 'al-like-fill', a: a, b: sub ? -b : b } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(2, 9), b = R.int(2, 9), like = R.int(0, 1);
+        var right = like ? 'Both are <i>x</i> terms, so add the numbers: ' + term(a, 'x') + ' + ' + term(b, 'x') + ' = ' + term(a + b, 'x') + '.' : term(a, 'x') + ' and ' + b + ' are not like terms. ' + term(a, 'x') + ' + ' + b + ' cannot be simplified.';
+        return { q: who + ' says <span class="math">' + term(a, 'x') + ' + ' + (like ? term(b, 'x') : b) + ' = ' + term(a + b, 'x') + '</span>. True or false?', type: 'tf', answer: !!like,
+          why: K.why(right, ['You can always add the numbers you see.', 'Terms are like when they have the same number in front.']),
+          hint: 'Are both of them <i>x</i> terms?', steps: [right], explain: right, meta: { k: 'al-like-tf', like: like } };
+      }]
+    ],
+    'al-eval': [
+      [1, 'match', function () {
+        var n = R.int(2, 6), es = K.uniq(3, function () { return [R.int(2, 7), R.int(-5, 9)]; }, function (e) { return e[0] * n + e[1]; });
+        var pairs = es.map(function (e) { return [expr(e[0], e[1]), dec(e[0] * n + e[1])]; });
+        return { q: 'Let <i>n</i> = ' + n + '. Match each expression to its value.', type: 'match', pairs: pairs,
+          hint: 'Replace <i>n</i> with ' + n + '. Multiply first, then add or subtract.', steps: ['For example, 3<i>n</i> + 1 = 3 &times; ' + n + ' + 1 = ' + (3 * n + 1) + '.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'al-eval-match', n: n, es: es } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), b = R.int(3, 6), r = R.int(2, 4), km = R.int(3, 15);
+        return { q: 'A taxi charges <b>$' + b + '</b> plus <b>$' + r + '</b> for every kilometre: ' + r + '<i>k</i> + ' + b + '. ' + who + ' rides <b>' + km + ' km</b>. What is the fare?', type: 'num', unit: '$', answer: r * km + b,
+          hint: 'Replace <i>k</i> with ' + km + '.', steps: [r + ' &times; ' + km + ' = ' + r * km + '.', r * km + ' + ' + b + ' = ' + (r * km + b) + '.'],
+          explain: 'The fare is $' + (r * km + b) + '.', meta: { k: 'al-eval-story', b: b, r: r, km: km } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(2, 9), n = R.int(2, 9), truth = R.int(0, 1), said = truth ? a * n : +(String(a) + n);
+        var right = term(a, 'n') + ' means ' + a + ' &times; <i>n</i>. With <i>n</i> = ' + n + ', it is ' + a + ' &times; ' + n + ' = ' + a * n + '.';
+        return { q: who + ' says that when <i>n</i> = ' + n + ', <span class="math">' + term(a, 'n') + ' = ' + said + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Write the digits side by side: ' + a + ' and ' + n + ' make ' + a + n + '.', term(a, 'n') + ' means ' + a + ' + <i>n</i>.']),
+          hint: 'What does a number right next to a letter mean?', steps: [right], explain: right, meta: { k: 'al-eval-tf', a: a, n: n, said: said } };
+      }]
+    ],
+    'al-solve': [
+      [1, 'line', function () {
+        var a = R.int(1, 5), x = R.int(0, 20), b = R.int(0, 12), c = a * x + b;
+        return { q: 'Solve <span class="math">' + expr(a, b, 'x') + ' = ' + c + '</span>. Place <i>x</i> on the number line.', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: x,
+          hint: b ? 'Take away ' + b + ' from both sides first.' : 'Divide both sides by ' + a + '.', steps: (b ? [c + ' &minus; ' + b + ' = ' + (c - b) + '.'] : []).concat(a > 1 ? [(c - b) + ' &divide; ' + a + ' = ' + x + '.'] : []),
+          explain: '<i>x</i> = ' + x + '. Check: ' + (a > 1 ? a + ' &times; ' + x : x) + (b ? ' + ' + b : '') + ' = ' + c + '.', meta: { k: 'al-solve-line', a: a, b: b, c: c } };
+      }],
+      [1, 'fill', function () {
+        var a = R.int(2, 9), x = R.int(1, 12), b = R.int(1, 20), c = a * x + b;
+        return { q: 'Solve in two steps. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + expr(a, b, 'x') + ' = ' + c + '</span><br><span class="math">' + term(a, 'x') + ' = </span>[[]]<br><span class="math"><i>x</i> = </span>[[]]', answers: [c - b, x],
+          fig: a <= 5 ? balance(a, b, c) : '', hint: 'Undo the + ' + b + ' first, then the &times; ' + a + '.', steps: ['Take ' + b + ' from both sides: ' + term(a, 'x') + ' = ' + (c - b) + '.', 'Divide both sides by ' + a + ': <i>x</i> = ' + x + '.'],
+          explain: '<i>x</i> = ' + x + '.', meta: { k: 'al-solve-fill', a: a, b: b, c: c } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), have = R.int(2, 10) * 5, per = R.int(2, 6) * 5, w = R.int(2, 10), goal = have + per * w, it = R.pick(['a new bike', 'a pair of skates', 'a tablet', 'a guitar']);
+        return { q: who + ' has <b>$' + have + '</b> and saves <b>$' + per + '</b> a week for ' + it + ' that costs <b>$' + goal + '</b>. Solve ' + per + '<i>w</i> + ' + have + ' = ' + goal + ' to find the number of weeks.', type: 'num', unit: 'weeks', answer: w,
+          hint: 'Take ' + have + ' from both sides, then divide by ' + per + '.', steps: [goal + ' &minus; ' + have + ' = ' + (goal - have) + '.', (goal - have) + ' &divide; ' + per + ' = ' + w + '.'],
+          explain: who + ' needs ' + w + ' weeks.', meta: { k: 'al-solve-story', a: per, b: have, c: goal } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), b = R.int(2, 15), c = b + R.int(1, 20), truth = R.int(0, 1), said = truth ? c - b : c + b;
+        var right = 'Undo + ' + b + ' by subtracting ' + b + ' from both sides: <i>x</i> = ' + c + ' &minus; ' + b + ' = ' + (c - b) + '.';
+        return { q: 'To solve <span class="math"><i>x</i> + ' + b + ' = ' + c + '</span>, ' + who + ' gets <span class="math"><i>x</i> = ' + said + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Add ' + b + ' to both sides to get rid of it.', 'Move the ' + b + ' to the other side and keep its sign.']),
+          hint: 'Check: put the answer back in the equation.', steps: [right], explain: right, meta: { k: 'al-solve-tf', b: b, c: c, said: said } };
+      }]
+    ],
+    'al-ineq': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var op = R.pick(['<', '<=', '>', '>=']), v = R.int(-3, 8), opts = K.uniq(6, function () { return R.int(v - 4, v + 4); }).sort(function (a, b) { return a - b; });
+          var ans = K.picks(opts, function (x) { return holds(x, op, v); });
+          if (!ans || opts.indexOf(v) < 0) return null;
+          return { q: 'Pick every value of <i>x</i> that makes <span class="math"><i>x</i> ' + OPS[op] + ' ' + dec(v) + '</span> true.', type: 'pick', options: opts.map(dec), answer: ans,
+            fig: ineqLine(op, v), hint: op.length > 1 ? dec(v) + ' itself counts, because of the "or equal to".' : dec(v) + ' itself does not count.', steps: ['Test each value against ' + dec(v) + '.'],
+            explain: ans.map(function (j) { return dec(opts[j]); }).join(', ') + ' make it true.', meta: { k: 'al-ineq-pick', op: op, v: v, opts: opts } };
+        });
+      }],
+      [1, 'line', function () {
+        var b = R.int(1, 9), c = b + R.int(1, 10), op = R.pick(['<', '>']);
+        return { q: 'Solve <span class="math"><i>x</i> + ' + b + ' ' + OPS[op] + ' ' + c + '</span>. Place the boundary number for <i>x</i> on the line.', type: 'line', min: 0, max: 15, tick: 1, every: 5, snap: 1, answer: c - b,
+          hint: 'Solve it like an equation: take ' + b + ' from both sides.', steps: [c + ' &minus; ' + b + ' = ' + (c - b) + '.', 'So <i>x</i> ' + OPS[op] + ' ' + (c - b) + '.'],
+          explain: '<i>x</i> ' + OPS[op] + ' ' + (c - b) + '. The boundary is ' + (c - b) + '.', meta: { k: 'al-ineq-line', b: b, c: c } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), v = R.int(-2, 9), op = R.pick(['<', '<=', '>', '>=']);
+        var right = op.length > 1 ? 'The "or equal to" part means ' + dec(v) + ' is a solution.' : dec(v) + ' ' + OPS[op] + ' ' + dec(v) + ' is false, so ' + dec(v) + ' is not a solution.';
+        return { q: who + ' says <b>' + dec(v) + '</b> is a solution of <span class="math"><i>x</i> ' + OPS[op] + ' ' + dec(v) + '</span>. True or false?', type: 'tf', answer: op.length > 1,
+          why: K.why(right, ['The boundary number is always a solution.', 'The boundary number is never a solution.'].filter(function (w, i) { return i !== (op.length > 1 ? 0 : 1); }).concat(['Only positive numbers can be solutions.'])),
+          hint: 'Is there an "or equal to" line under the sign?', steps: [right], explain: right, meta: { k: 'al-ineq-tf', op: op, v: v } };
+      }]
+    ],
+    'al-code': [
+      [1, 'fill', function () {
+        var s = R.int(0, 20), d = R.pick([-5, -3, -2, 2, 3, 4, 5, 10]), k = R.int(3, 6);
+        return { q: 'Trace the code. What is <b>total</b> after the first and second times through the loop?<span class="mono">' + loop(s, d, k) + '</span>', type: 'fill', fill: 'After 1 time: [[]] &nbsp; After 2 times: [[]]', answers: [s + d, s + 2 * d],
+          hint: 'Start at ' + s + '. Each time through, ' + (d < 0 ? 'take away ' + (-d) : 'add ' + d) + '.', steps: [s + (d < 0 ? ' &minus; ' + (-d) : ' + ' + d) + ' = ' + (s + d) + '.', (s + d) + (d < 0 ? ' &minus; ' + (-d) : ' + ' + d) + ' = ' + (s + 2 * d) + '.'],
+          explain: 'After 1 time: ' + (s + d) + '. After 2 times: ' + (s + 2 * d) + '.', meta: { k: 'al-code-fill', s: s, d: d } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), d = R.int(2, 9), k = R.int(3, 8), s = R.int(0, 10);
+        return { q: who + ' codes a robot. It starts at <b>' + s + '</b> on a number line.<span class="mono">repeat ' + k + ' times:\n    move forward ' + d + '\nshow position</span>Where does the robot stop?', type: 'num', answer: s + k * d,
+          hint: 'The loop moves ' + d + ', ' + k + ' times.', steps: [k + ' &times; ' + d + ' = ' + k * d + '.', s + ' + ' + k * d + ' = ' + (s + k * d) + '.'],
+          explain: 'It stops at ' + (s + k * d) + '.', meta: { k: 'al-code-story', s: s, d: d, n: k } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), s = R.int(0, 20), d = R.int(2, 9), k = R.int(3, 7), truth = R.int(0, 1), said = truth ? s + k * d : s + d;
+        var right = 'The loop runs ' + k + ' times, so it adds ' + d + ' a total of ' + k + ' times: ' + s + ' + ' + k * d + ' = ' + (s + k * d) + '.';
+        return { q: who + ' says this code shows <b>' + said + '</b>.<span class="mono">' + loop(s, d, k) + '</span>True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The line inside the loop runs once.', 'A loop only repeats the last line of the code.']),
+          hint: 'How many times does the indented line run?', steps: [right], explain: right, meta: { k: 'al-code-tf', s: s, d: d, n: k, said: said } };
+      }]
+    ]
+  });
 })();

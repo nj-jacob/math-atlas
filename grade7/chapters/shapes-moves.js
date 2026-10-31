@@ -418,4 +418,177 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  var LET = ['A', 'B', 'C', 'D'];
+  /* the plane with point P and four lettered points to tap; cands[i] is the point for letter i */
+  function tapPlane(p, cands, lim) {
+    return plane([{ pts: [p, p], col: 'var(--sb)', labs: ['P', ''], name: 'Point P' }], lim, function (X, Y) {
+      return cands.map(function (c, i) {
+        return '<g data-hit="' + i + '" aria-label="point ' + LET[i] + ' at (' + c[0] + ', ' + c[1] + ')"><circle cx="' + X(c[0]) + '" cy="' + Y(c[1]) + '" r="16" style="fill:transparent"/>' +
+          '<circle cx="' + X(c[0]) + '" cy="' + Y(c[1]) + '" r="8" style="fill:var(--card);stroke:var(--se)" stroke-width="3"/>' +
+          '<text x="' + (X(c[0]) + 11) + '" y="' + (Y(c[1]) + 18) + '" font-size="16" font-weight="700" style="fill:var(--se)">' + LET[i] + '</text></g>';
+      }).join('');
+    });
+  }
+  /* four different points on the grid: the right one plus likely mistakes, then points 2 squares away (so the tap targets never touch); none is P */
+  function cands(p, right, wrongs, lim) {
+    var list = [right], key = function (c) { return c.join(); };
+    wrongs.concat([[right[0] + 2, right[1]], [right[0], right[1] - 2], [right[0] - 2, right[1] + 2], [right[0] + 2, right[1] + 2]]).forEach(function (w) {
+      if (list.length < 4 && Math.abs(w[0]) <= lim && Math.abs(w[1]) <= lim && w.join() !== p.join() && !list.some(function (c) { return key(c) === key(w); })) list.push(w);
+    });
+    return R.shuffle(list);
+  }
+  function coordFill(lead, p) { return lead + ' <span class="math">(</span>[[]]<span class="math">, </span>[[]]<span class="math">)</span>'; }
+  function moveTap(k, lv) {
+    var lim = 8, p, img;
+    do { p = [R.int(-6, 6), R.int(-6, 6)]; img = MOVES[k](p); } while (!p[0] || !p[1] || img.join() === p.join());
+    var wrong = { rx: [MOVES.ry(p), MOVES.r180(p)], ry: [MOVES.rx(p), MOVES.r180(p)], r180: [MOVES.rx(p), MOVES.ry(p)], r90cw: [MOVES.r90ccw(p), MOVES.r180(p)], r90ccw: [MOVES.r90cw(p), MOVES.r180(p)] }[k];
+    var cs = cands(p, img, wrong, lim), at = cs.findIndex(function (c) { return c.join() === img.join(); });
+    return { q: 'Point P' + pt(p) + ' is given a ' + MNAME[k] + '. Tap where P\' lands.', type: 'tap', pic: tapPlane(p, cs, lim), answer: String(at), answerText: 'point ' + LET[at] + ' ' + pt(img),
+      hint: 'The rule is ' + MRULE[k] + '.', steps: ['Use the rule ' + MRULE[k] + '.', 'P\' is ' + pt(img) + '.'],
+      explain: 'P\'' + pt(img) + ' is point ' + LET[at] + '.', meta: { k: 'sm-move-tap', move: k, p: p, cands: cs } };
+  }
+  function moveFill(k) {
+    var p; do { p = [R.int(-7, 7), R.int(-7, 7)]; } while (!p[0] || !p[1]);
+    var img = MOVES[k](p);
+    return { q: 'Point P' + pt(p) + ' is given a ' + MNAME[k] + '. Write the coordinates of P\'.', type: 'fill', fill: coordFill('P\'', p), answers: img,
+      hint: 'The rule is ' + MRULE[k] + '.', steps: ['Use the rule ' + MRULE[k] + '.'], explain: 'P\' is ' + pt(img) + '.', meta: { k: 'sm-move-fill', move: k, p: p } };
+  }
+  var SOLKEYS = ['rect', 'tri', 'sqpyr', 'tripyr'];
+  function fev(k) { var S = SOLIDS[k]; return S.F + ' faces, ' + S.E + ' edges, ' + S.V + ' vertices'; }
+  K.shapes('shapes-moves', {
+    'sm-solid': [
+      [1, 'tap', function () {
+        var keys = R.shuffle(['rect', 'cube', 'tri', 'sqpyr', 'tripyr', 'cyl']).slice(0, 4), at = R.int(0, 3);
+        return { q: 'Tap the <b>' + SOLIDS[keys[at]].name.toLowerCase() + '</b>.', type: 'tap', tiles: keys.map(function (k) { return solid(k, 150); }), answer: at, answerText: SOLIDS[keys[at]].name,
+          hint: 'Prisms have two matching bases. Pyramids come to a point.', steps: ['Look at the base shape, then at the top.'],
+          explain: 'That is the ' + SOLIDS[keys[at]].name.toLowerCase() + '.', meta: { k: 'sm-solid-tap', keys: keys } };
+      }],
+      [1, 'match', function () {
+        var keys = R.shuffle(SOLKEYS).slice(0, 3), pairs = keys.map(function (k) { return [SOLIDS[k].name, fev(k)]; });
+        return { q: 'Match each solid to its faces, edges and vertices.', type: 'match', pairs: pairs,
+          hint: 'A prism has 2 bases plus one side face for each side of the base. A pyramid has 1 base plus triangles.', steps: ['A triangular pyramid has the fewest: 4 faces.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'sm-fev-match' } };
+      }],
+      [1, 'fill', function () {
+        var k = R.pick(SOLKEYS), S = SOLIDS[k];
+        return { q: 'Count the faces, edges and vertices of this ' + S.name.toLowerCase() + '.', type: 'fill', fill: 'Faces [[]] &nbsp; Edges [[]] &nbsp; Vertices [[]]', answers: [S.F, S.E, S.V], fig: solid(k),
+          hint: 'Dashed lines are hidden edges. Count them too.', steps: ['Faces are the flat surfaces. Edges are where two faces meet. Vertices are the corners.'],
+          explain: 'A ' + S.name.toLowerCase() + ' has ' + fev(k) + '.', meta: { k: 'sm-fev-fill', name: S.name } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), k = R.pick(SOLKEYS), S = SOLIDS[k], what = R.pick(['F', 'E', 'V']), nm = { F: 'faces', E: 'edges', V: 'vertices' }[what], truth = R.int(0, 1), said = truth ? S[what] : S[what] + R.pick([-1, 1]);
+        var right = 'A ' + S.name.toLowerCase() + ' has ' + fev(k) + '.';
+        return { q: who + ' says a <b>' + S.name.toLowerCase() + '</b> has <b>' + said + ' ' + nm + '</b>. True or false?', type: 'tf', answer: !!truth, fig: solid(k),
+          why: K.why(right, ['Every solid has 6 faces.', 'Hidden edges do not count.']),
+          hint: 'Count carefully, including the hidden (dashed) parts.', steps: [right], explain: right, meta: { k: 'sm-fev-tf', name: S.name, what: what, said: said } };
+      }]
+    ],
+    'sm-view': [
+      [1, 'fill', function () {
+        var map, v;
+        do { map = [[R.int(0, 3), R.int(0, 3), R.int(0, 3)], [R.int(1, 3), R.int(1, 3), R.int(1, 3)]]; v = views(map); } while (v.front.indexOf(0) >= 0);
+        return { q: 'Look from the FRONT. How tall is each column of the front view, from left to right?', type: 'fill', fill: '[[]] &nbsp; [[]] &nbsp; [[]]', answers: v.front, fig: iso(map),
+          hint: 'For each column, the tallest stack is what you see.', steps: ['Check each column from left to right, front and back rows together.'],
+          explain: 'The front view has columns ' + v.front.join(', ') + ' cubes tall.', meta: { k: 'sm-front-fill', map: map } };
+      }],
+      [1, 'tap', function () {
+        var map, v;
+        do { map = [[R.int(0, 3), R.int(0, 3)], [R.int(1, 3), R.int(1, 3)]]; v = views(map); } while (v.front.indexOf(0) >= 0 || v.side.indexOf(0) >= 0 || v.front.join() === v.side.join() || v.front.join() === v.front.slice().reverse().join() || v.side.join() === v.front.slice().reverse().join());
+        var sets = R.shuffle([v.front, v.side, v.front.slice().reverse()]), at = sets.indexOf(v.front);
+        return { q: 'Tap the <b>front</b> view of this building.', type: 'tap', tiles: sets.map(function (c) { return view(c, 'View'); }), answer: at, answerText: 'columns ' + v.front.join(', '), fig: iso(map),
+          hint: 'Stand at the FRONT label. Left stays left.', steps: ['The tallest stacks in each column, left to right: ' + v.front.join(', ') + '.'],
+          explain: 'The front view has columns ' + v.front.join(', ') + '.', meta: { k: 'sm-front-tap', map: map, sets: sets } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), map, v;
+        do { map = [[R.int(0, 3), R.int(0, 3)], [R.int(1, 3), R.int(1, 3)]]; v = views(map); } while (v.front.indexOf(0) >= 0 || v.side.indexOf(0) >= 0 || v.front.join() === v.side.join());
+        var truth = R.int(0, 1), said = truth ? v.front : v.side;
+        var right = 'From the front, the columns are ' + v.front.join(', ') + ' cubes tall.';
+        return { q: who + ' says this is the <b>front</b> view of the building. True or false?', type: 'tf', answer: !!truth, fig: iso(map) + view(said, 'Claimed front view'),
+          why: K.why(right, ['The front view is the same as the side view.', 'Only the front row of cubes shows in the front view.']),
+          hint: 'Stand at the FRONT label and look at each column.', steps: [right], explain: right, meta: { k: 'sm-front-tf', map: map, said: said } };
+      }]
+    ],
+    'sm-translate': [
+      [1, 'tap', function () {
+        var lim = 8, p, a, b, img;
+        do { p = [R.int(-5, 5), R.int(-5, 5)]; a = R.int(-4, 4); b = R.int(-4, 4); img = [p[0] + a, p[1] + b]; } while (!a || !b || Math.abs(img[0]) > 7 || Math.abs(img[1]) > 7);
+        var cs = cands(p, img, [[p[0] + b, p[1] + a], [p[0] - a, p[1] + b], [p[0] + a, p[1] - b]], lim), at = cs.findIndex(function (c) { return c.join() === img.join(); });
+        var dir = Math.abs(a) + (a > 0 ? ' right' : ' left') + ' and ' + Math.abs(b) + (b > 0 ? ' up' : ' down');
+        return { q: 'Point P' + pt(p) + ' is translated ' + dir + '. Tap where it lands.', type: 'tap', pic: tapPlane(p, cs, lim), answer: String(at), answerText: 'point ' + LET[at] + ' ' + pt(img),
+          hint: 'Move along the x-axis first, then up or down.', steps: [pt(p) + ' &rarr; ' + pt(img) + '.'],
+          explain: 'P\' is ' + pt(img) + ', point ' + LET[at] + '.', meta: { k: 'sm-tr-tap', p: p, a: a, b: b, cands: cs } };
+      }],
+      [1, 'fill', function () {
+        var p = [R.int(-6, 6), R.int(-6, 6)], a = R.int(-5, 5) || 3, b = R.int(-5, 5) || -2;
+        var dir = Math.abs(a) + (a > 0 ? ' right' : ' left') + ' and ' + Math.abs(b) + (b > 0 ? ' up' : ' down');
+        return { q: 'Point P' + pt(p) + ' is translated ' + dir + '. Write the coordinates of P\'.', type: 'fill', fill: coordFill('P\'', p), answers: [p[0] + a, p[1] + b],
+          hint: 'Right and left change x. Up and down change y.', steps: ['x: ' + sg(p[0]) + (a < 0 ? ' &minus; ' + (-a) : ' + ' + a) + ' = ' + sg(p[0] + a) + '.', 'y: ' + sg(p[1]) + (b < 0 ? ' &minus; ' + (-b) : ' + ' + b) + ' = ' + sg(p[1] + b) + '.'],
+          explain: 'P\' is ' + pt([p[0] + a, p[1] + b]) + '.', meta: { k: 'sm-tr-fill', p: p, a: a, b: b } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), p = [R.int(-4, 4), R.int(-4, 4)], a = R.int(1, 4) * R.pick([1, -1]), b = R.int(1, 4) * R.pick([1, -1]), place = R.pick(['the library', 'the rink', 'the bakery', 'the park gate']);
+        var walk = Math.abs(a) + ' block' + (Math.abs(a) > 1 ? 's' : '') + (a > 0 ? ' east' : ' west') + ' and ' + Math.abs(b) + ' block' + (Math.abs(b) > 1 ? 's' : '') + (b > 0 ? ' north' : ' south');
+        return { q: 'On a town map grid, ' + place + ' is at ' + pt(p) + '. ' + who + ' starts there and walks ' + walk + '. Where does ' + who + ' end up?', type: 'fill', fill: coordFill(who + ' is at', p), answers: [p[0] + a, p[1] + b],
+          hint: 'East and west change x. North and south change y.', steps: ['x: ' + sg(p[0]) + (a < 0 ? ' &minus; ' + (-a) : ' + ' + a) + ' = ' + sg(p[0] + a) + '.', 'y: ' + sg(p[1]) + (b < 0 ? ' &minus; ' + (-b) : ' + ' + b) + ' = ' + sg(p[1] + b) + '.'],
+          explain: who + ' ends up at ' + pt([p[0] + a, p[1] + b]) + '.', meta: { k: 'sm-tr-story', p: p } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), p = [R.int(-5, 5), R.int(-5, 5)], a = R.int(1, 5), b = R.int(1, 5), truth = R.int(0, 1), said = truth ? [p[0] - a, p[1] + b] : [p[0] + a, p[1] - b];
+        var right = 'Left takes away from x and up adds to y: ' + pt(p) + ' &rarr; ' + pt([p[0] - a, p[1] + b]) + '.';
+        return { q: who + ' translates P' + pt(p) + ' <b>' + a + ' left and ' + b + ' up</b> and gets ' + pt(said) + '. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Left adds to x and up takes away from y.', 'A translation does not change the coordinates.']),
+          hint: 'Which way is left on the x-axis?', steps: [right], explain: right, meta: { k: 'sm-tr-tf', p: p, a: -a, b: b, said: said } };
+      }]
+    ],
+    'sm-reflect': [
+      [1, 'tap', function () { return moveTap(R.pick(['rx', 'ry'])); }],
+      [1, 'fill', function () { return moveFill(R.pick(['rx', 'ry'])); }],
+      [2, 'mistake', function () {
+        var who = K.name(), p; do { p = [R.int(-7, 7), R.int(-7, 7)]; } while (!p[0] || !p[1] || Math.abs(p[0]) === Math.abs(p[1]));
+        var k = R.pick(['rx', 'ry']), truth = R.int(0, 1), said = truth ? MOVES[k](p) : MOVES[k === 'rx' ? 'ry' : 'rx'](p);
+        var right = 'In the ' + (k === 'rx' ? 'x' : 'y') + '-axis, the ' + (k === 'rx' ? 'y' : 'x') + '-coordinate changes sign: ' + MRULE[k] + '. So P\' is ' + pt(MOVES[k](p)) + '.';
+        return { q: who + ' reflects P' + pt(p) + ' in the <i>' + (k === 'rx' ? 'x' : 'y') + '</i>-axis and gets ' + pt(said) + '. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['In the x-axis, the x-coordinate changes sign.', 'A reflection changes the sign of both coordinates.']),
+          hint: 'Which coordinate measures the distance from that axis?', steps: [right], explain: right, meta: { k: 'sm-move-tf', move: k, p: p, said: said } };
+      }]
+    ],
+    'sm-rotate': [
+      [1, 'tap', function (lv) { return moveTap(lv === 1 ? 'r180' : R.pick(['r90cw', 'r90ccw', 'r180'])); }],
+      [1, 'fill', function (lv) { return moveFill(lv === 1 ? 'r180' : R.pick(['r90cw', 'r90ccw', 'r180'])); }],
+      [2, 'mistake', function () {
+        var who = K.name(), p; do { p = [R.int(-7, 7), R.int(-7, 7)]; } while (!p[0] || !p[1] || Math.abs(p[0]) === Math.abs(p[1]));
+        var k = R.pick(['r90cw', 'r90ccw']), truth = R.int(0, 1), said = truth ? MOVES[k](p) : MOVES[k === 'r90cw' ? 'r90ccw' : 'r90cw'](p);
+        var right = 'The rule for a ' + MNAME[k] + ' is ' + MRULE[k] + '. So P\' is ' + pt(MOVES[k](p)) + '.';
+        return { q: who + ' gives P' + pt(p) + ' a ' + MNAME[k] + ' and gets ' + pt(said) + '. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Clockwise and counterclockwise give the same point.', 'A 90&deg; rotation only changes the signs.']),
+          hint: 'Turn the grid in your mind, or use the rule.', steps: [right], explain: right, meta: { k: 'sm-move-tf', move: k, p: p, said: said } };
+      }]
+    ],
+    'sm-dilate': [
+      [1, 'fill', function (lv) {
+        var k = lv === 1 ? R.pick([2, 3]) : R.pick([0.5, 1.5, 2, 3]), p = [R.int(-4, 4) * 2, R.int(-4, 4) * 2];
+        return { q: 'Point P' + pt(p) + ' is dilated by a scale factor of ' + k + ' about the origin. Write the coordinates of P\'.', type: 'fill', fill: coordFill('P\'', p), answers: MOVES.dil(p, k),
+          hint: 'Multiply both coordinates by ' + k + '.', steps: [sg(p[0]) + ' &times; ' + k + ' = ' + sg(p[0] * k) + ' and ' + sg(p[1]) + ' &times; ' + k + ' = ' + sg(p[1] * k) + '.'],
+          explain: 'P\' is ' + pt(MOVES.dil(p, k)) + '.', meta: { k: 'sm-dil-fill', p: p, f: k } };
+      }],
+      [1, 'tap', function () {
+        var lim = 8, p; do { p = [R.int(-3, 3), R.int(-3, 3)]; } while (!p[0] || !p[1]);
+        var img = MOVES.dil(p, 2), cs = cands(p, img, [[p[0] + 2, p[1] + 2], [p[0] * 2, p[1]], [p[0], p[1] * 2]], lim), at = cs.findIndex(function (c) { return c.join() === img.join(); });
+        return { q: 'Point P' + pt(p) + ' is dilated by a scale factor of 2 about the origin. Tap where P\' lands.', type: 'tap', pic: tapPlane(p, cs, lim), answer: String(at), answerText: 'point ' + LET[at] + ' ' + pt(img),
+          hint: 'P\' is twice as far from the origin, in the same direction.', steps: ['Multiply both coordinates by 2: ' + pt(img) + '.'],
+          explain: 'P\' is ' + pt(img) + ', point ' + LET[at] + '.', meta: { k: 'sm-dil-tap', p: p, f: 2, cands: cs } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), k = R.pick([2, 3]), p; do { p = [R.int(1, 5), R.int(1, 5)]; } while (p[0] * k === p[0] + k || p[1] * k === p[1] + k); /* adding k must give a different point */
+        var truth = R.int(0, 1), said = truth ? MOVES.dil(p, k) : [p[0] + k, p[1] + k];
+        var right = 'A dilation multiplies each coordinate by the scale factor: ' + pt(p) + ' &rarr; ' + pt(MOVES.dil(p, k)) + '.';
+        return { q: who + ' dilates P' + pt(p) + ' by a scale factor of ' + k + ' and gets ' + pt(said) + '. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['A dilation adds the scale factor to each coordinate.', 'A dilation only changes the x-coordinate.']),
+          hint: 'Scale factor means multiply.', steps: [right], explain: right, meta: { k: 'sm-dil-tf', p: p, f: k, said: said } };
+      }]
+    ]
+  });
 })();

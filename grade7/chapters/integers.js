@@ -429,4 +429,133 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  function nz(lo, hi) { var v = 0; while (!v) v = R.int(lo, hi); return v; }
+  K.shapes('integers', {
+    'in-compare': [
+      [1, 'line', function () {
+        var n = nz(-10, 10);
+        return { q: 'Place <b>' + sg(n) + '</b> on the number line.', type: 'line', min: -10, max: 10, tick: 1, every: 5, snap: 1, answer: n,
+          hint: n < 0 ? 'Negative numbers are to the left of 0.' : 'Positive numbers are to the right of 0.', steps: ['Start at 0. Count ' + Math.abs(n) + ' to the ' + (n < 0 ? 'left' : 'right') + '.'],
+          explain: sg(n) + ' is ' + Math.abs(n) + ' to the ' + (n < 0 ? 'left' : 'right') + ' of 0.', meta: { k: 'in-line', n: n } };
+      }],
+      [1, 'order', function (lv) {
+        var list = K.uniq(lv === 1 ? 4 : 5, function () { return R.int(-15, 15); }).sort(function (a, b) { return a - b; });
+        return { q: 'Put these in order from <b>least</b> to <b>greatest</b>.', type: 'order', items: list.map(sg), first: 'least', last: 'greatest',
+          hint: 'Picture a number line. Further left is less.', steps: ['The most negative number is the least.', 'Then work to the right.'],
+          explain: 'In order: ' + list.map(sg).join(', ') + '.', meta: { k: 'in-order', list: list } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(2, 15), b = R.int(1, 15); while (b === a) b = R.int(1, 15);
+        var big = Math.max(a, b), small = Math.min(a, b), truth = R.int(0, 1), x = truth ? -small : -big, y = truth ? -big : -small;
+        var right = 'On a number line, ' + sg(-small) + ' is to the right of ' + sg(-big) + ', so ' + sg(-small) + ' is greater.';
+        return { q: who + ' says <span class="math">' + sg(x) + ' &gt; ' + sg(y) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The number with more digits is greater.', sg(-big) + ' is greater because ' + big + ' is more than ' + small + '.']),
+          hint: 'Which one is closer to 0?', steps: [right], explain: right, meta: { k: 'in-cmp-tf', x: x, y: y } };
+      }]
+    ],
+    'in-add': [
+      [1, 'line', function () {
+        var a = nz(-8, 8), b = nz(-7, 7);
+        return { q: 'Start at <b>' + sg(a) + '</b>. Add <b>' + sg(b) + '</b>. Place where you land.', type: 'line', min: -15, max: 15, tick: 1, every: 5, snap: 1, answer: a + b,
+          hint: 'Adding a positive moves right. Adding a negative moves left.', steps: ['Start at ' + sg(a) + '.', 'Move ' + Math.abs(b) + ' to the ' + (b < 0 ? 'left' : 'right') + '.'],
+          explain: sg(a) + ' + ' + sgp(b) + ' = ' + sg(a + b) + '.', meta: { k: 'in-add-line', a: a, b: b } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), a = -R.int(2, 15), b = R.int(3, 20), t = R.int(0, 1);
+        var q = t ? 'At 7 a.m. in Winnipeg it was <b>' + sg(a) + '&deg;C</b>. By noon it was <b>' + b + ' degrees warmer</b>. What was the temperature at noon?' : who + '\'s bank account was at <b>' + sg(a) + ' dollars</b>. ' + who + ' deposits <b>$' + b + '</b>. What is the balance now?';
+        return { q: q + ' Use &minus; for a negative number.', type: 'num', answer: a + b, kb: 'text',
+          hint: 'Start at ' + sg(a) + ' and move ' + b + ' up.', steps: [sg(a) + ' + ' + b + ' = ' + sg(a + b) + '.'],
+          explain: sg(a) + ' + ' + b + ' = ' + sg(a + b) + '.', meta: { k: 'in-add-story', a: a, b: b } };
+      }],
+      [1, 'which', function () {
+        var a = nz(-12, 12), b = nz(-12, 12); while (a + b === 0) b = nz(-12, 12);
+        var ans = a + b > 0 ? 'Positive' : 'Negative', o = R.mc(ans, [ans === 'Positive' ? 'Negative' : 'Positive', 'Zero']);
+        return { q: 'Before you add: will <span class="math">' + sg(a) + ' + ' + sgp(b) + '</span> be positive or negative?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Which number is further from 0? Its sign wins.', steps: [Math.sign(a) === Math.sign(b) ? 'Same signs: the answer keeps that sign.' : 'Different signs: the one further from 0 wins.'],
+          explain: sg(a) + ' + ' + sgp(b) + ' = ' + sg(a + b) + ', which is ' + ans.toLowerCase() + '.', meta: { k: 'in-sign', a: a, b: b } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = -R.int(2, 12), b = -R.int(2, 12), truth = R.int(0, 1), said = truth ? a + b : -(a + b);
+        var right = 'Two negatives make a bigger negative: ' + sg(a) + ' + ' + sgp(b) + ' = ' + sg(a + b) + '.';
+        return { q: who + ' says <span class="math">' + sg(a) + ' + ' + sgp(b) + ' = ' + sg(said) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Two negatives make a positive.', 'Adding always gives a bigger number.']),
+          hint: 'Picture ' + Math.abs(a) + ' red chips and ' + Math.abs(b) + ' more red chips.', steps: [right], explain: right, meta: { k: 'in-add-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'in-sub': [
+      [1, 'fill', function () {
+        var a = R.int(-9, 9), b = nz(-9, 9);
+        return { q: 'Subtracting is adding the opposite. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + sg(a) + ' &minus; ' + sgp(b) + ' = ' + sg(a) + ' + </span>[[]]<span class="math"> = </span>[[]]', answers: [-b, a - b],
+          hint: 'The opposite of ' + sg(b) + ' is ' + sg(-b) + '.', steps: ['Change &minus; ' + sgp(b) + ' to + ' + sgp(-b) + '.', sg(a) + ' + ' + sgp(-b) + ' = ' + sg(a - b) + '.'],
+          explain: sg(a) + ' &minus; ' + sgp(b) + ' = ' + sg(a - b) + '.', meta: { k: 'in-sub-fill', a: a, b: b } };
+      }],
+      [1, 'match', function () {
+        var ps = K.uniq(3, function () { return [R.int(-9, 9), nz(-9, 9)]; }, function (p) { return p[0] - p[1]; });
+        var pairs = ps.map(function (p) { return ['<span class="math">' + sg(p[0]) + ' &minus; ' + sgp(p[1]) + '</span>', sg(p[0] - p[1])]; });
+        return { q: 'Match each subtraction to its answer.', type: 'match', pairs: pairs,
+          hint: 'Add the opposite of the second number.', steps: ['3 &minus; (&minus;2) = 3 + 2 = 5.'],
+          explain: ps.map(function (p) { return sg(p[0]) + ' &minus; ' + sgp(p[1]) + ' = ' + sg(p[0] - p[1]); }).join(', ') + '.', meta: { k: 'in-sub-match', ps: ps } };
+      }],
+      [1, 'story', function () {
+        var lo = -R.int(3, 25), hi = R.int(1, 20), pl = R.pick([['Iqaluit', 'Vancouver'], ['Whitehorse', 'Toronto'], ['Yellowknife', 'Halifax']]);
+        return { q: 'One morning it was <b>' + sg(lo) + '&deg;C</b> in ' + pl[0] + ' and <b>' + hi + '&deg;C</b> in ' + pl[1] + '. How many degrees warmer was ' + pl[1] + '?', type: 'num', answer: hi - lo, kb: 'text',
+          hint: 'Subtract: warmer minus colder.', steps: [hi + ' &minus; ' + sgp(lo) + ' = ' + hi + ' + ' + (-lo) + ' = ' + (hi - lo) + '.'],
+          explain: 'From ' + sg(lo) + ' up to 0 is ' + (-lo) + ' degrees, and 0 up to ' + hi + ' is ' + hi + ' more: ' + (hi - lo) + ' degrees.', meta: { k: 'in-sub-story', lo: lo, hi: hi } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(1, 9), b = -R.int(1, 9), truth = R.int(0, 1), said = truth ? a - b : a + b;
+        var right = 'Subtracting ' + sg(b) + ' is adding ' + (-b) + ': ' + a + ' &minus; ' + sgp(b) + ' = ' + a + ' + ' + (-b) + ' = ' + (a - b) + '.';
+        return { q: who + ' says <span class="math">' + a + ' &minus; ' + sgp(b) + ' = ' + sg(said) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Subtracting always makes a number smaller.', 'Just ignore the negative sign.']),
+          hint: 'What is the opposite of ' + sg(b) + '?', steps: [right], explain: right, meta: { k: 'in-sub-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'in-word': [
+      [1, 'which', function () {
+        var who = K.name(), s = -R.int(2, 12), c = R.int(3, 10), up = R.int(0, 1);
+        var q = up ? 'It was ' + sg(s) + '&deg;C. Then it got ' + c + ' degrees warmer.' : 'It was ' + sg(s) + '&deg;C. Then it got ' + c + ' degrees colder.';
+        var right = up ? sg(s) + ' + ' + c : sg(s) + ' &minus; ' + c, o = R.mc(right, [up ? sg(s) + ' &minus; ' + c : sg(s) + ' + ' + c, sg(-s) + (up ? ' + ' : ' &minus; ') + c, c + ' &minus; ' + sgp(s)]);
+        return { q: 'Which way? ' + q + ' Which number sentence gives the new temperature?', type: 'mc', options: o.options, answer: o.answer,
+          hint: up ? 'Warmer means the number goes up.' : 'Colder means the number goes down.', steps: [up ? 'Warmer: add.' : 'Colder: subtract.'],
+          explain: right + ' = ' + sg(up ? s + c : s - c) + '&deg;C.', meta: { k: 'in-word-which', s: s, c: c, up: up } };
+      }],
+      [1, 'line', function () {
+        var who = K.name(), d = -R.int(5, 18), up = R.int(2, Math.min(12, -d + 4));
+        return { q: who + ' is scuba diving at <b>' + sg(d) + ' m</b> (below sea level). ' + who + ' swims up <b>' + up + ' m</b>. Place ' + who + '\'s new depth on the line.', type: 'line', min: -20, max: 5, tick: 1, every: 5, snap: 1, answer: d + up,
+          hint: 'Sea level is 0. Going up moves right on this line.', steps: [sg(d) + ' + ' + up + ' = ' + sg(d + up) + '.'],
+          explain: who + ' is now at ' + sg(d + up) + ' m.', meta: { k: 'in-word-line', d: d, up: up } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), bal = -R.int(5, 30), dep = R.int(10, 50), truth = R.int(0, 1), said = truth ? bal + dep : bal - dep;
+        var right = 'A deposit adds money: ' + sg(bal) + ' + ' + dep + ' = ' + sg(bal + dep) + '.';
+        return { q: who + '\'s account shows <b>' + sg(bal) + ' dollars</b>. After a deposit of <b>$' + dep + '</b>, ' + who + ' says the balance is <b>' + sg(said) + ' dollars</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['A deposit makes a negative balance more negative.', 'The balance is just the deposit, $' + dep + '.']),
+          hint: 'A deposit moves the balance up.', steps: [right], explain: right, meta: { k: 'in-word-tf', bal: bal, dep: dep, said: said } };
+      }]
+    ],
+    'in-pattern': [
+      [1, 'fill', function () {
+        var a = R.int(-10, 15), d = R.pick([-5, -4, -3, -2, 2, 3, 4, 5]), t = [0, 1, 2, 3].map(function (i) { return a + i * d; });
+        return { q: 'Fill in the next two terms.', type: 'fill', fill: '<span class="math">' + t.map(sg).join(', ') + ', </span>[[]], [[]]', answers: [a + 4 * d, a + 5 * d],
+          hint: 'What is added each time?', steps: ['Each term ' + (d > 0 ? 'adds ' + d : 'subtracts ' + (-d)) + '.'],
+          explain: 'Next: ' + sg(a + 4 * d) + ', ' + sg(a + 5 * d) + '.', meta: { k: 'in-pat-fill', t: t } };
+      }],
+      [1, 'tap', function () {
+        var a = R.int(-10, 10), d = R.pick([-4, -3, -2, 2, 3, 4]), t = [0, 1, 2, 3, 4].map(function (i) { return a + i * d; }), bad = R.int(1, 3);
+        t[bad] += R.pick([-1, 1]);
+        return { q: 'One term does not fit the pattern. Tap it.', type: 'tap', tiles: t.map(sg), answer: bad, answerText: sg(t[bad]),
+          hint: 'Find the difference between the first two terms, and the last two.', steps: ['The pattern ' + (d > 0 ? 'adds ' + d : 'subtracts ' + (-d)) + ' each time.', 'The term should be ' + sg(a + bad * d) + '.'],
+          explain: sg(t[bad]) + ' should be ' + sg(a + bad * d) + '.', meta: { k: 'in-pat-tap', t: t } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a = R.int(-5, 15), d = -R.int(2, 6), t = [0, 1, 2, 3].map(function (i) { return a + i * d; }), truth = R.int(0, 1), said = truth ? d : -d;
+        var right = 'Each term is ' + (-d) + ' less than the one before, so the rule is subtract ' + (-d) + ' (add ' + sg(d) + ').';
+        return { q: 'The pattern is <span class="math">' + t.map(sg).join(', ') + ', ...</span> ' + who + ' says the rule is <b>' + (said > 0 ? 'add ' + said : 'subtract ' + (-said)) + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The numbers are getting bigger, so the rule adds.', 'The rule is the first term.']),
+          hint: 'Are the terms going up or down?', steps: [right], explain: right, meta: { k: 'in-pat-tf', t: t, said: said } };
+      }]
+    ]
+  });
 })();

@@ -369,4 +369,155 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  var EQV = [['1 L', '1000 mL'], ['1 m', '100 cm'], ['1 km', '1000 m'], ['1 kg', '1000 g'], ['1 cm&sup3;', '1 mL'], ['1 m&sup2;', '10 000 cm&sup2;'], ['1 cm', '10 mm']];
+  K.shapes('circles-volume', {
+    'cv-circ': [
+      [1, 'match', function () {
+        var ds = K.uniq(3, function () { return R.int(2, 20); }), pairs = ds.map(function (d) { return ['diameter ' + d + ' cm', dec(PI * d) + ' cm']; });
+        return { q: 'Match each circle to its circumference. Use &#960; &asymp; 3.14.', type: 'match', pairs: pairs,
+          hint: 'Circumference = &#960; &times; diameter.', steps: ['For a diameter of 10 cm: 3.14 &times; 10 = 31.4 cm.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'cv-circ-match', ds: ds } };
+      }],
+      [1, 'which', function () {
+        var know = R.pick(['diameter', 'radius']), right = know === 'diameter' ? 'C = &#960; &times; d' : 'C = 2 &times; &#960; &times; r';
+        var o = R.mc(right, [know === 'diameter' ? 'C = 2 &times; &#960; &times; d' : 'C = &#960; &times; r', 'C = &#960; &times; r &times; r']);
+        return { q: 'Which way? You know the <b>' + know + '</b> of a circle. Which formula gives its circumference?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'The diameter is 2 radii.', steps: ['C = &#960; &times; d, and d = 2 &times; r, so C = 2 &times; &#960; &times; r.'],
+          explain: 'With the ' + know + ', use ' + right + '.', meta: { k: 'cv-formula-which', know: know } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), d = R.pick([40, 50, 60, 70]), it = R.pick(['bike wheel', 'wagon wheel', 'unicycle wheel']), C = r2(PI * d);
+        return { q: who + '\'s ' + it + ' has a diameter of <b>' + d + ' cm</b>. How far does it roll in one full turn? Use &#960; &asymp; 3.14.', type: 'num', unit: 'cm', answer: C, tol: tolFor(C),
+          hint: 'One turn rolls out the circumference.', steps: ['C = &#960; &times; d = 3.14 &times; ' + d + ' = ' + dec(C) + ' cm.'],
+          explain: 'It rolls ' + dec(C) + ' cm in one turn.', meta: { k: 'cv-circ-story', d: d } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), r = R.int(2, 12), truth = R.int(0, 1), said = truth ? r2(2 * PI * r) : r2(PI * r);
+        var right = 'The diameter is ' + 2 * r + ' cm, so C = 3.14 &times; ' + 2 * r + ' = ' + dec(r2(2 * PI * r)) + ' cm.';
+        return { q: 'A circle has a <b>radius</b> of ' + r + ' cm. ' + who + ' says its circumference is <b>' + dec(said) + ' cm</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['C = &#960; &times; r.', 'C = r &times; r.']),
+          hint: 'Circumference uses the diameter.', steps: [right], explain: right, meta: { k: 'cv-circ-tf', r: r, said: said } };
+      }]
+    ],
+    'cv-area': [
+      [1, 'fill', function () {
+        var r = R.int(2, 10), Ar = r2(PI * r * r);
+        return { q: 'Find the area of a circle with radius ' + r + ' cm. Fill in the blanks.', type: 'fill', fill: '<span class="math">A = 3.14 &times; </span>[[]]<span class="math"> &times; </span>[[]]<span class="math"> = </span>[[]] cm&sup2;', answers: [r, r, Ar], tol: 0.01,
+          hint: 'A = &#960; &times; r &times; r.', steps: ['r &times; r = ' + r * r + '.', '3.14 &times; ' + r * r + ' = ' + dec(Ar) + '.'],
+          explain: 'A = ' + dec(Ar) + ' cm&sup2;.', meta: { k: 'cv-area-fill', r: r } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), d = R.pick([20, 24, 30, 36, 40]), Ar = r2(PI * d * d / 4);
+        return { q: who + ' orders a round pizza with a diameter of <b>' + d + ' cm</b>. What is the area of the top? Use &#960; &asymp; 3.14.', type: 'num', unit: 'cm&sup2;', answer: Ar, tol: tolFor(Ar),
+          hint: 'Halve the diameter to get the radius first.', steps: ['r = ' + d / 2 + ' cm.', '3.14 &times; ' + d / 2 + ' &times; ' + d / 2 + ' = ' + dec(Ar) + '.'],
+          explain: 'The top is about ' + dec(Ar) + ' cm&sup2;.', meta: { k: 'cv-area-story', d: d } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), r = R.int(3, 10), truth = R.int(0, 1), said = truth ? r2(PI * r * r) : r2(PI * 2 * r);
+        var right = 'Area uses r &times; r: 3.14 &times; ' + r + ' &times; ' + r + ' = ' + dec(r2(PI * r * r)) + ' cm&sup2;.';
+        return { q: 'A circle has a radius of ' + r + ' cm. ' + who + ' says its area is <b>' + dec(said) + ' cm&sup2;</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Area = &#960; &times; diameter.', 'Area = 2 &times; radius.']),
+          hint: 'Is that the area or the circumference?', steps: [right], explain: right, meta: { k: 'cv-area-tf', r: r, said: said } };
+      }]
+    ],
+    'cv-units': [
+      [1, 'match', function () {
+        var pairs = R.shuffle(EQV).slice(0, 4);
+        return { q: 'Match the amounts that are equal.', type: 'match', pairs: pairs,
+          hint: 'Kilo means 1000. Centi means one hundredth. Milli means one thousandth.', steps: ['1 L is the same as 1000 cm&sup3;, so 1 mL = 1 cm&sup3;.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'cv-eq-match' } };
+      }],
+      [1, 'which', function () {
+        var c = R.pick([['m', 'cm', 100, 'mul'], ['cm', 'm', 100, 'div'], ['L', 'mL', 1000, 'mul'], ['mL', 'L', 1000, 'div'], ['kg', 'g', 1000, 'mul'], ['g', 'kg', 1000, 'div']]);
+        var right = (c[3] === 'mul' ? 'Multiply by ' : 'Divide by ') + c[2], o = R.mc(right, [(c[3] === 'mul' ? 'Divide by ' : 'Multiply by ') + c[2], (c[3] === 'mul' ? 'Multiply by ' : 'Divide by ') + (c[2] === 100 ? 1000 : 100)]);
+        return { q: 'Which way? To change <b>' + c[0] + '</b> to <b>' + c[1] + '</b>, what do you do?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Smaller units means more of them.', steps: ['1 ' + (c[3] === 'mul' ? c[0] : c[1]) + ' = ' + c[2] + ' ' + (c[3] === 'mul' ? c[1] : c[0]) + '.'],
+          explain: right + '.', meta: { k: 'cv-conv-which', from: c[0], to: c[1] } };
+      }],
+      [1, 'fill', function () {
+        var c = R.pick([['L', 'mL', 1000], ['m', 'cm', 100], ['kg', 'g', 1000], ['km', 'm', 1000]]), v = R.int(2, 95) / 10;
+        return { q: 'Convert.', type: 'fill', fill: dec(v) + ' ' + c[0] + ' = [[]] ' + c[1], answers: [cl(v * c[2])],
+          hint: '1 ' + c[0] + ' = ' + fmt(c[2]) + ' ' + c[1] + '.', steps: [dec(v) + ' &times; ' + fmt(c[2]) + ' = ' + dec(v * c[2]) + '.'],
+          explain: dec(v) + ' ' + c[0] + ' = ' + dec(v * c[2]) + ' ' + c[1] + '.', meta: { k: 'cv-conv-fill', v: v, from: c[0], to: c[1] } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), truth = R.int(0, 1), st = truth ? R.pick(EQV) : R.pick([['1 m&sup2;', '100 cm&sup2;'], ['1 L', '100 mL'], ['1 cm&sup3;', '10 mL'], ['1 km', '100 m']]);
+        var right = truth ? st[0] + ' = ' + st[1] + ' is correct.' : 'Check the facts: 1 m&sup2; = 10 000 cm&sup2;, 1 L = 1000 mL, 1 cm&sup3; = 1 mL, 1 km = 1000 m.';
+        return { q: who + ' says <b>' + st[0] + ' = ' + st[1] + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Every metric unit is 100 of the next one.', 'Square and cube units convert the same as lengths.']),
+          hint: 'For square units, the factor is used twice.', steps: [right], explain: right, meta: { k: 'cv-eq-tf' } };
+      }]
+    ],
+    'cv-vol': [
+      [1, 'fill', function () {
+        var l = R.int(2, 9), w = R.int(2, 6), h = R.int(2, 6);
+        return { q: 'A box is ' + l + ' cm long, ' + w + ' cm wide and ' + h + ' cm high. Fill in the blanks.', type: 'fill', fill: 'Base area = [[]] cm&sup2; &nbsp; Volume = [[]] cm&sup3;', answers: [l * w, l * w * h], fig: stack('box', l, w, h),
+          hint: 'Base area = length &times; width. Volume = base area &times; height.', steps: [l + ' &times; ' + w + ' = ' + l * w + '.', l * w + ' &times; ' + h + ' = ' + l * w * h + '.'],
+          explain: 'V = ' + l * w * h + ' cm&sup3;.', meta: { k: 'cv-box-fill', l: l, w: w, h: h } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), l = R.pick([40, 50, 60]), w = R.pick([20, 25, 30]), h = R.pick([20, 30, 40]), V = l * w * h;
+        return { q: who + '\'s fish tank is ' + l + ' cm long, ' + w + ' cm wide and ' + h + ' cm high. How many <b>litres</b> of water does it hold when full? (1 L = 1000 cm&sup3;)', type: 'num', unit: 'L', answer: V / 1000,
+          hint: 'Find the volume in cm&sup3;, then divide by 1000.', steps: [l + ' &times; ' + w + ' &times; ' + h + ' = ' + fmt(V) + ' cm&sup3;.', fmt(V) + ' &divide; 1000 = ' + dec(V / 1000) + ' L.'],
+          explain: 'It holds ' + dec(V / 1000) + ' L.', meta: { k: 'cv-tank-story', l: l, w: w, h: h } };
+      }],
+      [1, 'order', function () {
+        var boxes = K.uniq(3, function () { return [R.int(2, 8), R.int(2, 6), R.int(2, 6)]; }, function (b) { return b[0] * b[1] * b[2]; }).sort(function (a, b) { return a[0] * a[1] * a[2] - b[0] * b[1] * b[2]; });
+        return { q: 'Put these boxes in order from <b>least</b> to <b>greatest</b> volume (sizes in cm).', type: 'order', items: boxes.map(function (b) { return b.join(' &times; '); }), first: 'least', last: 'greatest',
+          hint: 'Multiply the three measurements of each box.', steps: boxes.map(function (b) { return b.join(' &times; ') + ' = ' + b[0] * b[1] * b[2] + ' cm&sup3;'; }),
+          explain: 'Volumes: ' + boxes.map(function (b) { return b[0] * b[1] * b[2]; }).join(', ') + ' cm&sup3;.', meta: { k: 'cv-box-order' } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), l = R.int(3, 9), w = R.int(2, 6), h = R.int(2, 6), truth = R.int(0, 1), said = truth ? l * w * h : l + w + h;
+        var right = 'Volume is length &times; width &times; height: ' + l + ' &times; ' + w + ' &times; ' + h + ' = ' + l * w * h + ' cm&sup3;.';
+        return { q: 'A box is ' + l + ' cm by ' + w + ' cm by ' + h + ' cm. ' + who + ' says its volume is <b>' + said + ' cm&sup3;</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Volume is length + width + height.', 'Volume is the area of the biggest face.']),
+          hint: 'How many 1 cm cubes fill the box?', steps: [right], explain: right, meta: { k: 'cv-box-tf', l: l, w: w, h: h, said: said } };
+      }]
+    ],
+    'cv-miss': [
+      [1, 'fill', function () {
+        var B = R.int(4, 30), h = R.int(2, 12);
+        return { q: 'A prism has a volume of ' + B * h + ' cm&sup3; and a base area of ' + B + ' cm&sup2;. Find its height.', type: 'fill', fill: '<span class="math">' + B * h + ' = ' + B + ' &times; </span>[[]]', answers: [h],
+          hint: 'V = base area &times; height. What times ' + B + ' makes ' + B * h + '?', steps: [B * h + ' &divide; ' + B + ' = ' + h + '.'],
+          explain: 'The height is ' + h + ' cm.', meta: { k: 'cv-miss-fill', V: B * h, B: B } };
+      }],
+      [1, 'story', function () {
+        var who = K.name(), l = R.pick([4, 5, 6]), w = R.pick([3, 4]), h = R.pick([8, 9, 10, 12]), V = l * w * h;
+        return { q: who + '\'s juice box holds <b>' + V + ' cm&sup3;</b>. Its base is ' + l + ' cm by ' + w + ' cm. How tall is it?', type: 'num', unit: 'cm', answer: h,
+          hint: 'Find the base area, then divide the volume by it.', steps: ['Base area: ' + l + ' &times; ' + w + ' = ' + l * w + ' cm&sup2;.', V + ' &divide; ' + l * w + ' = ' + h + '.'],
+          explain: 'It is ' + h + ' cm tall.', meta: { k: 'cv-miss-story', V: V, l: l, w: w } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), B = R.int(4, 20), h = R.int(2, 9), V = B * h, truth = R.int(0, 1), said = truth ? B : V * h;
+        var right = 'Base area = volume &divide; height = ' + V + ' &divide; ' + h + ' = ' + B + ' cm&sup2;.';
+        return { q: 'A prism has a volume of ' + V + ' cm&sup3; and a height of ' + h + ' cm. ' + who + ' says the base area is <b>' + said + ' cm&sup2;</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Base area = volume &times; height.', 'Base area = volume + height.']),
+          hint: 'Undo the multiplication.', steps: [right], explain: right, meta: { k: 'cv-miss-tf', V: V, h: h, said: said } };
+      }]
+    ],
+    'cv-sa': [
+      [1, 'fill', function () {
+        var r = R.int(1, 6), h = R.int(2, 10), circ = r2(PI * r * r), rect = r2(2 * PI * r * h);
+        return { q: 'A closed cylinder has radius ' + r + ' cm and height ' + h + ' cm. Find the area of each part of its net. Use &#960; &asymp; 3.14.', type: 'fill', fill: 'One circle = [[]] cm&sup2; &nbsp; Rectangle = [[]] cm&sup2;', answers: [circ, rect], tol: 0.01, fig: net(r, h),
+          hint: 'Circle: &#960; &times; r &times; r. Rectangle: circumference &times; height.', steps: ['Circle: 3.14 &times; ' + r + ' &times; ' + r + ' = ' + dec(circ) + '.', 'Rectangle: 2 &times; 3.14 &times; ' + r + ' &times; ' + h + ' = ' + dec(rect) + '.'],
+          explain: 'Surface area = 2 &times; ' + dec(circ) + ' + ' + dec(rect) + ' = ' + dec(r2(2 * circ + rect)) + ' cm&sup2;.', meta: { k: 'cv-net-fill', r: r, h: h } };
+      }],
+      [1, 'match', function () {
+        var pairs = [['Top of the cylinder', '&#960; &times; r &times; r'], ['Length of the rectangle', '2 &times; &#960; &times; r'], ['Width of the rectangle', 'the height h']];
+        return { q: 'Match each part of a cylinder\'s net to how you find it.', type: 'match', pairs: R.shuffle(pairs), fig: net(3, 5),
+          hint: 'The rectangle wraps around the circle.', steps: ['The rectangle\'s long side is the circumference.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'cv-net-match' } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), r = R.int(1, 6), h = R.int(2, 10), circ = PI * r * r, rect = 2 * PI * r * h, truth = R.int(0, 1), said = r2(truth ? 2 * circ + rect : circ + rect);
+        var right = 'A closed cylinder has two circles and one rectangle: 2 &times; ' + dec(r2(circ)) + ' + ' + dec(r2(rect)) + ' = ' + dec(r2(2 * circ + rect)) + ' cm&sup2;.';
+        return { q: 'A <b>closed</b> cylinder has radius ' + r + ' cm and height ' + h + ' cm. ' + who + ' says its surface area is <b>' + dec(said) + ' cm&sup2;</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['A cylinder has one circle and one rectangle.', 'Surface area is the same as volume.']),
+          hint: 'How many circles does a closed cylinder have?', steps: [right], explain: right, meta: { k: 'cv-sa-tf', r: r, h: h, said: said } };
+      }]
+    ]
+  });
 })();
