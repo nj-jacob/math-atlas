@@ -7,6 +7,7 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | Folder or file | What it is |
 | --- | --- |
 | `index.html`, `family.html`, `live.html` | Home page, family sign-in and parent and tutor pages, and the "Work together" page |
+| `404.html` | The "page not found" page. Firebase shows it for any address that does not exist. It uses `/` paths so it works at any depth. |
 | `plan/` | Math Plan: placement test and learning plans, Grades 1 to 8 |
 | `grade1/` … `grade8/` | One site per grade (see below) |
 | `assets/engine/` | **Shared by every grade**: lesson engine, toolbox, answer types |

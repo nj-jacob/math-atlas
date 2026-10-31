@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Polish: the grade header takes less room on a phone (grade name and "All grades" share a line, the menu wraps neatly, Sign in sits beside the display buttons). Every grade has the same footer, with a link to all grades. The "About this site" box no longer says progress is never sent anywhere (family accounts do save it). A calm "page not found" page links back home.
 - Polish: every page has a site icon for browser tabs and bookmarks. Grade 7 and Grade 8 menus now match the other grades ("Chapters", same order). The home page gives the same placement check time as Math Plan (about 25 minutes). The family page and the "Work together" page say so when sign-in cannot load (no internet or a blocked network), instead of showing a blank page.
 - Grade 4: spinners, bar graphs, growing patterns, the robot path and the shape slide show real orange and green again, so the words in the questions match the pictures (the shared theme had turned them teal).
 - Grade 5 place value: the "match each underlined digit" question never shows the same number twice.

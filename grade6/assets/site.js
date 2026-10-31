@@ -740,7 +740,7 @@
     h += '</div><div class="note"><p><b>About this site.</b> It follows the five content strands (B to F) of the 2020 Ontario elementary math curriculum for Grade 6. ' +
       'It is a study aid, not a copy of the curriculum. Teachers and parents should check details against the Ministry of Education document.</p>' +
       '<p><b>Not covered:</b> strand A (social-emotional learning skills and math processes) is woven through, not taught as its own chapter. Mathematical modelling (C4) has no chapter of its own. Infographics (D1.4) are described but not built on the site. Coding (C3) is taught with short code you read and change on paper, not a live coding tool.</p>' +
-      '<p><b>Progress</b> is saved only in this browser. Nothing is sent anywhere.</p></div></div>';
+      '<p><b>Progress</b> is saved in this browser. With a <a href="../family.html">family account</a>, it is also kept for any device, and parents and tutors can follow along.</p></div></div>';
     app.innerHTML = h;
   }
 
