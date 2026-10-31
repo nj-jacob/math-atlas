@@ -55,3 +55,5 @@ html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
 .qk-tool{border:1.5px solid var(--line);border-radius:14px;padding:8px}
 .qk-done .qk-card,.qk-done .qk-tile{cursor:default}
 @media (max-width:480px){.qk-cols{gap:8px}.qk-card{padding:8px 10px;font-size:1rem}.qk-fill{font-size:1.1rem}.qk-fill input.qk-blank{width:3.8em!important}}
+/* drawings inside questions, steps and answers never run off a phone screen */
+.pcard svg,.steps svg,.ls-reveal svg,.fb svg,.q svg{max-width:100%;height:auto}

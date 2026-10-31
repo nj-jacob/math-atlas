@@ -128,7 +128,8 @@ async function checkGrade(browser, base, g) {
           const q = Atlas._q, root = document.querySelector('.pq');
           if (!q || !root || !root.querySelector('.pcard')) return { err: 'practice question did not appear' };
           const card = root.querySelector('.pcard');
-          const over = [...card.querySelectorAll('*')].some(e => { const b = e.getBoundingClientRect(); return b.width && b.right > window.innerWidth + 2 && !e.closest('.tbl, [style*="overflow"], .qk-pic'); }) || card.scrollWidth > card.clientWidth + 2;
+          const runsOff = () => [...card.querySelectorAll('*')].some(e => { const b = e.getBoundingClientRect(); return b.width && b.right > window.innerWidth + 2 && !e.closest('.tbl, [style*="overflow"], .qk-pic'); }) || card.scrollWidth > card.clientWidth + 2;
+          let over = runsOff();
           const t = q.type + (q.shape ? ':' + q.shape : '');
           const fb = () => root.querySelector('.fb');
           try {
@@ -139,6 +140,7 @@ async function checkGrade(browser, base, g) {
             }
           } catch (e) { return { t, over, err: 'could not answer: ' + e.message }; }
           if (!/\bok\b/.test(fb().className)) return { t, over, err: 'a right answer was marked wrong: ' + fb().textContent.slice(0, 80) };
+          over = over || runsOff(); /* again with the answer, steps and pictures showing */
           const nb = root.querySelector('.pnext .btn'); if (nb) nb.click();
           return { t, over };
         }, bad);

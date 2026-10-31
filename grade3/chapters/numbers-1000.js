@@ -963,7 +963,7 @@
           var pairs = [], seen = {};
           while (pairs.length < 3) {
             var d = distinct3(true), n = num3(d), i = R.int(0, 2), val = d[i] * Math.pow(10, 2 - i);
-            if (seen[val]) continue; seen[val] = 1;
+            if (seen[val] || seen['n' + n]) continue; seen[val] = 1; seen['n' + n] = 1;
             pairs.push(['<span class="math">' + u(n, i) + '</span>', String(val)]);
           }
           return { q: 'Match each underlined digit to the value it stands for.', type: 'match', pairs: pairs,
