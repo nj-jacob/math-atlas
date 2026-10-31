@@ -116,15 +116,28 @@
     s.note = '';
   }
 
+  /* drawings for the Watch and My turn clips: each takes the clip's state */
+  function solidView(s) { return '<div>' + solid(s.k, s.hl) + cap(s.say) + '</div>'; }
+  function structView(s) { return '<div>' + structFig(s.k, s.split) + cap(s.say) + '</div>'; }
+  function pairView(s) { return '<div>' + boxPair(s.a, s.b, s.c) + cap(s.say) + '</div>'; }
+  function compassView(s) { return compass(s.d, s.say); }
+  function mapView(s) { return '<div>' + map(s.path, s.dir) + cap(s.say) + '</div>'; }
+
   var LESSONS = [
     { id: 'solids', title: '3D objects', sub: 'Faces, edges and vertices.', concepts: [
       { id: 'parts', title: 'Faces, edges and vertices', exp: ['E1.1'], skill: 'sh-count',
         body: '<p>A <b>face</b> is a flat surface. An <b>edge</b> is where two faces meet. A <b>vertex</b> is a corner where edges meet. Dashed lines are edges hidden at the back.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + solid('cube', s.hl) + cap(s.say) + '</div>'; }, { hl: '', say: 'A cube' }), steps: [
+        watch: { mount: G3.view(solidView, { k: 'cube', hl: '', say: 'A cube' }), steps: [
           { say: 'This is a cube.', ms: 1200 },
           { say: 'The flat surfaces are <b>faces</b>. A cube has 6.', act: function (t) { return t.set({ hl: 'f', say: '6 faces' }, 1800); } },
           { say: 'Where two faces meet is an <b>edge</b>. A cube has 12.', act: function (t) { return t.set({ hl: 'e', say: '12 edges' }, 1800); } },
           { say: 'The corners are <b>vertices</b>. A cube has 8.', act: function (t) { return t.set({ hl: 'v', say: '8 vertices' }, 1800); } }
+        ] },
+        example: { mount: G3.view(solidView, { k: 'tprism', hl: '', say: 'A triangular prism' }), steps: [
+          { say: 'My turn. This is a triangular prism.', ms: 1300 },
+          { say: 'I find the flat faces: 2 triangles and 3 rectangles. That is <b>5 faces</b>.', act: function (t) { return t.set({ hl: 'f', say: '5 faces' }, 1900); } },
+          { say: 'I find the edges, where two faces meet. There are <b>9 edges</b>.', act: function (t) { return t.set({ hl: 'e', say: '9 edges' }, 1900); } },
+          { say: 'I find the corners. There are <b>6 vertices</b>.', act: function (t) { return t.set({ hl: 'v', say: '6 vertices' }, 1900); } }
         ] },
         try: { mount: G3.play({ state: { k: 'cube', hl: '' }, draw: function (s) { return solid(s.k, s.hl); },
           selects: [{ key: 'k', label: 'Object', options: ORDER.map(function (k) { return [k, S[k].name]; }) }],
@@ -137,10 +150,15 @@
 
       { id: 'kinds', title: 'Prisms and pyramids', exp: ['E1.1'], skill: 'sh-name',
         body: '<p>A <b>prism</b> has two matching ends joined by rectangles. A <b>pyramid</b> has one base, with triangles that meet at a point. The <b>base</b> gives the object its name.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + solid(s.k, s.hl) + cap(s.say) + '</div>'; }, { k: 'tprism', hl: '', say: '' }), steps: [
+        watch: { mount: G3.view(solidView, { k: 'tprism', hl: '', say: '' }), steps: [
           { say: 'A triangular prism: two triangle ends, joined by rectangles.', act: function (t) { return t.set({ hl: 'f', say: 'Triangular prism' }, 2000); } },
           { say: 'A square-based pyramid: a square base, with 4 triangles meeting at a point.', act: function (t) { return t.set({ k: 'spyr', hl: 'f', say: 'Square-based pyramid' }, 2200); } },
           { say: 'A triangular pyramid: every face is a triangle.', act: function (t) { return t.set({ k: 'tpyr', say: 'Triangular pyramid' }, 2000); } }
+        ] },
+        example: { mount: G3.view(solidView, { k: 'rprism', hl: 'f', say: 'Rectangular prism' }), steps: [
+          { say: 'My turn. This has two matching ends, joined by rectangles. It is a <b>prism</b>: a rectangular prism.', ms: 2200 },
+          { say: 'This one has one triangle base, and triangles that meet at a point. It is a <b>pyramid</b>: a triangular pyramid.', act: function (t) { return t.set({ k: 'tpyr', say: 'Triangular pyramid' }, 2300); } },
+          { say: 'A cube has two matching square ends, joined by squares. So a cube is a prism too.', act: function (t) { return t.set({ k: 'cube', say: 'Cube: a prism' }, 2200); } }
         ] },
         try: { mount: G3.play({ state: { k: 'cube' }, draw: function (s) { return solid(s.k, 'f'); },
           selects: [{ key: 'k', label: 'Object', options: ORDER.map(function (k) { return [k, S[k].name]; }) }],
@@ -153,10 +171,16 @@
 
       { id: 'count', title: 'Count without missing any', exp: ['E1.1'], skill: 'sh-count', hard: true,
         body: '<p>Count in an order so you never miss or double count. For edges: <b>the top, the bottom, then the ones going up</b>.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + solid('rprism', 'e') + cap(s.say) + '</div>'; }, { say: '' }), steps: [
+        watch: { mount: G3.view(solidView, { k: 'rprism', hl: 'e', say: '' }), steps: [
           { say: '4 edges around the top.', act: function (t) { return t.set({ say: '4' }, 1500); } },
           { say: '4 around the bottom (one is dashed at the back).', act: function (t) { return t.set({ say: '4 + 4' }, 1500); } },
           { say: '4 going up. 4 + 4 + 4 = <b>12 edges</b>.', act: function (t) { return t.set({ say: '4 + 4 + 4 = 12' }, 2000); } }
+        ] },
+        example: { mount: G3.view(solidView, { k: 'tprism', hl: 'e', say: '' }), steps: [
+          { say: 'My turn. I count the edges of a triangular prism, in order.', ms: 1500 },
+          { say: '3 edges around the front triangle.', act: function (t) { return t.set({ say: '3' }, 1500); } },
+          { say: '3 around the back triangle. Some are dashed because they are hidden.', act: function (t) { return t.set({ say: '3 + 3' }, 1700); } },
+          { say: '3 going from the front to the back. 3 + 3 + 3 = <b>9 edges</b>.', act: function (t) { return t.set({ say: '3 + 3 + 3 = 9' }, 2000); } }
         ] },
         ways: [
           { label: 'Use the ends', html: '<p>A triangular prism has 2 triangle ends. Each has 3 vertices: 3 + 3 = <b>6</b>. Each has 3 edges, plus 3 joining them: 3 + 3 + 3 = <b>9 edges</b>.</p><div class="fig">' + solid('tprism', 'v') + '</div>' },
@@ -171,10 +195,16 @@
     { id: 'build', title: 'Structures', sub: 'Put objects together, and take them apart.', concepts: [
       { id: 'apart', title: 'Take a structure apart', exp: ['E1.2'], skill: 'sh-name',
         body: '<p>Buildings and toys are made of 3D objects put together. A house can be a <b>cube</b> with a <b>triangular prism</b> on top.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + structFig(s.k, s.split) + cap(s.say) + '</div>'; }, { k: 'house', split: false, say: 'A house' }), steps: [
+        watch: { mount: G3.view(structView, { k: 'house', split: false, say: 'A house' }), steps: [
           { say: 'This looks like a house.', ms: 1300 },
           { say: 'Lift off the roof. It is a triangular prism.', act: function (t) { return t.set({ split: true, say: 'Triangular prism on a cube' }, 1800); } },
           { say: 'A grain silo: a cone on a cylinder.', act: function (t) { return t.set({ k: 'silo', split: true, say: 'Cone on a cylinder' }, 2000); } }
+        ] },
+        example: { mount: G3.view(structView, { k: 'tower', split: false, say: 'A tower' }), steps: [
+          { say: 'My turn. This looks like a tower with a pointed roof.', ms: 1400 },
+          { say: 'I lift off the top. It is a square-based pyramid on a cube.', act: function (t) { return t.set({ split: true, say: 'Square-based pyramid on a cube' }, 2000); } },
+          { say: 'This barn is a triangular prism on a rectangular prism.', act: function (t) { return t.set({ k: 'barn', split: true, say: 'Triangular prism on a rectangular prism' }, 2000); } },
+          { say: 'A structure is objects put together.', ms: 1600 }
         ] },
         try: { mount: G3.play({ state: { k: 'barn', split: false }, draw: function (s) { return structFig(s.k, s.split); },
           selects: [{ key: 'k', label: 'Structure', options: [['house', 'house'], ['barn', 'barn'], ['tower', 'tower'], ['silo', 'silo']] }],
@@ -186,10 +216,16 @@
 
       { id: 'everyday', title: 'Objects all around us', exp: ['E1.2', 'E1.1'], skill: 'sh-name',
         body: '<p>Look for 3D objects in things you use. A can is a <b>cylinder</b>. A tent is a <b>triangular prism</b>. Look at the flat 2D shapes too: the front of a house shows a square and a triangle.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + solid(s.k, '') + cap(s.say) + '</div>'; }, { k: 'cyl', say: 'A can of soup' }), steps: [
+        watch: { mount: G3.view(solidView, { hl: '', k: 'cyl', say: 'A can of soup' }), steps: [
           { say: 'A can of soup is a cylinder.', ms: 1600 },
           { say: 'A tent is a triangular prism.', act: function (t) { return t.set({ k: 'tprism', say: 'A tent' }, 1600); } },
           { say: 'A traffic cone is a cone. A dice is a cube.', act: function (t) { return t.set({ k: 'cone', say: 'A traffic cone' }, 1400).then(function () { return t.set({ k: 'cube', say: 'A dice' }, 1600); }); } }
+        ] },
+        example: { mount: G3.view(solidView, { k: 'rprism', hl: '', say: 'A cereal box' }), steps: [
+          { say: 'My turn. A cereal box is a rectangular prism. Its faces are 6 rectangles.', ms: 1900 },
+          { say: 'An ice cream cone is a cone. It has 1 circle and 1 curved surface.', act: function (t) { return t.set({ k: 'cone', say: 'An ice cream cone' }, 1900); } },
+          { say: 'A roll of paper towel is a cylinder. It has 2 circles and 1 curved surface.', act: function (t) { return t.set({ k: 'cyl', say: 'A roll of paper towel' }, 1900); } },
+          { say: 'I name the 3D object first, then its 2D faces.', ms: 1600 }
         ] },
         key: '<p>Name the <b>3D object</b>, then the <b>2D faces</b>.</p>',
         check: [TU('s2', 0), TU('s2', 2)] }
@@ -198,10 +234,15 @@
     { id: 'congruent', title: 'Congruent objects', sub: 'Exactly the same size and shape.', concepts: [
       { id: 'same', title: 'What congruent means', exp: ['E1.3'], skill: 'sh-congruent',
         body: '<p>Two objects are <b>congruent</b> if they are exactly the same size and shape. Their matching faces and edges are all the same length.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + boxPair(s.a, s.b, s.c) + cap(s.say) + '</div>'; }, { a: 3, b: 2, c: 3, say: '' }), steps: [
+        watch: { mount: G3.view(pairView, { a: 3, b: 2, c: 3, say: '' }), steps: [
           { say: 'Box A is 3 by 2 by 4. Box B is 3 by 2 by 3.', ms: 1800 },
           { say: 'B is one cube shorter. <b>Not congruent.</b>', act: function (t) { return t.set({ say: 'Not congruent' }, 1600); } },
           { say: 'Make B 4 tall. Now every edge matches. <b>Congruent.</b>', act: function (t) { return t.set({ c: 4, say: 'Congruent' }, 2000); } }
+        ] },
+        example: { mount: G3.view(pairView, { a: 3, b: 1, c: 4, say: '' }), steps: [
+          { say: 'My turn. Box A is 3 by 2 by 4. Box B is 3 by 1 by 4.', ms: 1800 },
+          { say: 'I check each edge. B is only 1 cube deep, not 2. <b>Not congruent.</b>', act: function (t) { return t.set({ say: 'Not congruent' }, 1800); } },
+          { say: 'I make B 2 deep. Now every edge matches. <b>Congruent</b>: same size and same shape.', act: function (t) { return t.set({ b: 2, say: 'Congruent' }, 2200); } }
         ] },
         try: { mount: G3.play({ state: { a: 4, b: 2, c: 3 }, draw: function (s) { return boxPair(s.a, s.b, s.c); },
           sliders: [{ key: 'a', label: 'B long', min: 1, max: 5 }, { key: 'b', label: 'B deep', min: 1, max: 5 }, { key: 'c', label: 'B tall', min: 1, max: 5 }],
@@ -212,10 +253,16 @@
 
       { id: 'turned', title: 'Turned but still congruent', exp: ['E1.3'], skill: 'sh-congruent', hard: true,
         body: '<p>Turning an object does not change it. A box lying down can be congruent to a box standing up. Check: do they use the <b>same three lengths</b>?</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + boxPair(s.a, s.b, s.c) + cap(s.say) + '</div>'; }, { a: 3, b: 2, c: 4, say: 'The same box' }), steps: [
+        watch: { mount: G3.view(pairView, { a: 3, b: 2, c: 4, say: 'The same box' }), steps: [
           { say: 'B matches A: 3 by 2 by 4.', ms: 1500 },
           { say: 'Lay B on its side: 4 long, 2 deep, 3 tall.', act: function (t) { return t.set({ a: 4, c: 3, say: '4 by 2 by 3' }, 1800); } },
           { say: 'It looks different, but it uses 2, 3 and 4. <b>Still congruent.</b>', ms: 2000 }
+        ] },
+        example: { mount: G3.view(pairView, { a: 2, b: 3, c: 4, say: 'Is B congruent to A?' }), steps: [
+          { say: 'My turn. Is box B congruent to box A? B is 2 long, 3 deep and 4 tall.', ms: 1900 },
+          { say: 'I list the lengths. A: 3, 2 and 4. B: 2, 3 and 4.', act: function (t) { return t.set({ say: 'A: 3, 2, 4. B: 2, 3, 4.' }, 1900); } },
+          { say: 'Same three lengths, in a different order. B is just turned. <b>Congruent.</b>', ms: 2000 },
+          { say: 'I turn B to check: 3 long, 2 deep, 4 tall. It matches A.', act: function (t) { return t.set({ a: 3, b: 2, say: 'The same box' }, 2000); } }
         ] },
         ways: [
           { label: 'Sort the numbers', html: '<p>Write each box\'s lengths from smallest to biggest. A: 2, 3, 4. B: 2, 3, 4. Same list, so congruent.</p>' },
@@ -233,11 +280,17 @@
     { id: 'moves', title: 'Giving directions', sub: 'How far, and which way to turn.', concepts: [
       { id: 'turns', title: 'Quarter and half turns', exp: ['E1.4'], skill: 'sh-turn',
         body: '<p>A <b>quarter turn</b> turns you to face the side. A <b>half turn</b> turns you to face the opposite way. Four quarter turns bring you all the way around.</p>',
-        watch: { mount: G3.view(function (s) { return compass(s.d, s.say); }, { d: 0, say: 'Facing north' }), steps: [
+        watch: { mount: G3.view(compassView, { d: 0, say: 'Facing north' }), steps: [
           { say: 'Facing north.', ms: 1200 },
           { say: 'A quarter turn right: now facing east.', act: function (t) { return t.set({ d: 1, say: 'Quarter turn right: east' }, 1500); } },
           { say: 'A half turn: now facing west, the opposite way.', act: function (t) { return t.set({ d: 3, say: 'Half turn: west' }, 1500); } },
           { say: 'A quarter turn right: back to north. <b>Turns depend on where you face.</b>', act: function (t) { return t.set({ d: 4, say: 'Quarter turn right: north' }, 2000); } }
+        ] },
+        example: { mount: G3.view(compassView, { d: 1, say: 'Facing east' }), steps: [
+          { say: 'My turn. I am facing east.', ms: 1200 },
+          { say: 'I make a half turn. Now I face west, the opposite way.', act: function (t) { return t.set({ d: 3, say: 'Half turn: west' }, 1600); } },
+          { say: 'I make a quarter turn left. Now I face south.', act: function (t) { return t.set({ d: 2, say: 'Quarter turn left: south' }, 1600); } },
+          { say: 'Another quarter turn left: east. A quarter turn goes to the side. A half turn goes the opposite way.', act: function (t) { return t.set({ d: 1, say: 'Quarter turn left: east' }, 2200); } }
         ] },
         try: { mount: G3.play({ state: { d: 0 }, draw: function (s) { return compass(s.d, 'Facing ' + DN[((s.d % 4) + 4) % 4]); },
           buttons: [{ label: 'Quarter turn left', act: function (s) { s.d--; } }, { label: 'Quarter turn right', act: function (s) { s.d++; } }, { label: 'Half turn', act: function (s) { s.d += 2; } }],
@@ -248,11 +301,17 @@
 
       { id: 'map', title: 'Follow directions on a map', exp: ['E1.4'], skill: 'sh-path', hard: true,
         body: '<p>Directions say <b>how far to go</b> and <b>which way to turn</b>. Follow them one step at a time, and keep track of which way you face.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + map(s.path, s.dir) + cap(s.say) + '</div>'; }, { path: [[0, 0]], dir: 0, say: 'Start at A1, facing north' }), steps: [
+        watch: { mount: G3.view(mapView, { path: [[0, 0]], dir: 0, say: 'Start at A1, facing north' }), steps: [
           { say: 'Start at A1, facing north.', ms: 1300 },
           { say: 'Forward 3: A2, A3, A4.', act: function (t) { return t.seq([{ path: [[0, 0], [0, 1]] }, { path: [[0, 0], [0, 1], [0, 2]] }, { path: [[0, 0], [0, 1], [0, 2], [0, 3]], say: 'At A4' }], 600); } },
           { say: 'Quarter turn right: now facing east.', act: function (t) { return t.set({ dir: 1, say: 'Facing east' }, 1300); } },
           { say: 'Forward 2. You are at <b>C4</b>.', act: function (t) { return t.seq([{ path: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3]] }, { path: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3], [2, 3]], say: 'At C4' }], 600); } }
+        ] },
+        example: { mount: G3.view(mapView, { path: [[1, 0]], dir: 1, say: 'Start at B1, facing east' }), steps: [
+          { say: 'My turn. I start at B1, facing east.', ms: 1300 },
+          { say: 'Forward 2: C1, D1.', act: function (t) { return t.seq([{ path: [[1, 0], [2, 0]] }, { path: [[1, 0], [2, 0], [3, 0]], say: 'At D1' }], 600); } },
+          { say: 'A quarter turn left: now I face north.', act: function (t) { return t.set({ dir: 0, say: 'Facing north' }, 1300); } },
+          { say: 'Forward 3: D2, D3, D4. I am at <b>D4</b>.', act: function (t) { return t.seq([{ path: [[1, 0], [2, 0], [3, 0], [3, 1]] }, { path: [[1, 0], [2, 0], [3, 0], [3, 1], [3, 2]] }, { path: [[1, 0], [2, 0], [3, 0], [3, 1], [3, 2], [3, 3]], say: 'At D4' }], 600); } }
         ] },
         ways: [
           { label: 'Turn the map', html: '<p>Turn the page so the arrow points up before each turn. Then left and right are easy to see.</p>' },

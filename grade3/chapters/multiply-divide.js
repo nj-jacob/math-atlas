@@ -84,6 +84,7 @@
   function dealView(s) { return '<div>' + plates(dealCounts(s.total, s.k, s.dealt), s.total - s.dealt) + cap(s.say) + '</div>'; }
   function bagView(s) { return '<div>' + (s.bags ? groups(s.bags, s.size, s.bags + ' bags of ' + s.size) : '') + (s.total - s.bags * s.size ? plates([], s.total - s.bags * s.size) : '') + cap(s.say) + '</div>'; }
   function groupView(s) { return '<div>' + groups(s.g, s.n) + cap(s.say) + '</div>'; }
+  function factView(s) { return '<div>' + chart100(s.k) + cap(s.say) + '</div>'; }
   function arrView(s) { return '<div>' + array(s.r, s.c, s.sp || 0) + cap(s.say) + '</div>'; }
   function famView(s) {
     var f = [s.a + ' &times; ' + s.b + ' = ' + s.a * s.b, s.b + ' &times; ' + s.a + ' = ' + s.a * s.b, s.a * s.b + ' &divide; ' + s.a + ' = ' + s.b, s.a * s.b + ' &divide; ' + s.b + ' = ' + s.a];
@@ -107,6 +108,12 @@
           { say: 'One more plate of 4.', act: function (t) { return t.set({ g: 3, say: '3 groups of 4: 4 + 4 + 4 = 12' }, 1500); } },
           { say: '3 equal groups of 4 make <b>12</b>.', ms: 1800 }
         ] },
+        example: { mount: G3.view(groupView, { g: 1, n: 5, say: '1 group of 5' }), steps: [
+          { say: 'My turn. I put 5 grapes on one plate.', ms: 1300 },
+          { say: 'I add another plate of 5. Each plate has the same number.', act: function (t) { return t.set({ g: 2, say: '2 groups of 5: 5 + 5 = 10' }, 1500); } },
+          { say: 'I add two more plates of 5.', act: function (t) { return t.set({ g: 4, say: '4 groups of 5: 5 + 5 + 5 + 5 = 20' }, 1600); } },
+          { say: '4 equal groups of 5 make <b>20</b>. Every group has the same number.', ms: 2000 }
+        ] },
         try: { mount: G3.play({ state: { g: 2, n: 2 }, draw: function (s) { return groups(s.g, s.n); },
           sliders: [{ key: 'g', label: 'Number of groups', min: 1, max: 10 }, { key: 'n', label: 'In each group', min: 1, max: 10 }],
           info: function (s) { return s.g + ' group' + (s.g > 1 ? 's' : '') + ' of ' + s.n + ': ' + addList(s.g, s.n) + ' = <b>' + s.g * s.n + '</b>'; },
@@ -121,6 +128,11 @@
           { say: '5 plates with 2 on each.', ms: 1300 },
           { say: 'Add them: 2 + 2 + 2 + 2 + 2 = 10.', act: function (t) { return t.set({ say: '2 + 2 + 2 + 2 + 2 = 10' }, 1800); } },
           { say: 'A short way to write it: <b>5 &times; 2 = 10</b>.', act: function (t) { return t.set({ say: '5 &times; 2 = 10' }, 2000); } }
+        ] },
+        example: { mount: G3.view(groupView, { g: 4, n: 3, say: '4 groups of 3' }), steps: [
+          { say: 'My turn. I see 4 plates with 3 on each.', ms: 1300 },
+          { say: 'I add them: 3 + 3 + 3 + 3 = 12.', act: function (t) { return t.set({ say: '3 + 3 + 3 + 3 = 12' }, 1800); } },
+          { say: 'The short way to write it is <b>4 &times; 3 = 12</b>. That means 4 groups of 3.', act: function (t) { return t.set({ say: '4 &times; 3 = 12' }, 2200); } }
         ] },
         try: { tool: 'counters', opts: { n: 6, controls: ['pairs'], arrange: 'scatter' }, tasks: [
           { do: 'Show <b>5 &times; 2</b>: make 10 counters, then pair them up.', goal: function (s) { return s.n === 10 && s.mode === 'pairs'; }, yes: '5 pairs: 5 groups of 2 is 10.' }
@@ -139,6 +151,12 @@
           { say: 'A third row: 15.', act: function (t) { return t.set({ r: 3, say: '5, 10, 15' }, 1300); } },
           { say: '3 rows of 5: <b>3 &times; 5 = 15</b>.', act: function (t) { return t.set({ say: '3 &times; 5 = 15' }, 2000); } }
         ] },
+        example: { mount: G3.view(arrView, { r: 1, c: 6, say: '6' }), steps: [
+          { say: 'My turn. I make one row of 6.', ms: 1200 },
+          { say: 'I add a second row: 12.', act: function (t) { return t.set({ r: 2, say: '6, 12' }, 1300); } },
+          { say: 'Two more rows: 18, 24.', act: function (t) { return t.seq([{ r: 3, say: '6, 12, 18' }, { r: 4, say: '6, 12, 18, 24' }], 900); } },
+          { say: '4 rows with 6 in each row: <b>4 &times; 6 = 24</b>.', act: function (t) { return t.set({ say: '4 &times; 6 = 24' }, 2000); } }
+        ] },
         try: { mount: G3.play({ state: { r: 2, c: 3 }, draw: function (s) { return array(s.r, s.c); },
           sliders: [{ key: 'r', label: 'Rows', min: 1, max: 10 }, { key: 'c', label: 'In each row', min: 1, max: 10 }],
           info: function (s) { return s.r + ' rows of ' + s.c + ': <b>' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</b>'; },
@@ -154,6 +172,11 @@
           { say: 'Turn it on its side.', act: function (t) { return t.set({ r: 5, c: 2, say: '5 &times; 2 = 10' }, 1600); } },
           { say: 'Now it is 5 rows of 2. Still 10 dots. <b>2 &times; 5 = 5 &times; 2</b>.', ms: 2000 }
         ] },
+        example: { mount: G3.view(arrView, { r: 3, c: 6, say: '3 &times; 6 = 18' }), steps: [
+          { say: 'My turn. 3 rows of 6 is 18.', ms: 1500 },
+          { say: 'I turn it on its side.', act: function (t) { return t.set({ r: 6, c: 3, say: '6 &times; 3 = 18' }, 1600); } },
+          { say: 'Now it is 6 rows of 3. Still 18 dots. <b>3 &times; 6 = 6 &times; 3</b>. Same answer.', ms: 2200 }
+        ] },
         try: { mount: G3.play({ state: { r: 3, c: 7 }, draw: function (s) { return array(s.r, s.c); },
           buttons: [{ label: 'Turn it on its side', act: function (s) { var x = s.r; s.r = s.c; s.c = x; s.turned = (s.turned || 0) + 1; } }],
           info: function (s) { return '<b>' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</b>'; },
@@ -168,6 +191,12 @@
           { say: 'Split after 5 rows.', act: function (t) { return t.set({ sp: 5, say: '5 &times; 4 and 2 &times; 4' }, 1600); } },
           { say: 'The top is 5 &times; 4 = 20. The bottom is 2 &times; 4 = 8.', act: function (t) { return t.set({ say: '20 and 8' }, 1800); } },
           { say: 'Add the parts: 20 + 8 = <b>28</b>. So 7 &times; 4 = 28.', act: function (t) { return t.set({ say: '7 &times; 4 = 28' }, 2000); } }
+        ] },
+        example: { mount: G3.view(arrView, { r: 8, c: 3, sp: 0, say: '8 &times; 3 = ?' }), steps: [
+          { say: 'My turn. 8 rows of 3. That is a hard fact for me.', ms: 1400 },
+          { say: 'I split it after 5 rows.', act: function (t) { return t.set({ sp: 5, say: '5 &times; 3 and 3 &times; 3' }, 1600); } },
+          { say: 'The top is 5 &times; 3 = 15. The bottom is 3 &times; 3 = 9.', act: function (t) { return t.set({ say: '15 and 9' }, 1800); } },
+          { say: 'I add the parts: 15 + 9 = <b>24</b>. So 8 &times; 3 = 24.', act: function (t) { return t.set({ say: '8 &times; 3 = 24' }, 2000); } }
         ] },
         ways: [
           { label: 'Add one more group', html: '<p>Know 5 &times; 6 = 30? Then 6 &times; 6 is one more group of 6: 30 + 6 = <b>36</b>.</p><div class="fig">' + array(6, 6, 5, '6 rows of 6, split after 5') + '</div>' },
@@ -192,6 +221,11 @@
           { say: '5, 10, 15, 20, 25, 30, 35.', act: function (t) { return t.jumps(5, 7, 280); } },
           { say: '7 jumps of 5 land on <b>35</b>. So 5 &times; 7 = 35.', act: function (t) { return t.mark(35, '35'); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0 }, steps: [
+          { say: 'My turn. 4 &times; 6: I start at 0 and jump by 4, six times.', ms: 1400 },
+          { say: '4, 8, 12, 16, 20, 24.', act: function (t) { return t.jumps(4, 6, 300); } },
+          { say: '6 jumps of 4 land on <b>24</b>. So 4 &times; 6 = 24.', act: function (t) { return t.mark(24, '24'); }, ms: 2000 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 10, start: 0, step: [2, 5, 10] }, tasks: [
           { do: 'Find <b>2 &times; 8</b>: jump by 2, eight times.', goal: function (s) { return s.at === 16; }, yes: '8 jumps of 2: 16.' },
           { do: 'Now find <b>10 &times; 6</b>. Start again from 0.', goal: function (s) { return s.at === 60; }, yes: '6 jumps of 10: 60.' }
@@ -201,10 +235,16 @@
 
       { id: 'patterns', title: 'Patterns in the facts', exp: ['B2.2'], skill: 'md-facts',
         body: '<p>Each set of facts has a pattern. Facts of 2 are <b>even</b>. Facts of 5 end in <b>5 or 0</b>. Facts of 10 end in <b>0</b>.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + chart100(s.k) + cap(s.say) + '</div>'; }, { k: 2, say: 'Facts of 2' }), steps: [
+        watch: { mount: G3.view(factView, { k: 2, say: 'Facts of 2' }), steps: [
           { say: 'Facts of 2: every second number. They are the even numbers.', ms: 2000 },
           { say: 'Facts of 5: two columns, ending in 5 or 0.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 2000); } },
           { say: 'Facts of 10: only the last column. They all end in 0.', act: function (t) { return t.set({ k: 10, say: 'Facts of 10' }, 2000); } }
+        ] },
+        example: { mount: G3.view(factView, { k: 2, say: 'Facts of 2' }), steps: [
+          { say: 'My turn. Is 70 a fact of 2, of 5 or of 10? 70 is even, so it is a fact of 2.', ms: 2200 },
+          { say: '70 ends in 0, so it is a fact of 5.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 1800); } },
+          { say: 'It ends in 0, so it is a fact of 10 too.', act: function (t) { return t.set({ k: 10, say: 'Facts of 10' }, 1800); } },
+          { say: 'Now 35. It ends in 5, so it is a fact of 5. It is odd, so it is not a fact of 2 or 10.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 2200); } }
         ] },
         try: { tool: 'hundred', opts: {}, tasks: [
           { do: 'Tap all the facts of 10 on the chart: 10, 20, 30 and on to 100.', goal: function (s) { return s.lit.length === 10 && s.lit.every(function (n) { return n % 10 === 0; }); }, yes: 'They make one straight column. Every one ends in 0.' }
@@ -218,6 +258,11 @@
           { say: '5 &times; ___ = 30. Count by 5s to 30.', ms: 1300 },
           { say: '5, 10, 15, 20, 25, 30.', act: function (t) { return t.jumps(5, 6, 300); } },
           { say: 'That was 6 jumps. <b>5 &times; 6 = 30</b>.', ms: 2000 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
+          { say: 'My turn. 4 &times; ___ = 32. I count by 4s to 32.', ms: 1400 },
+          { say: '4, 8, 12, 16, 20, 24, 28, 32.', act: function (t) { return t.jumps(4, 8, 280); } },
+          { say: 'I count my jumps: 8. <b>4 &times; 8 = 32</b>. The number of jumps was the missing number.', ms: 2200 }
         ] },
         ways: [
           { label: 'Use the chart', html: '<p>Read across the row of 5s until you find 30. It is under the 6.</p><div class="tbl"><table><thead><tr><th>&times;</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<th>' + i + '</th>'; }).join('') + '</tr></thead><tbody><tr><th>5</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<td' + (i === 6 ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : '') + '>' + 5 * i + '</td>'; }).join('') + '</tr></tbody></table></div>' },
@@ -240,6 +285,11 @@
           { say: 'Deal one to each plate, round and round.', act: function (t) { var p = []; for (var i = 1; i <= 12; i++) p.push({ dealt: i }); return t.seq(p, 260); } },
           { say: 'Each plate has 4. <b>12 &divide; 3 = 4</b>.', act: function (t) { return t.set({ say: '12 &divide; 3 = 4' }, 2000); } }
         ] },
+        example: { mount: G3.view(dealView, { total: 15, k: 5, dealt: 0, say: '' }), steps: [
+          { say: 'My turn. I share 15 grapes among 5 plates.', ms: 1300 },
+          { say: 'I deal one to each plate, round and round, until none are left.', act: function (t) { var p = []; for (var i = 1; i <= 15; i++) p.push({ dealt: i }); return t.seq(p, 220); } },
+          { say: 'Each plate has 3. <b>15 &divide; 5 = 3</b>.', act: function (t) { return t.set({ say: '15 &divide; 5 = 3' }, 2000); } }
+        ] },
         try: { mount: G3.play({ state: { total: 15, k: 3, dealt: 0 }, draw: function (s) { return plates(dealCounts(s.total, s.k, s.dealt), s.total - s.dealt); },
           buttons: [{ label: 'Deal one to each', act: function (s) { s.dealt = Math.min(s.total, s.dealt + s.k); } }, { label: 'Start over', act: function (s) { s.dealt = 0; } }],
           info: function (s) { return s.dealt < s.total ? 'Each plate has ' + Math.floor(s.dealt / s.k) + ' so far.' : '<b>' + s.total + ' &divide; ' + s.k + ' = ' + s.total / s.k + '</b>'; },
@@ -256,6 +306,11 @@
           { say: 'Fill bags of 5 until none are left.', act: function (t) { return t.seq([{ bags: 1 }, { bags: 2 }, { bags: 3 }, { bags: 4 }], 650); } },
           { say: '4 bags. <b>20 &divide; 5 = 4</b>.', act: function (t) { return t.set({ say: '20 &divide; 5 = 4' }, 2000); } }
         ] },
+        example: { mount: G3.view(bagView, { total: 24, size: 6, bags: 0, say: '' }), steps: [
+          { say: 'My turn. I have 24 stickers. Each bag holds 6.', ms: 1300 },
+          { say: 'I fill bags of 6 until none are left.', act: function (t) { return t.seq([{ bags: 1 }, { bags: 2 }, { bags: 3 }, { bags: 4 }], 650); } },
+          { say: 'I count the bags: 4. <b>24 &divide; 6 = 4</b>.', act: function (t) { return t.set({ say: '24 &divide; 6 = 4' }, 2000); } }
+        ] },
         try: { mount: G3.play({ state: { total: 18, size: 2, bags: 0 }, draw: function (s) { return bagView(s); },
           buttons: [{ label: 'Fill a bag', act: function (s) { if ((s.bags + 1) * s.size <= s.total) s.bags++; } }, { label: 'Start over', act: function (s) { s.bags = 0; } }],
           info: function (s) { return s.bags + ' bag' + (s.bags === 1 ? '' : 's') + ' of ' + s.size + (s.bags * s.size === s.total ? '. <b>' + s.total + ' &divide; ' + s.size + ' = ' + s.bags + '</b>' : ''); },
@@ -270,6 +325,11 @@
           { say: '40 &divide; 10. Think: 10 times what is 40?', ms: 1500 },
           { say: 'Count by 10s to 40.', act: function (t) { return t.jumps(10, 4, 320); } },
           { say: '4 jumps. 10 &times; 4 = 40, so <b>40 &divide; 10 = 4</b>.', ms: 2000 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 50, tick: 5, every: 10, start: 0 }, steps: [
+          { say: 'My turn. 30 &divide; 5. I think: 5 times what is 30?', ms: 1500 },
+          { say: 'I count by 5s to 30.', act: function (t) { return t.jumps(5, 6, 300); } },
+          { say: '6 jumps. 5 &times; 6 = 30, so <b>30 &divide; 5 = 6</b>.', ms: 2000 }
         ] },
         ways: [
           { label: 'Share it', html: '<p>Share 40 among 10 people. Each gets 4.</p><div class="fig">' + groups(10, 4) + '</div>' },
@@ -291,6 +351,13 @@
           { say: 'Share 20 into 4 rows: 5 in each. 20 &divide; 4 = 5.', act: function (t) { return t.set({ k: 3 }, 1500); } },
           { say: 'Share 20 into 5 columns: 4 in each. 20 &divide; 5 = 4.', act: function (t) { return t.set({ k: 4, say: 'The fact family of 4, 5 and 20' }, 2200); } }
         ] },
+        example: { mount: G3.view(famView, { a: 3, b: 6, k: 0, say: '3 rows of 6' }), steps: [
+          { say: 'My turn. 3 rows of 6 make 18 dots.', ms: 1300 },
+          { say: 'My first fact: 3 &times; 6 = 18.', act: function (t) { return t.set({ k: 1, say: '' }, 1300); } },
+          { say: 'I turn it around: 6 &times; 3 = 18.', act: function (t) { return t.set({ k: 2 }, 1300); } },
+          { say: 'I share 18 into 3 rows: 6 in each. 18 &divide; 3 = 6.', act: function (t) { return t.set({ k: 3 }, 1500); } },
+          { say: 'I share 18 into 6 columns: 3 in each. 18 &divide; 6 = 3. Same three numbers, four facts.', act: function (t) { return t.set({ k: 4, say: 'The fact family of 3, 6 and 18' }, 2200); } }
+        ] },
         try: { mount: G3.play({ state: { a: 3, b: 10, k: 4 }, draw: famView,
           sliders: [{ key: 'a', label: 'Rows', min: 2, max: 10 }, { key: 'b', label: 'In each row', min: 2, max: 10 }],
           tasks: [{ do: 'Show the fact family for <b>2, 5 and 10</b>.', goal: function (s) { return (s.a === 2 && s.b === 5) || (s.a === 5 && s.b === 2); }, yes: '2 &times; 5 = 10, 5 &times; 2 = 10, 10 &divide; 2 = 5, 10 &divide; 5 = 2.' }] }), do: '' },
@@ -299,10 +366,15 @@
 
       { id: 'check', title: 'Check a division', exp: ['B2.1'], skill: 'md-family', hard: true,
         body: '<p>Use a times fact to <b>check</b> a division. If <span class="math">30 &divide; 5 = 6</span>, then 6 &times; 5 should be 30. It is, so the answer is right.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + groups(s.g, 5) + cap(s.say) + '</div>'; }, { g: 6, say: 'Jo says 35 &divide; 5 = 6' }), steps: [
+        watch: { mount: G3.view(groupView, { g: 6, n: 5, say: 'Jo says 35 &divide; 5 = 6' }), steps: [
           { say: 'Jo says 35 &divide; 5 = 6. Check it.', ms: 1500 },
           { say: '6 groups of 5 is 30, not 35. Jo is wrong.', act: function (t) { return t.set({ say: '6 &times; 5 = 30' }, 1800); } },
           { say: 'Add one more group: 7 groups of 5 is 35. <b>35 &divide; 5 = 7</b>.', act: function (t) { return t.set({ g: 7, say: '7 &times; 5 = 35' }, 2000); } }
+        ] },
+        example: { mount: G3.view(groupView, { g: 5, n: 4, say: 'Ali says 24 &divide; 4 = 5' }), steps: [
+          { say: 'My turn. Ali says 24 &divide; 4 = 5. I check: answer &times; divisor = total.', ms: 1800 },
+          { say: '5 groups of 4 is 20, not 24. So Ali is wrong.', act: function (t) { return t.set({ say: '5 &times; 4 = 20' }, 1800); } },
+          { say: 'I add one more group: 6 groups of 4 is 24. <b>24 &divide; 4 = 6</b>.', act: function (t) { return t.set({ g: 6, say: '6 &times; 4 = 24' }, 2000); } }
         ] },
         ways: [
           { label: 'Count by the divisor', html: '<p>Count by 5s: 5, 10, 15, 20, 25, 30, 35. That is 7, not 6.</p>' },
@@ -321,6 +393,11 @@
           { say: 'Each new hand adds 5 more fingers.', act: function (t) { return t.seq([{ n: 2, say: '2 hands: 10' }, { n: 3, say: '3 hands: 15' }, { n: 4, say: '4 hands: 20' }], 900); } },
           { say: '4 hands have <b>20 fingers</b>. 4 &times; 5 = 20.', act: function (t) { return t.set({ say: '4 &times; 5 = 20' }, 2000); } }
         ] },
+        example: { mount: G3.view(ratioView, { k: 2, n: 1, say: '1 bike, 2 wheels' }), steps: [
+          { say: 'My turn. 1 bike has 2 wheels.', ms: 1300 },
+          { say: 'Each new bike adds 2 more wheels.', act: function (t) { return t.seq([{ n: 2, say: '2 bikes: 4' }, { n: 3, say: '3 bikes: 6' }, { n: 4, say: '4 bikes: 8' }, { n: 5, say: '5 bikes: 10' }], 800); } },
+          { say: '5 bikes have <b>10 wheels</b>. For every 1 bike there are 2 wheels, so I multiply by 2: 5 &times; 2 = 10.', act: function (t) { return t.set({ say: '5 &times; 2 = 10' }, 2200); } }
+        ] },
         try: { mount: G3.play({ state: { k: 2, n: 1 }, draw: ratioView,
           selects: [{ key: 'k', label: 'For every 1, there are', options: [[2, '2 (bikes and wheels)'], [5, '5 (hands and fingers)'], [10, '10 (dimes and cents)']] }],
           sliders: [{ key: 'n', label: 'How many', min: 1, max: 10 }],
@@ -336,6 +413,11 @@
           { say: '70 cents in dimes. How many dimes?', ms: 1300 },
           { say: 'Each dime is 10 cents. Count by 10s to 70.', act: function (t) { return t.jumps(10, 7, 280); } },
           { say: '7 jumps, so <b>7 dimes</b>. 70 &divide; 10 = 7.', ms: 2000 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
+          { say: 'My turn. I have 35 cents in nickels. How many nickels?', ms: 1400 },
+          { say: 'Each nickel is 5 cents. I count by 5s to 35.', act: function (t) { return t.jumps(5, 7, 280); } },
+          { say: 'I count the jumps: 7. So I have <b>7 nickels</b>. 35 &divide; 5 = 7.', ms: 2000 }
         ] },
         ways: [
           { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><th class="l">Dimes</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">7</td></tr><tr><th class="l">Cents</th><td>10</td><td>20</td><td>30</td><td>40</td><td>50</td><td>60</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">70</td></tr></tbody></table></div><p>Find 70 in the cents row. Look up: <b>7</b> dimes.</p>' },

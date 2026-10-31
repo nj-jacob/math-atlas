@@ -1,6 +1,6 @@
 /* Grade 3 lesson kit: small helpers so any Grade 3 drawing can become a "Watch" clip or a hands-on "Try it".
    Works with the shared lesson engine (lesson.js) and does not change it.
-   G3.view(draw, start)  -> a mount for watch: { mount: G3.view(...), steps: [{ say, act: function (t) { return t.set({...}); } }] }
+   G3.view(draw, start)  -> a mount for watch or example: { mount: G3.view(...), steps: [{ say, act: function (t) { return t.set({...}); } }] }
    G3.play({ state, draw, buttons, sliders, selects, tap, info, tasks }) -> a mount for try: { mount: G3.play(...), do: '' }
    G3.turn(item), G3.skill(chapter, skillId, level) -> quick-check generators. */
 (function () {

@@ -98,6 +98,8 @@
   function SK(id, lv) { return G3.skill(CH, id, lv); }
   function colView(s) { return '<div>' + column(s.a, s.b, s.op, s.k) + (s.say ? '<p class="g3-sym" style="font-size:1.05rem;color:var(--ink)">' + s.say + '</p>' : '') + '</div>'; }
   function jumpView(s) { return jumps(s.start, s.parts.slice(0, s.k), s.op); }
+  function balView(s) { return balance(s.l, s.r, s.ok); }
+  function storyView(s) { return '<div>' + (s.k ? column(s.a, s.b, s.op, s.k) : '') + '<p class="g3-sym" style="font-size:1.05rem;color:var(--ink)">' + s.say + '</p></div>'; }
 
   var LESSONS = [
     { id: 'add', title: 'Adding with regrouping', sub: 'When the ones make 10 or more, trade them for a ten.', concepts: [
@@ -109,6 +111,13 @@
           { say: 'Now there are 12 ones. That is more than 9.', act: function (t) { return t.lightKind('o', 160); }, ms: 700 },
           { say: 'Group 10 ones into a ten.', act: function (t) { t.clearLit(); return t.group('o'); } },
           { say: '7 tens and 2 ones. <b>47 + 25 = 72</b>.', ms: 2000 }
+        ] },
+        example: { tool: 'base10', opts: { t: 3, o: 6 }, steps: [
+          { say: 'My turn. This is 36. I will add 47.', ms: 1300 },
+          { say: 'First I add 4 tens and 7 ones.', act: function (t) { return t.add('t', 4, 350).then(function () { return t.add('o', 7, 260); }); } },
+          { say: 'I count the ones: 6 + 7 = 13. That is more than 9.', act: function (t) { return t.lightKind('o', 160); }, ms: 700 },
+          { say: 'So I group 10 ones into 1 ten.', act: function (t) { t.clearLit(); return t.group('o'); } },
+          { say: 'Now I have 8 tens and 3 ones. <b>36 + 47 = 83</b>.', ms: 2000 }
         ] },
         try: { tool: 'base10', opts: { controls: true, t: 3, o: 8 }, tasks: [
           { do: 'This is 38. <b>Add 26</b> with the + buttons, then group the ones.', goal: function (s) { return s.value === 64 && s.o < 10; }, yes: '38 + 26 = 64. 14 ones became 1 ten and 4 ones.' },
@@ -124,6 +133,13 @@
           { say: 'Ones: 8 + 6 = 14. Write 4, carry 1 ten.', act: function (t) { return t.set({ k: 1, say: '8 + 6 = 14: write 4, carry 1' }, 1800); } },
           { say: 'Tens: 5 + 7 + 1 = 13. Write 3, carry 1 hundred.', act: function (t) { return t.set({ k: 2, say: '5 + 7 + 1 = 13: write 3, carry 1' }, 1800); } },
           { say: 'Hundreds: 3 + 2 + 1 = 6. <b>358 + 276 = 634</b>.', act: function (t) { return t.set({ k: 3, say: '3 + 2 + 1 = 6' }, 2200); } }
+        ] },
+        example: { mount: G3.view(colView, { a: 467, b: 285, op: '+', k: 0, say: '467 + 285' }), steps: [
+          { say: 'My turn. I will add 467 + 285. I line up the places and start with the ones.', ms: 1500 },
+          { say: 'Ones: 7 + 5 = 12. I write 2 and carry 1 ten.', act: function (t) { return t.set({ k: 1, say: '7 + 5 = 12: write 2, carry 1' }, 1800); } },
+          { say: 'Tens: 6 + 8 + 1 = 15. I write 5 and carry 1 hundred.', act: function (t) { return t.set({ k: 2, say: '6 + 8 + 1 = 15: write 5, carry 1' }, 1800); } },
+          { say: 'Hundreds: 4 + 2 + 1 = 7. <b>467 + 285 = 752</b>.', act: function (t) { return t.set({ k: 3, say: '4 + 2 + 1 = 7' }, 2000); } },
+          { say: 'Ones first. 10 or more? I write the ones and carry 1.', ms: 1800 }
         ] },
         ways: [
           { label: 'Add each place separately', html: '<p>Split both numbers into places and add each part.</p><p class="math">300 + 200 = 500</p><p class="math">50 + 70 = 120</p><p class="math">8 + 6 = 14</p><p class="math"><b>500 + 120 + 14 = 634</b></p>' },
@@ -151,6 +167,13 @@
           { say: 'Take away 7 ones and 1 ten.', act: function (t) { return t.remove('o', 7, 160).then(function () { return t.remove('t', 1, 300); }); } },
           { say: '3 tens and 5 ones are left. <b>52 &minus; 17 = 35</b>.', ms: 2000 }
         ] },
+        example: { tool: 'base10', opts: { t: 4, o: 3 }, steps: [
+          { say: 'My turn. This is 43. I will take away 18.', ms: 1300 },
+          { say: 'I need to take 8 ones, but there are only 3.', act: function (t) { return t.lightKind('o', 300); }, ms: 800 },
+          { say: 'So I break 1 ten into 10 ones. Now there are 13 ones.', act: function (t) { t.clearLit(); return t.split('t'); } },
+          { say: 'I take away 8 ones, then 1 ten.', act: function (t) { return t.remove('o', 8).then(function () { return t.remove('t', 1); }); } },
+          { say: '2 tens and 5 ones are left. <b>43 &minus; 18 = 25</b>.', ms: 2000 }
+        ] },
         try: { tool: 'base10', opts: { controls: true, t: 6, o: 3 }, tasks: [
           { do: 'This is 63. <b>Take away 28</b>. Break a ten when you need more ones.', goal: function (s) { return s.value === 35; }, yes: '63 &minus; 28 = 35.' },
           { do: 'Build <b>304</b>, then take away <b>126</b>.', setup: function (t) { t.set(3, 0, 4); }, reset: false, goal: function (s) { return s.value === 178; }, yes: '304 &minus; 126 = 178. You had to break a hundred first, because there were no tens.' }
@@ -165,6 +188,13 @@
           { say: 'Tens: 2 is less than 7. Trade a hundred: 5 becomes 4, and 2 tens become 12.', act: function (t) { return t.set({ k: 2, say: '12 &minus; 7 = 5' }, 2200); } },
           { say: 'Hundreds: 4 &minus; 2 = 2. <b>532 &minus; 278 = 254</b>.', act: function (t) { return t.set({ k: 3, say: '4 &minus; 2 = 2' }, 2000); } },
           { say: 'Check by adding: 254 + 278 = 532.', ms: 1800 }
+        ] },
+        example: { mount: G3.view(colView, { a: 624, b: 357, op: '-', k: 0, say: '624 &minus; 357' }), steps: [
+          { say: 'My turn. I will work out 624 &minus; 357. I start with the ones.', ms: 1400 },
+          { say: 'Ones: 4 is less than 7. I trade a ten: 2 tens become 1, and 4 ones become 14.', act: function (t) { return t.set({ k: 1, say: '14 &minus; 7 = 7' }, 2200); } },
+          { say: 'Tens: 1 is less than 5. I trade a hundred: 6 becomes 5, and 1 ten becomes 11.', act: function (t) { return t.set({ k: 2, say: '11 &minus; 5 = 6' }, 2200); } },
+          { say: 'Hundreds: 5 &minus; 3 = 2. <b>624 &minus; 357 = 267</b>.', act: function (t) { return t.set({ k: 3, say: '5 &minus; 3 = 2' }, 2000); } },
+          { say: 'I check by adding: 267 + 357 = 624. It is right.', ms: 1800 }
         ] },
         ways: [
           { label: 'Count up instead', html: '<p>Start at 278 and count up to 532. Big jumps first.</p><div class="fig">' + jumps(278, [2, 20, 200, 32], '+') + '</div><p>2 + 20 + 200 + 32 = <b>254</b>.</p>' },
@@ -190,6 +220,12 @@
           { say: 'Jump 30: 576.', act: function (t) { return t.set({ k: 2 }, 1300); } },
           { say: 'Jump 5: <b>581</b>. So 346 + 235 = 581.', act: function (t) { return t.set({ k: 3 }, 2000); } }
         ] },
+        example: { mount: G3.view(jumpView, { start: 418, parts: [100, 40, 7], op: '+', k: 0 }), steps: [
+          { say: 'My turn. I start at 418 and add 147. I split 147 into 100, 40 and 7.', ms: 1600 },
+          { say: 'I jump 100: 518.', act: function (t) { return t.set({ k: 1 }, 1300); } },
+          { say: 'I jump 40: 558.', act: function (t) { return t.set({ k: 2 }, 1300); } },
+          { say: 'I jump 7: <b>565</b>. So 418 + 147 = 565.', act: function (t) { return t.set({ k: 3 }, 2000); } }
+        ] },
         try: { tool: 'numberline', opts: { min: 200, max: 500, tick: 10, every: 50, start: 230, step: [100, 10] }, tasks: [
           { do: 'Start at 230. Add <b>140</b> with jumps of 100 and 10.', goal: function (s) { return s.at === 370; }, yes: '230 + 100 = 330, then 4 jumps of 10: 370.' }
         ] },
@@ -202,6 +238,12 @@
           { say: '245 + 99. 99 is almost 100.', ms: 1300 },
           { say: 'Add 100: 345.', act: function (t) { return t.set({ k: 1 }, 1400); } },
           { say: 'That was 1 too many. Take back 1: <b>344</b>.', act: function (t) { return t.set({ parts: [100], k: 1, start: 245, op: '+' }).then(function () { return t.set({ start: 345, parts: [1], op: '-', k: 1 }, 2000); }); } }
+        ] },
+        example: { mount: G3.view(jumpView, { start: 368, parts: [100], op: '+', k: 0 }), steps: [
+          { say: 'My turn. I will add 368 + 98. 98 is almost 100.', ms: 1400 },
+          { say: 'I add 100 instead: 468.', act: function (t) { return t.set({ k: 1 }, 1400); } },
+          { say: '100 is 2 more than 98. So I take back 2: <b>466</b>.', act: function (t) { return t.set({ start: 468, parts: [2], op: '-', k: 1 }, 2000); } },
+          { say: '368 + 98 = 466. I used a friendly number, then fixed the difference.', ms: 2000 }
         ] },
         ways: [
           { label: 'Make a ten first', html: '<p>To add 38 + 7, take 2 from the 7 to make 40, then add the 5 left: 45.</p>' },
@@ -220,6 +262,12 @@
           { say: '487 is close to 500.', act: function (t) { return t.mark(487, '487').then(function () { return t.moveTo(500); }); } },
           { say: '300 + 500 = 800. The exact answer, 799, is very close.', ms: 2200 }
         ] },
+        example: { tool: 'numberline', opts: { min: 100, max: 500, tick: 10, every: 100, start: 178 }, steps: [
+          { say: 'My turn. I will estimate 178 + 421.', ms: 1200 },
+          { say: '178 is close to 200.', act: function (t) { return t.mark(178, '178').then(function () { return t.moveTo(200); }); } },
+          { say: '421 is close to 400.', act: function (t) { return t.mark(421, '421').then(function () { return t.moveTo(400); }); } },
+          { say: 'I add the rounded numbers: 200 + 400 = 600. The exact answer, 599, is very close.', ms: 2200 }
+        ] },
         key: '<p>Round, then calculate. The estimate tells you <b>about</b> how big.</p>',
         mistake: '<p>Using the estimate as the answer. An estimate is a check, not the answer.</p>',
         check: [TU('s4', 0), TU('s4', 2), SK('as-estimate', 1)] },
@@ -231,6 +279,12 @@
           { say: 'Estimate: 600 &minus; 300 = 300.', act: function (t) { return t.set({ say: 'Estimate: 600 &minus; 300 = 300' }, 1600); } },
           { say: 'Her answer is 314. That is close to 300, so it makes sense.', act: function (t) { return t.set({ say: '314 is close to 300. It makes sense.' }, 2000); } }
         ] },
+        example: { mount: G3.view(colView, { a: 512, b: 296, op: '-', k: 3, say: 'Sam got 216.' }), steps: [
+          { say: 'My turn. Sam worked out 512 &minus; 296 and got 216. I check if that makes sense.', ms: 1800 },
+          { say: 'I round: 512 is close to 500, and 296 is close to 300.', act: function (t) { return t.set({ say: 'Estimate: 500 &minus; 300' }, 1600); } },
+          { say: '500 &minus; 300 = 200.', act: function (t) { return t.set({ say: 'Estimate: 500 &minus; 300 = 200' }, 1400); } },
+          { say: '216 is close to 200, so the answer makes sense.', ms: 2000 }
+        ] },
         key: '<p>Close to the estimate? Good. Far away? Check again.</p>',
         check: [TU('s4', 1), SK('as-estimate', 2)] }
     ] },
@@ -238,11 +292,17 @@
     { id: 'equal', title: 'Equal sides and word problems', sub: 'The equal sign means both sides are the same.', concepts: [
       { id: 'balance', title: 'Both sides are equal', exp: ['C2.3'], skill: 'as-equal', hard: true,
         body: '<p>The <b>=</b> sign means "is the same as". Both sides must have the same value, like a balance that is level.</p>',
-        watch: { mount: G3.view(function (s) { return balance(s.l, s.r, s.ok); }, { l: '200 + 50', r: '150 + ?', ok: false }), steps: [
+        watch: { mount: G3.view(balView, { l: '200 + 50', r: '150 + ?', ok: false }), steps: [
           { say: 'The left side is 200 + 50 = 250.', ms: 1500 },
           { say: 'The right side has 150 and a missing number.', ms: 1400 },
           { say: 'Try 50: 150 + 50 = 200. Not level.', act: function (t) { return t.set({ r: '150 + 50' }, 1600); } },
           { say: 'Try 100: 150 + 100 = 250. Level! The missing number is <b>100</b>.', act: function (t) { return t.set({ r: '150 + 100', ok: true }, 2200); } }
+        ] },
+        example: { mount: G3.view(balView, { l: '300 + 40', r: '? + 90', ok: false }), steps: [
+          { say: 'My turn. The left side is 300 + 40 = 340.', ms: 1500 },
+          { say: 'The right side has a missing number and 90. It must make 340 too.', ms: 1600 },
+          { say: 'I think: what plus 90 makes 340? 340 &minus; 90 = 250.', ms: 1800 },
+          { say: 'I check: 250 + 90 = 340. Level! The missing number is <b>250</b>. Both sides have the same value.', act: function (t) { return t.set({ r: '250 + 90', ok: true }, 2200); } }
         ] },
         ways: [
           { label: 'Work out one side first', html: '<p>Find the value of the full side: 200 + 50 = 250. Then ask: 150 plus what makes 250? Count up from 150: <b>100</b>.</p>' },
@@ -258,11 +318,17 @@
 
       { id: 'word', title: 'Solve word problems', exp: ['B2.5'], skill: 'as-word',
         body: '<p>Read the story and ask: are things being <b>joined</b> (add), or is something <b>taken away</b> or <b>compared</b> (subtract)? Then estimate, solve, and check.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + (s.k ? column(325, 148, '+', s.k) : '') + '<p class="g3-sym" style="font-size:1.05rem;color:var(--ink)">' + s.say + '</p></div>'; }, { k: 0, say: 'A library has 325 books. It gets 148 more. How many now?' }), steps: [
+        watch: { mount: G3.view(storyView, { a: 325, b: 148, op: '+', k: 0, say: 'A library has 325 books. It gets 148 more. How many now?' }), steps: [
           { say: 'More books are joined to the library. That means <b>add</b>.', ms: 1800 },
           { say: 'Estimate: 300 + 150 = 450.', act: function (t) { return t.set({ say: 'Estimate: 300 + 150 = 450' }, 1600); } },
           { say: 'Add in columns.', act: function (t) { return t.set({ k: 3, say: '325 + 148 = 473' }, 2000); } },
           { say: '473 is close to 450. The library has <b>473 books</b>.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(storyView, { a: 615, b: 192, op: '-', k: 0, say: 'A farm has 615 eggs. It sells 192. How many eggs are left?' }), steps: [
+          { say: 'My turn. Some eggs are taken away. That means I <b>subtract</b>.', ms: 1800 },
+          { say: 'I estimate: 600 &minus; 200 = 400.', act: function (t) { return t.set({ say: 'Estimate: 600 &minus; 200 = 400' }, 1600); } },
+          { say: 'I subtract in columns.', act: function (t) { return t.set({ k: 3, say: '615 &minus; 192 = 423' }, 2000); } },
+          { say: '423 is close to 400. The farm has <b>423 eggs</b> left.', ms: 2000 }
         ] },
         key: '<p>Joining: add. Taking away or comparing: subtract.</p>',
         check: [SK('as-word', 1), SK('as-word', 2)] }
