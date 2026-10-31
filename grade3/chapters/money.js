@@ -389,4 +389,186 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name;
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function cap1(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+    /* a handful of quarters, dimes and nickels worth less than $1 */
+    function handful(lv) {
+      for (;;) {
+        var l = [], n = R.int(2, lv === 1 ? 4 : 6);
+        for (var i = 0; i < n; i++) l.push(R.pick(lv === 1 ? [10, 5] : [25, 10, 5]));
+        if (sumOf(l) < 100) return l;
+      }
+    }
+    var SHAPES = {
+      'mn-count': [
+        [1, 'tap', function (lv) {
+          var set = [], seen = {};
+          while (set.length < 3) { var l = handful(lv), t = sumOf(l); if (seen[t]) continue; seen[t] = 1; set.push(l); }
+          var k = R.int(0, 2), t2 = sumOf(set[k]);
+          return { q: 'Tap the coins that make <b>' + t2 + '¢</b>.', type: 'tap', tiles: set.map(function (l) { return coins(l, null, 260); }), answer: k, answerText: listName(set[k]),
+            hint: 'Count each group from the biggest coin.', steps: [listName(set[k]) + ' make ' + t2 + '¢.'],
+            explain: listName(set[k]) + ' make ' + t2 + '¢.', meta: { k: 'coin-tap', t: t2 } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), l = handful(lv), t = sumOf(l);
+          return { q: who + ' finds ' + listName(l) + ' in a coat pocket. How much money is that?', type: 'num', answer: t, unit: '¢',
+            hint: 'Quarters are 25¢, dimes are 10¢ and nickels are 5¢. Start with the biggest coins.', steps: ['Count on: ' + l.slice().sort(function (a, b) { return b - a; }).join(' + ') + ' = ' + t + '.'],
+            explain: 'That is ' + t + '¢.', meta: { k: 'coin-num' } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) { var l = handful(lv), t = sumOf(l); if (seen[t]) continue; seen[t] = 1; pairs.push([listName(l), t + '¢']); }
+          return { q: 'Match each group of coins to how much it is worth.', type: 'match', pairs: pairs,
+            hint: 'Count from the biggest coin.', steps: ['Quarters by 25s, dimes by 10s, nickels by 5s.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'coin-match' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var l, t;
+          do { l = handful(2); t = sumOf(l); } while (l.length * 10 === t);
+          var who = nm(), truth = !R.int(0, 2), said = truth ? t : l.length * 10;
+          var right = 'Each coin has its own value. ' + l.slice().sort(function (a, b) { return b - a; }).join(' + ') + ' = ' + t + '¢.';
+          return { q: who + ' says these coins make <b>' + said + '¢</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: coins(l),
+            why: why(right, ['Every coin is worth 10¢.', 'Bigger coins are always worth more.', 'Count the coins, then add a zero.']),
+            hint: 'Read the value on each coin.', steps: [right], explain: right, meta: { k: 'coin-tf', said: said } };
+        }]
+      ],
+      'mn-make': [
+        [1, 'pick', function (lv) {
+          var tg = lv === 1 ? R.int(3, 9) * 10 : R.int(4, 19) * 5, good = [make(tg, [25, 10, 5]), make(tg, [10, 5])], opts = [], seen = {};
+          if (lv === 1) good[0] = make(tg, [10]);
+          good.forEach(function (g) { var n = listName(g); if (!seen[n]) { seen[n] = 1; opts.push(n); } });
+          var tries = 0;
+          while (opts.length < 4 && tries++ < 50) { var w = handful(lv), n2 = listName(w); if (sumOf(w) === tg || seen[n2]) continue; seen[n2] = 1; opts.push(n2); }
+          opts = R.shuffle(opts);
+          var ans = []; opts.forEach(function (o, j) { if (good.some(function (g) { return listName(g) === o; })) ans.push(j); });
+          return { q: 'Pick every group of coins that makes <b>' + tg + '¢</b>.', type: 'pick', options: opts, answer: ans,
+            hint: 'Add each group. There can be more than one way.', steps: ['Count each group from the biggest coin.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' make ' + tg + '¢.', meta: { k: 'make-pick', tg: tg } };
+        }],
+        [1, 'fill', function (lv) {
+          var tg = lv === 1 ? R.int(1, 9) * 10 + R.pick([0, 5]) : R.int(4, 19) * 5, f = make(tg, [25, 10, 5]), cnt = function (v) { return f.filter(function (x) { return x === v; }).length; };
+          return { q: 'Make <b>' + tg + '¢</b> with the <b>fewest</b> coins. Fill in the blanks.', type: 'fill', fill: '[[]] quarters, [[]] dimes and [[]] nickels', answers: [cnt(25), cnt(10), cnt(5)],
+            hint: 'Use as many quarters as you can. Then dimes. Then nickels.', steps: ['Quarters first: ' + cnt(25) + ' quarter' + (cnt(25) === 1 ? '' : 's') + ' is ' + cnt(25) * 25 + '¢.', 'Then ' + cnt(10) + ' dime' + (cnt(10) === 1 ? '' : 's') + ' and ' + cnt(5) + ' nickel' + (cnt(5) === 1 ? '' : 's') + '.'],
+            explain: tg + '¢ = ' + listName(f) + '.', meta: { k: 'make-fill', tg: tg } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), l = handful(lv), tg = sumOf(l), price = tg + R.pick([0, 0, 5, -5]), ok = tg >= price, opts = ['yes', 'no'];
+          return { q: who + ' has ' + listName(l) + '. A snack costs ' + price + '¢. Does ' + who + ' have enough?', type: 'mc', options: opts, answer: ok ? 0 : 1,
+            hint: 'Count the coins. Compare with ' + price + '¢.', steps: ['The coins make ' + tg + '¢.', tg + '¢ is ' + (ok ? 'enough for ' : 'less than ') + price + '¢.'],
+            explain: (ok ? 'Yes' : 'No') + ': the coins make ' + tg + '¢.', meta: { k: 'make-mc', price: price } };
+        }],
+        [2, 'mistake', function (lv) {
+          var tg = R.int(6, 19) * 5, f = make(tg, [25, 10, 5]), who = nm(), truth = !R.int(0, 2), said = truth ? f : f.concat([5]);
+          var right = listName(f) + ' make ' + tg + '¢.';
+          return { q: who + ' says <b>' + listName(said) + '</b> make ' + tg + '¢. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Any coins can make any amount.', 'Count the coins, not their values.', 'A quarter is worth 20¢.']),
+            hint: 'Add up the coins ' + who + ' named.', steps: [right], explain: right, meta: { k: 'make-tf', tg: tg, said: listName(said) } };
+        }]
+      ],
+      'mn-cents': [
+        [1, 'line', function (lv) {
+          var p = lv === 1 ? R.int(1, 9) * 10 : R.int(1, 19) * 5, it = R.pick(ITEMS);
+          return { q: cap1(it) + ' costs ' + p + '¢. You pay with a loonie ($1). Put the marker on the change you get.', type: 'line', min: 0, max: 100, tick: lv === 1 ? 10 : 5, every: lv === 1 ? 20 : 25, snap: lv === 1 ? 10 : 5, answer: 100 - p, hideValue: true, place: 'the change',
+            label: function (v) { return v + '¢'; },
+            hint: 'Count up from ' + p + '¢ to 100¢.', steps: ['A loonie is 100¢.', '100 &minus; ' + p + ' = ' + (100 - p) + '.'],
+            explain: 'The change is ' + (100 - p) + '¢.', meta: { k: 'cents-line', p: p } };
+        }],
+        [1, 'match', function (lv) {
+          var ps = R.shuffle(lv === 1 ? [10, 20, 30, 40, 60, 70, 80, 90] : [15, 35, 45, 55, 65, 85]).slice(0, 3);
+          var pairs = ps.map(function (p) { return ['costs ' + p + '¢', (100 - p) + '¢ change']; });
+          return { q: 'You pay with a loonie ($1) each time. Match each price to the change.', type: 'match', pairs: pairs,
+            hint: 'Count up from the price to 100¢.', steps: ['A loonie is 100¢. Price + change = 100¢.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'cents-match' } };
+        }],
+        [1, 'fill', function (lv) {
+          var p = lv === 1 ? R.int(1, 9) * 10 : R.int(1, 19) * 5, it = R.pick(ITEMS);
+          return { q: cap1(it) + ' costs ' + p + '¢. You pay with a loonie. Fill in the change.', type: 'fill', fill: '<span class="math">' + p + '¢ + [[]]¢ = 100¢</span>', answers: [100 - p], fig: lv === 1 ? countUp(p, 100) : '',
+            hint: 'Count up from ' + p + '¢ to 100¢.', steps: ['100 &minus; ' + p + ' = ' + (100 - p) + '.'],
+            explain: 'The change is ' + (100 - p) + '¢.', meta: { k: 'cents-fill' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var p = R.int(1, 9) * 10 + 5, who = nm(), truth = !R.int(0, 2), wrong = (10 - Math.floor(p / 10)) * 10 + 5, said = truth ? 100 - p : wrong;
+          var right = 'Count up from ' + p + '¢: ' + (p + 5) + '¢, then on to 100¢. The change is ' + (100 - p) + '¢.';
+          return { q: 'A sticker costs ' + p + '¢. You pay with a loonie. ' + who + ' says the change is <b>' + said + '¢</b>. True or false: ' + who + ' is right.', type: 'tf', answer: said === 100 - p,
+            why: why(right, ['Subtract the tens, then keep the 5.', 'The change is always 50¢.', 'Add the price to 100.']),
+            hint: 'Check: does the price plus the change make 100¢?', steps: [right], explain: right, meta: { k: 'cents-tf', p: p, said: said } };
+        }]
+      ],
+      'mn-dollars': [
+        [1, 'which', function (lv) {
+          var b = R.pick(lv === 1 ? [5, 10] : [10, 20]), p = R.int(1, b - 1), it = R.pick(BIG);
+          var opts = ['Subtract: $' + b + ' &minus; $' + p, 'Add: $' + b + ' + $' + p];
+          return { q: cap1(it) + ' costs $' + p + '. You pay with a $' + b + ' bill. <b>Which way finds your change?</b>', type: 'mc', options: opts, answer: 0,
+            hint: 'Change is what is left after you pay.', steps: ['Change = what you pay &minus; the price.', '$' + b + ' &minus; $' + p + ' = $' + (b - p) + '. You can also count up from $' + p + '.'],
+            explain: 'Subtract (or count up): $' + (b - p) + ' change.', meta: { k: 'dol-which' } };
+        }],
+        [1, 'line', function (lv) {
+          var b = R.pick(lv === 1 ? [5, 10] : [10, 20]), p = R.int(1, b - 1), it = R.pick(BIG);
+          return { q: cap1(it) + ' costs $' + p + '. You pay with a $' + b + ' bill. Put the marker on the change you get.', type: 'line', min: 0, max: b, tick: 1, every: b === 20 ? 5 : b === 10 ? 2 : 1, snap: 1, answer: b - p, hideValue: true, place: 'the change',
+            label: function (v) { return '$' + v; },
+            hint: 'Count up from $' + p + ' to $' + b + '.', steps: ['$' + b + ' &minus; $' + p + ' = $' + (b - p) + '.'],
+            explain: 'The change is $' + (b - p) + '.', meta: { k: 'dol-line', b: b, p: p } };
+        }],
+        [1, 'match', function (lv) {
+          var b = lv === 1 ? 10 : 20, ps = R.shuffle(Array.apply(null, Array(b - 1)).map(function (_, i) { return i + 1; })).slice(0, 3);
+          var pairs = ps.map(function (p) { return ['costs $' + p, '$' + (b - p) + ' change']; });
+          return { q: 'You pay with a <b>$' + b + '</b> bill each time. Match each price to the change.', type: 'match', pairs: pairs,
+            hint: 'Count up from the price to $' + b + '.', steps: ['Price + change = $' + b + '.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'dol-match', b: b } };
+        }],
+        [2, 'mistake', function (lv) {
+          var b = R.pick([10, 20]), p = R.int(2, b - 2), it = R.pick(BIG), who = nm(), truth = !R.int(0, 2), said = truth ? b - p : b + p;
+          var right = 'Change is what is left: $' + b + ' &minus; $' + p + ' = $' + (b - p) + '.';
+          return { q: cap1(it) + ' costs $' + p + '. ' + who + ' pays with a $' + b + ' bill and says the change is <b>$' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Add the price to the bill.', 'Change is the same as the price.', 'Change is always $1.']),
+            hint: 'Can the change be more than the bill?', steps: [right], explain: right, meta: { k: 'dol-tf', b: b, p: p, said: said } };
+        }]
+      ],
+      'mn-estimate': [
+        [1, 'match', function (lv) {
+          var near = R.shuffle([25, 50, 75]), pairs = near.map(function (n) { return [(n + R.pick([-5, 5])) + '¢', 'about ' + n + '¢']; });
+          return { q: 'Match each price to the closest friendly amount.', type: 'match', pairs: pairs,
+            hint: 'Friendly amounts are 25¢, 50¢ and 75¢. Which is each price closest to?', steps: ['A price 5¢ away from a friendly amount is close to it.'],
+            explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'est-near' } };
+        }],
+        [1, 'tf', function (lv) {
+          var have = R.pick([5, 10, 20]), a = R.int(1, have - 1), b = R.int(1, have - 1), ok = a + b <= have;
+          var right = '$' + a + ' + $' + b + ' = $' + (a + b) + (ok ? ', which is not more than $' + have + '.' : ', which is more than $' + have + '.');
+          return { q: 'You have $' + have + '. True or false: you have enough to buy things that cost <b>$' + a + '</b> and <b>$' + b + '</b>.', type: 'tf', answer: ok,
+            why: why(right, ['You only need to look at the bigger price.', 'Two things always cost more than $' + have + '.', 'You always have enough if each price is less than $' + have + '.']),
+            hint: 'Add the prices first.', steps: [right], explain: right, meta: { k: 'est-enough', have: have, a: a, b: b } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), p = R.pick([20, 30, 45, 55, 70, 80]), it = R.pick(ITEMS), rp = Math.round(p / 25) * 25, est = 100 - rp;
+          var o = R.mc('about ' + est + '¢', [25, 50, 75].filter(function (w) { return w !== est; }).map(function (w) { return 'about ' + w + '¢'; }));
+          return { q: who + ' buys ' + it + ' for ' + p + '¢ at the school fair and pays with a loonie. About how much change should ' + who + ' get?', type: 'mc', options: o.options, answer: o.answer,
+            hint: p + '¢ is close to which friendly amount: 25¢, 50¢ or 75¢?', steps: [p + '¢ is about ' + rp + '¢.', '100 &minus; ' + rp + ' = ' + est + '.'],
+            explain: 'About ' + est + '¢. (Exactly ' + (100 - p) + '¢.)', meta: { k: 'est-change', p: p } };
+        }],
+        [2, 'mistake', function (lv) {
+          var p = R.pick([20, 30, 45, 55, 70, 80]), who = nm(), rp = Math.round(p / 25) * 25, truth = !R.int(0, 2), said = truth ? 100 - rp : rp;
+          if (!truth && said === 100 - rp) said = 100 - rp + 25;
+          var right = p + '¢ is about ' + rp + '¢, so the change is about 100 &minus; ' + rp + ' = ' + (100 - rp) + '¢.';
+          return { q: 'A muffin costs ' + p + '¢. You pay with a loonie. ' + who + ' says you should get <b>about ' + said + '¢</b> in change. True or false: ' + who + ' is right.', type: 'tf', answer: said === 100 - rp,
+            why: why(right, ['The change is about the same as the price.', 'Change from a loonie is always about 50¢.', 'Round the price up to $1, so there is no change.']),
+            hint: 'Round the price to 25¢, 50¢ or 75¢ first.', steps: [right], explain: right, meta: { k: 'est-tf2', p: p, said: said } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();

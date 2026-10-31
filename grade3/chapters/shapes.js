@@ -467,4 +467,213 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name, PART = { f: 'flat faces', e: 'edges', v: 'vertices' };
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function small(k) { return solid(k, '', 30, 200, 'A ' + S[k].name); }
+    /* solids that each have a different count of the chosen part */
+    function distinctBy(part, n) {
+      var seen = {}, out = [];
+      R.shuffle(ORDER).forEach(function (k) { if (out.length < n && !seen[S[k][part]]) { seen[S[k][part]] = 1; out.push(k); } });
+      return out;
+    }
+    var EVERYDAY = [['a soup can', 'cyl'], ['a number cube', 'cube'], ['a cereal box', 'rprism'], ['an ice cream cone', 'cone'], ['a tent', 'tprism'], ['a pyramid in Egypt', 'spyr']];
+    var CRIT = [['has a curved surface', function (k) { return !!S[k].round; }], ['has at least one triangle face', function (k) { return /triangle/.test(S[k].faces); }], ['has exactly 6 flat faces', function (k) { return S[k].f === 6; }], ['has fewer than 5 vertices', function (k) { return S[k].v < 5; }]];
+    function dims(d) { return d.join(' by '); }
+    function sameBox(a, b) { return a.slice().sort().join() === b.slice().sort().join(); }
+    function boxFig(d) { return A.svg(230, 190, box(d[0], d[1], d[2], 20, 170, 2, 18), dims(d) + ' box'); }
+    var TURN = { 'quarter turn right': 1, 'half turn': 2, 'quarter turn left': 3 };
+    /* a compass you can tap: each direction is a hit area */
+    function compassPic() {
+      var s = '<circle cx="130" cy="130" r="70" style="fill:var(--card);stroke:var(--line)" stroke-width="2"/>';
+      DN.forEach(function (d, i) {
+        var a = -Math.PI / 2 + i * Math.PI / 2, x = 130 + 96 * Math.cos(a), y = 130 + 96 * Math.sin(a);
+        s += '<g data-hit="' + d + '" style="cursor:pointer"><circle cx="' + x + '" cy="' + y + '" r="30" style="fill:color-mix(in srgb,var(--strand) 12%,var(--card));stroke:var(--strand)" stroke-width="2"/><text x="' + x + '" y="' + (y + 7) + '" text-anchor="middle" font-size="18" class="tb">' + d.charAt(0).toUpperCase() + d.slice(1) + '</text></g>';
+      });
+      return A.svg(260, 260, s, 'Compass. Tap north, east, south or west.');
+    }
+    /* the map, with every square tappable */
+    function tapMap(start, dir) {
+      var sz = 62, hits = '';
+      for (var c = 0; c < 6; c++) for (var r = 0; r < 6; r++) hits += '<rect data-hit="' + COLS[c] + (r + 1) + '" x="' + (36 + c * sz) + '" y="' + (12 + (5 - r) * sz) + '" width="' + sz + '" height="' + sz + '" fill="transparent" style="cursor:pointer"/>';
+      return map([start], dir, 'Map grid. Tap the square where you end.').replace(/<\/svg>$/, hits + '</svg>');
+    }
+    /* walk a list like ['forward 2', 'right', 'forward 1'] from x, y facing d */
+    function walk(x, y, d, acts) {
+      acts.forEach(function (a) { if (a === 'right') d = (d + 1) % 4; else if (a === 'left') d = (d + 3) % 4; else { var f = +a.split(' ')[1], v = [[0, 1], [1, 0], [0, -1], [-1, 0]][d]; x += v[0] * f; y += v[1] * f; } });
+      return [x, y, d];
+    }
+    function route(lv) {
+      for (;;) {
+        var x = R.int(0, 3), y = R.int(0, 3), acts = ['forward ' + R.int(1, 3)];
+        if (lv > 1 || R.int(0, 1)) acts.push(R.pick(['right', 'left']), 'forward ' + R.int(1, 2));
+        var e = walk(x, y, 0, acts);
+        if (e[0] >= 0 && e[0] <= 5 && e[1] >= 0 && e[1] <= 5) return { x: x, y: y, acts: acts, end: e };
+      }
+    }
+    function actText(acts) { return acts.map(function (a) { return a === 'right' || a === 'left' ? 'make a quarter turn ' + a : 'go ' + a; }).join(', then '); }
+    function cell(x, y) { return COLS[x] + (y + 1); }
+
+    var SHAPES = {
+      'sh-count': [
+        [1, 'match', function (lv) {
+          var part = lv === 1 ? 'f' : R.pick(['f', 'e', 'v']), ks = distinctBy(part, 3);
+          var pairs = ks.map(function (k) { return [S[k].name, String(S[k][part])]; });
+          return { q: 'Match each object to its number of <b>' + PART[part] + '</b>.', type: 'match', pairs: pairs,
+            hint: 'Picture each object. Count the hidden back too.', steps: pairs.map(function (p) { return 'A ' + p[0] + ' has ' + p[1] + ' ' + PART[part] + '.'; }),
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'solid-match', part: part } };
+        }],
+        [1, 'tap', function (lv) {
+          var part = lv === 1 ? 'f' : R.pick(['f', 'v']), set = distinctBy(part, 3), k = R.pick(set);
+          return { q: 'Tap the object with <b>' + S[k][part] + ' ' + PART[part] + '</b>.', type: 'tap', tiles: set.map(small), answer: set.indexOf(k), answerText: 'the ' + S[k].name,
+            hint: 'Count the ' + PART[part] + ' on each object, front and back.', steps: ['A ' + S[k].name + ' has ' + S[k][part] + ' ' + PART[part] + '.'],
+            explain: 'The ' + S[k].name + ' has ' + S[k][part] + ' ' + PART[part] + '.', meta: { k: 'solid-tap', part: part, n: S[k][part], set: set.map(function (x) { return S[x].name; }) } };
+        }],
+        [1, 'fill', function (lv) {
+          var k = lv === 1 ? R.pick(['cube', 'rprism']) : R.pick(ORDER.slice(0, 5));
+          return { q: 'Look at the ' + S[k].name + '. Fill in the blanks.', type: 'fill', fig: small(k), fill: 'A ' + S[k].name + ' has [[]] flat faces, [[]] edges and [[]] vertices.', answers: [S[k].f, S[k].e, S[k].v],
+            hint: 'Dashed lines show the edges at the back.', steps: ['Faces: ' + S[k].faces + '.', 'Edges are where two faces meet. Vertices are the corners.'],
+            explain: 'A ' + S[k].name + ' has ' + S[k].f + ' flat faces, ' + S[k].e + ' edges and ' + S[k].v + ' vertices.', meta: { k: 'solid-fill', name: S[k].name } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.pick(['cube', 'rprism', 'tprism']), who = nm(), truth = !R.int(0, 2), said = truth ? S[k].f : S[k].vis.length;
+          var right = 'Some faces are hidden at the back. A ' + S[k].name + ' has ' + S[k].f + ' flat faces.';
+          return { q: who + ' looks at this ' + S[k].name + ' and says it has <b>' + said + '</b> flat faces. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: small(k),
+            why: why(right, ['Only the faces you can see count.', 'Count the corners to find the faces.', 'Every object has 6 faces.']),
+            hint: 'Do not forget the faces at the back and the bottom.', steps: [right], explain: right, meta: { k: 'solid-tf', name: S[k].name, part: 'f', said: said } };
+        }]
+      ],
+      'sh-name': [
+        [1, 'tap', function (lv) {
+          var set = R.shuffle(ORDER).slice(0, 3), k = R.pick(set);
+          return { q: 'Tap the <b>' + S[k].name + '</b>.', type: 'tap', tiles: set.map(small), answer: set.indexOf(k), answerText: 'the ' + S[k].name,
+            hint: 'A ' + S[k].name + ' has ' + S[k].faces + '.', steps: ['Look for ' + S[k].faces + '.'],
+            explain: 'This is the ' + S[k].name + '.', meta: { k: 'name-tap', name: S[k].name, set: set.map(function (x) { return S[x].name; }) } };
+        }],
+        [1, 'match', function (lv) {
+          var list = R.shuffle(EVERYDAY).slice(0, 3), pairs = list.map(function (e) { return [e[0], S[e[1]].name]; });
+          return { q: 'Match each everyday object to its 3D shape.', type: 'match', pairs: pairs,
+            hint: 'Think about the faces. Is any part curved? Is there a point?', steps: pairs.map(function (p) { return p[0].charAt(0).toUpperCase() + p[0].slice(1) + ' is shaped like a ' + p[1] + '.'; }),
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'name-match' } };
+        }],
+        [1, 'pick', function (lv) {
+          var c, opts, ans;
+          do { c = R.pick(CRIT); opts = R.shuffle(ORDER).slice(0, 5); ans = []; opts.forEach(function (k, j) { if (c[1](k)) ans.push(j); }); } while (!ans.length || ans.length === opts.length);
+          return { q: 'Pick every object that <b>' + c[0] + '</b>.', type: 'pick', options: opts.map(function (k) { return S[k].name; }), answer: ans,
+            hint: 'Picture each object, one at a time.', steps: opts.map(function (k) { return 'A ' + S[k].name + ' has ' + S[k].faces + '.'; }),
+            explain: ans.map(function (j) { return S[opts[j]].name; }).join(' and ') + ' ' + (ans.length > 1 ? 'fit' : 'fits') + '.', meta: { k: 'name-pick', c: c[0] } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.pick(ORDER.slice(0, 5)), who = nm(), others = ORDER.filter(function (x) { return x !== k && S[x].v !== S[k].v; }), truth = !R.int(0, 2), sk = truth ? k : R.pick(others);
+          var right = 'A ' + S[k].name + ' has ' + S[k].v + ' vertices and ' + S[k].e + ' edges.';
+          return { q: 'An object has <b>' + S[k].v + ' vertices</b> and <b>' + S[k].e + ' edges</b>. ' + who + ' says it is a <b>' + S[sk].name + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Any object with a point is a pyramid.', 'Edges and vertices are the same thing.', 'Every object with flat faces is a cube.']),
+            hint: 'How many vertices does a ' + S[sk].name + ' have?', steps: [right], explain: right, meta: { k: 'name-tf', v: S[k].v, e: S[k].e, said: S[sk].name } };
+        }]
+      ],
+      'sh-congruent': [
+        [1, 'pick', function (lv) {
+          var a = R.shuffle([R.int(1, 2), R.int(3, 4), R.int(5, 6)]), opts = [], seen = {};
+          while (opts.length < 4) {
+            var good = opts.length < 2, b = R.shuffle(a);
+            if (!good) { var i = R.int(0, 2); b[i] += R.pick([1, -1]); if (b[i] < 1) b[i] = 2; }
+            if (seen[b.join()] || (!good && sameBox(a, b))) continue; seen[b.join()] = 1; opts.push(b);
+          }
+          opts = R.shuffle(opts);
+          var ans = []; opts.forEach(function (b, j) { if (sameBox(a, b)) ans.push(j); });
+          return { q: 'Box A is <b>' + dims(a) + '</b> cubes. Pick every box that is congruent to it.', type: 'pick', options: opts.map(dims), answer: ans,
+            hint: 'Congruent boxes have the same three lengths, in any order.', steps: ['Sort each box\'s lengths from smallest to largest. Compare with ' + a.slice().sort().join(', ') + '.'],
+            explain: ans.map(function (j) { return dims(opts[j]); }).join(' and ') + ' are box A turned.', meta: { k: 'cong-pick', a: a } };
+        }],
+        [1, 'tap', function (lv) {
+          var a = [R.int(1, 2), R.int(2, 3), R.int(3, 4)], good = R.shuffle(a), b1 = a.slice(), b2 = a.slice();
+          b1[0] += 1; b2[2] += 1;
+          if (sameBox(good, a) && good.join() === a.join()) good = [a[2], a[0], a[1]];
+          var set = R.shuffle([good, b1, b2]);
+          return { q: 'Box A is <b>' + dims(a) + '</b> cubes. Tap the box that is congruent to box A.', type: 'tap', fig: boxFig(a), tiles: set.map(boxFig), answer: set.indexOf(good), answerText: 'the ' + dims(good) + ' box',
+            hint: 'Count the cubes along each edge of each box.', steps: ['Box A has edges of ' + a.join(', ') + ' cubes.', 'The ' + dims(good) + ' box has the same lengths, turned.'],
+            explain: 'The ' + dims(good) + ' box is box A turned.', meta: { k: 'cong-tap', a: a, set: set } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var a = [R.int(1, 3), R.int(2, 4), R.int(2, 5)], key = a.slice().sort().join();
+            if (seen[key]) continue; seen[key] = 1;
+            var b; do { b = R.shuffle(a); } while (b.join() === a.join() && new Set(a).size > 1);
+            pairs.push([dims(a), dims(b)]);
+          }
+          return { q: 'Match each box to the box that is congruent to it.', type: 'match', pairs: pairs,
+            hint: 'Look for the same three numbers in a different order.', steps: ['Sort the three lengths of each box, then match.'],
+            explain: pairs.map(function (p) { return p[0] + ' and ' + p[1]; }).join('. ') + '.', meta: { k: 'cong-match' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var a = [R.int(1, 3), R.int(2, 4), R.int(3, 5)], turned = R.int(0, 2) > 0, b = turned ? [a[2], a[0], a[1]] : [a[2] + 1, a[0], a[1]], who = nm();
+          var right = turned ? 'Box B has the same lengths, ' + a.slice().sort().join(', ') + ', just turned. Turning does not change the size or shape, so they are congruent.' : 'Box B has a length of ' + (a[2] + 1) + ', and box A does not. They are not congruent.';
+          return { q: 'Box A is ' + dims(a) + '. Box B is ' + dims(b) + '. ' + who + ' says they are <b>not</b> congruent. True or false: ' + who + ' is right.', type: 'tf', answer: !turned,
+            why: why(right, ['Turning a box changes its shape.', 'Congruent boxes must face the same way.', 'Only cubes can be congruent.']),
+            hint: 'Does turning change the size of a box?', steps: [right], explain: right, meta: { k: 'cong-tf', a: a, b: b } };
+        }]
+      ],
+      'sh-turn': [
+        [1, 'tap', function (lv) {
+          var d = lv === 1 ? 0 : R.int(0, 3), mv = lv === 1 ? [R.pick(['quarter turn right', 'quarter turn left', 'half turn'])] : [R.pick(Object.keys(TURN)), R.pick(Object.keys(TURN))];
+          var end = d; mv.forEach(function (m) { end = (end + TURN[m]) % 4; });
+          return { q: 'You face <b>' + DN[d] + '</b>. You make a ' + mv.join(', then a ') + '. Tap the way you face now.', type: 'tap', pic: compassPic(), answer: DN[end], answerText: DN[end],
+            hint: 'Clockwise goes north, east, south, west. A quarter turn right is one step clockwise.', steps: ['Start: ' + DN[d] + '.', 'After the turns you face ' + DN[end] + '.'],
+            explain: 'You face ' + DN[end] + '.', meta: { k: 'turn-tap', d: DN[d], moves: mv } };
+        }],
+        [1, 'match', function (lv) {
+          var d = lv === 1 ? 0 : R.int(0, 3), mv = R.shuffle(Object.keys(TURN));
+          var pairs = mv.map(function (m) { return ['a ' + m, DN[(d + TURN[m]) % 4]]; });
+          return { q: 'You face <b>' + DN[d] + '</b>. Match each turn to the way you face after it.', type: 'match', pairs: pairs, fig: compass(d),
+            hint: 'A quarter turn right goes one step clockwise. A half turn faces the other way.', steps: pairs.map(function (p) { return 'After ' + p[0] + ': ' + p[1] + '.'; }),
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'turn-match', d: DN[d] } };
+        }],
+        [2, 'mistake', function (lv) {
+          var d = R.int(0, 3), who = nm(), truth = !R.int(0, 2), said = truth ? DN[(d + 1) % 4] : DN[(d + 3) % 4];
+          var right = 'A quarter turn right goes clockwise: ' + DN[d] + ' to ' + DN[(d + 1) % 4] + '.';
+          return { q: who + ' faces ' + DN[d] + ' and makes a quarter turn right. ' + who + ' says they now face <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Right turns go counterclockwise.', 'A quarter turn faces the opposite way.', 'A quarter turn does not change the way you face.']),
+            hint: 'Clockwise: north, east, south, west.', steps: [right], explain: right, meta: { k: 'turn-tf', d: DN[d], moves: ['quarter turn right'], said: said } };
+        }]
+      ],
+      'sh-path': [
+        [1, 'tap', function (lv) {
+          var r = route(lv), end = cell(r.end[0], r.end[1]);
+          return { q: 'Start at ' + cell(r.x, r.y) + ', facing north. ' + actText(r.acts).charAt(0).toUpperCase() + actText(r.acts).slice(1) + '. Tap the square where you end.', type: 'tap', pic: tapMap([r.x, r.y], 0), answer: end, answerText: end,
+            hint: 'North is up. A quarter turn right then faces east.', steps: ['Start at ' + cell(r.x, r.y) + '.', 'Do one step at a time.', 'You end at ' + end + '.'],
+            explain: 'You end at ' + end + '.', meta: { k: 'path-tap', x: r.x, y: r.y, acts: r.acts } };
+        }],
+        [1, 'which', function (lv) {
+          var r = route(lv), from = cell(r.x, r.y), to = cell(r.end[0], r.end[1]);
+          var wrong = [r.acts.map(function (a) { return a === 'right' ? 'left' : a === 'left' ? 'right' : a; }), r.acts.map(function (a) { return /forward/.test(a) ? 'forward ' + (+a.split(' ')[1] + 1) : a; }), ['forward ' + (+r.acts[0].split(' ')[1] + 1)]];
+          var o = R.mc(actText(r.acts), wrong.filter(function (w) { var e = walk(r.x, r.y, 0, w); return cell(e[0], e[1]) !== to; }).map(actText));
+          return { q: 'You start at <b>' + from + '</b>, facing north. Which directions take you to <b>' + to + '</b>?', type: 'mc', options: o.options, answer: o.answer, fig: map([[r.x, r.y]], 0),
+            hint: 'Try each one on the map, one step at a time.', steps: ['Follow: ' + actText(r.acts) + '.', 'You reach ' + to + '.'],
+            explain: actText(r.acts) + ' takes you to ' + to + '.', meta: { k: 'path-which', x: r.x, y: r.y, to: to } };
+        }],
+        [2, 'mistake', function (lv) {
+          var r = route(2), turn = r.acts[1], wrongActs = r.acts.map(function (a) { return a === 'right' ? 'left' : a === 'left' ? 'right' : a; }), we = walk(r.x, r.y, 0, wrongActs);
+          var who = nm(), truth = !R.int(0, 2) || we[0] < 0 || we[0] > 5, said = truth ? cell(r.end[0], r.end[1]) : cell(we[0], Math.max(0, Math.min(5, we[1])));
+          var right = 'A quarter turn ' + turn + ' from north faces ' + (turn === 'right' ? 'east' : 'west') + '. You end at ' + cell(r.end[0], r.end[1]) + '.';
+          return { q: 'Start at ' + cell(r.x, r.y) + ', facing north. ' + actText(r.acts).charAt(0).toUpperCase() + actText(r.acts).slice(1) + '. ' + who + ' says you end at <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: said === cell(r.end[0], r.end[1]), fig: map([[r.x, r.y]], 0),
+            why: why(right, ['A quarter turn ' + turn + ' from north faces ' + (turn === 'right' ? 'west' : 'east') + '.', 'Turning moves you one square.', 'North is down on a map.']),
+            hint: 'Which way do you face after the turn?', steps: [right], explain: right, meta: { k: 'path-tf', x: r.x, y: r.y, acts: r.acts, said: said } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();

@@ -244,4 +244,109 @@ row(BILLS, function (k) { return M[k].n + ': ' + { b5: 'blue', b10: 'purple', b2
       { id: 'f-order', name: 'Least to greatest', code: 'F1.1', gen: qOrder }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  function poolFor(lv) { return lv === 1 ? ['nickel', 'dime', 'quarter', 'loonie', 'toonie'] : lv === 2 ? COINS : ALL; }
+  function some(lv, k) { return R.shuffle(poolFor(lv)).slice(0, k); }
+  var SHAPES = {
+    'f-name': [
+      [1, 'match', function (lv) {
+        var ks = some(lv, 3);
+        return { q: 'Match each one to its name.', type: 'match', pairs: ks.map(function (k) { return [one(k), M[k].n]; }),
+          hint: 'Look at the number, the colour and the picture.', steps: ['The loonie is gold with a loon. The toonie has two colours.'],
+          explain: ks.map(function (k) { return 'the ' + M[k].n + ' shows ' + M[k].lab; }).join('. ') + '.', meta: { k: 'g1-mname-match' } };
+      }],
+      [1, 'tap', function (lv) {
+        var ks = some(lv, 3), k = R.pick(ks);
+        return { q: 'Tap the <b>' + M[k].n + '</b>.', type: 'tap', tiles: ks.map(function (x) { return one(x); }), answer: ks.indexOf(k), answerText: 'the ' + M[k].n,
+          hint: 'The ' + M[k].n + ' shows ' + M[k].lab + '.', steps: ['Look for the number ' + M[k].lab + '.'],
+          explain: 'The ' + M[k].n + ' is worth ' + M[k].say + '.', meta: { k: 'g1-mname-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var ks = some(lv, 2), k = ks[0], who = nm(), truth = !R.int(0, 2), said = truth ? k : ks[1];
+        var right = 'This is ' + article(k) + ' ' + M[k].n + '. It is worth ' + M[k].say + '.';
+        return G.tf(who + ' says this is ' + article(said) + ' <b>' + M[said].n + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Every silver coin is a dime.', 'The biggest coin is always the loonie.', 'Coins and bills have the same names.'], { k: 'g1-mname-tf' },
+          { fig: one(k), hint: 'Look at the number on it.' });
+      }],
+      [3, 'pick', function () {
+        var ks = R.shuffle(COINS).slice(0, 2).concat(R.shuffle(BILLS).slice(0, 2)), want = R.pick(['coin', 'bill']);
+        ks = R.shuffle(ks);
+        var ans = []; ks.forEach(function (k, j) { if (!!M[k].bill === (want === 'bill')) ans.push(j); });
+        return { q: 'Pick every <b>' + want + '</b>.', type: 'pick', options: ks.map(function (k) { return one(k); }), answer: ans,
+          hint: 'Coins are round. Bills are flat rectangles.', steps: ['Look at the shape of each one.'],
+          explain: 'Bills are rectangles. Coins are round.', meta: { k: 'g1-mname-pick' } };
+      }]
+    ],
+    'f-value': [
+      [1, 'match', function (lv) {
+        var ks = some(lv, 3);
+        return { q: 'Match each one to what it is worth.', type: 'match', pairs: ks.map(function (k) { return [one(k), price(k)]; }),
+          hint: 'The number tells the value. Coins with 1 or 2 are dollars.', steps: ['A loonie is $1. A toonie is $2.'],
+          explain: ks.map(function (k) { return 'the ' + M[k].n + ' is ' + price(k); }).join('. ') + '.', meta: { k: 'g1-mval-match' } };
+      }],
+      [1, 'tap', function (lv) {
+        var ks = some(lv, 3), k = R.pick(ks);
+        return { q: 'Tap the one worth <b>' + price(k) + '</b>.', type: 'tap', tiles: ks.map(function (x) { return one(x); }), answer: ks.indexOf(k), answerText: 'the ' + M[k].n,
+          hint: 'Look at the number on each one.', steps: [price(k) + ' is the ' + M[k].n + '.'],
+          explain: 'The ' + M[k].n + ' is worth ' + price(k) + '.', meta: { k: 'g1-mval-tap' } };
+      }],
+      [2, 'mistake', function () {
+        var k = R.pick(['nickel', 'dime']), who = nm(), truth = !R.int(0, 2), said = truth ? k : (k === 'nickel' ? 'dime' : 'nickel');
+        var right = 'A ' + M[k].n + ' is worth ' + price(k) + '. Size does not tell the value.';
+        return G.tf(who + ' says a <b>' + M[k].n + '</b> is worth <b>' + price(said) + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Bigger coins are always worth more.', 'All silver coins are worth the same.', 'A coin is worth its size in mm.'], { k: 'g1-mval-tf' },
+          { fig: row(['nickel', 'dime'], function (x) { return M[x].n; }), hint: 'Read the number on the coin.' });
+      }]
+    ],
+    'f-compare': [
+      [1, 'mistake', function (lv) {
+        var a = 'nickel', b = 'dime', who = nm(), truth = R.int(0, 1), x = truth ? b : a, y = truth ? a : b;
+        if (lv > 1) { var ks = some(lv, 2); x = ks[0]; y = ks[1]; truth = M[x].v > M[y].v; }
+        var big = M[x].v > M[y].v ? x : y, small = big === x ? y : x;
+        var right = 'The ' + M[big].n + ' is worth ' + price(big) + ' and the ' + M[small].n + ' is worth ' + price(small) + '.';
+        return G.tf(who + ' says the <b>' + M[x].n + '</b> is worth more than the <b>' + M[y].n + '</b>. True or false: ' + who + ' is right.', !!truth, right,
+          ['The bigger coin is always worth more.', 'Gold coins are always worth less.', 'They are worth the same.'], { k: 'g1-mcmp-tf' },
+          { fig: row([x, y], function (k) { return M[k].n; }), hint: 'Compare the values, not the sizes.' });
+      }],
+      [1, 'pick', function (lv) {
+        var base = R.pick(lv === 1 ? ['dime', 'quarter'] : ['dime', 'quarter', 'loonie']), ks;
+        do { ks = some(lv, 4).filter(function (k) { return k !== base; }).slice(0, 4); } while (ks.length < 3 || ks.every(function (k) { return M[k].v > M[base].v; }) || !ks.some(function (k) { return M[k].v > M[base].v; }));
+        var ans = []; ks.forEach(function (k, j) { if (M[k].v > M[base].v) ans.push(j); });
+        return { q: 'Pick every one worth <b>more</b> than ' + article(base) + ' <b>' + M[base].n + '</b>.', type: 'pick', options: ks.map(function (k) { return one(k); }), answer: ans,
+          hint: 'The ' + M[base].n + ' is worth ' + price(base) + '.', steps: ['Read the value of each one.', 'Is it more than ' + price(base) + '?'],
+          explain: 'More than ' + price(base) + ': ' + ans.map(function (j) { return M[ks[j]].n; }).join(', ') + '.', meta: { k: 'g1-mcmp-pick' } };
+      }],
+      [2, 'story', function (lv) {
+        var p = A.Q ? A.Q.two() : ['Ava', 'Kai'], ks = some(lv, 2), more = R.int(0, 1), win = (M[ks[0]].v > M[ks[1]].v) === !!more ? 0 : 1;
+        var o = R.mc(p[win], [p[1 - win]]);
+        return { q: p[0] + ' has ' + article(ks[0]) + ' ' + M[ks[0]].n + '. ' + p[1] + ' has ' + article(ks[1]) + ' ' + M[ks[1]].n + '. Who has <b>' + (more ? 'more' : 'less') + '</b> money?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'What is each one worth?', steps: ['A ' + M[ks[0]].n + ' is ' + price(ks[0]) + '. A ' + M[ks[1]].n + ' is ' + price(ks[1]) + '.'],
+          explain: p[win] + ' has ' + (more ? 'more' : 'less') + '.', meta: { k: 'g1-mcmp-story' } };
+      }]
+    ],
+    'f-order': [
+      [1, 'order', function (lv) {
+        var ks = some(lv, 3).sort(function (x, y) { return M[x].v - M[y].v; });
+        return { q: 'Put them in order from <b>least to greatest</b> value.', type: 'order', items: ks.map(function (k) { return one(k); }), first: 'least', last: 'greatest',
+          hint: 'Read the value of each one. Cents are less than dollars.', steps: ['The least is the ' + M[ks[0]].n + ' (' + price(ks[0]) + ').'],
+          explain: ks.map(function (k) { return M[k].n + ' (' + price(k) + ')'; }).join(', ') + '.', meta: { k: 'g1-morder-order' } };
+      }],
+      [1, 'tap', function (lv) {
+        var ks = some(lv, 3), most = R.int(0, 1), pickK = ks.slice().sort(function (x, y) { return most ? M[y].v - M[x].v : M[x].v - M[y].v; })[0];
+        return { q: 'Tap the one worth the <b>' + (most ? 'most' : 'least') + '</b>.', type: 'tap', tiles: ks.map(function (k) { return one(k); }), answer: ks.indexOf(pickK), answerText: 'the ' + M[pickK].n,
+          hint: 'Read the value of each one.', steps: ['The values are ' + ks.map(price).join(', ') + '.'],
+          explain: 'The ' + M[pickK].n + ' is worth the ' + (most ? 'most' : 'least') + ': ' + price(pickK) + '.', meta: { k: 'g1-morder-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var ks = some(lv, 3), s = ks.slice().sort(function (x, y) { return M[x].v - M[y].v; }), who = nm(), truth = !R.int(0, 2), shown = truth ? s : [s[1], s[0], s[2]];
+        var right = 'From least to greatest: ' + s.map(function (k) { return M[k].n + ' (' + price(k) + ')'; }).join(', ') + '.';
+        return G.tf(who + ' put these from least to greatest value: <b>' + shown.map(function (k) { return M[k].n; }).join(', ') + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Smaller coins always come first.', 'Coins always come after bills.', 'Order by colour.'], { k: 'g1-morder-tf' },
+          { hint: 'Read the value of each one.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

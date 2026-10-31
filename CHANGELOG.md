@@ -4,6 +4,16 @@ Newest first. One line per change, in plain English.
 
 ## 2026-10-31
 - Grade 4: spinners, bar graphs, growing patterns, the robot path and the shape slide show real orange and green again, so the words in the questions match the pictures (the shared theme had turned them teal).
+- Grade 1 "Counting to 50": every practice skill now asks in at least 4 ways (tap the picture, match, number line, spot the mistake, short stories). Fresh chapter quiz every time.
+- Grade 1 "Tens and Ones": build numbers with blocks, match, fill the blanks, number line, stories and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Adding and Subtracting to 10": tap, number line, match, fact families, "which way?" stories and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Adding and Subtracting to 50": make ten, number line, build with blocks, "which way?" stories, balance the equation and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Equal Groups and Fair Shares": tap the plates, pick the halves, match part names, put in order and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Patterns": tap the odd one out, match the core, fill number patterns, put in order and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Shapes, Position and Coding": tap, match, pick, follow a code and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Measuring and the Calendar": tap the longest or heaviest, number line, put in order, calendar and season questions, spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Sorting and Picture Graphs": sort, tally, read graphs, put in order, chance questions and spot the mistake. Fresh chapter quiz every time.
+- Grade 1 "Canadian Money": match coins to names and values, tap, pick, put in order, stories and spot the mistake. Fresh chapter quiz every time.
 - Coin "build it" questions now work in every grade, and one shared helper (`Atlas.Q.shapes`) wires question shapes into a chapter, so grades don't copy it.
 - Match cards and "why?" reasons fit on a phone screen in every grade (long words and sentences wrap instead of running off the side).
 - Checks: fresh quizzes are now answered the same way as practice, so fraction answers (like 1/2) are typed correctly.
@@ -32,6 +42,16 @@ Newest first. One line per change, in plain English.
 - Grade 4 "Shapes, Angles and Grids": every skill asks in 4 or 5 ways, including tap angles, tap points on the grid for slides and flips, and pick the rectangles. Fresh chapter quiz.
 - Grade 4 "Measuring": every skill asks in 4 or 5 ways, including masses and jugs on a number line, an elapsed-time line, and tap the rectangle with a given area. Fresh chapter quiz.
 - Grade 4 "Money": every skill asks in 4 ways, including count up to the change on a number line, a savings table, and tap the best price. Fresh chapter quiz.
+- Grade 3 "Adding and Subtracting": every skill asks in 5 ways, including build the sum with blocks, a missing digit, "which way?" (add or subtract, and the quickest mental method), estimates that make sense, and mistakes to spot. Fresh chapter quiz.
+- Grade 3 "Multiplying and Dividing": every skill asks in 5 or 6 ways, including tap the equal groups or array, skip counts on a number line, fill the fact family, and "which way?" (multiply or divide). Fresh chapter quiz.
+- Grade 3 "Fractions and Fair Shares": every skill asks in 5 ways, including tap the bar, place fractions on a number line, fair-share blanks and put fractions in order. Fresh chapter quiz.
+- Grade 3 "Patterns, Equations and Code": every skill asks in 4 or 5 ways, including put the next shapes in order, "which rule?", match equations to n, and read loop code. Fresh chapter quiz.
+- Grade 3 "Data and Chance": every skill asks in 4 or 5 ways, including pick the numbers in the Venn overlap, order a pictograph or bar graph, match lists to their mode, and order bags by likelihood. Fresh chapter quiz.
+- Grade 3 "3D Shapes and Directions": every skill asks in 4 or 5 ways, including tap the object, match everyday things to shapes, tap the way you face on a compass, and tap where you end on the map. Fresh chapter quiz.
+- Grade 3 "Length, Perimeter and Area": every skill asks in 5 ways, including mark millimetres on a ruler, order mixed units, tap the shape with a given area, and pick shapes with the same area. Fresh chapter quiz.
+- Grade 3 "Time, Mass and Capacity": every skill asks in 4 or 5 ways, including tap the clock, order morning times, read a balance, and tap the jug. Fresh chapter quiz.
+- Grade 3 "Money: Making Change": every skill asks in 5 ways, including tap the coins, the fewest coins, change on a number line, and "which way?" to find change. Fresh chapter quiz.
+- Grade 3 answer checks now stop if two checks share a name, so one shape can never be checked by another shape's rule.
 - Mixed review now brings back skills from other chapters already practised.
 - Automatic checks (`tests/`) run on every pull request and before every publish.
 - Picked answers turn green or red again on every grade (the shared theme had hidden this).

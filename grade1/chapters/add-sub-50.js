@@ -397,4 +397,173 @@
       { id: 'b-equal', name: 'Is it equal?', code: 'C2.2, C2.3', gen: qEqual }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return R.pick(PEOPLE); };
+  /* a + b that crosses ten, a the bigger (level 1 always starts at 9) */
+  function cross(lv) { var a = lv === 1 ? 9 : R.int(6, 9), b = R.int(11 - a, 9); return [a, b]; }
+  function twoDigit(lv, add) {
+    var a, b;
+    if (add) { a = R.int(1, 3) * 10 + R.int(0, 5); b = lv === 1 ? R.int(1, 9 - a % 10) : R.int(2, 9); }
+    else { a = R.int(2, 4) * 10 + R.int(lv === 1 ? 5 : 1, 9); b = lv === 1 ? R.int(1, a % 10) : R.int(2, 9); }
+    return [a, b];
+  }
+  function trueFalseSum(lv) {
+    var tot = R.int(lv === 1 ? 4 : 6, lv === 1 ? 10 : 15), a = R.int(1, tot - 1), c; do { c = R.int(1, tot - 1); } while (c === a);
+    var d = tot - c, ok = R.int(0, 1);
+    if (!ok) d += R.pick([1, -1]) || 1;
+    if (d < 1) d = tot - c + 1;
+    return [a, tot - a, c, d];
+  }
+  var SHAPES = {
+    'b-20': [
+      [1, 'fill', function (lv) {
+        var p = cross(lv), a = p[0], b = p[1], need = 10 - a, rest = b - need;
+        return { q: 'Make a ten first. Fill in the blanks.', type: 'fill', fill: eqn(a + ' + ' + b + ' = ' + a + ' + ' + need + ' + [[]]') + '<br>' + eqn('= 10 + [[]] = [[]]'), answers: [rest, rest, a + b], fig: makeTen(a, b),
+          hint: a + ' needs ' + need + ' to make 10. Split ' + b + ' into ' + need + ' and the rest.', steps: [b + ' is ' + need + ' and ' + rest + '.', a + ' + ' + need + ' = 10.', '10 + ' + rest + ' = ' + (a + b) + '.'],
+          explain: a + ' + ' + b + ' = 10 + ' + rest + ' = ' + (a + b) + '.', meta: { k: 'g1-20-fill' } };
+      }],
+      [1, 'line', function (lv) {
+        var p = cross(lv), a = p[0], b = p[1];
+        return { q: 'Start at ' + a + '. Jump ' + b + ' more. Put the marker where you land.', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: a + b,
+          hint: 'Jump to 10 first. Then jump the rest.', steps: [a + ' + ' + (10 - a) + ' = 10.', '10 + ' + (b - 10 + a) + ' = ' + (a + b) + '.'],
+          explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'g1-20-line' } };
+      }],
+      [1, 'tap', function (lv) {
+        var p = cross(lv), a = p[0], b = p[1], set = R.shuffle([[a, b], [a, b - 1], [a - 1, b]]);
+        return { q: 'Tap the ten frames that show ' + eqn(a + ' + ' + b) + '.', type: 'tap', tiles: set.map(function (x) { return A.draw.frames(x[0], { b: x[1], c: 14, r: 2, min: 20 }); }), answer: set.map(function (x) { return x.join(); }).indexOf(a + ',' + b), answerText: 'the frames with ' + a + ' red and ' + b + ' yellow',
+          hint: 'Look for ' + a + ' red and ' + b + ' yellow.', steps: ['Count the red counters: you want ' + a + '.', 'Count the yellow counters: you want ' + b + '.'],
+          explain: a + ' red and ' + b + ' yellow make ' + (a + b) + '.', meta: { k: 'g1-20-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var p = cross(lv), a = p[0], b = p[1], who = nm(), truth = !R.int(0, 2), said = truth ? a + b : a + b - 1;
+        var right = a + ' + ' + b + ' = ' + (a + b) + '. Make 10 first, then add the rest.';
+        return G.tf(who + ' says ' + eqn(a + ' + ' + b + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, right,
+          ['Adding past 10 always gives 10.', 'Count the first number again when you count on.', 'The answer is the two digits side by side.'], { k: 'g1-20-tf' },
+          { hint: 'Make a ten first.' });
+      }]
+    ],
+    'b-tens': [
+      [1, 'line', function (lv) {
+        var back = R.int(0, 1), k = R.int(1, lv === 1 ? 2 : 3), a = lv === 1 ? (back ? R.int(k + 1, 5) * 10 : R.int(1, 5 - k) * 10) : (back ? R.int(k, 4) * 10 + R.int(1, 9) : R.int(1, 4 - k) * 10 + R.int(1, 9));
+        var ans = back ? a - 10 * k : a + 10 * k;
+        return { q: 'Start at ' + a + '. Jump ' + k + ' ten' + (k > 1 ? 's' : '') + ' ' + (back ? 'back' : 'forward') + '. Put the marker where you land.', type: 'line', min: 0, max: 50, tick: 1, every: 10, snap: 1, answer: ans,
+          hint: 'Each jump is 10. The ones digit stays the same.', steps: ['Start at ' + a + '.', 'Jump ' + (back ? 'back' : 'forward') + ' by 10s: ' + seq(a + (back ? -10 : 10), k, back ? -10 : 10).join(', ') + '.'],
+          explain: a + ' ' + (back ? M : '+') + ' ' + 10 * k + ' = ' + ans + '.', meta: { k: 'g1-tens-line' } };
+      }],
+      [1, 'build', function (lv) {
+        var a = lv === 1 ? R.int(1, 3) * 10 : R.int(11, 29), b = 10 * R.int(1, lv === 1 ? 5 - a / 10 : Math.min(2, tn(50 - a)));
+        return { q: 'Build the answer to ' + eqn(a + ' + ' + b) + ' with blocks. Then press Check.', type: 'build', tool: 'base10', opts: { cols: ['t', 'o'] }, answer: a + b,
+          hint: 'Build ' + a + '. Then add ' + b / 10 + ' more rod' + (b > 10 ? 's' : '') + '.', steps: [a + ' is ' + tn(a) + ' rods and ' + a % 10 + ' cubes.', 'Add ' + b / 10 + ' rod' + (b > 10 ? 's' : '') + ': ' + (a + b) + '.'],
+          explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'g1-tens-build' } };
+      }],
+      [2, 'match', function (lv) {
+        var used = [], pairs = [];
+        while (pairs.length < 3) {
+          var add = R.int(0, 1), a = R.int(11, 39), b = 10 * R.int(1, 2), ans = add ? a + b : a - b;
+          if (ans < 1 || ans > 50 || used.indexOf(ans) >= 0) continue;
+          used.push(ans); pairs.push([a + ' ' + (add ? '+' : M) + ' ' + b, String(ans)]);
+        }
+        return { q: 'Match each one to its answer.', type: 'match', pairs: pairs, hint: 'Adding or taking 10 changes only the tens digit.', steps: ['Count by 10s from the first number.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'g1-tens-match' } };
+      }]
+    ],
+    'b-two': [
+      [1, 'build', function (lv) {
+        var p = twoDigit(lv, true), a = p[0], b = p[1];
+        return { q: 'Build the answer to ' + eqn(a + ' + ' + b) + ' with blocks. Then press Check.', type: 'build', tool: 'base10', opts: { cols: ['t', 'o'] }, answer: a + b,
+          hint: 'Build ' + a + ', then add ' + b + ' small cubes. Trade 10 cubes for a rod if you can.', steps: ['Build ' + a + '.', 'Add ' + b + ' cubes.'],
+          explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'g1-two-build' } };
+      }],
+      [1, 'match', function (lv) {
+        var used = [], pairs = [];
+        while (pairs.length < 3) {
+          var add = lv === 1 ? 1 : R.int(0, 1), p = twoDigit(lv, add), ans = add ? p[0] + p[1] : p[0] - p[1];
+          if (used.indexOf(ans) >= 0) continue;
+          used.push(ans); pairs.push([p[0] + ' ' + (add ? '+' : M) + ' ' + p[1], String(ans)]);
+        }
+        return { q: 'Match each one to its answer.', type: 'match', pairs: pairs, hint: 'Add or take away the ones. The tens stay the same unless you pass a ten.', steps: ['Work out each one. Then find its answer.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'g1-tens-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(1, 4) * 10 + R.int(1, 4), b = R.int(2, 5), who = nm(), truth = !R.int(0, 2), said = truth ? a + b : a + 10 * b;
+        var right = b + ' is ones, so add it to the ones: ' + a + ' + ' + b + ' = ' + (a + b) + '.';
+        return G.tf(who + ' says ' + eqn(a + ' + ' + b + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, right,
+          ['Add the ' + b + ' to the tens.', 'Put the digits side by side.', 'Adding ones never changes a number.'], { k: 'g1-two-tf' },
+          { hint: 'Is ' + b + ' tens or ones?' });
+      }]
+    ],
+    'b-story': [
+      [1, 'which way', function (lv) {
+        var who = nm(), kind = R.int(0, lv === 1 ? 1 : 3), a, b, q, add;
+        if (kind === 0) { a = R.int(10, 30); b = R.int(2, 9); q = who + ' has ' + a + ' stickers and gets ' + b + ' more. How many stickers now?'; add = 1; }
+        else if (kind === 1) { a = R.int(15, 40); b = R.int(2, 9); q = 'There are ' + a + ' crackers. ' + who + ' eats ' + b + '. How many crackers are left?'; add = 0; }
+        else if (kind === 2) { a = R.int(10, 25); b = R.int(10, 20); q = 'A class has ' + a + ' girls and ' + b + ' boys. How many children in all?'; add = 1; }
+        else { a = R.int(12, 30); b = a + R.int(2, 12); q = who + ' has ' + a + ' marbles. A friend has ' + b + '. How many more marbles does the friend have?'; add = 0; }
+        var o = R.mc(add ? 'Add' : 'Subtract', [add ? 'Subtract' : 'Add']);
+        return { q: q + ' Do you add or subtract?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Putting together means add. Taking away or finding how many more means subtract.', steps: [add ? 'The parts go together, so add.' : 'You take away or compare, so subtract.'],
+          explain: add ? 'Add: ' + a + ' + ' + b + ' = ' + (a + b) + '.' : 'Subtract: ' + Math.max(a, b) + ' ' + M + ' ' + Math.min(a, b) + ' = ' + Math.abs(b - a) + '.', meta: { k: 'g1-bstory-way' } };
+      }],
+      [1, 'fill', function (lv) {
+        var who = nm(), add = R.int(0, 1), a = add ? R.int(10, 30) : R.int(15, 40), b = R.int(2, 9);
+        if (lv === 1) b = add ? R.int(1, Math.max(1, 9 - a % 10)) : R.int(1, Math.max(1, a % 10));
+        var q = add ? who + ' has ' + a + ' stickers. ' + who + ' gets ' + b + ' more.' : 'There are ' + a + ' crackers. ' + who + ' eats ' + b + '.';
+        return { q: q + ' Write the number sentence.', type: 'fill', fill: eqn('[[]] ' + (add ? '+' : M) + ' [[]] = [[]]'), answers: [a, b, add ? a + b : a - b],
+          hint: add ? 'Getting more means add.' : 'Eating some means take away.', steps: ['Start with ' + a + '.', (add ? 'Add ' : 'Take away ') + b + '.'],
+          explain: a + ' ' + (add ? '+' : M) + ' ' + b + ' = ' + (add ? a + b : a - b) + '.', meta: { k: 'g1-bstory-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var who = nm(), a = R.int(15, 40), b = R.int(2, 9), truth = !R.int(0, 2), said = truth ? a - b : a + b;
+        var right = 'Eating takes some away: ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.';
+        return G.tf('There were ' + a + ' crackers. ' + who + ' ate ' + b + '. ' + who + ' says <b>' + said + '</b> are left. True or false: ' + who + ' is right.', truth, right,
+          ['Always add the numbers in a story.', 'The answer is the biggest number in the story.', 'Eating adds more crackers.'], { k: 'g1-bstory-tf' },
+          { hint: '"Left" means take away.' });
+      }]
+    ],
+    'b-equal': [
+      [1, 'tap', function (lv) {
+        var rows = [], good = 0;
+        while (rows.length < 3) {
+          var s = trueFalseSum(lv), ok = s[0] + s[1] === s[2] + s[3], t = eqn(s[0] + ' + ' + s[1] + ' = ' + s[2] + ' + ' + s[3]);
+          if ((ok && good) || (!ok && rows.length - good >= 2) || rows.indexOf(t) >= 0) continue;
+          rows.push(t); if (ok) good++;
+        }
+        rows = R.shuffle(rows);
+        var ans = rows.map(function (t) { var v = t.replace(/<[^>]+>/g, '').match(/\d+/g).map(Number); return v[0] + v[1] === v[2] + v[3]; }).indexOf(true);
+        return { q: 'Tap the one that is <b>true</b>. Both sides must be equal.', type: 'tap', tiles: rows, answer: ans, answerText: rows[ans],
+          hint: 'Add each side. Are they the same?', steps: ['Work out the left side.', 'Work out the right side. True means they match.'],
+          explain: 'Both sides of ' + rows[ans].replace(/<[^>]+>/g, '') + ' make the same total.', meta: { k: 'g1-eq-tap' } };
+      }],
+      [1, 'pick', function (lv) {
+        var opts = [], good = 0;
+        while (opts.length < 4) {
+          var s = trueFalseSum(lv), ok = s[0] + s[1] === s[2] + s[3], t = s[0] + ' + ' + s[1] + ' = ' + s[2] + ' + ' + s[3];
+          if (opts.indexOf(t) >= 0 || (ok && good >= 2) || (!ok && opts.length - good >= 2)) continue;
+          opts.push(t); if (ok) good++;
+        }
+        var ans = []; opts.forEach(function (t, j) { var v = t.match(/\d+/g).map(Number); if (v[0] + v[1] === v[2] + v[3]) ans.push(j); });
+        return { q: 'Pick every one that is <b>true</b>.', type: 'pick', options: opts, answer: ans,
+          hint: 'Add each side. True means both sides make the same total.', steps: ['Work out both sides of each one.'],
+          explain: ans.map(function (j) { return opts[j]; }).join(' and ') + (ans.length > 1 ? ' are' : ' is') + ' true.', meta: { k: 'g1-eq-pick' } };
+      }],
+      [2, 'match', function (lv) {
+        var tots = R.shuffle([5, 6, 7, 8, 9, 10, 11, 12]).slice(0, 3), pairs = tots.map(function (t) {
+          var a = R.int(1, t - 1), c; do { c = R.int(1, t - 1); } while (c === a);
+          return [a + ' + ' + (t - a), c + ' + ' + (t - c)];
+        });
+        return { q: 'Match the ones that are equal.', type: 'match', pairs: pairs, hint: 'Work out each one. Equal means the same total.', steps: ['Add each one. Then find its partner.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'g1-eq-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var tot = R.int(6, 12), a = R.int(1, tot - 1), c; do { c = R.int(1, tot - 1); } while (c === a || c === tot - a);
+        var who = nm(), truth = R.int(0, 1), d = tot - c + (truth ? 0 : 1);
+        var right = a + ' + ' + (tot - a) + ' is ' + tot + ' and ' + c + ' + ' + d + ' is ' + (c + d) + (truth ? '. Both sides are equal, so it is true.' : '. The sides are not equal, so it is false.');
+        return G.tf(who + ' says ' + eqn(a + ' + ' + (tot - a) + ' = ' + c + ' + ' + d) + ' is true. True or false: ' + who + ' is right.', !!truth, right,
+          ['The numbers must be the same on both sides.', 'An equal sign means "the answer is next".', 'Bigger numbers on one side make it false.'], { k: 'g1-eq-tf' },
+          { hint: 'Add each side.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();
