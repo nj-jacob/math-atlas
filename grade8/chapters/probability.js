@@ -53,7 +53,7 @@
   }
   /* bars comparing experimental and theoretical probability */
   function compareBars(exp, theo, n) {
-    var s = '', W = 300, x0 = 92;
+    var s = '', W = 250, x0 = 124;
     s += '<text x="' + (x0 - 8) + '" y="34" text-anchor="end" font-size="16">theory</text><rect x="' + x0 + '" y="16" width="' + W * theo + '" height="26" style="fill:var(--strand)"/><text x="' + (x0 + W * theo + 6) + '" y="35" font-size="16" class="tb">' + (theo * 100).toFixed(1) + '%</text>';
     s += '<text x="' + (x0 - 8) + '" y="80" text-anchor="end" font-size="16">' + n + ' trials</text><rect x="' + x0 + '" y="62" width="' + W * exp + '" height="26" style="fill:var(--accent)"/><text x="' + (x0 + W * exp + 6) + '" y="81" font-size="16" class="tb">' + (exp * 100).toFixed(1) + '%</text>';
     s += '<line x1="' + x0 + '" y1="8" x2="' + x0 + '" y2="96" style="stroke:var(--ink)" stroke-width="1.5"/>';
@@ -185,6 +185,7 @@ A.yt({ q: 'If you flip two coins 400 times, about how many times would you expec
   ];
 
   A.register('probability', {
+    fx: { simp: simp, TX: TX, FR: FR, raw: raw, tree: tree, bag: bag, venn: venn, compareBars: compareBars },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); }, L = 'ABCD';

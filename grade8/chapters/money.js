@@ -96,7 +96,7 @@ A.yt({ q: 'You have 50 USD. At 1 USD = $1.36 CAD, how much is it in Canadian dol
 '<ul class="steplist"><li><b>Surplus:</b> income is more than spending. Save the extra.</li><li><b>Balanced:</b> they are equal.</li><li><b>Deficit:</b> spending is more than income. Something has to change.</li></ul>' +
 '<div class="lab"><span class="lt">Try it: balance a monthly budget</span>' +
 '<p class="t2" style="margin:.2rem 0 .6rem">Fixed: phone $35 and transit pass $60.</p>' +
-'<div class="ctrl"><label for="bui">Income: <output id="buio"></output><input type="range" id="bui" min="0" max="600" step="10" value="320"></label><label for="buf">Food and fun: <output id="bufo"></output><input type="range" id="buf" min="0" max="400" step="10" value="150"></label><label for="bus">Savings: <output id="buso"></output><input type="range" id="bus" min="0" max="300" step="10" value="100"></label></div>' +
+'<div class="ctrl"><label for="bui">Income: <output id="buio"></output><input type="range" id="bui" min="0" max="600" step="5" value="320"></label><label for="buf">Food and fun: <output id="bufo"></output><input type="range" id="buf" min="0" max="400" step="5" value="150"></label><label for="bus">Savings: <output id="buso"></output><input type="range" id="bus" min="0" max="300" step="5" value="100"></label></div>' +
 '<div class="fig" id="bufig"></div><div class="out" id="buout"></div></div>' +
 '<div class="eg"><b class="t">Worked example</b><p>Maya earns $320 a month. She spends $35 on her phone, $60 on transit, $180 on food and fun, and wants to save $80. Does her budget balance?</p><ol><li>Add the expenses: 35 + 60 + 180 + 80 = $355.</li><li>Compare: 355 is more than 320. That is a deficit of $35.</li><li>To balance, she could spend $35 less on food and fun, earn $35 more, or save less for now.</li></ol></div>' +
 A.yt({ q: 'Income is $400. Expenses are $120, $85 and $150. What is the surplus?', a: 45, unit: '$', show: '$45.00', back: 'Go back to step 1: add the expenses, then subtract from income.', ok: '120 + 85 + 150 = 355, and 400 &minus; 355 = $45.' }) +
@@ -243,6 +243,7 @@ A.yt({ q: 'A phone plan is $45 a month for 24 months with a free phone. Another 
   ];
 
   A.register('money', {
+    fx: { c2: c2, m: m, mp: mp, money: money, exFig: exFig, budgetFig: budgetFig, kf: kf, growth: growth, compare: compare, cardFig: cardFig },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

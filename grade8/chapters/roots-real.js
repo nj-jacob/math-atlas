@@ -245,6 +245,7 @@ A.yt({ q: 'Which is greater?', opts: [RT + '20', '4.5'], a: 1, back: 'Change ' +
   ];
 
   A.register('roots-real', {
+    fx: { r1: r1, r2: r2, square: square, rootLine: rootLine, nested: nested, diagonal: diagonal, realLine: realLine },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

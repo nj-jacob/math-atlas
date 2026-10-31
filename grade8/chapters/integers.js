@@ -219,6 +219,7 @@ A.yt({ q: 'Work out (&minus;45) &divide; (&minus;9).', a: 5, back: 'Divide the s
   ];
 
   A.register('integers', {
+    fx: { P: P, counters: counters, jump: jump, thermo: thermo, pattern: pattern, signGrid: signGrid, addModel: addModel, nz: nz, sizes: sizes },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

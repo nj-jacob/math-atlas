@@ -385,6 +385,7 @@ A.yt({ q: 'A box is 2 cm by 3 cm by 4 cm. What is its surface area?', a: 52, uni
   ];
 
   A.register('measurement', {
+    fx: { r1: r1, f1: f1, sq4: sq4, sqrtS: sqrtS, approx: approx, rtri: rtri, psq: psq, rearr: rearr, slices: slices, circW: circW, comp: comp, solid: solid, boxNet: boxNet, cylNet: cylNet, triple: triple },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

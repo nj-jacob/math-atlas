@@ -102,8 +102,6 @@ p{margin:.7em 0;max-width:66ch}
 .sec>h2{display:flex;align-items:baseline;gap:12px;margin-bottom:4px;padding-bottom:10px;border-bottom:1px solid var(--line)}
 .sec>h2 .n{flex:none;font-style:italic;font-weight:400;font-size:2rem;line-height:.9;color:var(--strand)}
 .sec>h2 .n::after{content:"."}
-.say{font:inherit;font-size:.78rem;font-weight:700;color:var(--ink2);background:none;border:1px solid var(--rule);border-radius:3px;padding:2px 9px;cursor:pointer;margin:8px 0 4px;min-height:30px}
-.say:hover{color:var(--ink);border-color:var(--ink2)}
 .key,.mistake{border-radius:0 3px 3px 0;padding:10px 16px;margin:16px 0;font-size:.97rem}
 .key{background:color-mix(in srgb,var(--strand) 8%,var(--card));border-left:4px solid var(--strand)}
 .mistake{background:color-mix(in srgb,var(--bad) 7%,var(--card));border-left:4px solid var(--bad)}
@@ -186,7 +184,6 @@ tbody tr:nth-child(even){background:color-mix(in srgb,var(--ink) 3%,transparent)
 .q:first-of-type{margin-top:10px}
 .qtext{margin:0 0 8px;max-width:none}
 .qn{display:inline-block;min-width:1.6em;margin-right:6px;font-family:var(--display);font-style:italic;font-size:1.2rem;color:var(--accent)}
-.q .say{margin-top:0}
 .opts{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:8px}
 button.opt{border:1.5px solid var(--rule);background:var(--card);color:var(--ink);border-radius:3px;padding:8px 12px;text-align:left;min-height:46px;font-variant-numeric:tabular-nums;font-size:1rem}
 button.opt:hover:not(:disabled){border-color:var(--accent)}
@@ -255,7 +252,7 @@ input[type=range]:disabled{opacity:.4}
 }
 
 @media print{
-  .bar,.jump,.pn,footer.site,.btn,.say,.crumb,.warm{display:none!important}
+  .bar,.jump,.pn,footer.site,.btn,.crumb,.warm{display:none!important}
   body{background:#fff}
   .sec,.quiz{border:1px solid #999;break-inside:avoid-page}
 }
@@ -296,8 +293,6 @@ h1{font-size:clamp(2rem,6vw,3rem)}
 :root[data-theme="dark"] .sec>h2 .n{color:#0f1c24}
 .sec>h2 .n::after{content:""}
 .sec>h2{align-items:center}
-.say{border-radius:999px;border-color:var(--line);background:var(--soft)}
-.say:hover{border-color:var(--teal);color:var(--teal)}
 .key,.mistake{border-radius:0 12px 12px 0}
 .eg{border:0;background:var(--soft);border-radius:12px}
 .eg>b.t{color:var(--teal)}
@@ -345,3 +340,26 @@ footer.site{border-top:2px solid var(--line)}
 @media (max-width:480px){.hero{padding:16px 14px 10px}.chead{padding:16px 14px 12px}.sec>h2 .n{font-size:.95rem}}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}.reveal{opacity:1;transform:none}}
 @media print{.reveal{opacity:1!important;transform:none!important}.bar{background:none;box-shadow:none}.brand,.bar nav a{color:#000}}
+
+/* ---- Grade 8 lesson kit: clips, labs and tap-to-count squares ---- */
+.mp{--mp-ones:var(--coral);--mp-tens:var(--teal2);--mp-hund:var(--sb);--mp-glow:var(--hi);--mp-radius:14px}
+.k8-frame{display:block}
+.k8-frame svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.k8-in{animation:fadeup .45s ease both}
+.k8-task{font-weight:700;margin:.4em 0}
+.k8-yes{font-weight:700;color:var(--good);min-height:1.2em}
+.k8-tap{display:flex;flex-wrap:wrap;gap:18px;align-items:flex-end;justify-content:center;margin:10px 0}
+.k8-tg{text-align:center}
+.k8-cells{display:grid;gap:3px;justify-content:center}
+.k8-cell{--k8s:26px;width:var(--k8s);height:var(--k8s);padding:0;border-radius:6px;border:2px solid var(--line);background:var(--card);cursor:pointer;transition:background .2s,border-color .2s,transform .12s}
+.k8-cell:hover{transform:scale(1.08);border-color:var(--k8c)}
+.k8-cell.on{background:var(--k8c);border-color:transparent;box-shadow:0 0 0 3px color-mix(in srgb,var(--hi) 55%,transparent)}
+.k8-pop{animation:pop .35s ease}
+.k8-cnt{margin:6px 0 0;font-weight:700;font-family:var(--display)}
+.k8-cnt b{display:inline-block;min-width:1.4em;color:var(--accent)}
+@media (max-width:420px){.k8-cell{--k8s:20px}}
+.k8-eq{text-align:center;font-family:var(--display);font-weight:700;font-size:1.3rem;margin:.6em 0}
+@media (max-width:520px){.bar nav{flex-wrap:wrap;gap:4px 12px;font-size:.86rem}.bar nav a{white-space:nowrap}}
+.k8-reuse{border:0;padding:0;margin:0;background:none}
+/* progress tables on phones: drop the lesson column so the table fits */
+@media (max-width:520px){.pg-ch table{width:100%;font-size:.88rem}.pg-ch table th:nth-child(2):not(:last-child),.pg-ch table td:nth-child(2):not(:last-child){display:none}.pg-ch td,.pg-ch th{overflow-wrap:anywhere}}

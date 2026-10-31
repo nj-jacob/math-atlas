@@ -219,6 +219,7 @@ A.yt({ q: 'A recipe uses ' + raw(2, 3) + ' cup of flour for one batch. You make 
   ];
 
   A.register('fractions', {
+    fx: { lcm: lcm, simp: simp, FR: FR, TXT: TXT, raw: raw, bar: bar, addPic: addPic, areaPic: areaPic, divPic: divPic, pf: pf, ansQ: ansQ },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

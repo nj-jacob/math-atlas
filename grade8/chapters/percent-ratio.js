@@ -69,7 +69,7 @@
   function unitBars(items) {
     var max = Math.max.apply(null, items.map(function (x) { return x.u; })), s = '', best = Math.min.apply(null, items.map(function (x) { return x.u; }));
     items.forEach(function (it, i) {
-      var y = 10 + i * 56, w = 240 * it.u / max, win = it.u === best;
+      var y = 10 + i * 56, w = 170 * it.u / max, win = it.u === best;
       s += '<text x="4" y="' + (y + 18) + '" font-size="16" class="tb">' + it.t + '</text>';
       s += '<rect x="4" y="' + (y + 26) + '" width="' + w + '" height="22" style="fill:' + (win ? 'color-mix(in srgb,var(--good) 45%,var(--card))' : 'color-mix(in srgb,var(--ink2) 25%,var(--card))') + ';stroke:' + (win ? 'var(--good)' : 'var(--ink2)') + '"/>';
       s += '<text x="' + (w + 12) + '" y="' + (y + 43) + '" font-size="16"' + (win ? ' class="tb"' : '') + '>' + it.l + (win ? ' &#10003; lower' : '') + '</text>';
@@ -212,6 +212,7 @@ A.yt({ q: 'Work out (&minus;2 + 5) &times; 1.5 &minus; 4 &divide; 0.5.', a: -3.5
   ];
 
   A.register('percent-ratio', {
+    fx: { c2: c2, m: m, cl: cl, pct: pct, grids: grids, changeBar: changeBar, dnl: dnl, unitBars: unitBars },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

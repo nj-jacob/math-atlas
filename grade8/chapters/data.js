@@ -210,6 +210,7 @@ A.yt({ q: 'If the line changes to <code>if t &gt;= 3:</code>, what does the prog
   ];
 
   A.register('data', {
+    fx: { cl: cl, rng: rng, gauss: gauss, corr: corr, makePts: makePts, scatter: scatter, bars: bars },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); }, seed = 1234;

@@ -258,6 +258,7 @@ A.yt({ q: 'Solve 3x &minus; 2 &gt; 7.', opts: ['x &gt; 3', 'x &lt; 3', 'x &gt; 5
   ];
 
   A.register('algebra', {
+    fx: { cl: cl, ex: ex, rule: rule, P: P, tiles: tiles, graph: graph, table: table, algTiles: algTiles, balance: balance, ineqLine: ineqLine },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

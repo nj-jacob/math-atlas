@@ -80,7 +80,7 @@
       for (var i = 0; i < 6; i++) P.push((cx + r * Math.cos(rad(60 * i))).toFixed(1) + ',' + (cy + r * Math.sin(rad(60 * i))).toFixed(1));
       s += '<polygon points="' + P.join(' ') + '" style="fill:color-mix(in srgb,var(--se) ' + ((row + col) % 3 * 15 + 15) + '%,var(--card));stroke:var(--ink)" stroke-width="1.2"/>';
     }
-    s += '<text x="80" y="190" text-anchor="middle" font-size="16" class="tb">hexagons: 3 &#215; 120' + D + ' = 360' + D + '</text>';
+    s += '<text x="82" y="186" text-anchor="middle" font-size="16" class="tb">hexagons</text><text x="82" y="206" text-anchor="middle" font-size="15">3 &#215; 120' + D + ' = 360' + D + '</text>';
     /* three pentagons around a point leave a gap */
     var cx2 = 300, cy2 = 90, R5 = 38;
     for (var k = 0; k < 3; k++) {
@@ -90,8 +90,8 @@
       for (var e = 0; e < 4; e++) { px += 40 * Math.cos(rad(dir)); py += 40 * Math.sin(rad(dir)); pts.push([px, py]); dir += 72; }
       s += '<polygon points="' + pts.map(function (p) { return p[0].toFixed(1) + ',' + p[1].toFixed(1); }).join(' ') + '" style="fill:color-mix(in srgb,var(--accent) ' + (15 + k * 12) + '%,var(--card));stroke:var(--ink)" stroke-width="1.2"/>';
     }
-    s += '<circle cx="' + cx2 + '" cy="' + cy2 + '" r="4" style="fill:var(--bad)"/><text x="300" y="190" text-anchor="middle" font-size="16" class="tb">pentagons: 3 &#215; 108' + D + ' = 324' + D + '</text><text x="300" y="210" text-anchor="middle" font-size="15" style="fill:var(--bad)">a 36' + D + ' gap is left</text>';
-    return A.svg(400, 218, s, 'Left: regular hexagons tile with no gaps because three angles of 120 degrees make 360 degrees. Right: three regular pentagons around a point make only 324 degrees, leaving a 36 degree gap.');
+    s += '<circle cx="' + cx2 + '" cy="' + cy2 + '" r="4" style="fill:var(--bad)"/><text x="300" y="186" text-anchor="middle" font-size="16" class="tb">pentagons</text><text x="300" y="206" text-anchor="middle" font-size="15">3 &#215; 108' + D + ' = 324' + D + '</text><text x="300" y="226" text-anchor="middle" font-size="15" style="fill:var(--bad)">a 36' + D + ' gap is left</text>';
+    return A.svg(400, 234, s, 'Left: regular hexagons tile with no gaps because three angles of 120 degrees make 360 degrees. Right: three regular pentagons around a point make only 324 degrees, leaving a 36 degree gap.');
   }
   /* an L-shaped block structure and its three views */
   function views() {
@@ -265,6 +265,7 @@ A.yt({ q: 'A map has a scale of 1 cm : 2 m. A path is 7.5 cm on the map. How lon
   ];
 
   A.register('geometry', {
+    fx: { rad: rad, arc: arc, parallel: parallel, polygon: polygon, plane: plane, tx: tx, pt: pt, tess: tess, views: views, plan: plan, P: P },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };

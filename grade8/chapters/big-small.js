@@ -153,10 +153,11 @@
     function X(v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); }
     s += '<line x1="' + x0 + '" y1="76" x2="' + x1 + '" y2="76" style="stroke:var(--ink)" stroke-width="2"/>';
     for (var k = lo; k <= hi; k++) s += '<line x1="' + X(k) + '" y1="68" x2="' + X(k) + '" y2="84" style="stroke:var(--ink)" stroke-width="2"/><text x="' + X(k) + '" y="106" text-anchor="middle" font-size="16">10<tspan dy="-7" font-size="12">' + (k < 0 ? '−' + -k : k) + '</tspan></text>';
+    var xs = list.map(function (p) { return X(Math.log10(p.a) + p.e); });
     list.forEach(function (p, i) {
-      var x = X(Math.log10(p.a) + p.e), y = i % 2 ? 46 : 22;
+      var x = xs[i], y = i % 2 ? 46 : 22, near = list.length === 2 && Math.abs(xs[0] - xs[1]) < 110, lft = near && x <= xs[1 - i];
       s += '<line x1="' + x + '" y1="' + (y + 6) + '" x2="' + x + '" y2="72" style="stroke:' + (i ? 'var(--accent)' : 'var(--strand)') + '" stroke-width="2"/><circle cx="' + x + '" cy="76" r="6" style="fill:' + (i ? 'var(--accent)' : 'var(--strand)') + '"/>' +
-        (p.t ? '<text x="' + Math.max(60, Math.min(340, x)) + '" y="' + y + '" text-anchor="middle" font-size="17" class="tb">' + p.t + '</text>' : '');
+        (p.t ? (near ? '<text x="' + Math.max(110, Math.min(290, x)) + '" dx="' + (lft ? -8 : 8) + '" y="' + y + '" text-anchor="' + (lft ? 'end' : 'start') + '" font-size="17" class="tb">' : '<text x="' + Math.max(60, Math.min(340, x)) + '" y="' + y + '" text-anchor="middle" font-size="17" class="tb">') + p.t + '</text>' : '');
     });
     return A.svg(400, 114, s, 'Number line in powers of ten with the values marked. Further right is bigger.');
   }
@@ -365,6 +366,7 @@ A.yt({ q: 'Which is smaller?', opts: ['6 &times; 10<sup>&minus;7</sup>', '2 &tim
   ];
 
   A.register('big-small', {
+    fx: { shift: shift, F: F, std: std, sci: sci, toSci: toSci, ladder: ladder, places: places, slide: slide, anatomy: anatomy, hops: hops, prefixStairs: prefixStairs, strip: strip, compareLine: compareLine, supE: supE, coef: coef },
     html: html, practice: practice, quiz: quiz,
     init: function (root) {
       var $ = function (s) { return A.$(s, root); };
