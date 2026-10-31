@@ -414,4 +414,151 @@ A.yt({ gen: function () { return gen.add(2); } }) +
       { id: 'de4-sub', name: 'Subtract tenths', code: 'B2.3, B2.4', gen: gen.sub }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     Values are whole numbers of tenths (23 means 2.3). q.meta holds the facts that
+     tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  function notWhole(lo, hi) { var t; do { t = R.int(lo, hi); } while (t % 10 === 0); return t; }
+  function roundT(t) { return Math.floor(t / 10) + (t % 10 >= 5 ? 1 : 0); }
+  var SHAPES = {
+    'de4-read': [
+      [1, 'line', function (lv) {
+        var t = lv === 1 ? R.int(1, 9) : notWhole(11, 59), lo = Math.floor(t / 10);
+        return { q: 'Place <b>' + ds(t) + '</b> on the number line.', type: 'line', min: lo, max: lo + 1, tick: 0.1, every: 0.5, snap: 0.1, answer: t / 10, tol: 0.01,
+          hint: 'Each small step is one tenth. Count ' + t % 10 + ' steps from ' + lo + '.', steps: [ds(t) + ' is ' + lo + ' and ' + (t % 10) + ' tenths.', 'Start at ' + lo + ' and count ' + t % 10 + ' tenths.'],
+          explain: ds(t) + ' is ' + t % 10 + ' tenths past ' + lo + '.', meta: { k: 'de4-read-line' } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var t = lv === 1 ? R.int(1, 9) : notWhole(11, 59); if (seen[t]) continue; seen[t] = 1; pairs.push([words(t), ds(t)]); }
+        return { q: 'Match each number in words to its decimal.', type: 'match', pairs: pairs, hint: 'The word "and" stands for the decimal point.',
+          steps: ['The whole number comes before the point. The tenths come after it.'], explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'de4-read-match', pairs: pairs } };
+      }],
+      [2, 'tap', function () {
+        var t = notWhole(11, 199), s = ds(t), tenths = !R.int(0, 2), n = s.replace('.', '').length, key = tenths ? n - 1 : n - 2;
+        return { q: 'Tap the digit in the <b>' + (tenths ? 'tenths' : 'ones') + '</b> place of ' + s + '.', type: 'tap', pic: K.digits(s), answer: String(key), answerText: 'the ' + s.replace('.', '').charAt(key),
+          hint: 'The ones digit is just before the decimal point. The tenths digit is just after it.', steps: ['In ' + s + ', the ' + (tenths ? 'tenths digit is ' + s.charAt(s.length - 1) : 'ones digit is ' + s.charAt(s.length - 3)) + '.'],
+          explain: 'The ' + (tenths ? 'tenths' : 'ones') + ' digit of ' + s + ' is ' + s.replace('.', '').charAt(key) + '.', meta: { k: 'de4-read-tap', s: s, tenths: tenths } };
+      }]
+    ],
+    'de4-frac': [
+      [1, 'match', function () {
+        var ts = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3), pairs = ts.map(function (t) { return [fr(t, 10), ds(t)]; });
+        return { q: 'Match each fraction to its decimal.', type: 'match', pairs: pairs, hint: 'Tenths go just after the decimal point.',
+          steps: ['The numerator of a tenths fraction is the digit after the point.'], explain: ts.map(function (t) { return t + '/10 = ' + ds(t); }).join('. ') + '.', meta: { k: 'de4-frac-match', ts: ts } };
+      }],
+      [1, 'fill', function () {
+        var t = R.int(1, 9);
+        return { q: 'Write the decimal as a fraction.', type: 'fill', fill: '<span class="math">' + ds(t) + '</span> = [[]] / 10', answers: [t], fig: tenthBars(t, null, 300),
+          hint: 'The digit after the point counts tenths.', steps: [ds(t) + ' is ' + words(t) + '.'], explain: ds(t) + ' = ' + fr(t, 10) + '.', meta: { k: 'de4-frac-fill', t: t } };
+      }],
+      [2, 'mistake', function () {
+        var t = R.int(2, 9), p = who(), truth = !R.int(0, 2), said = truth ? [t, 10] : [1, t];
+        var right = 'The ' + t + ' after the point means ' + t + ' tenths, so ' + ds(t) + ' = ' + fr(t, 10) + '.';
+        return { q: p + ' says <span class="math">' + ds(t) + '</span> = ' + fr(said[0], said[1]) + '. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The digit after the point is the denominator.', 'Decimals and fractions can never be equal.', 'The point means "out of 100".']),
+          hint: 'Read ' + ds(t) + ' out loud: "' + words(t) + '".', steps: [right], explain: right, meta: { k: 'de4-frac-tf', t: t, said: said } };
+      }]
+    ],
+    'de4-compare': [
+      [1, 'order', function (lv) {
+        var ts = [];
+        while (ts.length < 4) { var v = lv === 1 ? R.int(1, 9) : R.int(5, 45); if (ts.indexOf(v) < 0) ts.push(v); }
+        ts.sort(function (a, b) { return a - b; });
+        return { q: 'Put these decimals in order from <b>least to greatest</b>.', type: 'order', items: ts.map(ds), first: 'least', last: 'greatest',
+          hint: 'Compare the ones first. Then compare the tenths.', steps: ['In order: ' + ts.map(ds).join(', ') + '.'], explain: 'Least to greatest: ' + ts.map(ds).join(', ') + '.', meta: { k: 'de4-cmp-order' } };
+      }],
+      [1, 'tap', function (lv) {
+        var lo = lv === 1 ? 0 : R.int(1, 4), ts = [];
+        while (ts.length < 3) { var v = lo * 10 + R.int(1, 9); if (ts.every(function (x) { return Math.abs(x - v) > 1; })) ts.push(v); }
+        var keys = ['A', 'B', 'C'], want = R.int(0, 2);
+        return { q: 'Which point shows <b>' + ds(ts[want]) + '</b>? Tap it.', type: 'tap', pic: K.tapLine(lo, lo + 1, 0.1, ts.map(function (t, i) { return { v: t / 10, key: keys[i], t: keys[i] }; })), answer: keys[want], answerText: 'point ' + keys[want],
+          hint: 'Each small step is one tenth. Count from ' + lo + '.', steps: [ds(ts[want]) + ' is ' + ts[want] % 10 + ' tenths past ' + lo + '.'],
+          explain: 'Point ' + keys[want] + ' is at ' + ds(ts[want]) + '.', meta: { k: 'de4-cmp-tap', ts: ts, want: ts[want] } };
+      }],
+      [2, 'mistake', function () {
+        var w = R.int(1, 6), a = w * 10 + R.int(6, 9), b = (w + 1) * 10 + R.int(1, 4), p = who(), truth = !R.int(0, 2);
+        var claim = truth ? [b, a] : [a, b];
+        var right = 'Compare the ones first: ' + (w + 1) + ' is more than ' + w + ', so ' + ds(b) + ' &gt; ' + ds(a) + '.';
+        return { q: p + ' says ' + ds(claim[0]) + ' is greater than ' + ds(claim[1]) + '. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Compare the tenths first, because they are on the right.', 'The number with the bigger last digit is greater.', 'Decimals with the same number of digits are equal.']),
+          hint: 'Which has more wholes?', steps: [right], explain: right, meta: { k: 'de4-cmp-tf', big: claim[0], small: claim[1] } };
+      }],
+      [2, 'story', function () {
+        var two = A.Q.two(), a = notWhole(11, 49), b;
+        do { b = notWhole(11, 49); } while (b === a);
+        var c = R.pick([['ran', 'km', 'farther'], ['picked', 'kg of apples', 'more'], ['poured', 'L of juice', 'more']]);
+        return { q: two[0] + ' ' + c[0] + ' <b>' + ds(a) + '</b> ' + c[1] + '. ' + two[1] + ' ' + c[0] + ' <b>' + ds(b) + '</b> ' + c[1] + '. Who ' + c[0] + ' ' + c[2] + '?', type: 'mc', options: two, answer: a > b ? 0 : 1,
+          hint: 'Compare the ones, then the tenths.', steps: [ds(Math.max(a, b)) + ' &gt; ' + ds(Math.min(a, b)) + '.'],
+          explain: (a > b ? two[0] : two[1]) + ' ' + c[0] + ' ' + c[2] + '.', meta: { k: 'de4-cmp-story' } };
+      }]
+    ],
+    'de4-round': [
+      [1, 'line', function (lv) {
+        var t = lv === 1 ? R.int(1, 5) * 10 + R.int(1, 9) : notWhole(10, 99), lo = Math.floor(t / 10);
+        return { q: 'Round <b>' + ds(t) + '</b> to the nearest whole number. Place your answer on the line.', type: 'line', min: lo, max: lo + 1, tick: 0.1, every: 0.5, snap: 0.1, answer: roundT(t), tol: 0.01,
+          fig: hill(t, 'derl'), hint: 'Is ' + ds(t) + ' before ' + lo + '.5 or at it or past it?', steps: [ds(t) + ' is between ' + lo + ' and ' + (lo + 1) + '.', 'The tenths digit is ' + t % 10 + '. ' + (t % 10 >= 5 ? '5 or more rounds up.' : 'Less than 5 rounds down.')],
+          explain: ds(t) + ' rounds to ' + roundT(t) + '.', meta: { k: 'de4-round-line', t: t } };
+      }],
+      [1, 'mistake', function () {
+        var t = notWhole(10, 99), p = who(), truth = !R.int(0, 1), r = roundT(t), said = truth ? r : (r === Math.floor(t / 10) ? r + 1 : r - 1);
+        var right = 'The tenths digit is ' + t % 10 + ', so ' + ds(t) + ' rounds ' + (t % 10 >= 5 ? 'up' : 'down') + ' to ' + r + '.';
+        return { q: p + ' says <b>' + ds(t) + '</b> rounded to the nearest whole number is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['You always drop the tenths.', 'You always round up.', 'The ones digit decides how to round.']),
+          hint: 'Look at the tenths digit.', steps: [right], explain: right, meta: { k: 'de4-round-tf', t: t, said: said } };
+      }],
+      [2, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var t = notWhole(10, 99), r = roundT(t); if (seen[r]) continue; seen[r] = 1; pairs.push([ds(t), String(r)]); }
+        return { q: 'Match each decimal to the nearest whole number.', type: 'match', pairs: pairs, hint: 'Tenths digit 5 or more: round up.',
+          steps: ['Round each one, then match.'], explain: pairs.map(function (p) { return p[0] + ' rounds to ' + p[1]; }).join('. ') + '.', meta: { k: 'de4-round-match', pairs: pairs } };
+      }]
+    ],
+    'de4-add': [
+      [1, 'fill', function (lv) {
+        var a = lv === 1 ? R.int(1, 8) : R.int(3, 9), b = lv === 1 ? R.int(1, 9 - a) : R.int(10 - a, 9);
+        return { q: 'Think in tenths. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + ds(a) + ' + ' + ds(b) + '</span> is ' + a + ' tenths + ' + b + ' tenths = [[]] tenths = <span class="math">[[]]</span>', answers: [a + b, (a + b) / 10],
+          fig: cols(a, b, '+', false), hint: 'Add the tenths. Ten tenths make 1 whole.', steps: [a + ' + ' + b + ' = ' + (a + b) + ' tenths.', (a + b) + ' tenths = ' + ds(a + b) + '.'],
+          explain: ds(a) + ' + ' + ds(b) + ' = ' + ds(a + b) + '.', meta: { k: 'de4-add-fill', a: a, b: b } };
+      }],
+      [1, 'story', function (lv) {
+        var p = who(), a = lv === 1 ? R.int(11, 30) : R.int(15, 59), b = lv === 1 ? R.int(11, 30) : R.int(15, 49), c = R.pick([['paddled', 'km', 'before lunch', 'after lunch'], ['biked', 'km', 'on Saturday', 'on Sunday'], ['collected', 'kg of cans', 'in March', 'in April']]);
+        return { q: p + ' ' + c[0] + ' <b>' + ds(a) + '</b> ' + c[1] + ' ' + c[2] + ' and <b>' + ds(b) + '</b> ' + c[1] + ' ' + c[3] + '. How much is that in all?', type: 'num', answer: (a + b) / 10, unit: c[1].split(' ')[0],
+          hint: 'Line up the decimal points and add.', steps: [a + ' tenths + ' + b + ' tenths = ' + (a + b) + ' tenths.', 'That is ' + ds(a + b) + '.'],
+          explain: ds(a) + ' + ' + ds(b) + ' = ' + ds(a + b) + '.', meta: { k: 'de4-add-story' } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.int(3, 9), b = R.int(10 - a, 9), p = who(), truth = !R.int(0, 2), said = truth ? ds(a + b) : '0.' + (a + b);
+        var right = a + ' tenths + ' + b + ' tenths = ' + (a + b) + ' tenths. Ten tenths make 1 whole, so the sum is ' + ds(a + b) + '.';
+        return { q: p + ' says <span class="math">' + ds(a) + ' + ' + ds(b) + ' = ' + said + '</span>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Just add the digits after the point and write them after the point.', 'Adding decimals always gives less than 1.', 'You add the points too.']),
+          hint: 'Is the sum more or less than 1?', steps: [right], explain: right, meta: { k: 'de4-add-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'de4-sub': [
+      [1, 'line', function (lv) {
+        var a = lv === 1 ? R.int(5, 9) : R.int(11, 19), b = lv === 1 ? R.int(1, a - 1) : R.int(a - 9, 9);
+        if (b <= 0) b = 2;
+        return { q: 'Start at <b>' + ds(a) + '</b>. Jump back <b>' + ds(b) + '</b>. Place where you land.', type: 'line', min: 0, max: 2, tick: 0.1, every: 0.5, snap: 0.1, answer: (a - b) / 10, tol: 0.01,
+          hint: 'Each small step is one tenth. Jump back ' + b + ' steps.', steps: [a + ' tenths &minus; ' + b + ' tenths = ' + (a - b) + ' tenths = ' + ds(a - b) + '.'],
+          explain: ds(a) + ' &minus; ' + ds(b) + ' = ' + ds(a - b) + '.', meta: { k: 'de4-sub-line', a: a, b: b } };
+      }],
+      [1, 'which', function () {
+        var two = A.Q.two(), a = notWhole(25, 80), b = notWhole(11, a - 5), kind = R.pick(['left', 'diff', 'join']);
+        var t = kind === 'left' ? 'A jug holds ' + ds(a) + ' L of juice. ' + two[0] + ' pours out ' + ds(b) + ' L. How much is left?' : kind === 'diff' ? two[0] + ' ran ' + ds(a) + ' km. ' + two[1] + ' ran ' + ds(b) + ' km. How much farther did ' + two[0] + ' run?' : two[0] + ' walked ' + ds(a) + ' km to the park and ' + ds(b) + ' km back. How far did ' + two[0] + ' walk in all?';
+        var ans = kind === 'join' ? 0 : 1;
+        return { q: t + ' <b>Which way?</b> Pick the operation.', type: 'mc', options: ['Add', 'Subtract'], answer: ans,
+          hint: 'Are you putting amounts together, or finding what is left or the difference?', steps: [ans ? 'Subtract: ' + ds(a) + ' &minus; ' + ds(b) + ' = ' + ds(a - b) + '.' : 'Add: ' + ds(a) + ' + ' + ds(b) + ' = ' + ds(a + b) + '.'],
+          explain: ans ? 'Subtract. The answer is ' + ds(a - b) + '.' : 'Add. The answer is ' + ds(a + b) + '.', meta: { k: 'de4-sub-which', kind: kind } };
+      }],
+      [2, 'fill', function () {
+        var a = R.int(25, 80), b = R.int(11, a - 5);
+        return { q: 'Subtract. Then check by adding.', type: 'fill', fill: '<span class="math">' + ds(a) + ' &minus; ' + ds(b) + ' = [[]]</span><br>Check: <span class="math">[[]] + ' + ds(b) + ' = ' + ds(a) + '</span>', answers: [(a - b) / 10, (a - b) / 10], tol: 0.001,
+          hint: 'Line up the decimal points. Trade 1 whole for 10 tenths if you need to.', steps: [a + ' tenths &minus; ' + b + ' tenths = ' + (a - b) + ' tenths = ' + ds(a - b) + '.'],
+          explain: ds(a) + ' &minus; ' + ds(b) + ' = ' + ds(a - b) + '.', meta: { k: 'de4-sub-fill', a: a, b: b } };
+      }]
+    ]
+  };
+  K.shapes('decimals', SHAPES);
 })();
