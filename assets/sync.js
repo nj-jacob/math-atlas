@@ -146,12 +146,16 @@ window.addEventListener('pagehide', flush);
 function catalog() {
   const A = window.Atlas;
   if (!A || !A.meta) return null;
+  /* grades with the lesson engine list their concepts too (Atlas.lessons) */
+  let concepts = [];
+  try { if (A.lessons && A.lessons.all) concepts = A.lessons.all(); } catch (e) { concepts = []; }
   return A.meta.filter((m) => !m.ref && A.chapters[m.id]).map((m) => {
     const ch = A.chapters[m.id];
     return {
       id: m.id, title: m.title.replace(/&[a-z]+;/g, ' '), strand: m.strand, codes: m.codes || '',
       quiz: ch.quiz ? ch.quiz.length : 0,
-      skills: (ch.practice || []).map((sk) => ({ id: sk.id, name: sk.name, code: sk.code || '' }))
+      skills: (ch.practice || []).map((sk) => ({ id: sk.id, name: sk.name, code: sk.code || '' })),
+      concepts: concepts.filter((c) => c.ch === m.id).map((c) => ({ id: c.id, t: c.title, l: c.lesson, sk: c.skill, exp: c.exp }))
     };
   });
 }

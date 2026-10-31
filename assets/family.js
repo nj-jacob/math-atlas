@@ -338,6 +338,52 @@ async function addStudent() {
   });
 }
 
+/* ---------- concepts (grades with the lesson engine) ---------- */
+const CST = ['Not started', 'Seen', 'Got it', 'Mastered'];
+function conceptStatus(c, data) {
+  const sk = c.sk ? parse(data['sk:' + c.sk], null) : null, s = parse(data['cn:' + c.id], null) || {};
+  if (sk && sk.secure) return 3;
+  if (s.got) return 2;
+  if (s.seen) return 1;
+  return 0;
+}
+const cdot = (k) => '<span class="cdot s' + k + '" aria-hidden="true"></span>';
+function conceptSummary(cat, data) {
+  const all = [];
+  cat.forEach((ch) => (ch.concepts || []).forEach((c) => all.push(conceptStatus(c, data))));
+  const cov = parse(data.cov, null);
+  if (!all.length && !cov) return '';
+  let h = '';
+  if (all.length) {
+    const n = [0, 0, 0, 0];
+    all.forEach((k) => n[k]++);
+    h += '<h3>Concepts</h3><p class="clegend">' + [3, 2, 1, 0].map((k) => '<span>' + cdot(k) + '<b>' + n[k] + '</b> ' + CST[k].toLowerCase() + '</span>').join('') + '</p>' +
+      '<div class="cbar" role="img" aria-label="' + n[3] + ' mastered, ' + n[2] + ' got it, ' + n[1] + ' seen, ' + n[0] + ' not started, of ' + all.length + ' concepts">' +
+      [3, 2, 1].map((k) => n[k] ? '<i class="s' + k + '" style="width:' + (100 * n[k] / all.length).toFixed(2) + '%"></i>' : '').join('') + '</div>' +
+      '<p class="t2 small">Seen: opened the concept. Got it: right on the first try in its quick checks. Mastered: its practice skill is secure.</p>';
+  }
+  if (cov) {
+    const codes = [];
+    cat.forEach((ch) => ch.skills.forEach((sk) => String(sk.code || '').split(/,\s*/).forEach((c) => { if (c && codes.indexOf(c) < 0) codes.push(c); })));
+    codes.sort((a, b) => a.localeCompare(b, 'en', { numeric: true }));
+    h += '<h3>Ontario expectations checked: ' + codes.filter((c) => cov[c]).length + ' of ' + codes.length + '</h3><p class="covchips">' + codes.map((c) => {
+      const v = cov[c];
+      return '<span class="' + (v ? (v.ok ? 'ok' : 'part') : '') + '" title="' + (v ? 'Checked ' + esc(v.d) + (v.ok ? ', all right' : ', some to practise') : 'Not checked yet') + '">' + esc(c) + '</span>';
+    }).join('') + '</p><p class="t2 small">Green: checked in a check-up and right. Yellow: some to practise. White: not checked yet.</p>';
+  }
+  return h;
+}
+function conceptList(ch, data) {
+  if (!ch.concepts || !ch.concepts.length) return '';
+  let h = '<ul class="clist">', lesson = null;
+  ch.concepts.forEach((c) => {
+    if (c.l !== lesson) { lesson = c.l; h += '<li class="lh">' + esc(lesson) + '</li>'; }
+    const k = conceptStatus(c, data);
+    h += '<li>' + cdot(k) + esc(c.t) + ' <span class="t2">' + CST[k] + (c.exp && c.exp.length ? ' &middot; ' + esc(c.exp.join(', ')) : '') + '</span></li>';
+  });
+  return h + '</ul>';
+}
+
 /* ---------- keep the parent and tutor pages up to date ---------- */
 let quiet = false;
 async function refreshQuietly(force) {
@@ -443,7 +489,7 @@ async function studentDetail(sid) {
       '<div class="tile"><b>' + pct(w.ok, w.n) + '</b><span>right on the first try this week</span></div>' +
       '<div class="tile"><b>' + secure + ' of ' + total + '</b><span>skills secure (' + started + ' started)</span></div>' +
       '<div class="tile"><b>' + (last ? last.s + ' of ' + last.n : '–') + '</b><span>' + (last ? 'last check-up, ' + esc(last.d) : 'no check-up yet') + '</span></div>' +
-      '</div>' + activityChart(days, site);
+      '</div>' + conceptSummary(cat, data) + activityChart(days, site);
 
     if (stuck.length || plan.length) {
       h += '<h3>Worth a look</h3><ul>';
@@ -462,8 +508,10 @@ async function studentDetail(sid) {
       const best = data['best:' + ch.id];
       h += '<details class="chap" data-strand="' + esc(ch.strand) + '" data-id="' + esc(site + '/' + ch.id) + '"><summary><span class="ct">' + esc(ch.title) + '</span> <span class="t2">' +
         (opened[ch.id] ? 'lesson opened &middot; ' : '') +
+        (ch.concepts && ch.concepts.length ? ch.concepts.filter((c) => conceptStatus(c, data) === 3).length + ' of ' + ch.concepts.length + ' concepts mastered &middot; ' : '') +
         (best != null ? 'quiz best ' + (+best) + ' of ' + ch.quiz + ' &middot; ' : '') +
         ch.skills.filter((sk) => (parse(data['sk:' + sk.id], {}) || {}).secure).length + ' of ' + ch.skills.length + ' secure</span></summary>' +
+        conceptList(ch, data) +
         '<div class="tbl"><table><thead><tr><th class="l">Skill</th><th class="l">Level</th><th>Answered</th><th>First try</th><th></th></tr></thead><tbody>' +
         ch.skills.map((sk) => {
           const s = parse(data['sk:' + sk.id], null), st = skillStatus(s), on = isAssigned(site, sk.id);
