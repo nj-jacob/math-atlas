@@ -461,4 +461,182 @@
       { id: 's-code', name: 'Follow the code', code: 'E1.5, C3.1, C3.2', gen: qCode }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  var ROLLS = ['sphere', 'cylinder', 'cone'];
+  /* flat shapes in a row, each one can be tapped */
+  function flatRow(ks) {
+    var z = 66, s = '';
+    ks.forEach(function (k, i) { var x = 4 + i * (z + 10) + z / 2; s += '<g data-hit="' + i + '" aria-label="a ' + k + '"><rect x="' + (x - z / 2) + '" y="4" width="' + z + '" height="' + z + '" rx="10" style="fill:transparent;stroke:transparent" stroke-width="2"/>' + flat(k, x, 4 + z / 2, z - 8) + '</g>'; });
+    return A.svg(ks.length * (z + 10) + 4, z + 8, s, 'Shapes: ' + ks.join(', '));
+  }
+  /* the shelf, where each thing can be tapped */
+  function shelfTap(items) {
+    var s = '<rect x="4" y="4" width="282" height="252" rx="8" style="fill:#d9a066;stroke:#7a4b2a" stroke-width="4"/>';
+    for (var i = 1; i < 3; i++) s += '<rect x="8" y="' + (4 + i * 84 - 3) + '" width="274" height="6" style="fill:#7a4b2a"/>';
+    items.forEach(function (k, i) {
+      var x = 4 + (i % 3) * 94 + 47, y = 4 + Math.floor(i / 3) * 84 + 46;
+      s += '<g data-hit="' + i + '" aria-label="' + A.NAMES[k][0] + '"><rect x="' + (x - 40) + '" y="' + (y - 36) + '" width="80" height="72" rx="10" style="fill:transparent;stroke:transparent" stroke-width="2"/>' + A.icon(k, x, y, 52) + '</g>';
+    });
+    return A.svg(290, 260, s, 'A shelf with 3 rows: ' + names(items) + '.');
+  }
+  /* a relation on the shelf: [word, from index, to index] */
+  function relation(items, lv) {
+    var i = R.int(0, 8), r = Math.floor(i / 3), c = i % 3, rel = [];
+    if (r > 0) rel.push(['above', i, i - 3]);
+    if (r < 2) rel.push(['below', i, i + 3]);
+    if (lv > 1 && c > 0) rel.push(['to the left of', i, i - 1]);
+    if (lv > 1 && c < 2) rel.push(['to the right of', i, i + 1]);
+    return R.pick(rel);
+  }
+  /* the robot grid with every square tappable */
+  function gridTap(n, robot, things) {
+    var c = 52, base = grid(n, robot, things), hits = '';
+    for (var i = 0; i < n; i++) for (var j = 0; j < n; j++) hits += '<g data-hit="' + i + ',' + j + '" aria-label="column ' + (i + 1) + ', row ' + (j + 1) + '"><rect x="' + (4 + i * c) + '" y="' + (4 + j * c) + '" width="' + c + '" height="' + c + '" style="fill:transparent;stroke:transparent" stroke-width="2"/></g>';
+    return base.replace('</svg>', hits + '</svg>');
+  }
+  function randomCode(lv) {
+    var start, code, end, tries = 0;
+    do {
+      tries++;
+      start = [R.int(0, 4), R.int(0, 4)];
+      var len = lv === 1 ? R.int(1, 3) : R.int(3, 5);
+      code = []; for (var i = 0; i < len; i++) code.push(R.pick(lv === 1 ? ['Rt', 'D'] : ['U', 'D', 'L', 'Rt']));
+      var path = run(start, code); end = path[path.length - 1];
+    } while ((!path.every(function (p) { return p[0] >= 0 && p[0] < 5 && p[1] >= 0 && p[1] < 5; }) || (end[0] === start[0] && end[1] === start[1])) && tries < 200);
+    return { start: start, code: code, end: end };
+  }
+  var SHAPES = {
+    's-2d': [
+      [1, 'tap', function (lv) {
+        var want = R.pick(['circle', 'triangle', 'square', 'hexagon']), ks = R.shuffle([want].concat(R.shuffle(FLAT.filter(function (k) { return k !== want; })).slice(0, 3)));
+        return { q: 'Tap the <b>' + want + '</b>.', type: 'tap', pic: flatRow(ks), answer: String(ks.indexOf(want)), answerText: 'the ' + want,
+          hint: SIDES[want] ? 'A ' + want + ' has ' + SIDES[want] + ' straight sides.' : 'A circle is round, with no corners.', steps: ['Count the sides of each shape.'],
+          explain: SIDES[want] ? 'A ' + want + ' has ' + SIDES[want] + ' sides and ' + SIDES[want] + ' corners.' : 'A circle is round.', meta: { k: 'g1-2d-tap' } };
+      }],
+      [1, 'match', function () {
+        var ks = R.shuffle(['circle', 'triangle', 'square', 'hexagon']).slice(0, 3);
+        return { q: 'Match each shape to its name.', type: 'match', pairs: ks.map(function (k) { return [flatPic(k, 54), k]; }),
+          hint: 'Count the sides.', steps: ['A triangle has 3 sides. A square has 4 equal sides. A hexagon has 6.'],
+          explain: 'Count the sides and corners to name a shape.', meta: { k: 'g1-2d-match' } };
+      }],
+      [2, 'pick', function (lv) {
+        var n = R.pick([3, 4]), ks = R.shuffle(FLAT).slice(0, 4);
+        if (!ks.some(function (k) { return SIDES[k] === n; })) ks[0] = n === 3 ? 'triangle' : 'square';
+        if (ks.every(function (k) { return SIDES[k] === n; })) ks[3] = 'circle';
+        ks = R.shuffle(ks);
+        var ans = []; ks.forEach(function (k, j) { if (SIDES[k] === n) ans.push(j); });
+        return { q: 'Pick every shape with <b>' + n + ' sides</b>.', type: 'pick', options: ks.map(function (k) { return flatPic(k, 54); }), answer: ans,
+          hint: 'Count the straight sides of each shape.', steps: ['Touch each side as you count.'],
+          explain: ans.map(function (j) { return 'A ' + ks[j]; }).join(' and ') + ' ' + (ans.length > 1 ? 'have ' : 'has ') + n + ' sides.', meta: { k: 'g1-2d-pick' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var k = R.pick(['triangle', 'square', 'rectangle', 'hexagon']), who = nm(), truth = !R.int(0, 2), said = truth ? SIDES[k] : SIDES[k] + R.pick([1, -1]);
+        var right = 'A ' + k + ' has ' + SIDES[k] + ' corners. Touch each corner as you count.';
+        return G.tf(who + ' says this shape has <b>' + said + '</b> corners. True or false: ' + who + ' is right.', truth, right,
+          ['Every shape has 4 corners.', 'Bigger shapes have more corners.', 'Corners and sides are never the same number.'], { k: 'g1-2d-tf' },
+          { fig: flatPic(k, 90), hint: 'Touch each corner as you count.' });
+      }]
+    ],
+    's-3d': [
+      [1, 'match', function () {
+        var ks = R.shuffle(SOLIDS).slice(0, 3);
+        return { q: 'Match each solid to a thing with the same shape.', type: 'match', pairs: ks.map(function (k) { return [solidPic(k, 60), OBJ[k]]; }),
+          hint: 'Picture each thing in your hand.', steps: ['A ball is a sphere. A soup can is a cylinder. A cereal box is a rectangular prism.'],
+          explain: ks.map(function (k) { return OBJ[k] + ' is a ' + k; }).join('. ') + '.', meta: { k: 'g1-3d-match' } };
+      }],
+      [1, 'pick', function () {
+        var ks = R.shuffle(SOLIDS).slice(0, 4);
+        if (!ks.some(function (k) { return ROLLS.indexOf(k) >= 0; })) ks[0] = 'sphere';
+        if (ks.every(function (k) { return ROLLS.indexOf(k) >= 0; })) ks[0] = 'cube';
+        ks = R.shuffle(ks);
+        var ans = []; ks.forEach(function (k, j) { if (ROLLS.indexOf(k) >= 0) ans.push(j); });
+        return { q: 'Pick every solid that can <b>roll</b>.', type: 'pick', options: ks.map(function (k) { return solidPic(k, 60); }), answer: ans,
+          hint: 'A solid with a curved surface can roll.', steps: ['Look for curved parts.'],
+          explain: 'Spheres, cylinders and cones have curved surfaces, so they can roll.', meta: { k: 'g1-3d-pick' } };
+      }],
+      [2, 'mistake', function () {
+        var k = R.pick(SOLIDS), who = nm(), truth = !R.int(0, 2), said = truth ? k : R.pick(SOLIDS.filter(function (x) { return x !== k; }));
+        var right = OBJ[k].charAt(0).toUpperCase() + OBJ[k].slice(1) + ' is shaped like a ' + k + '.';
+        return G.tf(who + ' says <b>' + OBJ[k] + '</b> is shaped like a <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Things that can roll are all spheres.', 'All boxes are cubes.', 'The size of a thing tells its shape.'], { k: 'g1-3d-tf' },
+          { hint: 'Picture ' + OBJ[k] + '. What solid is it?' });
+      }]
+    ],
+    's-sym': [
+      [1, 'tap', function () {
+        var sh = R.pick(['square', 'rectangle', 'triangle', 'heart', 'circle']), good = SYM.filter(function (s) { return s[0] === sh && s[2]; }), bad = SYM.filter(function (s) { return s[0] === sh && !s[2]; });
+        var set = R.shuffle([R.pick(good), R.pick(bad)]);
+        return { q: 'Tap the fold line that makes two <b>matching</b> halves.', type: 'tap', tiles: set.map(function (s) { return foldPic(s[0], s[1]); }), answer: set.map(function (s) { return s[2]; }).indexOf(1), answerText: 'the fold that makes matching halves',
+          hint: 'Picture folding on the line. Would the two halves sit on top of each other?', steps: ['Matching halves are the same shape and size.'],
+          explain: 'That fold makes two halves that match.', meta: { k: 'g1-sym-tap', items: set.map(function (s) { return [s[0], s[1]]; }) } };
+      }],
+      [1, 'pick', function (lv) {
+        var g = R.shuffle(SYM.filter(function (s) { return s[2]; })).slice(0, 2), b = R.shuffle(SYM.filter(function (s) { return !s[2]; })).slice(0, 2), all = R.shuffle(g.concat(b));
+        var ans = []; all.forEach(function (s, j) { if (s[2]) ans.push(j); });
+        return { q: 'Pick every picture where the fold makes <b>matching</b> halves.', type: 'pick', options: all.map(function (s) { return foldPic(s[0], s[1]); }), answer: ans,
+          hint: 'Picture folding each one on the dashed line.', steps: ['Do the two halves sit on top of each other?'],
+          explain: 'Matching halves are the same shape and size.', meta: { k: 'g1-sym-pick', items: all.map(function (s) { return [s[0], s[1]]; }) } };
+      }],
+      [2, 'mistake', function () {
+        var it = R.pick(SYM), who = nm(), truth = !R.int(0, 2), says = truth ? it[2] : !it[2];
+        var right = it[2] ? 'Folding on the line makes two halves that match.' : 'Folding on the line makes two halves that do not match.';
+        return G.tf(who + ' says the two halves <b>' + (says ? 'match' : 'do not match') + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Every fold makes matching halves.', 'A fold line must be up and down.', 'Big shapes always have matching halves.'], { k: 'g1-sym-tf', sh: it[0], line: it[1], says: !!says },
+          { fig: foldPic(it[0], it[1]), hint: 'Picture folding on the dashed line.' });
+      }]
+    ],
+    's-pos': [
+      [1, 'tap', function (lv) {
+        var items = R.shuffle(THINGS).slice(0, 9), r = relation(items, lv);
+        return { q: 'Tap what is <b>' + r[0] + '</b> the ' + A.NAMES[items[r[1]]][0] + '.', type: 'tap', pic: shelfTap(items), answer: String(r[2]), answerText: 'the ' + A.NAMES[items[r[2]]][0],
+          hint: 'Find the ' + A.NAMES[items[r[1]]][0] + ' first.', steps: ['Find the ' + A.NAMES[items[r[1]]][0] + '.', 'Look ' + r[0].replace('to the ', '').replace(' of', '') + ' it.'],
+          explain: 'The ' + A.NAMES[items[r[2]]][0] + ' is ' + r[0] + ' the ' + A.NAMES[items[r[1]]][0] + '.', meta: { k: 'g1-pos-tap', items: items } };
+      }],
+      [1, 'mistake', function (lv) {
+        var items = R.shuffle(THINGS).slice(0, 9), r = relation(items, lv), who = nm(), truth = !R.int(0, 2), other = R.pick([0, 1, 2, 3, 4, 5, 6, 7, 8].filter(function (j) { return j !== r[1] && j !== r[2]; }));
+        var said = truth ? r[2] : other;
+        var right = 'The ' + A.NAMES[items[r[2]]][0] + ' is ' + r[0] + ' the ' + A.NAMES[items[r[1]]][0] + '.';
+        return G.tf(who + ' says the <b>' + A.NAMES[items[said]][0] + '</b> is ' + r[0] + ' the <b>' + A.NAMES[items[r[1]]][0] + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Above and below mean the same thing.', 'Anything on the shelf counts.', 'Left and right swap when you count.'], { k: 'g1-pos-tf', items: items, rel: r[0] },
+          { fig: shelf(items), hint: 'Find the ' + A.NAMES[items[r[1]]][0] + ' first.' });
+      }],
+      [2, 'match', function (lv) {
+        var items = R.shuffle(THINGS).slice(0, 9), pairs = [], used = {};
+        for (var t = 0; t < 40 && pairs.length < 3; t++) {
+          var r = relation(items, lv), left = r[0] + ' the ' + A.NAMES[items[r[1]]][0];
+          if (used[r[2]] || used[left]) continue; used[r[2]] = used[left] = 1;
+          pairs.push([left, A.NAMES[items[r[2]]][0]]);
+        }
+        return { q: 'Look at the shelf. Match each place to the thing there.', type: 'match', fig: shelf(items), pairs: pairs,
+          hint: 'Find the thing named first. Then look where the words say.', steps: ['Above is higher. Below is lower.'],
+          explain: pairs.map(function (p) { return p[1] + ' is ' + p[0]; }).join('. ') + '.', meta: { k: 'g1-pos-match', items: items } };
+      }]
+    ],
+    's-code': [
+      [1, 'tap', function (lv) {
+        var c = randomCode(lv);
+        return { q: 'The robot follows this code: ' + codeHtml(c.code) + ' <span class="sr">(' + c.code.map(function (k) { return DIR[k][3]; }).join(', ') + ')</span> Tap the square where it stops.', type: 'tap', pic: gridTap(5, c.start, []), answer: c.end.join(','), answerText: 'column ' + (c.end[0] + 1) + ', row ' + (c.end[1] + 1),
+          hint: 'Move one square for each arrow. Put your finger on the robot.', steps: ['Follow the arrows one at a time.', 'The robot stops in column ' + (c.end[0] + 1) + ', row ' + (c.end[1] + 1) + '.'],
+          explain: 'The robot stops in column ' + (c.end[0] + 1) + ', row ' + (c.end[1] + 1) + '.', meta: { k: 'g1-code-tap', start: c.start } };
+      }],
+      [2, 'fill', function (lv) {
+        var start = [R.int(0, 2), R.int(0, 2)], dx = R.int(1, 4 - start[0]), dy = R.int(1, 4 - start[1]), kind = R.pick(['apple', 'star', 'fish', 'ball']);
+        return { q: 'Write the code to get the robot to the ' + A.NAMES[kind][0] + '. Go right first, then down.', type: 'fill', fig: grid(5, start, [[start[0] + dx, start[1] + dy, kind]]), fill: '[[]] steps right, then [[]] steps down.', answers: [dx, dy],
+          hint: 'Count the squares across, then the squares down.', steps: ['Count across to the ' + A.NAMES[kind][0] + "'s column: " + dx + '.', 'Count down to its row: ' + dy + '.'],
+          explain: dx + ' right and ' + dy + ' down.', meta: { k: 'g1-code-fill', start: start, goal: [start[0] + dx, start[1] + dy] } };
+      }],
+      [1, 'mistake', function (lv) {
+        var c = randomCode(lv), cells = [], kind = R.pick(['apple', 'star', 'fish', 'ball']), who = nm(), truth = !R.int(0, 2);
+        for (var x = 0; x < 5; x++) for (var y = 0; y < 5; y++) if (!(x === c.start[0] && y === c.start[1]) && !(x === c.end[0] && y === c.end[1])) cells.push([x, y]);
+        var at = truth ? c.end : R.pick(cells.filter(function (p) { return Math.abs(p[0] - c.end[0]) + Math.abs(p[1] - c.end[1]) === 1; }).concat([R.pick(cells)]));
+        var right = 'Following the arrows, the robot stops in column ' + (c.end[0] + 1) + ', row ' + (c.end[1] + 1) + (truth ? ', where the ' : ', not at the ') + A.NAMES[kind][0] + '.';
+        return G.tf(who + ' says this code gets the robot to the ' + A.NAMES[kind][0] + ': ' + codeHtml(c.code) + ' <span class="sr">(' + c.code.map(function (k) { return DIR[k][3]; }).join(', ') + ')</span>. True or false: ' + who + ' is right.', truth, right,
+          ['The robot can skip squares.', 'Only the last arrow matters.', 'Arrows move the robot two squares.'], { k: 'g1-code-tf', start: c.start, at: at },
+          { fig: grid(5, c.start, [[at[0], at[1], kind]]), hint: 'Move one square for each arrow.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

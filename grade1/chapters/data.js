@@ -336,4 +336,140 @@
       { id: 'd-chance', name: 'Impossible, possible, certain', code: 'D2.1', gen: qChance }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ---------- */
+  var G = window.G1, nm = A.Q ? A.Q.name : function () { return 'Ava'; };
+  /* one thing to sort: red or blue, circle or square, big or small */
+  function thing(col, sh, big) {
+    var c = col === 'red' ? '#e04b3a' : '#2c68cf', r = big ? 24 : 13, st = 'style="fill:' + c + '" stroke="rgba(0,0,0,.45)" stroke-width="2"';
+    return A.svg(60, 60, sh === 'circle' ? '<circle cx="30" cy="30" r="' + r + '" ' + st + '/>' : '<rect x="' + (30 - r) + '" y="' + (30 - r) + '" width="' + 2 * r + '" height="' + 2 * r + '" rx="3" ' + st + '/>', 'a ' + (big ? 'big' : 'small') + ' ' + col + ' ' + sh);
+  }
+  function things(k) {
+    var all = []; ['red', 'blue'].forEach(function (c) { ['circle', 'square'].forEach(function (s) { [1, 0].forEach(function (b) { all.push([c, s, b]); }); }); });
+    return R.shuffle(all).slice(0, k);
+  }
+  function chanceOf(red, blue) { return red && blue ? 'possible' : red ? 'certain' : 'impossible'; }
+  var SHAPES = {
+    'd-sort': [
+      [1, 'pick', function (lv) {
+        var by = lv === 1 ? 'colour' : R.pick(['colour', 'shape']), want = by === 'colour' ? R.pick(['red', 'blue']) : R.pick(['circle', 'square']), list = things(5);
+        var fits = function (t) { return by === 'colour' ? t[0] === want : t[1] === want; };
+        if (!list.some(fits) || list.every(fits)) list = by === 'colour' ? [['red', 'circle', 1], ['blue', 'square', 0], ['red', 'square', 0], ['blue', 'circle', 1]] : [['red', 'circle', 1], ['blue', 'square', 0], ['red', 'square', 1], ['blue', 'circle', 0]];
+        var ans = []; list.forEach(function (t, j) { if (fits(t)) ans.push(j); });
+        return { q: 'Sort ' + (by === 'colour' ? 'by colour' : 'by shape') + '. Pick every <b>' + want + '</b> one.', type: 'pick', options: list.map(function (t) { return thing(t[0], t[1], t[2]); }), answer: ans,
+          hint: 'Look only at the ' + by + '. Size does not matter here.', steps: ['Check each one: is it ' + want + '?'],
+          explain: 'Every ' + want + ' one goes in that group.', meta: { k: 'g1-sort-pick' } };
+      }],
+      [1, 'tap', function (lv) {
+        var by = lv === 1 ? 'colour' : R.pick(['colour', 'shape']), a = by === 'colour' ? R.pick(['red', 'blue']) : R.pick(['circle', 'square']), b = by === 'colour' ? (a === 'red' ? 'blue' : 'red') : (a === 'circle' ? 'square' : 'circle');
+        var list = [0, 1, 2].map(function () { return by === 'colour' ? [a, R.pick(['circle', 'square']), R.int(0, 1)] : [R.pick(['red', 'blue']), a, R.int(0, 1)]; });
+        list.push(by === 'colour' ? [b, R.pick(['circle', 'square']), R.int(0, 1)] : [R.pick(['red', 'blue']), b, R.int(0, 1)]);
+        var odd = list[3]; list = R.shuffle(list);
+        return { q: 'These are sorted by <b>' + by + '</b>. Tap the one that does <b>not</b> belong.', type: 'tap', tiles: list.map(function (t) { return thing(t[0], t[1], t[2]); }), answer: list.indexOf(odd), answerText: 'the ' + (by === 'colour' ? odd[0] : odd[1]) + ' one',
+          hint: 'Look only at the ' + by + '.', steps: ['Three are ' + a + '. One is ' + b + '.'],
+          explain: 'The ' + b + ' one does not belong with the ' + a + ' ones.', meta: { k: 'g1-sort-tap', by: by } };
+      }],
+      [2, 'match', function () {
+        var list = things(3);
+        while (new Set(list.map(function (t) { return t.join(); })).size < 3) list = things(3);
+        return { q: 'Match each one to its name.', type: 'match', pairs: list.map(function (t) { return [thing(t[0], t[1], t[2]), (t[2] ? 'big ' : 'small ') + t[0] + ' ' + t[1]]; }),
+          hint: 'Look at the size, the colour and the shape.', steps: ['Name each one: size, colour, shape.'],
+          explain: 'Each one has a size, a colour and a shape.', meta: { k: 'g1-sort-match' } };
+      }]
+    ],
+    'd-tally': [
+      [1, 'tap', function (lv) {
+        var n = lv === 1 ? R.int(2, 6) : lv === 2 ? R.int(6, 14) : R.int(15, 24), set = R.shuffle(G.near(n, 3, 1, 25, lv === 1 ? [1, -1, 2] : [1, -1, 5, -5]));
+        return { q: 'Tap the tally marks that show <b>' + n + '</b>.', type: 'tap', tiles: set.map(tallyPic), answer: set.indexOf(n), answerText: n + ' tally marks',
+          hint: 'Each bundle with a line across is 5. Count by 5s, then count on.', steps: [n + ' is ' + Math.floor(n / 5) + ' bundles of 5 and ' + n % 5 + ' more.'],
+          explain: Math.floor(n / 5) + ' bundles of 5 and ' + n % 5 + ' more make ' + n + '.', meta: { k: 'g1-tally-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var lo = lv === 1 ? 1 : 6, hi = lv === 1 ? 7 : 20, v = [];
+        while (v.length < 3) { var x = R.int(lo, hi); if (v.indexOf(x) < 0) v.push(x); }
+        return { q: 'Match the tally marks to their numbers.', type: 'match', pairs: v.map(function (x) { return [tallyPic(x), String(x)]; }),
+          hint: 'Each bundle is 5.', steps: ['Count the bundles by 5s, then count on the single marks.'],
+          explain: v.join(', ') + '.', meta: { k: 'g1-tally-match' } };
+      }],
+      [2, 'fill', function (lv) {
+        var n = lv === 2 ? R.int(6, 14) : R.int(15, 24);
+        return { q: 'Fill in the blanks.', type: 'fill', fig: tallyPic(n), fill: '[[]] bundles of 5 and [[]] more make [[]].', answers: [Math.floor(n / 5), n % 5, n],
+          hint: 'A bundle is 5 marks with a line across.', steps: ['Count the bundles. Then the single marks.'],
+          explain: Math.floor(n / 5) + ' fives and ' + n % 5 + ' more make ' + n + '.', meta: { k: 'g1-tally-fill' } };
+      }]
+    ],
+    'd-graph': [
+      [1, 'fill', function (lv) {
+        var d = makeData(lv), i = R.int(0, 2), j = i + 1, cats = d.topic.cats;
+        return { q: 'Look at the picture graph. Fill in the blanks.', type: 'fill', fig: picto(d.topic, d.counts, d.src), fill: '[[]] children chose ' + cats[i][0] + '. [[]] children chose ' + cats[j][0] + '.', answers: [d.counts[i], d.counts[j]],
+          hint: 'Each picture is 1 child. Count the pictures in each row.', steps: ['Count the ' + cats[i][0] + ' row: ' + d.counts[i] + '.', 'Count the ' + cats[j][0] + ' row: ' + d.counts[j] + '.'],
+          explain: d.counts[i] + ' chose ' + cats[i][0] + ' and ' + d.counts[j] + ' chose ' + cats[j][0] + '.', meta: { k: 'g1-graph-fill' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var d = makeData(lv), a = R.int(0, 3), b; do { b = R.int(0, 3); } while (b === a);
+        var cats = d.topic.cats, who = nm(), truth = d.counts[a] > d.counts[b];
+        var big = truth ? a : b, small = truth ? b : a;
+        var right = cats[big][0] + ' has ' + d.counts[big] + ' and ' + cats[small][0] + ' has ' + d.counts[small] + ', so more chose ' + cats[big][0] + '.';
+        return G.tf(who + ' says more children chose <b>' + cats[a][0] + '</b> than <b>' + cats[b][0] + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['The top row always has the most.', 'Bigger pictures mean more children.', 'The last row always has the most.'], { k: 'g1-graph-tf' },
+          { fig: picto(d.topic, d.counts, d.src), hint: 'Count the pictures in both rows.' });
+      }],
+      [2, 'story', function (lv) {
+        var d = makeData(lv), i = R.int(0, 3), k = R.int(1, 3), cats = d.topic.cats;
+        return { q: (d.src.charAt(0).toUpperCase() + d.src.slice(1)) + ' made this graph. Then ' + k + ' more children chose <b>' + cats[i][0] + '</b>. How many chose ' + cats[i][0] + ' now?', type: 'num', answer: d.counts[i] + k, fig: picto(d.topic, d.counts, d.src),
+          hint: 'Count the ' + cats[i][0] + ' row. Then add ' + k + '.', steps: ['The graph shows ' + d.counts[i] + '.', d.counts[i] + ' + ' + k + ' = ' + (d.counts[i] + k) + '.'],
+          explain: d.counts[i] + ' + ' + k + ' = ' + (d.counts[i] + k) + '.', meta: { k: 'g1-graph-story' } };
+      }]
+    ],
+    'd-order': [
+      [1, 'order', function (lv) {
+        var d = makeData(lv, 3), cats = d.topic.cats.map(function (c) { return c[0]; }), idx = [0, 1, 2].sort(function (x, y) { return d.counts[y] - d.counts[x]; });
+        return { q: 'Put the choices in order from <b>most to least</b>.', type: 'order', items: idx.map(function (i) { return cats[i]; }), first: 'most', last: 'least', fig: picto(d.topic, d.counts, d.src),
+          hint: 'Count each row. The longest row is the most.', steps: ['The rows have ' + d.counts.join(', ') + '.'],
+          explain: idx.map(function (i) { return cats[i] + ' (' + d.counts[i] + ')'; }).join(', ') + '.', meta: { k: 'g1-dorder-order' } };
+      }],
+      [1, 'pick', function (lv) {
+        var d, x;
+        do { d = makeData(lv); x = R.int(3, 6); } while (d.counts.every(function (c) { return c > x; }) || d.counts.every(function (c) { return c <= x; }));
+        var cats = d.topic.cats.map(function (c) { return c[0]; }), ans = []; d.counts.forEach(function (c, j) { if (c > x) ans.push(j); });
+        return { q: 'Pick every choice that <b>more than ' + x + '</b> children chose.', type: 'pick', options: cats, answer: ans, fig: picto(d.topic, d.counts, d.src),
+          hint: 'Count each row. Is it more than ' + x + '?', steps: ['The rows have ' + d.counts.join(', ') + '.'],
+          explain: ans.map(function (j) { return cats[j]; }).join(', ') + '.', meta: { k: 'g1-dorder-pick' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var d = makeData(lv), cats = d.topic.cats.map(function (c) { return c[0]; }), least = d.counts.indexOf(Math.min.apply(null, d.counts)), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? least : R.pick([0, 1, 2, 3].filter(function (j) { return j !== least; }));
+        var right = cats[least] + ' has the fewest: ' + d.counts[least] + '.';
+        return G.tf(who + ' says <b>' + cats[said] + '</b> was chosen the least. True or false: ' + who + ' is right.', truth, right,
+          ['The last row is always the least.', 'The shortest word is the least.', 'Every choice is the same.'], { k: 'g1-dorder-tf' },
+          { fig: picto(d.topic, d.counts, d.src), hint: 'Find the shortest row.' });
+      }]
+    ],
+    'd-chance': [
+      [1, 'tap', function (lv) {
+        var want = R.pick(lv === 1 ? ['certain', 'impossible'] : ['certain', 'impossible', 'possible']), n = R.int(4, 8);
+        var bags = R.shuffle([[n, 0], [0, n], [R.int(2, 4), R.int(2, 4)]]), ans = bags.map(function (b) { return chanceOf(b[0], b[1]); }).indexOf(want);
+        return { q: 'Tap the bag where picking <b>red</b> is <b>' + want + '</b>.', type: 'tap', tiles: bags.map(function (b) { return bag(b[0], b[1]); }), answer: ans, answerText: 'the bag with ' + bags[ans][0] + ' red and ' + bags[ans][1] + ' blue',
+          hint: 'Certain: all red. Impossible: no red. Possible: some red.', steps: ['Look at the counters in each bag.'],
+          explain: { certain: 'All red: you are sure to get red.', impossible: 'No red: you cannot get red.', possible: 'Some red: you might get red.' }[want], meta: { k: 'g1-chance-tap' } };
+      }],
+      [1, 'match', function () {
+        var n = R.int(4, 7), bags = [[n, 0], [0, n], [R.int(2, 4), R.int(2, 4)]];
+        return { q: 'You pick one counter without looking. Match each bag to how likely <b>red</b> is.', type: 'match', pairs: bags.map(function (b) { return [bag(b[0], b[1]), chanceOf(b[0], b[1])]; }),
+          hint: 'All red is certain. No red is impossible. Some red is possible.', steps: ['Look for red in each bag.'],
+          explain: 'All red is certain. No red is impossible. Some red is possible.', meta: { k: 'g1-chance-match' } };
+      }],
+      [2, 'mistake', function () {
+        var red = R.int(0, 5), blue = red ? R.int(0, 5) : R.int(3, 6), ask = R.pick(['red', 'blue']), real = ask === 'red' ? chanceOf(red, blue) : chanceOf(blue, red);
+        if (!red && !blue) blue = 3;
+        real = ask === 'red' ? chanceOf(red, blue) : chanceOf(blue, red);
+        var who = nm(), truth = !R.int(0, 2), said = truth ? real : R.pick(['impossible', 'possible', 'certain'].filter(function (x) { return x !== real; }));
+        var right = 'The bag has ' + red + ' red and ' + blue + ' blue, so getting ' + ask + ' is ' + real + '.';
+        return G.tf(who + ' says getting <b>' + ask + '</b> from this bag is <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, right,
+          ['Every colour is always possible.', 'Nothing is ever certain.', 'More counters means impossible.'], { k: 'g1-chance-tf' },
+          { fig: bag(red, blue), hint: 'Look for ' + ask + ' counters in the bag.' });
+      }]
+    ]
+  };
+  G.shapes(CH, SHAPES);
 })();

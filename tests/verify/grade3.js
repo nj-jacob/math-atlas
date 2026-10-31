@@ -2,9 +2,12 @@
    an error message, or '' when the answer is right. Work the answer out here independently:
    never copy the site's own calculation. */
 (function (V, H) {
-  const set = (k, fn) => { V[k] = fn; };
+  const set = (k, fn) => { if (V[k]) throw new Error('two answer checks share the key ' + k); V[k] = fn; };
   const bold = q => H.strip((q.q.match(/<b>([^<]+)<\/b>/) || [])[1] || '');
   const same = (a, b) => a.slice().sort().join() === b.slice().sort().join();
+  /* works out a plain sum like "450 + 120 − 30" from its text */
+  const ev = t => { const s = H.strip(t).replace(/\u2212/g, '-').replace(/\s+/g, ''); if (!/^\d+([+-]\d+)*$/.test(s)) return NaN; return s.match(/[+-]?\d+/g).reduce((a, b) => a + +b, 0); };
+  const nums = t => (H.strip(t).match(/\d+/g) || []).map(Number);
   /* ---- Numbers to 1000 ---- */
   set('value-tap', (q, m) => { const hits = [0, 1, 2].filter(i => H.placeVal(m.n, i) === m.val); return hits.length === 1 && String(hits[0]) === String(q.answer) ? '' : 'digit worth ' + m.val + ' in ' + m.n; });
   set('value-num', (q, m) => H.placeVal(m.n, m.i) === q.answer ? '' : 'value of digit ' + m.i + ' in ' + m.n);
@@ -43,4 +46,259 @@
   set('round-pick', (q, m) => same(m.opts.map((v, j) => H.roundTo(v, m.p) === m.target ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
   set('round-tf', (q, m) => (H.roundTo(m.n, 100) === m.said) === q.answer ? '' : 'truth');
   set('round-match', (q, m) => m.pairs.every(p => H.roundTo(+p[0], 100) === +p[1]) ? '' : 'pairs');
+  /* ---- Addition and subtraction ---- */
+  set('add-story', (q, m) => { const n = nums(q.q); return n.includes(m.a) && n.includes(m.b) && q.answer === m.a + m.b ? '' : 'total'; });
+  set('add-build', q => { const n = nums(q.q); return n[0] + n[1] === q.answer ? '' : 'total'; });
+  set('add-fill', (q, m) => { const top = +H.strip(q.fill.replace('[[]]', String(q.answers[0]))).split('+')[0]; return q.answers[0] >= 0 && q.answers[0] <= 9 && top + m.b === m.sum ? '' : 'digit'; });
+  set('add-tf', (q, m) => (m.a + m.b === m.said) === q.answer ? '' : 'truth');
+  set('sub-story', (q, m) => { const n = nums(q.q); return n.includes(m.a) && n.includes(m.b) && q.answer === m.a - m.b ? '' : 'difference'; });
+  set('sub-match', (q, m) => m.pairs.every(p => ev(p[0]) === +p[1]) ? '' : 'pairs');
+  set('sub-tf', (q, m) => (m.said + m.b === m.a) === q.answer ? '' : 'truth');
+  set('mental-line', (q, m) => (m.op === '+' ? m.a + m.b : m.a - m.b) === q.answer ? '' : 'landing');
+  set('mental-match', (q, m) => m.pairs.every(p => ev(p[0]) === +p[1]) ? '' : 'pairs');
+  set('mental-which', (q, m) => { const ways = q.options.map(o => { const n = nums(o); return n.length === 1 ? n[0] : /take away/.test(o) ? n[0] - n[1] : n[0] + n[1]; }); const ok = ways.map((w, j) => w === m.b ? j : -1).filter(j => j >= 0); return ok.length === 1 && ok[0] === q.answer ? '' : 'way'; });
+  set('mental-tf', (q, m) => (m.a + m.b === m.said) === q.answer ? '' : 'truth');
+  set('est-match', (q, m) => m.pairs.every(p => { const [a, b] = nums(p[0]); return H.roundTo(a, m.p) + H.roundTo(b, m.p) === +p[1]; }) ? '' : 'pairs');
+  set('est-mc', (q, m) => H.roundTo(m.a, m.p) + H.roundTo(m.b, m.p) === H.num(q.options[q.answer]) ? '' : 'estimate');
+  set('est-pick', (q, m) => same(q.options.map((o, j) => ev(o) > m.lim ? j : -1).filter(j => j >= 0), q.answer) && q.options.every(o => Math.abs(ev(o) - m.lim) >= 120) ? '' : 'picks');
+  set('est-tf', (q, m) => ((m.op === '+' ? m.a + m.b : m.a - m.b) === m.said) === q.answer ? '' : 'truth');
+  set('eq-tf', (q, m) => (m.l[0] + m.l[1] === m.r[0] + m.r[1]) === q.answer ? '' : 'truth');
+  set('eq-pick', (q, m) => same(q.options.map((o, j) => ev(o) === m.t ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('eq-match', q => q.pairs.every(p => ev(p[0]) === ev(p[1])) && new Set(q.pairs.map(p => ev(p[0]))).size === q.pairs.length ? '' : 'pairs');
+  set('eq-fill', q => { const sides = H.strip(q.fill.replace('[[]]', String(q.answers[0]))).split('='); return ev(sides[0]) === ev(sides[1]) ? '' : 'sides'; });
+  set('word-which', (q, m) => (m.kind === 'join' ? /^Add/ : /^Subtract/).test(q.options[q.answer]) ? '' : 'operation');
+  set('word-num', (q, m) => (m.op === '+' ? m.a + m.b : m.a - m.b) === q.answer && nums(q.q).includes(m.b) ? '' : 'answer');
+  set('word-fill', (q, m) => q.answers[0] === m.a && q.answers[1] === m.b && q.answers[0] - q.answers[1] === q.answers[2] ? '' : 'sentence');
+  set('word-tf', (q, m) => (m.a - m.b === m.said) === q.answer ? '' : 'truth');
+  /* ---- Multiplication and division ---- */
+  /* counts the plates and the counters on one plate in a groups picture */
+  const plates = svg => { const d = document.createElement('div'); d.innerHTML = svg; const c = [...d.querySelectorAll('circle')]; const big = c.filter(x => +x.getAttribute('r') > 30); return [big.length, big.length ? (c.length - big.length) / big.length : 0]; };
+  /* counts rows and dots per row in an array picture */
+  const grid = svg => { const d = document.createElement('div'); d.innerHTML = svg; const c = [...d.querySelectorAll('circle')]; const ys = new Set(c.map(x => x.getAttribute('cy'))); return [ys.size, c.length / ys.size]; };
+  const eq = t => { const s = H.strip(t), m = s.match(/(\d+)\s*([×÷+])\s*(\d+)\s*=\s*(\d+)/); if (!m) return null; const a = +m[1], b = +m[3], c = +m[4]; return { a, b, c, op: m[2], ok: m[2] === '×' ? a * b === c : m[2] === '÷' ? a === b * c : a + b === c }; };
+  set('grp-tap', (q, m) => { const hit = q.tiles.map(plates).map((p, j) => p[0] === m.g && p[1] === m.n ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'picture'; });
+  set('grp-story', (q, m) => { const n = nums(q.q); return n[0] === m.g && n[1] === m.n && q.answer === m.g * m.n ? '' : 'total'; });
+  set('grp-match', q => q.pairs.every(p => { const n = nums(p[0]); return n[0] * n[1] === +p[1]; }) ? '' : 'pairs');
+  set('grp-tf', (q, m) => { const p = plates(q.fig); return (p[0] * p[1] === m.said) === q.answer ? '' : 'truth'; });
+  set('fact-line', (q, m) => m.f * m.n === q.answer ? '' : 'landing');
+  set('fact-fill', (q, m) => { const s = q.fill.replace(/<[^>]+>/g, '').split(','); let j = 0; const v = s.map(x => x.includes('[[]]') ? q.answers[j++] : +x); return v.every((x, i) => !i || x - v[i - 1] === m.f) && v[0] % m.f === 0 ? '' : 'sequence'; });
+  set('fact-match', q => q.pairs.every(p => { const n = nums(p[0]); return n[0] * n[1] === +p[1]; }) ? '' : 'pairs');
+  set('fact-pick', (q, m) => same(q.options.map((o, j) => +o % m.f === 0 && +o <= m.f * 10 ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('fact-tf', (q, m) => (m.a * m.b === m.said) === q.answer ? '' : 'truth');
+  set('arr-tap', (q, m) => { const hit = q.tiles.map(grid).map((g, j) => g[0] === m.r && g[1] === m.c ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'array'; });
+  set('arr-fill', q => { const g = grid(q.fig); return q.answers[0] === g[0] && q.answers[1] === g[1] && q.answers[2] === g[0] * g[1] ? '' : 'blanks'; });
+  set('arr-story', q => { const n = nums(q.q); return n[0] * n[1] === q.answer ? '' : 'total'; });
+  set('arr-tf', (q, m) => { const g = grid(q.fig); return (g[0] * g[1] === m.said) === q.answer ? '' : 'truth'; });
+  set('div-story', (q, m) => q.answer * m.k2 === m.n && nums(q.q)[0] === m.n ? '' : 'share');
+  set('div-tap', (q, m) => { const hit = q.tiles.map(plates).map((p, j) => p[0] === m.k2 && p[0] * p[1] === m.n ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'picture'; });
+  set('div-which', (q, m) => (m.kind === 'times' ? /^Multiply/ : /^Divide/).test(q.options[q.answer]) ? '' : 'operation');
+  set('div-tf', (q, m) => (m.k2 * m.said === m.n) === q.answer ? '' : 'truth');
+  set('fam-pick', (q, m) => { const want = [m.a, m.b, m.a * m.b].sort().join(); const exp = q.options.map((o, j) => { const e = eq(o); return e && e.ok && '×÷'.includes(e.op) && [e.a, e.b, e.c].sort().join() === want ? j : -1; }).filter(j => j >= 0); return same(exp, q.answer) ? '' : 'picks'; });
+  set('fam-fill', q => { const lines = q.fill.split('<br>'); return lines.every((l, i) => { const e = eq(l.replace('[[]]', String(q.answers[i]))); return e && e.ok; }) ? '' : 'family'; });
+  set('fam-match', q => q.pairs.every(p => { const d = nums(p[0]), e = eq(p[1]); return e.ok && e.c === d[0] && e.a === d[1]; }) ? '' : 'pairs');
+  set('fam-tf', (q, m) => (m.said * m.d === m.p) === q.answer ? '' : 'truth');
+  set('scale-fill', (q, m) => q.answers.every((v, i) => v === m.f * m.ns[i]) ? '' : 'table');
+  set('scale-story', q => { const n = nums(q.q); return n[1] * n[2] === q.answer ? '' : 'total'; });
+  set('scale-match', (q, m) => q.pairs.every(p => nums(p[0])[0] * m.f === nums(p[1])[0]) ? '' : 'pairs');
+  set('scale-tf', (q, m) => (m.f * m.n === m.said) === q.answer ? '' : 'truth');
+  /* ---- Fractions ---- */
+  /* reads a shaded bar or grid: [shaded parts, all parts] */
+  const shade = svg => { const d = document.createElement('div'); d.innerHTML = svg; const r = [...d.querySelectorAll('rect')]; return [r.filter(x => /fill:var\(--strand\)/.test(x.getAttribute('style'))).length, r.length]; };
+  /* reads "2 and 1/3", "1/4" or "3" written with fraction markup */
+  const amount = h => { const d = document.createElement('div'); d.innerHTML = h; const f = d.querySelector('.fr'); let v = 0; if (f) { const s = f.querySelectorAll('span'); v = +s[0].textContent / +s[1].textContent; f.remove(); } const w = d.textContent.match(/\d+/); return v + (w ? +w[0] : 0); };
+  const fracs = h => { const d = document.createElement('div'); d.innerHTML = h; return [...d.querySelectorAll('.fr')].map(f => { const s = f.querySelectorAll('span'); return [+s[0].textContent, +s[1].textContent]; }); };
+  const PIECE = { halves: 2, thirds: 3, fourths: 4 };
+  set('frn-tap', (q, m) => { const hit = q.tiles.map(shade).map((s, j) => s[0] === m.n && s[1] === m.d ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer && fracs(q.q)[0].join() === m.n + ',' + m.d ? '' : 'picture'; });
+  set('frn-fill', q => shade(q.fig).join() === q.answers.join() ? '' : 'counts');
+  set('frn-line', (q, m) => H.close(q.answer, m.n / m.d, 1e-9) && fracs(q.q)[0].join() === m.n + ',' + m.d ? '' : 'point');
+  set('frn-tf', (q, m) => { const s = shade(q.fig); return (s[0] === m.sn && s[1] === m.sd) === q.answer ? '' : 'truth'; });
+  set('frs-fill', (q, m) => q.answers[0] * m.k2 + q.answers[1] === m.items && q.answers[1] < m.k2 ? '' : 'share');
+  set('frs-mc', (q, m) => H.close(amount(q.options[q.answer]) * m.k2, m.items, 1e-9) ? '' : 'share');
+  set('frs-match', q => q.pairs.every(p => { const n = nums(p[0]); return H.close(amount(p[1]), n[0] / n[1], 1e-9); }) ? '' : 'pairs');
+  set('frs-tf', (q, m) => (m.w * m.k2 + m.l === m.items) === q.answer ? '' : 'truth');
+  set('fru-line', (q, m) => H.close(q.answer, m.n / m.d, 1e-9) ? '' : 'landing');
+  set('fru-fill', (q, m) => fracs(q.fill).filter(f => f[0] === 1 && f[1] === m.d).length === q.answers[0] ? '' : 'count');
+  set('fru-order', q => { const v = q.items.map(amount); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('fru-tf', (q, m) => { const f = fracs(q.q), parts = f.slice(0, -1), said = f[f.length - 1]; const total = parts.reduce((a, p) => a + p[0] / p[1], 0); return H.close(total, said[0] / said[1], 1e-9) === q.answer ? '' : 'truth'; });
+  set('fre-tap', (q, m) => { const hit = q.tiles.map(shade).map((s, j) => s[0] * m.a === m.n * s[1] ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'bar'; });
+  set('fre-tf', (q, m) => (m.n * m.b === m.m * m.a) === q.answer ? '' : 'truth');
+  set('fre-match', q => q.pairs.every(p => H.close(amount(p[0]), amount(p[1]), 1e-9)) && new Set(q.pairs.map(p => amount(p[0]))).size === q.pairs.length ? '' : 'pairs');
+  set('frg-num', (q, m) => q.answer * m.d === m.n && nums(q.q)[0] === m.n ? '' : 'wholes');
+  set('frg-match', q => q.pairs.every(p => { const d = PIECE[p[0].split(' ')[1]]; return nums(p[0])[0] === nums(p[1])[0] * d; }) ? '' : 'pairs');
+  set('frg-fill', q => { const d = PIECE[(q.fill.match(/halves|thirds|fourths/) || [])[0]]; const l = q.fill.split('<br>'); return nums(l[0])[0] === q.answers[0] * d && q.answers[1] === nums(l[1].replace('[[]]', ''))[0] * d ? '' : 'wholes'; });
+  set('frg-tf', (q, m) => (m.w * m.d === m.n) === q.answer ? '' : 'truth');
+  /* ---- Patterns and algebra ---- */
+  const SHAPE = { A: 'circle', B: 'square', C: 'triangle', D: 'star' };
+  /* works out one step such as "12 ÷ 3" or "4 × 5" */
+  const ev1 = t => { const m = H.strip(t).match(/^(\d+) ([+−×÷]) (\d+)$/); if (!m) return NaN; const a = +m[1], b = +m[3]; return { '+': a + b, '−': a - b, '×': a * b, '÷': a / b }[m[2]]; };
+  /* finds n by trying every value from 0 to 200 in an equation like "n − 4 = 10" or "5 × n = 20" */
+  const solve = t => { const [l, r] = H.strip(t).split('='); const hits = []; for (let n = 0; n <= 200; n++) if (ev1(l.trim().replace('n', n)) === +r) hits.push(n); return hits.length === 1 ? hits[0] : NaN; };
+  /* counts the steps a robot moves for code such as "repeat 3 times [move 2]" or "move 1, move 4" */
+  const steps = t => { let s = H.strip(t), total = 0; s = s.replace(/repeat (\d+) times \[([^\]]*)\]/g, (_, r, body) => { total += +r * nums(body).reduce((a, b) => a + b, 0); return ''; }); return total + (s.match(/move (\d+)/g) || []).reduce((a, b) => a + +b.slice(5), 0); };
+  set('rep-order', (q, m) => q.items.every((x, i) => x === SHAPE[m.core[(m.from + i) % m.core.length]]) ? '' : 'next shapes');
+  set('rep-tf', (q, m) => (SHAPE[m.core[(m.p - 1) % m.core.length]] === m.said) === q.answer ? '' : 'truth');
+  set('rep-fill', (q, m) => { let c = 0; for (let i = 0; i < m.total; i++) if (m.core[i % m.core.length] === 'A') c++; return q.answers[0] === m.core.length && q.answers[1] === c ? '' : 'counts'; });
+  set('rep-core', (q, m) => (m.said === m.core) === q.answer ? '' : 'truth');
+  set('grow-fill', q => { const s = q.fill.replace(/<[^>]+>/g, '').split(','); let j = 0; const v = s.map(x => x.includes('[[]]') ? q.answers[j++] : +x); return v.every((x, i) => i < 2 || x - v[i - 1] === v[1] - v[0]) && v[1] !== v[0] ? '' : 'pattern'; });
+  set('grow-line', (q, m) => m.st + m.b * (m.j - 1) === q.answer ? '' : 'point');
+  set('grow-which', (q, m) => { const rule = H.strip(q.options[q.answer]), n = nums(rule), b = /take away/.test(rule) ? -n[1] : n[1]; return m.v.every((x, i) => x === n[0] + b * i) ? '' : 'rule'; });
+  set('grow-tf', (q, m) => (m.v[3] + (m.v[1] - m.v[0]) === m.said) === q.answer ? '' : 'truth');
+  set('var-match', q => q.pairs.every(p => solve(p[0]) === nums(p[1])[0]) ? '' : 'pairs');
+  set('var-tf', (q, m) => (solve(m.eq) === m.n) === q.answer ? '' : 'truth');
+  set('var-num', (q, m) => solve(m.eq) === q.answer ? '' : 'n');
+  set('tbl-fill', (q, m) => q.answers.every((a, i) => ev1(m.ins[i] + ' ' + { '+': '+', '-': '−', x: '×' }[m.op] + ' ' + m.k2) === a) ? '' : 'outputs');
+  set('tbl-match', (q, m) => q.pairs.every(p => ev1(nums(p[0])[0] + ' ' + { '+': '+', x: '×' }[m.op] + ' ' + m.k2) === +p[1]) ? '' : 'pairs');
+  set('tbl-tf', (q, m) => (m.v + m.k2 === m.said) === q.answer ? '' : 'truth');
+  set('peq-pick', (q, m) => same(q.options.map((o, j) => ev1(o) === m.t ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('peq-match', q => q.pairs.every(p => ev1(p[0]) === ev1(p[1])) && new Set(q.pairs.map(p => ev1(p[0]))).size === q.pairs.length ? '' : 'pairs');
+  set('peq-fill', q => { const [l, r] = H.strip(q.fill.replace('[[]]', String(q.answers[0]))).split('='); return ev1(l.trim()) === ev1(r.trim()) ? '' : 'sides'; });
+  set('peq-tf', (q, m) => (ev1(m.l) === ev1(m.r)) === q.answer ? '' : 'truth');
+  set('code-match', q => q.pairs.every(p => steps(p[0]) === nums(p[1])[0]) ? '' : 'pairs');
+  set('code-fill', (q, m) => steps('repeat ' + q.answers[0] + ' times [move ' + q.answers[1] + ']') === m.moves.reduce((a, b) => a + b, 0) && m.moves.every(x => x === q.answers[1]) ? '' : 'loop');
+  set('code-tf', (q, m) => (steps(H.strip(q.q).split('.')[0]) === m.said) === q.answer ? '' : 'truth');
+  set('code-which', (q, m) => { const ok = q.options.map((o, j) => steps(o) === m.t ? j : -1).filter(j => j >= 0); return ok.length === 1 && ok[0] === q.answer ? '' : 'code'; });
+  /* ---- Data and probability ---- */
+  const LAB = { 'Even': n => n % 2 === 0, 'Odd': n => n % 2 === 1, 'Greater than 15': n => n > 15, 'Greater than 10': n => n > 10, 'Less than 10': n => n < 10, 'Multiple of 5': n => n % 5 === 0 };
+  const spot = (n, a, b) => LAB[a](n) && LAB[b](n) ? 'Both' : LAB[a](n) ? a + ' only' : LAB[b](n) ? b + ' only' : 'Neither';
+  /* reads the values a graph describes for screen readers, e.g. "Bar graph: Our survey. Red 3, Blue 5. ..." */
+  const chart = svg => { const d = document.createElement('div'); d.innerHTML = svg; const l = d.querySelector('svg').getAttribute('aria-label').split('. ')[1]; const o = {}; l.split(', ').forEach(x => { const m = x.match(/^(.*) (\d+)$/); o[m[1]] = +m[2]; }); return o; };
+  const modeOf = l => { const c = {}; l.forEach(x => { c[x] = (c[x] || 0) + 1; }); const best = Math.max(...Object.values(c)); const tops = Object.keys(c).filter(k => c[k] === best); return tops.length === 1 && best > 1 ? +tops[0] : NaN; };
+  const meanOf = l => l.reduce((a, b) => a + b, 0) / l.length;
+  const chanceWord = (r, t) => r === 0 ? 'impossible' : r === t ? 'certain' : 2 * r === t ? 'equally likely' : 2 * r < t ? 'unlikely' : 'likely';
+  set('venn-pick', (q, m) => same(q.options.map((o, j) => LAB[m.a](+o) && LAB[m.b](+o) ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('venn-match', (q, m) => q.pairs.every(p => spot(+p[0], m.a, m.b) === p[1]) ? '' : 'pairs');
+  set('venn-tf', (q, m) => (spot(m.n, m.a, m.b) === m.said) === q.answer ? '' : 'truth');
+  set('picto-fill', q => { const c = chart(q.fig), names = q.fill.split('<br>').map(l => l.split(':')[0]); return names.every((n, i) => c[n] === q.answers[i]) ? '' : 'values'; });
+  set('picto-order', q => { const c = chart(q.fig), v = q.items.map(n => c[n]); return v.every((x, i) => !i || x < v[i - 1]) ? '' : 'order'; });
+  set('picto-pick', (q, m) => { const c = chart(q.fig); return same(q.options.map((o, j) => c[o] > m.lim ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks'; });
+  set('picto-tf', (q, m) => (chart(q.fig)[m.name] === m.said) === q.answer ? '' : 'truth');
+  set('bar-order', q => { const c = chart(q.fig), v = q.items.map(n => c[n]); return v.every((x, i) => !i || x < v[i - 1]) ? '' : 'order'; });
+  set('bar-match', q => { const c = chart(q.fig); return q.pairs.every(p => c[p[0]] === +p[1]) ? '' : 'pairs'; });
+  set('bar-tf', (q, m) => { const c = chart(q.fig); return (c[m.a] - c[m.b] === m.said) === q.answer ? '' : 'truth'; });
+  set('mode-tf', (q, m) => (modeOf(m.list) === m.said) === q.answer ? '' : 'truth');
+  set('mode-num', (q, m) => modeOf(m.list) === q.answer ? '' : 'mode');
+  set('mode-match', q => q.pairs.every(p => modeOf(nums(p[0])) === +p[1]) ? '' : 'pairs');
+  set('mean-fill', (q, m) => q.answers[0] === m.list.reduce((a, b) => a + b, 0) && q.answers[1] === meanOf(m.list) ? '' : 'mean');
+  set('mean-num', (q, m) => meanOf(m.list) === q.answer ? '' : 'mean');
+  set('mean-tf', (q, m) => (meanOf(m.list) === m.said) === q.answer ? '' : 'truth');
+  set('chance-match', q => q.pairs.every(p => { const n = nums(p[0]); return chanceWord(n[0], n[0] + n[1]) === p[1]; }) ? '' : 'pairs');
+  set('chance-order', q => { const v = q.items.map(t => { const n = nums(t); return n[0] / (n[0] + n[1]); }); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('chance-mc', (q, m) => chanceWord(m.fav, m.tot) === q.options[q.answer] ? '' : 'word');
+  set('chance-tf', (q, m) => (chanceWord(m.red, m.red + m.blue) === m.said) === q.answer ? '' : 'truth');
+  /* ---- 3D objects and location ---- */
+  const FEV = { 'cube': [6, 12, 8], 'rectangular prism': [6, 12, 8], 'triangular prism': [5, 9, 6], 'square-based pyramid': [5, 8, 5], 'triangular pyramid': [4, 6, 4], 'cylinder': [2, 2, 0], 'cone': [1, 1, 1] };
+  const PARTI = { f: 0, e: 1, v: 2 };
+  const LOOKS = { 'a soup can': 'cylinder', 'a number cube': 'cube', 'a cereal box': 'rectangular prism', 'an ice cream cone': 'cone', 'a tent': 'triangular prism', 'a pyramid in Egypt': 'square-based pyramid' };
+  const FITS = { 'has a curved surface': ['cylinder', 'cone'], 'has at least one triangle face': ['triangular prism', 'square-based pyramid', 'triangular pyramid'], 'has exactly 6 flat faces': ['cube', 'rectangular prism'], 'has fewer than 5 vertices': ['triangular pyramid', 'cylinder', 'cone'] };
+  const DIR = ['north', 'east', 'south', 'west'], TURNS = { 'quarter turn right': 1, 'half turn': 2, 'quarter turn left': 3 };
+  const sorted3 = d => d.slice().sort((a, b) => a - b).join();
+  /* walks "forward 2" / "right" / "left" steps from a square, facing north */
+  const go = (x, y, acts) => { let d = 0; acts.forEach(a => { if (a === 'right') d = (d + 1) % 4; else if (a === 'left') d = (d + 3) % 4; else { const f = +a.split(' ')[1]; x += [0, 1, 0, -1][d] * f; y += [1, 0, -1, 0][d] * f; } }); return 'ABCDEF'[x] + (y + 1); };
+  const readActs = t => H.strip(t).split(', then ').map(s => s.replace('make a quarter turn ', '').replace('go ', ''));
+  set('solid-match', (q, m) => q.pairs.every(p => FEV[p[0]][PARTI[m.part]] === +p[1]) ? '' : 'pairs');
+  set('solid-tap', (q, m) => { const hit = m.set.map((n, j) => FEV[n][PARTI[m.part]] === m.n ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'object'; });
+  set('solid-fill', (q, m) => FEV[m.name].join() === q.answers.join() ? '' : 'counts');
+  set('solid-tf', (q, m) => (FEV[m.name][PARTI[m.part]] === m.said) === q.answer ? '' : 'truth');
+  set('name-tap', (q, m) => m.set[q.answer] === m.name && bold(q) === m.name ? '' : 'object');
+  set('name-match', q => q.pairs.every(p => LOOKS[p[0]] === p[1]) ? '' : 'pairs');
+  set('name-pick', (q, m) => same(q.options.map((o, j) => FITS[m.c].includes(o) ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('name-tf', (q, m) => { const fits = Object.keys(FEV).filter(n => FEV[n][2] === m.v && FEV[n][1] === m.e); return fits.includes(m.said) === q.answer ? '' : 'truth'; });
+  set('cong-pick', (q, m) => same(q.options.map((o, j) => sorted3(nums(o)) === sorted3(m.a) ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('cong-tap', (q, m) => { const hit = m.set.map((b, j) => sorted3(b) === sorted3(m.a) ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'box'; });
+  set('cong-match', q => q.pairs.every(p => sorted3(nums(p[0])) === sorted3(nums(p[1]))) && new Set(q.pairs.map(p => sorted3(nums(p[0])))).size === q.pairs.length ? '' : 'pairs');
+  set('cong-tf', (q, m) => (sorted3(m.a) !== sorted3(m.b)) === q.answer ? '' : 'truth');
+  set('turn-tap', (q, m) => { let d = DIR.indexOf(m.d); m.moves.forEach(t => { d = (d + TURNS[t]) % 4; }); return DIR[d] === q.answer ? '' : 'direction'; });
+  set('turn-match', (q, m) => q.pairs.every(p => DIR[(DIR.indexOf(m.d) + TURNS[p[0].replace(/^a /, '')]) % 4] === p[1]) ? '' : 'pairs');
+  set('turn-tf', (q, m) => (DIR[(DIR.indexOf(m.d) + 1) % 4] === m.said) === q.answer ? '' : 'truth');
+  set('path-tap', (q, m) => go(m.x, m.y, m.acts) === q.answer ? '' : 'square');
+  set('path-which', (q, m) => { const ok = q.options.map((o, j) => go(m.x, m.y, readActs(o)) === m.to ? j : -1).filter(j => j >= 0); return ok.length === 1 && ok[0] === q.answer ? '' : 'directions'; });
+  set('path-tf', (q, m) => (go(m.x, m.y, m.acts) === m.said) === q.answer ? '' : 'truth');
+  /* ---- Length and area ---- */
+  const INMM = { mm: 1, cm: 10, m: 1000, km: 1000000 };
+  const toMM = t => { const m = H.strip(t).match(/^(\d+) (mm|cm|m|km)$/); return m ? +m[1] * INMM[m[2]] : NaN; };
+  const BEST = { 'an ant': 'mm', 'a grain of rice': 'mm', 'a pencil': 'cm', 'your hand': 'cm', 'a book': 'cm', 'a door': 'm', 'a classroom': 'm', 'a school bus': 'm', 'a bike ride to the next town': 'km', 'the drive from Toronto to Ottawa': 'km' };
+  const ABOUT = { 'a pencil': '19 cm', 'a door': '2 m', 'a paper clip': '3 cm', 'a car': '4 m', 'a ladybug': '7 mm', 'a walk around a big park': '2 km' };
+  const filled = svg => { const d = document.createElement('div'); d.innerHTML = svg; return [...d.querySelectorAll('rect')].filter(r => /color-mix/.test(r.getAttribute('style') || '')); };
+  const rowsCols = svg => { const f = filled(svg), ys = new Set(f.map(r => r.getAttribute('y'))); return [ys.size, f.length / ys.size]; };
+  const area = t => { const n = nums(t); return /a row of/.test(t) ? n[0] : n[0] * n[1]; };
+  set('conv-match', q => q.pairs.every(p => toMM(p[0]) === toMM(p[1])) && new Set(q.pairs.map(p => toMM(p[0]))).size === q.pairs.length ? '' : 'pairs');
+  set('conv-line', (q, m) => H.close(q.answer * 10, m.mm, 1e-9) ? '' : 'point');
+  set('conv-tf', (q, m) => (m.a * INMM[m.from] === m.said * INMM[m.to]) === q.answer ? '' : 'truth');
+  set('conv-order', q => { const v = q.items.map(toMM); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('unit-match', q => q.pairs.every(p => BEST[p[0]] === p[1]) ? '' : 'pairs');
+  set('unit-order', q => { const r = q.items.map(t => ['mm', 'cm', 'm', 'km'].indexOf(BEST[t])); return r.every((x, i) => !i || x > r[i - 1]) ? '' : 'order'; });
+  set('unit-pick', (q, m) => same(q.options.map((o, j) => BEST[o] === m.u ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('unit-tf', (q, m) => (ABOUT[m.thing] === m.n + ' ' + m.said) === q.answer ? '' : 'truth');
+  set('count-num', (q, m) => q.answer * m.u === m.L ? '' : 'count');
+  set('count-match', (q, m) => q.pairs.every(p => nums(p[0])[0] * nums(p[1])[0] === m.L) ? '' : 'pairs');
+  set('count-tf', (q, m) => (m.n * m.said === m.L) === q.answer ? '' : 'truth');
+  set('count-tf2', (q, m) => (m.said * m.u === m.L) === q.answer ? '' : 'truth');
+  set('per-fill', (q, m) => q.answers[0] === 2 * m.l && q.answers[1] === 2 * m.w && q.answers[2] === 2 * m.l + 2 * m.w && H.strip(q.fig).includes(m.l + ' cm') ? '' : 'perimeter');
+  set('per-num', (q, m) => q.answer === m.l + m.w + m.l + m.w ? '' : 'perimeter');
+  set('per-pick', (q, m) => same(q.options.map((o, j) => { const n = nums(o); return n[0] + n[1] + n[0] + n[1] === m.P ? j : -1; }).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('per-tf', (q, m) => (m.l + m.w + m.l + m.w === m.said) === q.answer ? '' : 'truth');
+  set('area-tap', (q, m) => { const hit = q.tiles.map((t, j) => filled(t).length === m.A ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'shape'; });
+  set('area-fill', q => { const rc = rowsCols(q.fig); return q.answers[0] === rc[0] && q.answers[1] === rc[1] && q.answers[2] === filled(q.fig).length ? '' : 'area'; });
+  set('area-num', (q, m) => q.answer === m.r * m.c ? '' : 'area');
+  set('area-tf', (q, m) => (filled(q.fig).length === m.said) === q.answer ? '' : 'truth');
+  set('gaps-tap', q => { const d = document.createElement('div'); d.innerHTML = q.tiles[q.answer]; return /no gaps or overlaps/.test(d.querySelector('svg').getAttribute('aria-label')) ? '' : 'tiles'; });
+  set('gaps-tf', (q, m) => ((m.mode === 'gap' ? 'too low' : 'too high') === m.said) === q.answer ? '' : 'truth');
+  set('gaps-pick', (q, m) => same(q.options.map((o, j) => area(o) === m.A ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('gaps-same', (q, m) => ((m.a === m.b) === m.saysSame) === q.answer ? '' : 'truth');
+  /* ---- Time, mass and capacity ---- */
+  /* reads the time from the hands of a clock picture */
+  const readClock = svg => { const d = document.createElement('div'); d.innerHTML = svg; const ang = c => { const l = d.querySelector(c), dx = +l.getAttribute('x2') - 150, dy = +l.getAttribute('y2') - 150; return (Math.atan2(dx, -dy) * 180 / Math.PI + 360) % 360; }; const m = Math.round(ang('.mh') / 6) % 60, h = Math.floor((ang('.hh') + 0.01) / 30) % 12 || 12; return h + ':' + String(m).padStart(2, '0'); };
+  /* turns "7:15", "half past 7", "quarter to 8", "10 minutes past 3" or "8 o'clock" into minutes after midnight */
+  const timeOf = t => { t = H.strip(t); let m; if ((m = t.match(/^(\d+):(\d\d)$/))) return +m[1] * 60 + +m[2]; if ((m = t.match(/^(\d+) o'clock$/))) return +m[1] * 60; if ((m = t.match(/^half past (\d+)$/))) return +m[1] * 60 + 30; if ((m = t.match(/^quarter past (\d+)$/))) return +m[1] * 60 + 15; if ((m = t.match(/^quarter to (\d+)$/))) return +m[1] * 60 - 15; if ((m = t.match(/^(\d+) minutes? past (\d+)$/))) return +m[2] * 60 + +m[1]; if ((m = t.match(/^(\d+) minutes? to (\d+)$/))) return +m[2] * 60 - +m[1]; return NaN; };
+  const sameTime = (a, b) => ((timeOf(a) - timeOf(b)) % 720 + 720) % 720 === 0;
+  const TAKES = { 'blink your eyes': 'seconds', 'tie your shoes': 'seconds', 'clap 5 times': 'seconds', 'brush your teeth': 'minutes', 'eat lunch': 'minutes', 'have recess': 'minutes', 'spend a school day': 'hours', 'sleep at night': 'hours', 'drive from Toronto to Montréal': 'hours' };
+  const secs = t => { const m = H.strip(t).match(/^(\d+) (seconds?|minutes?|hours?)$/); return m ? +m[1] * { s: 1, m: 60, h: 3600 }[m[2][0]] : NaN; };
+  const CUBES = { apple: 9, book: 23, shoe: 15, pencil: 2, orange: 11, mug: 18 };
+  const jugCups = svg => { const d = document.createElement('div'); d.innerHTML = svg; const w = [...d.querySelectorAll('rect')].find(r => /color-mix/.test(r.getAttribute('style') || '')); return Math.round(+w.getAttribute('height') / 240 * 8); };
+  set('clock-tap', (q, m) => { const want = m.h + ':' + String(m.m).padStart(2, '0'), hit = q.tiles.map((t, j) => readClock(t) === want ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer && bold(q) === want ? '' : 'clock'; });
+  set('clock-fill', q => readClock(q.fig) === q.answers[0] + ':' + String(q.answers[1]).padStart(2, '0') ? '' : 'time');
+  set('clock-tf', (q, m) => (readClock(q.fig) === m.said) === q.answer ? '' : 'truth');
+  set('time-match', q => q.pairs.every(p => sameTime(p[0], p[1])) ? '' : 'pairs');
+  set('time-tap', (q, m) => { const hit = q.tiles.map((t, j) => sameTime(readClock(t), m.said) ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'clock'; });
+  set('time-order', q => { const v = q.items.map(timeOf); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('time-tf', (q, m) => sameTime(m.w, m.said) === q.answer ? '' : 'truth');
+  set('tunit-match', q => q.pairs.every(p => TAKES[p[0]] === p[1]) ? '' : 'pairs');
+  set('tunit-pick', (q, m) => same(q.options.map((o, j) => TAKES[o] === m.u ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('tunit-tf', (q, m) => (m.a * secs('1 ' + m.big) === m.said * secs('1 ' + m.small)) === q.answer ? '' : 'truth');
+  set('tunit-order', q => { const v = q.items.map(secs); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('mass-tf', (q, m) => ((m.ask === 'heavier' ? CUBES[m.obj] > m.c : CUBES[m.obj] < m.c) === q.answer) ? '' : 'truth');
+  set('mass-num', (q, m) => m.a - m.b === q.answer ? '' : 'difference');
+  set('mass-order', q => { const v = q.items.map(n => CUBES[n]); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('mass-tf2', (q, m) => ((m.said === 'a' ? m.a > m.b : m.b > m.a) === q.answer) ? '' : 'truth');
+  set('cap-tap', (q, m) => { const hit = q.tiles.map((t, j) => jugCups(t) === m.f ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'jug'; });
+  set('cap-num', (q, m) => m.a - m.b === q.answer ? '' : 'difference');
+  set('cap-order', q => { const said = {}; H.strip(q.q).replace(/The (\w+) holds (\d+) cups/g, (_, n, c) => { said[n] = +c; }); const v = q.items.map(n => said[n]); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
+  set('cap-tf', (q, m) => (({ 'used cups that were only half full': 'too high', 'stopped pouring before the pot was full': 'too low', 'let water spill over the top': 'too high' })[m.how] === m.said) === q.answer ? '' : 'truth');
+  /* ---- Money ---- */
+  const COIN = { nickel: 5, dime: 10, quarter: 25, loonie: 100, toonie: 200 };
+  /* reads "2 quarters, 1 dime and 3 nickels" as cents */
+  const cents = t => (H.strip(t).match(/\d+ (nickel|dime|quarter|loonie|toonie)s?/g) || []).reduce((a, x) => { const [n, c] = x.split(' '); return a + +n * COIN[c.replace(/s$/, '')]; }, 0);
+  /* reads the coins drawn in a picture */
+  const drawn = svg => { const d = document.createElement('div'); d.innerHTML = svg; return [...d.querySelectorAll('g.coin')].reduce((a, g) => a + +g.getAttribute('class').match(/c(\d+)/)[1], 0); };
+  const fewest = c => { let n = 0; [25, 10, 5].forEach(v => { n += Math.floor(c / v); c %= v; }); return n; };
+  set('coin-tap', (q, m) => { const hit = q.tiles.map((t, j) => drawn(t) === m.t ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'coins'; });
+  set('coin-num', q => cents(q.q) === q.answer ? '' : 'total');
+  set('coin-match', q => q.pairs.every(p => cents(p[0]) === nums(p[1])[0]) ? '' : 'pairs');
+  set('coin-tf', (q, m) => (drawn(q.fig) === m.said) === q.answer ? '' : 'truth');
+  set('make-pick', (q, m) => same(q.options.map((o, j) => cents(o) === m.tg ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('make-fill', (q, m) => { const [a, b, c] = q.answers; return a * 25 + b * 10 + c * 5 === m.tg && a + b + c === fewest(m.tg) ? '' : 'coins'; });
+  set('make-mc', (q, m) => (cents(q.q) >= m.price ? 'yes' : 'no') === q.options[q.answer] ? '' : 'enough');
+  set('make-tf', (q, m) => (cents(m.said) === m.tg) === q.answer ? '' : 'truth');
+  set('cents-line', (q, m) => q.answer + m.p === 100 ? '' : 'change');
+  set('cents-match', q => q.pairs.every(p => nums(p[0])[0] + nums(p[1])[0] === 100) ? '' : 'pairs');
+  set('cents-fill', q => nums(q.fill)[0] + q.answers[0] === 100 ? '' : 'change');
+  set('cents-tf', (q, m) => (m.p + m.said === 100) === q.answer ? '' : 'truth');
+  set('dol-which', q => /^Subtract/.test(H.strip(q.options[q.answer])) ? '' : 'way');
+  set('dol-line', (q, m) => q.answer + m.p === m.b ? '' : 'change');
+  set('dol-match', (q, m) => q.pairs.every(p => nums(p[0])[0] + nums(p[1])[0] === m.b) ? '' : 'pairs');
+  set('dol-tf', (q, m) => (m.p + m.said === m.b) === q.answer ? '' : 'truth');
+  set('est-near', q => q.pairs.every(p => H.roundTo(nums(p[0])[0], 25) === nums(p[1])[0]) ? '' : 'pairs');
+  set('est-enough', (q, m) => (m.a + m.b <= m.have) === q.answer ? '' : 'truth');
+  set('est-change', (q, m) => 100 - H.roundTo(m.p, 25) === nums(q.options[q.answer])[0] ? '' : 'estimate');
+  set('est-tf2', (q, m) => (100 - H.roundTo(m.p, 25) === m.said) === q.answer ? '' : 'truth');
 })(window.__verify, window.__H);

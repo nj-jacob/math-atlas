@@ -51,7 +51,7 @@ Atlas.Q.shapes('numbers-1000', SHAPES);
 
 Each skill keeps its first way of asking as `plain`. Don't copy this loop into a grade: use the shared helper.
 
-`grade3/chapters/numbers-1000.js` is the worked example.
+`grade3/chapters/numbers-1000.js` is the worked example. Grade 1 still uses its own `G1.shapes` (in `grade1/assets/g1kit.js`) until it moves to the shared helper.
 
 Grade 6 wraps the same loop in one helper, `G6.shapes(CH, SHAPES)` in `grade6/assets/g6lessons.js`, called at the end of each chapter file. `G6.why(right, wrong)` builds the "why" choices for a `tf` question.
 

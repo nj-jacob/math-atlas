@@ -568,4 +568,225 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name;
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function cores(lv) { return lv === 1 ? ['AB', 'ABC'] : ['ABB', 'AAB', 'ABC', 'AABB', 'ABCD']; }
+    function coreText(core) { return core.split('').map(function (c) { return SH[c]; }).join(', '); }
+    function seq(st, b, n) { var v = []; for (var i = 0; i < n; i++) v.push(st + b * i); return v; }
+    function ruleOf(st, b) { return 'Start at ' + st + ', ' + (b > 0 ? 'add ' + b : 'take away ' + (-b)); }
+    /* an equation with one unknown n, written for a child */
+    function eqn(kind, n, k) { return kind === '+' ? 'n + ' + k + ' = ' + (n + k) : kind === '-' ? 'n &minus; ' + k + ' = ' + (n - k) : k + ' &times; n = ' + k * n; }
+    function ex(e) { return e[0] + ' ' + showOp(e[1]) + ' ' + e[2]; }
+    /* a single-step expression worth t, using + and &times; at level 1 and all four operations later */
+    function exprFor(t, lv) {
+      var forms = [];
+      for (var a = 1; a <= 10; a++) { if (a < t) forms.push([a, '+', t - a]); if (t % a === 0 && t / a <= 10 && a > 1) forms.push([a, 'x', t / a]); if (lv > 1) { forms.push([t + a, '-', a]); if (t * a <= 60 && a > 1) forms.push([t * a, '/', a]); } }
+      return R.pick(forms);
+    }
+    function codeText(c) { return c.r ? 'repeat ' + c.r + ' times [move ' + c.m + ']' : 'move ' + c.moves.join(', move '); }
+    function codeSteps(c) { return c.r ? c.r * c.m : c.moves.reduce(function (a, b) { return a + b; }, 0); }
+
+    var SHAPES = {
+      'pt-repeat': [
+        [1, 'order', function (lv) {
+          var core = R.pick(lv === 1 ? cores(1) : ['ABC', 'ABCD']), L = core.length, shown = L * 2 - R.int(0, L - 1), next = [];
+          for (var i = 0; i < L; i++) next.push(SH[core.charAt((shown + i) % L)]);
+          return { q: 'Tap the cards in order to show the next ' + L + ' shapes.', type: 'order', items: next, first: 'next', fig: row(core, shown, -1, false),
+            hint: 'Find the part that repeats. Where did the pattern stop?', steps: ['The core is ' + coreText(core) + '.', 'The pattern stopped after a ' + SH[core.charAt((shown - 1) % L)] + '.', 'Next: ' + next.join(', ') + '.'],
+            explain: 'Next come ' + next.join(', ') + '.', meta: { k: 'rep-order', core: core, from: shown } };
+        }],
+        [1, 'tf', function (lv) {
+          var core = R.pick(cores(lv)), L = core.length, p = R.int(L * 2 + 1, lv === 1 ? 12 : 20), real = SH[core.charAt((p - 1) % L)];
+          var truth = !R.int(0, 1), others = core.split('').map(function (c) { return SH[c]; }).filter(function (x) { return x !== real; }), sayd = truth ? real : R.pick(others);
+          var right = 'The core has ' + L + ' shapes. Shape ' + p + ' is shape ' + ((p - 1) % L + 1) + ' of a core: a ' + real + '.';
+          return { q: 'The pattern keeps going. True or false: shape number <b>' + p + '</b> is a <b>' + sayd + '</b>.', type: 'tf', answer: truth, fig: row(core, L * 2, -1, true),
+            why: why(right, ['The shape at ' + p + ' is always the first shape.', 'Patterns change after 10 shapes.', 'Count only the circles.']),
+            hint: 'Count by ' + L + 's to get close to ' + p + '.', steps: [right], explain: right, meta: { k: 'rep-tf', core: core, p: p, said: sayd } };
+        }],
+        [1, 'fill', function (lv) {
+          var core = R.pick(cores(lv)), L = core.length, total = L * (lv === 1 ? 3 : 4), per = core.split('').filter(function (c) { return c === 'A'; }).length;
+          return { q: 'Look at the pattern. Fill in the blanks.', type: 'fill', fig: row(core, L * 2, -1, true), fill: 'The core has [[]] shapes. In the first ' + total + ' shapes there are [[]] circles.', answers: [L, per * total / L],
+            hint: 'Find the part that repeats. How many circles are in one core?', steps: ['The core is ' + coreText(core) + ': ' + L + ' shapes.', 'One core has ' + per + ' circle' + (per > 1 ? 's' : '') + '.', total + ' shapes is ' + total / L + ' cores, so ' + per * total / L + ' circles.'],
+            explain: 'The core has ' + L + ' shapes, and there are ' + per * total / L + ' circles.', meta: { k: 'rep-fill', core: core, total: total } };
+        }],
+        [2, 'mistake', function (lv) {
+          var core = R.pick(['ABB', 'AAB', 'AABB', 'ABBC']), who = nm(), truth = !R.int(0, 2), sc = truth ? core : core.replace(/(.)\1/, '$1');
+          var right = 'The part that repeats is ' + coreText(core) + '.';
+          return { q: who + ' says the core of this pattern is <b>' + coreText(sc) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: row(core, core.length * 3, -1, false),
+            why: why(right, ['Every shape that shows up once is the core.', 'The core is always two shapes.', 'The core is the first three shapes.']),
+            hint: 'Find the smallest part that repeats over and over.', steps: [right], explain: right, meta: { k: 'rep-core', core: core, said: sc } };
+        }]
+      ],
+      'pt-grow': [
+        [1, 'fill', function (lv) {
+          var b = R.int(2, lv === 1 ? 5 : 10) * (lv === 1 ? 1 : R.pick([1, -1])), st = b > 0 ? R.int(1, 20) : R.int(60, 90), v = seq(st, b, 6), gaps = lv === 1 ? [3, 5] : [1, 4];
+          return { q: 'Find the missing numbers.', type: 'fill', fill: '<span class="math">' + v.map(function (x, i) { return gaps.indexOf(i) >= 0 ? '[[]]' : x; }).join(', ') + '</span>', answers: gaps.map(function (i) { return v[i]; }),
+            hint: 'How much does it change each time?', steps: ['The rule is: ' + ruleOf(st, b).toLowerCase() + '.', 'The full pattern is ' + v.join(', ') + '.'],
+            explain: v.join(', ') + '.', meta: { k: 'grow-fill' } };
+        }],
+        [1, 'line', function (lv) {
+          var b = R.pick(lv === 1 ? [2, 5, 10] : [3, 4, 5, 10]), st = R.int(0, 3) * b, j = R.int(3, 5), max = Math.ceil((st + b * 5) / 10) * 10;
+          return { q: ruleOf(st, b) + '. Put the marker on the <b>' + ['', '', '', 'third', 'fourth', 'fifth'][j] + '</b> number.', type: 'line', min: 0, max: max, tick: b, every: b * 2, snap: b, answer: st + b * (j - 1),
+            hint: 'The first number is ' + st + '. Each jump adds ' + b + '.', steps: ['The pattern is ' + seq(st, b, j).join(', ') + '.', 'The ' + ['', '', '', 'third', 'fourth', 'fifth'][j] + ' number is ' + (st + b * (j - 1)) + '.'],
+            explain: seq(st, b, j).join(', ') + '.', meta: { k: 'grow-line', st: st, b: b, j: j } };
+        }],
+        [1, 'which', function (lv) {
+          var b = R.int(2, lv === 1 ? 5 : 9) * (lv === 1 ? 1 : R.pick([1, -1])), st = b > 0 ? R.int(2, 20) : R.int(50, 90), v = seq(st, b, 4);
+          var o = R.mc(ruleOf(st, b), [ruleOf(st, b > 0 ? b + 1 : b - 1), ruleOf(st + b, b), ruleOf(st, -b)]);
+          return { q: 'Which rule makes this pattern? <span class="math">' + v.join(', ') + ', &hellip;</span>', type: 'mc', options: o.options, answer: o.answer,
+            hint: 'Look at the first number. Then find the change from one number to the next.', steps: ['The first number is ' + st + '.', 'Each number is ' + Math.abs(b) + (b > 0 ? ' more' : ' less') + ' than the one before.'],
+            explain: 'The rule is: ' + ruleOf(st, b).toLowerCase() + '.', meta: { k: 'grow-which', v: v } };
+        }],
+        [2, 'mistake', function (lv) {
+          var b = R.int(2, 10) * R.pick([1, -1]), st = b > 0 ? R.int(1, 30) : R.int(60, 90), v = seq(st, b, 4), who = nm(), truth = !R.int(0, 2), said = truth ? st + 4 * b : st + 4 * b + R.pick([1, -1]) * (Math.abs(b) > 2 ? 2 : 1);
+          var right = 'The pattern ' + (b > 0 ? 'adds ' : 'takes away ') + Math.abs(b) + ' each time. ' + v[3] + (b > 0 ? ' + ' : ' &minus; ') + Math.abs(b) + ' = ' + (st + 4 * b) + '.';
+          return { q: who + ' says the next number in <span class="math">' + v.join(', ') + '</span> is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Add the first two numbers to get the next one.', 'Patterns always go up by 1 at the end.', 'The next number is the same as the first.']),
+            hint: 'Find the change from one number to the next.', steps: [right], explain: right, meta: { k: 'grow-tf', v: v, said: said } };
+        }]
+      ],
+      'pt-var': [
+        [1, 'match', function (lv) {
+          var kinds = lv === 1 ? ['+'] : ['+', '-', 'x'], pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var kd = R.pick(kinds), k = kd === 'x' ? R.pick([2, 5, 10]) : R.int(2, 9), n = R.int(kd === '-' ? k + 1 : 2, kd === 'x' ? 10 : 20);
+            if (seen[n]) continue; seen[n] = 1;
+            pairs.push(['<span class="math">' + eqn(kd, n, k) + '</span>', 'n = ' + n]);
+          }
+          return { q: 'Match each equation to its value of n.', type: 'match', pairs: pairs,
+            hint: 'Try each value in place of n. Does the equation work?', steps: ['For n + 4 = 9, ask: what plus 4 makes 9? It is 5.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'var-match' } };
+        }],
+        [1, 'tf', function (lv) {
+          var kd = lv === 1 ? '+' : R.pick(['+', '-', 'x']), k = kd === 'x' ? R.pick([2, 5, 10]) : R.int(2, 12), n = R.int(kd === '-' ? k + 1 : 2, kd === 'x' ? 10 : 25), truth = !R.int(0, 1), sn = truth ? n : n + R.pick([1, 2, -1]);
+          var right = 'Put ' + sn + ' in for n. ' + (truth ? 'Both sides match, so n = ' + n + '.' : 'The sides do not match. The right value is n = ' + n + '.');
+          return { q: 'True or false: <b>n = ' + sn + '</b> makes <span class="math">' + eqn(kd, n, k) + '</span> true.', type: 'tf', answer: truth,
+            why: why(right, ['n is always the biggest number.', 'n is always 1.', 'You cannot check what n is.']),
+            hint: 'Put ' + sn + ' in place of n and work it out.', steps: [right, 'n = ' + n + '.'], explain: 'n = ' + n + '.', meta: { k: 'var-tf', eq: eqn(kd, n, k), n: sn } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), k = R.int(3, 9), n = R.int(4, lv === 1 ? 12 : 30);
+          return { q: who + ' has some stickers. ' + who + ' gets ' + k + ' more and now has ' + (n + k) + '. So <span class="math">n + ' + k + ' = ' + (n + k) + '</span>. How many stickers did ' + who + ' have at first?', type: 'num', answer: n,
+            hint: 'n is the number at first. What plus ' + k + ' makes ' + (n + k) + '?', steps: [(n + k) + ' &minus; ' + k + ' = ' + n + '.', 'Check: ' + n + ' + ' + k + ' = ' + (n + k) + '.'],
+            explain: 'n = ' + n + '. ' + who + ' had ' + n + ' stickers.', meta: { k: 'var-num', eq: 'n + ' + k + ' = ' + (n + k) } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.int(3, 9), n = R.int(5, 20), who = nm(), truth = !R.int(0, 2), sn = truth ? n : n + 2 * k;
+          var right = 'n + ' + k + ' = ' + (n + k) + ', so n = ' + (n + k) + ' &minus; ' + k + ' = ' + n + '.';
+          return { q: who + ' says n = <b>' + sn + '</b> in <span class="math">n + ' + k + ' = ' + (n + k) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Add ' + k + ' and ' + (n + k) + ' to find n.', 'n is the number after the equal sign.', 'n is the same as ' + k + '.']),
+            hint: 'Check by putting the number in for n.', steps: [right], explain: right, meta: { k: 'var-tf', eq: 'n + ' + k + ' = ' + (n + k), n: sn } };
+        }]
+      ],
+      'pt-table': [
+        [1, 'fill', function (lv) {
+          var op = lv === 1 ? '+' : R.pick(['+', 'x', '-']), k = op === 'x' ? R.pick([2, 5, 10]) : op === '-' ? R.int(1, 3) : R.int(2, 9), ins = R.shuffle([4, 5, 6, 7, 8, 9]).slice(0, 2).sort(function (a, b) { return a - b; });
+          return { q: 'The rule is <span class="math">' + ruleText(op, k) + '</span>. Fill in the outputs.', type: 'fill', fill: 'n = ' + ins[0] + ' &rarr; [[]]<br>n = ' + ins[1] + ' &rarr; [[]]', answers: ins.map(function (v) { return ruleOut(op, k, v); }), fig: machine(op, k, ins[0], true),
+            hint: 'Put each number in place of n.', steps: ins.map(function (v) { return ruleText(op, k).replace('n', v) + ' = ' + ruleOut(op, k, v) + '.'; }),
+            explain: ins.map(function (v) { return ruleText(op, k).replace('n', v) + ' = ' + ruleOut(op, k, v); }).join('. ') + '.', meta: { k: 'tbl-fill', op: op, k2: k, ins: ins } };
+        }],
+        [1, 'match', function (lv) {
+          var op = lv === 1 ? '+' : R.pick(['+', 'x']), k = op === 'x' ? R.pick([2, 5, 10]) : R.int(2, 9), ins = R.shuffle([2, 3, 4, 5, 6, 7, 8]).slice(0, 3);
+          var pairs = ins.map(function (v) { return ['n = ' + v, String(ruleOut(op, k, v))]; });
+          return { q: 'The rule is <span class="math">' + ruleText(op, k) + '</span>. Match each input to its output.', type: 'match', pairs: pairs,
+            hint: 'Put each number in place of n.', steps: ['For n = ' + ins[0] + ': ' + ruleText(op, k).replace('n', ins[0]) + ' = ' + ruleOut(op, k, ins[0]) + '.'],
+            explain: pairs.map(function (p) { return p[0] + ' gives ' + p[1]; }).join('. ') + '.', meta: { k: 'tbl-match', op: op, k2: k } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.int(3, 9), v = R.int(3, 9), who = nm(), truth = !R.int(0, 2), said = truth ? v + k : v * k;
+          var right = 'The rule adds ' + k + '. ' + v + ' + ' + k + ' = ' + (v + k) + '.';
+          return { q: 'The rule is <span class="math">n + ' + k + '</span>. ' + who + ' says the output for n = ' + v + ' is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['n + ' + k + ' means ' + k + ' groups of n.', 'The output is always bigger than 20.', 'The input and the output are always the same.']),
+            hint: 'Put ' + v + ' in place of n.', steps: [right], explain: right, meta: { k: 'tbl-tf', op: '+', k2: k, v: v, said: said } };
+        }]
+      ],
+      'pt-equal': [
+        [1, 'pick', function (lv) {
+          var t = R.pick([10, 12, 15, 20, 24]), opts = [], seen = {};
+          while (opts.length < 5) {
+            var good = opts.length < 2, e = exprFor(good ? t : t + R.pick([-2, -1, 1, 2]), lv), s = ex(e);
+            if (seen[s]) continue; seen[s] = 1; opts.push(s);
+          }
+          opts = R.shuffle(opts);
+          var ans = []; opts.forEach(function (o, j) { if (evalE.apply(null, parse(o)) === t) ans.push(j); });
+          return { q: 'Pick every one that is equal to <b>' + t + '</b>.', type: 'pick', options: opts, answer: ans,
+            hint: 'Work out each one. Keep the ones that make ' + t + '.', steps: ['More than one can be right.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' are equal to ' + t + '.', meta: { k: 'peq-pick', t: t } };
+        }],
+        [1, 'match', function (lv) {
+          var ts = R.shuffle([8, 10, 12, 15, 16, 18, 20, 24]).slice(0, 3), pairs = ts.map(function (t) { var a = exprFor(t, lv), b; do { b = exprFor(t, lv); } while (ex(a) === ex(b)); return [ex(a), ex(b)]; });
+          return { q: 'Match the two sides that are equal.', type: 'match', pairs: pairs,
+            hint: 'Work out each card. Equal cards have the same value.', steps: ['Find the value of each card, then pair the same values.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'peq-match' } };
+        }],
+        [1, 'fill', function (lv) {
+          var t = R.pick([10, 12, 15, 20]), l = exprFor(t, lv), b = R.int(1, t - 1);
+          return { q: 'Fill in the missing number so both sides are equal.', type: 'fill', fill: '<span class="math">' + ex(l) + ' = [[]] + ' + b + '</span>', answers: [t - b],
+            hint: 'Work out ' + ex(l) + ' first.', steps: [ex(l) + ' = ' + t + '.', '? + ' + b + ' = ' + t + ', so the missing number is ' + (t - b) + '.'],
+            explain: ex(l) + ' = ' + (t - b) + ' + ' + b + '. Both sides are ' + t + '.', meta: { k: 'peq-fill' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var a = R.int(3, 9), b = R.int(3, 9), c = R.int(1, Math.min(a, b) - 1), who = nm(), truth = !R.int(0, 2);
+          var r = truth ? (a + b - c) + ' + ' + c : (a + b) + ' + ' + c, rv = truth ? a + b : a + b + c;
+          var right = 'The equal sign means both sides have the same value. The left side is ' + (a + b) + '. The right side is ' + rv + '.';
+          return { q: who + ' writes <span class="math">' + a + ' + ' + b + ' = ' + r + '</span> and says it is true. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['The equal sign means "write the answer next".', 'It is true because ' + (a + b) + ' is right after the equal sign.', 'Both sides have a plus sign, so they are equal.']),
+            hint: 'Work out each side on its own.', steps: [right], explain: right, meta: { k: 'peq-tf', l: a + ' + ' + b, r: r } };
+        }]
+      ],
+      'pt-code': [
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var c = lv === 1 || !R.int(0, 1) ? { moves: [R.int(1, 5), R.int(1, 5)] } : { r: R.int(2, 4), m: R.int(2, 5) }, n = codeSteps(c);
+            if (seen[n]) continue; seen[n] = 1;
+            pairs.push([codeText(c), n + ' steps']);
+          }
+          return { q: 'Match each code to the number of steps the robot moves.', type: 'match', pairs: pairs,
+            hint: 'Add the moves. A loop repeats its moves.', steps: ['move 2, move 3 is 5 steps. repeat 3 times [move 2] is 6 steps.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'code-match' } };
+        }],
+        [1, 'fill', function (lv) {
+          var r = R.int(2, lv === 1 ? 3 : 5), m = R.int(2, 6), long = [];
+          for (var i = 0; i < r; i++) long.push(m);
+          return { q: 'Write this code as a loop: <b>' + codeText({ moves: long }) + '</b>.', type: 'fill', fill: 'repeat [[]] times [move [[]]]', answers: [r, m],
+            hint: 'How many times does the same move happen?', steps: ['The move is move ' + m + '.', 'It happens ' + r + ' times.'],
+            explain: 'repeat ' + r + ' times [move ' + m + '].', meta: { k: 'code-fill', moves: long } };
+        }],
+        [1, 'tf', function (lv) {
+          var c = lv === 1 ? { moves: [R.int(1, 5), R.int(1, 5), R.int(1, 5)] } : { r: R.int(2, 5), m: R.int(2, 5) }, n = codeSteps(c), who = nm(), truth = !R.int(0, 1);
+          var said = truth ? n : c.r && c.r + c.m !== n ? c.r + c.m : n + R.pick([1, -1]);
+          var right = c.r ? 'The loop runs ' + c.r + ' times and moves ' + c.m + ' each time: ' + c.r + ' &times; ' + c.m + ' = ' + n + '.' : 'Add the moves: ' + c.moves.join(' + ') + ' = ' + n + '.';
+          return { q: 'Code: <b>' + codeText(c) + '</b>. ' + who + ' says the robot moves <b>' + said + '</b> steps. True or false: ' + who + ' is right.', type: 'tf', answer: said === n,
+            why: why(right, ['Count only the first move.', 'A loop runs only once.', 'Add the number of repeats to the move.']),
+            hint: c.r ? 'The moves inside the loop happen ' + c.r + ' times.' : 'The moves happen one after another.', steps: [right], explain: right, meta: { k: 'code-tf', said: said } };
+        }],
+        [2, 'which', function (lv) {
+          var t = R.pick([6, 8, 10, 12, 15]), fs = [], seen = {};
+          for (var r = 2; r <= 5; r++) if (t % r === 0) fs.push({ r: r, m: t / r });
+          var right = R.pick(fs), wrong = [{ r: right.r, m: right.m + 1 }, { r: right.r + 1, m: right.m }, { moves: [right.r, right.m] }].filter(function (c) { return codeSteps(c) !== t; });
+          var o = R.mc(codeText(right), wrong.map(codeText));
+          return { q: 'Which code moves the robot exactly <b>' + t + '</b> steps?', type: 'mc', options: o.options, answer: o.answer,
+            hint: 'Work out the steps for each code. A loop multiplies.', steps: [codeText(right) + ' moves ' + right.r + ' &times; ' + right.m + ' = ' + t + ' steps.'],
+            explain: codeText(right) + ' moves ' + t + ' steps.', meta: { k: 'code-which', t: t } };
+        }]
+      ]
+    };
+    /* reads "12 &times; 3" or "12 × 3" back into [a, op, b] */
+    function parse(s) { var t = s.replace(/<[^>]+>/g, '').replace('&times;', 'x').replace('&divide;', '/').replace('&minus;', '-').split(' '); return [+t[0], t[1], +t[2]]; }
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();
