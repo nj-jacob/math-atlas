@@ -274,4 +274,31 @@
   set('cap-num', (q, m) => m.a - m.b === q.answer ? '' : 'difference');
   set('cap-order', q => { const said = {}; H.strip(q.q).replace(/The (\w+) holds (\d+) cups/g, (_, n, c) => { said[n] = +c; }); const v = q.items.map(n => said[n]); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
   set('cap-tf', (q, m) => (({ 'used cups that were only half full': 'too high', 'stopped pouring before the pot was full': 'too low', 'let water spill over the top': 'too high' })[m.how] === m.said) === q.answer ? '' : 'truth');
+  /* ---- Money ---- */
+  const COIN = { nickel: 5, dime: 10, quarter: 25, loonie: 100, toonie: 200 };
+  /* reads "2 quarters, 1 dime and 3 nickels" as cents */
+  const cents = t => (H.strip(t).match(/\d+ (nickel|dime|quarter|loonie|toonie)s?/g) || []).reduce((a, x) => { const [n, c] = x.split(' '); return a + +n * COIN[c.replace(/s$/, '')]; }, 0);
+  /* reads the coins drawn in a picture */
+  const drawn = svg => { const d = document.createElement('div'); d.innerHTML = svg; return [...d.querySelectorAll('g.coin')].reduce((a, g) => a + +g.getAttribute('class').match(/c(\d+)/)[1], 0); };
+  const fewest = c => { let n = 0; [25, 10, 5].forEach(v => { n += Math.floor(c / v); c %= v; }); return n; };
+  set('coin-tap', (q, m) => { const hit = q.tiles.map((t, j) => drawn(t) === m.t ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'coins'; });
+  set('coin-num', q => cents(q.q) === q.answer ? '' : 'total');
+  set('coin-match', q => q.pairs.every(p => cents(p[0]) === nums(p[1])[0]) ? '' : 'pairs');
+  set('coin-tf', (q, m) => (drawn(q.fig) === m.said) === q.answer ? '' : 'truth');
+  set('make-pick', (q, m) => same(q.options.map((o, j) => cents(o) === m.tg ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('make-fill', (q, m) => { const [a, b, c] = q.answers; return a * 25 + b * 10 + c * 5 === m.tg && a + b + c === fewest(m.tg) ? '' : 'coins'; });
+  set('make-mc', (q, m) => (cents(q.q) >= m.price ? 'yes' : 'no') === q.options[q.answer] ? '' : 'enough');
+  set('make-tf', (q, m) => (cents(m.said) === m.tg) === q.answer ? '' : 'truth');
+  set('cents-line', (q, m) => q.answer + m.p === 100 ? '' : 'change');
+  set('cents-match', q => q.pairs.every(p => nums(p[0])[0] + nums(p[1])[0] === 100) ? '' : 'pairs');
+  set('cents-fill', q => nums(q.fill)[0] + q.answers[0] === 100 ? '' : 'change');
+  set('cents-tf', (q, m) => (m.p + m.said === 100) === q.answer ? '' : 'truth');
+  set('dol-which', q => /^Subtract/.test(H.strip(q.options[q.answer])) ? '' : 'way');
+  set('dol-line', (q, m) => q.answer + m.p === m.b ? '' : 'change');
+  set('dol-match', (q, m) => q.pairs.every(p => nums(p[0])[0] + nums(p[1])[0] === m.b) ? '' : 'pairs');
+  set('dol-tf', (q, m) => (m.p + m.said === m.b) === q.answer ? '' : 'truth');
+  set('est-near', q => q.pairs.every(p => H.roundTo(nums(p[0])[0], 25) === nums(p[1])[0]) ? '' : 'pairs');
+  set('est-enough', (q, m) => (m.a + m.b <= m.have) === q.answer ? '' : 'truth');
+  set('est-change', (q, m) => 100 - H.roundTo(m.p, 25) === nums(q.options[q.answer])[0] ? '' : 'estimate');
+  set('est-tf2', (q, m) => (100 - H.roundTo(m.p, 25) === m.said) === q.answer ? '' : 'truth');
 })(window.__verify, window.__H);
