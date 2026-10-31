@@ -527,4 +527,192 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name;
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function dens(lv) { return lv === 1 ? [2, 4] : [2, 3, 4, 5, 6, 8, 10]; }
+    function pic(n, d) { return d <= 5 || R.int(0, 1) ? bar(n, d, 360) : rectGrid(n, d); }
+    /* a number line in d-sized steps; only the whole numbers are labelled */
+    function frLine(d, max, ans) {
+      return { type: 'line', min: 0, max: max, tick: 1 / d, every: 1, snap: 1 / d, answer: ans, tol: 0.4 / d, hideValue: true,
+        label: function (v) { var k = Math.round(v * d); return k % d === 0 ? String(k / d) : k + '/' + d; } };
+    }
+    function put(o, extra) { for (var key in extra) o[key] = extra[key]; return o; }
+    var EQ = [[1, 2, 2, 4], [1, 2, 4, 8], [1, 4, 2, 8], [3, 4, 6, 8], [1, 3, 2, 6], [2, 3, 4, 6], [1, 5, 2, 10], [2, 5, 4, 10], [1, 2, 3, 6], [1, 2, 5, 10]];
+
+    var SHAPES = {
+      'fr-name': [
+        [1, 'tap', function (lv) {
+          var d = R.pick(dens(lv)), n = R.int(1, d - 1), set = [[n, d]], cand = R.shuffle([[d - n, d], [n, d + 1], [n + 1, d], [n - 1, d]]);
+          cand.forEach(function (p) { if (set.length < 3 && p[0] >= 1 && p[0] < p[1] && !set.some(function (s) { return s[0] === p[0] && s[1] === p[1]; })) set.push(p); });
+          set = R.shuffle(set);
+          var i = 0; set.forEach(function (p, j) { if (p[0] === n && p[1] === d) i = j; });
+          return { q: 'Tap the picture that shows ' + fr(n, d) + ' shaded.', type: 'tap', tiles: set.map(function (p) { return bar(p[0], p[1], 300); }), answer: i, answerText: 'the bar with ' + n + ' of ' + d + ' parts shaded',
+            hint: 'Look for ' + d + ' equal parts in all, with ' + n + ' shaded.', steps: ['The bottom number, ' + d + ', is the number of equal parts.', 'The top number, ' + n + ', is the number shaded.'],
+            explain: fr(n, d) + ' means ' + n + ' of ' + d + ' equal parts.', meta: { k: 'frn-tap', n: n, d: d } };
+        }],
+        [1, 'fill', function (lv) {
+          var d = R.pick(dens(lv)), n = R.int(1, d - 1);
+          return { q: 'Look at the picture. Fill in the blanks.', type: 'fill', fig: pic(n, d), fill: '[[]] of [[]] equal parts are shaded.', answers: [n, d],
+            hint: 'Count all the parts first. Then count the shaded ones.', steps: ['There are ' + d + ' equal parts.', n + ' are shaded, so the fraction is ' + fr(n, d) + '.'],
+            explain: n + ' of ' + d + ' equal parts are shaded: ' + fr(n, d) + '.', meta: { k: 'frn-fill' } };
+        }],
+        [1, 'line', function (lv) {
+          var d = R.pick(dens(lv)), n = R.int(1, d - 1);
+          return put({ q: 'Put ' + fr(n, d) + ' on the number line.', place: n + '/' + d,
+            hint: 'Split the space from 0 to 1 into ' + d + ' equal jumps. Count ' + n + ' of them.', steps: ['Each small jump is ' + fr(1, d) + '.', 'Count ' + n + ' jump' + (n > 1 ? 's' : '') + ' from 0.'],
+            explain: fr(n, d) + ' is ' + n + ' jump' + (n > 1 ? 's' : '') + ' of ' + fr(1, d) + ' from 0.', meta: { k: 'frn-line', n: n, d: d } }, frLine(d, 1, n / d));
+        }],
+        [2, 'mistake', function (lv) {
+          var d = R.pick([3, 4, 5, 6, 8]), n = R.int(1, d - 2), who = nm(), truth = !R.int(0, 2), sn = n, sd = truth ? d : d - n;
+          var right = 'There are ' + d + ' equal parts in all, and ' + n + ' are shaded. So ' + fr(n, d) + ' is shaded.';
+          return { q: who + ' says ' + fr(sn, sd) + ' of this bar is shaded. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: bar(n, d, 360),
+            why: why(right, ['The bottom number counts the parts that are not shaded.', 'The bottom number is the biggest number you see.', 'Count only the shaded parts for both numbers.']),
+            hint: 'The bottom number counts all the equal parts.', steps: [right], explain: right, meta: { k: 'frn-tf', sn: sn, sd: sd } };
+        }]
+      ],
+      'fr-share': [
+        [1, 'fill', function (lv) {
+          var k = lv === 1 ? 2 : R.pick([2, 3, 4]), items;
+          do { items = R.int(k + 1, lv === 1 ? 9 : 14); } while (items % k === 0);
+          var w = Math.floor(items / k), l = items - w * k;
+          return { q: 'Share ' + items + ' granola bars equally among ' + k + ' people. Fill in the blanks.', type: 'fill', fill: 'Each person gets [[]] whole bar' + (w === 1 ? '' : 's') + ' and [[]] piece' + (l === 1 ? '' : 's') + ' of ' + fr(1, k) + '.', answers: [w, l],
+            hint: 'Hand out whole bars first. Then cut the leftovers into ' + MANY[k] + '.', steps: [k + ' &times; ' + w + ' = ' + w * k + '. Each person gets ' + w + ' whole.', l + ' bar' + (l > 1 ? 's are' : ' is') + ' left. Each is cut into ' + MANY[k] + ', so each person gets ' + l + ' piece' + (l > 1 ? 's' : '') + '.'],
+            explain: 'Each person gets ' + mixed(w, l, k) + '.', meta: { k: 'frs-fill', items: items, k2: k } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), k = lv === 1 ? 2 : R.pick([2, 3, 4]), items;
+          do { items = R.int(k + 1, lv === 1 ? 7 : 11); } while (items % k === 0);
+          var w = Math.floor(items / k), l = items - w * k, right = mixed(w, l, k);
+          var wrong = [mixed(w + 1, 0, k), mixed(w, 0, k), mixed(0, l, k), mixed(w, 1, k === 2 ? 3 : k + 1)].filter(function (x) { return x !== right; });
+          var c = R.pick([['pizzas', 'pizza'], ['sandwiches', 'sandwich'], ['pancakes', 'pancake']]), o = R.mc(right, wrong);
+          return { q: who + ' shares ' + items + ' ' + c[0] + ' equally with ' + (k - 1) + ' friend' + (k > 2 ? 's' : '') + '. That is ' + k + ' people in all. How much does each person get?', type: 'mc', options: o.options, answer: o.answer,
+            hint: 'Hand out whole ' + c[0] + ' first. Then cut what is left.', steps: ['Each person gets ' + w + ' whole ' + (w === 1 ? c[1] : c[0]) + '.', l + ' left over, cut into ' + MANY[k] + '.', 'Each gets ' + right + '.'],
+            explain: 'Each person gets ' + right + ' ' + c[0] + '.', meta: { k: 'frs-mc', items: items, k2: k } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var k = lv === 1 ? 2 : R.pick([2, 3, 4]), items = R.int(k + 1, 4 * k + 1), w = Math.floor(items / k), l = items % k;
+            if (!l || seen[items / k]) continue; seen[items / k] = 1;
+            pairs.push([items + ' bars among ' + k, mixed(w, l, k)]);
+          }
+          return { q: 'Match each fair share to how much one person gets.', type: 'match', pairs: pairs,
+            hint: 'Hand out whole bars first. Then share the leftovers.', steps: ['5 bars among 2: each gets 2 wholes, and 1 bar is cut in half.'],
+            explain: 'Whole bars first, then the leftover pieces.', meta: { k: 'frs-match' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.pick([2, 3, 4]), items;
+          do { items = R.int(k + 1, 13); } while (items % k === 0);
+          var w = Math.floor(items / k), l = items - w * k, who = nm(), kind = R.int(0, 2), sw = kind === 1 ? 0 : w, sl = kind === 2 ? 0 : l;
+          var right = 'Each person gets ' + w + ' whole bar' + (w > 1 ? 's' : '') + ' and ' + said(l, k) + '. That is ' + mixed(w, l, k) + '.';
+          return { q: items + ' bars are shared among ' + k + ' people. ' + who + ' says each person gets <b>' + mixed(sw, sl, k) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: kind === 0,
+            why: why(right, ['The leftover bars can be thrown away.', 'Only the leftover pieces count.', 'Each person gets one bar.']),
+            hint: 'Hand out wholes first, then share the leftovers.', steps: [right], explain: right, meta: { k: 'frs-tf', items: items, k2: k, w: sw, l: sl } };
+        }]
+      ],
+      'fr-unit': [
+        [1, 'line', function (lv) {
+          var d = lv === 1 ? R.pick([2, 3, 4]) : R.pick([2, 3, 4, 5, 6, 8]), n = lv === 3 ? R.int(d + 1, 2 * d - 1) : R.int(2, d), max = n > d ? 2 : 1;
+          return put({ q: 'Start at 0. Jump ' + fr(1, d) + ' at a time, <b>' + n + ' times</b>. Where do you land? Put the marker there.',
+            hint: 'Each small jump is ' + fr(1, d) + '. ' + d + ' jumps make 1 whole.', steps: ['Count the jumps: ' + n + '.', n + ' ' + MANY[d] + ' is ' + fr(n, d) + '.'],
+            explain: n + ' jumps of ' + fr(1, d) + ' land on ' + fr(n, d) + '.', meta: { k: 'fru-line', n: n, d: d } }, frLine(d, max, n / d));
+        }],
+        [1, 'fill', function (lv) {
+          var d = R.pick(lv === 1 ? [2, 3, 4] : [3, 4, 5, 6, 8, 10]), n = R.int(2, Math.min(d, lv === 1 ? 4 : 6)), parts = [];
+          for (var i = 0; i < n; i++) parts.push(fr(1, d));
+          return { q: 'Count the pieces. Fill in the blank.', type: 'fill', fill: '<span class="math">' + parts.join(' + ') + '</span> = [[]] ' + MANY[d], answers: [n],
+            hint: 'Every piece is one ' + ONE[d] + '. Count them.', steps: ['There are ' + n + ' pieces of ' + fr(1, d) + '.', 'So it is ' + n + ' ' + MANY[d] + ', or ' + fr(n, d) + '.'],
+            explain: parts.join(' + ') + ' = ' + fr(n, d) + '.', meta: { k: 'fru-fill', d: d } };
+        }],
+        [1, 'order', function (lv) {
+          var d = R.pick(lv === 1 ? [4, 5, 6] : [5, 6, 8, 10]), ns = R.shuffle(Array.apply(null, Array(d)).map(function (_, i) { return i + 1; })).slice(0, lv === 1 ? 3 : 4).sort(function (a, b) { return a - b; });
+          return { q: 'Put these in order from <b>least to greatest</b>.', type: 'order', items: ns.map(function (n) { return fr(n, d); }), first: 'least', last: 'greatest',
+            hint: 'They are all ' + MANY[d] + '. Fewer pieces is less.', steps: ['Same bottom number means same-size pieces.', 'Compare the top numbers.'],
+            explain: ns.map(function (n) { return fr(n, d); }).join(', ') + '.', meta: { k: 'fru-order' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var d = R.pick([3, 4, 5, 6]), n = R.int(2, Math.min(4, d)), parts = [], who = nm(), truth = !R.int(0, 2), sd = truth ? d : d * n;
+          for (var i = 0; i < n; i++) parts.push(fr(1, d));
+          var right = 'The pieces stay the same size. ' + n + ' pieces of ' + fr(1, d) + ' make ' + fr(n, d) + '.';
+          return { q: who + ' says <span class="math">' + parts.join(' + ') + ' = ' + fr(n, sd) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Add the top numbers and add the bottom numbers.', 'More pieces make each piece smaller.', 'The answer is always ' + fr(1, d) + '.']),
+            hint: 'Count the pieces. Does the size of each piece change?', steps: [right], explain: right, meta: { k: 'fru-tf', n: n, d: d, sd: sd } };
+        }]
+      ],
+      'fr-equiv': [
+        [1, 'tap', function (lv) {
+          var e = R.pick(lv === 1 ? EQ.slice(0, 4) : EQ), n = e[0], a = e[1], m = e[2], b = e[3];
+          var set = R.shuffle([[m, b], [m + 1 < b ? m + 1 : m - 1, b], [n, b]].filter(function (p, i, all) { return p[0] >= 1 && all.findIndex(function (q) { return q[0] === p[0]; }) === i; }));
+          var ans = set.findIndex(function (p) { return p[0] === m; });
+          return { q: 'Tap the bar that shows the same amount as ' + fr(n, a) + '.', type: 'tap', fig: bar(n, a, 300), tiles: set.map(function (p) { return bar(p[0], p[1], 300); }), answer: ans, answerText: 'the bar with ' + m + ' of ' + b + ' shaded',
+            hint: 'Look for the shading that ends in the same place.', steps: ['The top bar shows ' + fr(n, a) + '.', 'Find the bar whose shading lines up with it: ' + fr(m, b) + '.'],
+            explain: fr(n, a) + ' = ' + fr(m, b) + '.', meta: { k: 'fre-tap', n: n, a: a } };
+        }],
+        [1, 'tf', function (lv) {
+          var e = R.pick(lv === 1 ? EQ.slice(0, 4) : EQ), n = e[0], a = e[1], m = e[2], b = e[3], truth = !R.int(0, 1), sm = truth ? m : (m + 1 < b ? m + 1 : m - 1);
+          var right = truth ? 'The shading lines up, so ' + fr(n, a) + ' = ' + fr(m, b) + '.' : 'The shading does not line up. ' + fr(n, a) + ' = ' + fr(m, b) + ', not ' + fr(sm, b) + '.';
+          return { q: 'True or false: ' + fr(n, a) + ' = ' + fr(sm, b), type: 'tf', answer: truth, fig: bar(n, a, 360) + '<div style="height:.4em"></div>' + bar(sm, b, 360),
+            why: why(right, ['Fractions with different bottom numbers are never equal.', 'The bigger bottom number is always more.', 'They are equal if the top numbers add up to 3.']),
+            hint: 'Compare where the shading ends on the two bars.', steps: [right], explain: right, meta: { k: 'fre-tf', n: n, a: a, m: sm, b: b } };
+        }],
+        [1, 'match', function (lv) {
+          var pool = R.shuffle(lv === 1 ? EQ.slice(0, 4) : EQ), pairs = [], seen = {};
+          pool.forEach(function (e) { var v = e[0] / e[1]; if (pairs.length < 3 && !seen[v]) { seen[v] = 1; pairs.push([fr(e[0], e[1]), fr(e[2], e[3])]); } });
+          return { q: 'Match each fraction to the one that is equal to it.', type: 'match', pairs: pairs,
+            hint: 'Picture each fraction as a bar. Equal fractions shade the same length.', steps: ['One half is the same as 2 fourths, 4 eighths and 5 tenths.'],
+            explain: 'Equal fractions name the same amount.', meta: { k: 'fre-match' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var e = R.pick(EQ), n = e[0], a = e[1], m = e[2], b = e[3], who = nm(), truth = !R.int(0, 2), sm = truth ? m : n;
+          var right = 'Each ' + ONE[a] + ' is ' + b / a + ' ' + MANY[b] + ', so ' + fr(n, a) + ' = ' + fr(m, b) + '.';
+          return { q: who + ' says ' + fr(n, a) + ' = ' + fr(sm, b) + '. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['The top number stays the same when the pieces get smaller.', 'Bigger bottom numbers mean bigger pieces.', 'You can never change the name of a fraction.']),
+            hint: 'Smaller pieces means you need more of them.', steps: [right], explain: right, meta: { k: 'fre-tf', n: n, a: a, m: sm, b: b } };
+        }]
+      ],
+      'fr-groups': [
+        [1, 'story', function (lv) {
+          var who = nm(), d = lv === 1 ? 2 : R.pick([2, 3, 4]), w = R.int(1, 5), n = w * d;
+          var c = R.pick([['sandwiches', 'sandwich'], ['oranges', 'orange'], ['pizzas', 'pizza']]);
+          return { q: who + ' has ' + n + ' ' + MANY[d] + ' of ' + c[0] + '. How many whole ' + c[0] + ' is that?', type: 'num', answer: w,
+            hint: d + ' ' + MANY[d] + ' make 1 whole ' + c[1] + '.', steps: ['Count by ' + d + 's to ' + n + '.', 'That is ' + w + ' group' + (w > 1 ? 's' : '') + ' of ' + d + '.'],
+            explain: n + ' ' + MANY[d] + ' = ' + w + ' whole ' + (w === 1 ? c[1] : c[0]) + '.', meta: { k: 'frg-num', n: n, d: d } };
+        }],
+        [1, 'match', function (lv) {
+          var d = lv === 1 ? 2 : R.pick([2, 3, 4]), ws = R.shuffle([1, 2, 3, 4, 5]).slice(0, 3);
+          var pairs = ws.map(function (w) { return [w * d + ' ' + MANY[d], w + ' whole' + (w > 1 ? 's' : '')]; });
+          return { q: 'Match each one to the number of wholes.', type: 'match', pairs: pairs,
+            hint: d + ' ' + MANY[d] + ' make 1 whole.', steps: ['Count by ' + d + 's. Each ' + d + ' is one more whole.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'frg-match', d: d } };
+        }],
+        [1, 'fill', function (lv) {
+          var d = lv === 1 ? 2 : R.pick([2, 3, 4]), w1 = R.int(1, 4), w2 = R.int(2, 5);
+          return { q: 'Fill in the blanks.', type: 'fill', fill: w1 * d + ' ' + MANY[d] + ' = [[]] whole' + (w1 > 1 ? 's' : '') + '<br>[[]] ' + MANY[d] + ' = ' + w2 + ' wholes', answers: [w1, w2 * d],
+            hint: d + ' ' + MANY[d] + ' make 1 whole.', steps: [w1 * d + ' &divide; ' + d + ' = ' + w1 + '.', w2 + ' &times; ' + d + ' = ' + w2 * d + '.'],
+            explain: w1 * d + ' ' + MANY[d] + ' = ' + w1 + ' whole' + (w1 > 1 ? 's' : '') + '. ' + w2 * d + ' ' + MANY[d] + ' = ' + w2 + ' wholes.', meta: { k: 'frg-fill', d: d } };
+        }],
+        [2, 'mistake', function (lv) {
+          var d = R.pick([3, 4]), w = R.int(2, 4), n = w * d, who = nm(), truth = !R.int(0, 2), sw = truth ? w : n / 2;
+          var right = d + ' ' + MANY[d] + ' make 1 whole. ' + n + ' &divide; ' + d + ' = ' + w + ' wholes.';
+          return { q: who + ' says ' + n + ' ' + MANY[d] + ' make <b>' + sw + '</b> wholes. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Any 2 pieces make a whole.', 'Each piece is a whole.', 'Wholes and pieces cannot be compared.']),
+            hint: 'How many ' + MANY[d] + ' make 1 whole?', steps: [right], explain: right, meta: { k: 'frg-tf', n: n, d: d, w: sw } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();

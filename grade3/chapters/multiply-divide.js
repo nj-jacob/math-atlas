@@ -603,4 +603,241 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name, X = ' &times; ', D = ' &divide; ';
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    /* three different [rows, per] pairs: the right one first, then near misses */
+    function nearSets(a, b) {
+      var out = [[a, b]], cand = R.shuffle([[a, b + 1], [a + 1, b], [a, b - 1], [a - 1, b], [b, a]]);
+      cand.forEach(function (p) { if (out.length < 3 && p[0] >= 1 && p[1] >= 1 && !out.some(function (o) { return o[0] === p[0] && o[1] === p[1]; })) out.push(p); });
+      return R.shuffle(out);
+    }
+    function idx(set, a, b) { for (var i = 0; i < set.length; i++) if (set[i][0] === a && set[i][1] === b) return i; return -1; }
+    function skips(k, n) { var l = []; for (var i = 1; i <= n; i++) l.push(k * i); return l.join(', '); }
+
+    var SHAPES = {
+      'md-groups': [
+        [1, 'tap', function (lv) {
+          var g = R.int(2, lv === 1 ? 4 : 5), n = R.int(2, lv === 1 ? 5 : 6), set = nearSets(g, n);
+          return { q: 'Tap the picture that shows <b>' + g + ' groups of ' + n + '</b>.', type: 'tap', tiles: set.map(function (p) { return groups(p[0], p[1]); }), answer: idx(set, g, n), answerText: 'the ' + g + ' plates with ' + n + ' on each',
+            hint: 'Count the plates first. You need ' + g + '. Then check there are ' + n + ' on each.', steps: [g + ' groups means ' + g + ' plates.', 'Each plate must have ' + n + '.'],
+            explain: g + ' plates with ' + n + ' on each is ' + g + X + n + ' = ' + g * n + '.', meta: { k: 'grp-tap', g: g, n: n, set: set } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), g = R.int(2, lv === 1 ? 5 : 9), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 9);
+          var c = R.pick([['boxes', 'crayons'], ['bags', 'apples'], ['vases', 'flowers'], ['shelves', 'books'], ['teams', 'players']]);
+          return { q: who + ' has ' + g + ' ' + c[0] + '. Each one has ' + n + ' ' + c[1] + '. How many ' + c[1] + ' are there in all?', type: 'num', answer: g * n,
+            hint: 'There are ' + g + ' equal groups of ' + n + '. Skip count by ' + n + '.', steps: [g + ' groups of ' + n + ' is ' + g + X + n + '.', 'Count by ' + n + 's: ' + skips(n, g) + '.'],
+            explain: g + X + n + ' = ' + g * n + ' ' + c[1] + '.', meta: { k: 'grp-story', g: g, n: n } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var g = R.int(2, lv === 1 ? 5 : 7), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 7);
+            if (seen[g * n] || seen[g + ',' + n]) continue; seen[g * n] = 1; seen[g + ',' + n] = 1;
+            pairs.push([g + ' groups of ' + n, String(g * n)]);
+          }
+          return { q: 'Match each set of equal groups to its total.', type: 'match', pairs: pairs,
+            hint: 'Skip count by the number in each group.', steps: ['3 groups of 5 is 5, 10, 15.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'grp-match', pairs: pairs } };
+        }],
+        [2, 'mistake', function (lv) {
+          var g = R.int(3, 6), n = R.int(3, 7), who = nm(), truth = !R.int(0, 2), said = truth ? g * n : g + n;
+          var right = g + ' groups of ' + n + ' means ' + n + ' added ' + g + ' times: ' + g + X + n + ' = ' + g * n + '.';
+          return { q: who + ' says ' + g + ' groups of ' + n + ' make <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: groups(g, n),
+            why: why(right, ['Groups of means add the two numbers.', 'Count only the plates.', 'Count one plate and stop.']),
+            hint: 'Count the counters on all the plates.', steps: [right], explain: right, meta: { k: 'grp-tf', g: g, n: n, said: said } };
+        }]
+      ],
+      'md-facts': [
+        [1, 'line', function (lv) {
+          var k = lv === 1 ? R.pick([2, 10]) : R.pick([2, 5, 10]), n = R.int(2, lv === 1 ? 6 : 10);
+          return { q: 'Count by ' + k + 's, <b>' + n + ' times</b>, starting at 0. Put the marker where you land. That shows ' + n + X + k + '.', type: 'line', min: 0, max: k * 10, tick: k, every: k === 2 ? 4 : k === 5 ? 10 : 20, snap: k, answer: k * n,
+            hint: 'Each jump is ' + k + '. Make ' + n + ' jumps.', steps: ['Count: ' + skips(k, n) + '.', 'You land on ' + k * n + '.'],
+            explain: n + X + k + ' = ' + k * n + '.', meta: { k: 'fact-line', f: k, n: n } };
+        }],
+        [1, 'fill', function (lv) {
+          var k = lv === 1 ? R.pick([2, 5, 10]) : R.pick([2, 5, 10]), start = lv === 1 ? 1 : R.int(1, 5), seq = [];
+          for (var i = 0; i < 5; i++) seq.push(k * (start + i));
+          var gaps = lv === 1 ? [2, 4] : [1, 3], txt = seq.map(function (v, i) { return gaps.indexOf(i) >= 0 ? '[[]]' : String(v); }).join(', ');
+          return { q: 'Count by ' + k + 's. Fill in the missing numbers.', type: 'fill', fill: '<span class="math">' + txt + '</span>', answers: gaps.map(function (i) { return seq[i]; }),
+            hint: 'Add ' + k + ' each time.', steps: ['The numbers go up by ' + k + '.', 'The full count is ' + seq.join(', ') + '.'],
+            explain: seq.join(', ') + '.', meta: { k: 'fact-fill', f: k } };
+        }],
+        [1, 'match', function (lv) {
+          var k = lv === 1 ? R.pick([2, 10]) : R.pick([2, 5, 10]), ns = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 3);
+          var pairs = ns.map(function (n) { return [n + X + k, String(n * k)]; });
+          return { q: 'Match each fact to its answer.', type: 'match', pairs: pairs,
+            hint: 'Skip count by ' + k + '.', steps: ['Count by ' + k + 's: ' + skips(k, 10) + '.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'fact-match', pairs: pairs } };
+        }],
+        [2, 'pick', function (lv) {
+          var k = R.pick([2, 5, 10]), opts = [], seen = {};
+          while (opts.length < 5) {
+            var good = opts.length < 2, v = good ? k * R.int(1, 10) : R.int(3, k * 10);
+            if (!good && v % k === 0) continue;
+            if (seen[v]) continue; seen[v] = 1; opts.push(v);
+          }
+          opts = R.shuffle(opts);
+          var ans = []; opts.forEach(function (v, j) { if (v % k === 0) ans.push(j); });
+          return { q: 'Pick every number you say when you count by <b>' + k + 's</b>.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: k === 2 ? 'Counting by 2s gives even numbers.' : k === 5 ? 'Counting by 5s ends in 0 or 5.' : 'Counting by 10s ends in 0.', steps: ['Count: ' + skips(k, 10) + '.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' are in the count by ' + k + 's.', meta: { k: 'fact-pick', f: k } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.pick([2, 5, 10]), n = R.int(3, 10), who = nm(), truth = !R.int(0, 2), said = truth ? k * n : k * n + R.pick([k, -k]);
+          var right = 'Count by ' + k + 's, ' + n + ' times: ' + skips(k, n) + '. So ' + n + X + k + ' = ' + k * n + '.';
+          return { q: who + ' says <span class="math">' + n + X + k + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Add ' + n + ' and ' + k + '.', 'Count by ' + k + 's and stop one early.', 'Any number that ends in 0 is right.']),
+            hint: 'Skip count by ' + k + ', and keep track of how many jumps.', steps: [right], explain: right, meta: { k: 'fact-tf', a: n, b: k, said: said } };
+        }]
+      ],
+      'md-array': [
+        [1, 'tap', function (lv) {
+          var r = R.int(2, lv === 1 ? 4 : 6), c = R.int(3, lv === 1 ? 5 : 7), set = nearSets(r, c);
+          return { q: 'Tap the array with <b>' + r + ' rows of ' + c + '</b>.', type: 'tap', tiles: set.map(function (p) { return array(p[0], p[1], 0, p[0] + ' rows of ' + p[1]).replace(/<text[^>]*>[^<]*<\/text>/g, ''); }), answer: idx(set, r, c), answerText: 'the array with ' + r + ' rows and ' + c + ' in each row',
+            hint: 'Rows go across. Count the rows first.', steps: ['Count the rows going down. You need ' + r + '.', 'Then count the dots in one row. You need ' + c + '.'],
+            explain: r + ' rows of ' + c + ' is ' + r + X + c + ' = ' + r * c + '.', meta: { k: 'arr-tap', r: r, c: c, set: set } };
+        }],
+        [1, 'fill', function (lv) {
+          var r = R.int(2, lv === 1 ? 5 : 8), c = lv === 1 ? R.pick([2, 5, 10]) : R.int(3, 9);
+          return { q: 'Look at the array. Fill in the blanks.', type: 'fill', fig: array(r, c, 0, r + ' rows of ' + c).replace(/<text[^>]*>[^<]*<\/text>/g, ''), fill: '[[]] rows of [[]] is <span class="math">' + r + X + c + ' = [[]]</span>', answers: [r, c, r * c],
+            hint: 'Count the rows going down. Count the dots in one row.', steps: ['There are ' + r + ' rows.', 'Each row has ' + c + ' dots.', r + X + c + ' = ' + r * c + '.'],
+            explain: r + ' rows of ' + c + ' = ' + r * c + '.', meta: { k: 'arr-fill', r: r, c: c } };
+        }],
+        [1, 'story', function (lv) {
+          var r = R.int(2, lv === 1 ? 5 : 9), c = lv === 1 ? R.pick([2, 5, 10]) : R.int(3, 9), who = nm();
+          var t = R.pick(['The gym has ' + r + ' rows of chairs with ' + c + ' chairs in each row. How many chairs are there?',
+            who + ' plants a garden with ' + r + ' rows of ' + c + ' carrots. How many carrots are planted?',
+            'A muffin tray has ' + r + ' rows with ' + c + ' muffins in each row. How many muffins fit?']);
+          return { q: t, type: 'num', answer: r * c,
+            hint: 'Rows of the same size make an array. Multiply rows by the number in each row.', steps: [r + ' rows of ' + c + ' is ' + r + X + c + '.', 'Count by ' + c + 's: ' + skips(c, r) + '.'],
+            explain: r + X + c + ' = ' + r * c + '.', meta: { k: 'arr-story', r: r, c: c } };
+        }],
+        [2, 'mistake', function (lv) {
+          var r = R.int(3, 6), c = R.int(4, 8), who = nm(), kind = R.int(0, 2), said = kind === 0 ? r * c : kind === 1 ? r + c : r * (c - 1);
+          var right = 'There are ' + r + ' rows with ' + c + ' in each, so ' + r + X + c + ' = ' + r * c + '.';
+          return { q: who + ' says this array has <b>' + said + '</b> dots. True or false: ' + who + ' is right.', type: 'tf', answer: said === r * c, fig: array(r, c, 0),
+            why: why(right, ['Add the number of rows and the number in each row.', 'Count one row and one column, then add.', 'Arrays always have 10 in a row.']),
+            hint: 'Multiply the number of rows by the number in each row.', steps: [right], explain: right, meta: { k: 'arr-tf', r: r, c: c, said: said } };
+        }]
+      ],
+      'md-divide': [
+        [1, 'story', function (lv) {
+          var who = nm(), k = R.int(2, lv === 1 ? 5 : 9), each = R.int(2, lv === 1 ? 5 : 9), n = k * each;
+          var c = R.pick(['grapes', 'stickers', 'crackers', 'marbles']);
+          return { q: who + ' shares ' + n + ' ' + c + ' equally among ' + k + ' friends. How many ' + c + ' does each friend get?', type: 'num', answer: each,
+            hint: 'Deal them out one at a time, or think: ' + k + ' times what is ' + n + '?', steps: ['Ask: ' + k + X + '? = ' + n + '.', k + X + each + ' = ' + n + '.', 'Each friend gets ' + each + '.'],
+            explain: n + D + k + ' = ' + each + '.', meta: { k: 'div-story', n: n, k2: k } };
+        }],
+        [1, 'tap', function (lv) {
+          var k = R.int(2, lv === 1 ? 4 : 5), each = R.int(2, lv === 1 ? 4 : 6), n = k * each;
+          var set = R.shuffle([[k, each], [k, each + 1], [k + 1, each]]);
+          return { q: '<b>' + n + '</b> counters are shared fairly on <b>' + k + '</b> plates. Tap the picture that shows it.', type: 'tap', tiles: set.map(function (p) { return groups(p[0], p[1]); }), answer: idx(set, k, each), answerText: k + ' plates with ' + each + ' on each',
+            hint: 'Look for ' + k + ' plates first. Then check the total is ' + n + '.', steps: [n + D + k + ' = ' + each + '.', 'So each of the ' + k + ' plates has ' + each + '.'],
+            explain: n + ' shared on ' + k + ' plates is ' + each + ' on each.', meta: { k: 'div-tap', n: n, k2: k, set: set } };
+        }],
+        [1, 'which', function (lv) {
+          var who = nm(), a = R.int(2, lv === 1 ? 5 : 9), b = R.int(2, lv === 1 ? 5 : 9), kind = R.pick(['share', 'group', 'times']);
+          var t = { share: who + ' puts ' + a * b + ' pencils into ' + a + ' cups, the same number in each. How many pencils go in each cup?',
+            group: 'There are ' + a * b + ' players. Each team has ' + b + ' players. How many teams are there?',
+            times: who + ' buys ' + a + ' packs of yogurt. Each pack has ' + b + ' cups. How many cups is that?' }[kind];
+          var d = kind === 'group' ? b : a, ans = kind === 'times' ? 0 : 1;
+          var opts = kind === 'times' ? ['Multiply: ' + a + X + b, 'Add: ' + a + ' + ' + b] : ['Multiply: ' + a * b + X + d, 'Divide: ' + a * b + D + d];
+          return { q: t + ' <b>Which way solves it?</b>', type: 'mc', options: opts, answer: ans,
+            hint: kind === 'times' ? 'You know how many groups and how many in each. You want the total.' : 'You know the total. You want ' + (kind === 'share' ? 'how many in each group.' : 'how many groups.'),
+            steps: [kind === 'times' ? 'Equal groups put together: multiply.' : 'Split a total into equal groups: divide.', opts[ans].split(': ')[1] + ' = ' + (kind === 'times' ? a * b : kind === 'group' ? a : b) + '.'],
+            explain: opts[ans] + '.', meta: { k: 'div-which', kind: kind } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.int(2, 9), each = R.int(2, 9), n = k * each, who = nm(), truth = !R.int(0, 2), said = truth ? each : each + R.pick([1, -1, 2]);
+          var right = 'Check with multiplication: ' + k + X + said + ' = ' + k * said + (truth ? '. That is ' + n + '.' : ', not ' + n + '.');
+          return { q: who + ' says <span class="math">' + n + D + k + ' = ' + said + '</span>. Check it with multiplication. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Division answers are always smaller than 10.', 'Check by adding ' + k + ' and ' + said + '.', 'Check by subtracting ' + k + ' from ' + n + '.']),
+            hint: k + ' times ' + said + ' should make ' + n + '.', steps: [right], explain: right, meta: { k: 'div-tf', n: n, k2: k, said: said } };
+        }]
+      ],
+      'md-family': [
+        [1, 'pick', function (lv) {
+          var a = R.int(2, lv === 1 ? 5 : 9), b = R.pick([2, 5, 10]);
+          if (a === b) a = a === 2 ? 3 : a - 1;
+          var p = a * b, good = R.shuffle([a + X + b + ' = ' + p, b + X + a + ' = ' + p, p + D + a + ' = ' + b, p + D + b + ' = ' + a]).slice(0, 3);
+          var bad = R.shuffle([a + ' + ' + b + ' = ' + (a + b), p + D + a + ' = ' + (b + 1), a + X + (b + 1) + ' = ' + a * (b + 1)]).slice(0, 2);
+          var opts = R.shuffle(good.concat(bad)), ans = []; opts.forEach(function (o, j) { if (good.indexOf(o) >= 0) ans.push(j); });
+          return { q: 'Pick every fact in the same family as <span class="math">' + a + X + b + ' = ' + p + '</span>.', type: 'pick', options: opts, answer: ans,
+            hint: 'Family facts use the same three numbers: ' + a + ', ' + b + ' and ' + p + '. They are all true.', steps: ['Each one must use ' + a + ', ' + b + ' and ' + p + ', with &times; or &divide;.'],
+            explain: 'The family of ' + a + ', ' + b + ' and ' + p + ': ' + a + X + b + ', ' + b + X + a + ', ' + p + D + a + ', ' + p + D + b + '.', meta: { k: 'fam-pick', a: a, b: b, opts: opts } };
+        }],
+        [1, 'fill', function (lv) {
+          var a = R.int(2, lv === 1 ? 5 : 9), b = R.pick([2, 5, 10]); if (a === b) a++;
+          var p = a * b;
+          return { q: 'Complete the fact family for ' + a + ', ' + b + ' and ' + p + '.', type: 'fill', fill: '<span class="math">' + b + X + a + ' = [[]]</span><br><span class="math">' + p + D + a + ' = [[]]</span><br><span class="math">' + p + D + b + ' = [[]]</span>', answers: [p, b, a],
+            hint: 'Start with the multiplication you know: ' + a + X + b + ' = ' + p + '.', steps: ['Turn it around: ' + b + X + a + ' = ' + p + '.', 'Divide the total by one number to get the other.'],
+            explain: b + X + a + ' = ' + p + ', ' + p + D + a + ' = ' + b + ', ' + p + D + b + ' = ' + a + '.', meta: { k: 'fam-fill', a: a, b: b } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var a = R.int(2, lv === 1 ? 5 : 9), b = R.pick([2, 5, 10]), p = a * b;
+            if (a === b || seen[p]) continue; seen[p] = 1;
+            pairs.push([p + D + b, b + X + a + ' = ' + p]);
+          }
+          return { q: 'Match each division to the times fact that helps you solve it.', type: 'match', pairs: pairs,
+            hint: 'Find the times fact with the same total and the same number you divide by.', steps: ['To find 20 &divide; 5, think: 5 &times; ? = 20.'],
+            explain: pairs.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'fam-match', pairs: pairs } };
+        }],
+        [2, 'mistake', function (lv) {
+          var a = R.int(3, 9), b = R.pick([2, 5, 10]); if (a === b) a++;
+          var p = a * b, who = nm(), truth = !R.int(0, 2), said = truth ? a : b;
+          var right = 'Think ' + b + X + '? = ' + p + '. The answer is ' + a + ', because ' + b + X + a + ' = ' + p + '.';
+          return { q: who + ' knows <span class="math">' + a + X + b + ' = ' + p + '</span>. ' + who + ' says <span class="math">' + p + D + b + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: said * b === p,
+            why: why(right, ['The answer to a division is the number you divide by.', 'Dividing by ' + b + ' gives ' + b + '.', 'The biggest number is always the answer.']),
+            hint: b + ' times what makes ' + p + '?', steps: [right], explain: right, meta: { k: 'fam-tf', p: p, d: b, said: said } };
+        }]
+      ],
+      'md-scale': [
+        [1, 'fill', function (lv) {
+          var k = lv === 1 ? 2 : R.pick([2, 5, 10]), th = R.pick(THINGS[k]), ns = lv === 1 ? [2, 3, 4] : [2, R.int(3, 5), R.int(6, 10)];
+          var rows = '1 ' + th[0] + ' &rarr; ' + k + ' ' + th[3] + ns.map(function (n) { return '<br>' + n + ' ' + th[1] + ' &rarr; [[]] ' + th[3]; }).join('');
+          return { q: 'Fill in the table.', type: 'fill', fill: rows, answers: ns.map(function (n) { return n * k; }),
+            hint: 'For every 1 ' + th[0] + ', there are ' + k + ' ' + th[3] + '. Count by ' + k + 's.', steps: ns.map(function (n) { return n + X + k + ' = ' + n * k + '.'; }),
+            explain: 'Each ' + th[0] + ' adds ' + k + ' more ' + th[3] + '.', meta: { k: 'scale-fill', f: k, ns: ns } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), k = lv === 1 ? R.pick([2, 5]) : R.pick([2, 5, 10]), n = R.int(2, lv === 1 ? 6 : 10);
+          var c = R.pick([['pack', 'packs', 'juice boxes'], ['box', 'boxes', 'markers'], ['bag', 'bags', 'buns']]);
+          return { q: 'For every 1 ' + c[0] + ', there are ' + k + ' ' + c[2] + '. ' + who + ' buys ' + n + ' ' + c[1] + '. How many ' + c[2] + ' is that?', type: 'num', answer: n * k,
+            hint: 'Each ' + c[0] + ' adds ' + k + '. Count by ' + k + 's, ' + n + ' times.', steps: ['Count by ' + k + 's: ' + skips(k, n) + '.'],
+            explain: n + X + k + ' = ' + n * k + ' ' + c[2] + '.', meta: { k: 'scale-story', f: k, n: n } };
+        }],
+        [1, 'match', function (lv) {
+          var k = lv === 1 ? 2 : R.pick([5, 10]), th = R.pick(THINGS[k]), ns = R.shuffle([2, 3, 4, 5, 6, 7]).slice(0, 3);
+          var pairs = ns.map(function (n) { return [n + ' ' + th[1], n * k + ' ' + th[3]]; });
+          return { q: '1 ' + th[0] + ' has ' + k + ' ' + th[3] + '. Match each one.', type: 'match', pairs: pairs,
+            hint: 'Count by ' + k + 's for each one.', steps: ['3 ' + th[1] + ' have 3' + X + k + ' = ' + 3 * k + ' ' + th[3] + '.'],
+            explain: pairs.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'scale-match', f: k, pairs: pairs } };
+        }],
+        [2, 'mistake', function (lv) {
+          var k = R.pick([2, 5, 10]), th = R.pick(THINGS[k]), n = R.int(3, 9), who = nm(), truth = !R.int(0, 2), said = truth ? n * k : n + k;
+          var right = 'Each ' + th[0] + ' has ' + k + ' ' + th[3] + ', so ' + n + ' ' + th[1] + ' have ' + n + X + k + ' = ' + n * k + '.';
+          return { q: '1 ' + th[0] + ' has ' + k + ' ' + th[3] + '. ' + who + ' says ' + n + ' ' + th[1] + ' have <b>' + said + '</b> ' + th[3] + '. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Add ' + n + ' and ' + k + '.', 'Each new ' + th[0] + ' adds 1 more.', 'The number stays the same.']),
+            hint: 'Count by ' + k + 's, ' + n + ' times.', steps: [right], explain: right, meta: { k: 'scale-tf', f: k, n: n, said: said } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();
