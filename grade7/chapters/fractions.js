@@ -602,7 +602,7 @@
   function sl(n, d) { return n + '/' + d; } /* a fraction on one line, for number line labels */
   function frac(maxD) { var d = R.int(2, maxD); return [R.int(1, d - 1), d]; }
   function val(f) { return f[0] / f[1]; }
-  K.shapes('fractions', {
+  Atlas.Q.shapes('fractions', {
     'fr-equiv': [
       [1, 'fill', function (lv) {
         var d = R.int(2, lv === 1 ? 6 : 12), n = R.int(1, d - 1), k = R.int(2, lv === 1 ? 4 : 8);

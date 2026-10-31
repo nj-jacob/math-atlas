@@ -495,7 +495,7 @@
   var START = '<rect x="2" y="2" width="' + C + '" height="' + C + '" style="fill:color-mix(in srgb,var(--sd) 40%,transparent)"/>';
   function starGrid(c, r, extra) { return gridSvg(5, 5, [[c, r, 'star']], START + (extra || ''), 'A grid with a green start square in the top left corner and a star ' + c + ' right and ' + r + ' down from it'); }
   function track(lo, hi) { return D.hops({ min: lo, max: hi, tick: 1, every: 5, id: 'trk', hops: [], marks: [] }); }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'm2-position': [
       [1, 'tap', function (lv) {
         var order = R.shuffle(SHELF).concat(R.shuffle(SHELF)), i = R.int(1, 2), left = lv === 1 || R.int(0, 1), ans = order[left ? i - 1 : i + 1], set = R.shuffle(SHELF.filter(function (x) { return x !== order[i]; }));

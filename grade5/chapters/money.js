@@ -670,5 +670,5 @@ payGallery() +
       }]
     ]
   };
-  K.shapes('money', SHAPES);
+  Atlas.Q.shapes('money', SHAPES);
 })();

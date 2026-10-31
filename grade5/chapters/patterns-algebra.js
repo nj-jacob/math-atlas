@@ -710,5 +710,5 @@
       }]
     ]
   };
-  K.shapes('patterns-algebra', SHAPES);
+  Atlas.Q.shapes('patterns-algebra', SHAPES);
 })();

@@ -668,5 +668,5 @@ benchmarks() +
       }]
     ]
   };
-  K.shapes('measurement', SHAPES);
+  Atlas.Q.shapes('measurement', SHAPES);
 })();

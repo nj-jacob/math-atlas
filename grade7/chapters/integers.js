@@ -432,7 +432,7 @@
 
   /* ---------- question shapes: more ways to practise each skill ---------- */
   function nz(lo, hi) { var v = 0; while (!v) v = R.int(lo, hi); return v; }
-  K.shapes('integers', {
+  Atlas.Q.shapes('integers', {
     'in-compare': [
       [1, 'line', function () {
         var n = nz(-10, 10);

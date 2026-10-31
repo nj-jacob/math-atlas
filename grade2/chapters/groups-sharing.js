@@ -378,7 +378,7 @@
     return R.shuffle(set);
   }
   function pieceName(n, d) { return n + ' ' + (d === 2 ? (n === 1 ? 'half' : 'halves') : (n === 1 ? 'fourth' : 'fourths')); }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'g2-groups': [
       [1, 'tap', function (lv) {
         var g = R.int(2, lv === 1 ? 3 : 4), n = R.int(2, 5); if (g === n) n++;

@@ -668,7 +668,7 @@ twoWay(['Walk', 'Ride'], ['Grade 2', 'Grade 3'], [[7, 4], [3, 6]], true) +
   function graph(cats, n) { return R.int(0, 1) ? barG({ title: 'Our votes', cats: cats, n: n }) : picto({ title: 'Our votes', cats: cats, n: n }); }
   var CATS = [['cat', 'dog', 'fish', 'bird'], ['apple', 'pear', 'plum', 'kiwi'], ['bus', 'car', 'walk', 'bike']];
   function regionName(g, a, b) { return { a: 'only ' + RULES[a].name, b: 'only ' + RULES[b].name, ab: 'both', n: 'neither' }[g]; }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'd2-sort': [
       [1, 'tap', function (lv) {
         var p = R.pick(PAIRS), yes = ALL.filter(function (it) { return region(it, p[0], p[1]) === 'ab'; }), no = R.shuffle(ALL.filter(function (it) { return region(it, p[0], p[1]) !== 'ab'; }));

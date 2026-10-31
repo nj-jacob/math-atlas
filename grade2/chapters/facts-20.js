@@ -464,7 +464,7 @@
     return { q: q, type: 'match', pairs: p, hint: 'Work out each one. Use a fact you know to help.', steps: ['Do one card at a time.'],
       explain: p.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: k, pairs: p } };
   }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'f2-add': [
       [1, 'match', function (lv) { return factMatch(function () { var t = twoNums(lv === 1 ? 1 : 3); return [t[0] + ' + ' + t[1], t[0] + t[1]]; }, 'f2-add-match', 'Match each fact to its sum.'); }],
       [1, 'line', function (lv) {

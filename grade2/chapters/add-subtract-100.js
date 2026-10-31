@@ -373,7 +373,7 @@
   var why = K.why, who = K.who;
   function noTrade(lv) { var a = R.int(1, 5) * 10 + R.int(1, 4), b = R.int(1, 4) * 10 + R.int(1, 5); return lv === 1 ? [a, b] : [R.int(1, 6) * 10 + R.int(5, 9), 0]; }
   function addPair(lv) { var p = noTrade(lv); if (lv > 1) p[1] = R.int(1, 2) * 10 + R.int(10 - p[0] % 10, 9); return p; }
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     'a2-tens': [
       [1, 'fill', function (lv) {
         var a = lv === 1 ? R.int(1, 5) * 10 : R.int(11, 59);

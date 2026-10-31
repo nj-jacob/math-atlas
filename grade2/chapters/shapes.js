@@ -507,7 +507,7 @@
   function hexPic(kind) { return A.svg(150, 136, hexFill(kind, 75, 68, 64), 'A hexagon filled with pieces'); }
   function twoAreas(a, b) { return A.svg(400, 160, grid(4, 4, 32, 4, 4) + cells(a, 'var(--strand)', 32, 4, 4) + grid(4, 4, 32, 210, 4) + cells(b, 'var(--se)', 32, 210, 4), 'Two shapes made of squares'); }
   var CONG = { same: true, turn: true, flip: true, big: false, small: false };
-  K.shapes(CH, {
+  Atlas.Q.shapes(CH, {
     's2-name': [
       [1, 'tap', function (lv) {
         var set = R.shuffle(lv === 1 ? [3, 4, 5, 6] : [3, 4, 5, 6, 8]).slice(0, 3), n = set[0], tiles = R.shuffle(set);

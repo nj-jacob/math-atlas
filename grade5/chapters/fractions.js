@@ -753,5 +753,5 @@
       }]
     ]
   };
-  K.shapes('fractions', SHAPES);
+  Atlas.Q.shapes('fractions', SHAPES);
 })();

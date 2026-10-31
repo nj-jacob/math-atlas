@@ -457,7 +457,7 @@
   }
   var SOLKEYS = ['rect', 'tri', 'sqpyr', 'tripyr'];
   function fev(k) { var S = SOLIDS[k]; return S.F + ' faces, ' + S.E + ' edges, ' + S.V + ' vertices'; }
-  K.shapes('shapes-moves', {
+  Atlas.Q.shapes('shapes-moves', {
     'sm-solid': [
       [1, 'tap', function () {
         var keys = R.shuffle(['rect', 'cube', 'tri', 'sqpyr', 'tripyr', 'cyl']).slice(0, 4), at = R.int(0, 3);

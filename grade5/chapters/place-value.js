@@ -928,5 +928,5 @@
       }]
     ]
   };
-  K.shapes('place-value', SHAPES);
+  Atlas.Q.shapes('place-value', SHAPES);
 })();
