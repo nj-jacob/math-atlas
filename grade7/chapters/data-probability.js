@@ -2,6 +2,10 @@
   var A = Atlas, R = A.R, cl = A.clean, fr = A.fr, frs = A.frs, gcd = A.gcd, fmt = A.fmt;
   function dec(x) { return String(cl(x)); }
   function plain(n, d) { return frs(n, d, true); }
+  /* examples of data, with their kind: 0 qualitative, 1 discrete, 2 continuous */
+  var KINDS = [['favourite ice cream flavour', 0], ['eye colour', 0], ['province of birth', 0], ['type of pet', 0], ['number of books read this month', 1], ['number of goals in a game', 1], ['number of people in a family', 1], ['number of texts sent in a day', 1],
+    ['height of each student', 2], ['time to run 1 km', 2], ['temperature at noon', 2], ['mass of a backpack', 2], ['amount of rain in a day', 2]];
+  var KINDS3 = [['shoe size (sizes come in halves)', 1], ['jersey number', 0], ['age in years, as a whole number', 1], ['length of a phone call', 2]];
   var PAL = ['var(--sb)', 'var(--se)', 'var(--sd)', 'var(--sc)', 'var(--sf)', 'var(--hi)'];
 
   /* circle graph. items [{lab, v}] */
@@ -339,9 +343,7 @@
 
     practice: [
       { id: 'dp-type', name: 'Kinds of data', code: 'D1.2', gen: function (lv) {
-        var list = [['favourite ice cream flavour', 0], ['eye colour', 0], ['province of birth', 0], ['type of pet', 0], ['number of books read this month', 1], ['number of goals in a game', 1], ['number of people in a family', 1], ['number of texts sent in a day', 1],
-          ['height of each student', 2], ['time to run 1 km', 2], ['temperature at noon', 2], ['mass of a backpack', 2], ['amount of rain in a day', 2]];
-        if (lv === 3) list = list.concat([['shoe size (sizes come in halves)', 1], ['jersey number', 0], ['age in years, as a whole number', 1], ['length of a phone call', 2]]);
+        var list = lv === 3 ? KINDS.concat(KINDS3) : KINDS;
         var it = R.pick(list), names = ['Qualitative', 'Discrete', 'Continuous'], why = ['It is a word or category, not a measured number.', 'It is counted, so only certain values are possible.', 'It is measured, so it can be any value in a range.'];
         if (it[0] === 'jersey number') why[0] = 'A jersey number is a label. You would not add or average jersey numbers.';
         if (/shoe/.test(it[0])) why[1] = 'Shoe sizes only come in certain steps, like 7, 7.5 and 8, so they are discrete.';
@@ -419,6 +421,167 @@
           steps: ['P(' + c1 + ' first) = ' + fr(n1, t) + '.', 'One marble is gone. ' + (c1 === c2 ? 'There are ' + n2 + ' ' + c2 + ' left' : 'All ' + n2 + ' ' + c2 + ' are still there') + ', out of ' + (t - 1) + '. P(' + c2 + ' second) = ' + fr(n2, t - 1) + '.', 'Multiply: ' + fr(n1, t) + ' &times; ' + fr(n2, t - 1) + ' = ' + fr(N, D) + (N && gcd(N, D) > 1 ? ' = ' + frs(N, D) : '') + '.'],
           explain: 'P = ' + (N ? frs(N, D) : '0') + '.' };
       } }
+    ]
+  });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  var KNAME = ['qualitative', 'discrete', 'continuous'];
+  function median(d) { var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
+  function sum(d) { return d.reduce(function (a, b) { return a + b; }, 0); }
+  K.shapes('data-probability', {
+    'dp-type': [
+      [1, 'match', function () {
+        var pick = [0, 1, 2].map(function (k) { return R.pick(KINDS.filter(function (it) { return it[1] === k; })); });
+        var pairs = pick.map(function (it) { return [it[0], KNAME[it[1]]]; });
+        return { q: 'Match each kind of data to an example.', type: 'match', pairs: R.shuffle(pairs),
+          hint: 'Words or labels: qualitative. Counted: discrete. Measured: continuous.', steps: ['Ask: is it a word, a count or a measurement?'],
+          explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'dp-type-match' } };
+      }],
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var k = R.int(0, 2), opts = R.shuffle(KINDS).slice(0, 5), ans = K.picks(opts, function (it) { return it[1] === k; });
+          if (!ans) return null;
+          return { q: 'Pick every example of <b>' + KNAME[k] + '</b> data.', type: 'pick', options: opts.map(function (it) { return it[0]; }), answer: ans,
+            hint: ['Qualitative data is words or labels.', 'Discrete data is counted.', 'Continuous data is measured.'][k], steps: ['Ask for each one: is it a word, a count or a measurement?'],
+            explain: ans.map(function (j) { return opts[j][0]; }).join(', ') + ': ' + KNAME[k] + '.', meta: { k: 'dp-type-pick', kind: k } };
+        });
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), it = R.pick(KINDS.filter(function (x) { return x[1]; })), truth = R.int(0, 1), said = truth ? it[1] : 3 - it[1];
+        var right = it[1] === 1 ? 'It is counted, so only whole numbers are possible: discrete.' : 'It is measured, so it can be any value in a range: continuous.';
+        return { q: who + ' says the <b>' + it[0] + '</b> is <b>' + KNAME[said] + '</b> data. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Any data with numbers is continuous.', 'Data you can graph is always discrete.']),
+          hint: 'Is it counted or measured?', steps: [right], explain: right, meta: { k: 'dp-type-tf', said: said } };
+      }]
+    ],
+    'dp-circle': [
+      [1, 'match', function () {
+        var ps = R.shuffle([5, 10, 20, 25, 30, 40, 50, 75]).slice(0, 3), pairs = ps.map(function (p) { return [p + '%', dec(p * 3.6) + '&deg;']; });
+        return { q: 'Match each slice of a circle graph to its angle.', type: 'match', pairs: pairs,
+          hint: 'A full circle is 360&deg;. 10% of 360&deg; is 36&deg;.', steps: ['Multiply the percent by 3.6 to get degrees.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'dp-angle-match' } };
+      }],
+      [1, 'story', function () {
+        var tot = R.pick([10, 20, 24, 30, 36, 40, 60]), n = R.int(1, tot - 1), it = R.pick(['walk to school', 'play a sport', 'have a library card', 'speak French at home']);
+        return { q: 'In a survey, <b>' + n + ' of ' + tot + '</b> students ' + it + '. What angle should their slice of the circle graph have?', type: 'num', unit: '&deg;', answer: 360 * n / tot,
+          hint: 'Find ' + n + '/' + tot + ' of 360&deg;.', steps: ['360 &divide; ' + tot + ' = ' + 360 / tot + '&deg; for each student.', n + ' &times; ' + 360 / tot + ' = ' + 360 * n / tot + '&deg;.'],
+          explain: 'The slice is ' + 360 * n / tot + '&deg;.', meta: { k: 'dp-angle-story', n: n, tot: tot } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), p = R.pick([15, 20, 30, 40, 45, 60]), truth = R.int(0, 1), said = truth ? p * 3.6 : p;
+        var right = p + '% of 360&deg; = ' + dec(p * 3.6) + '&deg;.';
+        return { q: who + ' says a ' + p + '% slice has an angle of <b>' + dec(said) + '&deg;</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The angle in degrees is the same number as the percent.', 'Every slice is 90&deg;.']),
+          hint: 'A whole circle is 100% and 360&deg;.', steps: [right], explain: right, meta: { k: 'dp-angle-tf', p: p, said: said } };
+      }]
+    ],
+    'dp-mmm': [
+      [1, 'order', function () {
+        var data = K.uniq(5, function () { return R.int(1, 30); });
+        var sorted = data.slice().sort(function (a, b) { return a - b; });
+        return { q: 'To find the median, first put the data in order from least to greatest.', type: 'order', items: sorted.map(String), first: 'least', last: 'greatest',
+          hint: 'Start with the smallest value.', steps: ['In order: ' + sorted.join(', ') + '.', 'The median is the middle one: ' + sorted[2] + '.'],
+          explain: 'In order: ' + sorted.join(', ') + '. The median is ' + sorted[2] + '.', meta: { k: 'dp-sort-order' } };
+      }],
+      [1, 'tap', function () {
+        var data = K.uniq(R.pick([5, 7]), function () { return R.int(1, 40); }).sort(function (a, b) { return a - b; }), mid = (data.length - 1) / 2;
+        return { q: 'The data is in order. Tap the <b>median</b>.', type: 'tap', tiles: data.map(String), answer: mid, answerText: String(data[mid]),
+          hint: 'The median is the middle value.', steps: ['There are ' + data.length + ' values. The middle one is number ' + (mid + 1) + '.'],
+          explain: 'The median is ' + data[mid] + '.', meta: { k: 'dp-median-tap', data: data } };
+      }],
+      [1, 'fill', function () {
+        var n = R.int(4, 6), m = R.int(8, 20), data = K.retry(function () {
+          var d = []; for (var i = 0; i < n - 1; i++) d.push(m + R.int(-4, 4));
+          var last = m * n - sum(d); /* chosen so the mean is exactly m */
+          return Math.abs(last - m) <= 6 ? d.concat([last]) : null;
+        }), mean = m;
+        return { q: 'Find the mean of ' + data.join(', ') + '. Fill in the blanks.', type: 'fill', fill: 'Total = [[]], number of values = [[]], mean = [[]]', answers: [sum(data), n, mean],
+          hint: 'Add all the values, then divide by how many there are.', steps: ['Total: ' + sum(data) + '.', sum(data) + ' &divide; ' + n + ' = ' + mean + '.'],
+          explain: 'The mean is ' + mean + '.', meta: { k: 'dp-mean-fill', data: data } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), data = K.uniq(5, function () { return R.int(1, 30); }), med = median(data);
+        while (data[2] === med) data = R.shuffle(data);
+        var truth = R.int(0, 1), said = truth ? med : data[2];
+        var right = 'Put the data in order first: ' + data.slice().sort(function (a, b) { return a - b; }).join(', ') + '. The middle value is ' + med + '.';
+        return { q: 'Data: ' + data.join(', ') + '. ' + who + ' says the median is <b>' + said + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The median is the middle number as the data is written.', 'The median is the most common value.']),
+          hint: 'Is the data in order?', steps: [right], explain: right, meta: { k: 'dp-median-tf', data: data, said: said } };
+      }]
+    ],
+    'dp-change': [
+      [1, 'which', function () {
+        var data = []; for (var i = 0; i < 6; i++) data.push(R.int(10, 20));
+        var v = R.int(70, 95), d2 = data.concat([v]);
+        var dm = Math.abs(sum(d2) / 7 - sum(data) / 6), dmed = Math.abs(median(d2) - median(data)), ans = dm > dmed ? 'The mean' : 'The median';
+        var o = R.mc(ans, [ans === 'The mean' ? 'The median' : 'The mean', 'Neither changes']);
+        return { q: 'Which way does the data move? Data: ' + data.join(', ') + '. The outlier <b>' + v + '</b> is added. Which changes more?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'The mean uses every value. The median only looks at the middle.', steps: ['Mean before: ' + dec(Math.round(sum(data) / 6 * 10) / 10) + '. After: ' + dec(Math.round(sum(d2) / 7 * 10) / 10) + '.', 'Median before: ' + median(data) + '. After: ' + median(d2) + '.'],
+          explain: 'An outlier pulls the mean much more than the median.', meta: { k: 'dp-outlier-which', data: data, v: v } };
+      }],
+      [1, 'fill', function () {
+        var n = 4, m = R.int(10, 20), data = R.shuffle([m - 2, m + 1, m - 1, m + 2]), v = R.int(1, 8) * 5;
+        while ((sum(data) + v) % 5) v++;
+        return { q: 'Data: ' + data.join(', ') + '. The value <b>' + v + '</b> is added. Fill in the blanks.', type: 'fill', fill: 'New total = [[]], new mean = [[]]', answers: [sum(data) + v, (sum(data) + v) / 5],
+          hint: 'Add ' + v + ' to the old total. There are now 5 values.', steps: ['Old total: ' + sum(data) + '. New total: ' + (sum(data) + v) + '.', (sum(data) + v) + ' &divide; 5 = ' + (sum(data) + v) / 5 + '.'],
+          explain: 'The new mean is ' + (sum(data) + v) / 5 + '.', meta: { k: 'dp-newmean-fill', data: data, v: v } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), data = []; for (var i = 0; i < 5; i++) data.push(R.int(10, 20));
+        var mean = sum(data) / 5, big = R.int(0, 1), v = big ? Math.ceil(mean) + R.int(5, 20) : Math.max(0, Math.floor(mean) - R.int(5, 9)), truth = R.int(0, 1), says = truth === big ? 'raises' : 'lowers';
+        var right = 'A value ' + (big ? 'above' : 'below') + ' the mean pulls the mean ' + (big ? 'up' : 'down') + '.';
+        return { q: 'Data: ' + data.join(', ') + ' (mean ' + dec(Math.round(mean * 10) / 10) + '). ' + who + ' says adding <b>' + v + '</b> ' + says + ' the mean. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Adding any value always raises the mean.', 'Adding a value never changes the mean.']),
+          hint: 'Is ' + v + ' above or below the mean?', steps: [right], explain: right, meta: { k: 'dp-addmean-tf', data: data, v: v, up: says === 'raises' } };
+      }]
+    ],
+    'dp-indep': [
+      [1, 'fill', function () {
+        var A1 = R.pick([[1, 2, 'heads on a coin'], [1, 6, 'a 4 on a die'], [1, 4, 'red on a 4-colour spinner']]), B1 = R.pick([[1, 6, 'a 5 on a die'], [1, 2, 'tails on a coin'], [1, 4, 'green on a 4-colour spinner']]);
+        return { q: 'P(' + A1[2] + ' and ' + B1[2] + '). Multiply the probabilities.', type: 'fill', fill: '<span class="math">' + fr(A1[0], A1[1]) + ' &times; ' + fr(B1[0], B1[1]) + ' = </span>[[]] <span class="math">/</span> [[]]', answers: [A1[0] * B1[0], A1[1] * B1[1]],
+          hint: 'Independent events: multiply. Tops times tops, bottoms times bottoms.', steps: [fr(A1[0], A1[1]) + ' &times; ' + fr(B1[0], B1[1]) + ' = ' + fr(A1[0] * B1[0], A1[1] * B1[1]) + '.'],
+          explain: 'P = ' + fr(A1[0] * B1[0], A1[1] * B1[1]) + '.', meta: { k: 'dp-and-fill', a: A1[2], b: B1[2] } };
+      }],
+      [1, 'match', function () {
+        var ev = R.shuffle([[1, 2, 'heads on a coin'], [1, 6, 'a 4 on a die'], [1, 4, 'red on a 4-colour spinner'], [3, 10, 'red from a bag of 3 red and 7 blue']]).slice(0, 3);
+        var pairs = ev.map(function (e) { return [e[2], fr(e[0], e[1])]; });
+        return { q: 'Match each event to its probability.', type: 'match', pairs: pairs,
+          hint: 'Probability = favourable outcomes &divide; all outcomes.', steps: ['A die has 6 outcomes. A coin has 2.'],
+          explain: pairs.map(function (p) { return 'P(' + p[0] + ') = ' + p[1]; }).join('. ') + '.', meta: { k: 'dp-event-match' } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), n = R.int(3, 6), truth = R.int(0, 1);
+        var claim = truth ? 'the chance of heads on the next flip is still ' + fr(1, 2) : 'the next flip is more likely to be tails';
+        var right = 'Each flip is independent. The coin does not remember, so P(heads) is still ' + fr(1, 2) + '.';
+        return { q: 'A coin lands on heads ' + n + ' times in a row. ' + who + ' says ' + claim + '. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['After a run of heads, tails is "due".', 'After a run of heads, heads is more likely.']),
+          hint: 'Does the coin know what happened before?', steps: [right], explain: right, meta: { k: 'dp-coin-tf' } };
+      }]
+    ],
+    'dp-dep': [
+      [1, 'fill', function () {
+        var r = R.int(2, 6), b = R.int(2, 6), t = r + b;
+        return { q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. You pick a red one and <b>keep it</b>. Fill in the blanks.', type: 'fill', fill: 'P(red first) = [[]] / [[]] &nbsp; P(red second) = [[]] / [[]]', answers: [r, t, r - 1, t - 1],
+          fig: bag(r, b, 0, null), hint: 'After the first pick there is one fewer red marble and one fewer marble.', steps: ['First: ' + r + ' red out of ' + t + '.', 'Second: ' + (r - 1) + ' red out of ' + (t - 1) + '.'],
+          explain: 'P(red first) = ' + fr(r, t) + ', then P(red second) = ' + fr(r - 1, t - 1) + '.', meta: { k: 'dp-dep-fill', r: r, b: b } };
+      }],
+      [1, 'pick', function () {
+        return K.retry(function () {
+        var S = R.shuffle([['Pick a card, keep it, pick another', 1], ['Pick a marble, put it back, pick again', 0], ['Flip a coin, then roll a die', 0], ['Choose a student for a team, then another student', 1], ['Spin a spinner twice', 0], ['Take a cookie from a jar and eat it, then take another', 1]]).slice(0, 5);
+        var ans = K.picks(S, function (x) { return x[1]; });
+        if (!ans) return null;
+        return { q: 'Pick every situation where the events are <b>dependent</b>.', type: 'pick', options: S.map(function (x) { return x[0]; }), answer: ans,
+          hint: 'Dependent: the first event changes what is left for the second.', steps: ['Is anything kept or used up after the first event?'],
+          explain: 'Dependent when the first pick is kept: ' + S.filter(function (x) { return x[1]; }).map(function (x) { return x[0].toLowerCase(); }).join('; ') + '.', meta: { k: 'dp-dep-pick' } };
+        });
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), r = R.int(3, 6), b = R.int(2, 6), t = r + b, back = R.int(0, 1);
+        var right = back ? 'The marble goes back, so the bag is the same: P(red) is still ' + fr(r, t) + '.' : 'The first red marble is kept, so there are ' + (r - 1) + ' red out of ' + (t - 1) + ' left.';
+        return { q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. You pick a red one and ' + (back ? 'put it back' : 'keep it') + '. ' + who + ' says P(red) on the second pick is still <b>' + fr(r, t) + '</b>. True or false?', type: 'tf', answer: !!back,
+          why: K.why(right, ['The second pick always has the same chance as the first.', 'The second pick is always less likely to be red.']),
+          hint: 'Is the first marble still in the bag?', steps: [right], explain: right, meta: { k: 'dp-dep-tf', r: r, b: b, back: back } };
+      }]
     ]
   });
 })();
