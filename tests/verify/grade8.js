@@ -140,4 +140,33 @@
   set('pq-tf', (q, m) => tf(ev(m.ex) === m.said, q));
   set('pq-fill', (q, m) => q.answers[0] === m.b * m.c && q.answers[1] === ev(m.a + ' - ' + m.b + ' * ' + m.c) ? '' : 'steps');
   set('pq-order', q => ordered(q.items.map(ev)) ? '' : 'order');
+  /* ---- Algebra ---- */
+  /* the value of a shown expression in x, such as "5x − 4" or "(2x + 3) + (x − 1)", at a given x */
+  const at = (t, x) => Function('return (' + H.strip(t).replace(/−/g, '-').replace(/x²/g, '(x*x)').replace(/(\d)([x(])/g, '$1*$2').replace(/x/g, '(' + x + ')') + ');')();
+  const sameExpr = (s, t) => [2, -3, 0.5].every(x => near(at(s, x), at(t, x), 1e-9));
+  const OPS = { '<': (a, b) => a < b, '>': (a, b) => a > b, '<=': (a, b) => a <= b, '>=': (a, b) => a >= b };
+  set('ap-fill', (q, m) => m.terms.every((t, i) => q.answers[0] * (i + 1) + q.answers[1] === t) ? '' : 'rule');
+  set('ap-story', (q, m) => q.answer === m.b + m.m * m.w ? '' : 'savings');
+  set('ap-match', (q, m) => { const r = m.terms[1] - m.terms[0], b0 = m.terms[0] - r, want = { 'Constant rate': r, 'Initial value': b0, 'Term for figure 6': m.terms[0] + 5 * r }; return pairsOk(q, (l, rt) => want[H.strip(l)] === n(rt)); });
+  set('ap-tf', (q, m) => tf(m.said === 2 * m.terms[0] - m.terms[1], q));
+  set('ar-fill', (q, m) => q.answers[0] === m.n && q.answers[1] === at(m.m + 'x + ' + m.b, m.n) ? '' : 'term');
+  set('ar-story', (q, m) => q.answer === at(m.m + 'x + ' + m.b, m.n) ? '' : 'chairs');
+  set('ar-tf', (q, m) => tf(at(m.m + 'x + ' + m.b, m.n) === m.said, q));
+  set('ar-match', (q, m) => pairsOk(q, (l, r) => at(m.m + '*x + ' + m.b, n(H.strip(l).replace('n = ', ''))) === n(r)));
+  set('al-match', q => pairsOk(q, (l, r) => sameExpr(l, r)));
+  set('al-tf', (q, m) => tf(sameExpr(m.left, m.said), q));
+  set('al-fill', (q, m) => sameExpr(m.left, q.answers[0] + 'x + ' + q.answers[1]) ? '' : 'collected');
+  set('al-pick', (q, m) => same(which(q, o => sameExpr(o, m.target)), q.answer) ? '' : 'picks');
+  set('ae-match', (q, m) => pairsOk(q, (l, r) => at(m.e, n(H.strip(l).replace('x = ', ''))) === n(r)));
+  set('ae-story', (q, m) => near(q.answer, m.a * m.x + m.b, 0.001) ? '' : 'cost');
+  set('ae-tf', (q, m) => tf(at(m.e, m.x) === m.said, q));
+  set('ae-order', (q, m) => ordered(q.items.map(t => at(t, m.x))) ? '' : 'order');
+  set('as-fill', (q, m) => q.answers[0] === m.c - m.b && at(m.a + 'x + ' + m.b, q.answers[1]) === m.c ? '' : 'solution');
+  set('as-tf', (q, m) => tf(near(at(m.e, m.said), m.c), q));
+  set('as-way', (q, m) => { const s = H.strip(chosen(q)), g = s.match(/^(Add|Subtract) (\d+) on both sides$/); return g && m.b + (g[1] === 'Add' ? 1 : -1) * +g[2] === 0 ? '' : 'first step'; });
+  set('as-story', (q, m) => m.a * q.answer + m.b === m.c && q.answer > 0 ? '' : 'visits');
+  set('as-tap', (q, m) => { const w = q.tiles.map((t, j) => (at(m.e, n(H.strip(t).replace('x = ', ''))) === m.c ? j : -1)).filter(j => j >= 0); return w.length === 1 && w[0] === q.answer ? '' : 'solution tile'; });
+  set('ai-pick', (q, m) => same(which(q, o => OPS[m.op](m.a * n(H.strip(o).replace('x = ', '')) + m.b, m.c)), q.answer) ? '' : 'picks');
+  set('ai-tf', (q, m) => { let agree = true; for (let x = -20; x <= 20; x += 0.5) if (OPS[m.op](m.a * x + m.b, m.c) !== OPS[m.sol](x, m.at)) agree = false; return tf(agree, q); });
+  set('ai-line', (q, m) => { const ok = x => OPS[m.op](x + m.b, m.c); return ok(q.answer) && !ok(q.answer + (m.big ? -1 : 1)) ? '' : 'edge'; });
 })(window.__verify, window.__H);
