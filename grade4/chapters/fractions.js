@@ -492,4 +492,160 @@ A.yt({ gen: function () { return gen.unit(2); } }) +
       { id: 'fr4-unit', name: 'Groups of unit fractions', code: 'B2.7', gen: gen.unit }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  function lineLabel(d) { return function (v) { var k = Math.round(v * d); return k % d === 0 ? String(k / d) : k + '/' + d; }; }
+  function asMixed(c, d) { return c % d === 0 ? String(c / d) : c > d ? A.mixed(Math.floor(c / d), c % d, d) : fr(c, d); }
+  var SHAPES = {
+    'fr4-name': [
+      [1, 'tap', function (lv) {
+        var d = lv === 1 ? R.pick([3, 4, 5, 6]) : R.pick([5, 6, 8, 10]), n = R.int(1, Math.min(d - 2, 4)), other = R.pick(DEN.filter(function (x) { return x !== d && x > n; }));
+        var set = R.shuffle([[n, d], d - n === n ? [n + 1, d] : [d - n, d], [n, other]]);
+        return { q: 'Tap the picture that shows ' + fr(n, d) + ' shaded.', type: 'tap', tiles: set.map(function (s) { return bar(s[0], s[1], 240); }), answer: set.map(String).indexOf(String([n, d])), answerText: 'the bar with ' + nm(n, d) + ' shaded',
+          hint: 'Count all the equal parts first. You need ' + d + '. Then count the shaded parts.', steps: ['The denominator, ' + d + ', is the number of equal parts.', 'The numerator, ' + n + ', is the number shaded.'],
+          explain: fr(n, d) + ' means ' + n + ' of ' + d + ' equal parts are shaded.', meta: { k: 'fr4-name-tap', set: set, n: n, d: d } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var d = lv === 1 ? R.pick([2, 3, 4, 5]) : R.pick(DEN), n = R.int(1, d - 1); if (seen[n / d]) continue; seen[n / d] = 1; pairs.push([bar(n, d, 200), fr(n, d)]); }
+        return { q: 'Match each bar to the fraction that is shaded.', type: 'match', pairs: pairs, hint: 'Count all the parts for the bottom number, and the shaded parts for the top number.',
+          steps: ['Bottom number: all the equal parts. Top number: the shaded parts.'], explain: 'Each bar shows its numerator shaded out of its denominator.', meta: { k: 'fr4-name-match', pairs: pairs } };
+      }],
+      [2, 'mistake', function () {
+        var d = R.pick([4, 5, 6, 8, 10]), n = R.int(1, d - 1), p = who(), truth = !R.int(0, 2), sn = truth ? n : d - n, sd = d;
+        if (!truth && sn === n) { sn = n; sd = d - n; }
+        var right = n + ' of the ' + d + ' equal parts are shaded, so ' + fr(n, d) + ' is shaded.';
+        return { q: p + ' says ' + fr(sn, sd) + ' of the bar is shaded. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: bar(n, d, 360),
+          why: why(right, ['You count the white parts for the numerator.', 'The denominator is the number of white parts.', 'Only the bigger number matters.']),
+          hint: 'Count the shaded parts. Count all the parts.', steps: [right], explain: right, meta: { k: 'fr4-name-tf', n: n, d: d, sn: sn, sd: sd } };
+      }]
+    ],
+    'fr4-mean': [
+      [1, 'tap', function () {
+        var d = R.pick(DEN), n = R.int(1, d - 1), askDen = !R.int(0, 1), set = R.shuffle([n, d]);
+        return { q: 'Look at ' + fr(n, d) + '. Tap the number that tells ' + (askDen ? 'how many equal parts make the <b>whole</b>' : 'how many parts we are <b>counting</b>') + '.', type: 'tap', tiles: set.map(function (v) { return '<span class="math">' + v + '</span>'; }),
+          answer: set.indexOf(askDen ? d : n), answerText: askDen ? 'the denominator, ' + d : 'the numerator, ' + n,
+          hint: 'The bottom number is the denominator. The top number is the numerator.', steps: [askDen ? 'The denominator, ' + d + ', is the number of equal parts in the whole.' : 'The numerator, ' + n + ', is the number of parts we count.'],
+          explain: 'In ' + fr(n, d) + ', ' + n + ' is the numerator and ' + d + ' is the denominator.', meta: { k: 'fr4-mean-tap', n: n, d: d, askDen: askDen } };
+      }],
+      [1, 'fill', function () {
+        var c = R.pick([['pizza', 'slices', 'eats'], ['chocolate bar', 'pieces', 'shares'], ['garden', 'beds', 'plants']]), d = R.pick([4, 5, 6, 8, 10]), n = R.int(1, d - 1), p = who();
+        return { q: 'A ' + c[0] + ' is cut into <b>' + d + '</b> equal ' + c[1] + '. ' + p + ' ' + c[2] + ' <b>' + n + '</b> of them. Fill in the fraction.', type: 'fill', fill: 'Numerator: [[]] &nbsp; Denominator: [[]]', answers: [n, d],
+          fig: bar(n, d, 300), hint: 'The denominator is all the equal parts. The numerator is the parts we talk about.', steps: ['All the parts: ' + d + '. The parts used: ' + n + '.'],
+          explain: 'The fraction is ' + fr(n, d) + '.', meta: { k: 'fr4-mean-fill' } };
+      }],
+      [2, 'mistake', function () {
+        var d = R.pick([5, 6, 8, 10]), n = R.int(1, d - 1), p = who(), truth = !R.int(0, 1), said = truth ? d : n;
+        var right = 'The denominator is the bottom number, ' + d + '. It tells how many equal parts make the whole.';
+        return { q: p + ' says the denominator of ' + fr(n, d) + ' is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The denominator is the top number.', 'The denominator is always the smaller number.', 'The denominator counts the shaded parts.']),
+          hint: 'Which number is on the bottom?', steps: [right], explain: right, meta: { k: 'fr4-mean-tf', n: n, d: d, said: said } };
+      }]
+    ],
+    'fr4-share': [
+      [1, 'fill', function (lv) {
+        var k = R.pick(lv === 1 ? [2, 3, 4] : [3, 4, 5, 6, 8]), n = R.int(1, k - 1), c = R.pick(['granola bars', 'pancakes', 'bannock loaves', 'pizzas']);
+        return { q: '<b>' + n + '</b> ' + c + ' are shared equally among <b>' + k + '</b> friends. Fill in the share for each friend.', type: 'fill', fill: 'Each friend gets [[]] / ' + k + ' of a whole.', answers: [n],
+          fig: fairShare(n, k), hint: 'Cut each whole into ' + k + ' pieces. Each friend gets one piece from each whole.', steps: ['Each friend gets 1 piece from each of the ' + n + ' wholes.', 'That is ' + n + ' pieces of ' + fr(1, k) + ', or ' + fr(n, k) + '.'],
+          explain: 'Each friend gets ' + fr(n, k) + '.', meta: { k: 'fr4-share-fill' } };
+      }],
+      [1, 'mistake', function () {
+        var k = R.pick([3, 4, 5, 6]), n = R.int(1, k - 1), p = who(), truth = !R.int(0, 1), sn = truth ? n : k, sd = truth ? k : n;
+        var right = n + ' wholes shared by ' + k + ' gives each one ' + n + ' pieces of ' + fr(1, k) + ': ' + fr(n, k) + '.';
+        return { q: n + ' pizza' + (n > 1 ? 's are' : ' is') + ' shared equally by ' + k + ' friends. ' + p + ' says each friend gets ' + fr(sn, sd) + '. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The number of friends goes on top.', 'Each friend gets a whole pizza.', 'The more friends there are, the bigger each share.']),
+          hint: 'Each friend gets less than one whole pizza. Is ' + fr(sn, sd) + ' less than 1?', steps: [right], explain: right, meta: { k: 'fr4-share-tf', n: n, people: k, sn: sn, sd: sd } };
+      }],
+      [2, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var k = R.pick([2, 3, 4, 5, 6, 8]), n = R.int(1, k - 1); if (seen[n / k]) continue; seen[n / k] = 1; pairs.push([n + ' sandwich' + (n > 1 ? 'es' : '') + ' for ' + k + ' people', fr(n, k)]); }
+        return { q: 'Match each sharing to the amount each person gets.', type: 'match', pairs: pairs, hint: 'Wholes on top, people on the bottom.',
+          steps: ['n wholes shared by k people gives each person n/k.'], explain: 'Each person gets wholes &divide; people.', meta: { k: 'fr4-share-match', pairs: pairs } };
+      }]
+    ],
+    'fr4-compare': [
+      [1, 'order', function (lv) {
+        var ds = R.shuffle(DEN).slice(0, 3), n = lv === 3 ? R.int(2, 3) : 1;
+        ds = ds.filter(function (d) { return d > n; });
+        while (ds.length < 3) { var x = R.pick(DEN); if (x > n && ds.indexOf(x) < 0) ds.push(x); }
+        ds.sort(function (a, b) { return b - a; });
+        return { q: 'Put these in order from <b>least to greatest</b>.', type: 'order', items: ds.map(function (d) { return fr(n, d); }), first: 'least', last: 'greatest',
+          hint: 'The top numbers are the same. More parts in the whole means smaller parts.', steps: ['The fraction with the biggest denominator has the smallest pieces.', 'Order: ' + ds.map(function (d) { return n + '/' + d; }).join(', ') + '.'],
+          explain: 'Least to greatest: ' + ds.map(function (d) { return n + '/' + d; }).join(', ') + '.', meta: { k: 'fr4-cmp-order' } };
+      }],
+      [1, 'line', function (lv) {
+        var d = lv === 1 ? R.pick([2, 3, 4]) : R.pick([4, 5, 6, 8, 10]), n = R.int(1, d - 1);
+        return { q: 'Place ' + fr(n, d) + ' on the number line.', type: 'line', min: 0, max: 1, tick: 1 / d, every: 1, snap: 1 / d, answer: n / d, tol: 0.01, label: lineLabel(d),
+          hint: 'The line from 0 to 1 is cut into ' + d + ' equal parts. Count ' + n + ' of them.', steps: ['Each small step is ' + fr(1, d) + '.', 'Count ' + n + ' steps from 0.'],
+          explain: fr(n, d) + ' is ' + n + ' steps of ' + fr(1, d) + ' from 0.', meta: { k: 'fr4-cmp-line', n: n, d: d } };
+      }],
+      [2, 'pick', function () {
+        var d = R.pick([4, 6, 8, 10]), opts = [], half = d / 2;
+        var ns = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9].filter(function (x) { return x < d && x !== half; })).slice(0, 4);
+        if (!ns.some(function (x) { return x > half; })) ns[0] = d - 1;
+        if (!ns.some(function (x) { return x < half; })) ns[1] = 1;
+        ns = ns.filter(function (x, i) { return ns.indexOf(x) === i; });
+        ns.forEach(function (x) { opts.push(fr(x, d)); });
+        var ans = ns.map(function (x, j) { return x > half ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every fraction that is <b>greater than ' + fr(1, 2) + '</b>.', type: 'pick', options: opts, answer: ans,
+          hint: fr(1, 2) + ' is the same as ' + fr(half, d) + '.', steps: [fr(1, 2) + ' = ' + fr(half, d) + '. Pick the ones with a numerator bigger than ' + half + '.'],
+          explain: 'Greater than ' + fr(1, 2) + ': ' + ans.map(function (j) { return ns[j] + '/' + d; }).join(', ') + '.', meta: { k: 'fr4-cmp-pick', d: d, ns: ns } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.pick([2, 3, 4, 5]), b = R.pick([6, 8, 10]), p = who(), truth = !R.int(0, 2);
+        var claim = truth ? [a, b] : [b, a];
+        var right = 'The whole is cut into fewer parts for ' + fr(1, a) + ', so its parts are bigger. ' + fr(1, a) + ' &gt; ' + fr(1, b) + '.';
+        return { q: p + ' says ' + fr(1, claim[0]) + ' is greater than ' + fr(1, claim[1]) + (truth ? '.' : ' because ' + claim[0] + ' is bigger than ' + claim[1] + '.') + ' True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['A bigger denominator always means a bigger fraction.', 'All unit fractions are the same size.', 'You compare the numerators, and they are both 1.']),
+          hint: 'Picture one pizza cut into ' + a + ' and one cut into ' + b + '. Which slice is bigger?', steps: [right], explain: right, meta: { k: 'fr4-cmp-tf', big: claim[0], small: claim[1] } };
+      }]
+    ],
+    'fr4-count': [
+      [1, 'line', function (lv) {
+        var d = lv === 1 ? R.pick([2, 4]) : R.pick([3, 4, 5, 6]), c = R.int(d + 1, d * 2 - 1), max = 2;
+        return { q: 'Count by ' + NAME[d][1] + '. Place <b>' + c + '/' + d + '</b> on the number line.', type: 'line', min: 0, max: max, tick: 1 / d, every: 1, snap: 1 / d, answer: c / d, tol: 0.01, label: lineLabel(d),
+          hint: 'Each small step is ' + fr(1, d) + '. ' + d + ' steps make 1 whole.', steps: [d + '/' + d + ' = 1.', c + '/' + d + ' is ' + (c - d) + ' more step' + (c - d > 1 ? 's' : '') + ' past 1.'],
+          explain: c + '/' + d + ' = ' + Math.floor(c / d) + ' ' + (c % d) + '/' + d + '.', meta: { k: 'fr4-count-line', c: c, d: d } };
+      }],
+      [1, 'fill', function (lv) {
+        var d = lv === 1 ? R.pick([2, 3, 4]) : R.pick([3, 4, 5, 6, 8]), s = R.int(1, d);
+        return { q: 'Count by ' + NAME[d][1] + '. Fill in the missing numerators.', type: 'fill', fill: [s, '[[]]', s + 2, '[[]]', s + 4].map(function (x) { return typeof x === 'number' ? x + '/' + d : x + ' / ' + d; }).join(', &nbsp;'), answers: [s + 1, s + 3],
+          hint: 'Each count adds ' + fr(1, d) + '. The denominator stays ' + d + '.', steps: ['The numerators go up by 1: ' + s + ', ' + (s + 1) + ', ' + (s + 2) + ', ' + (s + 3) + ', ' + (s + 4) + '.'],
+          explain: 'Counting by ' + NAME[d][1] + ' adds 1 to the numerator each time.', meta: { k: 'fr4-count-fill', d: d } };
+      }],
+      [2, 'order', function () {
+        var d = R.pick([2, 3, 4, 5]), cs = [];
+        while (cs.length < 4) { var c = R.int(1, d * 3); if (cs.indexOf(c) < 0) cs.push(c); }
+        cs.sort(function (a, b) { return a - b; });
+        return { q: 'Put these in order from <b>least to greatest</b>.', type: 'order', items: cs.map(function (c) { return asMixed(c, d); }), first: 'least', last: 'greatest',
+          hint: 'Change them all to ' + NAME[d][1] + ' first. ' + d + ' ' + NAME[d][1] + ' make 1 whole.', steps: ['In ' + NAME[d][1] + ': ' + cs.map(function (c) { return c + '/' + d; }).join(', ') + '.'],
+          explain: 'In order: ' + cs.map(function (c) { return c + '/' + d; }).join(', ') + '.', meta: { k: 'fr4-count-order', d: d } };
+      }]
+    ],
+    'fr4-unit': [
+      [1, 'fill', function () {
+        var d = R.pick(DEN), n = R.int(2, Math.min(d - 1, 6)), sum = [];
+        for (var i = 0; i < n; i++) sum.push(fr(1, d));
+        return { q: 'Add the unit fractions.', type: 'fill', fill: sum.join(' + ') + ' = [[]] / ' + d, answers: [n], fig: bar(n, d, 360),
+          hint: 'Count the pieces. They are all ' + NAME[d][1] + '.', steps: ['There are ' + n + ' pieces of ' + fr(1, d) + '.', 'So the sum is ' + fr(n, d) + '.'],
+          explain: n + ' &times; ' + fr(1, d) + ' = ' + fr(n, d) + '.', meta: { k: 'fr4-unit-fill', d: d } };
+      }],
+      [1, 'match', function () {
+        var d = R.pick([5, 6, 8, 10]), ns = R.shuffle([2, 3, 4]), pairs = ns.map(function (n) { return [n + ' &times; ' + fr(1, d), fr(n, d)]; });
+        return { q: 'Match each multiplication to its fraction.', type: 'match', pairs: pairs, hint: 'n copies of ' + fr(1, d) + ' make n ' + NAME[d][1] + '.',
+          steps: ['The number of copies becomes the numerator. The denominator stays ' + d + '.'], explain: pairs.map(function (p) { return H(p[0]) + ' = ' + H(p[1]); }).join('. ') + '.', meta: { k: 'fr4-unit-match', pairs: pairs } };
+      }],
+      [2, 'story', function () {
+        var d = R.pick([2, 3, 4]), n = R.int(2, 9), p = who();
+        return { q: p + ' uses ' + fr(1, d) + ' cup of flour for each pancake. ' + p + ' uses <b>' + asMixed(n, d) + '</b> cups in all. How many pancakes is that?', type: 'num', answer: n,
+          hint: 'How many ' + NAME[d][1] + ' are in ' + H(asMixed(n, d)) + '?', steps: ['Each pancake uses 1 ' + NAME[d][0] + '.', H(asMixed(n, d)) + ' = ' + n + '/' + d + ', so ' + n + ' pancakes.'],
+          explain: n + ' &times; ' + fr(1, d) + ' = ' + n + '/' + d + '. That is ' + n + ' pancakes.', meta: { k: 'fr4-unit-story', n: n, d: d } };
+      }]
+    ]
+  };
+  /* fraction html as plain text, e.g. "2 3/4", for steps and explanations */
+  function H(html) { return String(html).replace(/<span class="fr"[^>]*><sup>(\d+)<\/sup><sub>(\d+)<\/sub><\/span>/g, '$1/$2'); }
+  K.shapes('fractions', SHAPES);
 })();

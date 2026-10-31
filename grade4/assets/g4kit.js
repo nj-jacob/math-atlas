@@ -2,7 +2,8 @@
    for the shared lesson engine (lesson.js). Grade 4 only; the shared engine files stay untouched.
    K.watch([[caption, figure html, ms], ...])  a clip: each step shows a drawing; parts that are new in a step light up.
    K.lab({ controls, render, tasks })           a hands-on lab with sliders, buttons or a list, and self-checking challenges.
-   K.tap({ items, render, tasks })              a lab where you tap parts of a drawing to light them up and count. */
+   K.tap({ items, render, tasks })              a lab where you tap parts of a drawing to light them up and count.
+   K.shapes(id, SHAPES), K.why, K.small, K.digits, K.tapLine   more ways to ask in practice (see the end of this file). */
 (function () {
   'use strict';
   var A = window.Atlas, K = (A.kit = {});
@@ -185,4 +186,46 @@
 
   /* checks built from practice generators: K.gen(gen.add, 1) */
   K.gen = function (fn, lv) { return function () { return fn(lv); }; };
+
+  /* ---------- More ways to ask: practice question shapes (docs/QUESTIONS.md) ----------
+     K.shapes(chapterId, SHAPES) keeps each skill's first question ("plain") and mixes in the
+     chapter's new shapes with Atlas.Q.vary. SHAPES = { skillId: [[minLevel, name, fn(lv)], ...] }. */
+  K.shapes = function (id, SHAPES) {
+    var ch = A.chapters[id];
+    if (!ch || !A.Q) return;
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  };
+  /* the "why?" step of a true-or-false question: the right reason plus wrong ones, shuffled */
+  K.why = function (right, wrong) { var o = A.R.mc(right, wrong); return { options: o.options, answer: o.answer }; };
+  /* the same drawing shown smaller, for cards and tiles: sets the svg's width to w */
+  K.small = function (svg, w) { return svg.replace(/width="[\d.]+"/, 'width="' + w + '"'); };
+  /* big digits in boxes; box i (from the left) can be tapped: data-hit="i" */
+  K.digits = function (s) {
+    s = String(s);
+    var w = Math.min(84, 520 / s.length), h = '', k = 0;
+    for (var i = 0; i < s.length; i++) {
+      var x = 4 + i * w, c = s.charAt(i);
+      h += c === '.' ? '<text x="' + (x + w / 2 - 5) + '" y="80" text-anchor="middle" font-size="58" font-weight="700" style="fill:var(--ink)">.</text>' :
+        '<g data-hit="' + (k++) + '" aria-label="the digit ' + c + '"><rect x="' + x + '" y="4" width="' + (w - 10) + '" height="92" rx="14" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
+        '<text x="' + (x + (w - 10) / 2) + '" y="70" text-anchor="middle" font-size="54" font-weight="700" style="fill:var(--ink);font-family:var(--display)">' + c + '</text></g>';
+    }
+    return A.svg(s.length * w, 100, h, 'The number ' + s + ' in big digits');
+  };
+  /* a number line with labelled points to tap. pts = [{ v: value, key: 'a', t: 'label' }] */
+  K.tapLine = function (min, max, tick, pts, label) {
+    var W = 440, x0 = 26, x1 = W - 26, X = function (v) { return x0 + (x1 - x0) * (v - min) / (max - min); };
+    var s = '<line x1="' + x0 + '" y1="40" x2="' + x1 + '" y2="40" style="stroke:var(--ink)" stroke-width="3"/>', n = Math.round((max - min) / tick);
+    for (var i = 0; i <= n; i++) { var v = A.clean(min + i * tick), x = X(v), end = i === 0 || i === n; s += '<line x1="' + x + '" y1="' + (end ? 28 : 33) + '" x2="' + x + '" y2="' + (end ? 52 : 47) + '" style="stroke:var(--ink)" stroke-width="2"/>' + (end ? '<text x="' + x + '" y="72" text-anchor="middle" font-size="16">' + A.fmt(v) + '</text>' : ''); }
+    pts.forEach(function (p) {
+      s += '<g data-hit="' + p.key + '" aria-label="point ' + p.t + '"><circle cx="' + X(p.v) + '" cy="40" r="16" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>' +
+        '<text x="' + X(p.v) + '" y="46" text-anchor="middle" font-size="16" font-weight="700" style="fill:var(--ink)">' + p.t + '</text></g>';
+    });
+    return A.svg(W, 82, s, label || 'Number line from ' + A.fmt(min) + ' to ' + A.fmt(max) + ' with lettered points');
+  };
 })();
