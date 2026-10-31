@@ -101,6 +101,12 @@
           ['Term 4: still 3 more. Same change each time, so it is linear.', figs(3, 2, 4), '5, 8, 11, 14']
         ]),
         try: lab(CH, 0, 'Make a pattern that adds <b>4</b> each time with <b>1</b> tile that stays.', function (h) { return +h.querySelector('#gpm').value === 4 && +h.querySelector('#gpb').value === 1; }, 'Yes: 5, 9, 13, 17. The rule is 4n + 1.'),
+        example: G6.example([
+          ['My turn. Term 1 has 4 orange tiles that stay, and 2 purple tiles.', figs(2, 4, 1), '6 tiles'],
+          ['Term 2 adds 2 purple tiles: 8 tiles.', figs(2, 4, 2), '6, 8'],
+          ['Term 3 adds 2 more: 10 tiles.', figs(2, 4, 3), '6, 8, 10'],
+          ['I find the change between each pair: +2, +2, +2. Same change, so it is linear.', figs(2, 4, 4), '6, 8, 10, 12']
+        ]),
         key: '<p>Find the change between each pair of terms. Same change means linear.</p>',
         check: [{ q: 'The pattern is 0.25, 0.5, 0.75, 1, &hellip; What is the next term?', type: 'num', answer: 1.25, hint: 'What is added each time?', explain: 'It adds 0.25 each time. 1 + 0.25 = 1.25.' }, g(CH, 'pa-next', 1), g(CH, 'pa-next', 2)] },
       { id: 'linear', title: 'Linear or not?', exp: ['C1.1'], skill: 'pa-next', hard: true,
@@ -113,6 +119,12 @@
           { label: 'Look at the changes', html: '<div class="tbl"><table><thead><tr><th class="l">Pattern</th><th class="l">Changes</th><th class="l">Linear?</th></tr></thead><tbody><tr><td class="l">2, 5, 8, 11</td><td class="l">+3, +3, +3</td><td class="l"><b>Yes</b></td></tr><tr><td class="l">1, 2, 4, 8</td><td class="l">+1, +2, +4</td><td class="l">No</td></tr><tr><td class="l">20, 17, 14, 11</td><td class="l">&minus;3, &minus;3, &minus;3</td><td class="l"><b>Yes</b> (shrinking)</td></tr></tbody></table></div>' },
           { label: 'Shrinking patterns', html: '<p>A gift card starts at $50 and loses $4 a week: 50, 46, 42, 38. The change is &minus;4 every time, so it is linear too. The line just goes down.</p>' }
         ],
+        example: G6.example([
+          ['My turn. Is 4, 9, 14, 19 linear? I find each change: +5, +5, +5.', '<p class="g6-big">4, 9, 14, 19</p>', '+5 each time'],
+          ['Same change every time, so it is linear. The points sit on a straight line.', graph(5, -1, 4)],
+          ['Now 1, 2, 4, 8. The changes are +1, +2, +4.', '<p class="g6-big">1, 2, 4, 8</p>', '+1, +2, +4'],
+          ['The change is not the same, so it is not linear.', '<p class="g6-big">not linear</p>']
+        ]),
         key: '<p>Same change every time (up or down) = linear.</p>',
         check: [{ q: 'Which pattern is linear?', type: 'mc', options: ['3, 6, 12, 24', '2, 5, 8, 11', '1, 4, 9, 16', '1, 2, 4, 7'], answer: 1, hint: 'Find the change between each pair.', explain: '2, 5, 8, 11 adds 3 every time.' },
           { q: 'Is 40, 35, 30, 25 a linear pattern?', type: 'mc', options: ['Yes: it goes down by 5 every time', 'No: it gets smaller', 'No: linear patterns must grow'], answer: 0, hint: 'Is the change the same each time?', explain: 'It changes by &minus;5 every time, so it is linear.' }, g(CH, 'pa-next', 2)] }
@@ -125,6 +137,12 @@
           ['So start with 3n. For term 1, 3n is 3.', '<p class="g6-big">3 &times; 1 = 3</p>'],
           ['But term 1 is 5. We need 2 more.', '<p class="g6-big">5 &minus; 3 = 2</p>'],
           ['The rule is 3n + 2. Check term 4: 12 + 2 = 14. It works.', figs(3, 2, 4), '3n + 2']
+        ]),
+        example: G6.example([
+          ['My turn. I write the rule for 7, 11, 15, 19. The change is +4 each time.', '<p class="g6-big">7, 11, 15, 19</p>', '+4 each time'],
+          ['So the rule starts with 4n. For term 1, 4n is 4.', '<p class="g6-big">4 &times; 1 = 4</p>'],
+          ['But term 1 is 7. What is left over? 7 &minus; 4 = 3.', '<p class="g6-big">7 &minus; 4 = 3</p>'],
+          ['The rule is 4n + 3. I check term 4: 4 &times; 4 + 3 = 19. It works.', figs(4, 3, 4), '4n + 3']
         ]),
         key: '<p>Rule = (change) &times; n + (what is left over). Always check with term 1.</p>',
         mistake: '<p>Using only the change in the rule. 5, 8, 11, 14 is not 3n, because 3 &times; 1 = 3, not 5. Ask the student to test the rule on term 1 every time.</p>',
@@ -139,6 +157,12 @@
         ]),
         ways: [{ label: 'Use a table', html: '<div class="tbl"><table><thead><tr><th class="l">n</th><td>1</td><td>2</td><td>3</td><td>10</td><td>20</td></tr></thead><tbody><tr><th class="l">3n + 2</th><td>5</td><td>8</td><td>11</td><td>32</td><td><b>62</b></td></tr></tbody></table></div><p>The table works for small terms. The rule is faster for big ones.</p>' },
           { label: 'Count on in jumps', html: '<p>Term 10 is 32. Term 15 is 5 more jumps of 3: 32 + 15 = 47.</p>' }],
+        example: G6.example([
+          ['My turn. Which term of 4n + 3 is 51?', '<p class="g6-big">4n + 3 = 51</p>'],
+          ['I undo the adding first: I take 3 away from both sides.', '<p class="g6-big">4n = 48</p>'],
+          ['I undo the multiplying: I divide by 4.', '<p class="g6-big">n = 12</p>', 'Term 12'],
+          ['I check: 4 &times; 12 + 3 = 48 + 3 = 51.', '<p class="g6-big">48 + 3 = 51 &check;</p>']
+        ]),
         key: '<p>Forward: put n in. Backward: undo the adding, then undo the multiplying.</p>',
         check: [{ q: 'The rule is 4n + 1. What is term 12?', type: 'num', answer: 49, hint: 'Put 12 in place of n. Multiply first.', explain: '4 &times; 12 + 1 = 49.' },
           { q: 'The rule is 5n &minus; 2. Which term number has the value 48?', type: 'num', answer: 10, hint: 'Solve 5n &minus; 2 = 48.', explain: '5n = 50, so n = 10.' }, g(CH, 'pa-rule', 2)] }
@@ -151,6 +175,12 @@
           ['3x means 3 times x.', '<p class="g6-big">3 &times; x + 2</p>'],
           ['Put 4 in place of x.', '<p class="g6-big">3 &times; 4 + 2</p>'],
           ['Multiply first, then add.', '<p class="g6-big">12 + 2 = 14</p>', 'Not 34 + 2']
+        ]),
+        example: G6.example([
+          ['My turn. I evaluate 5y &minus; 4 when y = 6.', '<p class="g6-big">5y &minus; 4</p>'],
+          ['5y means 5 times y. I replace the letter with 6.', '<p class="g6-big">5 &times; 6 &minus; 4</p>'],
+          ['I multiply first: 5 &times; 6 = 30.', '<p class="g6-big">30 &minus; 4</p>'],
+          ['Then I subtract: 30 &minus; 4 = 26.', '<p class="g6-big">= 26</p>', 'Not 56 &minus; 4']
         ]),
         key: '<p>Replace the letter, multiply, then add or subtract.</p>',
         mistake: '<p>Reading 3x as a two-digit number. When x = 4, the student writes 34 instead of 3 &times; 4 = 12.</p>',
@@ -168,6 +198,12 @@
           { do: 'Show <b>x + 5 + 2x</b>.', goal: function (s) { return s.x === 3 && s.one === 5 && s.n === 8; }, yes: 'Yes: 3x + 5.' }
         ] },
         ways: [{ label: 'With a picture', html: '<div class="fig">' + atiles(6, 3) + '</div><p>4m + 3 + 2m: the long tiles join (4 + 2 = 6). The 3 small squares stay. 6m + 3.</p>', }],
+        example: G6.example([
+          ['My turn. I simplify 2x + 5 + 4x + 1.', '<p class="g6-big">2x + 5 + 4x + 1</p>'],
+          ['I find the x terms: 2x and 4x. I add the numbers in front: 2 + 4 = 6, so 6x.', atiles(6, 0), '6x'],
+          ['I find the plain numbers: 5 + 1 = 6. They stay separate from the x terms.', atiles(6, 6), '6x + 6'],
+          ['I check: 6x and 6 are not like terms, so I stop.', '<p class="g6-big">6x + 6</p>', 'Not 12x']
+        ]),
         key: '<p>Add the numbers in front of the same letter. Leave plain numbers alone.</p>',
         mistake: '<p>Adding everything together: 4m + 3 + 2m written as 9m. The 3 is not an m term.</p>',
         check: [{ q: 'Simplify: <span class="math">4m + 3 + 2m</span>', type: 'mc', options: ['9m', '6m + 3', '7m + 2', '6m + 3m'], answer: 1, hint: 'Add the m terms. The 3 stays.', explain: '4m + 2m = 6m, so 6m + 3.' }, g(CH, 'pa-combine', 1), g(CH, 'pa-combine', 2)] }
@@ -182,6 +218,12 @@
           ['Check: 3 &times; 4 + 5 = 17.', balance(3, 5, 17), '12 + 5 = 17 ✓']
         ]),
         try: lab(CH, 2, 'Set the balance to <b>4 x</b> and press "Next step" until it is solved.', function (h) { return +h.querySelector('#bqa').value === 4 && h.querySelector('#bqstep').disabled; }, 'Solved. First take away the extra units, then share into equal groups.'),
+        example: G6.example([
+          ['My turn. I solve 4x + 2 = 22. The sides balance.', balance(4, 2, 22)],
+          ['I undo the adding: I take 2 units off both sides.', balance(4, 0, 20), '4x = 20'],
+          ['I undo the multiplying: I split both sides into 4 equal groups.', balance(1, 0, 5), 'x = 5'],
+          ['I check: 4 &times; 5 + 2 = 22.', balance(4, 2, 22), '20 + 2 = 22 ✓']
+        ]),
         key: '<p>Undo in reverse order: first the adding, then the multiplying. Check your answer.</p>',
         check: [{ q: 'Solve: <span class="math">4x + 7 = 31</span>', type: 'num', answer: 6, hint: 'Take 7 from both sides, then divide by 4.', explain: '4x = 24, so x = 6.' }, g(CH, 'pa-solve', 1), g(CH, 'pa-solve', 2)] },
       { id: 'twox', title: 'More than one x term', exp: ['C2.3', 'C2.1'], skill: 'pa-solve', hard: true,
@@ -194,6 +236,13 @@
         ]),
         ways: [{ label: 'Guess and check', html: '<p>Try x = 4: 8 + 12 + 4 = 24. Too small. Try x = 5: 10 + 15 + 4 = 29. Yes. Guessing works, but undoing is faster for big numbers.</p>' },
           { label: 'Think backwards', html: '<p>Something plus 4 makes 29, so the something is 25. Five x make 25, so one x is 5.</p>' }],
+        example: G6.example([
+          ['My turn. I solve 3x + x + 7 = 31.', '<p class="g6-big">3x + x + 7 = 31</p>'],
+          ['First I join the x terms: 3x + x = 4x.', balance(4, 7, 31), '4x + 7 = 31'],
+          ['I undo the adding: take 7 from both sides.', balance(4, 0, 24), '4x = 24'],
+          ['I undo the multiplying: divide both sides by 4.', balance(1, 0, 6), 'x = 6'],
+          ['I check: 3 &times; 6 + 6 + 7 = 18 + 6 + 7 = 31.', '<p class="g6-big">31 = 31 &check;</p>']
+        ]),
         key: '<p>Join like terms, undo the adding, undo the multiplying, check.</p>',
         check: [{ q: 'Solve: <span class="math">3x + 2x + 6 = 41</span>', type: 'num', answer: 7, hint: 'Join the x terms first.', explain: '5x + 6 = 41. 5x = 35. x = 7.' }, g(CH, 'pa-solve', 2), g(CH, 'pa-solve', 3)] }
     ] },
@@ -206,6 +255,12 @@
           ['x &lt; 4: every number smaller than 4.', iqline('<', 4, 0, 12), 'Arrow points left']
         ]),
         try: lab(CH, 3, 'Show <b>x &lt; 3</b> on the number line.', function (h) { return h.querySelector('#iqo').value === '<' && +h.querySelector('#iqv').value === 3; }, 'Yes: open dot at 3, arrow to the left.'),
+        example: G6.example([
+          ['My turn. I show x &le; 7 on a number line. It means 7 or less.', '<p class="g6-big">x &le; 7</p>'],
+          ['&le; includes 7, so I draw a closed dot at 7.', iqline('≤', 7, 0, 12), 'Closed dot: 7 is included'],
+          ['Less means smaller numbers, so the arrow points left.', iqline('≤', 7, 0, 12), 'Arrow points left'],
+          ['I check: 6 is on the arrow and makes it true. 8 is not on it.', iqline('≤', 7, 0, 12), '6 &le; 7 ✓ &nbsp; 8 &le; 7 ✗']
+        ]),
         key: '<p>&lt; and &gt;: open dot. &le; and &ge;: closed dot. The arrow points to the answers.</p>',
         check: [{ q: 'Which inequality has a closed dot at 6 and an arrow to the left?', type: 'mc', options: ['x &lt; 6', 'x &le; 6', 'x &gt; 6', 'x &ge; 6'], answer: 1, hint: 'Closed means 6 is included. Left means smaller.', explain: 'x &le; 6.' }, { q: 'Is 5 a solution of x &gt; 5?', type: 'mc', options: ['Yes', 'No'], answer: 1, hint: 'Is 5 greater than 5?', explain: '5 is not greater than 5, so no.' }] },
       { id: 'solveineq', title: 'Solving inequalities', exp: ['C2.4'], skill: 'pa-ineq', hard: true,
@@ -217,6 +272,12 @@
           ['Check x = 7: 14 &minus; 3 = 11, and 11 &ge; 11. True.', iqline('≥', 7, 0, 14), '✓']
         ]),
         ways: [{ label: 'Test numbers', html: '<p>Try x = 6: 12 &minus; 3 = 9. Is 9 &ge; 11? No. Try x = 7: 11 &ge; 11. Yes. Try x = 8: 13 &ge; 11. Yes. So 7 and bigger work.</p>' }],
+        example: G6.example([
+          ['My turn. I solve 3x + 4 &lt; 19.', '<p class="g6-big">3x + 4 &lt; 19</p>'],
+          ['Same steps as an equation. I take 4 from both sides.', '<p class="g6-big">3x &lt; 15</p>'],
+          ['I divide both sides by 3. I keep the sign.', iqline('<', 5, 0, 12), 'x &lt; 5'],
+          ['I check a number. x = 4: 12 + 4 = 16, and 16 &lt; 19. True.', iqline('<', 5, 0, 12), '✓']
+        ]),
         key: '<p>Same steps as an equation. Keep the sign. Check a number.</p>',
         check: [{ q: 'Solve: <span class="math">2x &minus; 3 &ge; 11</span>', type: 'mc', options: ['x &ge; 4', 'x &ge; 7', 'x &le; 7', 'x &ge; 8'], answer: 1, hint: 'Add 3, then divide by 2.', explain: '2x &ge; 14, so x &ge; 7.' }, g(CH, 'pa-ineq', 1), g(CH, 'pa-ineq', 2)] }
     ] },
@@ -230,6 +291,12 @@
           ['Now x = &minus;2. That is not greater than 0, so it stops. 4 numbers.', '<div class="tbl"><table><thead><tr><th>x</th><th>says</th></tr></thead><tbody><tr><td>10</td><td>10</td></tr><tr><td>7</td><td>7</td></tr><tr><td>4</td><td>4</td></tr><tr><td>1</td><td>1</td></tr><tr><td>&minus;2</td><td>stop</td></tr></tbody></table></div>']
         ]),
         try: lab(CH, 4, 'Change the code so it says exactly <b>5</b> lines.', function (h) { return /Output \(5 lines\)/.test(h.querySelector('#cdout').textContent); }, 'Yes: 5 passes through the loop.'),
+        example: G6.example([
+          ['My turn. I trace this code. x starts at 2.', '<code class="mono">x = 2\nrepeat while x &lt; 20:\n    say x\n    x = x &times; 2</code>'],
+          ['Pass 1 says 2, then x becomes 4. Pass 2 says 4, then x becomes 8.', '<div class="tbl"><table><thead><tr><th>pass</th><th>says</th><th>new x</th></tr></thead><tbody><tr><td>1</td><td>2</td><td>4</td></tr><tr><td>2</td><td>4</td><td>8</td></tr></tbody></table></div>'],
+          ['Pass 3 says 8. Pass 4 says 16, then x becomes 32.', '<div class="tbl"><table><thead><tr><th>pass</th><th>says</th><th>new x</th></tr></thead><tbody><tr><td>1</td><td>2</td><td>4</td></tr><tr><td>2</td><td>4</td><td>8</td></tr><tr><td>3</td><td>8</td><td>16</td></tr><tr><td>4</td><td>16</td><td>32</td></tr></tbody></table></div>'],
+          ['32 is not less than 20, so the loop stops. The code says 4 numbers: 2, 4, 8, 16.', '<p class="g6-big">2, 4, 8, 16</p>']
+        ]),
         key: '<p>Make a trace table: the value of x on every pass, and when it stops.</p>',
         check: [{ q: 'x = 10. repeat while x &gt; 0: say x, then x = x &minus; 3. How many numbers does it say?', type: 'num', answer: 4, hint: 'Trace it: 10, 7, &hellip;', explain: 'It says 10, 7, 4, 1.' }, g(CH, 'pa-code', 1), g(CH, 'pa-code', 2)] }
     ] }

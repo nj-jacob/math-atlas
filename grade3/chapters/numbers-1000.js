@@ -502,7 +502,7 @@
         key: '<p>Look at the ones digit. 0 to 4 rounds down. 5 to 9 rounds up.</p>',
         check: [TU('s5', 0), SK('n3-round', 1)] },
 
-      { id: 'hundred', title: 'Round to the nearest hundred', exp: ['B1.3'], skill: 'n3-round', hard: true,
+      { id: 'round-hundred', title: 'Round to the nearest hundred', exp: ['B1.3'], skill: 'n3-round', hard: true,
         body: '<p>To round to the nearest hundred, find the hundreds on each side, then look at the <b>tens digit</b>. 451 is between 400 and 500. The tens digit is 5, so it rounds <b>up to 500</b>.</p>',
         watch: { mount: G3.view(hillView, { n: 400, p: 100 }), steps: [
           { say: 'A hill from 400 to 500. The top is 450.', ms: 1400 },

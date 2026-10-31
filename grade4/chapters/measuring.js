@@ -303,6 +303,12 @@
             { do: 'Put <b>2300 g</b> on the scale.', goal: function (s) { return s.g === 2300; }, yes: '2 kg and 300 g.' },
             { do: 'Make exactly <b>1 kg</b> with no kilogram blocks.', goal: function (s) { return s.k === 0 && s.h === 10; }, yes: '10 &times; 100 g = 1000 g = 1 kg.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will change 3 kg 400 g into grams. Here are 3 kilogram blocks and 4 blocks of 100 g.', massBlocks(3, 4), 2000],
+          ['1 kg = 1000 g. So 3 kg is 3 &times; 1000 = 3000 g.', massBlocks(3, 4), 2000],
+          ['4 blocks of 100 g make 400 g.', massBlocks(3, 4), 1600],
+          ['I add: 3000 + 400 = <b>3400 g</b>.', massBlocks(3, 4), 2000]
+        ]),
         key: '<p><b>1 kg = 1000 g.</b></p>',
         mistake: '<p>Thinking 1 kg = 100 g. Ask: "How many 100 g blocks balance a kilogram?"</p>',
         check: [T('mass', 1), T('mass', 2), T('mass', 3)] },
@@ -316,6 +322,11 @@
             { do: 'Make the scale show <b>750 g</b>.', goal: function (s) { return s.g === 750; }, yes: '750 g: halfway between 700 and 800.' },
             { do: 'Make it show <b>half a kilogram</b>.', goal: function (s) { return s.g === 500; }, yes: 'Half of 1000 g is 500 g.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will read this scale. First I find the numbered mark just before the needle: 400.', dial(450, 1000), 2200],
+          ['Each small mark is 50 g. The needle is on the first small mark after 400.', dial(450, 1000), 2000],
+          ['400 + 50 = <b>450 g</b>.', dial(450, 1000), 1800]
+        ]),
         key: '<p><b>Numbered mark before the needle, then count on.</b></p>',
         check: [T('mass', 2), T('mass', 2)] },
 
@@ -332,6 +343,11 @@
             { do: 'Pour <b>750 mL</b>.', goal: function (s) { return s.m === 750; }, yes: '750 mL. 250 mL more makes 1 L.' },
             { do: 'Fill the jug to <b>1 L</b>.', goal: function (s) { return s.m === 1000; }, yes: '1000 mL = 1 L.' }
           ] }),
+        example: K.watch([
+          ['My turn. How much more water will make 1 L? I read the jug: the water is at the 600 line, so it holds 600 mL.', jug(600, 100), 2400],
+          ['1 L = 1000 mL. I count up from 600 to 1000.', jug(600, 100), 1800],
+          ['600 + 400 = 1000. I need <b>400 mL</b> more.', jug(1000, 100), 2200]
+        ]),
         key: '<p><b>1 L = 1000 mL.</b></p>',
         check: [T('cap', 1), T('cap', 2), T('cap', 3)] },
 
@@ -345,6 +361,12 @@
           { label: 'A table to keep', html: '<div class="tbl"><table><thead><tr><th>What</th><th>Small</th><th>Large</th><th>Tool</th></tr></thead><tbody><tr><td>Length</td><td>mm, cm</td><td>m, km</td><td>ruler, tape</td></tr><tr><td>Mass</td><td>g</td><td>kg</td><td>scale</td></tr><tr><td>Capacity</td><td>mL</td><td>L</td><td>measuring cup or jug</td></tr></tbody></table></div>' },
           { label: 'Body benchmarks', html: '<p>A fingernail is about <b>1 cm</b> wide. A big step is about <b>1 m</b>. A paper clip is about <b>1 g</b>. A full water bottle is about <b>500 mL</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. Which unit should I use for the mass of a watermelon? First I ask: length, mass or capacity?', '<p class="math big">length &nbsp; mass &nbsp; capacity</p>', 2000],
+          ['"How heavy" means <b>mass</b>. Mass is measured in grams or kilograms.', '<p class="math big"><b>mass</b>: g or kg?</p>', 2000],
+          ['Next I ask: small or large? A watermelon is about as heavy as 4 dictionaries. That is large.', massBlocks(4, 0), 2200],
+          ['What kind? Mass. How big? Large. So I use <b>kilograms</b>, on a scale.', massBlocks(4, 0), 2200]
+        ]),
         key: '<p><b>What kind? How big?</b> Then pick the unit.</p>',
         mistake: '<p>Using a length unit for mass ("the cat is 4 m"), or a huge unit for a small thing. Ask: "Are we measuring how long, how heavy, or how much it holds?"</p>',
         check: [T('unit', 1), T('unit', 2), T('unit', 3)] }
@@ -362,6 +384,12 @@
           { do: 'Move the clock on by <b>1 hour</b>.', goal: function (s) { return s.elapsed === 60; }, yes: 'The minute hand went all the way round once: 60 minutes.' },
           { do: 'From 9:30, move the clock to <b>11:15 a.m.</b>', goal: function (s) { return s.h === 11 && s.m === 15; }, yes: '1 hour 45 minutes later.' }
         ] },
+        example: K.watch([
+          ['My turn. How many minutes are in 2 hours? I start at 2:00.', clock(2 * 60, '2:00'), 1600],
+          ['The minute hand goes all the way round once: 60 minutes. Now it is 3:00.', clock(3 * 60, '3:00'), 1800],
+          ['Once more round: another 60 minutes. Now it is 4:00.', clock(4 * 60, '4:00'), 1800],
+          ['60 + 60 = <b>120 minutes</b>. There are 60 minutes in an hour, not 100.', clock(4 * 60, '4:00'), 2200]
+        ]),
         key: '<p><b>60 minutes in an hour</b>, not 100.</p>',
         check: [T('time', 1), T('time', 1)] },
 
@@ -382,6 +410,12 @@
           { label: 'Count on the clock', html: '<p>Start at 9:40. Move the minute hand to 10:00 (20 min). One full turn to 11:00 (1 hour). Then to 11:15 (15 min).</p>' },
           { label: 'Hours, then minutes', html: '<p>9:40 to 10:40 is 1 hour. 10:40 to 11:15 is 35 minutes (20 to 11:00, then 15). Total: <b>1 hour 35 minutes</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. A movie starts at 1:50 and ends at 4:25. How long is it?', clocks(13 * 60 + 50, 16 * 60 + 25), 1800],
+          ['First I jump to the next hour: 1:50 to 2:00 is 10 minutes.', timeLine(13 * 60 + 50, 16 * 60 + 25), 2000],
+          ['Then whole hours: 2:00 to 4:00 is 2 hours. Then the minutes left: 4:00 to 4:25 is 25 minutes.', timeLine(13 * 60 + 50, 16 * 60 + 25), 2600],
+          ['I add the jumps: 10 minutes + 2 hours + 25 minutes = <b>2 hours 35 minutes</b>.', timeLine(13 * 60 + 50, 16 * 60 + 25), 2400]
+        ]),
         key: '<p><b>Jump to the next hour first.</b> Then whole hours, then minutes.</p>',
         mistake: '<p>Subtracting clock times like ordinary numbers (11:15 &minus; 9:40 = 1:75 or 175). An hour has 60 minutes, not 100. Use a time line.</p>',
         check: [T('time', 2), T('time', 3)] }
@@ -402,6 +436,11 @@
             { do: 'Make a <b>different</b> rectangle with the same area, 24 cm' + SQ + '.', goal: function (s) { return s.a === 24 && s.l !== s._l1; }, setup: function (api) { api.state._l1 = api.state.l; }, yes: 'Different shape, same area.' }
           ] }),
         ways: [{ label: 'Cover it yourself', html: '<p>Tap squares to cover a rectangle. Count the squares, then check: rows &times; number in each row.</p>', tool: 'areagrid', opts: { cols: 8, rows: 5 } }],
+        example: K.watch([
+          ['My turn. What is the area of this rectangle? It is covered in 1 cm' + SQ + ' squares.', areaPic(5, 3, { grid: true }), 1800],
+          ['I count one row: 5 squares. There are 3 rows.', areaPic(5, 3, { grid: true, rows: true }), 1800],
+          ['3 rows of 5 = 15. The area is <b>15 cm' + SQ + '</b>.', areaPic(5, 3, { grid: true, rows: true, area: 15 }), 2200]
+        ]),
         key: '<p>Area = <b>how many square units</b> cover the shape.</p>',
         check: [T('area', 1), T('area', 1)] },
 
@@ -415,6 +454,11 @@
           { label: 'It is an array', html: '<p>The squares are an array: rows &times; number in each row. Same as 5 &times; 8 dots.</p>' },
           { label: 'Not the edge', html: '<p>Walking around the edge is the <b>perimeter</b>: 8 + 5 + 8 + 5 = 26 m. Area is the <b>inside</b>: 40 m' + SQ + '. Different questions, different answers.</p>' }
         ],
+        example: K.watch([
+          ['My turn. A garden is 7 m long and 6 m wide. What is its area? I picture the first row and the first column.', areaPic(7, 6, { grid: true, partial: true, unit: 'm' }), 2200],
+          ['One row has 7 squares. There are 6 rows. I do not need to count them all.', areaPic(7, 6, { grid: true, partial: true, unit: 'm' }), 2000],
+          ['Area = length &times; width = 7 &times; 6 = <b>42 m' + SQ + '</b>.', areaPic(7, 6, { grid: true, rows: true, unit: 'm', area: 42 }), 2400]
+        ]),
         key: '<p><b>Area = length &times; width</b>, in square units.</p>',
         mistake: '<p>Adding the sides (8 + 5 = 13) or finding the perimeter instead. Ask: "Are we covering the inside or walking around the edge?"</p>',
         check: [T('area', 2), T('area', 3)] },
@@ -428,6 +472,12 @@
         try: K.lab({ controls: [{ id: 'l', label: 'Length', min: 1, max: 12, value: 3 }],
           render: function (s) { return { fig: areaPic(s.l, 4, { unit: 'm', grid: true, rows: true, area: s.l * 4 }), out: '<p>' + s.l + ' &times; 4 = ' + s.l * 4 + ' m' + SQ + '</p>' }; },
           tasks: [{ do: 'A garden is 4 m wide with an area of <b>36 m' + SQ + '</b>. Find its length.', goal: function (s) { return s.l === 9; }, yes: '36 &divide; 4 = 9 m.' }] }),
+        example: K.watch([
+          ['My turn. A rectangle has an area of 30 cm' + SQ + '. Its width is 5 cm. What is its length?', areaPic(6, 5, { unknown: 'l', area: 30 }), 2000],
+          ['I know the area and one side, so I divide: area &divide; the side I know. 30 &divide; 5.', areaPic(6, 5, { unknown: 'l', area: 30 }), 2200],
+          ['30 &divide; 5 = 6. The length is <b>6 cm</b>.', areaPic(6, 5, { grid: true, rows: true, area: 30 }), 1800],
+          ['I check: 6 &times; 5 = 30. It works.', areaPic(6, 5, { grid: true, rows: true, area: 30 }), 1800]
+        ]),
         key: '<p><b>Missing side = area &divide; known side.</b></p>',
         check: [T('side', 1), T('side', 2), T('side', 3)] }
     ] }

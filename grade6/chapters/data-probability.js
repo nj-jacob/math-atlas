@@ -96,6 +96,12 @@
           ['Number of pets: you count them. You cannot have 2.5 pets.', '<p class="g6-big">0, 1, 2, 3</p>', 'Discrete'],
           ['Height: you measure it. It can be 152.4 cm.', '<p class="g6-big">152.4 cm</p>', 'Continuous']
         ]),
+        example: G6.example([
+          ['My turn. Eye colour: blue, brown, green. The data are words, so it is qualitative.', '<p class="g6-big">blue, brown, green</p>', 'Qualitative'],
+          ['Books read this month: I count them. Counted data are whole numbers.', '<p class="g6-big">0, 2, 3, 5</p>', 'Discrete'],
+          ['Time to run 100 m: I measure it. It can be 15.42 seconds.', '<p class="g6-big">15.42 s</p>', 'Continuous'],
+          ['I check with the rule: count it, discrete. Measure it, continuous. Words, qualitative.', '<p class="g6-big">words &middot; counted &middot; measured</p>']
+        ]),
         key: '<p>Count it: discrete. Measure it: continuous. Words: qualitative.</p>',
         check: [{ q: 'The time it takes each student to walk to school is&hellip;', type: 'mc', options: ['qualitative', 'discrete', 'continuous'], answer: 2, hint: 'Counted or measured?', explain: 'Time is measured, so it is continuous.' }, g(CH, 'dp-type', 1), g(CH, 'dp-type', 2)] },
       { id: 'sample', title: 'Samples and intervals', exp: ['D1.2'], skill: 'dp-hist',
@@ -104,6 +110,12 @@
           ['Question: how tall are Grade 6 students in our school? That group is the population.', '<p class="g6-big">All Grade 6 students</p>', 'Population'],
           ['We measure 25 of them: a sample.', '<p class="t2">' + HEIGHTS.join(', ') + '</p>', 'Sample of 25'],
           ['Group them in intervals of 5 cm. 145 goes in "145 to 150", where it starts.', '<div class="tbl"><table><thead><tr><th>Interval (cm)</th><th>Count</th></tr></thead><tbody>' + B5.map(function (c, i) { return '<tr><td>' + (135 + 5 * i) + ' to ' + (140 + 5 * i) + '</td><td>' + c + '</td></tr>'; }).join('') + '</tbody></table></div>']
+        ]),
+        example: G6.example([
+          ['My turn. Question: how long do the 90 Grade 6 students at my school sleep? All 90 are the population.', '<p class="g6-big">All 90 students</p>', 'Population'],
+          ['I ask 20 of them. Those 20 are the sample.', '<p class="g6-big">20 students asked</p>', 'Sample'],
+          ['I group the answers in intervals of 1 hour: 8 to 9, 9 to 10, 10 to 11.', '<div class="tbl"><table><thead><tr><th>Interval (h)</th><th>Count</th></tr></thead><tbody><tr><td>8 to 9</td><td>6</td></tr><tr><td>9 to 10</td><td>10</td></tr><tr><td>10 to 11</td><td>4</td></tr></tbody></table></div>'],
+          ['Where does exactly 9 hours go? Each interval includes its start, so 9 goes in "9 to 10".', '<p class="g6-big">9 h &rarr; 9 to 10</p>']
         ]),
         key: '<p>Each interval includes its start number but not its end number.</p>',
         mistake: '<p>Putting a value that sits on a boundary in two intervals, or in the lower one. 145 cm belongs in 145 to 150.</p>',
@@ -119,6 +131,12 @@
           ['All 7 intervals. Most students are 150 to 155 cm.', hist(B5, 135, 5, 'Heights of 25 students', 'height (cm)'), 'Tallest bar: 7 students']
         ]),
         try: lab(CH, 0, 'Pick an interval width that makes exactly <b>4</b> bars.', function (h) { return h.querySelector('#hw').value === '10'; }, 'Yes: width 10 gives 4 intervals. Fewer bars, less detail.'),
+        example: G6.example([
+          ['My turn. I draw a histogram of minutes spent reading. The first interval is 0 to 10: 2 students.', hist([2, 0, 0, 0, 0], 0, 10, 'Minutes spent reading', 'minutes')],
+          ['I add the next intervals: 10 to 20 has 5, and 20 to 30 has 8.', hist([2, 5, 8, 0, 0], 0, 10, 'Minutes spent reading', 'minutes')],
+          ['I add the last two: 4 and 1. The bars touch, because the intervals meet.', hist([2, 5, 8, 4, 1], 0, 10, 'Minutes spent reading', 'minutes')],
+          ['I read the tallest bar on the left scale: 8 students read 20 to 30 minutes.', hist([2, 5, 8, 4, 1], 0, 10, 'Minutes spent reading', 'minutes'), 'Tallest bar: 8 students']
+        ]),
         key: '<p>Read the bar height on the left scale. Bars touch.</p>',
         check: [{ q: 'In the 5 cm histogram, how many students are at least 150 cm but less than 155 cm?', type: 'num', answer: 7, fig: hist(B5, 135, 5, 'Heights of 25 students', 'height (cm)'), hint: 'Find the bar that starts at 150.', explain: 'That bar has height 7.' }, g(CH, 'dp-hist', 1), g(CH, 'dp-hist', 2)] },
       { id: 'choose', title: 'Choosing a graph', exp: ['D1.3', 'D1.4'], skill: 'dp-graph',
@@ -129,6 +147,12 @@
         ]),
         ways: [{ label: 'Pick by question', html: '<div class="tbl"><table><thead><tr><th class="l">Your data</th><th class="l">Graph</th></tr></thead><tbody><tr><td class="l">Favourite fruit</td><td class="l">bar graph</td></tr><tr><td class="l">Heights of 25 students</td><td class="l">histogram</td></tr><tr><td class="l">Temperature each hour</td><td class="l">broken-line graph</td></tr><tr><td class="l">How you spend a day</td><td class="l">circle graph</td></tr></tbody></table></div>' },
           { label: 'Infographics', html: '<p>An <b>infographic</b> tells one story about a data set. It mixes a title, a few big numbers, one or two graphs and short sentences. Example: "Our class sleep": the mean hours of sleep in big type, a histogram of sleep times, and one tip.</p>' }],
+        example: G6.example([
+          ['My turn. A plant&rsquo;s height each week changes over time. I pick a broken-line graph.', bline(['Wk 1', 'Wk 2', 'Wk 3', 'Wk 4', 'Wk 5'], [2, 4, 7, 9, 12], 0, 15, 5, 'Plant height', 'cm'), 'Change over time'],
+          ['The heights of 25 students are many measured numbers. I group them and pick a histogram.', hist(B5, 135, 5, 'Heights of 25 students', 'height (cm)'), 'Measured, in intervals'],
+          ['Each student&rsquo;s favourite season is words. I pick a bar graph.', '<p class="g6-big">winter, spring, summer, fall</p>', 'Categories'],
+          ['I check every graph has a title, labels and where the data came from.', '<p class="g6-big">title &middot; labels &middot; source</p>']
+        ]),
         key: '<p>Ask what the data are, then pick the graph. Title, labels, source.</p>',
         check: [{ q: 'Which graph is best for showing park visitors each month for a year?', type: 'mc', options: ['histogram', 'broken-line graph', 'circle graph'], answer: 1, hint: 'Months are time.', explain: 'Change over time: broken-line graph.' }, g(CH, 'dp-graph', 1), g(CH, 'dp-graph', 2)] },
       { id: 'mislead', title: 'Misleading graphs', exp: ['D1.6'], skill: 'dp-graph', hard: true,
@@ -139,6 +163,11 @@
         ]),
         try: lab(CH, 1, 'Make the graph honest.', function (h) { return h.querySelector('#mz').value === '0'; }, 'Yes: starting at 0 shows the true size of the change.'),
         ways: [{ label: 'Do the math', html: '<p>$92 to $101 is a rise of $9. $9 out of $92 is about 10%. A small rise, whatever the picture looks like.</p>' }],
+        example: G6.example([
+          ['My turn. Bike sales went from 40 to 44 in a week. This graph makes it look huge.', bline(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], [40, 41, 42, 42, 43, 44], 38, 45, 1, 'Bikes sold each day', 'bikes'), 'Axis starts at 38'],
+          ['I check where the axis starts: at 38, not 0. That stretches a small change.', bline(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], [40, 41, 42, 42, 43, 44], 38, 45, 1, 'Bikes sold each day', 'bikes'), 'Look at the scale'],
+          ['I redraw it from 0. The change looks as small as it really is: 4 more bikes.', bline(['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], [40, 41, 42, 42, 43, 44], 0, 50, 10, 'Bikes sold each day', 'bikes'), 'Axis starts at 0']
+        ]),
         key: '<p>Check where the axis starts. Look for the zigzag break.</p>',
         check: [{ q: 'Why might a graph be misleading?', type: 'mc', options: ['It has a title', 'The vertical axis does not start at 0', 'It uses a broken line', 'It shows 6 months'], answer: 1, hint: 'Look at the scale.', explain: 'A vertical axis that does not start at 0 makes small changes look big.' }, g(CH, 'dp-graph', 3)] }
     ] },
@@ -151,6 +180,11 @@
           ['There are 5 values. 30 &divide; 5 = 6. The triangle balances the data at 6.', dotplot([3, 5, 5, 7, 10], 0, 12), 'Mean = 6']
         ]),
         try: lab(CH, 2, 'Type <b>4 or more</b> values with a mean of exactly <b>10</b>.', function (h) { var d = h.querySelector('#mdd').value.split(/[,\s]+/).map(function (x) { return parseInt(x, 10); }).filter(function (x) { return !isNaN(x) && x >= 0 && x <= 30; }); return d.length >= 4 && d.reduce(function (a, b) { return a + b; }, 0) === 10 * d.length; }, 'Yes: the total is 10 times the number of values.'),
+        example: G6.example([
+          ['My turn. I find the mean of 4, 6, 9, 9, 12.', dotplot([4, 6, 9, 9, 12], 0, 14)],
+          ['I add them: 4 + 6 + 9 + 9 + 12 = 40.', dotplot([4, 6, 9, 9, 12], 0, 14), 'Total 40'],
+          ['There are 5 values. Mean = total &divide; how many: 40 &divide; 5 = 8.', dotplot([4, 6, 9, 9, 12], 0, 14), 'Mean = 8']
+        ]),
         key: '<p>Mean = total &divide; how many.</p>',
         check: [{ q: 'What is the mean of 12, 15, 9, 20, 14?', type: 'num', answer: 14, hint: 'Add them, then divide by 5.', explain: '70 &divide; 5 = 14.' }, g(CH, 'dp-mmm', 1), g(CH, 'dp-mmm', 2)] },
       { id: 'median', title: 'Median, mode and range', exp: ['D1.5'], skill: 'dp-mmm', hard: true,
@@ -163,6 +197,12 @@
         ]),
         ways: [{ label: 'Cross off the ends', html: '<p>Write the data in order. Cross off one from each end, again and again. What is left in the middle is the median (or the two to average).</p>' },
           { label: 'One huge value', html: '<p>4, 5, 5, 6, 30: the mean is 10 but the median is 5. One very big value pulls the mean, not the median.</p>' }],
+        example: G6.example([
+          ['My turn. Data: 7, 2, 10, 4, 4. First I put them in order.', '<p class="g6-big">2, 4, 4, 7, 10</p>'],
+          ['5 values, so the middle one is the 3rd: 4. The median is 4.', '<p class="g6-big">2, 4, <b>4</b>, 7, 10</p>', 'Median = 4'],
+          ['4 appears most often, so the mode is 4.', dotplot([2, 4, 4, 7, 10], 0, 12), 'Mode = 4'],
+          ['Range: biggest minus smallest, 10 &minus; 2 = 8.', dotplot([2, 4, 4, 7, 10], 0, 12), 'Range = 8']
+        ]),
         key: '<p>Median: order first. Mode: most often. Range: biggest minus smallest.</p>',
         mistake: '<p>Finding the median without putting the data in order first.</p>',
         check: [{ q: 'What is the median of 8, 3, 12, 5, 9, 6?', type: 'num', answer: 7, hint: 'Order them. Average the middle two.', explain: '(6 + 8) &divide; 2 = 7.' }, { q: 'What is the range of 34, 28, 41, 30, 37?', type: 'num', answer: 13, hint: 'Greatest minus least.', explain: '41 &minus; 28 = 13.' }, g(CH, 'dp-mmm', 3)] },
@@ -172,6 +212,12 @@
           ['Team A scored 2, 3, 3, 4, 8. Team B scored 3, 3, 4, 4, 6.', '<div class="vrow"><figure><figcaption>Team A</figcaption>' + dotplot([2, 3, 3, 4, 8], 0, 10) + '</figure><figure><figcaption>Team B</figcaption>' + dotplot([3, 3, 4, 4, 6], 0, 10) + '</figure></div>'],
           ['Both means are 4.', '<p class="g6-big">20 &divide; 5 = 4</p>', 'Same mean'],
           ['Range: A is 6, B is 3. Team B is more consistent.', '<p class="g6-big">A: 8 &minus; 2 = 6<br>B: 6 &minus; 3 = 3</p>', 'Smaller range = more consistent']
+        ]),
+        example: G6.example([
+          ['My turn. Mia scored 6, 7, 7, 8, 7 on quizzes. Leo scored 4, 9, 10, 5, 7.', '<div class="vrow"><figure><figcaption>Mia</figcaption>' + dotplot([6, 7, 7, 8, 7], 0, 10) + '</figure><figure><figcaption>Leo</figcaption>' + dotplot([4, 9, 10, 5, 7], 0, 10) + '</figure></div>'],
+          ['I find each mean: 35 &divide; 5 = 7 for both. The centre is the same.', '<p class="g6-big">35 &divide; 5 = 7</p>', 'Same mean'],
+          ['I find each range: Mia 8 &minus; 6 = 2. Leo 10 &minus; 4 = 6.', '<p class="g6-big">Mia: 2 &nbsp; Leo: 6</p>'],
+          ['Same centre, but Mia&rsquo;s range is smaller. Mia is more consistent.', '<p class="g6-big">smaller range = more consistent</p>']
         ]),
         key: '<p>Centre tells you how high. Range tells you how spread out.</p>',
         check: [{ q: 'Runner P: 12, 13, 12, 13 s. Runner Q: 9, 16, 11, 14 s. Both means are 12.5 s. Who is more consistent?', type: 'mc', options: ['Runner P', 'Runner Q', 'They are the same'], answer: 0, hint: 'Find each range.', explain: 'P has range 1, Q has range 7. P is more consistent.' }, g(CH, 'dp-mmm', 2)] }
@@ -185,6 +231,12 @@
           ['Roll an even number: 3 of 6.', pline(0.5, 'even'), A.fr(1, 2) + ' = 0.5 = 50%'],
           ['Roll less than 7: certain.', pline(1, 'less than 7'), '1']
         ]),
+        example: G6.example([
+          ['My turn. A spinner has 4 equal parts: 3 blue and 1 red. I place each chance on the line.', '<p class="g6-big">3 blue &middot; 1 red</p>'],
+          ['Blue: 3 of 4 parts. Favourable &divide; all = 3/4 = 0.75.', pline(0.75, 'blue'), A.fr(3, 4) + ' = 0.75 = 75%'],
+          ['Red: 1 of 4 parts = 1/4 = 0.25.', pline(0.25, 'red'), A.fr(1, 4) + ' = 0.25 = 25%'],
+          ['Green: no green parts, so 0. It is impossible.', pline(0, 'green'), '0']
+        ]),
         key: '<p>Favourable &divide; all. 0 is impossible, 1 is certain.</p>',
         check: [{ q: 'A bag has 3 red, 5 blue and 2 green marbles. What is the probability of picking blue, as a percent?', type: 'num', unit: '%', answer: 50, hint: 'Blue &divide; all marbles.', explain: '5 of 10 = 50%.' }, g(CH, 'dp-prob', 1), g(CH, 'dp-prob', 2)] },
       { id: 'two', title: 'Two events at once', exp: ['D2.2'], skill: 'dp-two',
@@ -195,12 +247,24 @@
           ['Heads and a 6: just 1 square.', ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], function (x, y) { return x === 'H' && y === 6; }, 'coin', 'die'), A.fr(1, 12)],
           ['Heads and an even number: 3 squares.', ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], function (x, y) { return x === 'H' && y % 2 === 0; }, 'coin', 'die'), A.fr(3, 12) + ' = ' + A.fr(1, 4)]
         ]),
+        example: G6.example([
+          ['My turn. I flip a coin and spin red, blue or green. The coin has 2 outcomes; the spinner has 3.', ogrid(['H', 'T'], ['R', 'B', 'G'], null, 'coin', 'spinner')],
+          ['Outcomes = 2 &times; 3 = 6, all equally likely.', ogrid(['H', 'T'], ['R', 'B', 'G'], null, 'coin', 'spinner'), '6 outcomes'],
+          ['Tails and blue: I count 1 square.', ogrid(['H', 'T'], ['R', 'B', 'G'], function (x, y) { return x === 'T' && y === 'B'; }, 'coin', 'spinner'), A.fr(1, 6)],
+          ['Heads and not green: I count 2 squares.', ogrid(['H', 'T'], ['R', 'B', 'G'], function (x, y) { return x === 'H' && y !== 'G'; }, 'coin', 'spinner'), A.fr(2, 6) + ' = ' + A.fr(1, 3)]
+        ]),
         key: '<p>Outcomes = first count &times; second count. Then count the ones you want.</p>',
         check: [{ q: 'You spin a 4-part spinner (red, blue, green, yellow) and flip a coin. What is the probability of red and tails?', type: 'mc', options: ['1/4', '1/8', '1/6', '1/2'], answer: 1, hint: '4 &times; 2 outcomes.', explain: '1 of 8.' }, g(CH, 'dp-two', 1), g(CH, 'dp-two', 2)] },
       { id: 'experiment', title: 'Theory and experiment', exp: ['D2.2'], skill: 'dp-two', hard: true,
         body: '<p><b>Theoretical</b> probability is what should happen. <b>Experimental</b> probability is what does happen when you try it. With more tries, they usually get closer.</p>',
         try: lab(CH, 3, 'Run the experiment at least <b>100</b> times. Watch the green dot move toward the orange one.', function (h) { return /of \d[\d\s]{2,} tries/.test(h.querySelector('#prout').textContent); }, 'See how close they are now? More tries, closer results.'),
         ways: [{ label: 'Why small samples wobble', html: '<p>Flip a coin 4 times and you might get 3 heads (75%). Flip it 1000 times and you will get close to 50%. A few tries can be far from the theory.</p>' }],
+        example: G6.example([
+          ['My turn. In theory, a die lands on 5 one time in 6: about 17%.', pline(1 / 6, 'theory'), A.fr(1, 6) + ' &#8776; 17%'],
+          ['I roll it 30 times and get 8 fives. That is 8/30, about 27%. Far from the theory.', pline(8 / 30, '30 rolls'), A.fr(8, 30) + ' &#8776; 27%'],
+          ['I roll 600 times and get 104 fives: 104/600, about 17%.', pline(104 / 600, '600 rolls'), '&#8776; 17%'],
+          ['Small experiments wobble. Many tries settle near the theory.', '<p class="g6-big">more tries &rarr; closer to ' + A.fr(1, 6) + '</p>']
+        ]),
         key: '<p>Experiments wobble. Many tries settle near the theory.</p>',
         mistake: '<p>Thinking a result is "due": after 5 heads in a row, believing tails is more likely. The next flip is still ' + A.fr(1, 2) + '.</p>',
         check: [{ q: 'You flip a coin 10 times and get 7 heads. What is the experimental probability of heads?', type: 'mc', options: ['1/2', '7/10', '3/10', '7/3'], answer: 1, hint: 'What happened &divide; tries.', explain: '7 heads in 10 tries: 7/10.' }, { q: 'After 5 heads in a row, what is the probability the next flip is heads?', type: 'mc', options: ['less than 1/2', '1/2', 'more than 1/2'], answer: 1, hint: 'Does the coin remember?', explain: 'Each flip is independent: still 1/2.' }, g(CH, 'dp-two', 2)] }

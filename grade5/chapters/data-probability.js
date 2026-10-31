@@ -128,6 +128,12 @@
           { say: '8 of the 20 are green: 40%. The sample matches the school.', fig: an(crowd(RAND)) },
           { say: 'Now ask only the team and its fans. All 20 are green: 100%. That sample is <b>biased</b>.', fig: an(crowd(TEAM)), ms: 2600 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I want to know how many of these 100 students like basketball best. I cannot ask everyone, so I ask a sample of 10.', fig: an(crowd()), ms: 2400 },
+          { say: 'I pick 10 students at random, from every part of the school.', fig: an(crowd([5, 9, 14, 23, 38, 45, 56, 64, 79, 91])), ms: 1800 },
+          { say: '4 of my 10 are green: 40%. That matches the whole school.', fig: an(crowd([5, 9, 14, 23, 38, 45, 56, 64, 79, 91])), ms: 1800 },
+          { say: 'If I asked only 10 fans at a basketball game, all 10 would be green: 100%. That sample is <b>biased</b>. A fair sample is picked at random from every part.', fig: an(crowd([50, 51, 55, 56, 60, 61, 65, 66, 70, 71])), ms: 2800 }
+        ]),
         try: K.widget('data-probability', 0, 'Good. Take a few random samples. They are close to 40%, but not always exact.'),
         ways: [
           { label: 'Soup', html: '<p>To taste soup, you stir it and taste one spoonful. The spoonful is the sample. Stirring makes it fair.</p>' },
@@ -147,6 +153,12 @@
           { say: 'The relative frequency is 8 out of 20: 8/20.', fig: an(A.draw.fbars([{ n: 8, d: 20, label: '8/20' }], { w: 440 })) },
           { say: '8/20 = 40/100 = <b>0.4 = 40%</b>.', fig: an(A.draw.fbars([{ n: 8, d: 20, label: '40%' }], { w: 440 })), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. 25 students chose a favourite fruit.', fig: an(people(0, 25)) },
+          { say: '15 chose apples. The frequency is 15.', fig: an(people(15, 25)) },
+          { say: 'The relative frequency compares the count to the total: 15 out of 25, or 15/25.', fig: an(A.draw.fbars([{ n: 15, d: 25, label: '15/25' }], { w: 440 })), ms: 2000 },
+          { say: 'I make the bottom 100: 15/25 = 60/100 = <b>0.6 = 60%</b>.', fig: an(A.draw.fbars([{ n: 15, d: 25, label: '60%' }], { w: 440 })), ms: 2200 }
+        ]),
         try: K.widget('data-probability', 1, 'Nice. Check that the relative frequencies add up to 1.'),
         key: '<p>Relative frequency = <b>count &divide; total</b>. They always add up to 1, or 100%.</p>',
         mistake: '<p>Dividing by the wrong total, or by another count. Ask "out of how many in all?"</p>',
@@ -161,6 +173,12 @@
           { say: 'How do two classes get to school? A stacked bar shows each class split into walk, bus and car.', fig: an(stacked([{ name: 'Class A', parts: [10, 8, 6] }, { name: 'Class B', parts: [6, 12, 4] }], ['walk', 'bus', 'car'], SB)) },
           { say: 'As percents, each bar is 100%. Now classes of different sizes compare fairly.', fig: an(stacked([{ name: 'Class A', parts: [10, 8, 6] }, { name: 'Class B', parts: [6, 12, 4] }], ['walk', 'bus', 'car'], SB, true)), ms: 2600 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will pick a graph for each question. First I look at the three kinds.', fig: thumbs(), ms: 1800 },
+          { say: 'Question: how many students chose pizza, soup or salad? I am comparing categories, so I pick a <b>bar graph</b>.', fig: thumbs(), ms: 2200 },
+          { say: 'Question: what part of each class walks, bikes or takes the bus? That is parts of a whole, so I pick a <b>stacked bar</b>.', fig: an(stacked([{ name: 'Class C', parts: [12, 5, 8] }, { name: 'Class D', parts: [9, 9, 2] }], ['walk', 'bike', 'bus'], SB)), ms: 2400 },
+          { say: 'Last, I check it has a title, labels, a scale and a source.', fig: an(stacked([{ name: 'Class C', parts: [12, 5, 8] }, { name: 'Class D', parts: [9, 9, 2] }], ['walk', 'bike', 'bus'], SB)), ms: 2200 }
+        ]),
         try: K.widget('data-probability', 2, 'Good. Switch to percents and compare the bus parts.'),
         key: '<p>Bar: compare. Stacked bar: parts of a whole. Line: change over time. Always add title, labels, scale and source.</p>',
         mistake: '<p>Leaving off the source or the labels. Before the child finishes a graph, check the four must-haves together.</p>',
@@ -172,6 +190,12 @@
           { say: 'Two scores: 94 and 98, on a scale that starts at 0. They look almost the same.', fig: an(misBars(94, 98, 0, 'Scale from 0')) },
           { say: 'Start the scale at 80.', fig: an(misBars(94, 98, 80, 'Scale from 80')) },
           { say: 'Start it at 90. Now B looks twice as tall, but 98 is not twice 94.', fig: an(misBars(94, 98, 90, 'Scale from 90')), ms: 2600 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. Team A scored 50 points and team B scored 55. On a scale from 0, they look close.', fig: an(misBars(50, 55, 0, 'Scale from 0')), ms: 2000 },
+          { say: 'Here is the same data on a scale that starts at 45. B looks twice as tall as A.', fig: an(misBars(50, 55, 45, 'Scale from 45')), ms: 2000 },
+          { say: 'I check the scale. It starts at 45, not 0. 55 is only 5 more than 50, not twice as much.', fig: an(misBars(50, 55, 45, 'Scale from 45')), ms: 2200 },
+          { say: 'Before I trust a graph, I check its <b>title, labels, scale and source</b>.', fig: an(misBars(50, 55, 0, 'Scale from 0')), ms: 2200 }
         ]),
         try: K.widget('data-probability', 3, 'Nice. The numbers never change. Only the picture does.'),
         ways: [
@@ -191,6 +215,12 @@
           { say: 'In order, the middle value is 5: the <b>median</b>. 5 appears twice: the <b>mode</b>.', fig: an(dotplot([3, 5, 5, 7, 10], [{ v: 5, label: 'median and mode: 5', col: 'var(--pm1)' }])) },
           { say: 'Add them: 30. Share equally among 5 values: 30 &divide; 5 = 6, the <b>mean</b>.', fig: an(dotplot([3, 5, 5, 7, 10], [{ v: 5, label: 'median and mode: 5', col: 'var(--pm1)' }, { v: 6, label: 'mean: 6', col: 'var(--strand)' }])) },
           { say: 'One big value pulls the mean. For 2, 4, 5, 9, 20 the mean is 8 but the median is 5.', fig: an(dotplot([2, 4, 5, 9, 20], [{ v: 5, label: 'median 5', col: 'var(--pm1)' }, { v: 8, label: 'mean 8', col: 'var(--strand)' }])), ms: 2800 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. Data: 2, 4, 4, 6, 9. They are already in order.', fig: an(dotplot([2, 4, 4, 6, 9])), ms: 1600 },
+          { say: 'The middle value is 4: the <b>median</b>. 4 appears twice: the <b>mode</b>.', fig: an(dotplot([2, 4, 4, 6, 9], [{ v: 4, label: 'median and mode: 4', col: 'var(--pm1)' }])), ms: 2000 },
+          { say: 'I add them: 2 + 4 + 4 + 6 + 9 = 25. I share it among 5 values: 25 &divide; 5 = 5, the <b>mean</b>.', fig: an(dotplot([2, 4, 4, 6, 9], [{ v: 4, label: 'median and mode: 4', col: 'var(--pm1)' }, { v: 5, label: 'mean: 5', col: 'var(--strand)' }])), ms: 2400 },
+          { say: 'The <b>range</b> is biggest minus smallest: 9 &minus; 2 = 7.', fig: an(dotplot([2, 4, 4, 6, 9], [{ v: 4, label: 'median and mode: 4', col: 'var(--pm1)' }, { v: 5, label: 'mean: 5', col: 'var(--strand)' }])), ms: 2200 }
         ]),
         try: K.widget('data-probability', 4, 'Good. Add one very big number and watch the mean move.'),
         ways: [
@@ -212,6 +242,12 @@
           { say: '3 ways to get red: P(red) = <b>3/8</b>.', fig: an(pline(3 / 8, '3/8')) },
           { say: '3/8 is less than 1/2, so red is <b>unlikely</b>.', fig: an(pline(3 / 8, '3/8')), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. A bag has 4 red and 2 blue marbles. What is the probability of red?', fig: an(marbles(4, 2)), ms: 1800 },
+          { say: 'I count all the outcomes: 6 marbles, all equally likely.', fig: an(marbles(4, 2)) },
+          { say: 'There are 4 ways to get red. P(red) = ways &divide; all outcomes = <b>4/6</b>.', fig: an(pline(4 / 6, '4/6')), ms: 2000 },
+          { say: '4/6 is more than 1/2, so red is <b>likely</b>.', fig: an(pline(4 / 6, '4/6')), ms: 2200 }
+        ]),
         try: K.widget('data-probability', 5, 'Nice. Make red certain, then impossible.'),
         key: '<p>P = <b>ways it can happen &divide; all equally likely outcomes</b>.</p>',
         mistake: '<p>Comparing red to blue (3/5) instead of red to all (3/8). Ask "how many marbles in the whole bag?"</p>',
@@ -224,6 +260,12 @@
           { say: 'Flip it 10 times: 7 heads. That is 7/10, not 5/10.', fig: an(coins('HTHHHTHHTH')) },
           { say: 'That does not mean the coin is unfair. Small samples wobble.', fig: an(pline(0.7, '7/10')) },
           { say: 'Over 1000 flips the share of heads gets much closer to 1/2.', fig: an(pline(0.51, '510/1000')), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. A number cube has 6 faces. The chance of rolling a 6 is 1/6.', fig: an(pline(1 / 6, '1/6')), ms: 1800 },
+          { say: 'I roll it 12 times and get a 6 four times. That is 4/12, not the 2/12 I expected.', fig: an(pline(4 / 12, '4/12')), ms: 2200 },
+          { say: 'That does not mean the cube is unfair. Small samples wobble.', fig: an(pline(4 / 12, '4/12')), ms: 1800 },
+          { say: 'With 600 rolls I get 102 sixes. That is much closer to 1/6. More trials usually bring results closer.', fig: an(pline(102 / 600, '102/600')), ms: 2600 }
         ]),
         try: K.widget('data-probability', 5, 'Good. Spin 100 a few times and compare to the expected fractions.'),
         ways: [

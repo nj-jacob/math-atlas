@@ -178,6 +178,12 @@
           { do: 'Shade <b>0.7</b> of the strip.', goal: function (s) { return s[0].d === 10 && s[0].n === 7; }, yes: '7 tenths = 0.7.' },
           { do: 'Shade the whole strip. What decimal is it?', goal: function (s) { return s[0].n === 10; }, yes: '10 tenths = 1.0 = 1 whole.' }
         ] },
+        example: K.watch([
+          ['My turn. I will show 0.6. Here is one whole, cut into 10 equal parts. Each part is one tenth.', tenthBars(0), 2000],
+          ['I shade 6 parts: six tenths.', tenthBars(6), 1600],
+          ['Six tenths is ' + fr(6, 10) + ', written <b>0.6</b>.', tenthBars(6), 1800],
+          ['4 more tenths would fill the whole, because 10 tenths make 1 whole.', tenthBars(6), 2200]
+        ]),
         key: '<p><b>10 tenths make 1 whole.</b> 0.1 is one tenth.</p>',
         check: [T('read', 1), T('frac', 1)] },
 
@@ -195,6 +201,11 @@
             { do: 'Show <b>three and six tenths</b>.', goal: function (s) { return s.v === 36; }, yes: '3.6.' },
             { do: 'Show <b>4.0</b>.', goal: function (s) { return s.v === 40; }, yes: '4.0 is 4 wholes and no tenths: the same as 4.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will show 1.4. First, 1 whole.', '<div>' + tenthBars(10) + chart(10) + '</div>', 1600],
+          ['Then 4 tenths. The tenths go <b>after the point</b>.', '<div>' + tenthBars(14) + chart(14, -1) + '</div>', 2000],
+          ['<b>1.4</b>. I read the point as "and": one and four tenths.', '<div>' + tenthBars(14) + chart(14) + '</div>', 2200]
+        ]),
         key: '<p><b>Wholes . tenths.</b> Read the point as "and".</p>',
         mistake: '<p>Reading 2.3 as "two point thirty" or thinking 2.3 means 23. Ask: "How many whole bars? How many tenths in the last bar?"</p>',
         check: [T('read', 2), T('read', 3)] },
@@ -220,6 +231,11 @@
           { label: 'With money', html: '<p>Half a dollar is 50¢ = $0.50. A fifth of a dollar is 20¢ = $0.20. Tenths of a dollar are dimes.</p>' },
           { label: 'Each fifth is 2 tenths', html: '<p>A whole has 5 fifths or 10 tenths, so <b>1 fifth = 2 tenths</b>. 3 fifths = 6 tenths = 0.6.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will write ' + fr(4, 5) + ' as a decimal. Here is ' + fr(4, 5) + ' of a strip.', A.svg(404, 108, barsTwo(4, 5, 0), 'four fifths'), 1800],
+          ['Below it is a strip cut into tenths. I find how many tenths are the same length: 8 tenths.', A.svg(404, 108, barsTwo(4, 5, 8), 'four fifths equals 8 tenths'), 2400],
+          [fr(4, 5) + ' = ' + fr(8, 10) + ' = <b>0.8</b>.', A.svg(404, 108, barsTwo(4, 5, 8), 'four fifths equals 8 tenths'), 2200]
+        ]),
         key: '<p><b>Find how many tenths are the same length.</b> 1/2 = 0.5; 1/5 = 0.2.</p>',
         mistake: '<p>Writing ' + fr(1, 2) + ' as 1.2 or ' + fr(1, 5) + ' as 0.15 (using the digits of the fraction). Ask: "How many tenths fit in this piece?"</p>',
         check: [T('frac', 2), T('frac', 3)] }
@@ -239,6 +255,11 @@
             { do: 'Make the first number greater, with the <b>same whole number</b> in both.', goal: function (s) { return Math.floor(s.a / 10) === Math.floor(s.b / 10) && s.a > s.b; }, yes: 'Same wholes, so the tenths decide.' },
             { do: 'Make the first number greater even though it has <b>fewer tenths</b>.', goal: function (s) { return s.a > s.b && s.a % 10 < s.b % 10; }, yes: 'More wholes wins, whatever the tenths say.' }
           ] }),
+        example: K.watch([
+          ['My turn. Which is greater: 3.9 or 4.1? I compare the wholes first: 3 and 4.', line(30, 50, [{ t: 39, l: '3.9' }, { t: 41, l: '4.1', c: 'var(--strand)' }]), 2000],
+          ['4 wholes is more than 3 wholes, so <b>4.1 &gt; 3.9</b>. I do not need the tenths.', line(30, 50, [{ t: 39, l: '3.9' }, { t: 41, l: '4.1', c: 'var(--strand)' }]), 2400],
+          ['On the number line, 4.1 is further right. Wholes first, then tenths.', line(30, 50, [{ t: 39, l: '3.9' }, { t: 41, l: '4.1', c: 'var(--strand)' }]), 2200]
+        ]),
         key: '<p><b>Wholes first, then tenths.</b></p>',
         mistake: '<p>Thinking 1.8 &gt; 2.3 because 8 is bigger than 3. Ask: "How many wholes does each have?"</p>',
         check: [T('compare', 1), T('compare', 2), T('compare', 3)] },
@@ -256,6 +277,11 @@
             { do: 'Find a number that rounds <b>up</b> to 4.', goal: function (s) { return s.r === 4 && s.t < 40; }, yes: function (s) { return ds(s.t) + ' rolls up to 4.'; } },
             { do: 'Find the number at the very <b>top</b> of the hill between 2 and 3.', goal: function (s) { return s.t === 25; }, yes: '2.5 rounds up to 3.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will round 6.4 to the nearest whole number. It is between 6 and 7.', hill(64, 'dex1'), 1800],
+          ['The tenths digit is 4. That is less than 5, so 6.4 is before the top of the hill.', hill(64, 'dex1'), 2200],
+          ['It rolls back down. 6.4 rounds to <b>6</b>.', hill(64, 'dex1'), 2000]
+        ]),
         key: '<p>Tenths digit <b>5 or more: round up.</b> Less than 5: round down.</p>',
         check: [T('round', 1), T('round', 3)] }
     ] },
@@ -274,6 +300,11 @@
             { do: 'Show <b>1.6 + 2.7</b>.', goal: function (s) { return s.a === 16 && s.b === 27; }, yes: '16 + 27 = 43 tenths = 4.3.' },
             { do: 'Make a sum of exactly <b>2</b>, where neither number is a whole number.', goal: function (s) { return s.s === 20 && s.a % 10 && s.b % 10; }, yes: function (s) { return ds(s.a) + ' + ' + ds(s.b) + ': the tenths made a whole.'; } }
           ] }),
+        example: K.watch([
+          ['My turn. I will find 0.8 + 0.6. I start with 0.8: 8 tenths.', tenthBars(8, null, 540), 1600],
+          ['I add 0.6: 6 more tenths. 8 tenths + 6 tenths = 14 tenths.', tenthBars(14, null, 540), 2000],
+          ['10 tenths fill 1 whole, with 4 tenths left. <b>0.8 + 0.6 = 1.4</b>.', '<div>' + tenthBars(14, null, 540) + '<div class="fig">' + cols(8, 6, '+', true) + '</div></div>', 2400]
+        ]),
         key: '<p><b>Add the tenths. 10 tenths make 1 whole.</b> Line up the decimal points.</p>',
         mistake: '<p>Writing 0.7 + 0.5 = 0.12. Ask: "How many tenths is that? Is it more than a whole?"</p>',
         check: [T('add', 1), T('add', 2)] },
@@ -290,6 +321,13 @@
           { label: 'With money', html: '<p>$4.20 &minus; $1.70. Take away $1: $3.20. Take away 70¢: $2.50.</p>' },
           { label: 'Trade a whole', html: '<p>2 tenths is not enough to take 7. Trade 1 whole for 10 tenths: 3 wholes and 12 tenths. 12 &minus; 7 = 5 tenths, 3 &minus; 1 = 2 wholes: <b>2.5</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 5.3 &minus; 2.6. I line up the decimal points.', cols(53, 26, '-', false), 1600],
+          ['I think in tenths. 5.3 is 53 tenths, and 2.6 is 26 tenths.', cols(53, 26, '-', false), 2000],
+          ['53 &minus; 26 = 27, so the answer is 27 tenths.', '<div>' + cols(53, 26, '-', false) + '<p class="math big">53 &minus; 26 = 27 tenths</p></div>', 2000],
+          ['27 tenths is 2 wholes and 7 tenths: <b>2.7</b>.', cols(53, 26, '-', true), 2000],
+          ['I check: 2.7 + 2.6 = 5.3. It works.', cols(53, 26, '-', true), 2000]
+        ]),
         key: '<p><b>Line up the points and think in tenths.</b> Trade a whole for 10 tenths if you need to.</p>',
         mistake: '<p>Taking the smaller tenths digit from the bigger one (4.2 &minus; 1.7 = 3.5). Ask: "Can you take 7 tenths from 2 tenths?"</p>',
         check: [T('sub', 1), T('sub', 2), T('sub', 3)] }

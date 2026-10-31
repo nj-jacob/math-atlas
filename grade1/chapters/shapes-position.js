@@ -193,6 +193,12 @@
           { say: '3 sides and 3 corners: a <b>triangle</b>.', ms: 1600 },
           { say: 'Now 4 pegs, all sides the same: a <b>square</b>.', act: function (t) { t.reset(); return t.shape([[0, 0], [3, 0], [3, 3], [0, 3]], 450); }, ms: 1800 }
         ] },
+        example: { tool: 'geoboard', opts: { size: 5 }, steps: [
+          { say: 'My turn. I stretch a band around 4 pegs.', act: function (t) { return t.shape([[0, 1], [4, 1], [4, 3], [0, 3]], 450); }, ms: 1000 },
+          { say: 'I count the sides: 1, 2, 3, 4. There are 4 sides and 4 corners.', ms: 1600 },
+          { say: 'Two sides are long and two sides are short. It is a <b>rectangle</b>.', ms: 1700 },
+          { say: 'I counted the sides to name the shape.', ms: 1500 }
+        ] },
         try: { tool: 'geoboard', opts: { size: 5 }, tasks: [
           { do: 'Make a <b>triangle</b>. Tap pegs, then tap the first peg again to close it.', goal: function (s) { return s.closed && s.sides === 3; }, yes: '3 sides, 3 corners. A triangle.' },
           { do: 'Make a shape with <b>4 sides</b>.', goal: function (s) { return s.closed && s.sides === 4; }, yes: '4 sides and 4 corners.' }
@@ -202,6 +208,12 @@
       { id: 'turned', title: 'Turning does not change the name', exp: ['E1.1'], skill: 's-2d', hard: true,
         body: '<p>A triangle turned upside down is still a triangle. It still has 3 sides. <b>Turning a shape does not change its name.</b></p>',
         watch: { tool: 'g1stage', steps: [0, 45, 90, 180].map(function (d, i) { return { say: i ? 'Turn it. Still 3 sides: still a <b>triangle</b>.' : 'A triangle.', act: function (t) { return t.show(A.svg(110, 110, '<g transform="rotate(' + d + ' 55 55)">' + flat('triangle', 55, 55, 92) + '</g>', 'a triangle turned')); }, ms: 1000 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. This is a square. It has 4 sides, all the same length.', act: function (t) { return t.show(A.svg(110, 110, flat('square', 55, 55, 80), 'a square')); }, ms: 1600 },
+          { say: 'I turn it. Now it stands on a corner. Is it still a square?', act: function (t) { return t.show(A.svg(110, 110, '<g transform="rotate(45 55 55)">' + flat('square', 55, 55, 80) + '</g>', 'a square turned on its corner')); }, ms: 1700 },
+          { say: 'I count the sides: 1, 2, 3, 4. They are all the same length.', ms: 1600 },
+          { say: 'So it is still a <b>square</b>. Turning does not change the name.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { items: [0, 1, 2, 3].map(function (i) { var k = ['triangle', 'square', 'triangle', 'rectangle'][i], d = [180, 45, 100, 90][i]; return { id: k + i, html: A.svg(90, 90, '<g transform="rotate(' + d + ' 45 45)">' + flat(k, 45, 45, 70) + '</g>', 'a turned shape') }; }) }, tasks: [
           { do: 'Tap <b>every triangle</b>, even turned ones.', goal: function (s) { return s.n === 2 && s.picked.indexOf('triangle0') >= 0 && s.picked.indexOf('triangle2') >= 0; }, yes: 'Yes. They have 3 sides, so they are triangles.' }
         ] },
@@ -215,6 +227,12 @@
       { id: 'names', title: 'Solids around us', exp: ['E1.1'], skill: 's-3d',
         body: '<p>Solid shapes are <b>3D objects</b>. You can hold them. A ball is a <b>sphere</b>. A can is a <b>cylinder</b>. A box is a <b>rectangular prism</b>.</p>',
         watch: { tool: 'g1stage', steps: SOLIDS.map(function (k) { return { say: 'A <b>' + k + '</b>, like ' + OBJ[k] + '.', act: function (t) { return t.show(solidPic(k, 120)); }, ms: 1100 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. What solid is a cereal box?', act: function (t) { return t.show(solidPic('rectangular prism', 120)); }, ms: 1400 },
+          { say: 'I look at its faces. They are flat rectangles. It is a <b>rectangular prism</b>.', ms: 1800 },
+          { say: 'Now a number cube (a die).', act: function (t) { return t.show(solidPic('cube', 110)); }, ms: 1300 },
+          { say: 'All its faces are squares, all the same size. It is a <b>cube</b>.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['cube', 'sphere', 'cylinder', 'cone'].map(function (k) { return { id: k, html: card(solidPic(k, 70)) }; }) }, tasks: [
           { do: 'Tap the shape like a <b>soup can</b>.', goal: function (s) { return s.picked[0] === 'cylinder'; }, yes: 'A soup can is a cylinder.' },
           { do: 'Tap the shape like a <b>ball</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'sphere'; }, yes: 'A ball is a sphere.' }
@@ -227,6 +245,11 @@
           { say: 'Stand a can on paper and trace around it.', act: function (t) { return t.show(solidPic('cylinder', 110)); }, ms: 1400 },
           { say: 'The tracing is a <b>circle</b>.', act: function (t) { return t.show(flatPic('circle', 100)); }, ms: 1400 },
           { say: 'A cube gives a <b>square</b>.', act: function (t) { return t.show(solidPic('cube', 100) + flatPic('square', 90)); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. This pyramid is like a tent. I lay it on one side and trace around it.', act: function (t) { return t.show(solidPic('pyramid', 110)); }, ms: 1800 },
+          { say: 'The tracing has 3 sides. It is a <b>triangle</b>.', act: function (t) { return t.show(flatPic('triangle', 100)); }, ms: 1600 },
+          { say: 'The faces of solids are flat shapes.', ms: 1600 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['circle', 'square', 'triangle', 'rectangle'].map(function (k) { return { id: k, html: card(flatPic(k, 60)) }; }) }, tasks: [
           { do: 'Trace a <b>cereal box</b> (a rectangular prism). Which shape do you get?', goal: function (s) { return s.picked[0] === 'rectangle'; }, yes: 'The face of a box is a rectangle.' }
@@ -244,6 +267,13 @@
           { say: 'Rectangle: 4 sides. Yes.', act: function (t) { return t.pick('rectangle3'); }, ms: 700 },
           { say: 'This square is a different colour, but it has 4 sides. Yes.', act: function (t) { return t.pick('square5'); }, ms: 1800 }
         ] },
+        example: { tool: 'g1pick', opts: { items: ['triangle', 'square', 'triangle', 'circle', 'hexagon', 'triangle'].map(function (k, i) { return { id: k + i, html: flatPic(k, 56 - (i % 2) * 14) }; }) }, steps: [
+          { say: 'My turn. My rule is: shapes with <b>3 sides</b>.', ms: 1300 },
+          { say: 'This triangle has 3 sides. Yes.', act: function (t) { return t.pick('triangle0'); }, ms: 900 },
+          { say: 'The square has 4 sides. No, I leave it.', ms: 1100 },
+          { say: 'This triangle has 3 sides. Yes.', act: function (t) { return t.pick('triangle2'); }, ms: 900 },
+          { say: 'This triangle is a different size, but it has 3 sides. Yes. One rule decides each group.', act: function (t) { return t.pick('triangle5'); }, ms: 1900 }
+        ] },
         try: { tool: 'g1pick', opts: { items: ['triangle', 'circle', 'hexagon', 'triangle', 'square', 'circle'].map(function (k, i) { return { id: k + i, html: flatPic(k, 56 - (i % 2) * 14) }; }) }, tasks: [
           { do: 'Sort by the rule <b>round</b>. Tap every round shape.', goal: function (s) { return s.n === 2 && s.picked.every(function (p) { return /circle/.test(p); }); }, yes: 'Only the circles are round. Big or small does not matter.' }
         ] },
@@ -258,6 +288,12 @@
           { say: 'Fold the heart down the middle.', act: function (t) { return t.show(foldPic('heart', 'v')); }, ms: 1400 },
           { say: 'The two sides match. Yes.', ms: 1200 },
           { say: 'Fold it across. The top and bottom do <b>not</b> match.', act: function (t) { return t.show(foldPic('heart', 'h')); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. I fold the rectangle across the middle.', act: function (t) { return t.show(foldPic('rectangle', 'h')); }, ms: 1400 },
+          { say: 'The top half lines up with the bottom half all the way round. The halves <b>match</b>.', ms: 1800 },
+          { say: 'Now I fold it from corner to corner.', act: function (t) { return t.show(foldPic('rectangle', 'd')); }, ms: 1300 },
+          { say: 'The corners stick out. The halves do <b>not</b> match.', ms: 1800 }
         ] },
         try: { tool: 'g1pick', opts: { items: [['square', 'd'], ['circle', 'off'], ['rectangle', 'v'], ['triangle', 'h']].map(function (p, i) { return { id: 'f' + i, html: foldPic(p[0], p[1]) }; }) }, tasks: [
           { do: 'Tap every fold line where the halves <b>match</b>.', goal: function (s) { return s.n === 2 && s.picked.indexOf('f0') >= 0 && s.picked.indexOf('f2') >= 0; }, yes: 'The square corner to corner, and the rectangle down the middle.' }
@@ -275,6 +311,12 @@
           { say: 'The ball is <b>above</b> the flower. The sock is <b>below</b> it.', ms: 1800 },
           { say: 'The fish and the car are <b>beside</b> it. The flower is <b>between</b> them.', ms: 2000 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Where is the car? First I find the apple in the middle.', act: function (t) { return t.show(shelf(['leaf', 'car', 'sock', 'ball', 'apple', 'star', 'fish', 'cube', 'flower'])); }, ms: 1600 },
+          { say: 'The car is on the shelf over the apple. The car is <b>above</b> the apple.', ms: 1700 },
+          { say: 'The cube is on the shelf under the apple. The cube is <b>below</b> it.', ms: 1700 },
+          { say: 'The ball and the star are <b>beside</b> the apple. The apple is <b>between</b> them.', ms: 1900 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['ball', 'sock', 'car'].map(function (k) { return { id: k, html: card(G1.icon(k, 50), A.NAMES[k][0]) }; }) }, tasks: [
           { do: 'Look at the shelf. What is <b>below</b> the flower?<div class="fig">' + shelf(['apple', 'ball', 'star', 'fish', 'flower', 'car', 'leaf', 'sock', 'cube']) + '</div>', goal: function (s) { return s.picked[0] === 'sock'; }, yes: 'The sock is below the flower.' }
         ] },
@@ -286,6 +328,12 @@
           { say: 'Hold up both hands, palms away from you.', act: function (t) { return t.show(A.svg(220, 110, A.icon('hand', 55, 55, 90) + '<g transform="translate(220,0) scale(-1,1)">' + A.icon('hand', 55, 55, 90) + '</g>', 'two hands')); }, ms: 1500 },
           { say: 'The hand that makes an <b>L</b> is your <b>left</b>.', ms: 1600 },
           { say: 'On the shelf, the apple is on the <b>left</b> of the ball. The star is on the <b>right</b>.', act: function (t) { return t.show(shelf(['apple', 'ball', 'star', '', '', '', '', '', ''])); }, ms: 2000 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. I hold up both hands, palms away. The hand that makes an <b>L</b> is my left.', act: function (t) { return t.show(A.svg(220, 110, A.icon('hand', 55, 55, 90) + '<g transform="translate(220,0) scale(-1,1)">' + A.icon('hand', 55, 55, 90) + '</g>', 'two hands')); }, ms: 2000 },
+          { say: 'Now I look at the shelf. Where is the ball?', act: function (t) { return t.show(shelf(['', '', '', 'ball', 'apple', 'leaf', '', '', ''])); }, ms: 1400 },
+          { say: 'The ball is on my left-hand side of the apple. The ball is on the <b>left</b>.', ms: 1800 },
+          { say: 'The leaf is on the other side. The leaf is on the <b>right</b> of the apple.', ms: 1800 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['fish', 'car'].map(function (k) { return { id: k, html: card(G1.icon(k, 50), A.NAMES[k][0]) }; }) }, tasks: [
           { do: 'Which is on the <b>left</b> of the flower?<div class="fig">' + shelf(['', '', '', 'fish', 'flower', 'car', '', '', '']) + '</div>', goal: function (s) { return s.picked[0] === 'fish'; }, yes: 'The fish is on the left.' }
@@ -304,6 +352,12 @@
           { say: 'Right, right.', act: function (t) { return t.show(grid(5, [2, 4], [[2, 2, 'star']], run([0, 4], ['Rt', 'Rt']))); }, ms: 1200 },
           { say: 'Up, up. The robot reaches the star.', act: function (t) { return t.show(grid(5, [2, 2], [[2, 2, 'star']], run([0, 4], ['Rt', 'Rt', 'U', 'U']))); }, ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. The code is ' + codeHtml(['L', 'L', 'L', 'U']) + '.', act: function (t) { return t.show(grid(5, [4, 3], [[1, 2, 'apple']])); }, ms: 1500 },
+          { say: 'I do the steps in order. First: left, left, left.', act: function (t) { return t.show(grid(5, [1, 3], [[1, 2, 'apple']], run([4, 3], ['L', 'L', 'L']))); }, ms: 1500 },
+          { say: 'Last: up. The robot reaches the apple.', act: function (t) { return t.show(grid(5, [1, 2], [[1, 2, 'apple']], run([4, 3], ['L', 'L', 'L', 'U']))); }, ms: 1500 },
+          { say: 'I did each step <b>in order</b>.', ms: 1500 }
+        ] },
         try: robot([0, 4], [3, 1], 'star'),
         key: '<p>Do each step <b>in order</b>.</p>',
         check: [P('s-code', 1), P('s-code', 2)] },
@@ -313,6 +367,12 @@
           { say: 'This code should reach the apple: ' + codeHtml(['U', 'U', 'Rt']) + '.', act: function (t) { return t.show(grid(5, [1, 3], [[3, 1, 'apple']])); }, ms: 1600 },
           { say: 'Run it: up, up, right. The robot misses the apple.', act: function (t) { return t.show(grid(5, [2, 1], [[3, 1, 'apple']], run([1, 3], ['U', 'U', 'Rt']))); }, ms: 1800 },
           { say: 'It needs one more right. Fixed code: ' + codeHtml(['U', 'U', 'Rt', 'Rt']) + '.', act: function (t) { return t.show(grid(5, [3, 1], [[3, 1, 'apple']], run([1, 3], ['U', 'U', 'Rt', 'Rt']))); }, ms: 2000 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. This code should reach the fish: ' + codeHtml(['Rt', 'U', 'Rt']) + '.', act: function (t) { return t.show(grid(5, [0, 2], [[3, 2, 'fish']])); }, ms: 1600 },
+          { say: 'I run it: right, up, right. The robot misses the fish.', act: function (t) { return t.show(grid(5, [2, 1], [[3, 2, 'fish']], run([0, 2], ['Rt', 'U', 'Rt']))); }, ms: 1700 },
+          { say: 'I check one step at a time. The fish is straight across, so step 2, up, is wrong.', ms: 1900 },
+          { say: 'I change just that step to right. Fixed code: ' + codeHtml(['Rt', 'Rt', 'Rt']) + '. The robot reaches the fish.', act: function (t) { return t.show(grid(5, [3, 2], [[3, 2, 'fish']], run([0, 2], ['Rt', 'Rt', 'Rt']))); }, ms: 2000 }
         ] },
         try: robot([4, 4], [0, 2], 'apple'),
         ways: [{ label: 'Act it out', html: '<p>Make a grid with tape on the floor. One person reads the code. The other walks it, one square per arrow.</p>' }],

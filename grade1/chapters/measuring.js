@@ -214,6 +214,12 @@
           { say: '<b>Mass</b>: how heavy is it?', act: function (t) { return t.show(scale('rock', 'feather', 'L')); }, ms: 1300 },
           { say: '<b>Capacity</b>: how much does it hold?', act: function (t) { return t.show(jugs([{ cups: 5, name: 'jug' }])); }, ms: 1500 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. "How long is the bench?" I ask: is it about long, covers, heavy or holds?', act: function (t) { return t.show(ribbons([{ n: 5, c: COLS[2], name: 'bench' }])); }, ms: 1900 },
+          { say: 'It asks how long. So we measure <b>length</b>.', ms: 1400 },
+          { say: '"How much juice fits in the cup?" It asks what the cup holds.', act: function (t) { return t.show(jugs([{ cups: 3, name: 'cup' }])); }, ms: 1700 },
+          { say: 'Holds means <b>capacity</b>. Long, covers, heavy, holds: length, area, mass, capacity.', ms: 2000 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'l', html: '<span>Length</span>' }, { id: 'a', html: '<span>Area</span>' }, { id: 'm', html: '<span>Mass</span>' }, { id: 'c', html: '<span>Capacity</span>' }] }, tasks: [
           { do: '"How much water fits in the bathtub?" What are we measuring?', goal: function (s) { return s.picked[0] === 'c'; }, yes: 'How much it holds is capacity.' },
           { do: '"Which backpack is heavier?" What are we measuring?', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'm'; }, yes: 'How heavy is mass.' }
@@ -230,6 +236,12 @@
           { say: 'The red one looks longer. But is it?', ms: 1300 },
           { say: 'Line up the ends. Now we can see: <b>blue is longer</b>.', act: function (t) { return t.show(ribbons([{ n: 5, c: COLS[0], name: 'red' }, { n: 7, c: COLS[1], name: 'blue' }])); }, ms: 2000 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which ribbon is longer? The ends are not lined up.', act: function (t) { return t.show(ribbons([{ n: 4, c: COLS[2], name: 'green', off: 3 }, { n: 6, c: COLS[3], name: 'purple' }])); }, ms: 1800 },
+          { say: 'Green sticks out further. But it starts further along, so I cannot tell yet.', ms: 1700 },
+          { say: 'I line up the starts at the dashed line.', act: function (t) { return t.show(ribbons([{ n: 4, c: COLS[2], name: 'green' }, { n: 6, c: COLS[3], name: 'purple' }])); }, ms: 1500 },
+          { say: 'Now I compare the ends. <b>Purple is longer</b>.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, cols: 1, items: [{ id: 'g', html: ribbons([{ n: 6, c: COLS[2], name: 'green' }]) }, { id: 'p', html: ribbons([{ n: 8, c: COLS[3], name: 'purple' }]) }, { id: 'o', html: ribbons([{ n: 4, c: COLS[4], name: 'orange' }]) }] }, tasks: [
           { do: 'All the ribbons start at the dashed line. Tap the <b>longest</b>.', goal: function (s) { return s.picked[0] === 'p'; }, yes: 'Purple reaches furthest, so it is longest.' }
         ] },
@@ -244,6 +256,11 @@
           { say: 'End to end, no gaps: 7 cubes.', act: function (t) { return t.show(ribbons([{ n: 7, c: COLS[0], name: 'red' }], { cubes: true })); }, ms: 1500 },
           { say: 'The ribbon is <b>7 cubes long</b>.', ms: 1600 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. How long is the blue ribbon?', act: function (t) { return t.show(ribbons([{ n: 5, c: COLS[1], name: 'blue' }])); }, ms: 1300 },
+          { say: 'I lay cubes under it, end to end, with no gaps: 1, 2, 3, 4, 5.', act: function (t) { return t.show(ribbons([{ n: 5, c: COLS[1], name: 'blue' }], { cubes: true })); }, ms: 1800 },
+          { say: 'The ribbon is <b>5 cubes long</b>.', ms: 1700 }
+        ] },
         try: cubeTrain(6),
         key: '<p>Cubes go <b>end to end</b>, with no gaps and no overlaps.</p>',
         check: [P('m-length', 2), P('m-length', 3)] }
@@ -257,6 +274,11 @@
           { say: 'Blue covers 6 squares.', act: function (t) { return t.show(gridShape([[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]], '#2c68cf', 'Blue shape')); }, ms: 1400 },
           { say: '6 is more than 5, so blue <b>covers more</b>, even though red looks longer.', ms: 2000 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which covers more? Green is long. I count its squares: 6.', act: function (t) { return t.show(gridShape([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [5, 0]], '#2f9a4c', 'Green shape')); }, ms: 1800 },
+          { say: 'Purple is short. I count its squares: 8.', act: function (t) { return t.show(gridShape([[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2], [0, 3], [1, 3]], '#8441bd', 'Purple shape')); }, ms: 1800 },
+          { say: '8 is more than 6. Purple <b>covers more</b>, even though green looks longer.', ms: 2000 }
+        ] },
         try: cover(6),
         key: '<p>More squares, <b>more area</b>.</p>',
         check: [P('m-area', 1), P('m-area', 2)] }
@@ -268,6 +290,11 @@
         watch: { tool: 'g1stage', steps: [
           { say: 'An apple and a book.', act: function (t) { return t.show(scale('apple', 'book', '=')); }, ms: 1200 },
           { say: 'The book side goes down. The <b>book is heavier</b>.', act: function (t) { return t.show(scale('apple', 'book', 'R')); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which is heavier, the pencil or the apple? I put one on each side.', act: function (t) { return t.show(scale('pencil', 'apple', '=')); }, ms: 1700 },
+          { say: 'I let go. The apple side goes down.', act: function (t) { return t.show(scale('pencil', 'apple', 'R')); }, ms: 1500 },
+          { say: 'Down is heavier: the <b>apple is heavier</b>. Up is lighter: the pencil is lighter.', ms: 2000 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'p', html: OBJ.pumpkin.draw ? A.svg(80, 60, OBJ.pumpkin.draw(40, 30), 'a pumpkin') + '<span>pumpkin</span>' : '' }, { id: 'b', html: A.svg(80, 60, OBJ.ball.draw(40, 30), 'a ball') + '<span>ball</span>' }] }, tasks: [
           { do: 'Look at the balance. Which is <b>heavier</b>?<div class="fig">' + scale('ball', 'pumpkin', 'R') + '</div>', goal: function (s) { return s.picked[0] === 'p'; }, yes: 'The pumpkin side is down, so the pumpkin is heavier.' }
@@ -282,6 +309,11 @@
         ] },
         ways: [{ label: 'Hold them', html: '<p>Hold one thing in each hand. Which hand is pulled down more? Try a pillow and a can of soup.</p>' }],
         mistake: '<p>Choosing the bigger object as heavier. Let the child feel both in their hands.</p>',
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. The feather looks bigger than the apple. Is it heavier?', act: function (t) { return t.show(scale('feather', 'apple', '=')); }, ms: 1700 },
+          { say: 'I do not guess with my eyes. I use the balance.', ms: 1400 },
+          { say: 'The apple side goes down. The small apple is <b>heavier</b>.', act: function (t) { return t.show(scale('feather', 'apple', 'R')); }, ms: 1800 }
+        ] },
         key: '<p>Use a balance or your hands, <b>not your eyes</b>.</p>',
         check: [P('m-mass', 3), P('m-mass', 2)] }
     ] },
@@ -290,6 +322,12 @@
       { id: 'cups', title: 'Count the cups', exp: ['E2.2'], skill: 'm-cap',
         body: '<p><b>Capacity</b> is how much a container holds. Fill each one with the <b>same cup</b> and count.</p>',
         watch: { tool: 'g1stage', steps: [0, 1, 2, 3, 4, 5, 6, 7].map(function (c) { return { say: c < 7 ? 'Pour in cup ' + (c + 1) + '.' : 'Jug A holds 4 cups. Jug B holds 7. <b>B holds more</b>.', act: function (t) { return t.show(jugs([{ cups: Math.min(c + 1, 4), name: 'A' }, { cups: Math.min(c + 1, 7), name: 'B' }])); }, ms: c === 7 ? 1800 : 500 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which jug holds more, C or D? I fill both with the same small cup. Cup 1.', act: function (t) { return t.show(jugs([{ cups: 1, name: 'C' }, { cups: 1, name: 'D' }])); }, ms: 1700 },
+          { say: 'Cup 2, cup 3. Jug D is full.', act: function (t) { return t.show(jugs([{ cups: 3, name: 'C' }, { cups: 3, name: 'D' }])); }, ms: 1500 },
+          { say: 'Jug C still has room. Cup 4, cup 5. Now jug C is full too.', act: function (t) { return t.show(jugs([{ cups: 5, name: 'C' }, { cups: 3, name: 'D' }])); }, ms: 1700 },
+          { say: 'C holds 5 cups. D holds 3 cups. <b>C holds more</b>. I used the same size cup for both.', ms: 2000 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'a', html: jugs([{ cups: 6, name: 'A' }]) }, { id: 'b', html: jugs([{ cups: 3, name: 'B' }]) }] }, tasks: [
           { do: 'Which holds <b>less</b>?', goal: function (s) { return s.picked[0] === 'b'; }, yes: 'B holds 3 cups. A holds 6. B holds less.' }
         ] },
@@ -301,6 +339,12 @@
       { id: 'week', title: 'Days of the week', exp: ['E2.3'], skill: 'm-cal',
         body: '<p>A <b>week</b> has 7 days: Sunday, Monday, Tuesday, Wednesday, Thursday, Friday, Saturday. Then it starts again.</p>',
         watch: { tool: 'g1strip', opts: { tap: false, slots: 7, tray: DAYS.map(function (d) { return { id: d, html: '<b>' + d.slice(0, 3) + '</b>', label: d }; }) }, steps: DAYS.map(function (d, i) { return { say: i === 6 ? 'Saturday. That is 7 days. Then Sunday comes again.' : d + '.', act: function (t) { return t.add(d); }, ms: i === 6 ? 1800 : 450 }; }) },
+        example: { tool: 'g1strip', opts: { tap: false, slots: 5, start: ['Wednesday', 'Thursday', 'Friday'], tray: DAYS.map(function (d) { return { id: d, html: '<b>' + d.slice(0, 3) + '</b>', label: d }; }) }, steps: [
+          { say: 'My turn. What day comes after Friday? I say the days in order: Wednesday, Thursday, Friday ...', ms: 1900 },
+          { say: 'After Friday comes <b>Saturday</b>.', act: function (t) { return t.add('Saturday'); }, ms: 1200 },
+          { say: 'Saturday is the last day of the week. Then the week starts again with <b>Sunday</b>.', act: function (t) { return t.add('Sunday'); }, ms: 1800 },
+          { say: '7 days make 1 week. Then it starts again.', ms: 1600 }
+        ] },
         try: { tool: 'g1strip', opts: { max: 7, tray: R.shuffle(DAYS.slice()).map(function (d) { return { id: d, html: '<b>' + d.slice(0, 3) + '</b>', label: d }; }) }, tasks: [
           { do: 'Put the days in order. Start with <b>Sunday</b>.', goal: function (s) { return s.seq.join() === DAYS.join(); }, yes: 'Sunday to Saturday: 7 days.' }
         ] },
@@ -309,6 +353,12 @@
       { id: 'months', title: 'Months and seasons', exp: ['E2.3'], skill: 'm-cal',
         body: '<p>A <b>year</b> has 12 months. Canada has 4 seasons: <b>winter, spring, summer, fall</b>.</p>' +
           '<div class="tbl"><table><thead><tr><th class="l">Season</th><th class="l">Months (mostly)</th></tr></thead><tbody><tr><td class="l">Winter</td><td class="l">December, January, February</td></tr><tr><td class="l">Spring</td><td class="l">March, April, May</td></tr><tr><td class="l">Summer</td><td class="l">June, July, August</td></tr><tr><td class="l">Fall</td><td class="l">September, October, November</td></tr></tbody></table></div>',
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Jay has a birthday in April. Which season is that?', act: function (t) { return t.show('<p class="big">April</p>'); }, ms: 1500 },
+          { say: 'I find April in the seasons table. March, April and May are mostly <b>spring</b>.', act: function (t) { return t.show('<p class="big">March, April, May: spring</p>'); }, ms: 1900 },
+          { say: 'So the birthday is in spring.', ms: 1300 },
+          { say: 'New Year\'s Day is in January. December, January and February are <b>winter</b>. 12 months, 4 seasons.', act: function (t) { return t.show('<p class="big">December, January, February: winter</p>'); }, ms: 2200 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['winter', 'spring', 'summer', 'fall'].map(function (k) { return { id: k, html: '<span>' + k + '</span>' }; }) }, tasks: [
           { do: 'Canada Day is <b>July 1</b>. Which season is it?', goal: function (s) { return s.picked[0] === 'summer'; }, yes: 'July is in summer.' },
           { do: 'Halloween is <b>October 31</b>. Which season?', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'fall'; }, yes: 'October is in the fall.' }
@@ -321,6 +371,11 @@
           { say: 'What day is July 1, 2026?', act: function (t) { return t.show(calendar(2026, 6)); }, ms: 1400 },
           { say: 'Find the 1.', act: function (t) { return t.show(calendar(2026, 6, 1)); }, ms: 1200 },
           { say: 'Look up its column: <b>Wednesday</b>. Canada Day 2026 is on a Wednesday.', ms: 2000 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. What day is December 25, 2026?', act: function (t) { return t.show(calendar(2026, 11)); }, ms: 1400 },
+          { say: 'I find the 25.', act: function (t) { return t.show(calendar(2026, 11, 25)); }, ms: 1200 },
+          { say: 'I look up its column to the top: <b>Fri</b>. December 25, 2026 is a <b>Friday</b>.', ms: 2000 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['Monday', 'Wednesday', 'Saturday'].map(function (d) { return { id: d, html: '<span>' + d + '</span>' }; }) }, tasks: [
           { do: 'Remembrance Day is <b>November 11</b>. What day is it in 2026?<div class="fig">' + calendar(2026, 10, 11) + '</div>', goal: function (s) { return s.picked[0] === 'Wednesday'; }, yes: 'November 11, 2026 is a Wednesday.' }

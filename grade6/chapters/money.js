@@ -119,6 +119,12 @@
           ['E-transfer: send money to a person. Hard to undo if sent to the wrong person.', card('E-transfer', 'Check the name before you send.', 'var(--ink2)')],
           ['Buy now, pay later: smaller payments, but late fees add up.', card('Buy now, pay later', 'Easy to owe too much.', 'var(--bad)')]
         ]),
+        example: G6.example([
+          ['My turn. I want to buy $45 concert tickets online. How should I pay? I ask: whose money is it, where can I use it, and what can go wrong?', '<p class="g6-big">$45 tickets, online</p>'],
+          ['Cash is my own money, but it does not work online.', card('Cash', 'Not for online shopping.', 'var(--good)', 1)],
+          ['A debit card uses my own money from my bank account, and it works online.', card('Debit card', 'Your own money, works online.', 'var(--strand)')],
+          ['So I pick debit. I check the website and the total before I pay.', card('Debit card', 'Check the site and the total.', 'var(--strand)'), 'Debit card']
+        ]),
         key: '<p>Ask: whose money is it, where can I use it, and what can go wrong?</p>',
         check: [{ q: 'You want to buy a $3 snack at a shop with no card machine. How can you pay?', type: 'mc', options: ['credit card', 'cash', 'e-transfer', 'debit card'], answer: 1, hint: 'No card machine.', explain: 'Cash.' }, g(CH, 'mo-pay', 1), g(CH, 'mo-pay', 2)] },
       { id: 'credit', title: 'Debit or credit?', exp: ['F1.1', 'F1.4'], skill: 'mo-pay', hard: true,
@@ -129,6 +135,12 @@
           ['The jacket really cost her $240.', intChart(200, 20, 1, true), '$240']
         ]),
         ways: [{ label: 'Side by side', html: '<div class="tbl"><table><thead><tr><th class="l"></th><th class="l">Debit</th><th class="l">Credit</th></tr></thead><tbody><tr><td class="l">Whose money?</td><td class="l">yours</td><td class="l">the bank&rsquo;s</td></tr><tr><td class="l">Pay when?</td><td class="l">right away</td><td class="l">at the end of the month</td></tr><tr><td class="l">Pay late?</td><td class="l">not possible</td><td class="l">interest charged</td></tr></tbody></table></div>' }],
+        example: G6.example([
+          ['My turn. I buy $80 headphones on a credit card. Credit is a loan from the bank.', intChart(80, 20, 0, true), '$80'],
+          ['If I pay the full bill on time, it costs nothing extra: $80.', intChart(80, 20, 0, true), '$80'],
+          ['If I wait a year at 20% interest: 20% of $80 is $16.', intChart(80, 20, 1, true), '$80 + $16'],
+          ['Then the headphones really cost $96. Paying on time saves $16.', intChart(80, 20, 1, true), '$96']
+        ]),
         key: '<p>Credit is a loan. Pay the full bill on time and it costs nothing extra.</p>',
         check: [{ q: 'Which way to pay is a loan that you must pay back?', type: 'mc', options: ['debit card', 'credit card', 'cash', 'prepaid card'], answer: 1, hint: 'Whose money is it?', explain: 'A credit card uses the bank&rsquo;s money.' }, g(CH, 'mo-pay', 3)] }
     ] },
@@ -140,6 +152,11 @@
           ['Keep $300 for a bike.', card('Saving goal', 'Keeping money for later.', 'var(--good)', 1)],
           ['$20 for a gift next week: short-term. Saving for college: long-term.', card('Short or long?', 'Weeks or years.', 'var(--hi)', 1)]
         ]),
+        example: G6.example([
+          ['My turn. I set a goal. I name the goal: save for a hockey stick.', card('Saving goal', 'Keeping money for later.', 'var(--good)', 1)],
+          ['I name the amount and the date: $120 by March.', card('$120 by March', 'Goal, amount, date.', 'var(--strand)', 1)],
+          ['A few months away is short-term. Saving for university would be long-term.', card('Short-term', 'Weeks or months, not years.', 'var(--hi)', 1)]
+        ]),
         key: '<p>Name the goal, the amount and the date.</p>',
         check: [{ q: 'Making $150 by mowing lawns this summer is&hellip;', type: 'mc', options: ['a saving goal', 'an earning goal', 'a loan', 'a trade'], answer: 1, hint: 'Making money or keeping it?', explain: 'Making money: an earning goal.' }, g(CH, 'mo-needs', 1), g(CH, 'mo-needs', 1)] },
       { id: 'plan', title: 'Plan a saving goal', exp: ['F1.2'], skill: 'mo-goal',
@@ -150,6 +167,12 @@
           ['300 ÷ 25 = 12 weeks. The bars reach the goal line in week 12.', saveChart(360, 60, 25), '12 weeks']
         ]),
         try: lab(CH, 0, 'Set up a plan that reaches the goal in exactly <b>10 weeks</b>.', function (h) { var gl = +h.querySelector('#sg').value || 1, hv = +h.querySelector('#sh').value || 0, p = +h.querySelector('#sp').value || 1; return hv < gl && Math.ceil((gl - hv) / p - 1e-9) === 10; }, 'Yes: 10 weeks.'),
+        example: G6.example([
+          ['My turn. A skateboard costs $250. I have $40 and save $20 a week.', saveChart(250, 40, 20)],
+          ['Still needed: 250 &minus; 40 = $210.', saveChart(250, 40, 20), '$210'],
+          ['210 &divide; 20 = 10.5. Half a week is not enough, so I round up: 11 weeks.', saveChart(250, 40, 20), '11 weeks'],
+          ['I check: after 11 weeks I have 40 + 11 &times; 20 = $260. That covers $250.', saveChart(250, 40, 20), '$260 &ge; $250 ✓']
+        ]),
         key: '<p>(Goal &minus; saved) &divide; each week. Round up.</p>',
         mistake: '<p>Forgetting the money already saved. Subtract it before dividing.</p>',
         check: [{ q: 'You want a $120 game. You save $15 a week and have nothing saved. How many weeks?', type: 'num', unit: 'weeks', answer: 8, hint: '120 &divide; 15.', explain: '8 weeks.' }, g(CH, 'mo-goal', 1), g(CH, 'mo-goal', 2)] },
@@ -162,6 +185,12 @@
         ]),
         ways: [{ label: 'Needs or wants', html: '<div class="tbl"><table><thead><tr><th class="l">Item</th><th class="l">Need or want?</th></tr></thead><tbody><tr><td class="l">winter boots</td><td class="l">need</td></tr><tr><td class="l">a second pair of brand-name boots</td><td class="l">want</td></tr><tr><td class="l">groceries</td><td class="l">need</td></tr><tr><td class="l">take-out every night</td><td class="l">want</td></tr></tbody></table></div>' },
           { label: 'Pay yourself first', html: '<p>When you get money, put the savings aside <b>before</b> you spend anything. What is left is for spending.</p>' }],
+        example: G6.example([
+          ['My turn. Ava saves $15 a week for $180 headphones. That takes 12 weeks.', saveChart(180, 0, 15), '12 weeks'],
+          ['After 4 weeks she has $60. She notices she spends $5 a week on snacks she does not need.', '<p class="g6-big">4 &times; $15 = $60</p>', 'Track spending'],
+          ['She saves first instead: $20 a week. She still needs 180 &minus; 60 = $120.', saveChart(180, 60, 20), '$120 to go'],
+          ['120 &divide; 20 = 6 more weeks. She reaches her goal 2 weeks sooner.', saveChart(180, 60, 20), '10 weeks in all']
+        ]),
         key: '<p>Save first, track spending, needs before wants.</p>',
         check: [{ q: 'Which one helps you reach a saving goal?', type: 'mc', options: ['buying on impulse', 'tracking your spending', 'ignoring your budget', 'a credit card you cannot pay off'], answer: 1, hint: 'Which gives you more control?', explain: 'Tracking your spending.' }, g(CH, 'mo-needs', 2), g(CH, 'mo-needs', 3)] }
     ] },
@@ -174,6 +203,12 @@
           ['Year 2: another $12. Total interest $24, so $424 in the account.', intChart(400, 3, 2, false), '$424']
         ]),
         try: lab(CH, 1, 'Make a <b>loan</b> where you pay exactly <b>$50</b> in interest.', function (h) { var p = Math.max(0, Math.min(10000, +h.querySelector('#ip').value || 0)); return h.querySelector('#ik').value === 'l' && Math.abs(p * +h.querySelector('#ir').value * +h.querySelector('#it').value / 100 - 50) < 1e-9; }, 'Yes: $50 of interest.'),
+        example: G6.example([
+          ['My turn. I save $500 at 4% simple interest a year, for 3 years.', intChart(500, 4, 0, false), '$500'],
+          ['One year: rate &times; amount. 1% of $500 is $5, so 4% is $20.', intChart(500, 4, 1, false), '+ $20'],
+          ['Then times the years: 3 &times; $20 = $60 of interest.', intChart(500, 4, 3, false), '$60 interest'],
+          ['Total = amount + interest: $500 + $60 = $560.', intChart(500, 4, 3, false), '$560']
+        ]),
         key: '<p>One year: rate &times; amount. Then times the years. Total = amount + interest.</p>',
         mistake: '<p>Giving only the interest when the question asks for the total paid back.</p>',
         check: [{ q: 'You borrow $200 at 10% simple interest a year for 2 years. How much do you pay back in total?', type: 'num', unit: '$', answer: 240, hint: '$20 a year.', explain: '200 + 40 = $240.' }, g(CH, 'mo-interest', 1), g(CH, 'mo-interest', 2)] },
@@ -185,6 +220,12 @@
           ['20 transactions: A is still $4. B is $10, C is $11.50.', legend() + planChart(20), 'A wins']
         ]),
         try: lab(CH, 2, 'Find a number of transactions where <b>Plan A</b> is the cheapest.', function (h) { return +h.querySelector('#pk').value >= 13; }, 'Yes: with lots of transactions, the flat fee wins.'),
+        example: G6.example([
+          ['My turn. I make 12 transactions a month. Which plan is cheapest?', legend() + planChart(12)],
+          ['Plan A: $4 a month, no matter what.', legend() + planChart(12), 'A: $4.00'],
+          ['Plan B: 12 &times; 50&cent; = $6. Plan C: $1.50, plus 2 transactions after the 10 free at $1 each: $3.50.', legend() + planChart(12), 'B: $6.00 &nbsp; C: $3.50'],
+          ['I compare: $3.50 is the least, so Plan C is cheapest for me.', legend() + planChart(12), 'C wins']
+        ]),
         key: '<p>Work out each plan for your number of transactions. Then compare.</p>',
         check: [{ q: 'An ATM charges a $2.50 fee. You use it 6 times this month. How much do you pay in fees?', type: 'num', unit: '$', answer: 15, hint: '6 &times; $2.50.', explain: '$15.00.' }, g(CH, 'mo-fees', 1), g(CH, 'mo-fees', 2)] }
     ] },
@@ -196,6 +237,11 @@
           ['Jo lets Kim use $10. Jo is lending. Kim is borrowing.', card('Lending and borrowing', 'One event, two sides. The owner lends.', 'var(--hi)', 1)],
           ['A bank lends Kim $50 at 6%. Kim pays back $53.', card('Borrowing from a bank', '$50 + $3 interest.', 'var(--ink2)', 1)],
           ['Giving to a food bank, or volunteering your time.', card('Donating', 'Nothing comes back.', 'var(--good)', 1)]
+        ]),
+        example: G6.example([
+          ['My turn. For each story I ask: whose is it, and does it come back? Raj and a friend swap books.', card('Trading', 'A swap, now.', 'var(--strand)', 1)],
+          ['Raj&rsquo;s mom gives him $20 for a field trip, and he pays her back next week. Mom lends; Raj borrows.', card('Lending and borrowing', 'It comes back to the owner.', 'var(--hi)', 1)],
+          ['Raj gives his old skates to a younger neighbour. Nothing comes back: he is donating.', card('Donating', 'Nothing comes back.', 'var(--good)', 1)]
         ]),
         key: '<p>Ask: whose is it, and does it come back?</p>',
         check: [{ q: 'You let a friend use your calculator for a test, and they give it back. You are&hellip;', type: 'mc', options: ['trading', 'lending', 'borrowing', 'donating'], answer: 1, hint: 'It is yours and it comes back.', explain: 'Lending.' }, g(CH, 'mo-share', 1), g(CH, 'mo-share', 2), g(CH, 'mo-share', 3)] }

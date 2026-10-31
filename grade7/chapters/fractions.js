@@ -208,6 +208,12 @@
           { say: 'Cut again. 12 parts, 8 shaded.', fig: function () { return stack([[2, 3, 'var(--sb)'], [4, 6, 'var(--se)'], [8, 12, 'var(--sd)']]); } },
           { say: 'The dashed line shows the shaded length never changed. ' + fr(2, 3) + ' = ' + fr(4, 6) + ' = ' + fr(8, 12) + '.', fig: function () { return stack([[2, 3, 'var(--sb)'], [4, 6, 'var(--se)'], [8, 12, 'var(--sd)']]); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Here is a bar cut into 4 equal parts. 3 are shaded: three quarters.', fig: function () { return stack([[3, 4, 'var(--sb)']]); } },
+          { say: 'I cut every quarter in half. Now there are 8 parts, and 6 are shaded.', fig: function () { return stack([[3, 4, 'var(--sb)'], [6, 8, 'var(--se)']]); } },
+          { say: 'Next I cut every quarter into 3 instead. Now there are 12 parts, and 9 are shaded.', fig: function () { return stack([[3, 4, 'var(--sb)'], [6, 8, 'var(--se)'], [9, 12, 'var(--sd)']]); } },
+          { say: 'The shaded length never changed. ' + fr(3, 4) + ' = ' + fr(6, 8) + ' = ' + fr(9, 12) + '. They cover the same amount.', fig: function () { return stack([[3, 4, 'var(--sb)'], [6, 8, 'var(--se)'], [9, 12, 'var(--sd)']]); }, ms: 2600 }
+        ]),
         try: { tool: 'fractions', opts: { wall: [3, 6, 12] }, tasks: [
           { do: 'Shade <b>2/3</b> in the top strip.', goal: function (s) { return s[0].n === 2; }, yes: 'Two thirds shaded.' },
           { reset: false, do: 'Now shade the <b>same length</b> in the sixths strip.', goal: function (s) { return s[0].n === 2 && s[1].n === 4; }, yes: '4/6 covers the same length as 2/3.' },
@@ -223,6 +229,12 @@
           { say: 'Cut each fifth into 4. The bottom is multiplied by 4.', fig: function () { return stack([[3, 5, 'var(--sb)'], [12, 20, 'var(--se)']]) + eq(fr(3, 5) + ' = ' + fr('?', '5 &times; 4')); } },
           { say: 'Each shaded piece became 4 pieces too, so the top is multiplied by 4.', fig: function () { return stack([[3, 5, 'var(--sb)'], [12, 20, 'var(--se)']]) + eq(fr(3, 5) + ' = ' + fr('3 &times; 4', '5 &times; 4')); } },
           { say: 'Three fifths equals twelve twentieths.', fig: function () { return stack([[3, 5, 'var(--sb)'], [12, 20, 'var(--se)']]) + eq(fr(3, 5) + ' = ' + fr(12, 20)); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find a fraction equal to ' + fr(2, 7) + ' with 21 on the bottom.', fig: function () { return stack([[2, 7, 'var(--sb)']]) + eq(fr(2, 7) + ' = ' + fr('?', 21)); } },
+          { say: '7 &times; 3 = 21. So I cut each seventh into 3. The bottom is multiplied by 3.', fig: function () { return stack([[2, 7, 'var(--sb)'], [6, 21, 'var(--se)']]) + eq(fr(2, 7) + ' = ' + fr('?', '7 &times; 3')); } },
+          { say: 'Each shaded piece became 3 pieces, so I multiply the top by 3 too.', fig: function () { return stack([[2, 7, 'var(--sb)'], [6, 21, 'var(--se)']]) + eq(fr(2, 7) + ' = ' + fr('2 &times; 3', '7 &times; 3')); } },
+          { say: 'So ' + fr(2, 7) + ' = ' + fr(6, 21) + '. Whatever I do to the bottom, I do to the top.', fig: function () { return stack([[2, 7, 'var(--sb)'], [6, 21, 'var(--se)']]) + eq(fr(2, 7) + ' = ' + fr(6, 21)); }, ms: 2400 }
         ]),
         try: lab('eqno', [
           { do: 'Show <b>3/4</b> cut so that there are <b>12</b> parts.', goal: function (h) { return K.v(h, 'eqn') === 3 && K.v(h, 'eqd') === 4 && K.v(h, 'eqk') === 3; }, yes: '3/4 = 9/12. Both parts were multiplied by 3.' },
@@ -241,6 +253,12 @@
           { say: 'Find the GCF. Factors of 18 and 24 in common: 1, 2, 3 and 6. The greatest is 6.', fig: eq('GCF of 18 and 24 = <b>6</b>') },
           { say: 'Divide the top and the bottom by 6.', fig: function () { return eq(fr(18, 24) + ' = ' + fr('18 &divide; 6', '24 &divide; 6')); } },
           { say: 'Every 6 small pieces join into 1 big piece. 18 twenty-fourths is <b>three quarters</b>.', fig: function () { return stack([[18, 24, 'var(--sb)'], [3, 4, 'var(--se)']]) + eq(fr(18, 24) + ' = ' + fr(3, 4)); }, ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will simplify ' + fr(20, 32) + '.', fig: function () { return stack([[20, 32, 'var(--sb)']]) + eq(fr(20, 32)); } },
+          { say: 'First I find the GCF. 20 and 32 both divide by 1, 2 and 4. The greatest is 4.', fig: eq('GCF of 20 and 32 = <b>4</b>') },
+          { say: 'I divide the top and the bottom by 4.', fig: eq(fr(20, 32) + ' = ' + fr('20 &divide; 4', '32 &divide; 4')) },
+          { say: 'Every 4 small pieces join into 1 bigger piece. So ' + fr(20, 32) + ' = <b>' + fr(5, 8) + '</b>, in simplest form.', fig: function () { return stack([[20, 32, 'var(--sb)'], [5, 8, 'var(--se)']]) + eq(fr(20, 32) + ' = ' + fr(5, 8)); }, ms: 2600 }
         ]),
         try: lab('smn', [
           { do: 'Type <b>18</b> on top and <b>24</b> on the bottom.', goal: function (h) { return +K.v(h, 'smn') === 18 && +K.v(h, 'smd') === 24; }, yes: 'GCF 6, so 18/24 = 3/4.' },
@@ -262,6 +280,11 @@
           { say: 'Is 3 fifths in simplest form? Only 1 divides 3 and 5. Yes.', fig: eq(fr(3, 5) + ': GCF = 1 &#10003;') },
           { say: '8 ninths: 8 is 2 &times; 2 &times; 2 and 9 is 3 &times; 3. Nothing shared, so it is already simplest.', fig: eq(fr(8, 9) + ': GCF = 1 &#10003;'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Is ' + fr(14, 21) + ' in simplest form? 7 divides 14 and 21. So no: it simplifies to ' + fr(2, 3) + '.', fig: eq(fr(14, 21) + ' &rarr; both divide by 7 &rarr; ' + fr(2, 3)) },
+          { say: 'Is ' + fr(4, 9) + ' in simplest form? 4 is 2 &times; 2 and 9 is 3 &times; 3. They share nothing, so the GCF is 1. Yes.', fig: eq(fr(4, 9) + ': GCF = 1 &#10003;') },
+          { say: 'Is ' + fr(10, 25) + '? 5 divides both, so no: it is ' + fr(2, 5) + '. GCF = 1 means simplest form.', fig: eq(fr(10, 25) + ' &rarr; both divide by 5 &rarr; ' + fr(2, 5)), ms: 2600 }
+        ]),
         key: '<p><b>GCF = 1 means simplest form.</b> If any number bigger than 1 divides both, keep simplifying.</p>',
         mistake: '<p>Thinking a fraction with big numbers cannot be simple (8/9 is simplest) or one with small numbers always is (2/4 is not).</p>',
         check: [function () {
@@ -278,6 +301,12 @@
           { say: 'Now three quarters and three eighths. Both have 3 pieces.', fig: function () { return stack([[3, 4, 'var(--sb)'], [3, 8, 'var(--se)']]); } },
           { say: 'Quarters are bigger pieces than eighths, so ' + fr(3, 4) + ' &gt; ' + fr(3, 8) + '.', fig: function () { return stack([[3, 4, 'var(--sb)'], [3, 8, 'var(--se)']]) + eq(fr(3, 4) + ' &gt; ' + fr(3, 8)); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Which is greater, ' + fr(4, 7) + ' or ' + fr(6, 7) + '? The bottoms are the same, so the pieces are the same size.', fig: function () { return stack([[4, 7, 'var(--sb)'], [6, 7, 'var(--se)']]); } },
+          { say: '6 pieces is more than 4 pieces. So ' + fr(6, 7) + ' &gt; ' + fr(4, 7) + '.', fig: function () { return stack([[4, 7, 'var(--sb)'], [6, 7, 'var(--se)']]) + eq(fr(6, 7) + ' &gt; ' + fr(4, 7)); } },
+          { say: 'Next, ' + fr(2, 3) + ' and ' + fr(2, 9) + '. The tops are the same: 2 pieces each.', fig: function () { return stack([[2, 3, 'var(--sb)'], [2, 9, 'var(--se)']]); } },
+          { say: 'Thirds are bigger pieces than ninths. So ' + fr(2, 3) + ' &gt; ' + fr(2, 9) + '. Same top: the smaller bottom wins.', fig: function () { return stack([[2, 3, 'var(--sb)'], [2, 9, 'var(--se)']]) + eq(fr(2, 3) + ' &gt; ' + fr(2, 9)); }, ms: 2400 }
+        ]),
         try: { tool: 'fractions', opts: { wall: [4, 8] }, tasks: [
           { do: 'Shade <b>3/4</b> and <b>3/8</b>. Which is longer?', goal: function (s) { return s[0].n === 3 && s[1].n === 3; }, yes: '3/4 is longer: quarters are bigger pieces.' },
           { reset: false, do: 'Change the eighths strip so it matches 3/4 exactly.', goal: function (s) { return s[0].n === 3 && s[1].n === 6; }, yes: '6/8 = 3/4.' }
@@ -292,6 +321,12 @@
           { say: 'The LCM of 3 and 5 is 15. Cut both bars into fifteenths.', fig: function () { return stack([[10, 15, 'var(--sb)'], [9, 15, 'var(--se)']]); } },
           { say: 'Two thirds is ten fifteenths. Three fifths is nine fifteenths.', fig: function () { return eq(fr(2, 3) + ' = ' + fr(10, 15) + ' &nbsp; ' + fr(3, 5) + ' = ' + fr(9, 15)); } },
           { say: '10 is more than 9, so <b>two thirds is greater</b>.', fig: function () { return stack([[10, 15, 'var(--sb)'], [9, 15, 'var(--se)']]) + eq(fr(2, 3) + ' &gt; ' + fr(3, 5)); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Which is greater, ' + fr(3, 4) + ' or ' + fr(5, 6) + '?', fig: function () { return stack([[3, 4, 'var(--sb)'], [5, 6, 'var(--se)']]); } },
+          { say: 'First I find a common denominator. The LCM of 4 and 6 is 12, so I cut both bars into twelfths.', fig: function () { return stack([[9, 12, 'var(--sb)'], [10, 12, 'var(--se)']]); } },
+          { say: fr(3, 4) + ' is ' + fr(9, 12) + '. ' + fr(5, 6) + ' is ' + fr(10, 12) + '.', fig: eq(fr(3, 4) + ' = ' + fr(9, 12) + ' &nbsp; ' + fr(5, 6) + ' = ' + fr(10, 12)) },
+          { say: 'Now I compare the tops. 10 is more than 9, so <b>' + fr(5, 6) + ' is greater</b>.', fig: function () { return stack([[9, 12, 'var(--sb)'], [10, 12, 'var(--se)']]) + eq(fr(5, 6) + ' &gt; ' + fr(3, 4)); }, ms: 2400 }
         ]),
         try: lab('cpa', [
           { do: 'Compare <b>2/3</b> and <b>3/5</b>.', goal: function (h) { return +K.v(h, 'cpa') === 2 && +K.v(h, 'cpb') === 3 && +K.v(h, 'cpc') === 3 && +K.v(h, 'cpd') === 5; }, yes: 'In fifteenths: 10/15 &gt; 9/15.' },
@@ -312,6 +347,12 @@
           { say: 'Five ninths: half of 9 is 4.5. 5 is more, so five ninths is <b>more than a half</b>.', fig: function () { return fline(0, 1, 9, [{ v: 0.5, lab: '1/2', col: 'var(--hi)' }, { v: 5 / 9, lab: '5/9', col: 'var(--se)' }]); } },
           { say: 'So three sevenths is less than five ninths. No common denominator needed.', fig: eq(fr(3, 7) + ' &lt; ' + fr(1, 2) + ' &lt; ' + fr(5, 9)), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Which is greater, ' + fr(4, 9) + ' or ' + fr(3, 5) + '? I check each one against one half.', fig: eq(fr(4, 9) + ' &nbsp; or &nbsp; ' + fr(3, 5)) },
+          { say: fr(4, 9) + ': half of 9 is 4.5. 4 is less, so ' + fr(4, 9) + ' is <b>less than a half</b>.', fig: function () { return fline(0, 1, 9, [{ v: 4 / 9, lab: '4/9', col: 'var(--sb)' }, { v: 0.5, lab: '1/2', col: 'var(--hi)' }]); } },
+          { say: fr(3, 5) + ': half of 5 is 2.5. 3 is more, so ' + fr(3, 5) + ' is <b>more than a half</b>.', fig: function () { return fline(0, 1, 5, [{ v: 0.5, lab: '1/2', col: 'var(--hi)' }, { v: 3 / 5, lab: '3/5', col: 'var(--se)' }]); } },
+          { say: 'So ' + fr(4, 9) + ' &lt; ' + fr(1, 2) + ' &lt; ' + fr(3, 5) + '. ' + fr(3, 5) + ' is greater.', fig: eq(fr(4, 9) + ' &lt; ' + fr(1, 2) + ' &lt; ' + fr(3, 5)), ms: 2600 }
+        ]),
         key: '<p><b>Compare the top with half the bottom.</b> Less: under ' + fr(1, 2) + '. More: over ' + fr(1, 2) + '.</p>',
         mistake: '<p>Using this check when both fractions are on the same side of 1/2. Then it does not decide; use a common denominator.</p>',
         check: [function () {
@@ -329,6 +370,12 @@
           { say: 'Order the tops: 3, 4, 6.', fig: function () { return stack([[3, 8, 'var(--se)'], [4, 8, 'var(--sb)'], [6, 8, 'var(--sd)']]); } },
           { say: 'Least to greatest: three eighths, one half, three quarters.', fig: function () { return fline(0, 1, 8, [{ v: 3 / 8, lab: '3/8', col: 'var(--se)' }, { v: 0.5, lab: '1/2', col: 'var(--sb)' }, { v: 0.75, lab: '3/4', col: 'var(--sd)' }]); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will put ' + fr(2, 3) + ', ' + fr(5, 6) + ' and ' + fr(7, 12) + ' in order, least to greatest.', fig: eq(fr(2, 3) + ', ' + fr(5, 6) + ', ' + fr(7, 12)) },
+          { say: 'First I write them all with the same denominator, twelfths.', fig: eq(fr(8, 12) + ', ' + fr(10, 12) + ', ' + fr(7, 12)) },
+          { say: 'Now I order the tops: 7, 8, 10.', fig: function () { return stack([[7, 12, 'var(--se)'], [8, 12, 'var(--sb)'], [10, 12, 'var(--sd)']]); } },
+          { say: 'Least to greatest: ' + fr(7, 12) + ', ' + fr(2, 3) + ', ' + fr(5, 6) + '.', fig: function () { return fline(0, 1, 12, [{ v: 7 / 12, lab: '7/12', col: 'var(--se)' }, { v: 2 / 3, lab: '2/3', col: 'var(--sb)' }, { v: 5 / 6, lab: '5/6', col: 'var(--sd)' }], '', 2); }, ms: 2600 }
+        ]),
         key: '<p><b>Same denominator for all, then order the tops.</b></p>',
         mistake: '<p>Ordering by the bottoms alone (3/8 last because 8 is biggest).</p>',
         check: [K.ck('fr-compare', 3), K.ck('fr-compare', 3)] }
@@ -341,6 +388,12 @@
           { say: 'In sixths they are 2/6 and 3/6. They are next to each other. No gap yet.', fig: eq(fr(1, 3) + ' = ' + fr(2, 6) + ' &nbsp; ' + fr(1, 2) + ' = ' + fr(3, 6)) },
           { say: 'Cut smaller, into twelfths: 4/12 and 6/12.', fig: eq(fr(4, 12) + ' &nbsp; ? &nbsp; ' + fr(6, 12)) },
           { say: 'Now <b>5/12</b> fits in between.', fig: function () { return zoom(1, 3, 1, 2).svg; }, ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find a fraction between ' + fr(2, 5) + ' and ' + fr(1, 2) + '.', fig: function () { return fline(0, 1, 10, [{ v: 0.4, lab: '2/5', col: 'var(--sb)' }, { v: 0.5, lab: '1/2', col: 'var(--se)' }]); } },
+          { say: 'First a common denominator. In tenths they are ' + fr(4, 10) + ' and ' + fr(5, 10) + '. They are next to each other. No gap yet.', fig: eq(fr(2, 5) + ' = ' + fr(4, 10) + ' &nbsp; ' + fr(1, 2) + ' = ' + fr(5, 10)) },
+          { say: 'So I cut the pieces smaller, into twentieths: ' + fr(8, 20) + ' and ' + fr(10, 20) + '.', fig: eq(fr(8, 20) + ' &nbsp; ? &nbsp; ' + fr(10, 20)) },
+          { say: 'Now <b>' + fr(9, 20) + '</b> fits in between.', fig: function () { return zoom(2, 5, 1, 2).svg; }, ms: 2800 }
         ]),
         try: lab('zma', [
           { do: 'Zoom in between <b>1/3</b> and <b>1/2</b>.', goal: function (h) { return K.v(h, 'zma') === '1,3' && K.v(h, 'zmb') === '1,2'; }, yes: 'In twelfths: 5/12 is between.' },
@@ -363,6 +416,12 @@
           { say: '0.35 is halfway. 0.31 to 0.39 are all between.', fig: function () { return dline(0.3, 0.4, 0.01, [{ v: 0.35, lab: '0.35' }]); } },
           { say: 'Zoom again: between 0.35 and 0.36 is <b>0.355</b>.', fig: function () { return dline(0.35, 0.36, 0.001, [{ v: 0.355, lab: '0.355' }]); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will find decimals between 0.7 and 0.8.', fig: function () { return dline(0.7, 0.8, 0.1, [{ v: 0.7, col: 'var(--sb)' }, { v: 0.8, col: 'var(--se)' }]); } },
+          { say: 'I add a zero to both: 0.70 and 0.80. Now I can see ten small steps.', fig: function () { return dline(0.7, 0.8, 0.01, [{ v: 0.7, col: 'var(--sb)' }, { v: 0.8, col: 'var(--se)' }]); } },
+          { say: '0.71, 0.72, and so on up to 0.79 are all between. 0.75 is halfway.', fig: function () { return dline(0.7, 0.8, 0.01, [{ v: 0.75, lab: '0.75' }]); } },
+          { say: 'I can zoom in again. Between 0.72 and 0.73 is <b>0.725</b>.', fig: function () { return dline(0.72, 0.73, 0.001, [{ v: 0.725, lab: '0.725' }]); }, ms: 2600 }
+        ]),
         key: '<p><b>Add a zero to both, then look between.</b> 0.6 and 0.7 become 0.60 and 0.70.</p>',
         mistake: '<p>Thinking 0.35 is bigger than 0.4 because 35 is bigger than 4. Line up the places: 0.35 and 0.40.</p>',
         check: [function () { return mc('Which number is between 0.6 and 0.7?', '0.65', ['0.06', '0.71', '0.7'], 'Write both as hundredths: 0.60 and 0.70.', '0.60 &lt; 0.65 &lt; 0.70.'); }, K.ck('fr-between', 2)] }
@@ -374,6 +433,11 @@
           { say: 'Three eighths plus two eighths.', fig: function () { return stack([[3, 8, 'var(--sb)'], [2, 8, 'var(--se)']]); } },
           { say: 'Slide the pieces together: 3 eighths and 2 more eighths.', fig: function () { return addPic(3, 8, 2, 8); } },
           { say: '3 + 2 = 5 pieces. They are still eighths: five eighths.', fig: eq(fr(3, 8) + ' + ' + fr(2, 8) + ' = ' + fr(5, 8)), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will add ' + fr(2, 9) + ' + ' + fr(5, 9) + '.', fig: function () { return stack([[2, 9, 'var(--sb)'], [5, 9, 'var(--se)']]); } },
+          { say: 'The pieces are the same size: ninths. I join them together.', fig: function () { return addPic(2, 9, 5, 9); } },
+          { say: '2 + 5 = 7 pieces. They are still ninths, so the answer is ' + fr(7, 9) + '. Same bottom: I add the tops and keep the bottom.', fig: eq(fr(2, 9) + ' + ' + fr(5, 9) + ' = ' + fr(7, 9)), ms: 2600 }
         ]),
         try: { tool: 'fractions', opts: { wall: [8, 8, 8] }, tasks: [
           { do: 'Shade <b>3/8</b> in the first strip and <b>2/8</b> in the second.', goal: function (s) { var r = rows(s); return r[0] === 3 && r[1] === 2; }, yes: 'Now show the total in the third strip.' },
@@ -389,6 +453,12 @@
           { say: 'The LCM of 2 and 3 is 6. Cut both into sixths.', fig: function () { return addPic(1, 2, 1, 3); } },
           { say: 'One half is 3 sixths. One third is 2 sixths.', fig: eq(fr(1, 2) + ' + ' + fr(1, 3) + ' = ' + fr(3, 6) + ' + ' + fr(2, 6)) },
           { say: '3 + 2 = 5. The total is <b>five sixths</b>.', fig: eq(fr(1, 2) + ' + ' + fr(1, 3) + ' = ' + fr(5, 6)), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will add ' + fr(1, 4) + ' + ' + fr(2, 3) + '. Quarters and thirds are different sizes.', fig: function () { return stack([[1, 4, 'var(--sb)'], [2, 3, 'var(--se)']]); } },
+          { say: 'First I find a common denominator. The LCM of 4 and 3 is 12, so I cut both into twelfths.', fig: function () { return addPic(1, 4, 2, 3); } },
+          { say: fr(1, 4) + ' is ' + fr(3, 12) + '. ' + fr(2, 3) + ' is ' + fr(8, 12) + '.', fig: eq(fr(1, 4) + ' + ' + fr(2, 3) + ' = ' + fr(3, 12) + ' + ' + fr(8, 12)) },
+          { say: 'Now I add the tops and keep the bottom: 3 + 8 = 11. The total is <b>' + fr(11, 12) + '</b>.', fig: eq(fr(1, 4) + ' + ' + fr(2, 3) + ' = ' + fr(11, 12)), ms: 2400 }
         ]),
         try: lab('ada', [
           { do: 'Add <b>1/2 + 1/3</b>.', goal: function (h) { return +K.v(h, 'ada') === 1 && +K.v(h, 'adb') === 2 && +K.v(h, 'adc') === 1 && +K.v(h, 'add') === 3; }, yes: '3/6 + 2/6 = 5/6.' },
@@ -411,6 +481,12 @@
           { say: 'Fractions: three quarters plus two quarters is five quarters.', fig: function () { return addPic(3, 4, 1, 2) + eq(fr(3, 4) + ' + ' + fr(2, 4) + ' = ' + fr(5, 4)); } },
           { say: 'Five quarters is 1 and one quarter. So the total is 3 + 1 and one quarter: <b>4 and one quarter</b>.', fig: eq('3 + ' + A.mixed(1, 1, 4) + ' = ' + A.mixed(4, 1, 4)), ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will add ' + A.mixed(2, 2, 3) + ' + ' + A.mixed(1, 1, 2) + '.', fig: eq(A.mixed(2, 2, 3) + ' + ' + A.mixed(1, 1, 2)) },
+          { say: 'First, wholes with wholes: 2 + 1 = 3.', fig: eq('2 + 1 = 3') },
+          { say: 'Next, fractions with fractions. In sixths: ' + fr(4, 6) + ' + ' + fr(3, 6) + ' = ' + fr(7, 6) + '.', fig: function () { return addPic(2, 3, 1, 2) + eq(fr(2, 3) + ' + ' + fr(1, 2) + ' = ' + fr(4, 6) + ' + ' + fr(3, 6) + ' = ' + fr(7, 6)); } },
+          { say: fr(7, 6) + ' is more than 1. It is ' + A.mixed(1, 1, 6) + ', so I carry a whole: 3 + ' + A.mixed(1, 1, 6) + ' = <b>' + A.mixed(4, 1, 6) + '</b>.', fig: eq('3 + ' + A.mixed(1, 1, 6) + ' = ' + A.mixed(4, 1, 6)), ms: 2800 }
+        ]),
         key: '<p><b>Wholes with wholes, fractions with fractions.</b> If the fraction part is more than 1, carry a whole.</p>',
         mistake: '<p>Leaving the answer as 3 5/4. Five quarters is more than a whole, so carry 1: 4 1/4.</p>',
         check: [K.ck('fr-add', 3), function () { return { q: 'Mia ran ' + fr(3, 4) + ' km on Monday and ' + fr(5, 6) + ' km on Tuesday. How far in total? Type a fraction or mixed number.', type: 'num', answer: 19 / 12, show: '1 7/12', kb: 'text', tol: 1e-6, hint: 'Use twelfths.', explain: fr(9, 12) + ' + ' + fr(10, 12) + ' = ' + fr(19, 12) + ' = ' + A.mixed(1, 7, 12) + ' km.' }; }] }
@@ -423,6 +499,13 @@
           { say: 'The LCM of 6 and 4 is 12. Five sixths is 10 twelfths. One quarter is 3 twelfths.', fig: eq(fr(10, 12) + ' &minus; ' + fr(3, 12)) },
           { say: 'Take 3 twelfths away from 10 twelfths.', fig: function () { return addPic(5, 6, 1, 4, true); } },
           { say: '7 twelfths are left.', fig: eq(fr(5, 6) + ' &minus; ' + fr(1, 4) + ' = ' + fr(7, 12)), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + fr(3, 4) + ' &minus; ' + fr(2, 5) + '.', fig: function () { return stack([[3, 4, 'var(--sb)'], [2, 5, 'var(--se)']]); } },
+          { say: 'First a common denominator. The LCM of 4 and 5 is 20. ' + fr(3, 4) + ' is ' + fr(15, 20) + '. ' + fr(2, 5) + ' is ' + fr(8, 20) + '.', fig: eq(fr(15, 20) + ' &minus; ' + fr(8, 20)) },
+          { say: 'I take 8 twentieths away from 15 twentieths.', fig: function () { return addPic(3, 4, 2, 5, true); } },
+          { say: '15 &minus; 8 = 7. So ' + fr(7, 20) + ' is left.', fig: eq(fr(3, 4) + ' &minus; ' + fr(2, 5) + ' = ' + fr(7, 20)) },
+          { say: 'I check by adding back: ' + fr(7, 20) + ' + ' + fr(8, 20) + ' = ' + fr(15, 20) + '. It works.', fig: eq(fr(7, 20) + ' + ' + fr(8, 20) + ' = ' + fr(15, 20) + ' &#10003;'), ms: 2400 }
         ]),
         try: { tool: 'fractions', opts: { wall: [12] }, tasks: [
           { do: 'Shade <b>10/12</b>. That is 5/6.', goal: function (s) { return s[0].n === 10; }, yes: 'Now take away 1/4, which is 3/12.' },
@@ -438,6 +521,12 @@
           { say: 'Only 1 quarter is loose. Break one whole into 4 quarters.', fig: eq(A.mixed(2, 1, 4) + ' = 1 + ' + fr(4, 4) + ' + ' + fr(1, 4) + ' = ' + A.mixed(1, 5, 4)) },
           { say: 'Now take 3 quarters from 5 quarters. 2 quarters are left.', fig: function () { return bar(6, 4, { col: 'var(--sb)' }) + eq(A.mixed(1, 5, 4) + ' &minus; ' + fr(3, 4) + ' = ' + A.mixed(1, 2, 4)); } },
           { say: 'Two quarters is one half. The answer is <b>one and a half</b>.', fig: eq(A.mixed(1, 2, 4) + ' = ' + A.mixed(1, 1, 2)), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + A.mixed(3, 1, 5) + ' &minus; ' + fr(4, 5) + '.', fig: function () { return bar(16, 5, { col: 'var(--sb)' }); } },
+          { say: 'Only 1 fifth is loose. That is not enough pieces, so I break one whole into 5 fifths.', fig: eq(A.mixed(3, 1, 5) + ' = 2 + ' + fr(5, 5) + ' + ' + fr(1, 5) + ' = ' + A.mixed(2, 6, 5)) },
+          { say: 'Now I take 4 fifths from 6 fifths. 2 fifths are left.', fig: function () { return bar(12, 5, { col: 'var(--sb)' }) + eq(A.mixed(2, 6, 5) + ' &minus; ' + fr(4, 5) + ' = ' + A.mixed(2, 2, 5)); } },
+          { say: 'So the answer is <b>' + A.mixed(2, 2, 5) + '</b>. I check by adding back: ' + A.mixed(2, 2, 5) + ' + ' + fr(4, 5) + ' = ' + A.mixed(2, 6, 5) + ' = ' + A.mixed(3, 1, 5) + '.', fig: eq(A.mixed(2, 2, 5) + ' + ' + fr(4, 5) + ' = ' + A.mixed(3, 1, 5) + ' &#10003;'), ms: 2600 }
         ]),
         try: { tool: 'fractions', opts: { wall: [4, 4, 4] }, tasks: [
           { do: 'Show <b>2 1/4</b>: two full strips and 1 quarter.', goal: function (s) { var r = rows(s).slice().sort(); return sum(s) === 9 && r.join() === '1,4,4'; }, yes: '2 1/4 is 9 quarters.' },

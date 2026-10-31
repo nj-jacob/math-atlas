@@ -128,6 +128,13 @@
           ['0.345 is 3 tenths, 4 hundredths and 5 thousandths.', kgrid(345, 26), '0.345']
         ]),
         try: lab(CH, 0, 'Slide to shade exactly <b>0.25</b>.', function (h) { return +h.querySelector('#dgr').value === 250; }, 'Yes: 0.25 is 250 thousandths, a quarter of the whole.'),
+        example: G6.example([
+          ['My turn. I show 0.263 on one whole.', kgrid(0, 26)],
+          ['First the tenths: I shade 2 strips. That is 0.2.', kgrid(200, 26), '0.2'],
+          ['Next the hundredths: I shade 6 small squares. Now it is 0.26.', kgrid(260, 26), '0.26'],
+          ['Last the thousandths: I shade 3 slivers. Now it is 0.263.', kgrid(263, 26), '0.263'],
+          ['I check: each place to the right is one tenth of the place before it.', kgrid(263, 26), '2 tenths, 6 hundredths, 3 thousandths']
+        ]),
         key: '<p>Each place to the right is one tenth of the place before it.</p>',
         check: [g(CH, 'dc-value', 1), g(CH, 'dc-value', 2)] },
       { id: 'read', title: 'Reading decimals', exp: ['B1.4'], skill: 'dc-value',
@@ -136,6 +143,12 @@
           ['0.345 ends in the thousandths place.', dchart(345, { vals: true }), 'three hundred forty-five thousandths'],
           ['2.07 ends in the hundredths place.', dchart(2070, { vals: true }), 'two and seven hundredths'],
           ['0.052 ends in the thousandths place.', dchart(52, { vals: true }), 'fifty-two thousandths']
+        ]),
+        example: G6.example([
+          ['My turn. I read 4.105. First the whole number: four.', dchart(4105, { vals: true })],
+          ['I say "and" for the decimal point.', dchart(4105, { vals: true }), 'four and &hellip;'],
+          ['I read the digits after the point as one number: one hundred five.', dchart(4105, { vals: true }), 'four and one hundred five &hellip;'],
+          ['I name the last place. The 5 is in the thousandths place.', dchart(4105, { vals: true }), 'four and one hundred five thousandths']
         ]),
         key: '<p>Read the number after the point, then name the last place.</p>',
         mistake: '<p>Reading 0.052 as "fifty-two hundredths". Count the places: three digits after the point means thousandths.</p>',
@@ -154,6 +167,12 @@
           { label: 'Think money', html: '<p>$0.50 is fifty cents. $0.45 is forty-five cents. Fifty cents is more, so 0.5 &gt; 0.45.</p>' },
           { label: 'Zoom in on a number line', html: '<div class="fig">' + dline(400, 600, 10, [{ k: 450, lab: '0.45' }, { k: 500, lab: '0.5' }], 'Number line from 0.4 to 0.6 with 0.45 and 0.5 marked') + '</div><p>0.5 is further right, so it is greater.</p>' }
         ],
+        example: G6.example([
+          ['My turn. Which is greater: 0.3 or 0.28?', '<div class="vrow"><figure><figcaption>0.3</figcaption>' + kgrid(300, 14) + '</figure><figure><figcaption>0.28</figcaption>' + kgrid(280, 14) + '</figure></div>'],
+          ['First I write 0.3 as 0.30. Now both have two places.', '<p class="g6-big">0.3<b style="color:var(--hi)">0</b> &nbsp; and &nbsp; 0.28</p>'],
+          ['Next I compare from the left. Tenths: 3 is more than 2.', '<p class="g6-big">0.<b style="color:var(--strand)">3</b>0 &gt; 0.<b style="color:var(--strand)">2</b>8</p>'],
+          ['So 0.3 is greater. The grids agree: 30 squares beat 28.', '<div class="vrow"><figure><figcaption>0.30</figcaption>' + kgrid(300, 14) + '</figure><figure><figcaption>0.28</figcaption>' + kgrid(280, 14) + '</figure></div>']
+        ]),
         key: '<p>Same number of places, then compare from the left.</p>',
         mistake: '<p>Thinking a decimal with more digits is bigger. 0.45 has more digits than 0.5, but it is less. Adding a zero (0.50) makes the comparison fair.</p>',
         check: [{ q: 'Which is greater: <span class="math">0.7</span> or <span class="math">0.698</span>?', type: 'mc', options: ['0.7', '0.698', 'They are equal'], answer: 0, hint: '0.7 = 0.700. Compare from the left.', explain: '0.700 and 0.698: 7 tenths beats 6 tenths.' }, g(CH, 'dc-compare', 1), g(CH, 'dc-compare', 2)] }
@@ -171,6 +190,12 @@
           { label: 'Look one place right', html: '<p>Look at the digit just to the <b>right</b> of the place you round to. 5 or more: round up. Less than 5: round down. 5.283 to the nearest hundredth: the next digit is 3, so 5.28.</p>' },
           { label: 'Carrying', html: '<p>3.96 to the nearest tenth: 9 tenths plus one more tenth is a whole. The answer is <b>4.0</b>.</p>' }
         ],
+        example: G6.example([
+          ['My turn. I round 3.862 to the nearest hundredth. It sits between 3.86 and 3.87.', hill(3860, 10)],
+          ['Halfway is 3.865. I look one place to the right: the thousandths digit is 2.', hill(3862, 10)],
+          ['2 is less than 5. It is before halfway, so it rolls back down.', hill(3862, 10), '3.862 &rarr; 3.86'],
+          ['I check: 3.862 is closer to 3.86 than to 3.87.', '<p class="g6-big">3.862 &asymp; 3.86</p>']
+        ]),
         key: '<p>Look one place to the right: 5 or more rounds up.</p>',
         mistake: '<p>Forgetting to carry. 3.96 rounded to the nearest tenth is <b>4.0</b>, not 3.10.</p>',
         check: [{ q: 'Round <span class="math">5.283</span> to the nearest hundredth.', type: 'mc', options: ['5.28', '5.29', '5.3', '5.2'], answer: 0, hint: 'Look one place to the right of the hundredths.', explain: 'The thousandths digit is 3, so round down: 5.28.' }, g(CH, 'dc-round', 1), g(CH, 'dc-round', 2)] },
@@ -180,6 +205,12 @@
           ['Divide 2 by 3. Each step leaves 2 again.', '<p class="g6-big">2 &divide; 3 = 0.6&hellip;</p>'],
           ['So the 6 repeats forever.', '<p class="g6-big">0.6666666&hellip;</p>'],
           ['We write it with a bar.', '<p class="g6-big">0.<span class="rep">6</span></p>', 'rounded to the nearest hundredth: 0.67']
+        ]),
+        example: G6.example([
+          ['My turn. I write 4 &divide; 11 as a decimal. 40 &divide; 11 is 3, with 7 left.', '<p class="g6-big">4 &divide; 11 = 0.3&hellip;</p>'],
+          ['70 &divide; 11 is 6, with 4 left. I am back to 4.', '<p class="g6-big">4 &divide; 11 = 0.36&hellip;</p>'],
+          ['So 3 and 6 come again and again, forever.', '<p class="g6-big">0.363636&hellip;</p>'],
+          ['I put a bar over the part that repeats.', '<p class="g6-big">0.<span class="rep">36</span></p>', 'rounded to the nearest hundredth: 0.36']
         ]),
         key: '<p>Terminating decimals stop. Repeating decimals go on forever, with a bar over the part that repeats.</p>',
         check: [g(CH, 'dc-round', 3)] }
@@ -192,6 +223,12 @@
           ['23 hundredths.', kgrid(230, 22), fr(23, 100) + ' = 0.23'],
           ['9 thousandths.', kgrid(9, 22), fr(9, 1000) + ' = 0.009']
         ]),
+        example: G6.example([
+          ['My turn. I write 0.48 as a fraction. The last digit is in the hundredths place.', kgrid(480, 22)],
+          ['So the bottom number is 100: 48 hundredths.', kgrid(480, 22), fr(48, 100) + ' = 0.48'],
+          ['Now 0.006. The last digit is in the thousandths place.', kgrid(6, 22), fr(6, 1000) + ' = 0.006'],
+          ['I check: the bottom number names the last place.', '<p class="g6-big">0.48 = ' + fr(48, 100) + ' &nbsp; 0.006 = ' + fr(6, 1000) + '</p>']
+        ]),
         key: '<p>The bottom number names the last place.</p>',
         check: [g(CH, 'dc-frac', 1)] },
       { id: 'divide', title: 'Any fraction as a decimal', exp: ['B1.6'], skill: 'dc-frac', hard: true,
@@ -203,6 +240,12 @@
         ]),
         try: lab(CH, 3, 'Find a fraction that equals <b>0.375</b>.', function (h) { return +h.querySelector('#fdn').value / +h.querySelector('#fdd').value === 0.375; }, 'Yes: 3/8 = 0.375.'),
         ways: [{ label: 'Divide top by bottom', html: '<p>7 &divide; 20: 20 goes into 70 three times (60), leaving 10. 20 goes into 100 five times. So ' + fr(7, 20) + ' = 0.35.</p>' }, { label: 'Use money', html: '<p>' + fr(1, 4) + ' of a dollar is a quarter, 25 cents: 0.25. ' + fr(3, 4) + ' is three quarters: 0.75.</p>' }],
+        example: G6.example([
+          ['My turn. I write two fifths as a decimal.', fbar(2, 5, 420)],
+          ['I make the bottom 10: multiply top and bottom by 2.', '<p class="g6-big">' + fr(2, 5) + ' = ' + fr(4, 10) + '</p>'],
+          ['4 tenths is 0.4.', kgrid(400, 22), '0.4'],
+          ['I check by dividing the top by the bottom: 2 &divide; 5 = 0.4.', '<p class="g6-big">2 &divide; 5 = 0.4</p>']
+        ]),
         key: '<p>A fraction and its decimal are the same amount. Divide the top by the bottom.</p>',
         mistake: '<p>Writing ' + fr(1, 4) + ' as 0.4 (using the bottom number as the digit). ' + fr(1, 4) + ' means 1 &divide; 4 = 0.25.</p>',
         check: [{ q: 'Write ' + fr(7, 20) + ' as a decimal.', type: 'num', answer: 0.35, hint: 'Make the bottom 100: multiply top and bottom by 5.', explain: fr(7, 20) + ' = ' + fr(35, 100) + ' = 0.35.' }, g(CH, 'dc-frac', 2)] }
@@ -217,6 +260,12 @@
         ]),
         try: lab(CH, 4, 'Make a new list, sort it in your head, then show it on the line to check.', function (h) { return h.querySelector('#mxfig').innerHTML.length > 0; }, 'Check your order against the line.'),
         ways: [{ label: 'Negatives first', html: '<p>Any negative number is less than any positive one. Put the negatives on the left first, then sort the rest.</p>' }],
+        example: G6.example([
+          ['My turn. I order 0.6, 2/5, &minus;0.5, 0.65 and 1/4 from least to greatest.', '<p class="g6-big">0.6, ' + fr(2, 5) + ', &minus;0.5, 0.65, ' + fr(1, 4) + '</p>'],
+          ['First I make them all decimals: 2/5 = 0.4 and 1/4 = 0.25.', '<p class="g6-big">0.6, 0.4, &minus;0.5, 0.65, 0.25</p>'],
+          ['Next I place them on one number line.', dline(-1000, 1000, 100, [{ k: -500, lab: '−0.5', c: 'var(--neg)' }, { k: 250, lab: '1/4' }, { k: 400, lab: '2/5' }, { k: 600, lab: '0.6' }, { k: 650, lab: '0.65' }], 'Number line from minus 1 to 1')],
+          ['I read from left to right.', '<p class="g6-big">&minus;0.5, ' + fr(1, 4) + ', ' + fr(2, 5) + ', 0.6, 0.65</p>']
+        ]),
         key: '<p>Same form first (decimals), then one number line.</p>',
         mistake: '<p>Thinking &minus;0.5 is greater than &minus;0.2 because 5 is more than 2. &minus;0.5 is further left, so it is less.</p>',
         check: [{ q: 'Which is greatest: ' + fr(2, 5) + ', 0.35 or 0.04?', type: 'mc', options: ['2/5', '0.35', '0.04'], answer: 0, hint: 'Change ' + fr(2, 5) + ' to a decimal first.', explain: fr(2, 5) + ' = 0.4, which beats 0.35 and 0.04.' }, g(CH, 'dc-order', 1), g(CH, 'dc-order', 2)] }

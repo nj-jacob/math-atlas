@@ -111,6 +111,12 @@
           ['Count them all: 1, 2, 3, 4, 5, 6, 7, 8.', split(5, 3)],
           ['5 and 3 make 8. We write <b>5 + 3 = 8</b>.', '<p class="math big">5 + 3 = 8</p>' + split(5, 3), 2200]
         ]),
+        example: K.clip([
+          ['My turn. I will add 4 + 5. First I put out 4 blue counters.', split(4, 0)],
+          ['Next I put 5 yellow counters with them.', split(4, 5)],
+          ['Now I count them all: 1, 2, 3, 4, 5, 6, 7, 8, 9.', split(4, 5)],
+          ['The parts make 9 together. I write <b>4 + 5 = 9</b>.', '<p class="math big">4 + 5 = 9</p>' + split(4, 5), 2200]
+        ]),
         try: { tool: 'tenframe', opts: { frames: 2, two: true }, tasks: [
           { do: 'Tap boxes to show <b>6 + 3</b>. Tap once for blue, twice for yellow. Make 6 blue and 3 yellow.', goal: function (s) { return s.a === 6 && s.b === 3; }, yes: '6 and 3 make 9. 6 + 3 = 9.' },
           { do: 'Now show <b>4 + 5</b>.', goal: function (s) { return s.a === 4 && s.b === 5; }, yes: '4 + 5 = 9. A different pair can make the same whole.' }
@@ -125,6 +131,13 @@
           { say: '11,', act: function (t) { return t.hop(11, '+1'); } },
           { say: '12. We land on 12. So <b>9 + 3 = 12</b>.', act: function (t) { return t.hop(12, '+1'); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0 }, steps: [
+          { say: 'My turn. I will add 4 + 9. I start at the bigger number, 9.', act: function (t) { return t.moveTo(9); }, ms: 1200 },
+          { say: 'Now I count on 4: 10,', act: function (t) { return t.hop(10, '+1'); } },
+          { say: '11,', act: function (t) { return t.hop(11, '+1'); } },
+          { say: '12,', act: function (t) { return t.hop(12, '+1'); } },
+          { say: '13. I land on 13. So <b>4 + 9 = 13</b>.', act: function (t) { return t.hop(13, '+1'); }, ms: 2000 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0, step: 1 }, tasks: [
           { do: 'Show <b>8 + 4</b>. Tap 8 on the line, then press <b>Jump +1</b> four times.', goal: function (s) { return s.at === 12 && s.hops >= 4; }, yes: 'You counted on 4 from 8 and landed on 12.' },
           { do: 'Show <b>2 + 9</b>. Start at the bigger number!', goal: function (s) { return s.at === 11 && s.hops === 2; }, yes: 'Start at 9 and count on 2: 10, 11. Only 2 jumps.' }
@@ -138,6 +151,11 @@
           ['3 blue and 6 yellow: 3 + 6.', split(3, 6)],
           ['Turn the picture around: 6 yellow and 3 blue.', frames2([YEL, YEL, YEL, YEL, YEL, YEL, BLUE, BLUE, BLUE], '6 yellow and 3 blue counters')],
           ['Same counters, same total. <b>3 + 6 = 6 + 3 = 9</b>.', '<p class="math big">3 + 6 = 6 + 3</p>', 2200]
+        ]),
+        example: K.clip([
+          ['My turn. Here is 2 + 5: 2 blue and 5 yellow. That makes 7.', split(2, 5)],
+          ['I turn the picture around: 5 yellow first, then 2 blue.', frames2([YEL, YEL, YEL, YEL, YEL, BLUE, BLUE], '5 yellow and 2 blue counters')],
+          ['The counters did not change, so the total did not change. <b>2 + 5 = 5 + 2 = 7</b>.', '<p class="math big">2 + 5 = 5 + 2</p>', 2200]
         ]),
         try: { tool: 'tenframe', opts: { frames: 2, two: true }, tasks: [
           { do: 'Show <b>2 + 7</b>: 2 blue and 7 yellow.', goal: function (s) { return s.a === 2 && s.b === 7; }, yes: '2 + 7 = 9.' },
@@ -161,6 +179,11 @@
           { say: 'Fill 7 boxes.', act: function (t) { return t.fill(7, 250); } },
           { say: 'How many are empty? 3. So <b>7 + 3 = 10</b>.', ms: 2200 }
         ] },
+        example: { tool: 'tenframe', opts: {}, steps: [
+          { say: 'My turn. What goes with 8 to make 10? I fill 8 boxes.', act: function (t) { return t.fill(8, 250); }, ms: 900 },
+          { say: 'I count the empty boxes: 1, 2. There are 2.', ms: 1400 },
+          { say: 'So <b>8 + 2 = 10</b>.', act: function (t) { return t.fill(10, 400); }, ms: 1800 }
+        ] },
         try: { tool: 'tenframe', opts: { two: true }, tasks: [
           { do: 'Fill <b>6</b> boxes blue. Then fill the empty boxes yellow. How many yellow?', goal: function (s) { return s.a === 6 && s.b === 4; }, yes: '6 + 4 = 10.' },
           { do: 'Show another pair that makes 10.', goal: function (s) { return s.full && s.a > 0 && s.b > 0; }, yes: function (s) { return s.a + ' + ' + s.b + ' = 10.'; } }
@@ -173,6 +196,11 @@
           ['9 blue and 5 yellow. That is 9 + 5.', split(9, 5)],
           ['Move 1 yellow up to fill the first frame. Now it has 10.', made10(9, 5)],
           ['10 and 4 more. <b>9 + 5 = 10 + 4 = 14</b>.', '<p class="math big">9 + 5 = 10 + 4 = 14</p>' + made10(9, 5), 2400]
+        ]),
+        example: K.clip([
+          ['My turn. I will add 8 + 6. Here are 8 blue and 6 yellow.', split(8, 6)],
+          ['The first frame needs 2 more to make 10. I move 2 yellow up.', made10(8, 6)],
+          ['Now I have 10 and 4 more. <b>8 + 6 = 10 + 4 = 14</b>.', '<p class="math big">8 + 6 = 10 + 4 = 14</p>' + made10(8, 6), 2400]
         ]),
         try: { tool: 'tenframe', opts: { frames: 2 }, tasks: [
           { do: 'Show <b>8 + 5</b>. Fill the first frame (8 and 2 more), then put the rest in the second frame.', goal: function (s) { return s.n === 13; }, yes: '8 + 5 = 10 + 3 = 13.' },
@@ -196,6 +224,11 @@
           ['A matching row of 6.', dbl(6)],
           ['6 + 6 = <b>12</b>. A double always makes an even number.', dbl(6), 2000]
         ]),
+        example: K.clip([
+          ['My turn. I will add 5 + 5. I make one row of 5.', dbl(5).replace(/<circle[^>]*cy="56"[^>]*\/>/g, '')],
+          ['I make a matching row of 5 under it. That is a double.', dbl(5)],
+          ['5 + 5 = <b>10</b>. Every counter has a partner, so a double is even.', dbl(5), 2000]
+        ]),
         try: { tool: 'counters', opts: { n: 0, controls: ['pairs'], max: 20 }, tasks: [
           { do: 'Make <b>7 + 7</b>: add counters until there are 14, then press <b>Pair them up</b>.', goal: function (s) { return s.n === 14 && s.mode === 'pairs'; }, yes: '7 pairs. 7 + 7 = 14.' },
           { do: 'Make <b>9 + 9</b> and pair them up.', goal: function (s) { return s.n === 18 && s.mode === 'pairs'; }, yes: '9 + 9 = 18.' }
@@ -214,6 +247,11 @@
           { label: 'Double the bigger', html: '<p>6 + 7: double the bigger number, 7 + 7 = 14. Then 1 less: <b>13</b>. Both ways give the same answer.</p>' },
           { label: 'Make a ten', html: '<p>6 + 7: 6 needs 4 to make 10. 7 is 4 and 3. 10 + 3 = <b>13</b>.</p>' }
         ],
+        example: K.clip([
+          ['My turn. I will add 6 + 7. Here is a row of 6 and a row of 7.', dbl(6, true)],
+          ['I see the double 6 + 6 and one extra counter.', dbl(6, true)],
+          ['6 + 6 = 12, and 1 more is <b>13</b>.', '<p class="math big">6 + 7 = 6 + 6 + 1 = 13</p>', 2200]
+        ]),
         key: '<p>Near double: find the double, then add 1.</p>',
         mistake: '<p>Doubling the bigger number and then adding 1 (7 + 8 as 8 + 8 + 1 = 17). If you double the bigger number, take 1 away.</p>',
         check: [T('near'), T('near')] }
@@ -225,6 +263,11 @@
           ['There are 13 counters.', takeAway(13, 0)],
           ['Take away 5. Cross them out.', takeAway(13, 5)],
           ['8 are left. <b>13 &minus; 5 = 8</b>.', '<p class="math big">13 &minus; 5 = 8</p>' + takeAway(13, 5), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. I will find 12 &minus; 4. I start with 12 counters.', takeAway(12, 0)],
+          ['I take away 4. I cross them out.', takeAway(12, 4)],
+          ['I count what is left: 8. <b>12 &minus; 4 = 8</b>.', '<p class="math big">12 &minus; 4 = 8</p>' + takeAway(12, 4), 2200]
         ]),
         try: { tool: 'tenframe', opts: { frames: 2, n: 15 }, tasks: [
           { do: 'There are 15. Tap counters to take away <b>6</b>.', goal: function (s) { return s.n === 9; }, yes: '15 &minus; 6 = 9.' },
@@ -239,6 +282,12 @@
           { say: 'Start at 9. Hop to 10.', act: function (t) { return t.hop(10, '+1'); } },
           { say: 'Then hop to 14.', act: function (t) { return t.hop(14, '+4'); } },
           { say: '1 and 4 make 5. Ana has <b>5 more</b>. 14 &minus; 9 = 5.', ms: 2200 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0 }, steps: [
+          { say: 'My turn. Sam has 16 marbles. Kim has 9. How many more does Sam have?', act: function (t) { t.mark(16, '16', true); return t.moveTo(9); }, ms: 1400 },
+          { say: 'I start at the smaller number, 9. I hop to 10.', act: function (t) { return t.hop(10, '+1'); } },
+          { say: 'Then I hop to 16.', act: function (t) { return t.hop(16, '+6'); } },
+          { say: '1 and 6 make 7. Sam has <b>7 more</b>. 16 &minus; 9 = 7.', ms: 2200 }
         ] },
         try: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0, step: 1 }, tasks: [
           { do: 'How many more is 12 than 8? Tap <b>8</b>, then jump +1 until you reach 12.', goal: function (s) { return s.at === 12 && s.hops >= 4; }, yes: function (s) { return 'You made ' + s.hops + ' jumps. 12 is 4 more than 8.'; } }
@@ -258,6 +307,11 @@
           { label: 'Use a fact you know', html: '<p>16 &minus; 8: you know the double 8 + 8 = 16. So 16 &minus; 8 = <b>8</b>.</p>' },
           { label: 'Back through 10', html: '<p>14 &minus; 6: take 4 to get to 10, then 2 more. 10 &minus; 2 = <b>8</b>.</p>' + nlSvg(14, [{ a: 14, b: 10, t: '&minus;4' }, { a: 10, b: 8, t: '&minus;2' }], 16, [{ v: 8, t: '8' }]) }
         ],
+        example: K.clip([
+          ['My turn. I will find 12 &minus; 4. The whole is 12. One part is 4.', ppw(4, 8, 'b')],
+          ['I think addition: 4 plus what makes 12? I count up: 5, 6, 7, 8, 9, 10, 11, 12. That is 8.', ppw(4, 8, 'b'), 2600],
+          ['The missing part is 8. So <b>12 &minus; 4 = 8</b>.', ppw(4, 8), 2200]
+        ]),
         key: '<p>To subtract, think of the addition fact.</p>',
         check: [P('f2-sub', 2), P('f2-sub', 2)] }
     ] },
@@ -269,6 +323,11 @@
           ['Put the parts together: 6 + 8 = 14 and 8 + 6 = 14.', '<p class="math big">6 + 8 = 14<br>8 + 6 = 14</p>'],
           ['Take a part away from the whole: 14 &minus; 6 = 8 and 14 &minus; 8 = 6.', '<p class="math big">14 &minus; 6 = 8<br>14 &minus; 8 = 6</p>', 2200]
         ]),
+        example: K.clip([
+          ['My turn. The whole is 11. The parts are 4 and 7.', ppw(4, 7)],
+          ['I put the parts together: 4 + 7 = 11 and 7 + 4 = 11.', '<p class="math big">4 + 7 = 11<br>7 + 4 = 11</p>'],
+          ['I take a part from the whole: 11 &minus; 4 = 7 and 11 &minus; 7 = 4. Four facts, one family.', '<p class="math big">11 &minus; 4 = 7<br>11 &minus; 7 = 4</p>', 2400]
+        ]),
         key: '<p>In a subtracting fact, the <b>whole comes first</b>.</p>',
         mistake: '<p>Writing a subtracting fact with a part first (8 &minus; 14). Point to the bar: you take a part away from the whole.</p>',
         check: [T('fam'), P('f2-family', 2)] },
@@ -279,6 +338,12 @@
           ['Both parts are known, so add: 8 + 7 = 15.', ppw(8, 7)],
           ['Mia has 15 beads. She uses 6. How many are left? Now we know the whole and a part.', ppw(6, 9, 'b')],
           ['Subtract: 15 &minus; 6 = <b>9</b>.', ppw(6, 9), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. Leo has 9 toy cars. He gets 4 more. How many does he have now?', ppw(9, 4, 'w')],
+          ['I know both parts. I want the whole, so I add: 9 + 4 = 13.', ppw(9, 4)],
+          ['Next: Leo gives 5 cars to his sister. Now I know the whole, 13, and one part, 5.', ppw(5, 8, 'b')],
+          ['I want the other part, so I subtract: 13 &minus; 5 = <b>8</b>. Leo has 8 cars left.', ppw(5, 8), 2400]
         ]),
         key: '<p>Both parts known: add. Whole and one part known: subtract.</p>',
         check: [P('f2-story', 1), P('f2-story', 2)] }

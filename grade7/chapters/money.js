@@ -128,6 +128,7 @@
   function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
   function tbl(head, rows) { return '<div class="tbl"><table><thead><tr>' + head.map(function (h, i) { return '<th' + (i ? '' : ' class="l"') + '>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
   var MAYA = [{ lab: 'Needs', v: 15, col: 'var(--sc)' }, { lab: 'Wants', v: 10, col: 'var(--se)' }, { lab: 'Save', v: 15, col: 'var(--good)' }];
+  var SAM = [{ lab: 'Needs', v: 20, col: 'var(--sc)' }, { lab: 'Wants', v: 15, col: 'var(--se)' }, { lab: 'Save', v: 25, col: 'var(--good)' }]; /* used by the "My turn" example */
 
   var LESSONS = [
     { id: 'exchange', title: 'Exchange rates', sub: 'Convert other money to Canadian dollars and back.', concepts: [
@@ -137,6 +138,12 @@
           { say: 'Sample rate: 1 US dollar costs $1.38 Canadian.', fig: eq('1 USD = $1.38 CAD') },
           { say: 'You have 50 US dollars. Each one is worth $1.38 CAD.', fig: function () { return exch(50, CUR[0]); } },
           { say: '50 &times; 1.38 = $69.00 CAD.', fig: eq('50 &times; 1.38 = $69.00 CAD'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I have 80 euros. The sample rate is 1 euro = $1.50 CAD.', fig: eq('1 EUR = $1.50 CAD') },
+          { say: 'Each euro is worth $1.50 CAD. To get Canadian dollars, I multiply by the rate.', fig: function () { return exch(80, CUR[1]); } },
+          { say: '80 &times; 1.50 = <b>$120.00 CAD</b>.', fig: eq('80 &times; 1.50 = $120.00 CAD') },
+          { say: 'I check: a euro is worth more than a Canadian dollar, so I should get more dollars than euros. 120 is more than 80.', fig: eq('$120.00 CAD &gt; 80 EUR &#10003;'), ms: 2600 }
         ]),
         try: lab('xcur', [
           { do: 'Convert <b>200 euros</b> to Canadian dollars.', goal: function (h) { return K.v(h, 'xcur') === 1 && K.v(h, 'xamt') === 200 && K.v(h, 'xdir') === 1; }, yes: '200 × 1.50 = $300.00 CAD.' },
@@ -151,6 +158,12 @@
           { say: 'You have $69 CAD and want US dollars. Each US dollar costs $1.38.', fig: eq('$69.00 &divide; 1.38') },
           { say: 'How many $1.38 pieces fit into $69? 50.', fig: eq('$69.00 &divide; 1.38 = 50 USD') },
           { say: 'Check it makes sense: a US dollar is worth more, so you get fewer of them.', fig: eq('50 USD &lt; 69 CAD &#10003;'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I have $140 CAD and I want British pounds. Each pound costs $1.75 CAD.', fig: eq('1 GBP = $1.75 CAD') },
+          { say: 'From Canadian dollars, I divide by the rate. How many $1.75 pieces fit into $140?', fig: eq('$140.00 &divide; 1.75') },
+          { say: '140 &divide; 1.75 = 80. I get <b>&pound;80</b>.', fig: eq('$140.00 &divide; 1.75 = &pound;80.00') },
+          { say: 'I check: a pound is worth more than a dollar, so I get fewer of them. 80 is less than 140.', fig: eq('&pound;80 &lt; $140 &#10003;'), ms: 2600 }
         ]),
         ways: [
           { label: 'Undo the multiplying', html: '<p>To Canadian you multiply by 1.38. To go back, undo it: divide by 1.38.</p>' },
@@ -167,6 +180,11 @@
           { say: 'Bank B sells at $1.37 each, plus a $3 fee.', fig: eq('B: 100 &times; 1.37 + 3 = $140.00') },
           { say: 'Bank B costs $1 less, even with the fee.', fig: eq('$140.00 &lt; $141.00'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I want 200 euros. Bank A sells them at $1.52 each, with no fee.', fig: eq('A: 200 &times; 1.52 = $304.00') },
+          { say: 'Bank B sells them at $1.49 each, plus an $8 fee.', fig: eq('B: 200 &times; 1.49 + 8 = $306.00') },
+          { say: 'I compare the totals. Bank A costs $2 less, even though its rate is higher. Total cost = amount &times; rate + fees.', fig: eq('$304.00 &lt; $306.00 &rarr; A'), ms: 2600 }
+        ]),
         key: '<p><b>Total cost = amount &times; rate + fees.</b> Compare totals.</p>',
         mistake: '<p>Choosing the lower rate without adding the fee.</p>',
         check: [K.ck('mo-tocad', 3)] }
@@ -180,6 +198,12 @@
           { say: 'She has $30 and wants a $210 bike. She still needs $180.', fig: eq('210 &minus; 30 = $180') },
           { say: 'At $15 a week: 180 &divide; 15 = <b>12 weeks</b>.', fig: function () { return plan(210, 30, 15); }, ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I earn $60 a week from my paper route.', fig: eq('Income: $60 a week') },
+          { say: 'I spend $20 on needs and $15 on wants. I save the rest: 60 &minus; 20 &minus; 15 = $25.', fig: function () { return split(SAM); } },
+          { say: 'I have $50, and I want headphones that cost $300. I still need 300 &minus; 50 = $250.', fig: eq('300 &minus; 50 = $250') },
+          { say: 'At $25 a week: 250 &divide; 25 = <b>10 weeks</b>.', fig: function () { return plan(300, 50, 25); }, ms: 2800 }
+        ]),
         key: '<p><b>Savings = income &minus; expenses.</b></p>',
         mistake: '<p>Using income instead of savings to count weeks: $180 &divide; $40. Only what is saved goes toward the goal.</p>',
         check: [K.ck('mo-budget', 1), K.ck('mo-budget', 2)] },
@@ -189,6 +213,12 @@
           { say: 'Leo needs $150 more. He saves $20 a week.', fig: eq('150 &divide; 20 = 7.5') },
           { say: 'After 7 weeks he has $140. Still $10 short.', fig: function () { return plan(150, 0, 20); } },
           { say: 'So he needs <b>8 weeks</b>. Round up.', fig: eq('7.5 &rarr; 8 weeks'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I need $200 more. I save $35 a week. How many weeks will it take?', fig: eq('200 &divide; 35 &asymp; 5.7') },
+          { say: 'After 5 weeks I have 5 &times; 35 = $175. I am still $25 short.', fig: function () { return plan(200, 0, 35); } },
+          { say: 'So I need <b>6 weeks</b>. I round up, because 5 weeks is not enough.', fig: eq('5.7 &rarr; 6 weeks') },
+          { say: 'I check: 6 &times; 35 = $210. That reaches $200.', fig: eq('6 &times; 35 = $210 &ge; $200 &#10003;'), ms: 2400 }
         ]),
         try: lab('bgoalo', [
           { do: 'Reach the goal in <b>10 weeks or less</b>.', goal: function (h) { var need = K.v(h, 'bgoal') - K.v(h, 'bsave'), per = K.v(h, 'binc') - K.v(h, 'bexp'); return need <= 0 || (per > 0 && Math.ceil(need / per) <= 10); }, yes: 'Spending less or earning more speeds it up.' },
@@ -210,6 +240,12 @@
           { say: 'Ask: is it accurate and up to date? Can I check it?', fig: eq('accurate &middot; up to date &middot; checkable') },
           { say: 'Ask: is it trying to sell me something? Compare several sources.', fig: eq('compare, then decide'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I want a good savings account for my money. I find three sources.', fig: eq('a pop-up ad &middot; a bank&rsquo;s website &middot; a government comparison tool') },
+          { say: 'The pop-up ad promises 15% interest. It is selling, and I cannot check it. I set it aside.', fig: eq('pop-up ad &#10007;') },
+          { say: 'The bank&rsquo;s website is up to date, but it only shows that bank&rsquo;s own accounts.', fig: eq('bank website: one bank only') },
+          { say: 'The government tool shows many banks, and I can check it. I compare my sources, then decide.', fig: eq('compare, then decide'), ms: 2600 }
+        ]),
         key: '<p><b>Trust sources you can check and compare. Be careful with anyone selling.</b></p>',
         mistake: '<p>Trusting one review or ad. Look for at least two sources that agree.</p>',
         check: [function () { return mc('Which is the most reliable place to learn about savings accounts?', 'The websites of several banks and credit unions', ['A pop-up ad', 'A comment on a video', 'A friend who guesses'], 'Which one gives facts you can check and compare?', 'Bank websites give facts you can compare.'); }, K.ck('mo-think', 1)] },
@@ -219,6 +255,12 @@
           { say: 'A new phone comes out. Your friends all have it.', fig: eq('Do I need it? Can I afford it? Better price or time?') },
           { say: 'Need or want? Your phone still works: it is a want.', fig: eq('want') },
           { say: 'Can you afford it? Is the price lower in a few months? Then decide.', fig: eq('wait, save, compare'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. An ad says sneakers are 30% off, today only. Should I buy them? I ask three questions.', fig: eq('Do I need it? Can I afford it? Better price or time?') },
+          { say: 'Do I need them? My sneakers still fit and are not worn out. So they are a want.', fig: eq('want') },
+          { say: 'Can I afford them? They would use most of my bike savings. And "today only" is trying to rush me.', fig: eq('the ad is rushing me') },
+          { say: 'Is there a better price or a better time? Sales come back often. I decide to wait and keep saving.', fig: eq('wait, save, compare'), ms: 2600 }
         ]),
         key: '<p>Before spending ask: <b>Do I need it? Can I afford it? Is there a better price or a better time?</b></p>',
         mistake: '<p>Seeing advertising or friends as the reason to buy, not as influences to notice.</p>',
@@ -233,6 +275,12 @@
           { say: 'Two years: $12 &times; 2 = $24 interest.', fig: eq('I = 400 &times; 0.03 &times; 2 = $24') },
           { say: 'You end with $424.', fig: eq('400 + 24 = $424'), ms: 2200 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I save $250 at 4% a year for 3 years. As a decimal, 4% is 0.04.', fig: eq('P = 250, r = 0.04, t = 3') },
+          { say: 'One year: 250 &times; 0.04 = $10.', fig: eq('250 &times; 0.04 = $10') },
+          { say: 'Three years: $10 &times; 3 = $30 of interest. That is I = P &times; r &times; t.', fig: eq('I = 250 &times; 0.04 &times; 3 = $30') },
+          { say: 'I end with 250 + 30 = <b>$280</b>.', fig: eq('250 + 30 = $280'), ms: 2200 }
+        ]),
         key: '<p><b>I = P &times; r &times; t.</b> Write the rate as a decimal: 3% = 0.03.</p>',
         mistake: '<p>Using 3 instead of 0.03 for the rate, which gives $2400 interest. Ask: does that make sense?</p>',
         check: [function () { return { q: 'Find the simple interest on $600 at 5% a year for 3 years.', type: 'num', answer: 90, unit: '$', tol: 0.01, hint: 'I = 600 &times; 0.05 &times; 3.', explain: '30 a year, &times; 3 = $90.' }; }, K.ck('mo-interest', 1), K.ck('mo-interest', 2)] },
@@ -243,6 +291,12 @@
           { say: 'Year 2: simple earns $50 again. Compound earns 5% of $1050: $52.50.', fig: eq('simple 1100 &nbsp;&nbsp; compound 1102.50') },
           { say: 'Over 10 years the gap grows.', fig: function () { return growth(1000, 5, 10); } },
           { say: 'A high rate is good when you save, and bad when you borrow.', fig: eq('save: high rate &#10003; &nbsp;&nbsp; borrow: high rate &#10007;'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I save $500 at 10% a year. In year 1, simple and compound both earn $50. I have $550.', fig: eq('500 &rarr; 550') },
+          { say: 'Year 2: simple earns $50 again, so $600. Compound earns 10% of $550, which is $55, so $605.', fig: eq('simple 600 &nbsp;&nbsp; compound 605') },
+          { say: 'Year 3: simple is $650. Compound earns 10% of $605, which is $60.50, so $665.50.', fig: eq('simple 650 &nbsp;&nbsp; compound 665.50') },
+          { say: 'Compound interest earns interest on interest, so the gap grows every year.', fig: function () { return growth(500, 10, 10); }, ms: 2600 }
         ]),
         try: lab('gpo', [
           { do: 'Find a plan where compound interest more than <b>doubles</b> $1000.', goal: function (h) { return K.v(h, 'gp') === 1000 && Math.pow(1 + K.v(h, 'gr') / 100, K.v(h, 'gy')) > 2; }, yes: 'Time and rate together make money grow fast.' },
@@ -265,6 +319,12 @@
           { say: 'Account B: 2%, no fee. It gains $16.', fig: eq('B: 800 &times; 0.02 = $16') },
           { say: 'The lower rate wins here. The fee ate A\'s interest.', fig: tbl(['Account', 'Gain'], [['A: 4%, $2/month', '$8'], ['B: 2%, no fee', '<b>$16</b>']]), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will keep $1500 in an account for a year. Account A pays 3%, with a $1 monthly fee.', fig: eq('A: 1500 &times; 0.03 = $45, fees 12 &times; $1 = $12') },
+          { say: 'A&rsquo;s gain is the interest minus the fees: 45 &minus; 12 = $33.', fig: eq('A: 45 &minus; 12 = $33') },
+          { say: 'Account B pays 1.5%, with no fee: 1500 &times; 0.015 = $22.50.', fig: eq('B: 1500 &times; 0.015 = $22.50') },
+          { say: 'This time A wins: $33 is more than $22.50. Gain = interest &minus; fees.', fig: tbl(['Account', 'Gain'], [['A: 3%, $1/month', '<b>$33.00</b>'], ['B: 1.5%, no fee', '$22.50']]), ms: 2600 }
+        ]),
         ways: [
           { label: 'With more money', html: '<p>With $5000 saved, A gains 200 &minus; 24 = $176 and B gains $100. Now A wins. The best account depends on how much you keep in it.</p>' },
           { label: 'Fees per year', html: '<p>Always turn a monthly fee into a yearly one first: $2 &times; 12 = $24. Then compare with a year of interest.</p>' }
@@ -278,6 +338,11 @@
           { say: 'Borrow $1000 for 2 years. Loan X: 6%, no fee.', fig: eq('X: 1000 &times; 0.06 &times; 2 = $120') },
           { say: 'Loan Y: 4%, but a $50 fee.', fig: eq('Y: 1000 &times; 0.04 &times; 2 + 50 = $130') },
           { say: 'Loan X costs less, even with the higher rate.', fig: tbl(['Loan', 'Total cost'], [['X: 6%, no fee', '<b>$120</b>'], ['Y: 4%, $50 fee', '$130']]), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I borrow $2000 for 3 years. Loan X charges 5%, with no fee.', fig: eq('X: 2000 &times; 0.05 &times; 3 = $300') },
+          { say: 'Loan Y charges 4%, plus a $40 fee.', fig: eq('Y: 2000 &times; 0.04 &times; 3 + 40 = $280') },
+          { say: 'I compare the total costs. Loan Y costs $20 less. When I borrow, I pick the one I pay least for.', fig: tbl(['Loan', 'Total cost'], [['X: 5%, no fee', '$300'], ['Y: 4%, $40 fee', '<b>$280</b>']]), ms: 2600 }
         ]),
         key: '<p><b>Total cost = interest + fees.</b> For borrowing, pick the least you pay.</p>',
         mistake: '<p>Picking the lower rate without adding the fee.</p>',

@@ -120,6 +120,12 @@
           { say: 'Ten ones slide together to make <b>1 ten</b>.', act: function (t) { return t.group('o'); } },
           { say: '1 ten is the same amount as 10 ones. It is just faster to count.', act: function (t) { return t.lightKind('t'); }, ms: 1600 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], words: words }, steps: [
+          { say: 'My turn. I have some one cubes. I count them: there are 14.', act: function (t) { return t.add('o', 14, 120); }, ms: 900 },
+          { say: 'I can make a ten. I put 10 ones together.', act: function (t) { return t.group('o'); }, ms: 900 },
+          { say: 'Now I have <b>1 ten and 4 ones</b>.', act: function (t) { return t.lightKind('t'); }, ms: 1100 },
+          { say: 'I check: 10 and 4 more is 14. The same amount. 10 ones = 1 ten.', ms: 1800 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, words: words }, tasks: [
           { do: 'Tap <b>+ 1</b> until you have 10 ones. Then press <b>Group 10 ones</b>.', goal: function (s) { return s.t >= 1; }, yes: 'Yes. 10 ones became 1 ten.' },
           { do: 'Now make <b>2 tens and 3 ones</b>. You can use + 10 or group ones.', goal: function (s) { return s.t === 2 && s.o === 3; }, yes: function (s) { return 'Yes. 2 tens and 3 ones make 23.'; } },
@@ -142,6 +148,12 @@
           { say: 'Then count on the ones: 41, 42, 43.', act: function (t) { return t.lightKind('o', 650); } },
           { say: '4 tens and 3 ones make <b>43</b>.', ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 6, o: 5 }, steps: [
+          { say: 'My turn. How many blocks? I start with the tens.', ms: 1000 },
+          { say: 'I count by tens: 10, 20, 30, 40, 50, 60.', act: function (t) { return t.lightKind('t', 600); } },
+          { say: 'Then I count on the ones: 61, 62, 63, 64, 65.', act: function (t) { return t.lightKind('o', 600); } },
+          { say: '6 tens and 5 ones make <b>65</b>.', ms: 1800 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 5, o: 6 }, tasks: [
           { do: '<b>Tap each block</b> to count it. Start with the tens. Each block lights up and shows the count.', reset: false, goal: function (s) { return s.allLit; }, yes: 'You counted them all: 56.' },
           { do: 'Make <b>68</b> with the blocks.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 68 && s.o < 10; }, yes: '6 tens and 8 ones make 68.' },
@@ -158,6 +170,12 @@
           { say: 'Count by tens to check: 10, 20, 30 ... 100.', act: function (t) { return t.countAll(220); }, ms: 500 },
           { say: 'Ten tens slide together to make <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
           { say: '1 hundred = 10 tens = 100 ones.', act: function (t) { return t.pulseCol('h'); }, ms: 1600 }
+        ] },
+        example: { tool: 'base10', opts: { t: 6, words: words }, steps: [
+          { say: 'My turn. I have 6 tens: 60.', ms: 1000 },
+          { say: 'I add tens until I reach 100: 70, 80, 90, 100.', act: function (t) { return t.add('t', 4, 450); } },
+          { say: 'Now I have 10 tens. I put them together.', act: function (t) { return t.group('t'); } },
+          { say: 'I made <b>1 hundred</b>. 1 hundred = 10 tens = 100 ones.', act: function (t) { return t.pulseCol('h'); }, ms: 1700 }
         ] },
         try: { tool: 'base10', opts: { controls: true, t: 7 }, tasks: [
           { do: 'Add tens until you have 10 tens. Then press <b>Group 10 tens</b>.', goal: function (s) { return s.h >= 1; }, yes: 'Yes. 10 tens became 1 hundred.' },
@@ -180,6 +198,12 @@
           { say: 'Then 7 ones: 141 up to 147.', act: function (t) { return t.add('o', 7, 260); } },
           { say: 'Count it all to check.', act: function (t) { return t.countAll(260); } },
           { say: '1 hundred, 4 tens and 7 ones. We write <b>147</b> and say "one hundred forty-seven".', ms: 2000 }
+        ] },
+        example: { tool: 'base10', opts: { words: words }, steps: [
+          { say: 'My turn. I will build 182. First I take 1 hundred.', act: function (t) { return t.add('h', 1); } },
+          { say: 'Next I take 8 tens: 110, 120, 130 ... 180.', act: function (t) { return t.add('t', 8, 300); } },
+          { say: 'Then I take 2 ones: 181, 182.', act: function (t) { return t.add('o', 2, 400); } },
+          { say: '1 hundred, 8 tens and 2 ones. I write <b>182</b> and say "one hundred eighty-two".', ms: 2000 }
         ] },
         try: { tool: 'base10', opts: { controls: true, words: words }, tasks: [
           { do: 'Build <b>125</b>.', goal: function (s) { return s.value === 125 && s.o < 10 && s.t < 10; }, yes: '1 hundred, 2 tens and 5 ones make 125.' },
@@ -205,6 +229,12 @@
             '</tbody></table></div><p>Every number from 100 to 199 has <b>three digits</b>. If a place is empty, it gets a 0.</p>' },
           { label: 'Count the digits', html: '<p>Is the number bigger than 99? Then it needs <b>3 digits</b>: hundreds, tens, ones.</p><p><span class="math big">1 _ 7</span> &nbsp; The middle spot is the tens. No tens? Write 0: <span class="math big">107</span>.</p><p>"1007" has 4 digits. That would mean one <b>thousand</b> seven, a much bigger number.</p>' }
         ],
+        example: { tool: 'base10', opts: { words: words }, steps: [
+          { say: 'My turn. I will build one hundred ninety. First I take 1 hundred.', act: function (t) { return t.add('h', 1); } },
+          { say: 'Next I take 9 tens: 110, 120 ... 190.', act: function (t) { return t.add('t', 9, 260); } },
+          { say: 'How many ones? None. The ones column stays empty.', act: function (t) { return t.pulseCol('o'); } },
+          { say: 'I write a 0 to hold the ones place: <b>190</b>, not 19.', ms: 2000 }
+        ] },
         try: { tool: 'base10', opts: { controls: true, words: words }, tasks: [
           { do: 'Build <b>105</b>.', goal: function (s) { return s.value === 105 && s.o < 10; }, yes: '1 hundred, 0 tens, 5 ones: 105.' },
           { do: 'Build <b>150</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 150 && s.t < 10; }, yes: '1 hundred, 5 tens, 0 ones: 150.' },
@@ -232,6 +262,12 @@
           { label: 'With money', html: '<p>A $100 bill buys the same as ten $10 bills. Trading does not change how much money you have.</p><p>' + M.cashHtml(10000) + ' &nbsp;=&nbsp; ' + [0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function () { return M.cashHtml(1000); }).join(' ') + '</p>' },
           { label: 'With numbers', html: '<p>Each way adds up to the same number.</p><p class="math">100 + 30 + 4 = <b>134</b></p><p class="math">130 + 4 = <b>134</b></p><p class="math">120 + 14 = <b>134</b></p>' }
         ],
+        example: { tool: 'base10', opts: { h: 1, t: 2, o: 5 }, steps: [
+          { say: 'My turn. This is 125: 1 hundred, 2 tens and 5 ones.', ms: 1400 },
+          { say: 'I break the hundred into 10 tens.', act: function (t) { return t.split('h'); } },
+          { say: 'Now I have 12 tens and 5 ones. I count to check.', act: function (t) { return t.countAll(150); }, ms: 900 },
+          { say: 'The blocks look different, but it is still <b>125</b>.', ms: 1800 }
+        ] },
         try: { tool: 'base10', opts: { controls: true, h: 1, t: 3, o: 4 }, tasks: [
           { do: 'Show <b>134</b> with <b>no hundred flat</b>. Use Break.', goal: function (s) { return s.value === 134 && s.h === 0; }, yes: '13 tens and 4 ones is still 134.' },
           { do: 'Show <b>52</b> with <b>more than 9 ones</b>.', setup: function (t) { t.set(0, 5, 2); }, reset: false, goal: function (s) { return s.value === 52 && s.o > 9; }, yes: function (s) { return s.t + ' tens and ' + s.o + ' ones is still 52.'; } }
@@ -256,6 +292,12 @@
           { say: 'Add 6 ones.', act: function (t) { t.clearLit(); return t.add('o', 6, 200); } },
           { say: 'Now it is 126: "one hundred twenty-six". The word "and" is not needed.', ms: 2200 }
         ] },
+        example: { tool: 'base10', opts: { words: words }, steps: [
+          { say: 'My turn. I will read this number out loud.', act: function (t) { return t.set(1, 3, 5); }, ms: 900 },
+          { say: 'First the hundred: "one hundred".', act: function (t) { return t.lightKind('h'); } },
+          { say: 'Then the tens. 3 tens is "thirty".', act: function (t) { return t.lightKind('t', 260); } },
+          { say: 'Then the ones: "five". Together it is <b>one hundred thirty-five</b>: 135.', act: function (t) { return t.lightKind('o', 260); }, ms: 2000 }
+        ] },
         try: { tool: 'base10', opts: { controls: true, words: words }, tasks: [
           { do: 'Build <b>one hundred twenty</b>.', goal: function (s) { return s.value === 120 && s.t < 10; }, yes: 'One hundred twenty is 120.' },
           { do: 'Build <b>one hundred two</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 102 && s.o < 10; }, yes: 'One hundred two is 102.' },
@@ -272,6 +314,12 @@
           { say: 'The 3 is worth 3.', act: function (t) { return t.lightKind('o', 260); } },
           { say: '163 = 100 + 60 + 3.', ms: 2000 }
         ] },
+        example: { tool: 'base10', opts: { expanded: true }, steps: [
+          { say: 'My turn. Here is 148. I find what each digit is worth.', act: function (t) { return t.set(1, 4, 8); }, ms: 900 },
+          { say: 'The 1 is 1 hundred. It is worth 100.', act: function (t) { return t.lightKind('h'); } },
+          { say: 'The 4 is 4 tens. It is worth 40.', act: function (t) { return t.lightKind('t', 260); } },
+          { say: 'The 8 is 8 ones. It is worth 8. So <b>148 = 100 + 40 + 8</b>.', act: function (t) { return t.lightKind('o', 260); }, ms: 2000 }
+        ] },
         try: { tool: 'base10', opts: { controls: true, expanded: true }, tasks: [
           { do: 'Build <span class="math">100 + 60 + 3</span>.', goal: function (s) { return s.value === 163 && s.t < 10 && s.o < 10; }, yes: '100 + 60 + 3 = 163.' },
           { do: 'Build <span class="math">100 + 8</span>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 108; }, yes: '100 + 8 = 108. No tens.' }
@@ -280,6 +328,12 @@
 
       { id: 'uses', title: 'Numbers all around us', exp: ['B1.1'], skill: 'n2-words',
         body: '<p>Numbers do different jobs. Some <b>count</b> (150 pages). Some <b>put things in order</b> (day 100 of school). Some are <b>names</b> (bus 120). Some <b>measure</b> (120 cm tall).</p>',
+        example: A.kit.clip([
+          ['My turn. I read the sign. Does 114 tell how many?', '<p class="g2-big">Room 114</p>', 1500],
+          ['No. There are not 114 rooms. 114 is the <b>name</b> of the room.', '<p class="g2-big">Room 114</p>', 1700],
+          ['Next one. The number 60 tells how long the ribbon is. It <b>measures</b>.', '<p class="g2-big">A ribbon 60 cm long</p>', 1800],
+          ['I ask: does it count, put in order, name or measure? That tells the job of the number.', '<p class="g2-big">count, order, name or measure?</p>', 2000]
+        ]),
         try: { mount: function (host, done) {
           var items = [['A book with 150 pages', 0], ['The 100th day of school', 1], ['Bus number 120', 2], ['A plant 35 cm tall', 3], ['34 children in a gym', 0], ['Room 108', 2]];
           var jobs = ['counts', 'puts in order', 'is a name', 'measures'], k = 0, right = 0;
@@ -320,6 +374,12 @@
           { label: 'With money', html: '<p>$162 or $126? Both have one $100 bill. Then count the $10 bills: 6 is more than 2. $162 is more money.</p>' },
           { label: 'A short rule', html: '<ol><li>Line the numbers up, place by place.</li><li>Find the first place where the digits are different.</li><li>The bigger digit there wins.</li></ol><p>98 and 102: 98 has no hundreds and 102 has 1, so <b>102 is greater</b>.</p>' }
         ],
+        example: { mount: function (el) { return pair(el, function (h) { return M.base10(h, { tap: false, readout: false, u: 9 }); }); }, steps: [
+          { say: 'My turn. Which is greater, 174 or 147?', act: function (t) { t.cap('174', '147'); return Promise.all([t.a.set(1, 7, 4), t.b.set(1, 4, 7)]); } },
+          { say: 'I start with the hundreds. Both have 1 hundred. The same.', act: function (t) { return Promise.all([t.a.lightKind('h'), t.b.lightKind('h')]); } },
+          { say: 'Next I look at the tens: 7 tens and 4 tens.', act: function (t) { return Promise.all([t.a.lightKind('t', 300), t.b.lightKind('t', 300)]); } },
+          { say: '7 tens is more than 4 tens. So <b>174 is greater</b>.', ms: 2000 }
+        ] },
         try: { mount: function (host, done) {
           var round = 0, right = 0;
           function show() {
@@ -346,6 +406,12 @@
 
       { id: 'symbols', title: 'The symbols > and <', exp: ['B1.2'], skill: 'n2-compare',
         body: '<p><span class="math big">&gt;</span> means "is greater than". <span class="math big">&lt;</span> means "is less than". The <b>open side faces the greater number</b>. The point faces the smaller one.</p>',
+        example: A.kit.clip([
+          ['My turn. I will put a symbol between 85 and 58.', '<p class="math big">85 &nbsp;?&nbsp; 58</p>', 1500],
+          ['First I compare. 85 has 8 tens. 58 has 5 tens. 85 is greater.', '<p class="math big">85 &nbsp;?&nbsp; 58</p>', 1800],
+          ['The open side faces the greater number, so it opens toward 85.', '<p class="math big">85 &gt; 58</p>', 1700],
+          ['I read it: "85 is greater than 58." It is true.', '<p class="math big">85 &gt; 58</p>', 1800]
+        ]),
         try: { mount: function (host, done) {
           var syms = ['&gt;', '&lt;', '='], round = 0;
           function show() {
@@ -373,6 +439,13 @@
           { say: '98 comes next.', act: function (t) { return t.mark(98); } },
           { say: '120 is the greatest. It is farthest right.', act: function (t) { return t.mark(120); } },
           { say: 'From least to greatest: <b>45, 98, 120</b>.', ms: 2000 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 200, tick: 10, every: 50, start: 0, readout: false }, steps: [
+          { say: 'My turn. I will order 160, 30 and 115. I find each one on the line.', ms: 1100 },
+          { say: '30 is closest to 0, so it is the least.', act: function (t) { return t.mark(30); } },
+          { say: '115 comes next.', act: function (t) { return t.mark(115); } },
+          { say: '160 is farthest right, so it is the greatest.', act: function (t) { return t.mark(160); } },
+          { say: 'From least to greatest: <b>30, 115, 160</b>.', ms: 1800 }
         ] },
         try: { mount: function (host, done) {
           var nums, picked;
@@ -403,6 +476,12 @@
           { say: 'Now count by 5s: 5, 10, 15, 20 ... Two lines.', act: function (t) { t.clear(); return t.skip(5, 5, 100, 130); }, ms: 900 },
           { say: 'Count by 2s: 2, 4, 6, 8 ... Every other column.', act: function (t) { t.clear(); return t.skip(2, 2, 100, 60); }, ms: 1500 }
         ] },
+        example: { tool: 'hundred', opts: {}, steps: [
+          { say: 'My turn. I count by 5s to 50: 5, 10, 15 ... 50.', act: function (t) { return t.skip(5, 5, 50, 220); }, ms: 900 },
+          { say: 'Every number I said ends in 5 or 0.', ms: 1400 },
+          { say: 'Now I count by 2s to 20: 2, 4, 6 ... 20.', act: function (t) { t.clear(); return t.skip(2, 2, 20, 220); }, ms: 900 },
+          { say: 'I skip one number each time. Skip counting is faster than counting by 1s.', ms: 1800 }
+        ] },
         try: { tool: 'hundred', opts: {}, tasks: [
           { do: 'Count by <b>10s</b> to 100. Tap each number you say.', goal: function (s) { return s.lit.length === 10 && s.lit.every(function (n) { return n % 10 === 0; }); }, yes: '10, 20, 30, 40, 50, 60, 70, 80, 90, 100.' },
           { do: 'Count by <b>5s</b> to 50. Tap each number you say.', goal: function (s) { return s.lit.length === 10 && s.lit.every(function (n) { return n % 5 === 0 && n <= 50; }); }, yes: '5, 10, 15, 20, 25, 30, 35, 40, 45, 50.' }
@@ -422,6 +501,12 @@
           { label: 'Count by 50s: halves of 100', html: '<p>50 is half of 100. So 50, <b>100</b>, 150, <b>200</b>: every second jump lands on a hundred.</p>', tool: 'numberline', opts: { min: 0, max: 200, tick: 10, every: 50, step: 50, readout: true } },
           { label: 'Count by 20s: doubles of 10s', html: '<p>Count by 10s and say every <b>second</b> number out loud: 10, <b>20</b>, 30, <b>40</b>, 50, <b>60</b>. Those are the 20s.</p>', tool: 'hundred', opts: { lit: [20, 40, 60, 80, 100] } }
         ],
+        example: { tool: 'numberline', opts: { min: 0, max: 200, tick: 10, every: 50, start: 0, readout: false }, steps: [
+          { say: 'My turn. I count by 20s from 0. The first jump lands on 20.', act: function (t) { return t.jumps(20, 1); } },
+          { say: 'I keep jumping: 40, 60, 80, 100.', act: function (t) { return t.jumps(20, 4, 220); } },
+          { say: '120, 140, 160, 180, 200.', act: function (t) { return t.jumps(20, 5, 220); } },
+          { say: 'I made 10 jumps of 20 to reach <b>200</b>. 5 jumps made 100.', ms: 1900 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 200, tick: 10, every: 50, step: [20, 25, 50], start: 0 }, tasks: [
           { do: 'Choose <b>Jumps of 25</b>. Jump from 0 to 200.', goal: function (s) { return s.at === 200 && s.step === 25; }, yes: '8 jumps of 25 make 200.' },
           { do: 'Choose <b>Jumps of 20</b>. How many jumps to reach 100?', goal: function (s) { return s.at === 100 && s.step === 20; }, yes: '5 jumps of 20 make 100: 20, 40, 60, 80, 100.' },
@@ -438,6 +523,12 @@
           { say: 'About 4 groups of 10 would fit, so a good estimate is <b>about 40</b>.', ms: 1600 },
           { say: 'Check: move the dots into rows of 10.', act: function (t) { return t.arrange('tens'); }, ms: 1200 },
           { say: '3 tens and 8 ones: 38. The estimate of 40 was very close.', ms: 2200 }
+        ] },
+        example: { tool: 'counters', opts: { n: 27, seed: 8, readout: true, showN: false }, steps: [
+          { say: 'My turn. About how many dots? I do not count one by one.', ms: 1500 },
+          { say: 'I picture groups of 10. About 3 groups would fit. My estimate is <b>about 30</b>.', ms: 1800 },
+          { say: 'Now I check. I move the dots into rows of 10.', act: function (t) { return t.arrange('tens'); }, ms: 1200 },
+          { say: '2 tens and 7 ones: 27. My estimate of 30 was close.', ms: 1900 }
         ] },
         try: { mount: function (host, done) {
           var n, tool;
@@ -470,6 +561,12 @@
           { say: 'Add one more counter: 8.', act: function (t) { return t.setN(8).then(function () { return t.arrange('pairs'); }); } },
           { say: '4 pairs and none left over. <b>8 is even</b>.', ms: 2000 }
         ] },
+        example: { tool: 'counters', opts: { n: 9, seed: 6 }, steps: [
+          { say: 'My turn. Is 9 even or odd? I put the counters in pairs.', act: function (t) { return t.arrange('pairs'); }, ms: 1000 },
+          { say: '4 pairs and <b>1 left over</b>. So 9 is odd.', ms: 1600 },
+          { say: 'Now I try 10.', act: function (t) { return t.setN(10).then(function () { return t.arrange('pairs'); }); } },
+          { say: '5 pairs and none left over. <b>10 is even</b>.', ms: 1800 }
+        ] },
         try: { tool: 'counters', opts: { n: 5, controls: ['pairs'], max: 30, min: 1 }, tasks: [
           { do: 'Press <b>Pair them up</b>. Is 5 even or odd?', goal: function (s) { return s.mode === 'pairs'; }, yes: '2 pairs and 1 left over. 5 is odd.' },
           { do: 'Use + 1 and − 1 to find an <b>even</b> number bigger than 10. Pair them up to check.', reset: false, goal: function (s) { return s.mode === 'pairs' && s.even && s.n > 10; }, yes: function (s) { return s.n + ' is even: ' + s.pairs + ' pairs, none left over.'; } },
@@ -483,6 +580,12 @@
           { say: 'Light up the even numbers from 102: 102, 104, 106 ...', act: function (t) { return t.skip(2, 102, 200, 45); }, ms: 900 },
           { say: 'Every even number ends in 0, 2, 4, 6 or 8. They make columns.', ms: 1800 },
           { say: 'The numbers in between end in 1, 3, 5, 7 or 9. They are odd.', ms: 2000 }
+        ] },
+        example: { tool: 'hundred', opts: { from: 101 }, steps: [
+          { say: 'My turn. Is 137 even or odd?', act: function (t) { return t.skip(1, 137, 137); }, ms: 1200 },
+          { say: 'I look only at the ones digit. It is 7. 7 is odd, so <b>137 is odd</b>.', ms: 1900 },
+          { say: 'Now 146. The ones digit is 6.', act: function (t) { return t.skip(1, 146, 146); }, ms: 1200 },
+          { say: '6 is even, so <b>146 is even</b>. The ones digit tells.', ms: 1800 }
         ] },
         try: { tool: 'hundred', opts: {}, tasks: [
           { do: 'Tap all the <b>odd</b> numbers in the first row, 1 to 10.', goal: function (s) { return s.lit.join() === '1,3,5,7,9'; }, yes: '1, 3, 5, 7, 9 are odd.' },

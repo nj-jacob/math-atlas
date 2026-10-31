@@ -189,6 +189,12 @@
           { do: 'Show <b>three fifths</b>.', goal: function (s) { return s[0].d === 5 && s[0].n === 3; }, yes: '3 of 5 equal parts.' },
           { do: 'Show <b>one whole</b> using eighths.', goal: function (s) { return s[0].d === 8 && s[0].n === 8; }, yes: '8 eighths make 1 whole.' }
         ] },
+        example: { tool: 'fractions', opts: { choices: [] }, steps: [
+          { say: 'My turn. I will show two thirds. Here is one whole.', act: function (t) { return t.wait(600); }, ms: 1400 },
+          { say: 'I cut it into 3 <b>equal</b> parts. Each part is one third.', act: function (t) { return t.split(3); } },
+          { say: 'I shade 2 of the 3 parts: <b>two thirds</b>.', act: function (t) { return t.shade(2); } },
+          { say: 'All 3 parts are the same size. Fractions need <b>equal parts</b>.', ms: 2200 }
+        ] },
         key: '<p>Fractions need <b>equal parts</b>.</p>',
         mistake: '<p>Calling any piece a "fourth" even when the 4 parts are different sizes. Ask: "Are all the parts the same size?"</p>',
         check: [T('meaning', 2), T('name', 1)] },
@@ -206,6 +212,12 @@
             { do: 'Show <b>' + fr(3, 8) + '</b>.', goal: function (s) { return s.f === '3/8'; }, yes: 'Three eighths.' },
             { do: 'Show a fraction where the numerator and denominator are the <b>same</b>.', goal: function (s) { return +s.n === +s.d; }, yes: 'All the parts are shaded: that is 1 whole.' }
           ] }),
+        example: K.watch([
+          ['My turn. A cake is cut into 6 equal pieces. 4 are eaten. What fraction is eaten?', pie(0, 6), 2000],
+          ['The whole is cut into 6 equal pieces, so the bottom number, the denominator, is <b>6</b>.', pie(0, 6), 2000],
+          ['I count the eaten pieces: 1, 2, 3, 4. The top number, the numerator, is <b>4</b>.', pie(4, 6), 2000],
+          ['<b>4/6</b> of the cake is eaten: four sixths.', '<div style="display:flex;gap:18px;align-items:center;justify-content:center">' + pie(4, 6) + '<span class="big">' + fr(4, 6) + '</span></div>', 2200]
+        ]),
         key: '<p><b>Bottom: how many equal parts in the whole. Top: how many we count.</b></p>',
         check: [T('name', 1), T('meaning', 1)] },
 
@@ -220,6 +232,11 @@
             { do: 'Tap markers to make <b>' + fr(5, 8) + '</b> of the set red.', goal: function (st) { return st.order.length === 5; }, yes: '5 of the 8 markers.' },
             { do: 'Now make <b>half</b> the set red.', goal: function (st) { return st.order.length === 4; }, yes: '4 of 8 is half: ' + fr(4, 8) + '.' }
           ] }),
+        example: K.watch([
+          ['My turn. What fraction of the markers are red? First I count the whole set: 8 markers. The denominator is 8.', setFig({ lit: {} }), 2200],
+          ['Next I count the red markers: 1, 2, 3, 4, 5. The numerator is 5.', setFig({ lit: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 } }), 2000],
+          ['<b>5/8</b> of the markers are red.', setFig({ lit: { 0: 1, 1: 1, 2: 1, 3: 1, 4: 1 } }), 2000]
+        ]),
         key: '<p>In a set, <b>the denominator is how many things are in the whole set</b>.</p>',
         check: [T('meaning', 3), T('name', 3)] }
     ] },
@@ -243,6 +260,12 @@
           { label: 'Wholes on top', html: '<p>Share <b>3</b> wholes among <b>4</b> people: each gets <b>' + fr(3, 4) + '</b>. The number of wholes goes on top. The number of people goes on the bottom.</p>' },
           { label: 'One at a time', html: '<p>Share one pizza at a time. Pizza 1: each gets ' + fr(1, 4) + '. Pizza 2: another ' + fr(1, 4) + '. Pizza 3: another ' + fr(1, 4) + '. Each has 3 fourths.</p><div class="fig">' + fairShare(3, 4, true) + '</div>' }
         ],
+        example: K.watch([
+          ['My turn. I will share 2 pizzas among 3 friends.', fairShare(2, 1), 1600],
+          ['I cut each pizza into 3 equal pieces, one for each friend.', fairShare(2, 3), 2000],
+          ['One friend gets 1 piece from each pizza: 2 pieces of 1/3.', fairShare(2, 3, true), 2000],
+          ['So each friend gets <b>2/3</b> of a pizza. 2 wholes shared among 3 people: each gets 2/3.', fairShare(2, 3, true), 2400]
+        ]),
         key: '<p><b>n wholes shared among k people: each gets n/k.</b></p>',
         mistake: '<p>Flipping the fraction (4/3 instead of 3/4), or answering 1/4 because each piece is a fourth. Ask: "How many pieces does each person end up with?"</p>',
         check: [T('share', 1), T('share', 2)] },
@@ -253,6 +276,12 @@
           ['5 sandwiches among 4 friends. Each gets 1 whole sandwich.', fairShare(5, 1), 1800],
           ['Cut the last one into 4. Each friend also gets 1/4.', fairShare(5, 4, true), 2000],
           ['Each gets 5/4 = <b>' + A.mixed(1, 1, 4) + '</b>.', fairShare(5, 4, true) + '<p class="big">' + fr(5, 4) + ' = ' + A.mixed(1, 1, 4) + '</p>', 2200]
+        ]),
+        example: K.watch([
+          ['My turn. I will share 5 sandwiches among 2 friends.', fairShare(5, 1), 1600],
+          ['I cut each sandwich into 2 equal pieces. One friend gets 1 piece from each: 5 halves, or 5/2.', fairShare(5, 2, true), 2400],
+          ['2 halves make 1 whole. So 4 halves make 2 wholes, and 1 half is left.', fairShare(5, 2, true), 2200],
+          ['Each friend gets 5/2 = <b>' + A.mixed(2, 1, 2) + '</b> sandwiches.', '<div>' + fairShare(5, 2, true) + '<p class="big">' + fr(5, 2) + ' = ' + A.mixed(2, 1, 2) + '</p></div>', 2400]
         ]),
         key: '<p>5 among 4 is <b>5/4</b>, which is <b>1 and 1/4</b>.</p>',
         check: [T('share', 3), T('share', 3)] }
@@ -268,6 +297,12 @@
         ] },
         try: { tool: 'fractions', opts: { wall: [6, 6] }, tasks: [
           { do: 'Shade <b>' + fr(4, 6) + '</b> on top and <b>' + fr(2, 6) + '</b> below.', goal: function (s) { return s[0].n === 4 && s[1].n === 2; }, yes: fr(4, 6) + ' &gt; ' + fr(2, 6) + '.' }
+        ] },
+        example: { tool: 'fractions', opts: { wall: [6, 6] }, steps: [
+          { say: 'My turn. Which is greater: 4/6 or 2/6? I make two strips, both cut into sixths.', act: function (t) { return t.wait(500); }, ms: 1800 },
+          { say: 'I shade 4/6 on the top strip.', act: function (t) { return t.shade(4, 0); } },
+          { say: 'I shade 2/6 on the bottom strip.', act: function (t) { return t.shade(2, 1); } },
+          { say: 'The pieces are the same size, so I compare the numerators: 4 is more than 2. <b>4/6 &gt; 2/6</b>.', ms: 2400 }
         ] },
         key: '<p>Same denominator: <b>compare the numerators</b>.</p>',
         check: [T('compare', 2), T('compare', 2)] },
@@ -287,6 +322,12 @@
           { label: 'Sharing a pizza', html: '<p>A pizza shared by 3 friends, or the same pizza shared by 8 friends? With 8 friends, everyone gets a <b>smaller</b> slice. So ' + fr(1, 3) + ' &gt; ' + fr(1, 8) + '.</p><div style="display:flex;gap:18px;justify-content:center">' + pie(1, 3) + pie(1, 8) + '</div>' },
           { label: 'Same strip length', html: '<div class="fig">' + A.svg(404, 108, barAt(2, 2, 400, 44, 2, 3) + barAt(2, 60, 400, 44, 2, 5, 'var(--btn)'), fr(2, 3) + ' and ' + fr(2, 5)) + '</div><p>Both are 2 pieces. The thirds are longer pieces.</p>' }
         ],
+        example: { tool: 'fractions', opts: { wall: [3, 5] }, steps: [
+          { say: 'My turn. Which is greater: 2/3 or 2/5? I shade 2/3 on the top strip.', act: function (t) { return t.shade(2, 0); }, ms: 1800 },
+          { say: 'I shade 2/5 on the bottom strip.', act: function (t) { return t.shade(2, 1); } },
+          { say: 'Both have 2 pieces, so I look at the size of the pieces. Thirds are bigger than fifths, because the whole is cut into fewer parts.', ms: 2600 },
+          { say: 'So <b>2/3 &gt; 2/5</b>. Same numerator: the smaller denominator is the bigger fraction.', ms: 2400 }
+        ] },
         key: '<p>Same numerator: <b>the smaller denominator is the bigger fraction</b>.</p>',
         mistake: '<p>Thinking 1/8 is bigger than 1/3 "because 8 is bigger than 3". Ask: "Would you rather share a pizza with 2 friends or 7 friends?"</p>',
         check: [T('compare', 1), T('compare', 3)] }
@@ -307,6 +348,13 @@
             { do: 'Count by fourths to <b>' + A.mixed(1, 2, 4) + '</b>.', setup: function (api) { api.set('d', '4'); }, goal: function (s) { return s.d === '4' && s.c === 6; }, yes: '6 fourths = 1 and 2/4.' },
             { do: 'Count by thirds to <b>2</b>.', setup: function (api) { api.set('d', '3'); }, goal: function (s) { return s.d === '3' && s.c === 6; }, yes: '6 thirds = 2 wholes.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will count by thirds. Each jump is 1/3.', countLine(3, 2, 0), 1600],
+          ['One third: 1/3.', countLine(3, 2, 1), 1000],
+          ['Two thirds: 2/3.', countLine(3, 2, 2), 1000],
+          ['Three thirds: 3/3. That is <b>1 whole</b>. 3 jumps of 1/3 make 1 whole.', countLine(3, 2, 3), 2200],
+          ['I keep going: 4/3, 5/3, 6/3. 6/3 is 2 wholes.', countLine(3, 2, 6), 2200]
+        ]),
         key: '<p><b>d jumps of 1/d make 1 whole.</b></p>',
         check: [T('count', 1), T('count', 2)] },
 
@@ -321,6 +369,11 @@
           { label: 'Make wholes first', html: '<p>Take out groups of 4 fourths. Each group is 1 whole. 11/4: two groups (8/4 = 2), 3 left: <b>' + A.mixed(2, 3, 4) + '</b>.</p><div class="fig">' + unitFig(11, 4) + '</div>' },
           { label: 'Like money', html: '<p>4 quarters make $1. 7 quarters are $1 and 3 quarters: $1.75. That is 1 and 3/4 dollars.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will write 5/3 as a mixed number. I count 5 thirds on the line.', countLine(3, 2, 5, false), 1800],
+          ['The first 3 thirds make 1 whole. Then there are 2 more thirds.', countLine(3, 2, 5, true), 2000],
+          ['So 5/3 = <b>' + A.mixed(1, 2, 3) + '</b>. I group the parts into wholes, and what is left is the fraction part.', '<div>' + unitFig(5, 3) + '<p class="big">' + fr(5, 3) + ' = ' + A.mixed(1, 2, 3) + '</p></div>', 2600]
+        ]),
         key: '<p><b>Group the parts into wholes. What is left is the fraction part.</b></p>',
         mistake: '<p>Reading 1 3/4 as "13 fourths", or counting the tick marks instead of the jumps. Point at each jump while counting.</p>',
         check: [T('count', 3), T('count', 3)] }
@@ -340,6 +393,12 @@
             { do: 'Make <b>4 &times; ' + fr(1, 6) + '</b>.', goal: function (s) { return s.k === 4 && s.d === '6'; }, yes: fr(4, 6) + '.' },
             { do: 'Make exactly <b>2 wholes</b> with eighths.', goal: function (s) { return s.k === 16 && s.d === '8'; }, yes: '16 &times; ' + fr(1, 8) + ' = 2.' }
           ] }),
+        example: { tool: 'fractions', opts: { parts: 6, choices: [] }, steps: [
+          { say: 'My turn. I will find 4 &times; 1/6. Here is one sixth.', act: function (t) { return t.shade(1); }, ms: 1600 },
+          { say: 'I add another sixth: 1/6 + 1/6 = 2/6.', act: function (t) { return t.split(6).then(function () { return t.shade(2); }); } },
+          { say: '4 copies: 1/6 + 1/6 + 1/6 + 1/6 = 4/6.', act: function (t) { return t.split(6).then(function () { return t.shade(4); }); }, ms: 1800 },
+          { say: 'So <b>4 &times; 1/6 = 4/6</b>. The pieces are still sixths, so the denominator stays the same.', ms: 2400 }
+        ] },
         key: '<p><b>n &times; 1/d = n/d.</b> The denominator stays the same.</p>',
         check: [T('unit', 1), T('unit', 2)] },
 
@@ -354,6 +413,12 @@
           { label: 'Count by fourths', html: '<div class="fig">' + countLine(4, 2, 7, true) + '</div><p>7 jumps of 1/4 land on ' + A.mixed(1, 3, 4) + '.</p>' },
           { label: 'Make full cups', html: '<p>Every 4 muffins use a full cup. 7 muffins = 4 muffins (1 cup) + 3 muffins (3/4 cup).</p>' }
         ],
+        example: K.watch([
+          ['My turn. Each smoothie needs 1/3 cup of yogurt. How much for 7 smoothies?', unitFig(1, 3), 1800],
+          ['I multiply: 7 &times; 1/3 = 7/3 cups.', unitFig(7, 3), 1800],
+          ['Now I make wholes. 3 thirds make 1 cup, so 6 thirds make 2 cups. 1 third is left.', unitFig(7, 3), 2400],
+          ['7/3 = <b>' + A.mixed(2, 1, 3) + ' cups</b> of yogurt.', unitFig(7, 3), 2200]
+        ]),
         key: '<p>Multiply to get <b>n/d</b>, then <b>make wholes</b>.</p>',
         mistake: '<p>Multiplying the denominator too (7 &times; 1/4 = 7/28). Ask: "Did the size of the piece change?"</p>',
         check: [T('unit', 3), T('unit', 3)] }

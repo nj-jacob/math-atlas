@@ -3,8 +3,16 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
-- Grade 3: every lesson idea has a "My turn" worked example (no voice). Each one solves a fresh problem step by step in "I" language, then says the key idea. The robot's code now shows one step per line, so long code fits on a phone.
+- Watch clips: when a picture is followed by a line of words, the words now sit under the picture, full width, instead of being squeezed into a thin column beside it (seen in several Grade 4 clips).
+- Grade 4: every lesson idea in all 10 chapters has a silent "My turn" worked example: one fresh problem solved step by step in "I" language, ending with the key idea.
+- Grade 1: every lesson idea in all 10 chapters has a silent "My turn" worked example (69 new, added to the 16 in Counting to 50).
 - Grade 8: every lesson idea has a "My turn" worked example: words on screen, no voice, with fresh numbers, ending on the answer and a check.
+- Grade 5: every lesson idea has a "My turn" worked example, solved step by step with words on screen (no voice).
+- Grade 6: every lesson idea has a "My turn" worked example (no voice). The long-division Watch clip in "Decimal operations" shows its steps again instead of "[object Object]".
+- Grade 7: every lesson idea has a "My turn" worked example: one fresh problem solved step by step, with words on screen and no voice.
+- Grade 3: every lesson idea has a "My turn" worked example (no voice). Each one solves a fresh problem step by step in "I" language, then says the key idea. The robot's code now shows one step per line, so long code fits on a phone.
+- Grade 2: every lesson idea has a "My turn" worked example.
+- Fixed: three pairs of lesson ideas shared one web address and one progress record (Grade 1 "Stories that join", Grade 3 "Round to the nearest hundred" and "Subtract in columns"). Each now has its own. The checks now catch this.
 - Lessons: new "My turn" worked examples, solved step by step (no voice). Added to every idea in Grade 1 "Counting to 50", Grade 5 "Make the bottoms match" and Grade 7 "An equation is a balance" as a sample for Noel.
 - Lessons: every idea is now a short stack of cards (Watch, Try it, Your turn) shown one at a time, with Back and Next. "Watch" clips no longer start on their own: the student taps Play or steps through one part at a time, and an "Auto-play" switch turns auto-start back on.
 - Polish: the grade header takes less room on a phone (grade name and "All grades" share a line, the menu wraps neatly, Sign in sits beside the display buttons). Every grade has the same footer, with a link to all grades. The "About this site" box no longer says progress is never sent anywhere (family accounts do save it). A calm "page not found" page links back home.

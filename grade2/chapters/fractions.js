@@ -117,6 +117,11 @@
           ['Cut like this, some pieces are big and some are small. Not fair.', rect(4, 0, 300, true)],
           ['Cut like this, every piece is the same size. <b>Fair shares</b>.', rect(4, 0, 300), 2000]
         ]),
+        example: K.clip([
+          ['My turn. 3 friends will share a sandwich. I need 3 fair shares.', rect(1, 0, 300, false, 'A whole sandwich')],
+          ['If I cut it like this, I check the parts. One part is much bigger. Not fair.', rect(3, 0, 300, true)],
+          ['If I cut it like this, all 3 parts are the same size. These are <b>fair shares</b>.', rect(3, 0, 300), 2000]
+        ]),
         key: '<p>Fair shares: <b>all parts the same size</b>.</p>',
         check: [T('fair'), P('r2-fair', 1)] },
       { id: 'names', title: 'Names of equal parts', exp: ['B1.6'], skill: 'r2-name',
@@ -126,6 +131,11 @@
           ['3 equal parts: thirds. One part is <b>one third</b>.', pie(3, 1, 60)],
           ['4 equal parts: fourths. One part is <b>one fourth</b>.', pie(4, 1, 60)],
           ['6 equal parts: sixths. Two parts are <b>two sixths</b>.', pie(6, 2, 60), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. How much is shaded? First I count all the equal parts: 4. So the parts are fourths.', pie(4, 3, 60), 1900],
+          ['Next I count the shaded parts: 1, 2, 3.', pie(4, 3, 60)],
+          ['3 parts of 4 are shaded. That is <b>three fourths</b>.', pie(4, 3, 60), 2000]
         ]),
         try: cutLab,
         key: '<p>Count the equal parts to get the name. Count the shaded parts to say how many.</p>',
@@ -137,6 +147,11 @@
           ['One sixth.', pie(6, 1, 60)],
           ['Three sixths.', pie(6, 3, 60)],
           ['Six sixths: the <b>whole</b> circle.', pie(6, 6, 60), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. This circle is cut into thirds. One third is shaded.', pie(3, 1, 60)],
+          ['I shade one more part. Two thirds.', pie(3, 2, 60)],
+          ['I shade the last part. Three thirds fill the circle. Three thirds make <b>one whole</b>.', pie(3, 3, 60), 2200]
         ]),
         try: { tool: 'fractions', opts: { choices: [2, 3, 4, 6], words: true }, tasks: [
           { do: 'Cut the strip into <b>fourths</b>. Then tap parts until you have shaded <b>one whole</b>.', goal: function (s) { return s[0].d === 4 && s[0].n === 4; }, yes: 'Four fourths make one whole.' },
@@ -159,6 +174,11 @@
           { label: 'Fraction strips', html: '<p>Each strip is the same whole. Tap one part on each strip and compare the sizes.</p>', tool: 'fractions', opts: { wall: [2, 3, 4, 6], words: true } },
           { label: 'This, not that', html: K.vs('One third is <b>bigger</b> than one sixth. Fewer sharers, bigger pieces.', 'One sixth is not bigger just because 6 is bigger than 3.') }
         ],
+        example: K.clip([
+          ['My turn. Which is bigger: one half or one fourth of the same bar?', rect(1, 0, 240, false, 'A whole bar')],
+          ['I cut one bar into 2 parts and the same size bar into 4 parts.', '<div class="vrow"><figure>' + rect(2, 1, 220, false, 'one half') + '<figcaption>one half</figcaption></figure><figure>' + rect(4, 1, 220, false, 'one fourth') + '<figcaption>one fourth</figcaption></figure></div>'],
+          ['The fourth is smaller. More pieces means smaller pieces. So <b>one half is bigger</b>.', '<div class="vrow"><figure>' + rect(2, 1, 220, false, 'one half') + '<figcaption>one half</figcaption></figure><figure>' + rect(4, 1, 220, false, 'one fourth') + '<figcaption>one fourth</figcaption></figure></div>', 2200]
+        ]),
         key: '<p>More sharers: <b>smaller</b> pieces.</p>',
         mistake: '<p>Thinking one sixth is bigger because 6 is bigger than 3. Cut two paper strips, one in thirds and one in sixths, and lay one piece of each side by side.</p>',
         check: [T('bigger'), P('r2-compare', 1)] }
@@ -171,6 +191,12 @@
           ['Give each friend 1 whole bar. 1 bar is left.', dealBars(3, 3)],
           ['Cut the last bar into 3 equal parts: thirds.', dealBars(4, 3)],
           ['Each friend gets <b>1 whole and one third</b>.', dealBars(4, 3), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. 5 bars for 2 friends.', plainBars(5)],
+          ['First I give out whole bars. Each friend gets 2. 1 bar is left.', dealBars(4, 2)],
+          ['There are 2 friends, so I cut the last bar into 2 equal parts: halves.', dealBars(5, 2)],
+          ['Each friend gets <b>2 wholes and one half</b>.', dealBars(5, 2), 2200]
         ]),
         try: dealLab,
         ways: [
@@ -186,6 +212,11 @@
           ['Cut each muffin into thirds.', dealBars(2, 3)],
           ['Each friend gets one third from each muffin: <b>two thirds</b>.', dealBars(2, 3), 2200]
         ]),
+        example: K.clip([
+          ['My turn. 3 muffins for 4 friends. There is not enough for one each.', dealBars(3, 4).replace(/style="fill:var\(--s[a-z]\)/g, 'style="fill:var(--card)')],
+          ['There are 4 friends, so I cut each muffin into fourths.', dealBars(3, 4)],
+          ['Each friend gets one fourth from each muffin. That is <b>three fourths</b>.', dealBars(3, 4), 2200]
+        ]),
         key: '<p>Each friend gets one part from every thing.</p>',
         check: [P('r2-share', 2), P('r2-share', 2)] }
     ] },
@@ -196,6 +227,11 @@
           ['A bar cut into thirds. One third is shaded.', thirdsSixths(1).replace(/<rect[^>]*y="76"[^>]*\/>/g, '').replace('<text x="0" y="104" font-size="18" font-weight="700">sixths</text>', '')],
           ['The same bar cut into sixths, just below.', thirdsSixths(1)],
           ['One third and two sixths end at the same line. <b>Same amount.</b>', thirdsSixths(1), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. A bar is cut into thirds. Two thirds are shaded.', thirdsSixths(2).replace(/<rect[^>]*y="76"[^>]*\/>/g, '').replace('<text x="0" y="104" font-size="18" font-weight="700">sixths</text>', '')],
+          ['I cut the same bar into sixths. Each third becomes 2 sixths.', thirdsSixths(2)],
+          ['Two thirds and four sixths end at the same line. <b>Two thirds is the same as four sixths.</b>', thirdsSixths(2), 2200]
         ]),
         try: tsLab,
         ways: [
@@ -215,6 +251,11 @@
           ['Group A: 3 friends share 2 pancakes.', dealBars(2, 3)],
           ['Group B: 6 friends share 2 pancakes.', dealBars(2, 6)],
           ['A gets two thirds each. B gets two sixths each. Thirds are bigger, so <b>group A</b> gets more.', '<div class="vrow"><figure>' + dealBars(2, 3) + '<figcaption>A</figcaption></figure><figure>' + dealBars(2, 6) + '<figcaption>B</figcaption></figure></div>', 2400]
+        ]),
+        example: K.clip([
+          ['My turn. Group A: 2 friends share 1 pizza.', dealBars(1, 2)],
+          ['Group B: 4 friends share 1 pizza.', dealBars(1, 4)],
+          ['A gets one half each. B gets one fourth each. Halves are bigger, so <b>group A</b> gets more.', '<div class="vrow"><figure>' + dealBars(1, 2) + '<figcaption>A</figcaption></figure><figure>' + dealBars(1, 4) + '<figcaption>B</figcaption></figure></div>', 2400]
         ]),
         key: '<p>Draw both. Then compare the shares.</p>',
         check: [T('cmp'), P('r2-compare', 3)] }

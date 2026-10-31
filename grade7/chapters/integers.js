@@ -164,6 +164,13 @@
           { say: 'In January in Ottawa it can be &minus;12&deg;C: 12 degrees <b>below</b> zero.', fig: function () { return thermo(-12); } },
           { say: 'Negative numbers are everywhere: a debt of $20 is &minus;20, and 86 m below sea level is &minus;86 m.', fig: eq('&minus;$20 &nbsp;&nbsp; &minus;86 m &nbsp;&nbsp; &minus;12&deg;C'), ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will write each one as an integer. First: it is 5 degrees below zero.', fig: function () { return thermo(-5); } },
+          { say: 'Below zero means negative. So it is &minus;5&deg;C.', fig: eq('5 below zero = &minus;5&deg;C') },
+          { say: 'Next: a submarine is 40 m below sea level. Below means negative: &minus;40 m.', fig: eq('&minus;40 m') },
+          { say: 'Last: I put $15 into my bank account. That is above zero: +15.', fig: eq('+$15') },
+          { say: 'Negative means below zero. The minus sign tells me which side of zero.', fig: eq('&minus;5&deg;C &nbsp;&nbsp; &minus;40 m &nbsp;&nbsp; +$15'), ms: 2600 }
+        ]),
         try: lab('tho', [
           { do: 'Set the temperature to <b>&minus;20&deg;C</b>.', goal: function (h) { return K.v(h, 'thr') === -20; }, yes: '20 degrees below zero. Its opposite is 20&deg;C.' },
           { do: 'Find a temperature that is <b>its own opposite</b>.', goal: function (h) { return K.v(h, 'thr') === 0; }, yes: 'Zero is neither positive nor negative. It is its own opposite.' }
@@ -179,6 +186,12 @@
           { say: 'Back to zero, and hop 7 to the left: &minus;7.', act: function (t) { return t.moveTo(0).then(function () { return t.hop(-7, '−7'); }); }, ms: 900 },
           { say: '7 and &minus;7 are the same distance from zero. They are opposites.', act: function (t) { return t.mark(7, '7'); }, ms: 2200 }
         ] },
+        example: { tool: 'numberline', opts: { min: -10, max: 10, start: 0, tap: false }, steps: [
+          { say: 'My turn. I will find the opposite of &minus;4. I start at zero.', act: null, ms: 1000 },
+          { say: '&minus;4 is 4 hops to the left of zero.', act: function (t) { return t.hop(-4, '−4'); }, ms: 900 },
+          { say: 'Back to zero. The opposite is the same distance on the other side: 4 hops to the right.', act: function (t) { return t.moveTo(0).then(function () { return t.hop(4, '+4'); }); }, ms: 900 },
+          { say: 'So the opposite of &minus;4 is <b>4</b>. They are the same distance from zero.', act: function (t) { return t.mark(-4, '−4'); }, ms: 2200 }
+        ] },
         key: '<p><b>Opposites: same distance from zero, other side.</b> 7 + (&minus;7) = 0.</p>',
         mistake: '<p>Thinking the opposite of &minus;5 is &minus;5 or 0. The opposite flips the side: 5.</p>',
         check: [function () { return nq('What is the opposite of &minus;15?', 15, 'Same distance from zero, other side.', 'The opposite of &minus;15 is 15.'); }, function () { var n = R.int(2, 40); return nq('What is ' + n + ' + (&minus;' + n + ')?', 0, 'A number and its opposite add to zero.', n + ' and &minus;' + n + ' are opposites, so they add to 0.'); }] }
@@ -191,6 +204,12 @@
           { say: '&minus;3 is further right, so &minus;3 is greater.', fig: eq('&minus;3 &gt; &minus;8') },
           { say: 'Think of temperature: &minus;8&deg;C is colder than &minus;3&deg;C.', fig: function () { return thermo(-3, -8); } },
           { say: 'For negatives, further from zero means <b>smaller</b>.', fig: '<div class="vs"><div><b class="t">Positive</b><p>8 &gt; 3</p></div><div><b class="t">Negative</b><p>&minus;8 &lt; &minus;3</p></div></div>', ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Which is greater, &minus;6 or &minus;2? I put them on a number line.', fig: function () { return iline(-10, 5, [{ v: -6, lab: '&minus;6', col: 'var(--sb)' }, { v: -2, lab: '&minus;2', col: 'var(--bad)' }]); } },
+          { say: '&minus;2 is further right, so &minus;2 is greater.', fig: eq('&minus;2 &gt; &minus;6') },
+          { say: 'I check with temperature: &minus;6&deg;C is colder than &minus;2&deg;C.', fig: function () { return thermo(-2, -6); } },
+          { say: 'So &minus;6 &lt; &minus;2. For negatives, the one closer to zero is greater.', fig: eq('&minus;6 &lt; &minus;2'), ms: 2600 }
         ]),
         try: { tool: 'numberline', opts: { min: -10, max: 10, start: 0, step: [-1, 1] }, tasks: [
           { do: 'Move the marker to a number <b>less than &minus;6</b>.', goal: function (s) { return s.at < -6; }, yes: 'Further left is less.' },
@@ -209,6 +228,13 @@
           { say: '&minus;2.5 is halfway between &minus;3 and &minus;2.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sb)' }]); } },
           { say: '&minus;' + fr(3, 4) + ' is between &minus;1 and 0, closer to &minus;1.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sb)' }, { v: -0.75, lab: '&minus;3/4', col: 'var(--sb)' }]); } },
           { say: 'Order &minus;2, &minus;1.2, &minus;' + fr(1, 2) + ' and 0.4: read them left to right.', fig: function () { return iline(-3, 1, [{ v: -2, lab: '&minus;2' }, { v: -1.2, lab: '&minus;1.2' }, { v: -0.5, lab: '&minus;1/2' }, { v: 0.4, lab: '0.4' }]); }, ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will order 1.2, &minus;0.8, &minus;1.5 and &minus;' + fr(1, 4) + ' from least to greatest.', fig: eq('1.2, &nbsp;&minus;0.8, &nbsp;&minus;1.5, &nbsp;&minus;' + fr(1, 4)) },
+          { say: 'First, &minus;1.5 is halfway between &minus;2 and &minus;1.', fig: function () { return iline(-3, 2, [{ v: -1.5, lab: '&minus;1.5', col: 'var(--sb)' }]); } },
+          { say: '&minus;0.8 is between &minus;1 and 0, close to &minus;1. &minus;' + fr(1, 4) + ' is between &minus;1 and 0, close to 0.', fig: function () { return iline(-3, 2, [{ v: -1.5, lab: '&minus;1.5', col: 'var(--sb)' }, { v: -0.8, lab: '&minus;0.8', col: 'var(--sb)' }, { v: -0.25, lab: '&minus;1/4', col: 'var(--sb)' }]); } },
+          { say: '1.2 is just past 1.', fig: function () { return iline(-3, 2, [{ v: -1.5, lab: '&minus;1.5', col: 'var(--sb)' }, { v: -0.8, lab: '&minus;0.8', col: 'var(--sb)' }, { v: -0.25, lab: '&minus;1/4', col: 'var(--sb)' }, { v: 1.2, lab: '1.2', col: 'var(--bad)' }]); } },
+          { say: 'I read them left to right: &minus;1.5, &minus;0.8, &minus;' + fr(1, 4) + ', 1.2.', fig: eq('&minus;1.5 &lt; &minus;0.8 &lt; &minus;' + fr(1, 4) + ' &lt; 1.2'), ms: 2600 }
         ]),
         try: lab('ordn', [
           { do: 'Add <b>&minus;4.5</b> to the list. Where does it go?', goal: function (h) { return /(^|,)\s*[-−]4\.5\s*(,|$)/.test(K.v(h, 'ordn')); }, yes: '−4.5 is the least: furthest left.' },
@@ -231,6 +257,12 @@
           { say: 'Each positive and negative together make zero. Remove the zero pairs.', act: function (t) { return t.zeroPairs(); }, ms: 900 },
           { say: '2 positive tiles are left: 5 + (&minus;3) = <b>2</b>.', act: null, ms: 2200 }
         ] },
+        example: { tool: 'tiles', opts: { ones: true }, steps: [
+          { say: 'My turn. I will work out &minus;7 + 3. First I put out 7 negative tiles.', act: function (t) { return put(t, -1, 7); }, ms: 600 },
+          { say: 'Then I add 3 positive tiles.', act: function (t) { return put(t, 1, 3); }, ms: 800 },
+          { say: 'A positive and a negative make a zero pair. I remove the 3 zero pairs.', act: function (t) { return t.zeroPairs(); }, ms: 900 },
+          { say: '4 negative tiles are left. So &minus;7 + 3 = <b>&minus;4</b>.', act: null, ms: 2200 }
+        ] },
         try: { tool: 'tiles', opts: { ones: true }, tasks: [
           { do: 'Show <b>&minus;6 + 4</b>: 6 negative tiles and 4 positive. Then remove the zero pairs.', goal: function (s) { return s.one === -2 && s.n === 2; }, yes: '4 zero pairs cancel. −2 is left.' },
           { do: 'Make <b>zero</b> using exactly 10 tiles.', goal: function (s) { return s.one === 0 && s.n === 10; }, yes: '5 zero pairs: 5 + (−5) = 0.' }
@@ -245,6 +277,12 @@
           { say: 'Add the sizes, 4 + 3 = 7, and keep the sign: &minus;7.', fig: eq('&minus;4 + (&minus;3) = &minus;7') },
           { say: '&minus;6 + 4: different signs. 4 zero pairs cancel.', fig: function () { return chips(-6, 4); } },
           { say: 'Subtract the sizes, 6 &minus; 4 = 2. The negative was bigger, so &minus;2.', fig: eq('&minus;6 + 4 = &minus;2'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. First, &minus;5 + (&minus;2). Both are negative, so there are no zero pairs.', fig: function () { return chips(-5, -2); } },
+          { say: 'Same signs: I add the sizes, 5 + 2 = 7, and keep the sign. The answer is &minus;7.', fig: eq('&minus;5 + (&minus;2) = &minus;7') },
+          { say: 'Next, 3 + (&minus;8). The signs are different. 3 zero pairs cancel.', fig: function () { return chips(3, -8); } },
+          { say: 'Different signs: I subtract the sizes, 8 &minus; 3 = 5. The negative was bigger, so the answer is <b>&minus;5</b>.', fig: eq('3 + (&minus;8) = &minus;5'), ms: 2600 }
         ]),
         try: lab('chao', [
           { do: 'Show <b>&minus;6 + 4</b>.', goal: function (h) { return K.v(h, 'cha') === -6 && K.v(h, 'chb') === 4; }, yes: 'Different signs: 6 − 4 = 2, and the negative is bigger: −2.' },
@@ -270,6 +308,13 @@
           { say: 'Subtracting &minus;5 means adding 5: move 5 right to 8.', act: function (t) { return t.hop(8, '+5'); }, ms: 1200 },
           { say: '3 &minus; (&minus;5) = 3 + 5 = <b>8</b>.', act: null, ms: 2200 }
         ] },
+        example: { tool: 'numberline', opts: { min: -10, max: 10, start: -2, tap: false }, steps: [
+          { say: 'My turn. I will work out &minus;2 &minus; 6. I start at &minus;2.', act: null, ms: 1000 },
+          { say: 'Subtracting 6 means adding &minus;6. I move 6 to the left, to &minus;8.', act: function (t) { return t.hop(-8, '−6'); }, ms: 1200 },
+          { say: 'Now &minus;2 &minus; (&minus;6). I start at &minus;2 again.', act: function (t) { return t.clearHops().then(function () { return t.moveTo(-2); }); }, ms: 800 },
+          { say: 'Subtracting &minus;6 means adding 6. I move 6 to the right, to 4.', act: function (t) { return t.hop(4, '+6'); }, ms: 1200 },
+          { say: '&minus;2 &minus; (&minus;6) = &minus;2 + 6 = <b>4</b>. Subtract means add the opposite.', act: null, ms: 2200 }
+        ] },
         try: lab('sbao', [
           { do: 'Show <b>&minus;2 &minus; (&minus;6)</b>.', goal: function (h) { return K.v(h, 'sba') === -2 && K.v(h, 'sbop') === -1 && K.v(h, 'sbb') === -6; }, yes: '−2 − (−6) = −2 + 6 = 4.' },
           { do: 'Now change it to <b>&minus;2 + 6</b>. Is the answer the same?', goal: function (h) { return K.v(h, 'sba') === -2 && K.v(h, 'sbop') === 1 && K.v(h, 'sbb') === 6; }, yes: 'Yes: subtracting −6 is adding 6.' },
@@ -290,6 +335,12 @@
           { say: 'From &minus;12 up to 0 is 12 degrees. From 0 up to 4 is 4 more.', fig: function () { return iline(-14, 6, [{ v: -12, lab: '&minus;12', col: 'var(--sb)' }, { v: 4, lab: '4', col: 'var(--bad)' }], [{ from: -12, to: 0, col: 'var(--sb)', id: 'idf1', lab: '12' }, { from: 0, to: 4, col: 'var(--bad)', id: 'idf2', lab: '4' }]); } },
           { say: 'Or subtract: 4 &minus; (&minus;12) = 4 + 12 = <b>16 degrees</b>.', fig: eq('4 &minus; (&minus;12) = 16'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A diver is at &minus;15 m. A gull flies 20 m above the water. How far apart are they?', fig: function () { return iline(-20, 25, [{ v: -15, lab: '&minus;15', col: 'var(--sb)' }, { v: 20, lab: '20', col: 'var(--bad)' }]); } },
+          { say: 'From &minus;15 up to 0 is 15 m. From 0 up to 20 is 20 m more.', fig: function () { return iline(-20, 25, [{ v: -15, lab: '&minus;15', col: 'var(--sb)' }, { v: 20, lab: '20', col: 'var(--bad)' }], [{ from: -15, to: 0, col: 'var(--sb)', id: 'iex1', lab: '15' }, { from: 0, to: 20, col: 'var(--bad)', id: 'iex2', lab: '20' }]); } },
+          { say: 'Across zero, I add the two distances: 15 + 20 = 35 m.', fig: eq('15 + 20 = 35') },
+          { say: 'I check by subtracting: 20 &minus; (&minus;15) = 20 + 15 = 35. They are <b>35 m</b> apart.', fig: eq('20 &minus; (&minus;15) = 35'), ms: 2600 }
+        ]),
         key: '<p><b>Difference = bigger &minus; smaller.</b> Across zero, add the two distances from zero.</p>',
         mistake: '<p>Subtracting the sizes (12 &minus; 4 = 8) when the numbers are on opposite sides of zero. Draw the line and count across zero.</p>',
         check: [function () { return { q: 'At 6 a.m. it was &minus;14&deg;C. By noon it was 3&deg;C. How many degrees did the temperature rise?', type: 'num', answer: 17, hint: 'Find the distance from &minus;14 to 3.', explain: '3 &minus; (&minus;14) = 17 degrees.' }; }, K.ck('in-word', 1), K.ck('in-word', 2)] }
@@ -302,6 +353,12 @@
           { say: 'Add &minus;3 each time: 4, then 1.', fig: function () { return patt([7, 4, 1]); } },
           { say: 'Keep going below zero: &minus;2, &minus;5, &minus;8.', fig: function () { return patt([7, 4, 1, -2, -5, -8]); } },
           { say: 'The rule: start at 7, add &minus;3 each time.', fig: eq('7, 4, 1, &minus;2, &minus;5, &minus;8, ...'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A pattern starts at 10 and adds &minus;4 each time. I will find the next terms.', fig: function () { return patt([10]); } },
+          { say: '10 + (&minus;4) = 6. Then 6 + (&minus;4) = 2.', fig: function () { return patt([10, 6, 2]); } },
+          { say: 'I keep going past zero: 2 + (&minus;4) = &minus;2, then &minus;6, then &minus;10.', fig: function () { return patt([10, 6, 2, -2, -6, -10]); } },
+          { say: 'The pattern is 10, 6, 2, &minus;2, &minus;6, &minus;10. I find the change, then keep adding it, even past zero.', fig: eq('10, 6, 2, &minus;2, &minus;6, &minus;10, ...'), ms: 2600 }
         ]),
         try: lab('ptao', [
           { do: 'Build the pattern <b>5, 3, 1, &minus;1, ...</b>', goal: function (h) { return K.v(h, 'pta') === 5 && K.v(h, 'ptd') === -2; }, yes: 'Start at 5, add −2 each time.' },
@@ -316,6 +373,12 @@
           { say: 'A diver starts at the surface, 0 m, and goes down 4 m every minute.', fig: function () { return patt([0, -4, -8, -12]); } },
           { say: 'After 1 minute: &minus;4. After 2: &minus;8. After 3: &minus;12.', fig: eq('0, &minus;4, &minus;8, &minus;12, ...') },
           { say: 'After 6 minutes: 6 &times; (&minus;4) = <b>&minus;24 m</b>. No need to list every term.', fig: function () { return patt([0, -4, -8, -12, -16, -20, -24]); }, ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. It is 5&deg;C. The temperature drops 3 degrees every hour. What will it be after 8 hours?', fig: function () { return patt([5, 2, -1, -4]); } },
+          { say: 'The start is 5. The change is &minus;3 each hour, and there are 8 steps.', fig: eq('term = start + steps &times; change') },
+          { say: '8 &times; (&minus;3) = &minus;24. Then 5 + (&minus;24) = &minus;19.', fig: eq('5 + 8 &times; (&minus;3) = 5 + (&minus;24) = &minus;19') },
+          { say: 'After 8 hours it is <b>&minus;19&deg;C</b>. I did not need to list every term.', fig: function () { return patt([5, 2, -1, -4, -7, -10, -13, -16, -19]); }, ms: 2800 }
         ]),
         key: '<p><b>Term = start + (number of steps) &times; change.</b></p>',
         mistake: '<p>Multiplying by the term number instead of the number of steps: the 10th term has 9 steps after the first.</p>',

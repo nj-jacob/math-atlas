@@ -2,15 +2,16 @@
   var A = Atlas, R = A.R, D = A.draw, M = '&minus;';
   var COLS = ['var(--strand)', 'var(--p1)', 'var(--se)', 'var(--sc)', 'var(--sf)', 'var(--p0)'];
   /* g plates with n things on each. Wraps after 4 plates. */
+  /* g plates with n on each (n can be a list: how many on each plate) */
   function plates(g, n, kind, label) {
     var pw = 116, ph = 96, per = Math.min(g, 4), s = '';
     for (var i = 0; i < g; i++) {
       var px = 6 + (i % per) * (pw + 12), py = 6 + Math.floor(i / per) * (ph + 12);
       s += '<ellipse cx="' + (px + pw / 2) + '" cy="' + (py + ph / 2) + '" rx="' + pw / 2 + '" ry="' + ph / 2 + '" style="fill:var(--card);stroke:var(--ink2)" stroke-width="2.5"/>';
       s += '<ellipse cx="' + (px + pw / 2) + '" cy="' + (py + ph / 2) + '" rx="' + (pw / 2 - 10) + '" ry="' + (ph / 2 - 9) + '" fill="none" style="stroke:var(--line)" stroke-width="1.5"/>';
-      var cols = n <= 4 ? 2 : 3, r = n > 9 ? 8 : 10, gx = r * 2.5;
-      for (var j = 0; j < n; j++) {
-        var rows = Math.ceil(n / cols), cx = px + pw / 2 + ((j % cols) - (Math.min(cols, n) - 1) / 2) * gx, cy = py + ph / 2 + (Math.floor(j / cols) - (rows - 1) / 2) * gx;
+      var k = Array.isArray(n) ? n[i] : n, cols = k <= 4 ? 2 : 3, r = k > 9 ? 8 : 10, gx = r * 2.5;
+      for (var j = 0; j < k; j++) {
+        var rows = Math.ceil(k / cols), cx = px + pw / 2 + ((j % cols) - (Math.min(cols, k) - 1) / 2) * gx, cy = py + ph / 2 + (Math.floor(j / cols) - (rows - 1) / 2) * gx;
         s += A.THING[kind || 'dot'](cx, cy, r, kind === 'dot' || !kind ? COLS[i % COLS.length] : undefined);
       }
     }
@@ -131,6 +132,12 @@
           ['A third plate with 4: 4, 8, 12.', plates(3, 4, 'dot')],
           ['<b>3 groups of 4</b> is 4 + 4 + 4 = <b>12</b>.', '<p class="math big">4 + 4 + 4 = 12</p>' + plates(3, 4, 'dot'), 2200]
         ]),
+        example: K.clip([
+          ['My turn. I will find 3 groups of 5. I put 5 on the first plate.', plates(1, 5, 'dot')],
+          ['I put 5 on the next plate. I skip count: 5, 10.', plates(2, 5, 'dot')],
+          ['And 5 on the last plate: 5, 10, 15.', plates(3, 5, 'dot')],
+          ['<b>3 groups of 5</b> is 5 + 5 + 5 = <b>15</b>.', '<p class="math big">5 + 5 + 5 = 15</p>' + plates(3, 5, 'dot'), 2200]
+        ]),
         try: plateLab,
         key: '<p><b>3 groups of 4</b> means 4 + 4 + 4.</p>',
         mistake: '<p>Adding the number of groups to the number in each group (3 groups of 4 = 7). Have the child point to each plate and skip count: 4, 8, 12.</p>',
@@ -139,8 +146,13 @@
         body: '<p>Groups are equal only if <b>every</b> group has the same number. Check each group before you skip count.</p>',
         watch: K.clip([
           ['These plates have 5, 5 and 5. Every group is the same.', plates(3, 5, 'star')],
-          ['These have 5, 3 and 5. The middle one is different.', (function () { var s = ''; [5, 3, 5].forEach(function (n, i) { var px = 6 + i * 128; s += '<ellipse cx="' + (px + 58) + '" cy="54" rx="58" ry="48" style="fill:var(--card);stroke:var(--ink2)" stroke-width="2.5"/>'; for (var j = 0; j < n; j++) s += A.THING.star(px + 58 + ((j % 3) - 1) * 25, 54 + (Math.floor(j / 3) - 0.5) * 25, 10); }); return A.svg(386, 108, s, 'Groups of 5, 3 and 5'); })()],
+          ['These have 5, 3 and 5. The middle one is different.', plates(3, [5, 3, 5], 'star', 'Groups of 5, 3 and 5')],
           ['Only the first set is <b>equal groups</b>: 3 groups of 5.', plates(3, 5, 'star'), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. Are these equal groups? I count each plate: 3, 3, 2, 3.', plates(4, [3, 3, 2, 3], 'dot', 'Plates with 3, 3, 2 and 3')],
+          ['One plate has only 2. The groups are <b>not equal</b>.', plates(4, [3, 3, 2, 3], 'dot', 'Plates with 3, 3, 2 and 3'), 1800],
+          ['I add 1 to that plate. Now every plate has 3. These are <b>4 equal groups of 3</b>.', plates(4, 3, 'dot'), 2200]
         ]),
         key: '<p>Equal groups: <b>every</b> group has the same number.</p>',
         check: [T('equal'), T('equal')] },
@@ -150,6 +162,11 @@
           ['One row of 6.', D.things(6, { kind: 'dot', cols: 6, r: 14 })],
           ['Two rows of 6.', D.things(12, { kind: 'dot', cols: 6, r: 14 })],
           ['6, 12. <b>2 groups of 6 is 12</b>.', D.things(12, { kind: 'dot', cols: 6, r: 14 }), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. I make one row of 3.', D.things(3, { kind: 'dot', cols: 3, r: 14 })],
+          ['I add more rows of 3 until I have 4 rows.', D.things(12, { kind: 'dot', cols: 3, r: 14 })],
+          ['I skip count by rows: 3, 6, 9, 12. <b>4 groups of 3 is 12</b>.', D.things(12, { kind: 'dot', cols: 3, r: 14 }), 2200]
         ]),
         try: { tool: 'counters', opts: { n: 0, controls: ['tens'], max: 30 }, tasks: [
           { do: 'Make <b>3 rows of 5</b>: add counters until there are 15. Then press <b>Group in tens</b> to see 10 and 5.', goal: function (s) { return s.n === 15 && s.mode === 'tens'; }, yes: '3 groups of 5 is 15: one ten and 5 ones.' }
@@ -165,6 +182,11 @@
           ['2 halves make 1 whole orange.', partsToWholes(2, 2)],
           ['4 halves make 2 whole oranges.', partsToWholes(4, 2)],
           ['5 halves make <b>2 and a half oranges</b>.', partsToWholes(5, 2), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. 8 children each eat one fourth of a pizza. How many whole pizzas is that?', partsToWholes(1, 4)],
+          ['4 fourths make 1 whole pizza.', partsToWholes(4, 4)],
+          ['8 fourths fill 2 pizzas. So 8 fourths make <b>2 whole pizzas</b>.', partsToWholes(8, 4), 2200]
         ]),
         try: partsLab,
         ways: [
@@ -186,6 +208,12 @@
           ['Again.', dealt(3, 3)],
           ['And again. All 12 are shared. Each friend gets <b>4</b>.', dealt(4, 3), 2200]
         ]),
+        example: K.clip([
+          ['My turn. I will share 8 crackers between 2 friends. I give one to each.', dealt(1, 2)],
+          ['I give one more to each.', dealt(2, 2)],
+          ['I keep going, one at a time, until all 8 are gone.', dealt(4, 2)],
+          ['Every share is the same. Each friend gets <b>4</b>.', dealt(4, 2), 2000]
+        ]),
         try: dealLab,
         key: '<p>Share one at a time. Every share is the same.</p>',
         check: [T('share'), P('g2-share', 1)] },
@@ -194,7 +222,12 @@
         watch: K.clip([
           ['10 stickers for 4 friends. Give one to each, then again.', share(10, 4)],
           ['2 are left. That is not enough for 4 friends, so we stop.', share(10, 4)],
-          ['Each gets <b>2</b>, and <b>2 are left over</b>.', '<p class="math big">10 shared by 4 = 2 each, 2 left</p>', 2200]
+          ['Each gets <b>2</b>, and <b>2 are left over</b>.', '<p class="g2-big">10 shared by 4 = 2 each, 2 left</p>', 2200]
+        ]),
+        example: K.clip([
+          ['My turn. I will share 11 apples among 3 friends. I give one to each, again and again.', share(11, 3)],
+          ['2 are left. That is not enough for all 3 friends, so I stop.', share(11, 3)],
+          ['Each friend gets <b>3</b>, and <b>2 are left over</b>.', '<p class="g2-big">11 shared by 3 = 3 each, 2 left</p>', 2200]
         ]),
         key: '<p>If there are not enough to go around, the rest are <b>left over</b>.</p>',
         mistake: '<p>Giving the leftovers to some people so that "nothing is left". Then the shares are not equal. Ask: "Does everyone have the same?"</p>',
@@ -210,6 +243,12 @@
           { say: '3. 3 boxes.', act: function (t) { return t.hop(3, '&minus;3'); } },
           { say: '0. We took away 3 four times. <b>4 boxes</b>.', act: function (t) { return t.hop(0, '&minus;3'); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 12, every: 4, start: 12 }, steps: [
+          { say: 'My turn. 12 pencils go in packs of 4. How many packs? I start at 12.', ms: 1300 },
+          { say: 'I take away 4: 8. That is 1 pack.', act: function (t) { return t.hop(8, '&minus;4'); } },
+          { say: 'I take away 4 again: 4. That is 2 packs.', act: function (t) { return t.hop(4, '&minus;4'); } },
+          { say: 'Once more: 0. I took away 4 three times. <b>3 packs</b>.', act: function (t) { return t.hop(0, '&minus;4'); }, ms: 2000 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 15, step: 5 }, tasks: [
           { do: '15 apples go into bags of 5. Press <b>Jump back</b> until you reach 0. How many jumps?', goal: function (s) { return s.at === 0; }, yes: function (s) { return '3 jumps of 5. So there are 3 bags.'; } }
         ] },
@@ -222,6 +261,12 @@
           ['Skip count: 2, 4, 6, 8. <b>8 oranges</b>.', plates(4, 2, 'dot')],
           ['8 oranges shared by 2 friends. Now we know how many in all and the number of friends.', share(8, 2)],
           ['Each gets <b>4</b>.', share(8, 2), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. 3 nests have 3 eggs in each. How many eggs? I know the groups and the size.', plates(3, 3, 'dot')],
+          ['I skip count: 3, 6, 9. There are <b>9 eggs</b>.', plates(3, 3, 'dot')],
+          ['Next: 9 stickers are shared by 3 friends. I know how many in all and how many friends.', share(9, 3)],
+          ['I share them out. Each friend gets <b>3</b>.', share(9, 3), 2000]
         ]),
         key: '<p>Groups, sharing, adding and subtracting all fit together: 4 + 4 = 8, so 8 shared by 2 is 4.</p>',
         check: [P('g2-story', 1), P('g2-story', 2)] }

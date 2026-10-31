@@ -186,6 +186,12 @@
           ['Smaller unit, bigger number. Bigger unit, smaller number.', ladder('kg', 'g'), '1 kg = 1000 g']
         ]),
         try: glab(CH, 0, 'Use the ladder to show that <b>3.5 kg = 3500 g</b>.', function (h) { return +h.querySelector('#cvv').value === 3.5 && h.querySelector('#cvf').value === 'kg' && h.querySelector('#cvt').value === 'g'; }, 'Yes: 3 steps down, times 1000.'),
+        example: G6.example([
+          ['My turn. I change 3.2 km to metres. From km to m is 3 steps down the ladder.', ladder('km', 'm')],
+          ['Down means multiply. 3 steps is &times; 1000: 3.2 &times; 1000 = 3200 m.', ladder('km', 'm'), '3.2 km = 3200 m'],
+          ['Now 650 g to kilograms. From g to kg is 3 steps up, so I divide by 1000.', ladder('g', 'kg'), '650 g = 0.65 kg'],
+          ['I check: a smaller unit gives a bigger number. 3200 m is more than 3.2. 0.65 kg is less than 650.', '<p class="g6-big">3.2 km = 3200 m &nbsp; 650 g = 0.65 kg</p>']
+        ]),
         key: '<p>Count the steps. Down: multiply. Up: divide.</p>',
         check: [{ q: 'How many millilitres are in 2.4 L?', type: 'num', unit: 'mL', answer: 2400, hint: 'L to mL: multiply by 1000.', explain: '2.4 &times; 1000 = 2400 mL.' }, g(CH, 'me-convert', 1), g(CH, 'me-convert', 2)] },
       { id: 'square', title: 'Square units', exp: ['E2.1'], skill: 'me-convert', hard: true,
@@ -196,6 +202,11 @@
           ['So it holds 10 000 square centimetres.', '<p class="g6-big">= 10 000 cm²</p>', 'Not 100 cm²']
         ]),
         ways: [{ label: 'Count rows', html: '<p>Fill a square metre with 1 cm squares. One row along the bottom holds 100. There are 100 rows. 100 rows of 100 is 10 000.</p>' }],
+        example: G6.example([
+          ['My turn. I change 3 m² to cm². 1 m² is a square 1 m long and 1 m wide.', '<p class="g6-big">1 m &times; 1 m = 1 m²</p>'],
+          ['I convert both the length and the width: 100 cm by 100 cm.', '<p class="g6-big">100 cm &times; 100 cm = 10 000 cm²</p>'],
+          ['So 3 m² is 3 &times; 10 000 = 30 000 cm².', '<p class="g6-big">3 m² = 30 000 cm²</p>', 'Not 300 cm²']
+        ]),
         key: '<p>For square units, convert both the length and the width.</p>',
         mistake: '<p>Converting square units with the length rule: writing 1 m² = 100 cm².</p>',
         check: [{ q: 'How many cm² are in 1 m²?', type: 'mc', options: ['100', '1000', '10 000', '100 000'], answer: 2, hint: '100 cm by 100 cm.', explain: '100 &times; 100 = 10 000.' }, { q: 'A rug is 2 m by 3 m. What is its area in m²?', type: 'num', unit: 'm²', answer: 6, hint: 'Length times width.', explain: '2 &times; 3 = 6 m².' }] }
@@ -209,6 +220,11 @@
           ['250°: past a straight line, so reflex.', angleFig(250, 'ccw', { prot: true, label: '250°' }), 'Reflex: more than 180°']
         ]),
         try: glab(CH, 1, 'Make a <b>reflex</b> angle of <b>250°</b> going <b>clockwise</b>.', function (h) { return +h.querySelector('#ang').value === 250 && h.querySelector('#adir').value === 'cw'; }, 'Yes: 250° clockwise.'),
+        example: G6.example([
+          ['My turn. I measure this angle. First I estimate: it is past a straight line, so more than 180&deg;.', angleFig(300, 'ccw', { prot: true })],
+          ['I start at 0 on the first ray and count counterclockwise to the other ray: 300&deg;.', angleFig(300, 'ccw', { prot: true, label: '300°' })],
+          ['300&deg; is more than 180&deg; and less than 360&deg;, so it is a reflex angle.', angleFig(300, 'ccw', { prot: true, label: '300°' }), 'Reflex']
+        ]),
         key: '<p>Start at 0 on the first ray. Estimate first: more or less than 180°?</p>',
         mistake: '<p>Reading the wrong scale on the protractor. Ask the student to estimate first and check the answer against the estimate.</p>',
         check: [g(CH, 'me-angle', 1), g(CH, 'me-angle', 2)] },
@@ -219,6 +235,11 @@
           ['Same two rays, the other way: clockwise.', angleFig(230, 'cw', { prot: true, label: '230°' }), '360 − 130 = 230']
         ]),
         ways: [{ label: 'Think of a clock', html: '<p>From 12 to 3 clockwise is a quarter turn, 90°. From 12 to 3 the other way round is three quarters, 270°. 90 + 270 = 360.</p>' }],
+        example: G6.example([
+          ['My turn. This angle is 70&deg; clockwise.', angleFig(70, 'cw', { prot: true, label: '70°' })],
+          ['Same two rays, the other way: counterclockwise. A full turn is 360&deg;.', angleFig(290, 'ccw', { prot: true })],
+          ['Other way = 360 &minus; this way: 360 &minus; 70 = 290&deg;.', angleFig(290, 'ccw', { prot: true, label: '290°' }), '360 &minus; 70 = 290']
+        ]),
         key: '<p>Other way = 360 &minus; this way.</p>',
         check: [{ q: 'An angle measures 130° counterclockwise. What does it measure clockwise?', type: 'num', unit: '°', answer: 230, hint: 'They add to 360°.', explain: '360 &minus; 130 = 230°.' }, g(CH, 'me-angle', 3)] }
     ] },
@@ -231,6 +252,12 @@
           ['A straight line split in two.', splitFig(180, 110, '110°', '?')],
           ['They add to 180°: 180 − 110 = 70°.', splitFig(180, 110, '110°', '70°'), 'Supplementary']
         ]),
+        example: G6.example([
+          ['My turn. The complement of 62&deg;. Complementary angles fill a right angle: 90&deg;.', splitFig(90, 62, '62°', '?')],
+          ['90 &minus; 62 = 28&deg;.', splitFig(90, 62, '62°', '28°'), 'Complementary'],
+          ['The supplement of 45&deg;. Supplementary angles fill a straight line: 180&deg;.', splitFig(180, 45, '45°', '?')],
+          ['180 &minus; 45 = 135&deg;. I remember: C before S, 90 before 180.', splitFig(180, 45, '45°', '135°'), 'Supplementary']
+        ]),
         key: '<p>C before S, 90 before 180.</p>',
         mistake: '<p>Mixing up complementary (90°) and supplementary (180°). The memory trick: C comes before S, and 90 comes before 180.</p>',
         check: [{ q: 'Two angles are complementary. One is 35°. What is the other?', type: 'num', unit: '°', answer: 55, hint: 'They add to 90°.', explain: '55°.' }, { q: 'Two angles are supplementary. One is 115°. What is the other?', type: 'num', unit: '°', answer: 65, hint: 'They add to 180°.', explain: '65°.' }, g(CH, 'me-relate', 1)] },
@@ -242,6 +269,12 @@
           ['Opposite angles match.', crossFig(50, ['50°', '130°', '50°', '130°']), 'All four: 360°']
         ]),
         try: glab(CH, 2, 'Make all four angles <b>equal</b>.', function (h) { return +h.querySelector('#xa').value === 90; }, 'Yes: four right angles, 90° each.'),
+        example: G6.example([
+          ['My turn. Two lines cross. One angle is 65&deg;. I find the other three.', crossFig(65, ['65°', '', '', ''])],
+          ['The angle next to it sits on the line, so they add to 180&deg;: 180 &minus; 65 = 115&deg;.', crossFig(65, ['65°', '115°', '', ''])],
+          ['Opposite angles are equal: 65&deg; and 115&deg; again.', crossFig(65, ['65°', '115°', '65°', '115°'])],
+          ['I check: 65 + 115 + 65 + 115 = 360&deg;, a full turn.', crossFig(65, ['65°', '115°', '65°', '115°']), 'All four: 360°']
+        ]),
         key: '<p>Opposite: equal. Next to each other: add to 180°.</p>',
         check: [{ q: 'Two lines cross. One angle is 72°. What is the angle opposite it?', type: 'num', unit: '°', answer: 72, hint: 'Opposite angles are equal.', explain: '72°.' }, g(CH, 'me-relate', 2)] },
       { id: 'triangle', title: 'Angles in a triangle', exp: ['E2.3'], skill: 'me-relate', hard: true,
@@ -253,6 +286,12 @@
         ]),
         try: glab(CH, 3, 'Make angle C a <b>right angle</b> (90°).', function (h) { return +h.querySelector('#ta').value + +h.querySelector('#tb').value === 90; }, 'Yes: A + B = 90°, so C = 90°.'),
         ways: [{ label: 'Tear the corners', html: '<p>Cut out a paper triangle. Tear off the three corners and line them up point to point. They always make a straight line: 180°.</p>' }],
+        example: G6.example([
+          ['My turn. A triangle has angles of 40&deg; and 85&deg;. I find the third angle.', triFig(40, 85, { A: '40°', B: '85°', C: '?' })],
+          ['Inside angles add to 180&deg;: 180 &minus; 40 &minus; 85 = 55&deg;.', triFig(40, 85, { A: '40°', B: '85°', C: '55°' })],
+          ['I extend a side at B. The exterior angle and its neighbour make 180&deg;: 180 &minus; 85 = 95&deg;.', triFig(40, 85, { A: '40°', B: '85°', C: '55°', ext: '95°' })],
+          ['I check: 95 = 40 + 55, the two far angles.', triFig(40, 85, { A: '40°', B: '85°', C: '55°', ext: '95°' }), '40 + 55 = 95 ✓']
+        ]),
         key: '<p>Inside angles: 180°. Exterior + its neighbour: 180°.</p>',
         check: [{ q: 'A triangle has angles of 50° and 70°. What is the third angle?', type: 'num', unit: '°', answer: 60, hint: 'Take both from 180.', explain: '60°.' }, g(CH, 'me-relate', 2), g(CH, 'me-relate', 3)] }
     ] },
@@ -266,6 +305,11 @@
           ['Shortcut: (6 + 10) × 4 ÷ 2 = 32 cm².', trapFig(6, 10, 4), '32 cm²']
         ]),
         try: glab(CH, 4, 'Make a <b>trapezoid</b> with an area of exactly <b>30 cm²</b>.', function (h) { return h.querySelector('#arsh').value === 'trap' && (nv(h, '#ar1') + nv(h, '#ar2')) * nv(h, '#ar3') === 60; }, 'Yes: 30 cm².'),
+        example: G6.example([
+          ['My turn. A trapezoid: top 4 cm, bottom 8 cm, height 5 cm.', trapFig(4, 8, 5)],
+          ['I cut along a diagonal: 2 triangles, both 5 cm high. 4 &times; 5 &divide; 2 = 10, and 8 &times; 5 &divide; 2 = 20.', trapFig(4, 8, 5, true), '10 + 20 = 30 cm²'],
+          ['The shortcut: add the parallel sides, times the height, divide by 2. (4 + 8) &times; 5 &divide; 2 = 30.', trapFig(4, 8, 5), '30 cm²']
+        ]),
         key: '<p>Add the parallel sides, times the height, divide by 2.</p>',
         mistake: '<p>Using the slanted side as the height. The height is measured straight across, at 90°, between the parallel sides.</p>',
         check: [{ q: 'A trapezoid has parallel sides 6 cm and 10 cm and height 4 cm. What is its area?', type: 'num', unit: 'cm²', answer: 32, hint: '(6 + 10) &times; 4 &divide; 2.', explain: '32 cm².' }, g(CH, 'me-area', 1), g(CH, 'me-area', 2)] },
@@ -278,6 +322,11 @@
           ['A kite works the same way: 8 × 6 ÷ 2 = 24 cm².', diagFig(8, 6, true, true), '24 cm²']
         ]),
         ways: [{ label: 'Two triangles', html: '<p>Cut the kite along its long diagonal (8 cm). Each half is a triangle with base 8 cm and height 3 cm: 8 &times; 3 &divide; 2 = 12. Two of them: 24 cm².</p>' }],
+        example: G6.example([
+          ['My turn. A kite has diagonals of 12 cm and 5 cm.', diagFig(12, 5, true)],
+          ['I draw a rectangle around it: 12 &times; 5 = 60 cm².', diagFig(12, 5, true, true)],
+          ['The kite fills half of it: 60 &divide; 2 = 30 cm².', diagFig(12, 5, true, true), '12 &times; 5 &divide; 2 = 30 cm²']
+        ]),
         key: '<p>Diagonal &times; diagonal &divide; 2.</p>',
         check: [{ q: 'A rhombus has diagonals of 10 cm and 7 cm. What is its area?', type: 'num', unit: 'cm²', answer: 35, hint: 'Multiply, then halve.', explain: '35 cm².' }, { q: 'A kite has diagonals of 8 cm and 6 cm. What is its area?', type: 'num', unit: 'cm²', answer: 24, hint: 'Multiply, then halve.', explain: '24 cm².' }, g(CH, 'me-area', 3)] },
       { id: 'composite', title: 'Composite shapes', exp: ['E2.4'], skill: 'me-area',
@@ -287,6 +336,11 @@
           ['Subtract: 10 × 8 − 4 × 3 = 80 − 12 = 68 m².', lFig(10, 8, 4, 3).replace(/ cm/g, ' m'), '68 m²'],
           ['Or cut it into two rectangles and add. Same answer.', lFig(10, 8, 4, 3, true).replace(/ cm/g, ' m'), '68 m²'],
           ['A house shape: rectangle plus triangle.', houseFig(8, 5, 3), '40 + 12 = 52 cm²']
+        ]),
+        example: G6.example([
+          ['My turn. An L shape: 9 by 7 with a 3 by 2 corner missing.', lFig(9, 7, 3, 2).replace(/ cm/g, ' m')],
+          ['I surround and subtract: 9 &times; 7 = 63, and the corner is 3 &times; 2 = 6.', lFig(9, 7, 3, 2).replace(/ cm/g, ' m'), '63 &minus; 6 = 57 m²'],
+          ['I check by splitting it into two rectangles and adding. Same answer: 57 m².', lFig(9, 7, 3, 2, true).replace(/ cm/g, ' m'), '57 m²']
         ]),
         key: '<p>Split and add, or surround and subtract.</p>',
         check: [{ q: 'A house shape is an 8 cm by 5 cm rectangle with a triangle on top (base 8 cm, height 3 cm). What is its area?', type: 'num', unit: 'cm²', answer: 52, fig: houseFig(8, 5, 3), hint: 'Rectangle plus triangle.', explain: '40 + 12 = 52 cm².' }, g(CH, 'me-area', 2)] }
@@ -300,6 +354,12 @@
           ['A triangular prism: 2 triangles and 3 rectangles.', triNet(1, 6, 'dims'), '5 faces']
         ]),
         ways: [{ label: 'Cube nets', html: '<div class="tbl"><table><thead><tr><th class="l">Net</th><th class="l">Cube?</th></tr></thead><tbody><tr><td class="l">' + sqNet([[1, 0], [0, 1], [1, 1], [2, 1], [3, 1], [1, 2]]) + '</td><td class="l"><b>yes</b></td></tr><tr><td class="l">' + sqNet([[0, 0], [1, 0], [2, 0], [0, 1], [1, 1], [2, 1]]) + '</td><td class="l"><b>no</b>: it cannot fold up</td></tr></tbody></table></div>' }],
+        example: G6.example([
+          ['My turn. I check a net for a cube. I count the faces: 6 squares.', boxNet(3, 3, 3, 'dims'), 'Cube: 6 faces'],
+          ['Each face shows exactly once: top, bottom and 4 sides.', boxNet(3, 3, 3, 'dims')],
+          ['Now a square-based pyramid: 1 square base and 4 triangles.', pyrNet(3, 4, 'dims'), '5 faces'],
+          ['I check: the pyramid has 5 faces, and the net shows 5 shapes.', pyrNet(3, 4, 'dims'), '1 + 4 = 5']
+        ]),
         key: '<p>A net shows every face exactly once.</p>',
         mistake: '<p>Counting only the faces you can see in a drawing. A box drawing shows 3 faces, but a box has 6.</p>',
         check: [{ q: 'How many faces does a square-based pyramid have?', type: 'num', answer: 5, hint: '1 base and the triangles.', explain: '1 square + 4 triangles = 5.' }, g(CH, 'me-faces', 1), g(CH, 'me-faces', 2)] },
@@ -312,6 +372,11 @@
         ]),
         try: glab(CH, 5, 'Make a <b>rectangular prism</b> with a surface area of exactly <b>52 cm²</b>.', function (h) { function v(id) { return Math.max(1, Math.min(12, Math.round(+h.querySelector(id).value) || 1)); } var a = v('#n1'), b = v('#n2'), c = v('#n3'); return h.querySelector('#nsh').value === 'box' && 2 * (a * b + a * c + b * c) === 52; }, 'Yes: 52 cm².'),
         ways: [{ label: 'A pyramid', html: '<p>Square-based pyramid, base 4 cm, triangle height 5 cm. Base: 4 &times; 4 = 16. Each triangle: 4 &times; 5 &divide; 2 = 10, and there are 4: 40. Total: 56 cm².</p>' }],
+        example: G6.example([
+          ['My turn. A box is 6 cm long, 4 cm wide and 3 cm high. I find its surface area.', boxNet(6, 4, 3, 'dims')],
+          ['I find each face area: 6 &times; 4 = 24, 6 &times; 3 = 18, 4 &times; 3 = 12.', boxNet(6, 4, 3, 'area'), '24, 18, 12'],
+          ['Each face comes twice. I add every face: 48 + 36 + 24 = 108 cm².', boxNet(6, 4, 3, 'area'), '108 cm²']
+        ]),
         key: '<p>Add the area of every face.</p>',
         check: [{ q: 'A cube has edges of 4 cm. What is its surface area?', type: 'num', unit: 'cm²', answer: 96, hint: '6 equal squares.', explain: '6 &times; 16 = 96 cm².' }, g(CH, 'me-sa', 1), g(CH, 'me-sa', 2)] }
     ] }

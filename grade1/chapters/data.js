@@ -166,6 +166,13 @@
           { say: 'Red square, small red circle. Red, red.', act: function (t) { return t.pick('s2').then(function () { return t.pick('s4'); }); }, ms: 900 },
           { say: 'Shape and size do not matter for this rule. Only colour.', ms: 1800 }
         ] },
+        example: { tool: 'g1pick', opts: { items: SH8.map(shp) }, steps: [
+          { say: 'My turn. My sorting rule is <b>circles</b>.', ms: 1200 },
+          { say: 'Big red circle: a circle. Yes.', act: function (t) { return t.pick('s0'); }, ms: 800 },
+          { say: 'Big blue circle: a circle. Yes.', act: function (t) { return t.pick('s3'); }, ms: 800 },
+          { say: 'Small red circle: a circle too. Yes.', act: function (t) { return t.pick('s4'); }, ms: 900 },
+          { say: 'The squares do not fit my rule. Colour and size do not matter. Only shape.', ms: 1900 }
+        ] },
         try: { tool: 'g1pick', opts: { items: SH8.map(shp) }, tasks: [
           { do: 'Sort by shape. Tap every <b>square</b>, big or small, red or blue.', goal: function (s) { return s.n === 3 && ['s1', 's2', 's5'].every(function (k) { return s.picked.indexOf(k) >= 0; }); }, yes: 'Those are all the squares.' },
           { do: 'Now sort the same shapes by size. Tap every <b>big</b> one.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.n === 4 && ['s0', 's2', 's3', 's5'].every(function (k) { return s.picked.indexOf(k) >= 0; }); }, yes: 'Same shapes, a different rule, different groups.' }
@@ -178,6 +185,12 @@
       { id: 'marks', title: 'Tally marks', exp: ['D1.2'], skill: 'd-tally',
         body: '<p>A <b>tally</b> is a quick way to count. Make one line for each answer. The 5th line goes <b>across</b> the first 4 to make a bundle of 5.</p>',
         watch: { tool: 'g1stage', steps: [1, 2, 3, 4, 5, 6, 7, 8].map(function (n) { return { say: n === 5 ? 'The 5th line goes <b>across</b>. A bundle of 5.' : n === 8 ? 'Count the bundle as 5, then 6, 7, 8. <b>8</b> tallies.' : String(n) + '.', act: function (t) { return t.show(tallyPic(n)); }, ms: n === 5 ? 1500 : n === 8 ? 1800 : 450 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. How many tallies are here?', act: function (t) { return t.show(tallyPic(12)); }, ms: 1300 },
+          { say: 'Each bundle is 5. I count the bundles by 5s: 5, 10.', ms: 1600 },
+          { say: 'Then I count on the single lines: 11, 12.', ms: 1400 },
+          { say: 'There are <b>12</b> tallies. Bundles by 5s, then count on.', ms: 1800 }
+        ] },
         try: survey(8),
         key: '<p>Count tally bundles by <b>5s</b>, then count on.</p>',
         check: [P('d-tally', 1), P('d-tally', 2)] }
@@ -191,6 +204,12 @@
           { say: 'One apple picture for each child who picked apples: 7.', act: function (t) { return t.show(picto(demo, [7, 0, 0, 0], 'Ms. Lee\'s class')); }, ms: 1300 },
           { say: 'Then the others: oranges 3, bananas 5, grapes 2.', act: function (t) { return t.show(picto(demo, [7, 3, 5, 2], 'Ms. Lee\'s class')); }, ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Mr. Singh\'s class told me their pets. First I write the title and the labels.', act: function (t) { return t.show(picto(TOPICS[3], [0, 0, 0, 0], 'Mr. Singh\'s class')); }, ms: 1800 },
+          { say: 'I draw one picture for each child with a dog: 4.', act: function (t) { return t.show(picto(TOPICS[3], [4, 0, 0, 0], 'Mr. Singh\'s class')); }, ms: 1400 },
+          { say: 'Then the others: cat 6, fish 2, no pet 3.', act: function (t) { return t.show(picto(TOPICS[3], [4, 6, 2, 3], 'Mr. Singh\'s class')); }, ms: 1600 },
+          { say: 'Every row starts at the same line. One picture for each answer.', ms: 1800 }
+        ] },
         try: survey(10),
         mistake: '<p>Pictures that are different sizes or spread out make a short row look long. Line them up from the same start, one per space.</p>',
         key: '<p>One picture for <b>each answer</b>, lined up from the same start.</p>',
@@ -201,6 +220,11 @@
           { say: 'The longest row is apples: <b>most</b>, 7.', act: function (t) { return t.show(picto(demo, [7, 3, 5, 2], 'Ms. Lee\'s class')); }, ms: 1600 },
           { say: 'The shortest row is grapes: <b>least</b>, 2.', ms: 1500 },
           { say: 'Apples 7, bananas 5. Apples has <b>2 more</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which pet do the most children have? I find the longest row: cat, 6. That is the <b>most</b>.', act: function (t) { return t.show(picto(TOPICS[3], [4, 6, 2, 3], 'Mr. Singh\'s class')); }, ms: 2000 },
+          { say: 'The shortest row is fish, 2. That is the <b>least</b>.', ms: 1600 },
+          { say: 'Cat 6, no pet 3. I count on from 3 to 6: 4, 5, 6. Cat has <b>3 more</b>.', ms: 2000 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: demo.cats.map(function (c) { return { id: c[0], html: '<span>' + c[0] + '</span>' }; }) }, tasks: [
           { do: 'Which fruit did the <b>fewest</b> children pick?', goal: function (s) { return s.picked[0] === 'grapes'; }, yes: 'Grapes: only 2.' },
@@ -217,6 +241,12 @@
           { say: 'All red counters. Picking red is <b>certain</b>.', act: function (t) { return t.show(bag(6, 0)); }, ms: 1600 },
           { say: 'Some red, some blue. Picking red is <b>possible</b>.', act: function (t) { return t.show(bag(3, 3)); }, ms: 1600 },
           { say: 'No red at all. Picking red is <b>impossible</b>.', act: function (t) { return t.show(bag(0, 6)); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. I pick one counter without looking. Will it be <b>blue</b>?', act: function (t) { return t.show(bag(0, 6)); }, ms: 1500 },
+          { say: 'All the counters are blue. Picking blue is <b>certain</b>. It will happen.', ms: 1700 },
+          { say: 'This bag has some red and some blue. Picking blue is <b>possible</b>. It might happen.', act: function (t) { return t.show(bag(4, 2)); }, ms: 1900 },
+          { say: 'This bag has no blue at all. Picking blue is <b>impossible</b>. It cannot happen.', act: function (t) { return t.show(bag(6, 0)); }, ms: 1900 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [['c', 'certain'], ['p', 'possible'], ['i', 'impossible']].map(function (x) { return { id: x[0], html: '<span>' + x[1] + '</span>' }; }) }, tasks: [
           { do: '"A dog will fly to the moon."', goal: function (s) { return s.picked[0] === 'i'; }, yes: 'Dogs cannot fly. Impossible.' },

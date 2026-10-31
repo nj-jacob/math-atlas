@@ -241,6 +241,12 @@
             { do: 'Build the core <b>circle, square, square</b> three times.', goal: function (s) { return s.k === 'csscsscss'; }, yes: 'The core repeats 3 times.' },
             { do: 'Keep going: add the next <b>two</b> shapes.', goal: function (s) { return s.k === 'csscsscsscs'; }, yes: 'Circle, square: the core starts again.' }
           ] }),
+        example: K.watch([
+          ['My turn. What comes next in this pattern?', shapeRow(rep(['s', 's', 'c'], 9), 1), 1600],
+          ['First I find the core, the part that repeats: square, square, circle.', shapeRow(['s', 's', 'c']), 2000],
+          ['I say the pattern out loud, one core at a time: square, square, circle. Square, square, circle. Square, square ...', shapeRow(rep(['s', 's', 'c'], 9), 1), 2600],
+          ['Next comes a <b>circle</b>.', shapeRow(rep(['s', 's', 'c'], 9)), 2000]
+        ]),
         key: '<p><b>Find the core, then say the pattern out loud.</b></p>',
         check: [T('next', 1), T('next', 1)] },
 
@@ -253,6 +259,12 @@
             { do: 'Make the pattern <b>4, 7, 10, 13</b>.', goal: function (s) { return s.st === 4 && s.ad === 3; }, yes: 'Start at 4, add 3.' },
             { do: 'Make figure 4 have exactly <b>20</b> tiles.', goal: function (s) { return s.f4 === 20; }, yes: function (s) { return 'Start at ' + s.st + ', add ' + s.ad + ': ' + s.st + ' + 3 &times; ' + s.ad + ' = 20.'; } }
           ] }),
+        example: K.watch([
+          ['My turn. I will find the rule. Figure 1 has 2 tiles.', figures(2, 3, 1), 1600],
+          ['Figure 2 has 5 tiles. The orange tiles are new: 3 of them.', figures(2, 3, 2), 2000],
+          ['Figure 3 has 8 tiles. Again, 3 new tiles.', figures(2, 3, 3), 1800],
+          ['Figure 4 has 11 tiles. The rule is <b>start at 2, add 3</b> each time: the same number of new tiles each time.', figures(2, 3, 4), 2600]
+        ]),
         key: '<p>Growing pattern: <b>the same number of new tiles each time</b>.</p>',
         check: [T('next', 2), T('next', 2)] }
     ] },
@@ -275,6 +287,12 @@
           { label: 'Count the steps', html: '<p>Figure 1 is the start. Every figure after it is one more step. Figure 10 is <b>9 steps</b> past figure 1: 3 + 9 &times; 2 = 21.</p>' },
           { label: 'Keep counting on', html: '<p>Count on by 2s from 3: 3, 5, 7, 9, 11, 13, 15, 17, 19, <b>21</b>. Ten numbers: figure 10 is 21. Slower, but it proves the rule.</p>' }
         ],
+        example: K.watch([
+          ['My turn. A pattern starts at 4 and adds 3 each time. I make a table.', table(4, 3, 5), 2000],
+          ['I want figure 8. From figure 1 to figure 8 is 7 steps.', table(4, 3, 5), 2000],
+          ['Each step adds 3, so 7 steps add 7 &times; 3 = 21.', table(4, 3, 5), 2000],
+          ['I add the start: 4 + 21 = <b>25</b>. Figure 8 has 25 tiles.', graph([4, 7, 10, 13, 16, 19, 22, 25]), 2400]
+        ]),
         key: '<p>Figure n = <b>start + (n &minus; 1) steps</b>.</p>',
         mistake: '<p>Multiplying the figure number by the step (10 &times; 2 = 20), forgetting the start. Ask: "How many steps are there from figure 1 to figure 10?"</p>',
         check: [T('rule', 1), T('rule', 2), T('next', 3)] },
@@ -286,6 +304,12 @@
           ['9 &minus; 5 = 4. The rule adds 4.', '<p class="math big">5, 9, &#9633;, 17, 21</p><p class="math">+4 each time</p>', 1800],
           ['9 + 4 = <b>13</b>. Check: 13 + 4 = 17.', '<p class="math big">5, 9, <b>13</b>, 17, 21</p><p class="math">+4 each time</p>', 2000]
         ]),
+        example: K.watch([
+          ['My turn. I will find the missing number: 3, 10, &#9633;, 24, 31.', '<p class="math big">3, 10, &#9633;, 24, 31</p>', 1600],
+          ['I subtract two neighbours: 10 &minus; 3 = 7. The rule adds 7.', '<div><p class="math big">3, 10, &#9633;, 24, 31</p><p class="math">+7 each time</p></div>', 2000],
+          ['10 + 7 = <b>17</b>.', '<div><p class="math big">3, 10, <b>17</b>, 24, 31</p><p class="math">+7 each time</p></div>', 1600],
+          ['I check with the next number: 17 + 7 = 24. It fits.', '<div><p class="math big">3, 10, <b>17</b>, 24, 31</p><p class="math">+7 each time</p></div>', 2000]
+        ]),
         key: '<p><b>Subtract two neighbours to find the step.</b> Check with the next number.</p>',
         check: [T('rule', 3), T('rule', 3)] },
 
@@ -295,6 +319,12 @@
           ['0.2, 0.4, 0.6, 0.8 ...', '<p class="math big">0.2, 0.4, 0.6, 0.8, &#9633;</p>', 1600],
           ['In tenths: 2, 4, 6, 8. Next: 10 tenths.', '<p class="math big">2, 4, 6, 8, 10 tenths</p>', 1800],
           ['10 tenths is 1 whole: <b>1.0</b>.', '<p class="math big">0.2, 0.4, 0.6, 0.8, <b>1.0</b></p>', 2000]
+        ]),
+        example: K.watch([
+          ['My turn. What comes next: 0.3, 0.6, 0.9 ...?', '<p class="math big">0.3, 0.6, 0.9, &#9633;</p>', 1600],
+          ['I think in tenths: 3, 6, 9. Each step adds 3 tenths.', '<p class="math big">3, 6, 9, &#9633; tenths</p>', 2000],
+          ['9 + 3 = 12 tenths.', '<p class="math big">3, 6, 9, 12 tenths</p>', 1600],
+          ['10 tenths make 1 whole, so 12 tenths is <b>1.2</b>.', '<p class="math big">0.3, 0.6, 0.9, <b>1.2</b></p>', 2200]
         ]),
         key: '<p><b>Think in tenths.</b> 10 tenths make 1 whole.</p>',
         mistake: '<p>Going 0.8, 0.9, 0.10 (writing 10 tenths as 0.10). 10 tenths is 1.0.</p>',
@@ -316,6 +346,11 @@
             { do: 'Make <b>n &minus; 4 = 9</b> level.', setup: function (api) { api.set('e', '1'); }, goal: function (s) { return s.e === '1' && s.ok; }, yes: 'n = 13.' },
             { do: 'Make <b>3 &times; n = 18</b> level.', setup: function (api) { api.set('e', '2'); }, goal: function (s) { return s.e === '2' && s.ok; }, yes: 'n = 6.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will solve n + 6 = 15. I try n = 5: 5 + 6 = 11. That is lighter than 15.', balance('5 + 6', '15', -4), 2200],
+          ['11 is too small, so I try a bigger number. n = 10: 10 + 6 = 16. Too heavy.', balance('10 + 6', '15', 1), 2200],
+          ['I try n = 9: 9 + 6 = 15. Both sides are equal. <b>n = 9</b>.', balance('9 + 6', '15', 0), 2400]
+        ]),
         key: '<p>The answer makes <b>both sides equal</b>.</p>',
         check: [T('solve', 1), T('solve', 1)] },
 
@@ -331,6 +366,11 @@
           { label: 'Guess and check', html: '<p>Try n = 5: 4 &times; 5 = 20, too small. Try 8: 32, too big. Try 7: 28. Yes.</p>' },
           { label: 'Bar model', html: '<p>n &minus; 4 = 9 means n is a whole made of 4 and 9. So n = 9 + 4 = <b>13</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will solve 6 &times; n = 48.', balance('6 &times; n', '48', 0), 1600],
+          ['n is multiplied by 6. To undo multiplying, I do the opposite: I divide. 48 &divide; 6 = 8.', '<p class="math big">n = 48 &divide; 6 = 8</p>', 2400],
+          ['I check: 6 &times; 8 = 48. Both sides are equal. <b>n = 8</b>.', balance('6 &times; 8', '48', 0), 2200]
+        ]),
         key: '<p><b>Do the opposite operation.</b> Then check.</p>',
         mistake: '<p>Doing the same operation instead of the opposite (n &minus; 4 = 9, so n = 5). The check catches it: 5 &minus; 4 is not 9.</p>',
         check: [T('solve', 2), T('solve', 3)] },
@@ -345,6 +385,12 @@
           tasks: [
             { do: 'Tap <b>every</b> whole number that makes <b>n + 3 &lt; 9</b> true.', goal: function (st) { var k = Object.keys(st.lit).map(Number).sort(function (a, b) { return a - b; }); return k.join() === '0,1,2,3,4,5'; }, yes: '0 to 5. At 6 the two sides are equal.' }
           ] }),
+        example: K.watch([
+          ['My turn. Which numbers make n + 6 &lt; 10 true? First I find where the sides are equal: 4 + 6 = 10, so n = 4.', solLine([4], 20), 2600],
+          ['4 makes the sides equal, not less, so 4 does not count.', solLine([4], 20), 2000],
+          ['The sign points to less than, so I go to smaller numbers: <b>0, 1, 2 and 3</b>.', solLine([0, 1, 2, 3], 20), 2200],
+          ['I check one: 3 + 6 = 9, and 9 is less than 10.', solLine([0, 1, 2, 3], 20), 2000]
+        ]),
         key: '<p>Find where the sides are <b>equal</b>, then go the way the sign points.</p>',
         check: [T('ineq', 1), T('ineq', 2), T('ineq', 3)] }
     ] },
@@ -359,6 +405,11 @@
             { do: 'Draw a closed <b>square with sides of 3</b>.', goal: function (s) { return s.r && s.k === 3 && s.t === 4; }, yes: 'Repeat 4 times: forward 3, turn right.' },
             { do: 'Move <b>12 squares in a straight line</b> using the loop.', goal: function (s) { return !s.r && s.k * s.t === 12; }, yes: function (s) { return s.t + ' &times; ' + s.k + ' = 12, no turns.'; } }
           ] }),
+        example: K.watch([1, 2, 3, 4].map(function (t) {
+          var p = [{ rep: Math.min(t, 3), body: fwd(2).concat(['R']) }];
+          return [['My turn. I will run this code. Loop 1: move forward 2, then turn right.', 'Loop 2: forward 2, turn right.', 'Loop 3: forward 2, turn right. The loop is done.', 'The robot moved forward 3 &times; 2 = <b>6</b> squares. Total = times &times; steps inside.'][t - 1],
+            '<div>' + robotPic(p) + '<pre class="mono">' + codeText([{ rep: 3, body: fwd(2).concat(['R']) }]) + '</pre></div>', t === 4 ? 2400 : 1600];
+        })),
         key: '<p><b>A loop runs its steps again and again.</b> Total = times &times; steps inside.</p>',
         check: [T('code', 1), T('code', 2)] },
 
@@ -369,6 +420,11 @@
           { label: 'Unroll it', html: '<p>Write out what the computer does: move 2, move 2, turn; move 2, move 2, turn; move 2, move 2, turn. Count the moves: <b>12</b>.</p>' },
           { label: 'Multiply', html: '<p>Inside: 2 &times; 2 = 4 moves. Outside runs it 3 times: 3 &times; 4 = <b>12</b>.</p>' }
         ],
+        example: K.watch([1, 2, 3].map(function (t) {
+          var p = [{ rep: Math.min(t, 2), body: [{ rep: 3, body: fwd(1) }, 'R'] }];
+          return [['My turn. I will run this code. Outside loop 1: the inside loop moves forward 1, three times. Then turn right.', 'Outside loop 2: the inside loop runs all 3 times again. Then turn right.', 'Moves: 2 &times; 3 = <b>6</b>. Nested loop total = outside times &times; inside total.'][t - 1],
+            '<div>' + robotPic(p) + '<pre class="mono">' + codeText([{ rep: 2, body: [{ rep: 3, body: fwd(1) }, 'R'] }]) + '</pre></div>', t === 3 ? 2400 : 2000];
+        })),
         key: '<p>Nested loop total = <b>outside times &times; inside total</b>.</p>',
         mistake: '<p>Adding the repeat numbers (3 + 2) instead of multiplying. Have your child "be the robot" and step it out.</p>',
         check: [T('code', 3), T('code', 3)] }
