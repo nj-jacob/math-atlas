@@ -90,6 +90,12 @@
           ['39.7 is about 40. 18.25 is about 20.', '<p class="g6-big">40 &minus; 20 = 20</p>'],
           ['The exact answer, 21.45, is close to 20. It makes sense.', '<p class="g6-big">21.45 &#8776; 20 &#10003;</p>']
         ]),
+        example: G6.example([
+          ['My turn. I work out 52.3 + 28.9. First I estimate.', '<p class="g6-big">52.3 + 28.9</p>'],
+          ['I round to friendly numbers: 52.3 is about 50. 28.9 is about 30.', '<p class="g6-big">50 + 30 = 80</p>'],
+          ['Now I calculate: 52.3 + 28.9 = 81.2.', '<p class="g6-big">52.3 + 28.9 = 81.2</p>'],
+          ['I check: 81.2 is close to 80. It makes sense.', '<p class="g6-big">81.2 &#8776; 80 &#10003;</p>']
+        ]),
         key: '<p>Estimate, calculate, then check: is the answer close?</p>',
         mistake: '<p>Skipping the estimate and trusting a misplaced decimal point (2.145 instead of 21.45). Ask for an estimate out loud before any calculation.</p>',
         check: [{ q: 'Which is the best estimate for <span class="math">39.7 &minus; 18.25</span>?', type: 'mc', options: ['about 2', 'about 20', 'about 58', 'about 200'], answer: 1, hint: '39.7 is about 40. 18.25 is about 20.', explain: '40 &minus; 20 = 20.' }, g(CH, 'do-est', 1), g(CH, 'do-est', 2)] },
@@ -99,6 +105,12 @@
           ['3 notebooks at $2.45 and a pen at $1.60.', '<p class="g6-big">3 &times; 2.45 + 1.60</p>'],
           ['Multiply first.', '<p class="g6-big">7.35 + 1.60</p>'],
           ['Then add.', '<p class="g6-big">$8.95</p>', 'estimate: 3 &times; 2.5 + 1.5 = 9 &#10003;']
+        ]),
+        example: G6.example([
+          ['My turn. 2 juice boxes cost $1.85 each, and a muffin costs $2.40. What is the total?', '<p class="g6-big">2 &times; 1.85 + 2.40</p>'],
+          ['I multiply first: 2 &times; 1.85 = 3.70.', '<p class="g6-big">3.70 + 2.40</p>'],
+          ['Then I add: 3.70 + 2.40 = 6.10.', '<p class="g6-big">$6.10</p>'],
+          ['I check with an estimate: 2 &times; 2 + 2 = 6. Close.', '<p class="g6-big">$6.10 &#8776; $6 &#10003;</p>']
         ]),
         key: '<p>Brackets, then &times; and &divide;, then + and &minus;.</p>',
         check: [g(CH, 'do-multi', 1), g(CH, 'do-multi', 2)] }
@@ -113,6 +125,12 @@
         ]),
         try: lab(CH, 0, 'Subtract a number with <b>3 decimal places</b> from a whole number.', function (h) { var a = h.querySelector('#asa').value, b = h.querySelector('#asb').value; return h.querySelector('#aso').value === '-1' && Number.isInteger(+a) && (b.split('.')[1] || '').length === 3; }, 'Fill the whole number with zeros: 20 = 20.000.'),
         ways: [{ label: 'Think money', html: '<p>$20 &minus; $6.45: a twenty-dollar bill minus six dollars forty-five cents. Count up: $6.45 + $0.55 = $7, then $7 + $13 = $20. Change: $13.55.</p>' }],
+        example: G6.example([
+          ['My turn. I add 8.06 + 12.5. I write 12.5 as 12.50 so the points line up.', columns(8060, 12500, 1, false)],
+          ['I add each column from the right. I bring the point straight down.', columns(8060, 12500, 1, true), '20.56'],
+          ['Next, 15 &minus; 3.72. I write 15 as 15.00. Zeros fill the gaps.', columns(15000, 3720, -1, false)],
+          ['I subtract from the right, trading as I go.', columns(15000, 3720, -1, true), '11.28']
+        ]),
         key: '<p>Points in a line. Zeros fill the gaps.</p>',
         mistake: '<p>Lining up the last digits instead of the decimal points. In 14.6 + 3.275, the 6 is 6 tenths and the 5 is 5 thousandths: not the same column.</p>',
         check: [{ q: '<span class="math">20 &minus; 6.45 = ?</span>', type: 'num', answer: 13.55, hint: '20 = 20.00. Line up the points.', explain: '20.00 &minus; 6.45 = 13.55.' }, g(CH, 'do-addsub', 1), g(CH, 'do-addsub', 2)] }
@@ -127,6 +145,11 @@
         ]),
         try: lab(CH, 1, 'Make a product between <b>100 and 200</b>.', function (h) { var w = +h.querySelector('#mtw').value, s = h.querySelector('#mtt'), t = parseFloat(s.options[s.selectedIndex].text); return w * t >= 100 && w * t <= 200; }, 'Yes. Notice the answer is less than the whole number.'),
         ways: [{ label: 'Smaller, not bigger', html: '<p>Times a number less than 1 gives <b>less</b> than you started with. 245 &times; 0.3 is about a third of 245, around 80.</p>' }, { label: 'Money', html: '<p>245 dimes is 245 &times; $0.10 = $24.50. 3 times that is 245 &times; 0.3 = $73.50.</p>' }],
+        example: G6.example([
+          ['My turn. I work out 132 &times; 0.4. I split 132 into 100 + 30 + 2.', area(132, 4)],
+          ['I multiply each part by 0.4: 40 + 12 + 0.8.', area(132, 4), '40 + 12 + 0.8 = 52.8'],
+          ['I check another way: 132 &times; 4 = 528, and 528 &divide; 10 = 52.8.', '<p class="g6-big">132 &times; 0.4 = 52.8</p>']
+        ]),
         key: '<p>Multiply by the digit, then divide by 10.</p>',
         mistake: '<p>Forgetting the decimal point: 245 &times; 0.3 is not 735. Estimate: about a third of 240 is 80.</p>',
         check: [{ q: '<span class="math">160 &times; 0.4 = ?</span>', type: 'num', answer: 64, hint: 'Multiply by 4, then divide by 10.', explain: '640 &divide; 10 = 64.' }, g(CH, 'do-mult', 1), g(CH, 'do-mult', 2)] }
@@ -141,6 +164,12 @@
         ]),
         try: lab(CH, 2, 'Find a division with an answer over <b>1000</b>.', function (h) { var w = +h.querySelector('#dtw').value, s = h.querySelector('#dtt'), t = parseFloat(s.options[s.selectedIndex].text); return w / t > 1000; }, 'Yes: small divisors give big answers.'),
         ways: [{ label: 'Halves', html: '<p>150 &divide; 0.5: there are 2 halves in every 1, so 150 has 300 halves.</p>' }],
+        example: G6.example([
+          ['My turn. I work out 36 &divide; 0.6.', '<p class="g6-big">36 &divide; 0.6</p>'],
+          ['I multiply both numbers by 10. Now I divide by a whole number.', '<p class="g6-big">360 &divide; 6</p>'],
+          ['360 &divide; 6 = 60.', '<p class="g6-big">= 60</p>'],
+          ['I check: 60 is bigger than 36. That makes sense, because 0.6 is less than 1.', '<p class="g6-big">60 &times; 0.6 = 36 &#10003;</p>']
+        ]),
         key: '<p>Times 10 on both sides, then divide by a whole number.</p>',
         mistake: '<p>Expecting a smaller answer. Dividing by a number less than 1 always gives a bigger answer.</p>',
         check: [{ q: '<span class="math">150 &divide; 0.5 = ?</span>', type: 'num', answer: 300, hint: 'Multiply both by 10: 1500 &divide; 5.', explain: '1500 &divide; 5 = 300.' }, g(CH, 'do-divt', 1), g(CH, 'do-divt', 2)] },
@@ -151,6 +180,12 @@
           ['1250 ÷ 3 = 416 remainder 2.', '<p class="g6-big">416 R 2</p>'],
           ['416 whole pieces. The 2 tenths of a metre left over is 0.2 m.', '<p class="g6-big">416 pieces, 0.2 m left</p>']
         ]),
+        example: G6.example([
+          ['My turn. I have 7 m of ribbon. Each bow needs 0.4 m. How many bows can I make?', '<p class="g6-big">7 &divide; 0.4 = 70 &divide; 4</p>'],
+          ['70 &divide; 4 = 17 remainder 2.', '<p class="g6-big">17 R 2</p>'],
+          ['The question asks for whole bows, so I make 17. The 2 tenths left over is 0.2 m.', '<p class="g6-big">17 bows, 0.2 m left</p>'],
+          ['I check: 17 &times; 0.4 = 6.8, and 6.8 + 0.2 = 7.', '<p class="g6-big">6.8 + 0.2 = 7 &#10003;</p>']
+        ]),
         key: '<p>The question decides what the remainder means.</p>',
         check: [g(CH, 'do-divt', 3)] }
     ] },
@@ -159,10 +194,17 @@
         body: '<p>Share the biggest place first. Trade any leftover for 10 of the next smaller place. The point in the answer goes above the point in the number.</p>',
         watch: play([
           ['Share 4.536 into 6 equal groups.', legend() + share(4536, 6)],
-          ['Long division keeps track of each trade.', longDiv(4536, 6), '4.536 &divide; 6 = 0.756']
+          ['Long division keeps track of each trade.', '<p>' + longDiv(4536, 6).steps.join('<br>') + '</p>', '4.536 &divide; 6 = 0.756']
         ]),
         try: lab(CH, 3, 'Choose a decimal and a group size that shares with <b>no leftover</b>.', function (h) { var k = Math.round(+h.querySelector('#sdk').value * 1000), n = +h.querySelector('#sdn').value; return k > 0 && k % n === 0; }, 'Every group gets the same, down to the thousandths.'),
         ways: [{ label: 'Rice', html: '<p>Four friends share 2.6 kg of rice. 2 ones cannot be shared by 4, so trade for 20 tenths: 26 tenths &divide; 4 = 6 tenths, 2 left. Trade for 20 hundredths: &divide; 4 = 5. Each gets <b>0.65 kg</b>.</p>' }],
+        example: G6.example([
+          ['My turn. I share 2.835 into 5 equal groups. I cannot give 2 ones to 5 groups, so I trade them for 20 tenths.', '<p class="g6-big">2 ones &rarr; 20 tenths</p>'],
+          ['Now there are 28 tenths. 28 &divide; 5 = 5 each, with 3 tenths left. I trade those for 30 hundredths.', '<p class="g6-big">28 &divide; 5 = 5 R 3</p>'],
+          ['Now there are 33 hundredths. 33 &divide; 5 = 6 each, with 3 left. I trade those for 30 thousandths.', '<p class="g6-big">33 &divide; 5 = 6 R 3</p>'],
+          ['Now there are 35 thousandths. 35 &divide; 5 = 7 each. Nothing is left.', '<p class="g6-big">35 &divide; 5 = 7</p>'],
+          ['Each group gets 0.567.', legend() + share(2835, 5), '2.835 &divide; 5 = 0.567']
+        ]),
         key: '<p>Leftovers become 10 of the next place.</p>',
         mistake: '<p>Stopping at a remainder. With decimals you can write zeros at the end (2.6 = 2.60) and keep going.</p>',
         check: [{ q: '<span class="math">7.38 &divide; 3 = ?</span>', type: 'num', answer: 2.46, hint: '7 &divide; 3 = 2 R 1. Trade the 1 for tenths.', explain: '2.46.' }, g(CH, 'do-divw', 1), g(CH, 'do-divw', 2)] }

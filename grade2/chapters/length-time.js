@@ -64,12 +64,13 @@
   var K = A.kit, CH = 'length-time';
   function T(k) { return K.T(CH, k); }
   function P(id, lv) { return K.P(CH, id, lv); }
-  /* the pencil with the first k cubes laid under it */
-  function laying(k, gap) {
-    var sc = 15, len = 18 * sc, w = 2 * sc, s = objShape('pencil', 6, 4, len, OBJ.pencil.col);
-    for (var i = 0; i < k; i++) s += K.pop(unitShape('cube', 6 + i * (w + (gap ? 6 : 0)), 48, w), i === k - 1 ? 0 : -9);
+  /* a thing (pencil if not given) with the first k units (cubes if not given) laid under it */
+  function laying(k, gap, o, u) {
+    o = o || 'pencil'; u = u || 'cube';
+    var sc = 15, len = OBJ[o].cm * sc, w = UNIT[u].cm * sc, s = objShape(o, 6, 4, len, OBJ[o].col);
+    for (var i = 0; i < k; i++) s += K.pop(unitShape(u, 6 + i * (w + (gap ? 6 : 0)), 48, w), i === k - 1 ? 0 : -9);
     s += '<line x1="6" y1="40" x2="6" y2="74" style="stroke:var(--bad)" stroke-width="2" stroke-dasharray="4 3"/><line x1="' + (6 + len) + '" y1="0" x2="' + (6 + len) + '" y2="74" style="stroke:var(--bad)" stroke-width="2" stroke-dasharray="4 3"/>';
-    return A.svg(len + 14 + (gap ? 60 : 0), 78, s, 'A pencil with ' + k + ' cubes under it');
+    return A.svg(len + 14 + (gap ? 60 : 0), 78, s, 'A ' + OBJ[o].n + ' with ' + k + ' ' + (k === 1 ? UNIT[u].n : UNIT[u].many) + ' under it');
   }
   var layLab = K.lab('<div class="btnrow"><button type="button" class="btn" id="llad">Add a cube</button><button type="button" class="btn alt" id="llrm">Take one away</button></div><div class="fig llfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
     var k = 0, $ = A.$;
@@ -169,6 +170,12 @@
           ['5, 6, 7, 8, 9. The cubes reach the end.', laying(9)],
           ['The pencil is <b>9 cubes</b> long.', laying(9), 2000]
         ]),
+        example: K.clip([
+          ['My turn. I will measure the crayon with paper clips. I start at the left end.', laying(1, false, 'crayon', 'clip')],
+          ['I lay the next clip right against the first one. No gap: 2.', laying(2, false, 'crayon', 'clip')],
+          ['3, 4. The clips reach the other end.', laying(4, false, 'crayon', 'clip')],
+          ['The crayon is <b>4 paper clips</b> long.', laying(4, false, 'crayon', 'clip'), 2000]
+        ]),
         try: layLab,
         key: '<p>Same-size units, end to end, no gaps, no overlaps. Count them.</p>',
         mistake: '<p>Leaving gaps or letting units overlap, so the count is wrong.</p>',
@@ -180,6 +187,11 @@
           ['In paper clips: <b>6</b>.', measured('pencil', 'clip')],
           ['In erasers: <b>3</b>.', measured('pencil', 'eraser')],
           ['Same pencil. Bigger unit, fewer units.', measured('pencil', 'eraser'), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. I measure the book in cubes: <b>12</b>.', measured('book', 'cube')],
+          ['Now I measure the same book in erasers: <b>4</b>.', measured('book', 'eraser')],
+          ['The book did not change. Erasers are bigger, so I need fewer. Bigger unit, fewer units.', measured('book', 'eraser'), 2200]
         ]),
         try: unitLab,
         ways: [
@@ -199,6 +211,11 @@
           ['100 fingertips fit across the door. <b>100 cm = 1 m</b>.', '<p class="math big">100 cm = 1 m</p>'],
           ['Short things: cm. Long things: m.', '<p class="math big">pencil: 18 cm &nbsp; classroom: 9 m</p>', 2000]
         ]),
+        example: K.clip([
+          ['My turn. Do I measure a spoon in cm or m? I think of a door. A spoon is much shorter than a door is wide.', '<p class="g2-big">spoon: cm or m?</p>', 2000],
+          ['Short things use centimetres. A spoon is about <b>15 cm</b>.', '<p class="g2-big">spoon: 15 cm</p>'],
+          ['Next: a school bus. It is much longer than a door. Long things use metres. A bus is about <b>12 m</b>.', '<p class="g2-big">school bus: 12 m</p>', 2200]
+        ]),
         try: cmLab,
         key: '<p>Shorter than a door is wide: centimetres. Longer: metres.</p>',
         mistake: '<p>Writing a long distance in cm (a classroom is "9 cm"). Ask: does that make sense?</p>',
@@ -212,6 +229,11 @@
           ['Look at the other end. It lines up with 9.', rulerEnd(0, 9, K.pop('<circle cx="' + (16 + 9 * PX) + '" cy="82" r="14" fill="none" style="stroke:var(--strand)" stroke-width="3"/>', 0))],
           ['The crayon is <b>9 cm</b> long.', rulerEnd(0, 9), 1800]
         ]),
+        example: K.clip([
+          ['My turn. How long is this crayon? I check that one end lines up with 0.', rulerEnd(0, 6)],
+          ['I look at the other end. It lines up with 6.', rulerEnd(0, 6, K.pop('<circle cx="' + (16 + 6 * PX) + '" cy="82" r="14" fill="none" style="stroke:var(--strand)" stroke-width="3"/>', 0))],
+          ['It starts at 0, so the end number is the length. The crayon is <b>6 cm</b> long.', rulerEnd(0, 6), 2000]
+        ]),
         try: readLab(false),
         key: '<p>Start at 0. Read the end.</p>',
         check: [T('read'), P('l2-ruler', 1)] },
@@ -222,6 +244,12 @@
           ['Count the spaces: 1, 2, 3, 4.', rulerEnd(3, 7, spaces(3, 4))],
           ['5, 6, 7.', rulerEnd(3, 7, spaces(3, 7))],
           ['It is <b>7 cm</b>, not 10 cm. 10 &minus; 3 = 7.', rulerEnd(3, 7, spaces(3, 7)), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. This crayon starts at 2 and ends at 7. It does not start at 0.', rulerEnd(2, 5)],
+          ['So I count the spaces between: 1, 2, 3.', rulerEnd(2, 5, spaces(2, 3))],
+          ['4, 5.', rulerEnd(2, 5, spaces(2, 5))],
+          ['It is <b>5 cm</b>, not 7 cm. I check: 7 &minus; 2 = 5.', rulerEnd(2, 5, spaces(2, 5)), 2200]
         ]),
         try: slideLab,
         ways: [
@@ -234,6 +262,11 @@
         check: [T('shift'), P('l2-ruler', 2)] },
       { id: 'practise', title: 'Read any ruler', exp: ['E2.3'], skill: 'l2-ruler',
         body: '<p>Now mix them up. First check where it starts. Then find the length.</p>',
+        example: K.clip([
+          ['My turn. First I check where the crayon starts. It starts at 4.', rulerEnd(4, 6)],
+          ['It does not start at 0, so I count the spaces from 4 to the end: 1, 2, 3, 4, 5, 6.', rulerEnd(4, 6, spaces(4, 6)), 2000],
+          ['The crayon is <b>6 cm</b> long. I check: it ends at 10, and 10 &minus; 4 = 6.', rulerEnd(4, 6, spaces(4, 6)), 2200]
+        ]),
         try: readLab(true),
         key: '<p>Where does it start? Where does it end? How many spaces between?</p>',
         check: [P('l2-ruler', 2), P('l2-ruler', 3)] }
@@ -246,6 +279,11 @@
           ['Washing your hands takes about 1 <b>minute</b>. That is 60 seconds.', '<p class="math big">wash hands: 1 minute</p>'],
           ['A hockey game takes about 2 to 3 <b>hours</b>.', '<p class="math big">hockey game: 2 to 3 hours</p>'],
           ['Short: seconds. Longer: minutes. Longest: hours.', '<p class="math big">seconds &lt; minutes &lt; hours</p>', 2000]
+        ]),
+        example: K.clip([
+          ['My turn. Which unit fits tying a shoe? I picture it. It is over very fast.', '<p class="g2-big">tying a shoe</p>'],
+          ['So I use <b>seconds</b>. It takes about 10 seconds.', '<p class="g2-big">tying a shoe: about 10 seconds</p>'],
+          ['Next: a night of sleep. That takes most of the night, so I use <b>hours</b>: about 10 hours.', '<p class="g2-big">a night of sleep: about 10 hours</p>', 2200]
         ]),
         try: timerLab,
         key: '<p>Pick the unit that gives a small, sensible number.</p>',
@@ -260,6 +298,12 @@
           ['Jump to 3: <b>1 hour</b>.', clock(3, 0)],
           ['Jump to 4: <b>2 hours</b>.', clock(4, 0)],
           ['Jump to 5: <b>3 hours</b>. The party lasted 3 hours.', clock(5, 0), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. The swim lesson starts at 9 o\'clock and ends at 11 o\'clock. How long is it? I start at 9.', clock(9, 0)],
+          ['I jump the short hand to 10. That is <b>1 hour</b>.', clock(10, 0)],
+          ['I jump to 11. That is <b>2 hours</b>. I do not count the start.', clock(11, 0)],
+          ['The swim lesson lasts <b>2 hours</b>.', clock(11, 0), 1800]
         ]),
         try: hourLab,
         ways: [

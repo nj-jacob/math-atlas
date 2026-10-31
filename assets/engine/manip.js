@@ -1277,7 +1277,8 @@
 
   /* ================= Frames: a Watch clip from drawings (from Grade 5) =================
      Manip.frames([{ say, fig, ms }, ...]) or ([[say, fig, ms], ...]) returns a watch spec: { mount, steps }.
-     Each frame swaps in a new picture (usually one svg); the parts that are new pop in, the parts that stay still do not move. */
+     Each frame swaps in a new picture (usually one svg); the parts that are new pop in, the parts that stay still do not move.
+     A frame with several parts (say a drawing, then a line of text) stacks them top to bottom, centred. */
   M.frames = function (frames) {
     frames = frames.map(function (f) { return Array.isArray(f) ? { say: f[0], fig: f[1], ms: f[2] } : f; });
     return {

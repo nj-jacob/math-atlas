@@ -237,6 +237,12 @@
       { id: 'ways', title: 'Ways to pay', exp: ['F1.1'], skill: 'mo4-pay',
         body: '<p>We can pay with <b>cash</b>, a <b>debit card</b>, a <b>credit card</b>, a <b>gift card</b>, a phone tap or an <b>e-transfer</b>. They all move real money.</p>',
         watch: K.watch(PAY.map(function (p) { return [cap(p[0]) + '.', payCard(p), 2200]; })),
+        example: K.watch([
+          ['My turn. Nadia buys a $28 sweater. The money leaves her own bank account right away. How did she pay?', tags([['sweater', 28]]), 2200],
+          ['I ask two questions. Where does the money come from? Her own account. When does it leave? Right away.', tags([['sweater', 28]]), 2400],
+          ['Money from your own account, right away, means a <b>debit card</b>.', payCard(PAY[1]), 2200],
+          ['If she had borrowed the money to pay back later, it would be a credit card.', payCard(PAY[2]), 2400]
+        ]),
         key: '<p><b>Debit</b>: your money, right away. <b>Credit</b>: borrowed, pay it back later.</p>',
         mistake: '<p>Thinking a card or phone tap is "free" money. Point out that every tap comes from a bank account or a loan that must be paid back.</p>',
         check: [T('pay', 1), T('pay', 2), T('pay', 3)] },
@@ -253,6 +259,12 @@
             { do: 'Choose items that cost exactly <b>$20</b>.', goal: function (s) { return s.t === 20; }, yes: 'Exactly $20.' },
             { do: 'Now choose items that cost exactly <b>$50</b>.', goal: function (s) { return s.t === 50; }, yes: 'Exactly $50.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will find the total for a kite and a ball.', tags([SHOP[5], SHOP[2]]), 1600],
+          ['First I estimate. I round each price to the nearest $10: $24 is about $20, and $8 is about $10. $20 + $10 = $30.', tags([SHOP[5], SHOP[2]]), 2800],
+          ['Now I add the exact prices: $24 + $8 = <b>$32</b>.', '<div>' + tags([SHOP[5], SHOP[2]]) + cash(32) + '</div>', 2200],
+          ['$32 is close to my estimate of $30, so it makes sense.', '<div>' + tags([SHOP[5], SHOP[2]]) + cash(32) + '</div>', 2000]
+        ]),
         key: '<p><b>Estimate, then add.</b> The total should be close to the estimate.</p>',
         check: [T('total', 1), T('total', 2), T('total', 3)] },
 
@@ -273,6 +285,12 @@
           { label: 'Subtract', html: '<p>Change = money paid &minus; price. $50 &minus; $37 = <b>$13</b>. Counting up and subtracting give the same answer.</p>' },
           { label: 'Hand it back', html: '<p>A cashier says: "$37 ... $38, $39, $40" (three loonies) "... and $50" (a $10 bill). The change is what was handed back: $13.</p>' }
         ],
+        example: K.watch([
+          ['My turn. A shirt costs $26. I pay with $40. How much change do I get?', cash(40), 1800],
+          ['I count up from the price, like a cashier. $26 to $30 is $4.', countUp(26, 40), 2000],
+          ['$30 to $40 is $10.', countUp(26, 40), 1600],
+          ['I add the jumps: $4 + $10 = <b>$14 change</b>.', '<div>' + countUp(26, 40) + cash(14) + '</div>', 2400]
+        ]),
         key: '<p><b>Count up from the price to the money paid.</b></p>',
         mistake: '<p>Subtracting the wrong way (37 &minus; 50) or forgetting the small first jump. Practise with real coins: say the amounts out loud while counting up.</p>',
         check: [T('change', 1), T('change', 2), T('change', 3)] }
@@ -288,6 +306,11 @@
         try: K.lab({ controls: [['spend', 'Spend'], ['save', 'Save'], ['invest', 'Invest'], ['donate', 'Donate']].map(function (c) { return { id: c[0], label: c[1], min: 0, max: 40, step: 5, value: c[0] === 'spend' ? 40 : 0, fmt: $s }; }),
           render: function (s) { s.tot = s.spend + s.save + s.invest + s.donate; return { fig: jars({ earn: 40, spend: s.spend, save: s.save, invest: s.invest, donate: s.donate }), out: '<p>' + (s.tot === 40 ? 'All $40 has a job.' : s.tot < 40 ? $s(40 - s.tot) + ' still needs a job.' : 'That is ' + $s(s.tot - 40) + ' more than you earned.') + '</p>' }; },
           tasks: [{ do: 'Split $40: <b>save half</b>, <b>donate $5</b>, and use the rest however you like.', goal: function (s) { return s.tot === 40 && s.save === 20 && s.donate === 5; }, yes: 'Every dollar has a job, and half is saved.' }] }),
+        example: K.watch([
+          ['My turn. Ava earns $30 selling lemonade. Earning is money coming in.', jars({ earn: 30 }), 1800],
+          ['She spends $5, saves $15 for a bike, invests $5 and donates $5.', jars({ earn: 30, spend: 5, save: 15, invest: 5, donate: 5 }), 2400],
+          ['I check: 5 + 15 + 5 + 5 = 30. Earn comes in. Spend, save, invest and donate go out.', jars({ earn: 30, spend: 5, save: 15, invest: 5, donate: 5 }), 2600]
+        ]),
         key: '<p><b>Earn</b> comes in. <b>Spend, save, invest, donate</b> go out.</p>',
         mistake: '<p>Mixing up saving and investing. Saving keeps money safe for later; investing uses money so it might grow, with some risk.</p>',
         check: [T('con', 1), T('con', 2), T('con', 3)] },
@@ -305,6 +328,11 @@
             { do: 'Plan for a <b>$45</b> game, saving <b>$5</b> a week, starting with nothing.', goal: function (s) { return s.g === 45 && s.p === 5 && s.h === 0; }, yes: '9 weeks.' },
             { do: 'Same game, but you already have <b>$6</b>. How many weeks now?', goal: function (s) { return s.g === 45 && s.p === 5 && s.h === 6; }, yes: '$39 more: 7 R4, so 8 weeks.' }
           ] }),
+        example: K.watch([
+          ['My turn. A skateboard costs $45. I save $10 a week. How many weeks will it take?', goalBar(45, 10), 2000],
+          ['I divide: $45 &divide; $10 = 4 R5. After 4 weeks I have $40.', goalBar(45, 10), 2000],
+          ['$40 is not enough. The leftover $5 needs one more week: <b>5 weeks</b>.', goalBar(45, 10), 2400]
+        ]),
         key: '<p><b>Still needed &divide; amount each week.</b> Leftover? Add a week.</p>',
         check: [T('save', 1), T('save', 2), T('save', 3)] },
 
@@ -318,6 +346,12 @@
           ['A second video game: a <b>want</b>. It can wait, or be saved for.', tags([['video game', 30]]), 2200],
           ['Needs first. Then decide which wants are worth saving for.', tags([['winter boots', 45], ['video game', 30]]), 2200]
         ]),
+        example: K.watch([
+          ['My turn. I will sort lunch for school and a new phone case. I ask: "Do I need it, or do I just want it?"', tags([['lunch', 6], ['phone case', 20]]), 2400],
+          ['I must eat, so lunch is a <b>need</b>.', tags([['lunch', 6]]), 1800],
+          ['My old phone case still works, so a new one is a <b>want</b>.', tags([['phone case', 20]]), 2000],
+          ['Needs first. Then I can decide if the want is worth saving for.', tags([['lunch', 6], ['phone case', 20]]), 2200]
+        ]),
         key: '<p><b>Needs first, then wants.</b></p>',
         check: [T('con', 3), T('con', 3)] },
 
@@ -328,6 +362,12 @@
           { label: 'Price for one', html: '<p>A pack of 4 for $8: $8 &divide; 4 = $2 each. One alone for $3. The pack is cheaper per item, <b>if</b> you will use all 4.</p>' },
           { label: 'Total cost', html: '<p>Online $30 + $8 shipping = $38. Local store $35. The local store costs less in all.</p>' }
         ],
+        example: K.watch([
+          ['My turn. A board game costs $40 online or $45 at a store. Which is the better value?', tags([['online', 40], ['store', 45]]), 2000],
+          ['Online looks cheaper. But I check for extra costs: shipping is $8.', tags([['online', 40], ['shipping', 8], ['store', 45]]), 2000],
+          ['The full cost online is $40 + $8 = $48. The store is $45.', tags([['online total', 48], ['store', 45]]), 2000],
+          ['The store is the better value. It saves $3. I compare the full cost.', tags([['online total', 48], ['store', 45]]), 2400]
+        ]),
         key: '<p>Compare <b>the same amount</b> and <b>the full cost</b>. Then think: will it last?</p>',
         mistake: '<p>Picking the biggest pack or the lowest sticker price without checking cost per item, shipping, or whether it will all get used.</p>',
         check: [T('value', 1), T('value', 2), T('value', 3)] }

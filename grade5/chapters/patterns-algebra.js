@@ -109,6 +109,12 @@
           { say: 'Shrinking: 100, 92, 84, 76. Take away 8 each time.', fig: an(bars([100, 92, 84, 76])) },
           { say: 'To find the next term, find the change and keep it going.', fig: an(jumps([5, 9, 13, 17, '?'], null, '+4')), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. What comes next: 50, 44, 38, 32?', fig: an(jumps([50, 44, 38, 32, '?'], null, '&minus;6')), ms: 1600 },
+          { say: 'I find what changes. 50 to 44 is take away 6. 44 to 38 is take away 6 again.', fig: an(jumps([50, 44, 38, 32, '?'], null, '&minus;6')), ms: 2000 },
+          { say: 'It is a shrinking pattern. It goes down by 6 each time.', fig: an(bars([50, 44, 38, 32])), ms: 1800 },
+          { say: 'I keep that change going: 32 &minus; 6 = <b>26</b>.', fig: an(jumps([50, 44, 38, 32, 26], null, '&minus;6')), ms: 2200 }
+        ]),
         try: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 5, step: 4 }, tasks: [
           { do: 'The pattern starts at 5 and grows by 4. Jump until you land on <b>21</b>.', goal: function (s) { return s.at === 21; }, yes: 'Yes. 5, 9, 13, 17, 21.' },
           { do: 'Keep jumping. What comes after 29?', reset: false, goal: function (s) { return s.at === 33; }, yes: 'Yes. 29 + 4 = 33.' }
@@ -125,6 +131,13 @@
           { say: 'Figure 2: two groups of 3, and the same 1 extra. 7 tiles.', fig: an(tiles(3, 1, 2)) },
           { say: 'Figure 3: three groups. 10 tiles. It grows by 3 each time.', fig: an(tiles(3, 1, 3)) },
           { say: 'Rule: <b>3 &times; n + 1</b>. Figure 50 has 3 &times; 50 + 1 = 151 tiles.', fig: an(graph([4, 7, 10, 13, 16], 'Graph of 3n + 1 for figures 1 to 5')), ms: 2600 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will find a rule for this pattern. Figure 1: one group of 2 purple tiles, and 3 yellow extras. 5 tiles.', fig: an(tiles(2, 3, 1)), ms: 2000 },
+          { say: 'Figure 2: two groups of 2, and the same 3 extras. 7 tiles.', fig: an(tiles(2, 3, 2)) },
+          { say: 'Figure 3: three groups. 9 tiles. It grows by 2 each time, so the step is 2.', fig: an(tiles(2, 3, 3)), ms: 1800 },
+          { say: 'The 3 extras never change. Rule: <b>2 &times; n + 3</b>.', fig: an(graph([5, 7, 9, 11, 13], 'Graph of 2n + 3 for figures 1 to 5')), ms: 2000 },
+          { say: 'I use the rule for figure 20: 2 &times; 20 + 3 = <b>43</b> tiles.', fig: an(graph([5, 7, 9, 11, 13], 'Graph of 2n + 3 for figures 1 to 5')), ms: 2200 }
         ]),
         try: K.widget('patterns-algebra', 0, 'Nice. Change the figure number to 30 and use the rule instead of counting.'),
         ways: [
@@ -147,6 +160,13 @@
           { say: '<b>1.0</b>. Ten tenths make one whole.', act: function (t) { return t.hop(1, '+0.1'); } },
           { say: '1.1, then 1.2.', act: function (t) { return t.hop(1.1, '+0.1').then(function () { return t.hop(1.2, '+0.1'); }); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 2.5, max: 3.5, tick: 0.1, every: 0.5, start: 2.7 }, steps: [
+          { say: 'My turn. I start at 2.7 and count by 0.1.', ms: 1400 },
+          { say: '2.8', act: function (t) { return t.hop(2.8, '+0.1'); } },
+          { say: '2.9', act: function (t) { return t.hop(2.9, '+0.1'); } },
+          { say: '<b>3.0</b>. 10 tenths make 1 whole, so the ones digit goes up by 1.', act: function (t) { return t.hop(3, '+0.1'); }, ms: 2000 },
+          { say: 'I keep going: 3.1, then 3.2.', act: function (t) { return t.hop(3.1, '+0.1').then(function () { return t.hop(3.2, '+0.1'); }); }, ms: 2000 }
+        ] },
         try: K.widget('patterns-algebra', 1, 'Good. Try counting by 0.01 from 2.47. Watch what happens after 2.49.'),
         ways: [
           { label: 'With money', html: '<p>Count dimes: $0.70, $0.80, $0.90, $1.00. Ten dimes make a dollar.</p>' },
@@ -166,6 +186,12 @@
           { say: '3n + 2 is 3 bags and 2 extra counters.', fig: an(bags(3, 2)) },
           { say: 'If each bag holds 5: 3 &times; 5 + 2 = <b>17</b>.', fig: an(bags(3, 2, '5')), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will find 4n + 1 when n = 6. Each bag holds n counters.', fig: an(bags(1, 0)), ms: 1600 },
+          { say: '4n means 4 &times; n: 4 bags.', fig: an(bags(4, 0)) },
+          { say: '+ 1 means 1 extra counter.', fig: an(bags(4, 1)) },
+          { say: 'I replace n with 6. 4 &times; 6 = 24, then 24 + 1 = <b>25</b>.', fig: an(bags(4, 1, '6')), ms: 2400 }
+        ]),
         try: K.widget('patterns-algebra', 2, 'Nice. Try n = 0. What is left?'),
         key: '<p><b>3n means 3 &times; n.</b> Replace n with the number, multiply, then add.</p>',
         mistake: '<p>Reading 3n as 3 + n (so 3n = 8 when n = 5). Use bags: 3n is three bags, not three counters and a bag.</p>',
@@ -180,6 +206,12 @@
           { say: 'To get n alone, add 12 to both sides.', fig: an(scale('n', '30 + 12')) },
           { say: 'n = <b>42</b>.', fig: an(scale('n', '42')) },
           { say: 'Check: 42 &minus; 12 = 30. It balances.', fig: an(scale('42 &#8722; 12', '30')), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will solve n + 15 = 40. The two sides balance.', fig: an(scale('n + 15', '40')), ms: 1600 },
+          { say: 'I want n alone. I undo the adding: I take 15 off both sides.', fig: an(scale('n', '40 &#8722; 15')), ms: 2000 },
+          { say: '40 &minus; 15 = 25, so n = <b>25</b>.', fig: an(scale('n', '25')) },
+          { say: 'I check: 25 + 15 = 40. It balances.', fig: an(scale('25 + 15', '40')), ms: 2200 }
         ]),
         try: K.widget('patterns-algebra', 3, 'Good. Guess, check, and adjust until the scale balances.'),
         ways: [
@@ -199,6 +231,12 @@
           { say: 'Test 7: 7 + 3 = 10, not less than 10. The edge never works.', fig: an(ineq(7, true)) },
           { say: 'The answers are <b>every number less than 7</b>.', fig: an(ineq(7, true)), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will solve n + 4 &gt; 9. First I find the edge: n + 4 = 9 when n = 5.', fig: an(ineq(5, false).replace(/var\(--strand\)/g, 'var(--card)')), ms: 2000 },
+          { say: 'I test 8: 8 + 4 = 12. 12 is greater than 9, so it works.', fig: an(ineq(5, false)), ms: 1800 },
+          { say: 'I test the edge, 5: 5 + 4 = 9. 9 is not greater than 9. The edge is not an answer.', fig: an(ineq(5, false)), ms: 2000 },
+          { say: 'The answers are <b>every number greater than 5</b>.', fig: an(ineq(5, false)), ms: 2200 }
+        ]),
         try: K.widget('patterns-algebra', 4, 'Nice. Switch the symbol and watch the answers flip to the other side.'),
         ways: [
           { label: 'In words', html: '<p>"A number plus 3 is less than 10." Which numbers fit? 0, 1, 2, 3, 4, 5, 6. Not 7: 7 + 3 is exactly 10.</p>' },
@@ -217,6 +255,12 @@
           { say: 'Pass 2: 5 + 3 = 8.', fig: an(trace(2, 3, 2)) },
           { say: 'Pass 3: 11. Pass 4: 14.', fig: an(trace(2, 3, 4)) },
           { say: 'Add a condition: say "big" if total &gt; 10.', fig: an(trace(2, 3, 4, 10)), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. total = 5. Repeat 3 times: total = total + 4. Pass 1: 5 + 4 = 9.', fig: an(trace(5, 4, 1)), ms: 2000 },
+          { say: 'Pass 2: 9 + 4 = 13.', fig: an(trace(5, 4, 2)) },
+          { say: 'Pass 3: 13 + 4 = 17. The loop is done.', fig: an(trace(5, 4, 3)) },
+          { say: 'Then the code says "big" if total &gt; 12. 17 &gt; 12, so it says "big". I traced it one pass at a time.', fig: an(trace(5, 4, 3, 12)), ms: 2600 }
         ]),
         try: K.widget('patterns-algebra', 5, 'Good. Change the start value and see every total move.'),
         key: '<p>Trace a loop <b>one pass at a time</b>, and write the total after each pass.</p>',

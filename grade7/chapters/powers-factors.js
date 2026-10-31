@@ -242,6 +242,14 @@
           { say: 'The <b>millions</b> period: 405 million.', fig: function () { return perChart(405216789); } },
           { say: 'The <b>billions</b> period: 3 billion. Each period is 1000 times bigger than the one to its right.', fig: function () { return perChart(3405216789); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will read 2 718 054 306.', fig: function () { return perChart(2718054306); } },
+          { say: 'First I split it into periods of three digits, starting from the right: 2 | 718 | 054 | 306.', fig: function () { return perChart(2718054306); } },
+          { say: 'I start at the left. The billions period says 2: <b>two billion</b>.', fig: function () { return perChart(2718054306); } },
+          { say: 'Next, the millions period: <b>seven hundred eighteen million</b>.', fig: function () { return perChart(2718054306); } },
+          { say: 'Then the thousands: <b>fifty-four thousand</b>. Last, the ones: <b>three hundred six</b>.', fig: function () { return perChart(2718054306); } },
+          { say: 'So it is two billion seven hundred eighteen million fifty-four thousand three hundred six. I read one period at a time, from the left.', fig: function () { return perChart(2718054306); }, ms: 2600 }
+        ]),
         try: lab('read', [
           { do: 'Press <b>One billion</b>. How many periods does it fill?', goal: function (h) { return num(h) === 1e9; }, yes: 'One billion fills four periods: 1 000 000 000.' },
           { do: 'Type a number in the <b>millions</b>, like your city\'s population.', goal: function (h) { var n = num(h); return n >= 1e6 && n < 1e9; }, yes: function (h) { return 'Yes. ' + fmt(num(h)) + ' has a millions period.'; } },
@@ -257,6 +265,13 @@
           { say: 'One million is 1 000 000. A tenth of a million is 100 000.', fig: eq('1 million = 1 000 000 &nbsp;&nbsp; 0.1 million = 100 000') },
           { say: '36 million is 36 000 000. 0.2 million is 200 000.', fig: eq('36 000 000 + 200 000') },
           { say: 'Together: <b>36 200 000</b>.', fig: function () { return perChart(36200000); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A city has 4.7 million people. I will write that as a number.', fig: eq('4.7 million') },
+          { say: 'One million is 1 000 000. So 4 million is 4 000 000.', fig: eq('4 million = 4 000 000') },
+          { say: 'Next I do the 0.7. Seven tenths of a million is 700 000.', fig: eq('0.7 million = 700 000') },
+          { say: 'I add the two parts: 4 000 000 + 700 000 = <b>4 700 000</b>.', fig: function () { return perChart(4700000); } },
+          { say: 'I check with the rule: 4.7 &times; 1 000 000. I move the point 6 places right and get 4 700 000.', fig: eq('4.7 &times; 1 000 000 = 4 700 000'), ms: 2400 }
         ]),
         ways: [{ label: 'Move the decimal point', html: '<p>"Million" means &times; 1 000 000, which moves the decimal point <b>6 places right</b>.</p>' + eq('36.2 &rarr; 36.200000 &rarr; 36 200 000') },
           { label: 'Think of money', html: '<p>$2.5 million is two and a half million dollars: $2 000 000 plus half a million, $500 000. That is $2 500 000.</p>' }],
@@ -275,6 +290,13 @@
           { say: '25 times 5 is 125. So 5 to the 3 is <b>125</b>.', fig: eq(pw(5, 3) + ' = <b>125</b>') },
           { say: 'Each step multiplies by the base again.', fig: function () { return chain(5, 3); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + pw(3, 4) + '. The base is 3. The exponent is 4.', fig: eq('<span style="font-size:2.4rem">' + pw(3, 4) + '</span>') },
+          { say: 'The exponent is 4, so I write the base 4 times, with times signs.', fig: eq(pw(3, 4) + ' = 3 &times; 3 &times; 3 &times; 3') },
+          { say: 'First I do 3 &times; 3 = 9.', fig: eq(pw(3, 4) + ' = 9 &times; 3 &times; 3') },
+          { say: 'Next I do 9 &times; 3 = 27.', fig: eq(pw(3, 4) + ' = 27 &times; 3') },
+          { say: 'Last, 27 &times; 3 = 81. So ' + pw(3, 4) + ' = <b>81</b>. The exponent counts how many times the base is multiplied.', fig: function () { return chain(3, 4); }, ms: 2600 }
+        ]),
         try: lab('power', [
           { do: 'Make <b>2<sup>5</sup></b>. What does it equal?', goal: function (h) { return K.v(h, 'pwb') === 2 && K.v(h, 'pwe') === 5; }, yes: '2 &times; 2 &times; 2 &times; 2 &times; 2 = 32.' },
           { do: 'Find a power that equals <b>81</b>.', goal: function (h) { return Math.pow(K.v(h, 'pwb'), K.v(h, 'pwe')) === 81; }, yes: function (h) { return 'Yes. ' + K.v(h, 'pwb') + ' to the ' + K.v(h, 'pwe') + ' is 81. (Both 3<sup>4</sup> and 9<sup>2</sup> work.)'; } },
@@ -290,6 +312,13 @@
           { say: '2 to the 3 means three 2s <b>multiplied</b>: 8.', fig: eq(pw(2, 3) + ' = 2 &times; 2 &times; 2 = 8') },
           { say: 'With bigger numbers the difference is huge. 10 times 4 is 40.', fig: eq('10 &times; 4 = 40') },
           { say: 'But 10 to the 4 is 10 000.', fig: eq(pw(10, 4) + ' = 10 &times; 10 &times; 10 &times; 10 = 10 000'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Is ' + pw(4, 3) + ' the same as 4 &times; 3? I will work out both.', fig: eq(pw(4, 3) + ' &nbsp; or &nbsp; 4 &times; 3') },
+          { say: '4 &times; 3 means three 4s <b>added</b>: 4 + 4 + 4 = 12.', fig: eq('4 &times; 3 = 4 + 4 + 4 = 12') },
+          { say: pw(4, 3) + ' means three 4s <b>multiplied</b>. First I do 4 &times; 4 = 16.', fig: eq(pw(4, 3) + ' = 4 &times; 4 &times; 4 = 16 &times; 4') },
+          { say: 'Then 16 &times; 4 = 64. So ' + pw(4, 3) + ' = <b>64</b>, not 12.', fig: function () { return chain(4, 3); } },
+          { say: 'Power: I multiply the base again and again. I never do base &times; exponent.', fig: eq(pw(4, 3) + ' = 64 &nbsp;&nbsp; 4 &times; 3 = 12'), ms: 2400 }
         ]),
         ways: [{ label: 'As a picture', html: '<p>' + pw(3, 2) + ' is a 3 by 3 square of tiles: 9. And ' + pw(3, 3) + ' is a 3 by 3 by 3 cube: 27.</p><div class="vrow"><figure><figcaption>3<sup>2</sup> = 9</figcaption>' + sq(3, 30) + '</figure><figure><figcaption>3<sup>3</sup> = 27</figcaption>' + cube(3, 90) + '</figure></div>' },
           { label: 'Powers of 1 and 0', html: '<p>Any number to the power 1 is itself: ' + pw(7, 1) + ' = 7. Any number (except 0) to the power 0 is 1: ' + pw(7, 0) + ' = 1. Look at the pattern: ' + pw(2, 3) + ' = 8, ' + pw(2, 2) + ' = 4, ' + pw(2, 1) + ' = 2, ' + pw(2, 0) + ' = 1. Each step down halves.</p>' }],
@@ -307,6 +336,12 @@
           { say: '10 to the 6 is one million. Six zeros.', fig: eq(pw(10, 6) + ' = 1 000 000') },
           { say: '10 to the 9 is one billion. Nine zeros.', fig: eq(pw(10, 9) + ' = 1 000 000 000'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will write ' + pw(10, 5) + ' as a normal number.', fig: eq(pw(10, 5) + ' = ?') },
+          { say: pw(10, 5) + ' is five 10s multiplied. Each 10 adds one more zero.', fig: eq(pw(10, 5) + ' = 10 &times; 10 &times; 10 &times; 10 &times; 10') },
+          { say: 'The exponent is 5, so I write 1, then 5 zeros: <b>100 000</b>.', fig: eq(pw(10, 5) + ' = 100 000') },
+          { say: 'I check: I count the zeros in 100 000. There are 5, the same as the exponent.', fig: function () { return chain(10, 5); }, ms: 2400 }
+        ]),
         try: lab('power', [{ do: 'Set the base to <b>10</b>. Make one million.', goal: function (h) { return K.v(h, 'pwb') === 10 && K.v(h, 'pwe') === 6; }, yes: pw(10, 6) + ' = 1 000 000: six zeros.' }]),
         key: '<p><b>' + pw(10, 'n') + ' is 1 followed by n zeros.</b></p>',
         mistake: '<p>Counting the digits instead of the zeros: 1000 has 4 digits but only 3 zeros, so it is ' + pw(10, 3) + '.</p>',
@@ -319,6 +354,13 @@
           { say: 'The 7 has 6 places after it: 7 times 10 to the 6.', fig: eq('3 &times; ' + pw(10, 8) + ' + 7 &times; ' + pw(10, 6)) },
           { say: 'Then 2 times 10 to the 4, and 5 times 10.', fig: eq('3 &times; ' + pw(10, 8) + ' + 7 &times; ' + pw(10, 6) + ' + 2 &times; ' + pw(10, 4) + ' + 5 &times; 10') },
           { say: 'The zeros are skipped. Each part matches one non-zero digit.', fig: function () { return perChart(307020050); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will write 50 400 900 in expanded form with powers of ten.', fig: function () { return perChart(50400900); } },
+          { say: 'The 5 has 7 places after it. So it is 5 &times; ' + pw(10, 7) + '.', fig: eq('5 &times; ' + pw(10, 7)) },
+          { say: 'The 4 has 5 places after it: 4 &times; ' + pw(10, 5) + '.', fig: eq('5 &times; ' + pw(10, 7) + ' + 4 &times; ' + pw(10, 5)) },
+          { say: 'The 9 has 2 places after it: 9 &times; ' + pw(10, 2) + '. I skip all the zeros.', fig: eq('5 &times; ' + pw(10, 7) + ' + 4 &times; ' + pw(10, 5) + ' + 9 &times; ' + pw(10, 2)) },
+          { say: 'Done. Each exponent is the number of places to the right of its digit.', fig: eq('50 400 900 = 5 &times; ' + pw(10, 7) + ' + 4 &times; ' + pw(10, 5) + ' + 9 &times; ' + pw(10, 2)), ms: 2600 }
         ]),
         try: lab('read', [{ do: 'Type <b>4 000 900 006</b>. Look at its expanded form.', goal: function (h) { return num(h) === 4000900006; }, yes: '4 &times; 10<sup>9</sup> + 9 &times; 10<sup>5</sup> + 6.' },
           { do: 'Type a number whose expanded form has exactly <b>two parts</b>.', goal: function (h) { var n = String(num(h)); return n !== '0' && n.replace(/0/g, '').length === 2; }, yes: 'Two non-zero digits make two parts.' }]),
@@ -333,6 +375,12 @@
         body: '<p>A <b>perfect square</b> is a number of tiles that make a full square. 16 tiles make a 4 by 4 square, so 16 is a perfect square: 4 &times; 4 = 4<sup>2</sup> = 16.</p>',
         watch: K.slides([1, 2, 3, 4, 5].map(function (b) { return { say: b + ' by ' + b + ' makes ' + b * b + '.', fig: '<div class="vrow"><figure><figcaption>' + b + ' &times; ' + b + ' = ' + b * b + '</figcaption>' + sq(b, 30) + '</figure></div>', ms: 1300 }; })
           .concat([{ say: 'The perfect squares: 1, 4, 9, 16, 25, ... The gaps between them grow by 2 each time.', fig: eq('1, 4, 9, 16, 25, 36, 49, 64, 81, 100'), ms: 2600 }])),
+        example: K.slides([
+          { say: 'My turn. Is 49 a perfect square? I try to build a square with 49 tiles.', fig: eq('49 tiles') },
+          { say: 'I try 6 by 6. That is 36 tiles. Too small.', fig: '<div class="vrow"><figure><figcaption>6 &times; 6 = 36</figcaption>' + sq(6, 26) + '</figure></div>' },
+          { say: 'I try 7 by 7. That is 49 tiles. It uses them all.', fig: '<div class="vrow"><figure><figcaption>7 &times; 7 = 49</figcaption>' + sq(7, 26) + '</figure></div>' },
+          { say: 'So <b>49 is a perfect square</b>. A perfect square is a whole number times itself: 7 &times; 7.', fig: eq('7 &times; 7 = 49'), ms: 2400 }
+        ]),
         try: lab('squares', [
           { do: 'Find a perfect square <b>between 50 and 70</b>.', goal: function (h) { return K.v(h, 'sqn') === 64; }, yes: '64 = 8 &times; 8.' },
           { do: 'Find the biggest perfect square on the slider.', goal: function (h) { return K.v(h, 'sqn') === 196; }, yes: '196 = 14 &times; 14. (225 is past the end.)' }
@@ -347,6 +395,13 @@
           { say: 'We need a number that times itself makes 81.', fig: eq('? &times; ? = 81') },
           { say: '9 times 9 is 81. So the side is 9 metres.', fig: eq('9 &times; 9 = 81 &nbsp;&nbsp; &radic;81 = 9'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A square patio has an area of 144 square metres. I will find the length of each side.', fig: '<div class="vrow"><figure><figcaption>Area 144 m&sup2;</figcaption>' + sq(12, 16) + '</figure></div>' },
+          { say: 'I need a number that times itself makes 144.', fig: eq('? &times; ? = 144') },
+          { say: 'I try 10. 10 &times; 10 = 100. That is too small.', fig: eq('10 &times; 10 = 100 &nbsp; too small') },
+          { say: 'I try 12. 12 &times; 12 = 144. Yes!', fig: eq('12 &times; 12 = 144') },
+          { say: 'So &radic;144 = <b>12</b>. Each side is 12 metres.', fig: eq('&radic;144 = 12'), ms: 2400 }
+        ]),
         key: '<p><b>&radic;n is the side of a square with area n.</b> &radic;81 = 9 because 9 &times; 9 = 81.</p>',
         mistake: '<p>Halving instead of rooting: &radic;16 = 8. Check by multiplying back: 8 &times; 8 = 64, not 16.</p>',
         check: [function () { return { q: 'A square tile has an area of 144 cm&sup2;. How long is one side?', type: 'num', answer: 12, unit: 'cm', hint: 'Which number times itself is 144?', explain: '12 &times; 12 = 144.' }; }, K.ck('pf-root', 1)] },
@@ -357,6 +412,12 @@
           { say: 'A 7 by 7 square uses 49. One tile is left over.', fig: function () { return tiles(50); } },
           { say: 'On a number line, 50 sits just past 49.', fig: function () { return rootLine(50); } },
           { say: 'So &radic;50 is between 7 and 8, very close to 7: about 7.1.', fig: eq('7 &times; 7 = 49 &lt; 50 &lt; 64 = 8 &times; 8'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find where &radic;30 is.', fig: eq('&radic;30 = ?') },
+          { say: 'First I find the perfect squares on each side of 30: 5 &times; 5 = 25 and 6 &times; 6 = 36.', fig: eq('25 &lt; 30 &lt; 36') },
+          { say: 'I build 30 tiles. A 5 by 5 square uses 25. 5 tiles are left over.', fig: function () { return tiles(30); } },
+          { say: 'So &radic;30 is between <b>5 and 6</b>. 30 is about halfway from 25 to 36, so &radic;30 is about 5.5.', fig: function () { return rootLine(30); }, ms: 2600 }
         ]),
         try: lab('squares', [{ do: 'Set the slider to <b>30</b>. Between which two whole numbers is &radic;30?', goal: function (h) { return K.v(h, 'sqn') === 30; }, yes: '25 &lt; 30 &lt; 36, so &radic;30 is between 5 and 6.' }]),
         ways: [{ label: 'Squeeze it', html: '<p>List the squares until you pass the number: 1, 4, 9, 16, 25, <b>36</b>. 30 is between 25 and 36, so &radic;30 is between &radic;25 = 5 and &radic;36 = 6.</p>' },
@@ -374,6 +435,13 @@
           { say: '6 times 6 meets in the middle. Stop there.', fig: eq('1 &times; 36 &nbsp; 2 &times; 18 &nbsp; 3 &times; 12 &nbsp; 4 &times; 9 &nbsp; 6 &times; 6') },
           { say: 'The rainbow joins each pair.', fig: function () { return rainbow(36); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will find the factor pairs of 48. I start with 1 &times; 48.', fig: eq('1 &times; 48') },
+          { say: 'I test 2, 3 and 4. They all go in: 2 &times; 24, 3 &times; 16, 4 &times; 12.', fig: eq('1 &times; 48 &nbsp; 2 &times; 24 &nbsp; 3 &times; 16 &nbsp; 4 &times; 12') },
+          { say: '5 does not go into 48. 6 does: 6 &times; 8.', fig: eq('1 &times; 48 &nbsp; 2 &times; 24 &nbsp; 3 &times; 16 &nbsp; 4 &times; 12 &nbsp; 6 &times; 8') },
+          { say: '7 does not go in. 8 is already in a pair, so I stop.', fig: eq('1 &times; 48 &nbsp; 2 &times; 24 &nbsp; 3 &times; 16 &nbsp; 4 &times; 12 &nbsp; 6 &times; 8') },
+          { say: 'The factors of 48 are 1, 2, 3, 4, 6, 8, 12, 16, 24 and 48. Factors come in pairs.', fig: function () { return rainbow(48); }, ms: 2600 }
+        ]),
         key: '<p><b>Factors come in pairs.</b> Test 1, 2, 3, ... until the pairs meet.</p>',
         mistake: '<p>Stopping too early and missing a pair, such as 4 &times; 9 for 36. The rainbow shows a gap when a pair is missing.</p>',
         check: [function () { var n = R.pick([24, 30, 36, 40, 48]), f = factors(n), bad = R.pick([5, 7, 9, 11].filter(function (x) { return n % x; })); return mc('Which is <b>not</b> a factor of ' + n + '?', String(bad), R.shuffle(f.filter(function (x) { return x > 1 && x < n; })).slice(0, 3).map(String), 'Does it divide ' + n + ' with no remainder?', n + ' &divide; ' + bad + ' has a remainder. Factors of ' + n + ': ' + f.join(', ') + '.'); }] },
@@ -383,6 +451,12 @@
           { say: 'GCF of 24 and 36. List the factors of 24.', fig: eq('24: 1, 2, 3, 4, 6, 8, 12, 24') },
           { say: 'List the factors of 36.', fig: eq('24: 1, 2, 3, 4, 6, 8, 12, 24<br>36: 1, 2, 3, 4, 6, 9, 12, 18, 36') },
           { say: 'The biggest number in both lists is <b>12</b>.', fig: eq('24: 1, 2, 3, 4, 6, 8, <b>12</b>, 24<br>36: 1, 2, 3, 4, 6, 9, <b>12</b>, 18, 36'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find the GCF of 18 and 30. First I list the factors of 18.', fig: eq('18: 1, 2, 3, 6, 9, 18') },
+          { say: 'Next I list the factors of 30.', fig: eq('18: 1, 2, 3, 6, 9, 18<br>30: 1, 2, 3, 5, 6, 10, 15, 30') },
+          { say: 'I look for numbers in both lists: 1, 2, 3 and 6.', fig: eq('18: <b>1, 2, 3, 6</b>, 9, 18<br>30: <b>1, 2, 3</b>, 5, <b>6</b>, 10, 15, 30') },
+          { say: 'The biggest one is <b>6</b>. So the GCF of 18 and 30 is 6.', fig: eq('GCF of 18 and 30 = 6'), ms: 2400 }
         ]),
         try: lab('gcf', [
           { do: 'Find two numbers with a GCF of <b>12</b>.', goal: function (h) { return gcd(+K.v(h, 'gca'), +K.v(h, 'gcb')) === 12; }, yes: 'Both are multiples of 12, and nothing bigger divides both.' },
@@ -398,6 +472,12 @@
           { say: 'Put the shared primes in the middle of a Venn diagram.', fig: function () { return venn(24, 36).svg; } },
           { say: 'Multiply the shared primes: 2 &times; 2 &times; 3 = 12.', fig: eq('GCF = 2 &times; 2 &times; 3 = 12'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will find the GCF of 40 and 60. First I break each number into primes.', fig: eq('40 = 2 &times; 2 &times; 2 &times; 5<br>60 = 2 &times; 2 &times; 3 &times; 5') },
+          { say: 'I put the primes they share in the middle: 2, 2 and 5.', fig: function () { return venn(40, 60).svg; } },
+          { say: 'I multiply the shared primes: 2 &times; 2 &times; 5 = 20.', fig: eq('GCF = 2 &times; 2 &times; 5 = 20') },
+          { say: 'I check: 40 &divide; 20 = 2 and 60 &divide; 20 = 3. So the GCF is <b>20</b>.', fig: eq('40 &divide; 20 = 2 &nbsp;&nbsp; 60 &divide; 20 = 3'), ms: 2400 }
+        ]),
         ways: [{ label: 'Equal groups', html: '<p>24 pencils and 36 erasers go into identical kits with nothing left over. The most kits is the GCF, 12: each kit gets 2 pencils and 3 erasers.</p>' }],
         key: '<p><b>GCF = product of the shared prime factors.</b></p>',
         mistake: '<p>Multiplying all the primes of both numbers. That gives a multiple, not a factor.</p>',
@@ -410,6 +490,12 @@
           { say: 'Skip count by 4: 4, 8, 12, 16 ...', fig: function () { return hops([4]); } },
           { say: 'Skip count by 6: 6, 12, 18 ...', fig: function () { return hops([4, 6]); } },
           { say: 'They first land together on 12. The LCM of 4 and 6 is <b>12</b>.', fig: function () { return hops([4, 6]); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find the LCM of 6 and 8.', fig: eq('LCM of 6 and 8 = ?') },
+          { say: 'I skip count by the bigger number, 8: 8, 16, 24 ...', fig: function () { return hops([8]); } },
+          { say: 'I check each one. Does 6 go into 8? No. Into 16? No. Into 24? Yes: 6 &times; 4 = 24.', fig: eq('8 &nbsp; 16 &nbsp; <b>24</b>') },
+          { say: 'I can see it: 6s and 8s first land together on 24. The LCM is <b>24</b>.', fig: function () { return hops([6, 8]); }, ms: 2400 }
         ]),
         try: lab('lcm', [
           { do: 'Make two jumps that first meet at <b>24</b>.', goal: function (h) { var a = K.v(h, 'lca'), b = K.v(h, 'lcb'), c = K.v(h, 'lcc'); return [a, b].concat(c ? [c] : []).reduce(lcm) === 24; }, yes: 'Yes, the LCM is 24.' },
@@ -424,6 +510,13 @@
           { say: 'Bus A leaves every 8 minutes. Bus B every 12. When do they leave together again?', fig: eq('8, 16, <b>24</b> &nbsp;&nbsp; 12, <b>24</b>') },
           { say: '"Together again" means line up: LCM. 24 minutes.', fig: function () { return hops([8, 12]); } },
           { say: '24 pencils and 36 erasers into identical kits. The most kits? That is splitting: GCF, 12.', fig: function () { return venn(24, 36).svg; }, ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Hot dogs come in packs of 10. Buns come in packs of 8. I want the same number of each.', fig: eq('10, 20, 30, 40 &nbsp;&nbsp; 8, 16, 24, 32, 40') },
+          { say: 'The two counts have to meet, so I need the LCM. They first meet at <b>40</b>.', fig: function () { return hops([8, 10]); } },
+          { say: 'Next: 18 apples and 24 pears go into identical bags. What is the most bags I can make?', fig: eq('18 apples &nbsp;&nbsp; 24 pears') },
+          { say: 'This is splitting into groups, so I need the GCF. They share the primes 2 and 3: 2 &times; 3 = <b>6</b> bags.', fig: function () { return venn(18, 24).svg; } },
+          { say: 'Split into groups: GCF. Meet again: LCM.', fig: eq('split &rarr; GCF &nbsp;&nbsp; meet again &rarr; LCM'), ms: 2400 }
         ]),
         ways: [{ label: 'A quick test', html: '<p>Should the answer be <b>smaller</b> than the numbers (a share)? Use the GCF. <b>Bigger</b> (a time or amount you reach)? Use the LCM.</p>' }],
         key: '<p><b>Split into groups: GCF. Meet again: LCM.</b></p>',

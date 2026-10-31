@@ -110,7 +110,7 @@
 @media (max-width:560px){.mp-dh .lg{display:none}.mp-dh .sm{display:inline}.mp-dk{--s:32px}.mp-dmat{gap:3px;padding:6px 4px}}
 
 /* ---------- frames (Watch clips from drawings) ---------- */
-.mp-scene{min-height:120px;display:flex;align-items:center;justify-content:center;padding:6px 0}
+.mp-scene{min-height:120px;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:6px 0}
 .mp-scene>*{max-width:100%}
 .mp-scene svg{display:block;max-width:100%;height:auto;margin:0 auto}
 .mp-scene .mp-new{animation:mp-in .55s cubic-bezier(.25,1.3,.5,1) both;transform-box:fill-box;transform-origin:center}

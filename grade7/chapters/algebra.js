@@ -188,6 +188,12 @@
           { say: 'The orange 3 never change. That is the initial value.', fig: function () { return tiles(2, 3, 4); } },
           { say: 'Rate: 2 each term. Initial value: 3.', fig: function () { return pgraph([{ m: 2, c: 3, col: 'var(--sc)', lab: '2n + 3' }], 6); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Here is a tile pattern. I will find its rate and its initial value.', fig: function () { return tiles(3, 1, 1); } },
+          { say: 'Term 2 has 7 tiles and term 3 has 10. Each new term adds 3 blue tiles. So the rate is 3.', fig: function () { return tiles(3, 1, 3); } },
+          { say: 'The 1 orange tile never changes. That is where it starts, at term 0. The initial value is 1.', fig: function () { return tiles(3, 1, 4); } },
+          { say: 'Rate: 3 each term. Initial value: 1. The rule is 3n + 1.', fig: function () { return pgraph([{ m: 3, c: 1, col: 'var(--sc)', lab: '3n + 1' }], 6); }, ms: 2600 }
+        ]),
         try: lab('pgmo', [
           { do: 'Make pattern A <b>start at 5</b> and <b>grow by 3</b>.', goal: function (h) { return K.v(h, 'pgm') === 3 && K.v(h, 'pgc') === 5; }, yes: 'Rule: 3n + 5.' },
           { do: 'Make A and B <b>equal at term 2</b>.', goal: function (h) { return K.v(h, 'pgm') * 2 + K.v(h, 'pgc') === K.v(h, 'pgm2') * 2 + K.v(h, 'pgc2') && K.v(h, 'pgm') !== K.v(h, 'pgm2'); }, yes: 'The lines cross at term 2.' }
@@ -203,6 +209,13 @@
           { say: 'Take 3 away: 2n = 48. Divide by 2: n = 24.', fig: eq('2<i>n</i> = 48 &nbsp; <i>n</i> = 24') },
           { say: 'Term <b>24</b> has 51 tiles.', fig: eq('2 &times; 24 + 3 = 51 &#10003;'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. The rule is 4n + 5. I will find term 8. I replace n with 8.', fig: eq('4 &times; 8 + 5 = 32 + 5 = <b>37</b>') },
+          { say: 'Next: which term has 61 tiles? I write an equation.', fig: eq('4<i>n</i> + 5 = 61') },
+          { say: 'I undo the adding: I take 5 off both sides. 4n = 56.', fig: eq('4<i>n</i> = 56') },
+          { say: 'I undo the multiplying: I divide both sides by 4. n = 14.', fig: eq('<i>n</i> = 14') },
+          { say: 'I check: 4 &times; 14 + 5 = 61. Term <b>14</b> has 61 tiles.', fig: eq('4 &times; 14 + 5 = 61 &#10003;'), ms: 2400 }
+        ]),
         ways: [
           { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><td class="l">term <i>n</i></td><td>0</td><td>1</td><td>2</td><td>3</td></tr><tr><td class="l">tiles</td><td>3</td><td>5</td><td>7</td><td>9</td></tr></tbody></table></div><p>Going across, it adds 2 each time (the rate). At term 0 it is 3 (the initial value). So the rule is 2<i>n</i> + 3.</p>' },
           { label: 'Picture the tiles', html: '<div class="fig">' + tiles(2, 3, 3) + '</div><p>Every term has the 3 orange tiles, plus 2 blue tiles for each term number: 2<i>n</i> + 3.</p>' }
@@ -217,6 +230,12 @@
           { say: 'At term 3 they are equal: 14 and 14.', fig: eq('2 &times; 3 + 8 = 14 &nbsp; 4 &times; 3 + 2 = 14') },
           { say: 'After that, B is bigger, because it grows faster.', fig: function () { return pgraph([{ m: 2, c: 8, col: 'var(--sb)', lab: 'A: 2n + 8' }, { m: 4, c: 2, col: 'var(--se)', lab: 'B: 4n + 2' }], 6); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Pattern A starts at 10 and grows by 3. Pattern B starts at 2 and grows by 5. Which is bigger?', fig: function () { return pgraph([{ m: 3, c: 10, col: 'var(--sb)', lab: 'A: 3n + 10' }, { m: 5, c: 2, col: 'var(--se)', lab: 'B: 5n + 2' }], 6); } },
+          { say: 'At the start, A is bigger: 10 is more than 2.', fig: eq('term 0: &nbsp; A = 10 &nbsp; B = 2') },
+          { say: 'I check term 4. A is 3 &times; 4 + 10 = 22. B is 5 &times; 4 + 2 = 22. They are equal.', fig: eq('3 &times; 4 + 10 = 22 &nbsp; 5 &times; 4 + 2 = 22') },
+          { say: 'After term 4, B is bigger, because it grows faster. Bigger start wins early. Bigger rate wins in the end.', fig: function () { return pgraph([{ m: 3, c: 10, col: 'var(--sb)', lab: 'A: 3n + 10' }, { m: 5, c: 2, col: 'var(--se)', lab: 'B: 5n + 2' }], 6); }, ms: 2800 }
+        ]),
         key: '<p><b>Bigger start wins early. Bigger rate wins in the end.</b></p>',
         mistake: '<p>Deciding which is bigger from the first term only. Ask what happens at term 10 or 100.</p>',
         check: [function () { return mc('Pattern A: 3<i>n</i> + 10. Pattern B: 5<i>n</i>. Which is bigger at term 20?', 'B', ['A', 'They are equal'], 'Work out both at <i>n</i> = 20.', 'A: 70. B: 100.'); }] }
@@ -229,6 +248,12 @@
           { say: 'Plus 2<i>x</i>: two more.', act: function (t) { return addx(t, 'x', 1, 2); }, ms: 700 },
           { say: 'Altogether, 5<i>x</i>.', act: null, ms: 1200 },
           { say: 'Add 4 unit tiles. They are not <i>x</i>-tiles, so they stay separate: 5<i>x</i> + 4.', act: function (t) { return addx(t, 'one', 1, 4); }, ms: 2400 }
+        ] },
+        example: { tool: 'tiles', opts: {}, steps: [
+          { say: 'My turn. I will simplify 2<i>x</i> + 3 + 4<i>x</i>. First, 2<i>x</i>: two <i>x</i>-tiles.', act: function (t) { return addx(t, 'x', 1, 2); }, ms: 700 },
+          { say: 'Then 3: three unit tiles.', act: function (t) { return addx(t, 'one', 1, 3); }, ms: 700 },
+          { say: 'Then 4<i>x</i>: four more <i>x</i>-tiles.', act: function (t) { return addx(t, 'x', 1, 4); }, ms: 700 },
+          { say: 'Only like terms combine: 2<i>x</i> + 4<i>x</i> = 6<i>x</i>. The unit tiles stay separate. So it is <b>6<i>x</i> + 3</b>.', act: null, ms: 2600 }
         ] },
         try: { tool: 'tiles', opts: {}, tasks: [
           { do: 'Build <b>4<i>x</i> + 3</b>.', goal: function (s) { return s.x === 4 && s.one === 3; }, yes: '4 <i>x</i>-tiles and 3 unit tiles. They cannot be combined.' },
@@ -249,6 +274,12 @@
           { say: 'Take 2 tiles away: 4 are left.', fig: function () { return atiles(4, 0); } },
           { say: '5<i>x</i> &minus; <i>x</i>: the lone <i>x</i> is one tile. 4<i>x</i> are left, not 5.', fig: eq('5<i>x</i> &minus; <i>x</i> = 4<i>x</i>'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will simplify 7<i>x</i> &minus; <i>x</i>.', fig: function () { return atiles(7, 0); } },
+          { say: 'The lone <i>x</i> means 1<i>x</i>: one tile. I take 1 tile away. 6 are left.', fig: function () { return atiles(6, 0); } },
+          { say: 'I subtract the numbers in front: 7 &minus; 1 = 6. So 7<i>x</i> &minus; <i>x</i> = <b>6<i>x</i></b>.', fig: eq('7<i>x</i> &minus; <i>x</i> = 6<i>x</i>') },
+          { say: 'Next, 4<i>x</i> &minus; 3<i>x</i>. 4 &minus; 3 = 1, so it is 1<i>x</i>. I write that as just <i>x</i>.', fig: eq('4<i>x</i> &minus; 3<i>x</i> = <i>x</i>'), ms: 2400 }
+        ]),
         try: lab('ltao', [
           { do: 'Show <b>5<i>x</i> &minus; 1<i>x</i></b>.', goal: function (h) { return K.v(h, 'lta') === 5 && K.v(h, 'ltop') === -1 && K.v(h, 'ltb') === 1; }, yes: '5<i>x</i> − <i>x</i> = 4<i>x</i>.' },
           { do: 'Make the answer <b>zero</b>.', goal: function (h) { return K.v(h, 'ltop') === -1 && K.v(h, 'lta') === K.v(h, 'ltb'); }, yes: 'Anything minus itself is 0.' }
@@ -264,6 +295,12 @@
           { say: 'Evaluate 4n &minus; 2.5 when n = 3.', fig: eq('4<i>n</i> &minus; 2.5, &nbsp; <i>n</i> = 3') },
           { say: 'Replace n with 3, and write the times sign.', fig: eq('4 &times; 3 &minus; 2.5') },
           { say: 'Multiply first: 12. Then subtract: <b>9.5</b>.', fig: eq('12 &minus; 2.5 = 9.5'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will evaluate 2.5n &minus; 4 when n = 6.', fig: eq('2.5<i>n</i> &minus; 4, &nbsp; <i>n</i> = 6') },
+          { say: 'I replace n with 6, and I write the times sign.', fig: eq('2.5 &times; 6 &minus; 4') },
+          { say: 'BEDMAS: I multiply first. 2.5 &times; 6 = 15.', fig: eq('15 &minus; 4') },
+          { say: 'Then I subtract: 15 &minus; 4 = <b>11</b>.', fig: eq('= 11'), ms: 2400 }
         ]),
         try: lab('evx', [
           { do: 'Evaluate <b>3n + 2</b> when <b>n = 4</b>.', goal: function (h) { return K.v(h, 'evx') === '3,2' && K.v(h, 'evn') === 4; }, yes: '3 × 4 + 2 = 14.' },
@@ -309,6 +346,13 @@
           { say: 'Take 3 off both sides: 3x = 15. Divide by 3: x = 5.', fig: eq('3<i>x</i> = 15 &nbsp; <i>x</i> = 5') },
           { say: 'With decimals: 2x + 1.5 = 9.5 gives 2x = 8, so x = 4.', fig: eq('2<i>x</i> + 1.5 = 9.5 &rarr; <i>x</i> = 4'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will solve 4x &minus; 2 + x = 18. There are two x terms.', fig: eq('4<i>x</i> &minus; 2 + <i>x</i> = 18') },
+          { say: 'First I tidy up. I combine 4x and x: 5x &minus; 2 = 18.', fig: eq('5<i>x</i> &minus; 2 = 18') },
+          { say: 'I undo the subtracting: I add 2 to both sides. 5x = 20.', fig: eq('5<i>x</i> = 20') },
+          { say: 'I undo the multiplying: I divide both sides by 5. <b>x = 4</b>.', fig: eq('<i>x</i> = 4') },
+          { say: 'I check: 4 &times; 4 &minus; 2 + 4 = 18. It works.', fig: eq('16 &minus; 2 + 4 = 18 &#10003;'), ms: 2400 }
+        ]),
         key: '<p><b>Tidy up (combine like terms), then solve.</b></p>',
         mistake: '<p>Forgetting the lone <i>x</i> when combining: 2<i>x</i> + <i>x</i> = 2<i>x</i>.</p>',
         check: [function () { return { q: 'Solve: 2<i>x</i> + 4 + 2<i>x</i> = 24. What is <i>x</i>?', type: 'num', answer: 5, hint: 'Combine: 4<i>x</i> + 4 = 24.', explain: '4<i>x</i> = 20, so <i>x</i> = 5.' }; }, K.ck('al-solve', 3)] }
@@ -320,6 +364,12 @@
           { say: 'x &gt; 2: every number bigger than 2. The open dot means 2 itself is not included.', fig: function () { return ineqLine('>', 2); } },
           { say: 'x &ge; 2: now 2 is included. The dot is closed.', fig: function () { return ineqLine('>=', 2); } },
           { say: 'x &lt; &minus;1: everything to the left of &minus;1.', fig: function () { return ineqLine('<', -1); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will show x &le; 4 on a number line. &le; means less than or equal to.', fig: eq('<i>x</i> &le; 4') },
+          { say: '4 is included, so I draw a closed dot at 4. Less than means I go to the left.', fig: function () { return ineqLine('<=', 4); } },
+          { say: 'Next, x &gt; &minus;3. &minus;3 is not included, so the dot is open. Greater than means I go to the right.', fig: function () { return ineqLine('>', -3); } },
+          { say: 'Open dot: not included. Closed dot: included.', fig: eq('<i>x</i> &le; 4: closed dot &nbsp;&nbsp; <i>x</i> &gt; &minus;3: open dot'), ms: 2400 }
         ]),
         try: lab('iqop', [
           { do: 'Graph <b><i>x</i> &le; 4</b>.', goal: function (h) { return K.v(h, 'iqop') === '<=' && K.v(h, 'iqv') === 4; }, yes: 'Closed dot at 4, arrow to the left.' },
@@ -335,6 +385,12 @@
           { say: 'Take 2 off both sides: 6t &le; 18.', fig: eq('6<i>t</i> &le; 18') },
           { say: 'Divide by 6: t &le; 3.', fig: function () { return ineqLine('<=', 3, -1, 8); } },
           { say: 'Check: t = 3 costs $20, fine. t = 4 costs $26, too much. You can buy 0 to 3 tickets.', fig: eq('<i>t</i> = 3: 20 &le; 20 &#10003; &nbsp; <i>t</i> = 4: 26 &le; 20 &#10007;'), ms: 3000 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I have $29. Books cost $5 each, and shipping is $4. How many books can I buy?', fig: eq('5<i>b</i> + 4 &le; 29') },
+          { say: 'I solve it like an equation. I take 4 off both sides: 5b &le; 25.', fig: eq('5<i>b</i> &le; 25') },
+          { say: 'I divide both sides by 5: b &le; 5.', fig: function () { return ineqLine('<=', 5, -1, 9); } },
+          { say: 'I test a value on each side. b = 5 costs $29: fine. b = 6 costs $34: too much. I can buy 0 to 5 books.', fig: eq('<i>b</i> = 5: 29 &le; 29 &#10003; &nbsp; <i>b</i> = 6: 34 &le; 29 &#10007;'), ms: 3000 }
         ]),
         ways: [
           { label: 'Solve the equation first', html: '<p>Pretend it is 6<i>t</i> + 2 = 20: <i>t</i> = 3. Then ask: do bigger or smaller values work? Smaller ones cost less, so <i>t</i> &le; 3.</p>' },
@@ -353,6 +409,12 @@
           { say: 'Trace it: 4, then 7, 10, 13, 16. It shows 16.', fig: eq('4 &rarr; 7 &rarr; 10 &rarr; 13 &rarr; 16') },
           { say: 'This code makes the pattern 3n + 4. To repeat 100 times, change one number.', fig: eq('3<i>n</i> + 4'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will trace this loop. It starts with total = 10.', fig: mono('total = 10\nrepeat 5 times:\n    total = total &minus; 2\nshow total') },
+          { say: 'Each time through, it takes 2 away. First time: 8. Second time: 6.', fig: eq('10 &rarr; 8 &rarr; 6') },
+          { say: 'Third time: 4. Fourth: 2. Fifth: 0. The loop is done.', fig: eq('10 &rarr; 8 &rarr; 6 &rarr; 4 &rarr; 2 &rarr; 0') },
+          { say: 'It shows <b>0</b>. This code makes the pattern 10 &minus; 2n.', fig: eq('10 &minus; 2<i>n</i>'), ms: 2600 }
+        ]),
         try: lab('cdso', [
           { do: 'Change the code so it shows <b>25</b>.', goal: function (h) { return Math.abs(K.v(h, 'cds') + K.v(h, 'cdr') * K.v(h, 'cdp') - 25) < 1e-9; }, yes: 'Start + repeats × step = 25.' },
           { do: 'Make the total go <b>down</b> each time.', goal: function (h) { return K.v(h, 'cdp') < 0; }, yes: 'Adding a negative number makes it shrink.' }
@@ -367,6 +429,12 @@
           { say: 'Use it twice: for $20 and for $50.', fig: mono('show addTax(20)\nshow addTax(50)') },
           { say: '20 + 2.6 = 22.6, and 50 + 6.5 = 56.5.', fig: eq('22.6 &nbsp;&nbsp; 56.5') },
           { say: 'If the tax changes, edit one line and every use updates.', fig: mono('define addTax(price):\n    return price + price &times; <b>0.15</b>'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. This sub-program finds the area of a rectangle.', fig: mono('define area(length, width):\n    return length &times; width') },
+          { say: 'I use it twice: for a 4 by 6 rectangle, and for a 2.5 by 8 rectangle.', fig: mono('show area(4, 6)\nshow area(2.5, 8)') },
+          { say: 'First use: 4 &times; 6 = 24. Second use: 2.5 &times; 8 = 20.', fig: eq('24 &nbsp;&nbsp; 20') },
+          { say: 'I wrote it once and used it twice. For a 12 by 3 rectangle, I just use it again: 36.', fig: mono('show area(12, 3) &rarr; 36'), ms: 2600 }
         ]),
         key: '<p><b>Write it once, use it many times.</b></p>',
         mistake: '<p>Copying the same steps in many places. When one copy is fixed, the others stay wrong.</p>',

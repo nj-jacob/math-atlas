@@ -133,6 +133,12 @@
           { say: 'Ten of the cubes slide together to make <b>1 ten</b>.', act: function (t) { return t.group('o'); }, ms: 800 },
           { say: '1 ten and 3 ones. That is <b>13</b>.', act: function (t) { return t.countAll(380); }, ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: 'My turn. I count some one cubes: 1, 2, 3 ... all the way to 10.', act: function (t) { return t.add('o', 10, 200); }, ms: 800 },
+          { say: 'I have 10 ones. I snap them together to make <b>1 ten</b>.', act: function (t) { return t.group('o'); }, ms: 1000 },
+          { say: 'I put 1 more cube next to it.', act: function (t) { return t.add('o', 1); }, ms: 900 },
+          { say: '1 ten and 1 one. That is <b>11</b>. 10 ones = 1 ten.', ms: 1800 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true }, tasks: [
           { do: 'Tap <b>+ 1</b> until there are 10 ones. Then press <b>Group 10 ones</b>.', goal: function (s) { return s.t >= 1; }, yes: 'Yes. 10 ones became 1 ten.' },
           { do: 'Now make <b>1 ten and 6 ones</b>.', reset: false, goal: function (s) { return s.t === 1 && s.o === 6; }, yes: '1 ten and 6 ones make 16.' }
@@ -147,6 +153,12 @@
           { say: 'Count on the ones: 31, 32, 33, 34.', act: function (t) { return t.lightKind('o', 550); }, ms: 400 },
           { say: '3 tens and 4 ones make <b>34</b>.', ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 2, o: 7 }, steps: [
+          { say: 'My turn. How many? I start with the tens.', ms: 1100 },
+          { say: 'I count the rods by tens: 10, 20.', act: function (t) { return t.lightKind('t', 650); }, ms: 400 },
+          { say: 'I count on the ones: 21, 22, 23, 24, 25, 26, 27.', act: function (t) { return t.lightKind('o', 450); }, ms: 400 },
+          { say: '2 tens and 7 ones make <b>27</b>. I counted the tens first, then the ones.', ms: 1800 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 2, o: 5 }, tasks: [
           { do: '<b>Tap each block</b> to count it. Start with the tens.', reset: false, goal: function (s) { return s.allLit; }, yes: 'You counted them all: 25.' },
           { do: 'Make <b>42</b> with the blocks.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 42 && s.o < 10; }, yes: '4 tens and 2 ones make 42.' }
@@ -160,6 +172,12 @@
           { say: 'Build 34. The 3 is in the tens place: 3 tens.', act: function (t) { return t.add('t', 3, 420); }, ms: 600 },
           { say: 'The 4 is in the ones place: 4 ones.', act: function (t) { return t.add('o', 4, 320); }, ms: 600 },
           { say: 'The 3 is worth 30. The 4 is worth 4. 30 and 4 make <b>34</b>.', act: function (t) { return t.lightKind('t', 300); }, ms: 1800 }
+        ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: 'My turn. I will build 43.', ms: 1000 },
+          { say: 'The first digit is 4. It is in the tens place, so I take <b>4 tens</b>.', act: function (t) { return t.add('t', 4, 380); }, ms: 700 },
+          { say: 'The last digit is 3. It is in the ones place, so I take <b>3 ones</b>.', act: function (t) { return t.add('o', 3, 320); }, ms: 700 },
+          { say: 'The 4 is worth 40. The 3 is worth 3. 40 and 3 make <b>43</b>.', act: function (t) { return t.lightKind('t', 300); }, ms: 1800 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true }, tasks: [
           { do: 'Build the number with <b>2 tens</b> and <b>9 ones</b>.', goal: function (s) { return s.t === 2 && s.o === 9; }, yes: '2 tens and 9 ones is 29.' },
@@ -177,6 +195,12 @@
           { say: 'Add one more ten.', act: function (t) { return t.add('t', 1); }, ms: 800 },
           { say: 'Now 2 tens and 8 ones: <b>28</b>. The ones did not change.', ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 3, o: 5 }, steps: [
+          { say: 'My turn. What is ten more than 35?', ms: 1200 },
+          { say: 'I see 3 tens and 5 ones. To find ten more, I add one ten.', act: function (t) { return t.add('t', 1); }, ms: 1000 },
+          { say: 'Now there are 4 tens and 5 ones: <b>45</b>.', ms: 1300 },
+          { say: 'The ones stayed 5. Ten more than 35 is 45.', ms: 1700 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 2, o: 3 }, tasks: [
           { do: 'This is 23. Show <b>ten more</b>.', reset: false, goal: function (s) { return s.value === 33 && s.o === 3; }, yes: 'Ten more than 23 is 33.' },
           { do: 'Show <b>ten more</b> again.', reset: false, goal: function (s) { return s.value === 43 && s.o === 3; }, yes: 'Ten more than 33 is 43. Only the tens digit changed.' }
@@ -190,6 +214,12 @@
           { say: 'Here is 36: 3 tens and 6 ones.', ms: 1400 },
           { say: 'Take away one ten.', act: function (t) { return t.remove('t', 1); }, ms: 800 },
           { say: 'Now 2 tens and 6 ones: <b>26</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 4, o: 2 }, steps: [
+          { say: 'My turn. What is ten less than 42?', ms: 1200 },
+          { say: 'I see 4 tens and 2 ones. To find ten less, I take away one ten.', act: function (t) { return t.remove('t', 1); }, ms: 1000 },
+          { say: 'Now there are 3 tens and 2 ones: <b>32</b>.', ms: 1300 },
+          { say: 'The ones stayed 2. Ten less than 42 is 32.', ms: 1700 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 4, o: 7 }, tasks: [
           { do: 'This is 47. Show <b>ten less</b>.', reset: false, goal: function (s) { return s.value === 37 && s.o === 7; }, yes: 'Ten less than 47 is 37.' },
@@ -208,6 +238,12 @@
           { say: 'Split them into two parts, red and yellow.', act: function (t) { return t.arrange('pairs'); }, ms: 900 },
           { say: 'Many ways work: 4 and 5, 6 and 3, 8 and 1. The whole is still 9.', act: function (t) { return t.arrange('row'); }, ms: 2000 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Here are 6 counters. 6 is the whole.', act: function (t) { return t.show(A.draw.frames(6, { c: 30, label: '6 red counters' })); }, ms: 1300 },
+          { say: 'I split them into two parts: 2 red and 4 yellow.', act: function (t) { return t.show(mat(6, 2)); }, ms: 1500 },
+          { say: 'I can split them another way: 5 red and 1 yellow.', act: function (t) { return t.show(mat(6, 5)); }, ms: 1500 },
+          { say: '2 and 4 make 6. 5 and 1 make 6. The two <b>parts</b> together make the <b>whole</b>.', ms: 1900 }
+        ] },
         try: { tool: 'tenframe', opts: { two: true }, tasks: [
           { do: 'Make <b>8</b> with two colours: some red, some yellow. Tap a box once for red, twice for yellow.', goal: function (s) { return s.n === 8 && s.a > 0 && s.b > 0; }, yes: function (s) { return s.a + ' and ' + s.b + ' make 8.'; } },
           { do: 'Make <b>8</b> a different way.', setup: function () {}, goal: function (s) { return s.n === 8 && s.a > 0 && s.b > 0; }, yes: function (s) { return s.a + ' and ' + s.b + ' also make 8.'; } }
@@ -221,6 +257,12 @@
           { say: 'Fill the empty boxes to find the other part: 7, 8, 9, 10.', act: function (t) { return t.fill(10, 500); }, ms: 600 },
           { say: 'We added <b>4</b>. So 10 is 6 and 4.', ms: 1800 }
         ] },
+        example: { tool: 'tenframe', opts: { n: 2 }, steps: [
+          { say: 'My turn. The whole is 10. One part is 2. What is the other part?', ms: 1500 },
+          { say: 'I fill the empty boxes and count them: 1, 2, 3, 4, 5, 6, 7, 8.', act: function (t) { return t.fill(10, 380); }, ms: 700 },
+          { say: 'I filled <b>8</b> boxes. So the other part is 8.', ms: 1300 },
+          { say: '10 take away 2 leaves 8. I check: 2 and 8 make 10.', ms: 1800 }
+        ] },
         try: { tool: 'tenframe', opts: { n: 3 }, tasks: [
           { do: 'The whole is 10. One part is 3. Fill boxes to find the other part.', reset: false, goal: function (s) { return s.full; }, yes: '3 and 7 make 10. The missing part is 7.' }
         ] },
@@ -232,6 +274,12 @@
           { say: 'This is 25: 2 tens and 5 ones.', ms: 1400 },
           { say: 'Break one ten into 10 ones.', act: function (t) { return t.split('t'); }, ms: 900 },
           { say: 'Now 1 ten and 15 ones. Count them: still <b>25</b>.', act: function (t) { return t.countAll(200); }, ms: 1800 }
+        ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 4, o: 1 }, steps: [
+          { say: 'My turn. This is 41: 4 tens and 1 one.', ms: 1400 },
+          { say: 'I break one ten into 10 ones.', act: function (t) { return t.split('t'); }, ms: 1000 },
+          { say: 'Now there are 3 tens and 11 ones. I count them all to check.', act: function (t) { return t.countAll(160); }, ms: 900 },
+          { say: 'Still <b>41</b>. Trading a ten for 10 ones does not change the number.', ms: 1900 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 3, o: 2 }, tasks: [
           { do: 'Show <b>32</b> with <b>more than 9 ones</b>. Use Break a ten.', reset: false, goal: function (s) { return s.value === 32 && s.o > 9; }, yes: function (s) { return s.t + ' ten and ' + s.o + ' ones is still 32.'; } },
@@ -254,6 +302,12 @@
           { say: '31 has <b>3 tens</b>. 28 has <b>2 tens</b>.', act: function (t) { return t.glow('figure:first-child svg'); }, ms: 1600 },
           { say: '3 tens is more than 2 tens. So <b>31 is greater</b>. The ones do not matter here.', ms: 2200 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which is greater, 19 or 32?', act: function (t) { return t.show(pair(19, 32)); }, ms: 1500 },
+          { say: 'I look at the tens first. 19 has <b>1 ten</b>. 32 has <b>3 tens</b>.', act: function (t) { return t.glow('figure svg', 600); }, ms: 1600 },
+          { say: '3 tens is more than 1 ten. So <b>32 is greater</b>.', ms: 1500 },
+          { say: 'More tens means greater. I do not need the ones.', ms: 1700 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'a', html: blocksCard(24) }, { id: 'b', html: blocksCard(41) }] }, tasks: [
           { do: 'Tap the <b>greater</b> number.', goal: function (s) { return s.picked[0] === 'b'; }, yes: '41 has 4 tens. 24 has 2 tens. 41 is greater.' }
         ] },
@@ -266,6 +320,12 @@
           { say: 'Both have 4 tens. The same.', ms: 1400 },
           { say: 'Ones: 5 and 2. 5 is more, so <b>45 is greater</b>.', ms: 2000 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which is greater, 26 or 29?', act: function (t) { return t.show(pair(26, 29)); }, ms: 1500 },
+          { say: 'I look at the tens first. Both have 2 tens. That is the same.', ms: 1500 },
+          { say: 'So I look at the ones: 6 and 9. 9 is more.', ms: 1500 },
+          { say: '<b>29 is greater</b>. Same tens? The one with more ones is greater.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'a', html: blocksCard(37) }, { id: 'b', html: blocksCard(33) }] }, tasks: [
           { do: 'Tap the <b>greater</b> number.', goal: function (s) { return s.picked[0] === 'a'; }, yes: 'Both have 3 tens. 7 ones is more than 3 ones, so 37 is greater.' }
         ] },
@@ -277,6 +337,12 @@
           { say: '14 is 1 ten and 4 ones.', act: function (t) { return t.set(0, 1, 4); }, ms: 1600 },
           { say: '41 is 4 tens and 1 one.', act: function (t) { return t.set(0, 4, 1); }, ms: 1600 },
           { say: '41 has many more blocks. <b>41 is greater</b>.', act: function (t) { return t.countAll(150); }, ms: 1800 }
+        ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: 'My turn. 25 and 52 use the same digits. Which is greater?', ms: 1500 },
+          { say: 'I build 25: the first digit says 2 tens, then 5 ones.', act: function (t) { return t.set(0, 2, 5); }, ms: 1500 },
+          { say: 'I build 52: the first digit says 5 tens, then 2 ones.', act: function (t) { return t.set(0, 5, 2); }, ms: 1500 },
+          { say: '5 tens is more than 2 tens. <b>52 is greater</b>. The first digit counts tens, so it matters most.', ms: 2000 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'a', html: '<span class="big">23</span>' }, { id: 'b', html: '<span class="big">32</span>' }] }, tasks: [
           { do: 'Tap the number that has <b>3 tens</b>.', goal: function (s) { return s.picked[0] === 'b'; }, yes: '32 has 3 tens and 2 ones. 23 has only 2 tens.' }
@@ -300,6 +366,13 @@
           { say: '35 is further right.', act: function (t) { return t.mark(35, '35'); }, ms: 800 },
           { say: 'Left to right: <b>12, 27, 35</b>. Least to greatest.', ms: 1800 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 10, start: 0 }, steps: [
+          { say: 'My turn. I will put 44, 8 and 21 in order.', ms: 1300 },
+          { say: 'I find 8. It is near the start, on the left.', act: function (t) { return t.mark(8, '8'); }, ms: 900 },
+          { say: 'I find 21. It is a little past 20.', act: function (t) { return t.mark(21, '21'); }, ms: 900 },
+          { say: 'I find 44. It is far to the right, near 50.', act: function (t) { return t.mark(44, '44'); }, ms: 900 },
+          { say: 'I read left to right: <b>8, 21, 44</b>. 8 is the least. 44 is the greatest.', ms: 1900 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 10, start: 25 }, tasks: [
           { do: 'Move the dot to the <b>least</b> of 18, 9 and 31.', goal: function (s) { return s.at === 9; }, yes: '9 is furthest left, so it is the least.' },
           { do: 'Now move it to the <b>greatest</b> of 18, 9 and 31.', reset: false, goal: function (s) { return s.at === 31; }, yes: '31 is furthest right, so it is the greatest.' }
@@ -313,6 +386,12 @@
           { say: 'The fewest tens: 15. It goes first.', act: function (t) { return t.pick('15'); }, ms: 900 },
           { say: 'Next, 28.', act: function (t) { return t.pick('28'); }, ms: 900 },
           { say: 'The most tens: 42. Least to greatest: <b>15, 28, 42</b>.', act: function (t) { return t.pick('42'); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1pick', opts: { items: [{ id: '30', html: blocksCard(30) }, { id: '13', html: blocksCard(13) }, { id: '26', html: blocksCard(26) }] }, steps: [
+          { say: 'My turn. I will put 30, 13 and 26 in order, least to greatest.', ms: 1500 },
+          { say: 'I find the least first. 13 has the fewest tens: just 1. It goes first.', act: function (t) { return t.pick('13'); }, ms: 1100 },
+          { say: 'Next: 26 has 2 tens.', act: function (t) { return t.pick('26'); }, ms: 1000 },
+          { say: '30 has the most tens, so it goes last. <b>13, 26, 30</b>. Least first, greatest last.', act: function (t) { return t.pick('30'); }, ms: 1900 }
         ] },
         try: { tool: 'g1pick', opts: { items: [{ id: '33', html: '<span class="big">33</span>' }, { id: '19', html: '<span class="big">19</span>' }, { id: '40', html: '<span class="big">40</span>' }, { id: '7', html: '<span class="big">7</span>' }], readout: function (s) { return s.n ? '<p>Your order: <b>' + s.picked.join(', ') + '</b></p>' : '<p class="t2">Tap from least to greatest.</p>'; } }, tasks: [
           { do: 'Tap the numbers in order from <b>least to greatest</b>. Tap a number again to undo it.', goal: function (s) { return s.picked.join(',') === '7,19,33,40'; }, yes: '7, 19, 33, 40. Least to greatest.' }

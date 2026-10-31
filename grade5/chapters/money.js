@@ -164,6 +164,12 @@
           { say: 'Credit: the bank pays now, and you pay the bank back later with interest.', fig: an(debitCredit()) },
           { say: 'E-transfers and direct deposits move money between accounts with no cash at all.', fig: an(flow([['Neighbour', 'pays $20', 'var(--ink2)'], ['Maya&rsquo;s bank', 'gets $20', 'var(--good)'], ['Store', 'debit $8', 'var(--bad)']], ['e-transfer', 'debit card'])), ms: 2400 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I have $50 in my bank account. I buy a $30 jacket with my debit card.', fig: an(flow([['My account', '$50', 'var(--ink2)'], ['Store', 'gets $30', 'var(--good)']], ['debit card'])), ms: 2000 },
+          { say: 'Debit spends my own money now. $30 leaves my account right away, so $20 is left.', fig: an(flow([['My account', '$20 left', 'var(--ink2)'], ['Store', 'gets $30', 'var(--good)']], ['debit card'])), ms: 2200 },
+          { say: 'If I use a credit card instead, the bank pays the $30 now.', fig: an(debitCredit()), ms: 1800 },
+          { say: 'Credit spends the bank&rsquo;s money now. I must pay it back later, and interest is added if I pay late.', fig: an(debitCredit()), ms: 2400 }
+        ]),
         try: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200, 500, 1000, 2000] }, tasks: [
           { do: 'Pay exactly <b>$12.35</b> in cash, using as few bills and coins as you can.', goal: function (s) { return s.total === 1235 && s.n <= 5; }, yes: 'Yes. $10 + $2 + 25¢ + 10¢.' }
         ] },
@@ -181,6 +187,12 @@
           { say: '3% more is $0.60. So 13% is $2.60.', fig: an(receipt([['Book', 2000], ['10%', 200], ['3%', 60], ['HST 13%', 260, 1, 'var(--bad)']], 'Receipt')) },
           { say: 'Total at the till: <b>$22.60</b>.', fig: an(receipt([['Book', 2000], ['HST 13%', 260, 0, 'var(--bad)'], ['Total', 2260, 1]], 'Receipt')), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I buy $40.00 shoes. The subtotal is $40.00.', fig: an(receipt([['Shoes', 4000], ['Subtotal', 4000, 1]], 'Receipt')), ms: 1600 },
+          { say: 'First I find 10%. I move the decimal point one place left: $4.00.', fig: an(receipt([['Shoes', 4000], ['10%', 400]], 'Receipt')), ms: 1800 },
+          { say: 'Next I find 3%: 3 &times; $0.40 = $1.20. So 13% is $4.00 + $1.20 = $5.20.', fig: an(receipt([['Shoes', 4000], ['10%', 400], ['3%', 120], ['HST 13%', 520, 1, 'var(--bad)']], 'Receipt')), ms: 2200 },
+          { say: 'Subtotal + HST = total. $40.00 + $5.20 = <b>$45.20</b>.', fig: an(receipt([['Shoes', 4000], ['HST 13%', 520, 0, 'var(--bad)'], ['Total', 4520, 1]], 'Receipt')), ms: 2200 }
+        ]),
         try: K.widget('money', 0, 'Nice. Switch to cash and watch the total round to the nearest 5 cents.'),
         ways: [
           { label: 'Where tax goes', html: '<div class="fig">' + hstSplit(2000) + '</div><p>5% goes to Canada and 8% to Ontario.</p>' },
@@ -197,6 +209,12 @@
           { say: 'It is 2&cent; from $4.95 and 3&cent; from $5.00, so it rounds to <b>$4.95</b>.', fig: an(cashLine(497)) },
           { say: 'You pay with a $10 bill. Count up: $4.95 + $0.05 = $5.00.', fig: an(countUp(495, 1000)) },
           { say: 'Then $5.00 more to $10.00. Change: <b>$5.05</b>.', fig: an(countUp(495, 1000)), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. My cash total is $3.42. It sits between $3.40 and $3.45.', fig: an(cashLine(342)), ms: 1600 },
+          { say: 'It ends in 2, so I round down. It is 2&cent; from $3.40, so I pay <b>$3.40</b>.', fig: an(cashLine(342)), ms: 2000 },
+          { say: 'I pay with a $5 bill. I count up: $3.40 + $0.60 = $4.00.', fig: an(countUp(340, 500)), ms: 1800 },
+          { say: 'Then $1.00 more to $5.00. My change is $0.60 + $1.00 = <b>$1.60</b>.', fig: an(countUp(340, 500)), ms: 2200 }
         ]),
         try: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200, 500] }, tasks: [
           { do: 'The total is $4.95 and you paid $10.00. Put the <b>change</b> on the mat.', goal: function (s) { return s.total === 505; }, yes: 'Yes. $5.05 in change.' },
@@ -216,6 +234,12 @@
           { say: 'Needs take $15.', fig: an(budgetBar(40, [15, 10, 15], 2)) },
           { say: 'That leaves $15 for wants. 15 + 10 + 15 = 40: <b>balanced</b>.', fig: an(budgetBar(40, [15, 10, 15])), ms: 2400 }
         ]),
+        example: K.watch([
+          { say: 'My turn. My income this month is $60.', fig: an(flow([['Income', '$60', 'var(--ink2)']], [])), ms: 1400 },
+          { say: 'I pay myself first: $15 goes into savings.', fig: an(flow([['Income', '$60', 'var(--ink2)'], ['1. Savings', '$15', 'var(--sd)']], ['first'])) },
+          { say: 'Next my needs take $25. I work out what is left: 60 &minus; 15 &minus; 25 = 20.', fig: an(budgetBar(60, [25, 15, 20], 2)), ms: 2000 },
+          { say: 'That leaves $20 for wants. 25 + 15 + 20 = 60: <b>balanced</b>. Needs + savings + wants = income.', fig: an(budgetBar(60, [25, 15, 20])), ms: 2600 }
+        ]),
         try: K.widget('money', 1, 'Good. Make the plan add up exactly to the income.'),
         key: '<p><b>Needs + savings + wants = income.</b> Save first, then spend what is left.</p>',
         mistake: '<p>Spending first and saving "whatever is left", which is usually nothing. Set the savings aside the day money comes in.</p>',
@@ -230,6 +254,12 @@
           { say: 'After one month, 2% is added: you owe $102.', fig: an(oweBars([['borrow', 10000], ['+2%', 10200, 'var(--bad)']])) },
           { say: 'You pay $52. You still owe $50.', fig: an(oweBars([['borrow', 10000], ['+2%', 10200, 'var(--bad)'], ['pay $52', 5000, 'var(--good)']])) },
           { say: 'Next month 2% of $50 is added: $51. Pay more each month, and you pay less interest in total.', fig: an(oweBars([['borrow', 10000], ['+2%', 10200, 'var(--bad)'], ['pay $52', 5000, 'var(--good)'], ['+2%', 5100, 'var(--bad)']])), ms: 2600 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I borrow $200 on a card that adds 2% each month.', fig: an(oweBars([['borrow', 20000]])), ms: 1600 },
+          { say: 'After one month, 2% of $200 is $4. Now I owe $204.', fig: an(oweBars([['borrow', 20000], ['+2%', 20400, 'var(--bad)']])), ms: 1800 },
+          { say: 'I pay $104. I still owe $100.', fig: an(oweBars([['borrow', 20000], ['+2%', 20400, 'var(--bad)'], ['pay $104', 10000, 'var(--good)']])) },
+          { say: 'Next month, 2% of $100 is added: I owe $102. Interest is added to what I still owe, so paying more, sooner, costs less.', fig: an(oweBars([['borrow', 20000], ['+2%', 20400, 'var(--bad)'], ['pay $104', 10000, 'var(--good)'], ['+2%', 10200, 'var(--bad)']])), ms: 2800 }
         ]),
         try: K.widget('money', 2, 'Nice. Compare paying $20 a month to paying $100 a month.'),
         ways: [
@@ -250,6 +280,12 @@
           { say: '10 bars for $5.90: $5.90 &divide; 10 = <b>$0.59</b> each.', fig: an(items(10, 590, 'bar', 1)) },
           { say: '$0.59 is less than $0.65, so the 10-pack is the better buy, if you will eat them all.', fig: '<div class="pies g5-anim">' + items(6, 390, 'bar', 1) + items(10, 590, 'bar', 1) + '</div>', ms: 2600 }
         ]),
+        example: K.watch([
+          { say: 'My turn. Which is the better buy: 4 muffins for $5.00, or 6 muffins for $6.60?', fig: '<div class="pies g5-anim">' + items(4, 500, 'muffin') + items(6, 660, 'muffin') + '</div>', ms: 2000 },
+          { say: 'I find the price for one. $5.00 &divide; 4 = <b>$1.25</b> each.', fig: an(items(4, 500, 'muffin', 1)), ms: 1800 },
+          { say: '$6.60 &divide; 6 = <b>$1.10</b> each.', fig: an(items(6, 660, 'muffin', 1)), ms: 1800 },
+          { say: '$1.10 is less than $1.25, so the 6-pack is the better buy. Lower unit rate is better value.', fig: '<div class="pies g5-anim">' + items(4, 500, 'muffin', 1) + items(6, 660, 'muffin', 1) + '</div>', ms: 2600 }
+        ]),
         try: K.widget('money', 3, 'Good. Try a case where the smaller size wins.'),
         ways: [
           { label: 'Same amount', html: '<p>Make the amounts match. 500 g for $4.00 is $8.00 per kg. 750 g for $5.25 is $7.00 per kg. The 750 g bag is cheaper per kilogram.</p>' },
@@ -268,6 +304,12 @@
           { say: 'Provincial: Ontario. Hospitals, schools, highways.', fig: an(levels(1)) },
           { say: 'Municipal: your town. Parks, libraries, garbage pickup.', fig: an(levels(2)) },
           { say: 'The 13% HST is shared: 5% to Canada and 8% to Ontario.', fig: an(hstSplit(1000)), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. A new library opens in my town. Who pays for it? Libraries are run by the town: <b>municipal</b>.', fig: an(levels(2)), ms: 2200 },
+          { say: 'My school is paid for by Ontario: <b>provincial</b>.', fig: an(levels(1)), ms: 1800 },
+          { say: 'I buy a $20.00 game. The HST is 13%: $2.60. $1.00 goes to Canada and $1.60 goes to Ontario.', fig: an(hstSplit(2000)), ms: 2400 },
+          { say: 'Taxes pay for things too costly for one family alone, like roads, schools and hospitals.', fig: an(levels()), ms: 2400 }
         ]),
         key: '<p>Taxes pay for things too costly for one family alone: <b>roads, schools, hospitals</b>.</p>',
         mistake: '<p>Mixing up which level runs which service. Link each one to something nearby: your library (town), your school (Ontario), your passport (Canada).</p>',

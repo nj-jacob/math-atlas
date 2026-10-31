@@ -163,6 +163,7 @@
   function eq(t) { return '<p class="math k7-eq">' + t + '</p>'; }
   function tbl(rows) { return '<div class="tbl"><table><tbody>' + rows.map(function (r) { return '<tr>' + r.map(function (c, i) { return '<td' + (i ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>'; }
   var SCHOOL = [{ lab: 'Bus', v: 12 }, { lab: 'Walk', v: 9 }, { lab: 'Car', v: 6 }, { lab: 'Bike', v: 3 }];
+  var SEASON = [{ lab: 'Summer', v: 10 }, { lab: 'Winter', v: 5 }, { lab: 'Fall', v: 4 }, { lab: 'Spring', v: 1 }]; /* used by the "My turn" examples */
   function out(h) { return (h.querySelector('#mbout') || {}).textContent || ''; }
 
   var LESSONS = [
@@ -173,6 +174,12 @@
           { say: 'Favourite sport: the answers are words. That is <b>qualitative</b> data.', fig: eq('soccer, hockey, swimming, ...') },
           { say: 'Number of pets: you count them. 0, 1, 2, 3. No 1.5 pets. That is <b>discrete</b>.', fig: eq('0, 1, 2, 3, ...') },
           { say: 'Time to run 100 m: you measure it. 14.37 s is possible. That is <b>continuous</b>.', fig: eq('14.37 s, 15.2 s, 13.98 s, ...'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will sort three kinds of data. First: the kind of tree in each yard. The answers are words, so it is <b>qualitative</b>.', fig: eq('maple, pine, birch, ...') },
+          { say: 'Next: the number of cars in a parking lot. I count them: 0, 1, 2, 3. There is no 2.5 cars. So it is <b>discrete</b>.', fig: eq('0, 1, 2, 3, ...') },
+          { say: 'Last: the mass of a pumpkin. I measure it, so 4.62 kg is possible. It is <b>continuous</b>.', fig: eq('4.62 kg, 5.1 kg, 3.87 kg, ...') },
+          { say: 'Words: qualitative. Counted: discrete. Measured: continuous.', fig: eq('trees: qualitative &nbsp; cars: discrete &nbsp; mass: continuous'), ms: 2600 }
         ]),
         ways: [
           { label: 'Ask two questions', html: '<p>1. Is it a number? If not, it is qualitative.<br>2. Can it have any value in between, like 1.5 or 1.53? If yes, continuous. If only whole steps, discrete.</p>' },
@@ -189,6 +196,12 @@
           { say: 'A: 90 &divide; 300 = 30%. B: 150 &divide; 600 = 25%.', fig: eq('A: 30% &nbsp;&nbsp; B: 25%') },
           { say: 'School A has the <b>bigger share</b> of bikers.', fig: eq('30% &gt; 25%'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Team A won 18 of its 24 games. Team B won 28 of its 40 games. Which team did better?', fig: eq('A: 18 / 24 &nbsp;&nbsp; B: 28 / 40') },
+          { say: 'B won more games. But B also played more games, so I change to percents.', fig: eq('28 &gt; 18, but 40 &gt; 24') },
+          { say: 'A: 18 &divide; 24 = 0.75 = 75%. B: 28 &divide; 40 = 0.7 = 70%.', fig: eq('A: 75% &nbsp;&nbsp; B: 70%') },
+          { say: 'Team A won the <b>bigger share</b> of its games.', fig: eq('75% &gt; 70%'), ms: 2400 }
+        ]),
         key: '<p><b>To compare groups of different sizes, change to percents.</b></p>',
         mistake: '<p>Comparing the counts (150 &gt; 90) when the groups are different sizes.</p>',
         check: [K.ck('dp-circle', 1), function () { return mc('Team A won 12 of 20 games. Team B won 15 of 30. Which won a greater percent?', 'Team A', ['Team B', 'They are equal'], 'Change both to percents.', 'A: 60%. B: 50%.'); }] }
@@ -200,6 +213,11 @@
           { say: '30 students say how they get to school.', fig: tbl([['Bus', '12'], ['Walk', '9'], ['Car', '6'], ['Bike', '3']]) },
           { say: 'Bus: 12 of 30 is 40%. Walk: 30%. Car: 20%. Bike: 10%.', fig: eq('40% + 30% + 20% + 10% = 100%') },
           { say: 'Each percent becomes a slice of the circle.', fig: function () { return pie(SCHOOL, 'How 30 students get to school'); }, ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. 20 students name their favourite season. I will make a circle graph.', fig: tbl([['Summer', '10'], ['Winter', '5'], ['Fall', '4'], ['Spring', '1']]) },
+          { say: 'I change each count to a percent of 20. Summer: 10 of 20 is 50%. Winter: 25%. Fall: 20%. Spring: 5%.', fig: eq('50% + 25% + 20% + 5% = 100%') },
+          { say: 'The percents add to 100%, so the parts make one whole. Each percent becomes a slice.', fig: function () { return pie(SEASON, 'Favourite season of 20 students'); }, ms: 2600 }
         ]),
         try: lab('pifig', [
           { do: 'Make <b>Soccer exactly half</b> of the circle.', goal: function (h) { var v = [0, 1, 2, 3].map(function (i) { return K.v(h, 'pi' + i); }); return v[0] > 0 && 2 * v[0] === v[0] + v[1] + v[2] + v[3]; }, yes: 'Half of the votes is 50%: a 180° slice.' },
@@ -214,6 +232,12 @@
           { say: 'Bus is 40% of the class.', fig: function () { return pie(SCHOOL, ''); } },
           { say: '40% of 360&deg;: 0.4 &times; 360 = 144&deg;.', fig: eq('0.4 &times; 360&deg; = 144&deg;') },
           { say: 'Walk, 30%: 108&deg;. Car, 20%: 72&deg;. Bike, 10%: 36&deg;. Together: 360&deg;.', fig: eq('144 + 108 + 72 + 36 = 360'), ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find the angle for each slice. Summer is 50% of the class.', fig: function () { return pie(SEASON, ''); } },
+          { say: 'Summer: 50% of 360&deg; is 0.5 &times; 360 = 180&deg;.', fig: eq('0.5 &times; 360&deg; = 180&deg;') },
+          { say: 'Winter, 25%: 0.25 &times; 360 = 90&deg;. Fall, 20%: 72&deg;. Spring, 5%: 18&deg;.', fig: eq('Winter 90&deg; &nbsp; Fall 72&deg; &nbsp; Spring 18&deg;') },
+          { say: 'I check: 180 + 90 + 72 + 18 = 360. All the angles add to 360&deg;.', fig: eq('180 + 90 + 72 + 18 = 360'), ms: 2600 }
         ]),
         ways: [
           { label: 'Use fractions', html: '<p>25% is a quarter of the circle: 360 &divide; 4 = 90&deg;. 50% is half: 180&deg;. 10% is a tenth: 36&deg;.</p>' },
@@ -231,6 +255,12 @@
           { say: 'How the class gets to school: parts of one whole. A <b>circle graph</b>.', fig: function () { return pie(SCHOOL, ''); } },
           { say: 'A puppy\'s mass each month: change over time. A <b>line graph</b>.', fig: eq('Jan &rarr; Feb &rarr; Mar &rarr; ...'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will choose a graph for three sets of data. First: the pets in our class. I compare categories, so I use a <b>bar graph</b>.', fig: function () { return bars([{ lab: 'Dog', v: 9 }, { lab: 'Cat', v: 7 }, { lab: 'Fish', v: 3 }], 0, 10, 'Pets in our class'); } },
+          { say: 'Next: how I spend my $20 allowance. The parts make one whole, so I use a <b>circle graph</b>.', fig: function () { return pie([{ lab: 'Saving', v: 10 }, { lab: 'Snacks', v: 6 }, { lab: 'Games', v: 4 }], ''); } },
+          { say: 'Last: a sunflower\'s height each week. It changes over time, so I use a <b>line graph</b>.', fig: eq('week 1 &rarr; week 2 &rarr; week 3 &rarr; ...') },
+          { say: 'Whatever graph I choose, I give it a title, labels, a sensible scale and a source.', fig: eq('title &middot; labels &middot; scale &middot; source'), ms: 2400 }
+        ]),
         key: '<p><b>Every graph needs a title, labels, a sensible scale and a source.</b></p>',
         mistake: '<p>Picking a graph by looks. Ask what the data is: categories, parts of a whole, or change over time?</p>',
         check: [function () { return mc('Which graph is best for showing how a puppy\'s mass changed each month for a year?', 'Line graph', ['Circle graph', 'Bar graph of favourite colours'], 'The data changes over time.', 'Change over time: a line graph.'); }, function () { return mc('Which graph is best for showing what percent of a budget goes to rent, food and fun?', 'Circle graph', ['Line graph', 'Stem-and-leaf plot'], 'The parts make one whole.', 'Parts of one whole: a circle graph.'); }] },
@@ -240,6 +270,11 @@
           { say: 'Start with a question: how does Room 7B get to school?', fig: eq('How does Room 7B get to school?') },
           { say: 'Pick the headline number: 70% come by bus or on foot.', fig: '<div class="info"><div class="ibig"><b>70%</b><span>come by bus or on foot</span></div></div>' },
           { say: 'Add a graph, one more fact, and the source.', fig: '<div class="info"><div class="ihead">Getting to school, Room 7B</div><div class="ibig"><b>70%</b><span>come by bus or on foot</span></div><div class="fig">' + pie(SCHOOL, '', 70) + '</div><div class="ibig"><b>1 in 10</b><span>bikes, even in winter</span></div><p class="isrc">Source: class survey of 30 students, October</p></div>', ms: 3000 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will plan an infographic. I start with a question: what does Room 7B read for fun?', fig: eq('What does Room 7B read for fun?') },
+          { say: 'I pick the headline number: 18 of 30 students read novels. That is 60%.', fig: '<div class="info"><div class="ibig"><b>60%</b><span>read novels for fun</span></div></div>' },
+          { say: 'I add a graph, one more fact, and the source. Now it tells the story at a glance.', fig: '<div class="info"><div class="ihead">Reading for fun, Room 7B</div><div class="ibig"><b>60%</b><span>read novels for fun</span></div><div class="fig">' + pie([{ lab: 'Novels', v: 18 }, { lab: 'Comics', v: 8 }, { lab: 'Magazines', v: 4 }], '', 70) + '</div><div class="ibig"><b>8 of 30</b><span>pick comics first</span></div><p class="isrc">Source: class survey of 30 students, November</p></div>', ms: 3000 }
         ]),
         key: '<p><b>Question, headline number, 2 or 3 displays, source.</b></p>',
         mistake: '<p>Leaving out the source or the sample size, so readers cannot judge the data.</p>',
@@ -254,6 +289,12 @@
           { say: 'Median: the middle of the ordered list, the 4th value. Median = 4.', fig: eq('2, 3, 3, <b>4</b>, 5, 6, 12') },
           { say: 'Mode: the most common value. Mode = 3.', fig: eq('2, <b>3, 3</b>, 4, 5, 6, 12'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A team scored 4, 6, 6, 7, 9, 10 and 14 points in 7 games. I will find the mean, median and mode.', fig: function () { return dotplot([4, 6, 6, 7, 9, 10, 14], 0, 16); } },
+          { say: 'Mean: I add them to get 56. Then I share equally: 56 &divide; 7 = 8.', fig: eq('56 &divide; 7 = 8') },
+          { say: 'Median: the list is in order, so I take the middle value, the 4th one. Median = 7.', fig: eq('4, 6, 6, <b>7</b>, 9, 10, 14') },
+          { say: 'Mode: the most common value. 6 comes up twice. Mode = 6.', fig: eq('4, <b>6, 6</b>, 7, 9, 10, 14'), ms: 2400 }
+        ]),
         key: '<p><b>Mean: share equally. Median: middle in order. Mode: most common.</b></p>',
         mistake: '<p>Finding the median without putting the data in order first.</p>',
         check: [function () { return { q: 'Find the median of 8, 3, 10, 5, 7, 4.', type: 'num', answer: 6, hint: 'Put them in order. Use the two middle values.', explain: '3, 4, 5, 7, 8, 10. (5 + 7) &divide; 2 = 6.' }; }, K.ck('dp-mmm', 1), K.ck('dp-mmm', 2)] },
@@ -264,6 +305,13 @@
           { say: 'Remove the 12, one unusual game.', fig: function () { return dotplot([2, 3, 3, 4, 5, 6], 0, 14); } },
           { say: 'Now the mean is 23 &divide; 6, about 3.8. The median is 3.5.', fig: eq('mean 5 &rarr; 3.8 &nbsp;&nbsp; median 4 &rarr; 3.5') },
           { say: 'The mean moved a lot. The median moved a little.', fig: eq('outlier: mean moves, median stays'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Six friends read 3, 4, 4, 5, 6 and 14 books this month. The 14 is far from the rest: an outlier.', fig: function () { return dotplot([3, 4, 4, 5, 6, 14], 0, 16); } },
+          { say: 'With the 14, the mean is 36 &divide; 6 = 6. The median is halfway between 4 and 5: 4.5.', fig: eq('mean 6 &nbsp;&nbsp; median 4.5') },
+          { say: 'I take out the 14.', fig: function () { return dotplot([3, 4, 4, 5, 6], 0, 16); } },
+          { say: 'Now the mean is 22 &divide; 5 = 4.4. The median is 4.', fig: eq('mean 6 &rarr; 4.4 &nbsp;&nbsp; median 4.5 &rarr; 4') },
+          { say: 'The mean moved a lot. The median moved only a little. With an outlier, the median is the better typical value.', fig: eq('outlier: mean moves, median stays'), ms: 2600 }
         ]),
         try: lab('dpv', [
           { do: 'Add a big value, like <b>18</b>. Watch the mean and median.', goal: function (h) { return /Data \(10 values\)/.test(h.querySelector('#dpout').textContent); }, yes: 'The mean jumped up. The median moved by only half a step.' },
@@ -285,6 +333,12 @@
           { say: 'Start the axis at 90, and B looks much bigger.', fig: function () { return bars([{ lab: 'Brand A', v: 96 }, { lab: 'Brand B', v: 98 }], 90, 100, 'Customers happy (%)'); } },
           { say: 'The data did not change. Only the picture did. Always read the scale.', fig: eq('98 &minus; 96 = only 2 points'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Store A sold 52 boxes. Store B sold 55. Here is a graph with the axis starting at 0.', fig: function () { return bars([{ lab: 'Store A', v: 52 }, { lab: 'Store B', v: 55 }], 0, 60, 'Boxes sold'); } },
+          { say: 'The bars look almost the same. That fits: 55 &minus; 52 is only 3.', fig: eq('55 &minus; 52 = 3') },
+          { say: 'Here is the same data with the axis starting at 50. Now B looks more than twice as tall.', fig: function () { return bars([{ lab: 'Store A', v: 52 }, { lab: 'Store B', v: 55 }], 50, 60, 'Boxes sold'); } },
+          { say: 'The data did not change. Only the scale did. I read the scale before I trust the picture.', fig: eq('same data, different scale'), ms: 2600 }
+        ]),
         try: lab('mlzo', [
           { do: 'Make Brand B look <b>more than 2 times</b> as tall as Brand A.', goal: function (h) { var z = K.v(h, 'mlz'); return (98 - z) / (96 - z) > 2; }, yes: 'A high starting point makes a small difference look huge.' },
           { do: 'Now make the graph <b>honest</b>.', goal: function (h) { return K.v(h, 'mlz') === 0; }, yes: 'With the axis at 0, the brands look almost the same, which is true.' }
@@ -302,6 +356,12 @@
           { say: 'Heads and a 6 is one of 12 outcomes.', fig: eq('P(H, 6) = ' + fr(1, 12)) },
           { say: 'Or multiply: one half times one sixth is one twelfth.', fig: eq(fr(1, 2) + ' &times; ' + fr(1, 6) + ' = ' + fr(1, 12)), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I spin a spinner with 3 equal parts: red, blue and green. Then I flip a coin. What is P(green, tails)?', fig: eq('spinner: red, blue, green &nbsp;&nbsp; coin: H or T') },
+          { say: 'A tree diagram shows every outcome: 3 &times; 2 = 6.', fig: function () { return tree(['Red', 'Blue', 'Green'], ['H', 'T'], 'spinner', 'coin'); } },
+          { say: 'Green and tails is 1 of the 6 outcomes. So P(green, T) = ' + fr(1, 6) + '.', fig: eq('P(green, T) = ' + fr(1, 6)) },
+          { say: 'I check by multiplying: ' + fr(1, 3) + ' &times; ' + fr(1, 2) + ' = ' + fr(1, 6) + '. The spin does not change the coin, so I multiply.', fig: eq(fr(1, 3) + ' &times; ' + fr(1, 2) + ' = ' + fr(1, 6)), ms: 2400 }
+        ]),
         key: '<p><b>Independent: multiply the probabilities.</b></p>',
         mistake: '<p>Adding the probabilities (1/2 + 1/6). Both events together is less likely than either one, so the answer must be smaller.</p>',
         check: [function () { return { q: 'You flip a coin and spin a spinner with 4 equal colours. What is P(tails and blue)? Type a fraction.', type: 'num', answer: 0.125, show: '1/8', kb: 'text', tol: 1e-6, hint: 'Multiply.', explain: fr(1, 2) + ' &times; ' + fr(1, 4) + ' = ' + fr(1, 8) + '.' }; }, K.ck('dp-indep', 1), K.ck('dp-indep', 2)] },
@@ -312,6 +372,12 @@
           { say: 'P(red first) = 3 out of 5. Keep that red marble.', fig: function () { return bag(3, 2, 0, 0) + eq('P(red) = ' + fr(3, 5)); } },
           { say: 'Now only 2 red of 4 are left. P(red second) = 2 out of 4.', fig: function () { return bag(3, 2, 0, 0) + eq('P(red) = ' + fr(2, 4)); } },
           { say: 'P(red, red) = 3/5 &times; 2/4 = 6/20 = <b>3/10</b>.', fig: eq(fr(3, 5) + ' &times; ' + fr(2, 4) + ' = ' + fr(6, 20) + ' = ' + fr(3, 10)), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A bag has 2 red and 4 blue marbles. I pick one, keep it, then pick another. What is P(blue, blue)?', fig: function () { return bag(2, 4); } },
+          { say: 'First pick: 4 of the 6 marbles are blue. P(blue) = ' + fr(4, 6) + '. I keep that blue marble.', fig: function () { return bag(2, 4, 0, 2) + eq('P(blue) = ' + fr(4, 6)); } },
+          { say: 'Now the bag has changed. 3 blue of 5 marbles are left. P(blue second) = ' + fr(3, 5) + '.', fig: function () { return bag(2, 4, 0, 2) + eq('P(blue) = ' + fr(3, 5)); } },
+          { say: 'I multiply: ' + fr(4, 6) + ' &times; ' + fr(3, 5) + ' = ' + fr(12, 30) + ' = <b>' + fr(2, 5) + '</b>.', fig: eq(fr(4, 6) + ' &times; ' + fr(3, 5) + ' = ' + fr(12, 30) + ' = ' + fr(2, 5)), ms: 2600 }
         ]),
         try: lab('mbr', [
           { do: 'With <b>No</b> selected, pick two <b>500 times</b>. Is red, red close to 30%?', goal: function (h) { return K.v(h, 'mbr') === 0 && /500 trials/.test(out(h)); }, yes: 'The experimental result is close to the theoretical 30%.' },

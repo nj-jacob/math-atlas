@@ -1,5 +1,6 @@
 /* Grade 6 helpers for the shared lesson engine (lesson.js, manip.js). Grade-local: nothing here changes the shared files.
    G6.play(frames)  -> a "Watch" that steps through pictures: [[caption, svgOrHtml, note], ...]
+   G6.example(frames) -> a "My turn" worked example: the same frames, held longer so there is time to read each step
    G6.lab(chapter, n, doText, test, msg) -> a "Try it" that shows the chapter's widget number n; done when test(host) is true
    G6.goal(host, test, msg, done) -> calls done(msg) the first time test(host) is true after any input
    G6.g(chapter, skill, level) -> a quick-check generator that reuses a practice skill
@@ -27,6 +28,9 @@
       mount: function (el) { return G6.frames(el, start === undefined ? frames[0][1] : start); },
       steps: frames.map(function (f) { return { say: f[0], act: function (t) { return t.show(f[1], f[2]); }, ms: f[3] == null ? 1500 : f[3] }; })
     };
+  };
+  G6.example = function (frames) {
+    return G6.play(frames.map(function (f) { return [f[0], f[1], f[2], f[3] == null ? 2600 : f[3]]; }));
   };
   /* Try it with one of the chapter's own widgets: the chapter page is built hidden and only widget number n is shown,
      so the chapter's init() wires it exactly as on the full page. */

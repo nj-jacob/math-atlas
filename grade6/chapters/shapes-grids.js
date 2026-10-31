@@ -101,6 +101,12 @@
           ['Kite: 2 pairs of equal sides next to each other. Diagonals meet at 90°.', quad('kite', { diag: true })]
         ]),
         try: lab(CH, 0, 'Find the shape whose diagonals meet at 90° but which has only <b>one</b> line of symmetry. Turn on "show lines of symmetry" to check.', function (h) { return h.querySelector('#qk').value === 'kite' && h.querySelector('#qs').checked; }, 'Yes: the kite.'),
+        example: G6.example([
+          ['My turn. I describe this shape. Sides: 2 pairs of equal sides, next to each other.', quad('kite')],
+          ['Parallel sides: none. Angles: one pair of opposite angles is equal.', quad('kite')],
+          ['Diagonals: they meet at 90&deg;, and one cuts the other in half.', quad('kite', { diag: true })],
+          ['Symmetry: 1 line. All of this together says it is a kite.', quad('kite', { diag: true, sym: true }), 'Kite']
+        ]),
         key: '<p>Describe a quadrilateral by its sides, angles, parallel sides, diagonals and symmetry.</p>',
         check: [{ q: 'Which quadrilateral has diagonals that meet at 90° but only one line of symmetry?', type: 'mc', options: ['rhombus', 'kite', 'rectangle', 'parallelogram'], answer: 1, hint: 'The rhombus has 2 lines.', explain: 'The kite.' }, g(CH, 'sg-quad', 1), g(CH, 'sg-quad', 2)] },
       { id: 'families', title: 'Shape families', exp: ['E1.1'], skill: 'sg-quad', hard: true,
@@ -113,6 +119,12 @@
         ]),
         ways: [{ label: 'Example or not?', html: '<div class="tbl"><table><thead><tr><th class="l">Shape</th><th class="l">Is it a rhombus?</th><th class="l">Why</th></tr></thead><tbody><tr><td class="l">square</td><td class="l">yes</td><td class="l">4 equal sides</td></tr><tr><td class="l">kite</td><td class="l">no</td><td class="l">only pairs of sides are equal</td></tr><tr><td class="l">2 cm by 5 cm rectangle</td><td class="l">no</td><td class="l">sides not all equal</td></tr></tbody></table></div>' },
           { label: 'Ask "always?"', html: '<p>"Is every square a rectangle?" Check the rectangle rule: 4 right angles. Every square has them, so yes. "Is every rectangle a square?" A square needs 4 equal sides. A 2 by 5 rectangle does not, so no.</p>' }],
+        example: G6.example([
+          ['My turn. Is a square a rhombus? I check the family rule: a rhombus has 4 equal sides.', quad('rhombus')],
+          ['A square has 4 equal sides. It meets the rule, so a square is a rhombus.', quad('square'), 'Yes'],
+          ['Is a rectangle a rhombus? Its sides are not all equal.', quad('rectangle')],
+          ['It does not meet the rule, so a rectangle is not always a rhombus.', quad('rectangle'), 'No']
+        ]),
         key: '<p>Check the family rule. If the shape meets it, it belongs.</p>',
         mistake: '<p>Saying a square is "not a rectangle" because it looks different. Families are decided by properties, not looks.</p>',
         check: [{ q: 'Is every square a rhombus?', type: 'mc', options: ['Yes', 'No'], answer: 0, hint: 'A rhombus needs 4 equal sides.', explain: 'Every square has 4 equal sides, so yes.' }, { q: 'Is every rectangle a square?', type: 'mc', options: ['Yes', 'No'], answer: 1, hint: 'Do all rectangles have 4 equal sides?', explain: 'No: a 2 by 5 rectangle is not a square.' }, g(CH, 'sg-quad', 3)] }
@@ -126,6 +138,12 @@
           ['A kite folds 1 way.', quad('kite', { sym: true }), '1 line'],
           ['A parallelogram has no fold that works.', quad('parallelogram'), '0 lines']
         ]),
+        example: G6.example([
+          ['My turn. How many lines of symmetry does a rhombus have? I picture each fold.', quad('rhombus')],
+          ['I fold top to bottom: both halves land on each other. That is 1.', quad('rhombus', { sym: true }), '1 line'],
+          ['I fold left to right: they match again. That is 2.', quad('rhombus', { sym: true }), '2 lines'],
+          ['I try a fold through the middles of two sides: the halves do not match. So it has 2 lines.', quad('rhombus', { sym: true }), '2 lines of symmetry']
+        ]),
         key: '<p>Picture the fold. Do both halves land exactly on each other?</p>',
         check: [{ q: 'How many lines of symmetry does a rectangle (not a square) have?', type: 'num', answer: 2, hint: 'Across and down. Does a diagonal work?', explain: 'Two.' }, g(CH, 'sg-sym', 1)] },
       { id: 'turns', title: 'Rotational symmetry', exp: ['E1.1'], skill: 'sg-sym', hard: true,
@@ -138,6 +156,12 @@
         ]),
         try: lab(CH, 1, 'Choose the <b>rectangle</b> and turn it to its first match after 0°.', function (h) { return h.querySelector('#rk').value === 'rectangle' && +h.querySelector('#ra').value === 180; }, 'Yes: 180°. It matches at 180° and 360°, so order 2.'),
         ways: [{ label: 'Divide 360', html: '<p>A square first matches at 90°. 360 &divide; 90 = 4, so order 4. A rectangle first matches at 180°. 360 &divide; 180 = 2.</p>' }],
+        example: G6.example([
+          ['My turn. I find the order of rotational symmetry of a rectangle. The orange dot marks one corner.', quad('rectangle', { rot: 0, ghost: true })],
+          ['I turn it 90&deg;: it does not match the outline.', quad('rectangle', { rot: 90, ghost: true }), 'No match'],
+          ['I turn it 180&deg;: it matches. That is 1 match.', quad('rectangle', { rot: 180, ghost: true }), 'Match 1'],
+          ['I turn it 360&deg;: back to the start, match 2. I count 2 matches in a full turn: order 2.', quad('rectangle', { rot: 360, ghost: true }), 'Order 2']
+        ]),
         key: '<p>Count the matches in one full turn. Order 1 means no rotational symmetry.</p>',
         check: [{ q: 'What is the order of rotational symmetry of a square?', type: 'num', answer: 4, hint: 'Try 90° turns.', explain: '90°, 180°, 270°, 360°: order 4.' }, g(CH, 'sg-sym', 2)] }
     ] },
@@ -152,6 +176,15 @@
         ]),
         try: lab(CH, 2, 'Build an object with exactly <b>6</b> cubes and a front view that is <b>3</b> tall.', function (h) { var t = 0, mx = 0; for (var r = 0; r < 3; r++) for (var c = 0; c < 3; c++) { var v = Math.max(0, Math.min(4, parseInt(h.querySelector('#iso' + r + c).value, 10) || 0)); t += v; mx = Math.max(mx, v); } return t === 6 && mx === 3; }, 'Yes: 6 cubes with a stack of 3.'),
         ways: [{ label: 'Count from the top view', html: '<p>Add the numbers on the top view: that is the number of cubes. The front and side views can hide cubes behind taller stacks.</p>' }],
+        example: (function () {
+          var H = [[1, 2, 0], [3, 1, 1], [1, 0, 2]];
+          return G6.example([
+            ['My turn. I look at this cube building. First the top view shows where each stack is.', '<div class="vrow"><figure>' + iso(H) + '</figure><figure>' + topView(H) + '</figure></div>'],
+            ['The numbers tell how tall. I add them: 1 + 2 + 3 + 1 + 1 + 1 + 2 = 11 cubes.', topView(H), '11 cubes'],
+            ['For the front, I take the tallest stack in each column: 3, 2, 2.', '<div class="vrow"><figure>' + iso(H) + '</figure><figure>' + view(fronts(H), 'front') + '</figure></div>'],
+            ['For the right side, I take the tallest in each row: 2, 3, 2. I check it against the drawing.', '<div class="vrow"><figure>' + iso(H) + '</figure><figure>' + view(sides(H), 'right side') + '</figure></div>']
+          ]);
+        })(),
         key: '<p>Top view for where. Numbers for how tall. Front and side to check.</p>',
         mistake: '<p>Thinking the front and side views show every cube. Cubes can hide behind taller stacks; only the numbered top view gives the exact count.</p>',
         check: [{ q: 'A top view has the numbers 2, 1, 3 and 1 on its squares. How many cubes are there?', type: 'num', answer: 7, hint: 'Add the numbers.', explain: '2 + 1 + 3 + 1 = 7.' }, g(CH, 'sg-views', 1), g(CH, 'sg-views', 2)] }
@@ -165,6 +198,12 @@
           ['Then up 2.', grid(5, [{ p: [-3, 2], lab: 'P' }], [], [[[0, 0], [-3, 2]]], 26), '(−3, 2): quadrant II'],
           ['(4, −1): right 4, down 1. Quadrant IV.', grid(5, [{ p: [-3, 2], lab: 'P' }, { p: [4, -1], lab: 'Q', c: 'var(--strand)' }], [], [], 26), '(4, −1)']
         ]),
+        example: G6.example([
+          ['My turn. I plot (2, &minus;4). I start at the origin.', grid(5, [{ p: [0, 0], lab: 'O' }], [], [], 26)],
+          ['I go across first: x is 2, so right 2.', grid(5, [{ p: [2, 0] }], [], [[[0, 0], [2, 0]]], 26), 'x = 2'],
+          ['Then y is &minus;4. Negative y is down, so down 4.', grid(5, [{ p: [2, -4], lab: 'P' }], [], [[[0, 0], [2, -4]]], 26), '(2, &minus;4): quadrant IV'],
+          ['Next (&minus;5, &minus;1): left 5, down 1. Quadrant III.', grid(5, [{ p: [2, -4], lab: 'P' }, { p: [-5, -1], lab: 'Q', c: 'var(--strand)' }], [], [], 26), '(&minus;5, &minus;1)']
+        ]),
         key: '<p>Across, then up or down. Negative x is left, negative y is down.</p>',
         mistake: '<p>Swapping the order: plotting (2, −5) at (−5, 2). x always comes first.</p>',
         check: [{ q: 'Which quadrant is (−4, −6) in?', type: 'mc', options: ['I', 'II', 'III', 'IV'], answer: 2, hint: 'Left and down.', explain: 'Quadrant III.' }, g(CH, 'sg-coord', 1), g(CH, 'sg-coord', 2)] },
@@ -175,6 +214,12 @@
           ['Across: 2 − (−3) = 5. Right 5. Down: −1 − 4 = −5. Down 5.', grid(5, [{ p: [-3, 4], lab: 'A' }, { p: [2, -1], lab: 'B', c: 'var(--strand)' }], [], [[[-3, 4], [2, -1]]], 26), 'Right 5, down 5']
         ]),
         try: lab(CH, 3, 'Set A and B so that A to B is <b>right 5, down 3</b>.', function (h) { function v(id) { return Math.max(-8, Math.min(8, parseInt(h.querySelector(id).value, 10) || 0)); } return v('#cbx') - v('#cax') === 5 && v('#cby') - v('#cay') === -3; }, 'Yes: right 5, down 3.'),
+        example: G6.example([
+          ['My turn. A is (4, &minus;2). B is (&minus;1, 3). I describe the move from A to B.', grid(5, [{ p: [4, -2], lab: 'A' }, { p: [-1, 3], lab: 'B', c: 'var(--strand)' }], [], [], 26)],
+          ['Across: new minus old, &minus;1 &minus; 4 = &minus;5. That is left 5.', grid(5, [{ p: [4, -2], lab: 'A' }, { p: [-1, 3], lab: 'B', c: 'var(--strand)' }], [], [], 26), 'Left 5'],
+          ['Up or down: 3 &minus; (&minus;2) = 5. That is up 5.', grid(5, [{ p: [4, -2], lab: 'A' }, { p: [-1, 3], lab: 'B', c: 'var(--strand)' }], [], [[[4, -2], [-1, 3]]], 26), 'Left 5, up 5'],
+          ['I check: 4 &minus; 5 = &minus;1 and &minus;2 + 5 = 3. That is B.', grid(5, [{ p: [4, -2], lab: 'A' }, { p: [-1, 3], lab: 'B', c: 'var(--strand)' }], [], [[[4, -2], [-1, 3]]], 26), '(&minus;1, 3) ✓']
+        ]),
         key: '<p>New minus old, for x and for y.</p>',
         check: [{ q: 'Which translation moves (−3, 4) to (2, −1)?', type: 'mc', options: ['right 5, down 5', 'left 5, down 5', 'right 1, down 3', 'right 5, up 5'], answer: 0, hint: 'x: −3 to 2. y: 4 to −1.', explain: 'Right 5, down 5.' }, g(CH, 'sg-translate', 1), g(CH, 'sg-translate', 2)] }
     ] },
@@ -185,6 +230,12 @@
           ['A triangle in quadrant I.', grid(6, [], [{ pts: TRI }], [], 22)],
           ['Reflect in the x-axis: each y changes sign. (4, 1) goes to (4, −1).', grid(6, [], [{ pts: TRI }, { pts: img(0), c: 'var(--bad)' }], [], 22), '(x, −y)'],
           ['Reflect in the y-axis instead: each x changes sign.', grid(6, [], [{ pts: TRI }, { pts: img(1), c: 'var(--bad)' }], [], 22), '(−x, y)']
+        ]),
+        example: G6.example([
+          ['My turn. I reflect this triangle in the y-axis. Its corners are (2, 1), (5, 2) and (2, 4).', grid(6, [], [{ pts: [[2, 1], [5, 2], [2, 4]] }], [], 22)],
+          ['In the y-axis, each x changes sign. (2, 1) goes to (&minus;2, 1).', grid(6, [{ p: [-2, 1], c: 'var(--bad)' }], [{ pts: [[2, 1], [5, 2], [2, 4]] }], [], 22), '(x, y) &rarr; (&minus;x, y)'],
+          ['(5, 2) goes to (&minus;5, 2), and (2, 4) goes to (&minus;2, 4).', grid(6, [], [{ pts: [[2, 1], [5, 2], [2, 4]] }, { pts: [[-2, 1], [-5, 2], [-2, 4]], c: 'var(--bad)' }], [], 22)],
+          ['I check: each corner is the same distance from the mirror line. Same size, same shape, flipped.', grid(6, [], [{ pts: [[2, 1], [5, 2], [2, 4]] }, { pts: [[-2, 1], [-5, 2], [-2, 4]], c: 'var(--bad)' }], [], 22), '✓']
         ]),
         key: '<p>Same size, same shape, flipped. Every corner is the same distance from the mirror line.</p>',
         check: [{ q: 'Point (2, 5) is reflected in the y-axis. Where does it land?', type: 'mc', options: ['(2, −5)', '(−2, 5)', '(−2, −5)', '(5, 2)'], answer: 1, hint: 'Only x changes sign.', explain: '(−2, 5).' }, g(CH, 'sg-transform', 1)] },
@@ -198,6 +249,12 @@
         try: lab(CH, 4, 'Choose two moves that put the triangle in <b>quadrant III</b> (all corners left of and below the origin).', function (h) { var a = +h.querySelector('#tm1').value, b = +h.querySelector('#tm2').value; return TRI.every(function (p) { var q = mv(b, mv(a, p)); return q[0] < 0 && q[1] < 0; }); }, 'Yes: the image is in quadrant III.'),
         ways: [{ label: 'Follow one corner', html: '<p>Track only (4, 1). Rotate 90° clockwise: (1, −4). Then reflect in the y-axis: (−1, −4). Do the same to the other corners.</p>' },
           { label: 'Turn the page', html: '<p>Trace the shape and the axes on paper. Pin the origin with a pencil tip and turn the paper a quarter turn clockwise.</p>' }],
+        example: G6.example([
+          ['My turn. I rotate the triangle (2, 1), (5, 2), (2, 4) 90&deg; counterclockwise about the origin.', grid(6, [], [{ pts: [[2, 1], [5, 2], [2, 4]] }], [], 22)],
+          ['The rule is (x, y) to (&minus;y, x). I predict one corner: (2, 1) goes to (&minus;1, 2).', grid(6, [{ p: [-1, 2], c: 'var(--bad)' }], [{ pts: [[2, 1], [5, 2], [2, 4]] }], [], 22), '(&minus;y, x)'],
+          ['Then the rest: (5, 2) goes to (&minus;2, 5), and (2, 4) goes to (&minus;4, 2).', grid(6, [], [{ pts: [[2, 1], [5, 2], [2, 4]] }, { pts: [[-1, 2], [-2, 5], [-4, 2]], c: 'var(--bad)' }], [], 22), 'Quadrant II'],
+          ['I check: a quarter turn counterclockwise takes quadrant I to quadrant II.', grid(6, [], [{ pts: [[2, 1], [5, 2], [2, 4]] }, { pts: [[-1, 2], [-2, 5], [-4, 2]], c: 'var(--bad)' }], [], 22), '✓']
+        ]),
         key: '<p>Predict one corner with the rule, then the rest.</p>',
         check: [{ q: 'Point (4, 1) is rotated 180° about the origin. Where does it land?', type: 'mc', options: ['(−4, 1)', '(4, −1)', '(−4, −1)', '(1, 4)'], answer: 2, hint: 'Both signs change.', explain: '(−4, −1).' }, g(CH, 'sg-transform', 2), g(CH, 'sg-transform', 3)] }
     ] }

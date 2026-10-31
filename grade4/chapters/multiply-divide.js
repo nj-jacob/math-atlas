@@ -187,6 +187,12 @@
             { do: 'Make an array with <b>7 rows</b> that has <b>56</b> dots.', goal: function (s) { return s.r === 7 && s.c === 8; }, yes: '7 &times; 8 = 56.' },
             { do: 'Find a <b>square</b> array with 49 dots.', goal: function (s) { return s.r === 7 && s.c === 7; }, yes: '7 &times; 7 = 49. Same rows and columns.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will find 3 &times; 7. I make an array: 3 rows with 7 in each row.', array(3, 7), 1800],
+          ['I count by 7s, one row at a time: 7, 14, 21.', array(3, 7, undefined, '3 rows of 7 is 21'), 2000],
+          ['So 3 &times; 7 = <b>21</b>.', array(3, 7, undefined, '3 rows of 7 is 21'), 1400],
+          ['I turn it on its side: 7 rows of 3. Still 21. Rows &times; number in each row = total.', array(7, 3), 2400]
+        ]),
         key: '<p><b>Rows &times; number in each row = total.</b> The order does not change the product.</p>',
         check: [T('facts', 1), T('facts', 1)] },
 
@@ -213,6 +219,12 @@
           { label: 'Start from 10', html: '<p>9 &times; 6 is one row less than 10 &times; 6. 10 &times; 6 = 60, then take away one 6: 60 &minus; 6 = <b>54</b>.</p>' },
           { label: 'Use the 5s', html: '<p>Fives are easy: count by 5s. 7 &times; 6 = 5 &times; 6 + 2 &times; 6 = 30 + 12 = <b>42</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 8 &times; 6. I do not know it yet, so I make 8 rows of 6.', array(8, 6), 1800],
+          ['I break the 8 rows into 5 rows and 3 rows. I know both of those facts.', array(8, 6, 5), 2000],
+          ['5 &times; 6 = 30 and 3 &times; 6 = 18.', array(8, 6, 5, '5 rows of 6 is 30, 3 rows of 6 is 18'), 2000],
+          ['I add: 30 + 18 = <b>48</b>. So 8 &times; 6 = 48.', array(8, 6, 5, '8 times 6 is 48'), 2400]
+        ]),
         key: '<p><b>Break the rows into two facts you know, then add.</b></p>',
         mistake: '<p>Breaking the rows but then multiplying by the wrong number, or forgetting to add the two parts. Have your child point to each part of the array and say its fact.</p>',
         check: [T('facts', 2), T('facts', 2)] },
@@ -224,6 +236,13 @@
           ['8 &times; 7 = 56 too.', array(7, 8) + '<p class="math big">7 &times; 8 = 56<br>8 &times; 7 = 56</p>', 1600],
           ['56 shared into 7 rows: 8 in each. 56 &divide; 7 = 8.', array(7, 8) + '<p class="math big">7 &times; 8 = 56<br>8 &times; 7 = 56<br>56 &divide; 7 = 8</p>', 1800],
           ['And 56 &divide; 8 = 7.', array(7, 8) + '<p class="math big">7 &times; 8 = 56<br>8 &times; 7 = 56<br>56 &divide; 7 = 8<br>56 &divide; 8 = 7</p>', 2000]
+        ]),
+        example: K.watch([
+          ['My turn. I will write the fact family for 6 rows of 9.', array(6, 9), 1600],
+          ['6 rows of 9 is 54: 6 &times; 9 = 54.', '<div>' + array(6, 9) + '<p class="math big">6 &times; 9 = 54</p></div>', 1800],
+          ['The order does not change the product: 9 &times; 6 = 54.', '<div>' + array(6, 9) + '<p class="math big">6 &times; 9 = 54<br>9 &times; 6 = 54</p></div>', 1800],
+          ['54 shared into 6 rows gives 9 in each: 54 &divide; 6 = 9.', '<div>' + array(6, 9) + '<p class="math big">6 &times; 9 = 54<br>9 &times; 6 = 54<br>54 &divide; 6 = 9</p></div>', 1800],
+          ['For 54 &divide; 9, I think: 9 &times; what = 54? It is 6. So 54 &divide; 9 = 6.', '<div>' + array(6, 9) + '<p class="math big">6 &times; 9 = 54<br>9 &times; 6 = 54<br>54 &divide; 6 = 9<br>54 &divide; 9 = 6</p></div>', 2400]
         ]),
         key: '<p>To divide, <b>think of the multiplication fact</b>. 56 &divide; 8: 8 &times; what = 56?</p>',
         check: [T('facts', 3), T('facts', 3)] }
@@ -244,6 +263,11 @@
             { do: 'Make <b>3700</b>.', goal: function (s) { return s.res === 3700; }, yes: '37 &times; 100 = 3700.' },
             { do: 'Make <b>8000</b> using <b>&times; 100</b>.', goal: function (s) { return s.res === 8000 && s.k === '2'; }, yes: '80 &times; 100 = 8000. Also 8 &times; 1000.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will find 73 &times; 100.', shift(73, 0, 'x').replace(/each digit moves 0 places? left/, ''), 1400],
+          ['Times 100 makes each digit worth 100 times as much. So each digit moves 2 places left.', shift(73, 2, 'x'), 2400],
+          ['Zeros fill the empty tens and ones. 73 &times; 100 = <b>7300</b>.', shift(73, 2, 'x'), 2400]
+        ]),
         key: '<p>Times 10, 100, 1000: <b>each digit moves 1, 2 or 3 places left</b>. Zeros fill the empty places.</p>',
         check: [T('tens', 1), T('tens', 2)] },
 
@@ -256,6 +280,11 @@
         try: K.lab({ controls: [{ id: 'n', label: 'Number', min: 10, max: 990, step: 10, value: 460 }],
           render: function (s) { return { fig: shift(s.n, 1, 'd'), out: '<p class="big math">' + s.n + ' &divide; 10 = ' + s.n / 10 + '</p>' }; },
           tasks: [{ do: 'Find the number that gives <b>64</b> when you divide by 10.', goal: function (s) { return s.n === 640; }, yes: '640 &divide; 10 = 64.' }] }),
+        example: K.watch([
+          ['My turn. I will find 5800 &divide; 10.', shift(5800, 0, 'x').replace(/each digit moves 0 places? left/, ''), 1400],
+          ['Divide by 10: each digit moves 1 place right. The 0 in the ones place drops off.', shift(5800, 1, 'd'), 2400],
+          ['5800 &divide; 10 = <b>580</b>.', shift(5800, 1, 'd'), 2000]
+        ]),
         key: '<p>Divide by 10: <b>each digit moves 1 place right</b>.</p>',
         mistake: '<p>"Just add a zero" also for dividing (460 &divide; 10 = 4600). Ask: "Should the answer be bigger or smaller?"</p>',
         check: [T('tens', 3), T('tens', 3)] }
@@ -273,6 +302,11 @@
           { label: 'Repeated groups', html: '<p>34 &times; 6 is six groups of 34. Six 30s are 180. Six 4s are 24. Together: <b>204</b>.</p>' },
           { label: 'With money', html: '<p>6 friends each pay $34. Each pays three $10 bills and four loonies. Bills: 18 &times; $10 = $180. Loonies: 24 &times; $1 = $24. Total: <b>$204</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 47 &times; 5. First I break 47 into 40 and 7.', areaModel(47, 5, true), 2000],
+          ['Next I multiply each part by 5: 40 &times; 5 = 200 and 7 &times; 5 = 35.', areaModel(47, 5), 2400],
+          ['Last I add the parts: 200 + 35 = <b>235</b>. Break, multiply each part, add.', '<div>' + areaModel(47, 5) + '<p class="math big">200 + 35 = 235</p></div>', 2400]
+        ]),
         key: '<p><b>Break. Multiply each part. Add.</b></p>',
         mistake: '<p>Multiplying only the ones (34 &times; 6 = 3 tens and 24 = 54), or 3 &times; 6 instead of 30 &times; 6. Point to the 3 and ask: "What is this 3 really worth?"</p>',
         check: [T('mult', 1), T('mult', 2)] },
@@ -291,6 +325,11 @@
             { do: 'Show <b>246 &times; 3</b>.', goal: function (s) { return s.a === 246 && s.b === 3; }, yes: '738.' },
             { do: 'Find a product between <b>1000 and 1100</b>.', goal: function (s) { return s.p >= 1000 && s.p <= 1100; }, yes: function (s) { return s.a + ' &times; ' + s.b + ' = ' + A.fmt(s.p) + '.'; } }
           ] }),
+        example: K.watch([
+          ['My turn. I will find 152 &times; 6. I break 152 into 100, 50 and 2.', areaModel(152, 6, true), 2000],
+          ['I multiply every part by 6: 100 &times; 6 = 600, 50 &times; 6 = 300, 2 &times; 6 = 12.', areaModel(152, 6), 2600],
+          ['I add the parts: 600 + 300 + 12 = <b>912</b>.', '<div>' + areaModel(152, 6) + '<p class="math big">600 + 300 + 12 = 912</p></div>', 2400]
+        ]),
         key: '<p><b>Break. Multiply each part. Add.</b> Every part gets multiplied.</p>',
         check: [T('mult', 3), T('mult', 3)] }
     ] },
@@ -310,6 +349,13 @@
             { do: 'Share <b>20</b> counters into <b>6</b> groups.', goal: function (s) { return s.n === 20 && s.d === 6; }, yes: '3 each, 2 left over: 20 &divide; 6 = 3 R2.' },
             { do: 'Find more than 30 counters that share into <b>4</b> groups with <b>none</b> left over.', goal: function (s) { return s.d === 4 && s.n > 30 && s.n % 4 === 0; }, yes: function (s) { return s.n + ' &divide; 4 = ' + s.n / 4 + ', no remainder.'; } }
           ] }),
+        example: K.watch([
+          ['My turn. I will share 17 counters onto 5 plates. I deal one to each plate.', share(5, 5), 1600],
+          ['I deal again. 10 are used.', share(10, 5), 1300],
+          ['And again. 15 are used.', share(15, 5), 1300],
+          ['2 are left. That is not enough for every plate, so they are the remainder. 17 &divide; 5 = <b>3 R2</b>.', share(17, 5), 2400],
+          ['I check: 5 groups &times; 3 + 2 = 17. That is the start number.', share(17, 5), 2200]
+        ]),
         key: '<p><b>Groups &times; number in each + remainder = start number.</b></p>',
         check: [T('div', 1), T('div', 1)] },
 
@@ -324,6 +370,12 @@
           { label: 'Share the blocks', html: '<p>87 is 8 tens and 7 ones. Share 8 tens among 3: each gets 2 tens, and 2 tens are left. Break them into 20 ones: now 27 ones. Each gets 9. Each has 2 tens and 9 ones: <b>29</b>.</p>' },
           { label: 'Check by multiplying', html: '<p>Guess, then check. Is it 30? 3 &times; 30 = 90, too big by 3. So take one away: 29. 3 &times; 29 = <b>87</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 76 &divide; 4. I start with a tens fact: 4 &times; 10 = 40. (4 &times; 20 = 80 is too much.)', areaModel(10, 4), 2600],
+          ['76 &minus; 40 = 36 is left. I know 4 &times; 9 = 36.', areaModel(19, 4), 2200],
+          ['I add the two answers: 10 + 9 = 19. So 76 &divide; 4 = <b>19</b>.', '<div>' + areaModel(19, 4) + '<p class="math big">76 &divide; 4 = 19</p></div>', 2200],
+          ['I check: 40 + 36 = 76. It works.', '<div>' + areaModel(19, 4) + '<p class="math big">76 &divide; 4 = 19</p></div>', 1800]
+        ]),
         key: '<p><b>Use a tens fact first, then divide what is left.</b> Add the two answers.</p>',
         mistake: '<p>Dividing each digit on its own (87 &divide; 3 as 8 &divide; 3 and 7 &divide; 3) and losing the leftovers. Ask: "What happens to the tens that do not share evenly?"</p>',
         check: [T('div', 2), T('div', 3)] },
@@ -339,6 +391,12 @@
         ways: [
           { label: 'Ask a question', html: '<p>After dividing, ask: <b>"Can the leftovers be left out, do they need their own group, or can they be cut?"</b></p><div class="tbl"><table><thead><tr><th>Story</th><th>Leftovers</th></tr></thead><tbody><tr><td>Vans, tables, boxes needed</td><td>Round up</td></tr><tr><td>Full boxes, full teams</td><td>Drop them</td></tr><tr><td>Pizza, bread, money</td><td>Cut and share</td></tr></tbody></table></div>' }
         ],
+        example: K.watch([
+          ['My turn. 30 campers go canoeing. 4 fit in each canoe. How many canoes do they need?', share(30, 4), 2000],
+          ['I divide: 30 &divide; 4 = 7 R2. 7 canoes are full, and 2 campers are left over.', share(30, 4), 2200],
+          ['The story decides. The 2 campers still need a canoe, so I round up.', share(30, 4), 2000],
+          ['They need <b>8 canoes</b>.', '<div>' + share(30, 4) + '<p class="big">Round up: 8 canoes</p></div>', 2200]
+        ]),
         key: '<p><b>The story decides:</b> round up, drop the remainder, or share it.</p>',
         mistake: '<p>Writing "6 R2 vans". A remainder is not an answer to a real question. Ask: "Where do the 2 extra students sit?"</p>',
         check: [T('rem', 1), T('rem', 3)] }
@@ -354,6 +412,12 @@
             { do: 'Sam saves <b>$5 each week</b>. Show how much after <b>7 weeks</b>.', goal: function (s) { return s.p === 5 && s.n === 7; }, yes: '7 &times; $5 = $35.' },
             { do: 'At $5 a week, how many weeks to save <b>$45</b>? Show it.', goal: function (s) { return s.p === 5 && s.n === 9; }, yes: '9 weeks. 45 &divide; 5 = 9.' }
           ] }),
+        example: K.watch([
+          ['My turn. A box holds 8 crayons. How many crayons are in 5 boxes? 1 box: 8 crayons.', rateLine(8, 1, 'boxes', 'crayons'), 2000],
+          ['2 boxes: 16 crayons. Each box adds 8 more.', rateLine(8, 2, 'boxes', 'crayons'), 1600],
+          ['I know the amount for 1 box, so I multiply: 5 &times; 8 = <b>40</b> crayons.', rateLine(8, 5, 'boxes', 'crayons'), 2200],
+          ['I check by counting by 8s: 8, 16, 24, 32, 40.', rateLine(8, 5, 'boxes', 'crayons'), 2000]
+        ]),
         key: '<p>Know the amount for 1? <b>Multiply</b> to find more. Know the total? <b>Divide</b>.</p>',
         check: [T('rate', 1), T('rate', 2)] },
 
@@ -362,6 +426,12 @@
         watch: K.watch([
           ['A cyclist rides 8 km each hour. How many hours to ride 40 km?', rateLine(8, 5, 'hours', 'kilometres', true).replace('>?<', '>40<'), 2200],
           ['Count by 8s: 8, 16, 24, 32, 40. That is <b>5 hours</b>. 40 &divide; 8 = 5.', rateLine(8, 5, 'hours', 'kilometres'), 2400]
+        ]),
+        example: K.watch([
+          ['My turn. A hose fills 6 L of water each minute. How many minutes to fill 42 L?', rateLine(6, 7, 'minutes', 'litres', true).replace('>?<', '>42<'), 2200],
+          ['I know the total, 42 L, and the amount for each minute, 6 L. So I divide: 42 &divide; 6.', rateLine(6, 7, 'minutes', 'litres', true).replace('>?<', '>42<'), 2200],
+          ['6 &times; 7 = 42, so 42 &divide; 6 = 7.', rateLine(6, 7, 'minutes', 'litres'), 1800],
+          ['I check by counting by 6s: 6, 12, 18, 24, 30, 36, 42. It takes <b>7 minutes</b>.', rateLine(6, 7, 'minutes', 'litres'), 2400]
         ]),
         key: '<p>Total &divide; amount for each = <b>how many</b>.</p>',
         mistake: '<p>Multiplying when the total is already known (8 &times; 40). Ask: "Do we know the total, or the amount for one?"</p>',

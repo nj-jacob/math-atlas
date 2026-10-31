@@ -116,6 +116,9 @@ async function checkGrade(browser, base, g) {
     }
     return r;
   });
+  /* Each idea needs its own name in its chapter: the name is its web address and its progress record. */
+  const seen = new Set();
+  for (const r of routes) if (r.includes('/learn/')) { if (seen.has(r)) fail(where, r + ' is used by two ideas. Give one of them a different id.'); seen.add(r); }
   for (const r of routes) {
     const before = errs.length;
     await page.evaluate(h => { location.hash = '#' + h; }, r);

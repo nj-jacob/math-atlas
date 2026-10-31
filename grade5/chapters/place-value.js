@@ -172,6 +172,13 @@
           { say: '10 tens are grouped into <b>1 hundred</b>.', act: function (t) { return t.group(1); } },
           { say: 'It keeps going: 10 hundreds make 1 thousand, and 10 thousands make 10 000.', act: function (t) { return t.add(2, 9, 160).then(function () { return t.group(2); }); }, ms: 2200 }
         ] },
+        example: { mount: disksTool([3, 2, 1, 0], { 1: 7 }), steps: [
+          { say: 'My turn. I start with 7 tens.', ms: 1200 },
+          { say: 'I add 3 more tens. Now there are 10 tens.', act: function (t) { return t.add(1, 3, 300); } },
+          { say: 'I group the 10 tens into <b>1 hundred</b>.', act: function (t) { return t.group(1); } },
+          { say: 'Next I add 9 more hundreds. That makes 10 hundreds.', act: function (t) { return t.add(2, 9, 220); } },
+          { say: 'I group the 10 hundreds into <b>1 thousand</b>. 10 of one place make 1 of the next place to the left.', act: function (t) { return t.group(2); }, ms: 2200 }
+        ] },
         try: { mount: function (host, done) {
           var t = K.disks(host, { places: [3, 2, 1, 0], controls: true, start: { 0: 7 }, onChange: function (s) {
             if (s.last.indexOf('group-') === 0 && s.counts[2] >= 1 && !t.told) { t.told = 1; done('Yes. Every time you group 10, you make 1 of the next place.'); }
@@ -191,6 +198,13 @@
           { say: 'The 7 is in the thousands place. It is worth <b>7000</b>.', fig: an(chart(47305, { vals: true, hl: 1 })) },
           { say: 'The 3 is worth 300, and the 5 is worth 5.', fig: an(chart(47305, { vals: true, hl: 3 })), ms: 1800 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will find what each digit in 63 914 is worth.', fig: an(chart(63914, { vals: false })), ms: 1400 },
+          { say: 'The 6 is in the ten thousands place. 6 &times; 10 000 = <b>60 000</b>.', fig: an(chart(63914, { vals: true, hl: 0 })), ms: 1600 },
+          { say: 'The 3 is in the thousands place. 3 &times; 1000 = <b>3000</b>.', fig: an(chart(63914, { vals: true, hl: 1 })), ms: 1600 },
+          { say: 'The 9 is in the hundreds place. 9 &times; 100 = <b>900</b>.', fig: an(chart(63914, { vals: true, hl: 2 })), ms: 1600 },
+          { say: 'The 1 is worth 10 and the 4 is worth 4. Value = digit &times; place.', fig: an(chart(63914, { vals: true, hl: 4 })), ms: 2000 }
+        ]),
         try: K.widget('place-value', 0, 'Nice. Watch how each digit tells you how many disks are in its place.'),
         ways: [
           { label: 'Say the place', html: '<p>Point to the digit, then say its place: "7 thousands". 7 thousands is 7000.</p><div class="fig">' + periods(47305) + '</div>' },
@@ -207,6 +221,13 @@
           { say: '3 hundreds.', act: function (t) { return t.add(2, 3, 300); } },
           { say: 'No tens. Another <b>0</b>.', act: function (t) { return t.pulseCol(1); } },
           { say: '5 ones. We write <b>40 305</b>, not 435.', act: function (t) { return t.add(0, 5, 220); }, ms: 2200 }
+        ] },
+        example: { mount: disksTool([4, 3, 2, 1, 0]), steps: [
+          { say: 'My turn. I will build 50 208. First I put 5 ten thousands.', act: function (t) { return t.add(4, 5, 300); } },
+          { say: 'There are no thousands. I leave that column empty and write <b>0</b>.', act: function (t) { return t.pulseCol(3); } },
+          { say: 'Next I put 2 hundreds.', act: function (t) { return t.add(2, 2, 300); } },
+          { say: 'There are no tens. I write another <b>0</b>.', act: function (t) { return t.pulseCol(1); } },
+          { say: 'Then 8 ones. I write <b>50 208</b>, not 528. A 0 holds an empty place.', act: function (t) { return t.add(0, 8, 200); }, ms: 2200 }
         ] },
         try: { mount: function (host, done) {
           var tg = [40305, 60070, 90009], k = 0, p = A.$$ ? null : null, msg = document.createElement('p');
@@ -241,6 +262,13 @@
           { say: 'The 0 in the tens place is worth nothing, so it is left out of the sum.', fig: expanded(52408), ms: 1800 },
           { say: '52 408 = 50 000 + 2000 + 400 + 8.', fig: expanded(52408), ms: 1800 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will write 71 060 in expanded form.', fig: an(chart(71060, { dots: false })), ms: 1400 },
+          { say: 'I drop each digit down to the value it stands for.', fig: expanded(71060), ms: 1600 },
+          { say: 'The 7 is worth 70 000. The 1 is worth 1000. The 6 is worth 60.', fig: expanded(71060), ms: 1800 },
+          { say: 'The zeros are worth nothing, so I leave them out.', fig: expanded(71060), ms: 1600 },
+          { say: '<b>71 060 = 70 000 + 1000 + 60</b>. Same number.', fig: expanded(71060), ms: 2000 }
+        ]),
         try: { mount: function (host, done) {
           var msg = document.createElement('p'); msg.className = 'ls-task'; msg.innerHTML = 'Build <b>30 000 + 6000 + 70 + 2</b> with disks.'; host.appendChild(msg);
           var b = document.createElement('div'); host.appendChild(b);
@@ -257,6 +285,12 @@
           { say: 'The right part is "three hundred five". Together: forty-seven thousand three hundred five.', fig: periods(47305), ms: 2400 },
           { say: 'In 60 018 the right part is "eighteen": sixty thousand eighteen.', fig: periods(60018), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will read 83 042 in words. I split it at the space.', fig: periods(83042), ms: 1600 },
+          { say: 'First I read the left part and say "thousand": "eighty-three thousand".', fig: periods(83042), ms: 1800 },
+          { say: 'Next I read the right part. 042 is "forty-two".', fig: periods(83042), ms: 1600 },
+          { say: 'Together: <b>eighty-three thousand forty-two</b>.', fig: periods(83042), ms: 2200 }
+        ]),
         try: K.widget('place-value', 0, 'Good. Try a number with zeros in it and read the words.'),
         key: '<p>Read the <b>thousands</b> part, say "thousand", then read the rest. The space in 47 305 shows where to split.</p>',
         mistake: '<p>Saying "and" inside a whole number (three hundred <b>and</b> five). In math, "and" marks the decimal point. Model it without "and".</p>',
@@ -270,6 +304,13 @@
           { say: 'Now it is 1 thousand and 13 hundreds. Still 2304.', ms: 1600 },
           { say: 'Break the other thousand too: 23 hundreds and 4 ones.', act: function (t) { return t.split(3); }, ms: 2000 },
           { say: 'Count to check.', act: function (t) { return t.countAll(120); }, ms: 1200 }
+        ] },
+        example: { mount: disksTool([3, 2, 1, 0], { 2: 4, 1: 1, 0: 6 }), steps: [
+          { say: 'My turn. This is 416: 4 hundreds, 1 ten and 6 ones.', ms: 1600 },
+          { say: 'I break 1 hundred into 10 tens.', act: function (t) { return t.split(2); } },
+          { say: 'Now it is 3 hundreds and 11 tens. Still 416.', ms: 1600 },
+          { say: 'Next I break 1 ten into 10 ones. Now there are 16 ones.', act: function (t) { return t.split(1); }, ms: 1600 },
+          { say: 'I count to check: still 416. Trading disks <b>does not change the number</b>.', act: function (t) { return t.countAll(120); }, ms: 1800 }
         ] },
         try: K.widget('place-value', 1, 'Yes. The disks change, but the total does not.'),
         ways: [
@@ -290,6 +331,14 @@
           { say: 'Hundreds: 2 and 7. Different! 7 hundreds is more.', fig: cmpFig(38245, 38712, 2) },
           { say: 'So <b>38 245 &lt; 38 712</b>. The open side faces the greater number.', fig: cmpFig(38245, 38712, 2), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. Which is greater: 52 671 or 52 619?', fig: cmpFig(52671, 52619), ms: 1400 },
+          { say: 'I start on the left. Ten thousands: 5 and 5. The same.', fig: cmpFig(52671, 52619, 0) },
+          { say: 'Thousands: 2 and 2. The same.', fig: cmpFig(52671, 52619, 1) },
+          { say: 'Hundreds: 6 and 6. Still the same.', fig: cmpFig(52671, 52619, 2) },
+          { say: 'Tens: 7 and 1. Different! 7 tens is more.', fig: cmpFig(52671, 52619, 3) },
+          { say: 'So <b>52 671 &gt; 52 619</b>. The first different digit decides.', fig: cmpFig(52671, 52619, 3), ms: 2200 }
+        ]),
         try: K.widget('place-value', 2, 'Nice. Try two numbers that only differ in the ones place.'),
         key: '<p>Compare digits from the <b>left</b>. The first different digit decides. More digits means greater.</p>',
         mistake: '<p>Comparing the last digits first, or deciding by the biggest digit anywhere. 40 001 &gt; 39 999 even though 9 &gt; 1. Have the child line the numbers up in a chart.</p>',
@@ -302,6 +351,13 @@
           { say: 'They all have 5 digits. Look at the ten thousands: 5, 3, 6, 4.', fig: A.draw.line(30000, 70000, 10000, 38900) },
           { say: 'The smallest is 38 900, then 47 300.', fig: A.draw.line(30000, 70000, 10000, 47300) },
           { say: 'Then 52 800, then 61 200. Least to greatest: 38 900, 47 300, 52 800, 61 200.', fig: A.draw.line(30000, 70000, 10000, 61200), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will order 74 100, 29 500, 56 300 and 41 800.', fig: A.draw.line(20000, 80000, 10000, null, 'Number line from 20 000 to 80 000'), ms: 1600 },
+          { say: 'They all have 5 digits, so I look at the biggest place. The ten thousands digits are 7, 2, 5 and 4.', fig: A.draw.line(20000, 80000, 10000, null, 'Number line from 20 000 to 80 000'), ms: 2000 },
+          { say: '2 is the smallest, so 29 500 comes first.', fig: A.draw.line(20000, 80000, 10000, 29500) },
+          { say: 'Next is 41 800, then 56 300.', fig: A.draw.line(20000, 80000, 10000, 56300) },
+          { say: 'Last is 74 100. Least to greatest: <b>29 500, 41 800, 56 300, 74 100</b>.', fig: A.draw.line(20000, 80000, 10000, 74100), ms: 2400 }
         ]),
         key: '<p>Order by the <b>biggest place first</b>. Least to greatest goes left to right on a number line.</p>',
         check: [P('pv-compare', 2), P('pv-compare', 3)] }
@@ -316,6 +372,12 @@
           { say: '48 650 is past the top.', fig: hill(48650, 1000) },
           { say: 'So it rolls up to <b>49 000</b>.', fig: hill(48650, 1000), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will round 63 280 to the nearest thousand. It is between 63 000 and 64 000.', fig: hill(63000, 1000), ms: 1800 },
+          { say: 'Halfway is 63 500, the top of the hill.', fig: hill(63500, 1000) },
+          { say: '63 280 is before the top. The digit to the right of the thousands is 2.', fig: hill(63280, 1000), ms: 1800 },
+          { say: '2 is less than 5, so I round down. 63 280 rolls back to <b>63 000</b>.', fig: hill(63280, 1000), ms: 2200 }
+        ]),
         try: K.widget('place-value', 3, 'Good. Try a number exactly at halfway. It rounds up.'),
         key: '<p>Look at the digit to the <b>right</b> of the rounding place. <b>5 or more</b>: round up. <b>Less than 5</b>: round down.</p>',
         check: [P('pv-round', 1), P('pv-round', 2)] },
@@ -326,6 +388,12 @@
           { say: 'Round 39 700 to the nearest thousand.', fig: hill(39000, 1000) },
           { say: 'It is between 39 000 and 40 000. The hundreds digit is 7.', fig: hill(39700, 1000) },
           { say: '7 is 5 or more, so round up: 39 thousands + 1 thousand = <b>40 000</b>.', fig: hill(39700, 1000), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will round 59 600 to the nearest thousand.', fig: hill(59000, 1000), ms: 1400 },
+          { say: 'It is between 59 000 and 60 000. The hundreds digit is 6.', fig: hill(59600, 1000), ms: 1600 },
+          { say: '6 is 5 or more, so I round up. The 9 thousands becomes 10.', fig: hill(59600, 1000), ms: 1800 },
+          { say: 'I write 0 and carry 1 to the left: 59 600 rounds to <b>60 000</b>.', fig: hill(59600, 1000), ms: 2200 }
         ]),
         ways: [
           { label: 'Count thousands', html: '<p>39 700 has 39 whole thousands. Rounding up gives one more: 40 thousands, which is 40 000.</p>' },
@@ -344,6 +412,12 @@
           { say: 'A large hockey arena seats about 19 000 people: 19 squares.', fig: hundredK(19000) },
           { say: 'Around the Earth is about 40 000 km: 40 squares.', fig: hundredK(40075) },
           { say: '100 squares make <b>100 000</b>.', fig: hundredK(100000), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will picture 100 000. Each square is 1000.', fig: hundredK(1000), ms: 1400 },
+          { say: 'A town of 25 000 people fills 25 squares.', fig: hundredK(25000), ms: 1600 },
+          { say: '50 000 fills half the grid: 50 squares.', fig: hundredK(50000), ms: 1600 },
+          { say: 'All 100 squares make <b>100 000</b>. That is 100 &times; 1000, or 10 &times; 10 000.', fig: hundredK(100000), ms: 2200 }
         ]),
         try: K.widget('place-value', 4, 'Nice. Big numbers are easier to picture as groups of 1000.'),
         key: '<p>100 000 = 10 &times; 10 000 = 100 &times; 1000 = 1000 &times; 100.</p>',

@@ -157,6 +157,12 @@
           ['And again. The core is <b>circle, square, square</b>.', grow('ABBABBABB', 3)],
           ['So next comes a <b>circle</b>.', grow('ABBABBABBA', 3), 2000]
         ]),
+        example: K.clip([
+          ['My turn. I look for the part that repeats. Circle, circle, triangle.', grow('AAC', 3)],
+          ['Then circle, circle, triangle again. It repeats in the same order.', grow('AACAAC', 3)],
+          ['The core is <b>circle, circle, triangle</b>. I mark each core.', grow('AACAAC', 3)],
+          ['After a core ends, a new one starts. So next comes a <b>circle</b>.', grow('AACAACA', 3), 2000]
+        ]),
         try: buildLab,
         key: '<p>Find the core. Mark each core with a bracket.</p>',
         mistake: '<p>Calling any row of shapes a pattern. The core must repeat at least twice in the same order.</p>',
@@ -167,6 +173,11 @@
           ['What is at place 11 of circle, square, square?', grow('ABBABBABB??'.replace(/\?/g, '?'), 3)],
           ['Count in cores of 3: 3, 6, 9. Place 9 ends a core.', grow('ABBABBABB', 3)],
           ['Place 10 starts a new core: circle. Place 11 is a <b>square</b>.', grow('ABBABBABBAB', 3), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. The core is circle, square, triangle. What is at place 8?', grow('ABCABC??', 3)],
+          ['I count in cores of 3: 3, 6. Place 6 ends a core.', grow('ABCABC', 3)],
+          ['Place 7 starts a new core: circle. So place 8 is a <b>square</b>.', grow('ABCABCAB', 3), 2200]
         ]),
         try: placeLab,
         ways: [
@@ -183,6 +194,12 @@
           ['As numbers: 1 2 2 1 2 2.', '<p class="math big">A B B A B B<br>1 2 2 1 2 2</p>'],
           ['As sounds: clap, snap, snap. All the same pattern: <b>one, then two the same</b>.', '<p class="math big">clap snap snap clap snap snap</p>', 2200]
         ]),
+        example: K.clip([
+          ['My turn. I will show this pattern in new ways.', row('AACAAC')],
+          ['The first shape gets A. The next new shape gets B. As letters: A A B A A B.', row('AACAAC') + '<p class="math big">A A B A A B</p>', 2000],
+          ['As numbers: 1 1 2 1 1 2.', '<p class="math big">A A B A A B<br>1 1 2 1 1 2</p>'],
+          ['As sounds: stomp, stomp, clap. It is the same pattern: <b>two the same, then one different</b>.', '<p class="g2-big">stomp stomp clap stomp stomp clap</p>', 2200]
+        ]),
         key: '<p>Same structure, new look. A B B is "one, then two the same".</p>',
         mistake: '<p>Matching colours or shapes instead of the structure. Red, blue, blue and 5, 7, 7 are both A B B.</p>',
         check: [T('translate'), P('p2-translate', 1)] }
@@ -197,6 +214,13 @@
           { say: 'To 24: back 2.', act: function (t) { return t.hop(24, '&minus;2'); } },
           { say: 'The rule: <b>start at 30, subtract 2 each time</b>. Next is 22.', act: function (t) { return t.hop(22, '&minus;2'); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 10, max: 26, every: 2, start: 12 }, steps: [
+          { say: 'My turn. 12, 15, 18, 21. What is the rule? I start at 12.', ms: 1200 },
+          { say: 'From 12 to 15 is 3 more.', act: function (t) { return t.hop(15, '+3'); } },
+          { say: 'From 15 to 18 is 3 more.', act: function (t) { return t.hop(18, '+3'); } },
+          { say: 'From 18 to 21 is 3 more.', act: function (t) { return t.hop(21, '+3'); } },
+          { say: 'The rule: <b>start at 12, add 3 each time</b>. Next is 24.', act: function (t) { return t.hop(24, '+3'); }, ms: 2000 }
+        ] },
         try: { tool: 'hundred', opts: {}, tasks: [
           { do: 'Show the rule <b>start at 3, add 5 each time</b>. Tap 3 and the next four numbers.', goal: function (s) { return [3, 8, 13, 18, 23].every(function (n) { return s.lit.indexOf(n) >= 0; }); }, yes: '3, 8, 13, 18, 23. The ones go 3, 8, 3, 8.' }
         ] },
@@ -209,6 +233,11 @@
           ['From 5 to 10 is + 5. From 20 to 25 is + 5.', '<p class="math big">5 <sup>+5</sup> 10, &#9633;, 20 <sup>+5</sup> 25</p>'],
           ['10 + 5 = <b>15</b>.', '<p class="math big">5, 10, <b>15</b>, 20, 25</p>', 2000]
         ]),
+        example: K.clip([
+          ['My turn. What number is missing? 18, 16, ?, 12, 10.', '<p class="math big">18, 16, &#9633;, 12, 10</p>'],
+          ['I find the rule. From 18 to 16 is 2 less. From 12 to 10 is 2 less.', '<p class="math big">18 <sup>&minus;2</sup> 16, &#9633;, 12 <sup>&minus;2</sup> 10</p>'],
+          ['16 &minus; 2 = <b>14</b>. I check: 14 &minus; 2 = 12. Yes.', '<p class="math big">18, 16, <b>14</b>, 12, 10</p>', 2000]
+        ]),
         key: '<p>Find the rule from the numbers you know, then use it.</p>',
         check: [T('missing'), P('p2-number', 2)] },
       { id: 'chart', title: 'Patterns on the hundred chart', exp: ['C1.4'], skill: 'p2-number',
@@ -218,6 +247,12 @@
           { say: 'A straight column. Every number ends in 4.', ms: 1400 },
           { say: 'Now start at 5 and add 5.', act: function (t) { t.clear(); return t.skip(5, 5, 100, 140); } },
           { say: 'Two columns: numbers ending in 5 and in 0.', ms: 2000 }
+        ] },
+        example: { tool: 'hundred', opts: {}, steps: [
+          { say: 'My turn. I start at 7 and add 10 each time.', act: function (t) { return t.skip(10, 7, 97, 260); } },
+          { say: 'I look at the ones digits. They are all 7. The pattern makes a straight column.', ms: 1800 },
+          { say: 'Now I start at 2 and add 2.', act: function (t) { t.clear(); return t.skip(2, 2, 40, 160); } },
+          { say: 'The ones digits go 2, 4, 6, 8, 0 again and again. Every other column lights up.', ms: 2000 }
         ] },
         try: chartLab,
         key: '<p>Look at the ones digits to see the pattern.</p>',
@@ -231,6 +266,11 @@
           ['Count up from 7 to 12: 8, 9, 10, 11, 12. That is 5.', D.hops({ min: 6, max: 13, tick: 1, every: 1, id: 'bx', hops: [{ a: 7, b: 12, t: '+5' }] })],
           ['The box is <b>5</b>. 7 + 5 = 12.', '<p class="math big">7 + 5 = 12</p>', 2000]
         ]),
+        example: K.clip([
+          ['My turn. 9 + &#9633; = 15. What number is in the box?', '<p class="math big">9 + &#9633; = 15</p>'],
+          ['I count up from 9 to 15: 10, 11, 12, 13, 14, 15. That is 6.', D.hops({ min: 8, max: 16, tick: 1, every: 1, id: 'bxe', hops: [{ a: 9, b: 15, t: '+6' }] })],
+          ['The box is <b>6</b>. I check: 9 + 6 = 15.', '<p class="math big">9 + 6 = 15</p>', 2000]
+        ]),
         key: '<p>The symbol holds the place of a number.</p>',
         check: [T('box'), P('p2-symbol', 1)] },
       { id: 'same', title: 'The same symbol, the same number', exp: ['C2.1'], skill: 'p2-symbol',
@@ -239,6 +279,11 @@
           ['&#9650; + &#9650; = 10. Both triangles are the same number.', '<p class="math big">&#9650; + &#9650; = 10</p>'],
           ['Which number added to itself makes 10? 5 + 5 = 10.', D.things(10, { kind: 'dot', cols: 5, r: 13 })],
           ['So &#9650; = <b>5</b>.', '<p class="math big">5 + 5 = 10</p>', 2000]
+        ]),
+        example: K.clip([
+          ['My turn. &#9733; + &#9733; = 8. Both stars are the same number.', '<p class="math big">&#9733; + &#9733; = 8</p>'],
+          ['I need a number added to itself that makes 8. I try 4: 4 + 4 = 8.', D.things(8, { kind: 'dot', cols: 4, r: 13 })],
+          ['It works. So &#9733; = <b>4</b>.', '<p class="math big">4 + 4 = 8</p>', 2000]
         ]),
         key: '<p>Same symbol, same number.</p>',
         check: [T('same'), T('same')] }
@@ -251,6 +296,11 @@
           ['Both sides are 8. The balance is level. <b>5 + 3 = 4 + 4</b> is true.', balance('5 + 3', '4 + 4', 0)],
           ['5 + 3 and 4 + 5 are not the same: 8 and 9. It tips.', balance('5 + 3', '4 + 5', 1), 2200]
         ]),
+        example: K.clip([
+          ['My turn. Is 6 + 2 = 5 + 3 true? I put each side on the balance.', balance('6 + 2', '5 + 3', 0)],
+          ['6 + 2 is 8. 5 + 3 is 8. The balance is level, so it is <b>true</b>.', balance('6 + 2', '5 + 3', 0)],
+          ['Now 6 + 2 and 5 + 4: 8 and 9. Not the same, so it tips. The equal sign means both sides are the same.', balance('6 + 2', '5 + 4', 1), 2400]
+        ]),
         key: '<p>= means both sides are the same amount.</p>',
         mistake: '<p>Thinking = means "the answer comes next". In 8 + 4 = &#9633; + 5, the box is not 12. Both sides must make 12, so the box is 7.</p>',
         check: [T('tf'), T('tf')] },
@@ -260,6 +310,11 @@
           ['8 + 4 = 10 + &#9633;.', balance('8 + 4', '10 + ?', -1)],
           ['The left side is 12. The right side needs to be 12 too.', balance('8 + 4', '10 + ?', -1)],
           ['10 + 2 = 12. Now it is level. The box is <b>2</b>.', balance('8 + 4', '10 + 2', 0), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. 7 + 5 = 9 + &#9633;. What goes in the box?', balance('7 + 5', '9 + ?', -1)],
+          ['First I work out the left side: 7 + 5 = 12. The right side must be 12 too.', balance('7 + 5', '9 + ?', -1)],
+          ['9 + 3 = 12. Now it is level. The box is <b>3</b>.', balance('7 + 5', '9 + 3', 0), 2200]
         ]),
         try: balLab,
         ways: [

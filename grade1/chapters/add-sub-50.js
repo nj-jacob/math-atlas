@@ -132,6 +132,12 @@
           { say: 'Move 2 yellow into the first frame. Now it is full: 10.', act: function (t) { return t.show(makeTen(8, 5)); }, ms: 1600 },
           { say: '3 yellow are left in the second frame. 10 + 3 = <b>13</b>.', act: function (t) { return t.show(makeTen(8, 5) + '<p class="big">' + eqn('8 + 5 = 10 + 3 = 13') + '</p>'); }, ms: 2000 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. What is 7 + 6? I show 7 red and 6 yellow.', act: function (t) { return t.show(A.draw.frames(7, { c: 26 }) + A.draw.frames(0, { b: 6, c: 26 })); }, ms: 1600 },
+          { say: 'The first frame has 3 empty boxes. I move 3 yellow into it. Now it is full: 10.', act: function (t) { return t.show(makeTen(7, 6)); }, ms: 1800 },
+          { say: 'I split 6 into 3 and 3. The first 3 made the ten. 3 are left.', ms: 1700 },
+          { say: '10 + 3 = <b>13</b>. So 7 + 6 = 13. Make a ten, then add what is left.', act: function (t) { return t.show(makeTen(7, 6) + '<p class="big">' + eqn('7 + 6 = 10 + 3 = 13') + '</p>'); }, ms: 2000 }
+        ] },
         try: { tool: 'tenframe', opts: { frames: 2, n: 9 }, tasks: [
           { do: 'Find ' + eqn('9 + 4') + '. Add 4 counters. Fill the first frame first.', reset: false, goal: function (s) { return s.n === 13; }, yes: '9 + 1 fills the ten. 3 more: 9 + 4 = 13.' }
         ] },
@@ -151,6 +157,12 @@
           { say: 'Jump back 2 more: 8.', act: function (t) { return t.hop(8, '−2'); }, ms: 900 },
           { say: '14 &minus; 6 = <b>8</b>.', ms: 1800 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 13 }, steps: [
+          { say: 'My turn. What is 13 &minus; 5? I start at 13.', ms: 1400 },
+          { say: 'I split 5 into 3 and 2. First I jump back 3 to get to 10.', act: function (t) { return t.hop(10, '−3'); }, ms: 1100 },
+          { say: 'Then I jump back the 2 that are left: 9, 8.', act: function (t) { return t.hop(8, '−2'); }, ms: 1000 },
+          { say: 'I land on 8. <b>13 &minus; 5 = 8</b>. Jump back to 10 first, then the rest.', ms: 1900 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 15, step: 1 }, tasks: [
           { do: 'Find ' + eqn('15 &minus; 7') + '. Use Jump back 7 times.', goal: function (s) { return s.at === 8; }, yes: '15 &minus; 7 = 8.' }
         ] },
@@ -167,6 +179,12 @@
           { say: 'Add another ten: 43.', act: function (t) { return t.add('t', 1); }, ms: 900 },
           { say: '23 + 20 = <b>43</b>. The ones stayed 3.', ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 1, o: 4 }, steps: [
+          { say: 'My turn. What is 14 + 20? I start with 14.', ms: 1300 },
+          { say: '20 is 2 tens. I add one ten: 24.', act: function (t) { return t.add('t', 1); }, ms: 1000 },
+          { say: 'I add the second ten: 34.', act: function (t) { return t.add('t', 1); }, ms: 1000 },
+          { say: '14 + 20 = <b>34</b>. Only the tens digit changed. The ones stayed 4.', ms: 1900 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 1, o: 6 }, tasks: [
           { do: 'This is 16. Show ' + eqn('16 + 30') + '.', reset: false, goal: function (s) { return s.value === 46; }, yes: '16 + 30 = 46.' }
         ] },
@@ -179,6 +197,12 @@
           { say: 'Jump one ten: 33.', act: function (t) { return t.hop(33, '+10'); }, ms: 900 },
           { say: 'Jump 4 ones: 34, 35, 36, 37.', act: function (t) { return t.hop(34).then(function () { return t.hop(35); }).then(function () { return t.hop(36); }).then(function () { return t.hop(37); }); }, ms: 900 },
           { say: '23 + 14 = <b>37</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 20, max: 40, every: 5, start: 26 }, steps: [
+          { say: 'My turn. What is 26 + 13? I start at 26.', ms: 1300 },
+          { say: '13 is 1 ten and 3 ones. First I jump one ten: 36.', act: function (t) { return t.hop(36, '+10'); }, ms: 1000 },
+          { say: 'Then I jump 3 ones: 37, 38, 39.', act: function (t) { return t.hop(37).then(function () { return t.hop(38); }).then(function () { return t.hop(39); }); }, ms: 900 },
+          { say: 'I land on 39. <b>26 + 13 = 39</b>. Tens first, then ones.', ms: 1800 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 2, o: 1 }, tasks: [
           { do: 'This is 21. Add <b>15</b>: 1 ten and 5 ones.', reset: false, goal: function (s) { return s.value === 36 && s.o < 10; }, yes: '21 + 15 = 36.' }
@@ -197,6 +221,12 @@
           { say: 'Take away another ten: 25.', act: function (t) { return t.remove('t', 1); }, ms: 900 },
           { say: '45 &minus; 20 = <b>25</b>.', ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'], t: 3, o: 7 }, steps: [
+          { say: 'My turn. What is 37 &minus; 20? I start with 37.', ms: 1300 },
+          { say: '20 is 2 tens. I take away one ten: 27.', act: function (t) { return t.remove('t', 1); }, ms: 1000 },
+          { say: 'I take away the second ten: 17.', act: function (t) { return t.remove('t', 1); }, ms: 1000 },
+          { say: '37 &minus; 20 = <b>17</b>. Only the tens digit changed. The ones stayed 7.', ms: 1900 }
+        ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 4, o: 8 }, tasks: [
           { do: 'This is 48. Show ' + eqn('48 &minus; 30') + '.', reset: false, goal: function (s) { return s.value === 18; }, yes: '48 &minus; 30 = 18.' }
         ] },
@@ -209,6 +239,12 @@
           { say: 'Jump back one ten: 35.', act: function (t) { return t.hop(35, '−10'); }, ms: 900 },
           { say: 'Jump back 2 ones: 34, 33.', act: function (t) { return t.hop(34).then(function () { return t.hop(33); }); }, ms: 900 },
           { say: '45 &minus; 12 = <b>33</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 20, max: 40, every: 5, start: 38 }, steps: [
+          { say: 'My turn. What is 38 &minus; 15? I start at 38.', ms: 1300 },
+          { say: '15 is 1 ten and 5 ones. First I jump back one ten: 28.', act: function (t) { return t.hop(28, '−10'); }, ms: 1000 },
+          { say: 'Then I jump back 5 ones: 27, 26, 25, 24, 23.', act: function (t) { return t.hop(27).then(function () { return t.hop(26); }).then(function () { return t.hop(25); }).then(function () { return t.hop(24); }).then(function () { return t.hop(23); }); }, ms: 900 },
+          { say: 'I land on 23. <b>38 &minus; 15 = 23</b>. Tens first, then ones.', ms: 1800 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 3, o: 9 }, tasks: [
           { do: 'This is 39. Take away <b>24</b>: 2 tens and 4 ones.', reset: false, goal: function (s) { return s.value === 15; }, yes: '39 &minus; 24 = 15.' }
@@ -227,10 +263,23 @@
           { say: '<b>Solve:</b> the group gets bigger, so add. 20 + 12 = 32.', act: function (t) { return t.show(A.draw.tens(3, 2) + '<p class="big">' + eqn('20 + 12 = 32') + '</p>'); }, ms: 1800 },
           { say: '<b>Check:</b> 32 is more than 20. That makes sense.', ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. <b>I read:</b> Zoe has 34 stickers. She gives 13 away. How many are left?', act: function (t) { return t.show('<p class="big">34 stickers, 13 given away</p>'); }, ms: 2200 },
+          { say: '<b>I picture it:</b> 3 tens and 4 ones. Some will go away.', act: function (t) { return t.show(A.draw.tens(3, 4)); }, ms: 1700 },
+          { say: '<b>I solve it:</b> the group gets smaller, so I subtract. I take away 1 ten and 3 ones: 34 &minus; 13 = 21.', act: function (t) { return t.show(A.draw.tens(2, 1) + '<p class="big">' + eqn('34 &minus; 13 = 21') + '</p>'); }, ms: 2200 },
+          { say: '<b>I check:</b> 21 is less than 34. And 21 + 13 = 34. It makes sense.', ms: 2000 }
+        ] },
         key: '<p><b>Read, picture, solve, check.</b></p>',
         check: [P('b-story', 1), P('b-story', 2)] },
       { id: 'which', title: 'Add or subtract?', exp: ['B2.4'], skill: 'b-story', hard: true,
         body: '<p>Ask: does the group get <b>bigger</b> or <b>smaller</b>? Bigger means add. Smaller means subtract.</p>',
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. "18 apples. 6 fall off the tree." Do I add or subtract?', act: function (t) { return t.show('<p class="big">18 apples. 6 fall off.</p>'); }, ms: 1800 },
+          { say: 'I picture it. Apples go away, so the group gets smaller. I subtract: 18 &minus; 6 = 12.', act: function (t) { return t.show('<p class="big">18 apples. 6 fall off.</p><p class="big">' + eqn('18 &minus; 6 = 12') + '</p>'); }, ms: 2000 },
+          { say: 'Now: "18 apples. 6 more grow." More apples come, so the group gets bigger.', act: function (t) { return t.show('<p class="big">18 apples. 6 more grow.</p>'); }, ms: 1900 },
+          { say: 'Bigger means I add: 18 + 6 = 24.', act: function (t) { return t.show('<p class="big">18 apples. 6 more grow.</p><p class="big">' + eqn('18 + 6 = 24') + '</p>'); }, ms: 1700 },
+          { say: 'Bigger: <b>add</b>. Smaller: <b>subtract</b>.', ms: 1700 }
+        ] },
         try: { tool: 'g1pick', opts: { cols: 2, items: [
           { id: 'a', html: '<span>12 birds. 5 more land.</span>' }, { id: 's', html: '<span>30 cookies. 10 are eaten.</span>' },
           { id: 'a2', html: '<span>Leo has 21 cards. He gets 4.</span>' }, { id: 's2', html: '<span>15 balloons. 3 pop.</span>' }] }, tasks: [
@@ -250,6 +299,12 @@
           { say: 'Both sides are 7. The balance is level. <b>4 + 3 = 5 + 2</b>.', ms: 1800 },
           { say: 'Now 4 + 3 and 5 + 4. The right side is 9. It is heavier, so it is not equal.', act: function (t) { return t.show(balance(7, 9, '4 + 3', '5 + 4')); }, ms: 2200 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Is 6 + 3 the same as 5 + 4? I work out each side.', act: function (t) { return t.show(balance(9, 9, '6 + 3', '5 + 4')); }, ms: 1700 },
+          { say: '6 + 3 is 9. 5 + 4 is 9. The balance is level, so <b>6 + 3 = 5 + 4</b>.', ms: 2000 },
+          { say: 'Now 6 + 3 and 4 + 4. 4 + 4 is only 8. The left side is heavier.', act: function (t) { return t.show(balance(9, 8, '6 + 3', '4 + 4')); }, ms: 2000 },
+          { say: '9 and 8 are not the same, so they are not equal. = means "is the same as".', ms: 1900 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'y', html: '<span class="big">6 + 2</span>' }, { id: 'n', html: '<span class="big">6 + 3</span>' }, { id: 'n2', html: '<span class="big">4 + 2</span>' }] }, tasks: [
           { do: 'Which one is <b>equal to 5 + 3</b>?', goal: function (s) { return s.picked[0] === 'y'; }, yes: '6 + 2 = 8 and 5 + 3 = 8. They are equal.' }
         ] },
@@ -264,6 +319,12 @@
           { say: 'Level. <b>3 + 5 = 4 + 4</b>.', ms: 1800 }
         ] },
         ways: [{ label: 'Count on', html: '<p>The left side is 8. Start at 4 and count on to 8: 5, 6, 7, 8. That is <b>4</b> more.</p>' }],
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Left: 2 + 6. Right: 5 + ?. I work out the left side first: 2 + 6 = 8.', act: function (t) { return t.show(balance(8, 5, '2 + 6', '5 + ?')); }, ms: 2000 },
+          { say: 'The right side needs to be 8 too. I count on from 5: 6, 7, 8. That is 3.', ms: 1900 },
+          { say: 'I add 3 to the right side.', act: function (t) { return t.show(balance(8, 8, '2 + 6', '5 + 3')); }, ms: 1500 },
+          { say: 'Level. <b>2 + 6 = 5 + 3</b>. Both sides are 8.', ms: 1800 }
+        ] },
         key: '<p>Work out one side. Make the other side <b>the same</b>.</p>',
         check: [P('b-equal', 2), P('b-equal', 3)] }
     ] }

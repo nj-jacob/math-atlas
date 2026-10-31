@@ -181,7 +181,7 @@
         key: '<p>Not enough? <b>Break 1 ten into 10 ones.</b></p>',
         check: [TU('s2', 0), TU('s2', 1), SK('as-sub', 1)] },
 
-      { id: 'columns', title: 'Subtract in columns', exp: ['B2.4', 'B2.5'], skill: 'as-sub', hard: true,
+      { id: 'sub-columns', title: 'Subtract in columns', exp: ['B2.4', 'B2.5'], skill: 'as-sub', hard: true,
         body: '<p>Line up the places and start with the <b>ones</b>. If the top digit is smaller, trade 1 from the next place: cross it out and write one less, then put 10 more in this place.</p>',
         watch: { mount: G3.view(colView, { a: 532, b: 278, op: '-', k: 0, say: '532 &minus; 278' }), steps: [
           { say: 'Ones: 2 is less than 8. Trade a ten: 3 tens become 2, and 2 ones become 12.', act: function (t) { return t.set({ k: 1, say: '12 &minus; 8 = 4' }, 2200); } },
