@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en-CA">
+<html lang="en-CA" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/site.css">
 <link rel="stylesheet" href="assets/family.css">
+<link rel="stylesheet" href="assets/atlas-theme.css">
 </head>
 <body>
 <a class="skip" href="#app">Skip to content</a>
@@ -22,10 +23,6 @@
 <footer class="site"><div class="wrap">
   <p>Math Atlas is a free study aid for Ontario math. Family accounts keep a student's practice in one place.</p>
 </div></footer>
-<script>
-  /* same theme as the grade sites */
-  try { var th = localStorage.getItem('g5atlas:theme'); if (th && th !== 'auto') document.documentElement.setAttribute('data-theme', th); } catch (e) {}
-</script>
 <script type="module" src="assets/family.js"></script>
 </body>
 </html>
