@@ -180,6 +180,12 @@
             { do: 'Make an <b>obtuse</b> angle.', goal: function (s) { return s.k === 'obtuse'; }, yes: 'More than a square corner.' },
             { do: 'Make a <b>right</b> angle, then <b>turn</b> the drawing.', goal: function (s) { return s.k === 'right' && s.r > 0; }, yes: 'Still a right angle: turning does not change it.' }
           ] }),
+        example: K.watch([
+          ['My turn. What kind of angle is this?', angle(140, 20, null, false, true), 1400],
+          ['I compare it with a square corner. Here is a right angle.', angle(90, 20, null, false, true), 1800],
+          ['My angle opens wider than the square corner, but it is not a straight line.', angle(140, 20, null, false, true), 2200],
+          ['So it is <b>obtuse</b>: more than a right angle.', angle(140, 20, null, false, true), 2000]
+        ]),
         key: '<p>Compare with a <b>square corner</b>: smaller is acute, bigger is obtuse.</p>',
         check: [T('angle', 1), T('angle', 1)] },
 
@@ -194,6 +200,12 @@
           { label: 'Paper corner test', html: '<p>Fold any paper twice to make a perfect square corner. Put one edge on one line of the angle. If the other line is <b>inside</b> the corner, it is acute. <b>Outside</b>, obtuse.</p>' },
           { label: 'Arms', html: '<p>Hold one arm straight out in front and the other straight up: right angle. Close them a little: acute. Open them wider: obtuse. Out flat: straight.</p>' }
         ],
+        example: K.watch([
+          ['My turn. Is this angle acute, right or obtuse?', angle(60, 200, null, false, true), 1600],
+          ['It is turned, so its lines point a new way. That does not matter. Only the opening matters.', angle(60, 200, null, false, true), 2400],
+          ['I picture it turned back, so one line lies flat.', angle(60, 0, null, false, true), 1800],
+          ['It opens less than a square corner. It is <b>acute</b>.', angle(60, 0, null, false, true), 2000]
+        ]),
         key: '<p><b>Only the opening matters</b>, not the length or the direction.</p>',
         mistake: '<p>Thinking a turned right angle is not right, or that longer lines make a bigger angle. Turn the page so one line is flat and check again.</p>',
         check: [T('angle', 2), T('angle', 3)] }
@@ -207,6 +219,12 @@
           ['4 right angles: every corner is square.', rect(5, 3, { right: true }), 1800],
           ['Opposite sides are parallel: matching arrows.', rect(5, 3, { par: true }), 2000]
         ]),
+        example: K.watch([
+          ['My turn. I will check this shape for the rectangle facts.', rect(6, 2, {}), 1600],
+          ['First I check each corner: 1, 2, 3, 4 square corners.', rect(6, 2, { right: true }), 2000],
+          ['Next I check the sides. The top and bottom are parallel: they never meet. The left and right sides are parallel too.', rect(6, 2, { par: true }), 2600],
+          ['It has <b>4 right angles</b> and opposite sides <b>parallel</b>. It is a rectangle.', rect(6, 2, { right: true }), 2200]
+        ]),
         key: '<p>Rectangle: <b>4 right angles</b>, opposite sides <b>parallel</b>.</p>',
         check: [T('rect', 1), T('rect', 3)] },
 
@@ -218,6 +236,11 @@
         ]),
         try: K.tap({ render: quadRow, label: function (st) { return '<p>' + st.order.length + ' chosen</p>'; },
           tasks: [{ do: 'Tap <b>every</b> shape that is a rectangle.', goal: function (st) { var k = Object.keys(st.lit).sort().join(); return k === '0,2'; }, yes: 'The rectangle and the square: both have 4 right angles.' }] }),
+        example: K.watch([
+          ['My turn. Is this shape a rectangle? I check every corner.', quad('trapezoid', 150), 1800],
+          ['The two bottom corners are smaller than a square corner. The two top corners are bigger.', quad('trapezoid', 150), 2200],
+          ['A rectangle needs 4 right angles. This shape has none, so it is <b>not</b> a rectangle. It is a trapezoid.', quad('trapezoid', 150), 2600]
+        ]),
         key: '<p><b>4 right angles = rectangle.</b> Squares count.</p>',
         mistake: '<p>Leaving the square out ("it is a square, not a rectangle"), or counting a parallelogram because it "looks like a pushed-over rectangle". Check the corners.</p>',
         check: [T('rect', 2), T('rect', 2)] },
@@ -228,6 +251,12 @@
           ['A rectangle folds top to bottom and side to side: <b>2</b> lines.', rect(5, 3, { sym: true }), 2200],
           ['A square also folds corner to corner: <b>4</b> lines.', rect(3, 3, { sym: true }), 2200],
           ['A kite folds only one way: <b>1</b> line.', quad('kite', 150), 2000]
+        ]),
+        example: K.watch([
+          ['My turn. How many lines of symmetry does this rectangle have? I fold it in my mind.', rect(6, 2, {}), 1800],
+          ['Fold side to side: the halves match. Fold top to bottom: they match too.', rect(6, 2, { sym: true }), 2200],
+          ['Fold corner to corner: the halves do not match, because a long rectangle is not a square.', rect(6, 2, { sym: true }), 2400],
+          ['So this rectangle has <b>2</b> lines of symmetry.', rect(6, 2, { sym: true }), 1800]
         ]),
         key: '<p>Fold it in your mind: <b>do the halves match exactly?</b></p>',
         mistake: '<p>Counting the diagonals of a rectangle as lines of symmetry. Cut a paper rectangle and fold it corner to corner: the halves do not match.</p>',
@@ -252,6 +281,12 @@
           { label: 'Walk, then climb', html: '<p>Walk along the hallway (across), then take the elevator (up). You cannot take the elevator before you reach it.</p>' },
           { label: 'Alphabetical', html: '<p>The pair is (x, y). <b>x</b> comes before <b>y</b> in the alphabet, and across comes before up.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will plot (6, 2). I start at 0.', grid(10, [], null, []), 1400],
+          ['The first number tells me how far across. I go across 6.', grid(10, [], null, [[0, 0, 6, 0]]), 1800],
+          ['The second number tells me how far up. I go up 2.', grid(10, [{ x: 6, y: 2, l: 'B' }], null, [[0, 0, 6, 0], [6, 0, 6, 2]]), 1800],
+          ['That is point <b>(6, 2)</b>. Across first, then up.', grid(10, [{ x: 6, y: 2, l: 'B' }], null, [[0, 0, 6, 0], [6, 0, 6, 2]]), 2000]
+        ]),
         key: '<p><b>Across first, then up.</b></p>',
         mistake: '<p>Swapping the numbers: plotting (4, 7) at across 7, up 4. Ask: "Which way did you go first?"</p>',
         check: [T('coord', 1), T('coord', 2), T('coord', 3)] },
@@ -268,6 +303,12 @@
             { do: 'Slide the triangle <b>3 right and 2 up</b>.', goal: function (s) { return s.dx === 3 && s.dy === 2; }, yes: 'The corner moved from (2, 2) to (5, 4).' },
             { do: 'Slide it so the orange corner lands on <b>(1, 6)</b>.', goal: function (s) { return s.dx === -1 && s.dy === 4; }, yes: '1 left and 4 up.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will slide this triangle 5 right and 3 down. One corner is at (1, 5).', grid(10, [{ x: 1, y: 5, l: 'A' }], [{ pts: move(TRI, 1, 5), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }]), 2200],
+          ['5 right changes the first number: 1 + 5 = 6.', grid(10, [{ x: 1, y: 5, l: 'A' }], [{ pts: move(TRI, 1, 5), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], [[1, 5, 6, 5]]), 2000],
+          ['3 down changes the second number: 5 &minus; 3 = 2. That corner moves to (6, 2).', grid(10, [{ x: 6, y: 2, l: 'A' }], [{ pts: move(TRI, 1, 5), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], [[1, 5, 6, 5], [6, 5, 6, 2]]), 2400],
+          ['Every corner moves the same way, so the triangle slides without turning.', grid(10, [], [{ pts: move(TRI, 1, 5), fill: 'transparent', dash: true }, { pts: move(TRI, 6, 2), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }]), 2400]
+        ]),
         key: '<p>Right/left: <b>first number</b>. Up/down: <b>second number</b>.</p>',
         check: [T('trans', 1), T('trans', 2), T('trans', 3)] },
 
@@ -284,6 +325,12 @@
           { label: 'Fold the paper', html: '<p>Fold along the mirror line. The point and its image touch when folded.</p>' },
           { label: 'Count to the line', html: '<p>Count squares from the point straight to the line. Keep counting the same number past it. That is the image.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will flip this flag over the mirror line at 5.', grid(10, [], [{ pts: move(FLAG, 3, 6), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], null, { h: 5 }), 1800],
+          ['The bottom of the pole is 1 above the line. Its image is 1 below the line, at 4.', grid(10, [{ x: 3, y: 6 }, { x: 3, y: 4 }], [{ pts: move(FLAG, 3, 6), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], null, { h: 5 }), 2400],
+          ['The top of the pole is 4 above the line, so its image is 4 below, at 1.', grid(10, [{ x: 3, y: 9 }, { x: 3, y: 1 }], [{ pts: move(FLAG, 3, 6), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], null, { h: 5 }), 2400],
+          ['Each point lands the same distance on the other side. The flipped flag hangs upside down.', grid(10, [], [{ pts: move(FLAG, 3, 6), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }, { pts: reflH(move(FLAG, 3, 6), 5), fill: 'color-mix(in srgb,var(--btn) 35%,var(--card))' }], null, { h: 5 }), 2600]
+        ]),
         key: '<p><b>Same distance from the mirror line, on the other side.</b></p>',
         mistake: '<p>Sliding the shape across instead of flipping it, so it faces the same way. In a reflection, the image faces the opposite way.</p>',
         check: [T('refl', 1), T('refl', 3)] }
