@@ -263,7 +263,7 @@
           ['Slide it 4 right and 3 up. Every corner moves the same.', grid(10, [], [{ pts: START, fill: 'transparent', dash: true }, { pts: move(START, 4, 3), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], [[2, 2, 6, 5]]), 2400]
         ]),
         try: K.lab({ controls: [{ id: 'dx', label: 'Right (+) or left (&minus;)', min: -2, max: 6, value: 0 }, { id: 'dy', label: 'Up (+) or down (&minus;)', min: -2, max: 5, value: 0 }],
-          render: function (s) { return { fig: grid(10, [{ x: 2 + s.dx, y: 2 + s.dy, c: 'var(--accent)' }], [{ pts: START, fill: 'transparent', dash: true }, { pts: move(START, s.dx, s.dy), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], s.dx || s.dy ? [[2, 2, 2 + s.dx, 2 + s.dy]] : []), out: '<p>' + dirWords(s.dx, s.dy) + '. Corner: (2, 2) &rarr; <b>(' + (2 + s.dx) + ', ' + (2 + s.dy) + ')</b></p>' }; },
+          render: function (s) { return { fig: grid(10, [{ x: 2 + s.dx, y: 2 + s.dy, c: 'var(--se)' }], [{ pts: START, fill: 'transparent', dash: true }, { pts: move(START, s.dx, s.dy), fill: 'color-mix(in srgb,var(--strand) 35%,var(--card))' }], s.dx || s.dy ? [[2, 2, 2 + s.dx, 2 + s.dy]] : []), out: '<p>' + dirWords(s.dx, s.dy) + '. Corner: (2, 2) &rarr; <b>(' + (2 + s.dx) + ', ' + (2 + s.dy) + ')</b></p>' }; },
           tasks: [
             { do: 'Slide the triangle <b>3 right and 2 up</b>.', goal: function (s) { return s.dx === 3 && s.dy === 2; }, yes: 'The corner moved from (2, 2) to (5, 4).' },
             { do: 'Slide it so the orange corner lands on <b>(1, 6)</b>.', goal: function (s) { return s.dx === -1 && s.dy === 4; }, yes: '1 left and 4 up.' }
