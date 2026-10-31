@@ -318,6 +318,11 @@ A.yt({ q: 'A map has a scale of 1 cm : 2 m. A path is 7.5 cm on the map. How lon
         return { q: 'Two angles sit together on a straight line. Fill in the missing angle.', type: 'fill', fill: '<span class="math">' + a + D + ' + [[]]' + D + ' = 180' + D + '</span>', answers: [180 - a],
           hint: 'Angles on a straight line add to 180' + D + '.', steps: ['180 &minus; ' + a + ' = ' + (180 - a) + '.'], explain: 'The missing angle is ' + (180 - a) + D + '.', meta: { k: 'ga-fill', a: a } };
       }],
+      [2, 'line', function (lv) {
+        var a = R.int(3, 33) * 5;
+        return { q: 'Two angles sit together on a straight line. One is ' + a + D + '. Place the other angle on the line.', type: 'line', min: 0, max: 180, tick: 10, every: 30, snap: 5, answer: 180 - a, label: function (v) { return v + '\u00b0'; },
+          hint: 'Angles on a straight line add to 180' + D + '.', steps: ['180 &minus; ' + a + ' = ' + (180 - a) + '.'], explain: 'The other angle is ' + (180 - a) + D + '.', meta: { k: 'ga-line', a: a } };
+      }],
       [2, 'match', function (lv) {
         return K.until(function () {
           var s = R.int(20, 160), t1 = R.int(30, 80), t2 = R.int(30, 70), p1 = R.int(80, 140), p2 = R.int(60, 140), v = [180 - s, 180 - t1 - t2, 360 - p1 - p2];

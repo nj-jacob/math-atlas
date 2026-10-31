@@ -436,6 +436,11 @@ A.yt({ q: 'A box is 2 cm by 3 cm by 4 cm. What is its surface area?', a: 52, uni
           right: 'Square, add, then square root: ' + sqrtS(t[0] * t[0] + t[1] * t[1]) + ' = ' + t[2] + ' cm. A straight line is shorter than going around two sides.', wrong: ['The hypotenuse is the two legs added together.', 'The hypotenuse is the longer leg doubled.'],
           hint: 'Use a' + SQ + ' + b' + SQ + ' = c' + SQ + '.', meta: { k: 'mh-tf', a: t[0], b: t[1], said: said } });
       }],
+      [2, 'line', function (lv) {
+        var a = R.int(2, 9), b = R.int(2, 9), c = Math.sqrt(a * a + b * b);
+        return { q: 'A right triangle has legs of ' + a + ' cm and ' + b + ' cm. Place the length of the hypotenuse on the line, to the nearest tenth.', type: 'line', min: 0, max: 15, tick: 1, every: 5, snap: 0.1, answer: r1(c), tol: 0.2, fig: rtri(a, b, a + ' cm', b + ' cm', 'c = ?', 'c'),
+          hint: 'Square, add, then square root. It must be longer than ' + Math.max(a, b) + ' cm.', steps: [a + SQ + ' + ' + b + SQ + ' = ' + (a * a + b * b) + '.', 'c = ' + sqrtS(a * a + b * b) + ' &asymp; ' + f1(c) + '.'], explain: 'c &asymp; ' + f1(c) + ' cm. Within 0.2 counts.', meta: { k: 'mh-line', a: a, b: b } };
+      }],
       [2, 'pick', function (lv) {
         return K.until(function () {
           var opts = R.shuffle(TRIPLES).slice(0, 3).map(function (t) { var k = R.pick([1, 2]); return [t[0] * k + ', ' + t[1] * k + ', ' + t[2] * k, true]; })

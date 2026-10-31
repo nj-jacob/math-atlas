@@ -220,6 +220,7 @@
   set('ga-story', (q, m) => q.answer + m.a + m.b === 360 ? '' : 'third angle');
   set('ga-tf', (q, m) => tf(m.said + m.a + m.b === 180, q));
   set('ga-fill', (q, m) => q.answers[0] + m.a === 180 ? '' : 'straight line');
+  set('ga-line', (q, m) => q.answer + m.a === 180 ? '' : 'other angle');
   set('ga-match', q => pairsOk(q, (l, rt) => { const s = H.strip(l), known = (s.match(/\d+(?=°)/g) || []).map(Number).reduce((a, b) => a + b, 0), total = s.startsWith('Around') ? 360 : 180; return total - known === deg(rt); }));
   set('gp-pick', (q, m) => same(which(q, o => [3, 5, 7].includes(n(H.strip(o).replace('Angle ', '')))), q.answer) ? '' : 'equal angles');
   set('gp-tf', (q, m) => tf(m.kind !== 'co-interior', q));
@@ -242,6 +243,7 @@
   set('mh-fill', (q, m) => { const [a2, b2, s, c] = q.answers; return a2 === m.a ** 2 && b2 === m.b ** 2 && s === a2 + b2 && c === hyp(m.a, m.b) ? '' : 'hypotenuse'; });
   set('mh-story', (q, m) => near(q.answer, hyp(m.a, m.b)) ? '' : 'shortcut');
   set('mh-tf', (q, m) => tf(near(m.said, hyp(m.a, m.b)), q));
+  set('mh-line', (q, m) => near(q.answer, hyp(m.a, m.b), 0.051) && q.tol <= 0.2 ? '' : 'placement');
   set('mh-pick', q => same(which(q, o => { const [a, b, c] = H.strip(o).split(', ').map(Number); return a * a + b * b === c * c; }), q.answer) ? '' : 'picks');
   set('ml-fill', (q, m) => q.answers[0] === m.c ** 2 - m.b ** 2 && q.answers[1] ** 2 + m.b ** 2 === m.c ** 2 ? '' : 'leg');
   set('ml-tf', (q, m) => tf(m.said ** 2 + m.b ** 2 === m.c ** 2, q));
@@ -262,4 +264,27 @@
   set('ma-fill', (q, m) => q.answers[3] === box(m) && q.answers[0] === m.l * m.w && q.answers[1] === m.l * m.h && q.answers[2] === m.w * m.h ? '' : 'surface');
   set('ma-tf', (q, m) => tf(m.said === box(m), q));
   set('ma-story', (q, m) => q.answer === box(m) ? '' : 'paper');
+  /* ---- Money ---- */
+  const cents = x => Math.round(x * 100) / 100;
+  const sum = a => a.reduce((x, y) => x + y, 0);
+  set('me-fill', (q, m) => near(q.answers[0], m.amt * m.rate, 0.011) ? '' : 'CAD');
+  set('me-tf', (q, m) => tf(near(m.said, m.amt * m.rate, 0.006), q));
+  set('me-way', (q, m) => only(q, o => near(ev(o), m.c / m.rate, 1e-9)));
+  set('mb-line', (q, m) => q.answer === m.inc - sum(m.costs) && q.answer > 0 && q.answer <= q.max ? '' : 'surplus');
+  set('mb-tf', (q, m) => tf(m.inc >= sum(m.costs), q));
+  set('mb-story', (q, m) => q.answer * m.w >= m.goal && (q.answer - 1) * m.w < m.goal ? '' : 'weeks');
+  set('mt-tap', (q, m) => { const w = q.tiles.map((t, j) => (near(n(t), m.p * 0.13, 0.006) ? j : -1)).filter(j => j >= 0); return w.length === 1 && w[0] === q.answer ? '' : 'HST tile'; });
+  set('mt-tf', (q, m) => tf(near(m.said, m.p + m.p * 0.13, 0.006), q));
+  set('mt-fill', (q, m) => near(q.answers[0], m.p * 0.13, 0.006) && near(q.answers[1], m.p * 1.13, 0.011) ? '' : 'tax');
+  set('mt-way', (q, m) => only(q, o => near(ev(o), m.pre, 0.006)));
+  set('mi-fill', (q, m) => near(q.answers[0], m.P * m.r / 100 * m.t, 0.006) ? '' : 'interest');
+  set('mi-tf', (q, m) => tf(m.P * (1 + m.r / 100) ** m.t - m.P * (1 + m.r * m.t / 100) > 0.005, q));
+  set('mi-story', (q, m) => near(q.answer, m.P + m.P * m.r / 100 * m.t, 0.006) ? '' : 'GIC');
+  set('mi-order', q => ordered(q.items.map(t => { const g = H.strip(t).match(/^\$([\d ]+) at (\d+)% for (\d+) yr$/); return n(g[1]) * +g[2] / 100 * +g[3]; })) ? '' : 'order');
+  set('mu-tap', q => { const u = q.tiles.map(offer); return u[q.answer] === Math.min(...u) ? '' : 'best value'; });
+  set('mu-tf', (q, m) => tf(near(m.said, cents(m.P * (100 - m.a) / 100 * (100 - m.b) / 100), 0.006), q));
+  set('mu-story', (q, m) => H.strip(chosen(q)) === (m.P * m.pc / 100 > m.off ? m.pc + '% off' : '$' + m.off + ' off') ? '' : 'coupon');
+  set('mk-fill', (q, m) => q.answers[0] === m.mA * m.term && q.answers[1] === q.answers[0] + m.up ? '' : 'total');
+  set('mk-tf', (q, m) => tf(near(m.said, m.bal * m.rate / 100 / 12, 0.006), q));
+  set('mk-story', (q, m) => H.strip(chosen(q)) === (m.a * 24 + m.upA < m.b * 24 ? 'Plan A' : 'Plan B') ? '' : 'cheaper plan');
 })(window.__verify, window.__H);
