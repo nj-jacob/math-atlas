@@ -569,4 +569,149 @@ A.yt({ gen: function () { return gen.side(2); } }) +
       { id: 'me4-side', name: 'Missing side', code: 'E2.6', gen: gen.side }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  var small = K.small;
+  function kgg(g) { return g % 1000 === 0 ? g / 1000 + ' kg' : g > 1000 ? Math.floor(g / 1000) + ' kg ' + g % 1000 + ' g' : g + ' g'; }
+  function lml(ml) { return ml % 1000 === 0 ? ml / 1000 + ' L' : ml > 1000 ? Math.floor(ml / 1000) + ' L ' + ml % 1000 + ' mL' : ml + ' mL'; }
+  var UNITS = { length: ['mm', 'cm', 'm', 'km'], mass: ['g', 'kg'], capacity: ['mL', 'L'] };
+  var SHAPES = {
+    'me4-mass': [
+      [1, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var g = R.int(1, 4) * 1000 + R.pick([0, R.int(1, 9) * 100]); if (seen[g]) continue; seen[g] = 1; pairs.push([kgg(g), A.fmt(g) + ' g']); }
+        return { q: 'Match the masses that are the same.', type: 'match', pairs: pairs, hint: '1 kg = 1000 g.', steps: ['Change the kilograms to grams, then add the extra grams.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'me4-mass-match', pairs: pairs } };
+      }],
+      [1, 'line', function (lv) {
+        var g = lv === 1 ? R.int(1, 9) * 100 : R.int(1, 19) * 50;
+        return { q: 'A bag of apples has a mass of <b>' + g + ' g</b>. Place it on the line.', type: 'line', min: 0, max: 1000, tick: 50, every: 500, snap: 50, answer: g, tol: 0, unit: 'g',
+          hint: 'Each small mark is 50 g. Halfway is 500 g.', steps: [g + ' g is ' + (g >= 500 ? (g - 500) + ' g past halfway.' : (500 - g) + ' g before halfway.')],
+          explain: g + ' g is less than 1 kg.', meta: { k: 'me4-mass-line' } };
+      }],
+      [2, 'mistake', function () {
+        var kg = R.int(2, 9), p = who(), truth = !R.int(0, 2), said = truth ? kg * 1000 : kg * 100;
+        var right = '1 kg = 1000 g, so ' + kg + ' kg = ' + A.fmt(kg * 1000) + ' g.';
+        return { q: p + ' says <b>' + kg + ' kg</b> is the same as <b>' + A.fmt(said) + ' g</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['1 kg = 100 g.', 'Grams and kilograms are the same size.', '1 kg = 10 g.']), hint: 'How many grams are in 1 kg?', steps: [right], explain: right, meta: { k: 'me4-mass-tf', kg: kg, said: said } };
+      }],
+      [2, 'order', function () {
+        var gs = [];
+        while (gs.length < 4) { var g = R.pick([R.int(1, 9) * 100, R.int(1, 3) * 1000, R.int(1, 2) * 1000 + R.int(1, 9) * 100]); if (gs.indexOf(g) < 0) gs.push(g); }
+        gs.sort(function (a, b) { return a - b; });
+        return { q: 'Put these masses in order from <b>lightest to heaviest</b>.', type: 'order', items: gs.map(kgg), first: 'lightest', last: 'heaviest',
+          hint: 'Change them all to grams first.', steps: ['In grams: ' + gs.map(function (g) { return A.fmt(g) + ' g'; }).join(', ') + '.'], explain: 'Lightest to heaviest: ' + gs.map(kgg).join(', ') + '.', meta: { k: 'me4-mass-order' } };
+      }]
+    ],
+    'me4-cap': [
+      [1, 'line', function (lv) {
+        var ml = lv === 1 ? R.int(1, 9) * 100 : R.int(1, 19) * 50;
+        return { q: 'Fill the jug to <b>' + ml + ' mL</b>. Place it on the line.', type: 'line', min: 0, max: 1000, tick: 50, every: 500, snap: 50, answer: ml, tol: 0, unit: 'mL',
+          hint: 'The line goes from 0 to 1000 mL, which is 1 L. Each small mark is 50 mL.', steps: [ml + ' mL is ' + ml / 50 + ' small marks from 0.'], explain: ml + ' mL is ' + (1000 - ml) + ' mL less than 1 L.', meta: { k: 'me4-cap-line' } };
+      }],
+      [1, 'fill', function () {
+        var a = R.int(2, 9), b = R.int(1, 4), c = R.int(1, 9) * 100;
+        return { q: 'Change litres to millilitres.', type: 'fill', fill: a + ' L = [[]] mL<br>' + b + ' L ' + c + ' mL = [[]] mL', answers: [a * 1000, b * 1000 + c],
+          hint: '1 L = 1000 mL.', steps: [a + ' &times; 1000 = ' + A.fmt(a * 1000) + '.', A.fmt(b * 1000) + ' + ' + c + ' = ' + A.fmt(b * 1000 + c) + '.'], explain: a + ' L = ' + A.fmt(a * 1000) + ' mL.', meta: { k: 'me4-cap-fill' } };
+      }],
+      [2, 'mistake', function () {
+        var c = R.pick([100, 200, 250, 500]), p = who(), truth = !R.int(0, 2), said = truth ? 1000 / c : 100 / c;
+        if (said < 1) said = 1000 / c * 2;
+        var right = '1 L = 1000 mL. ' + 1000 / c + ' &times; ' + c + ' mL = 1000 mL.';
+        return { q: 'A cup holds ' + c + ' mL. ' + p + ' says <b>' + said + '</b> cups fill a 1 L jug. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: jug(c),
+          why: why(right, ['1 L = 100 mL.', 'Any cup fills a jug in 2 pours.', '1 L = 10 000 mL.']), hint: 'How many millilitres are in 1 L?', steps: [right], explain: right, meta: { k: 'me4-cap-tf', c: c, said: said } };
+      }]
+    ],
+    'me4-unit': [
+      [1, 'pick', function () {
+        var kind = R.pick(['length', 'mass', 'capacity']), opts = R.shuffle(['mm', 'cm', 'm', 'km', 'g', 'kg', 'mL', 'L']).slice(0, 6);
+        if (!opts.some(function (u) { return UNITS[kind].indexOf(u) >= 0; })) opts[0] = UNITS[kind][0];
+        var ans = opts.map(function (u, j) { return UNITS[kind].indexOf(u) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every unit that measures <b>' + kind + '</b>.', type: 'pick', options: opts, answer: ans,
+          hint: kind === 'length' ? 'Length units end in "metre".' : kind === 'mass' ? 'Mass units end in "gram".' : 'Capacity units end in "litre".', steps: ['Length: mm, cm, m, km. Mass: g, kg. Capacity: mL, L.'],
+          explain: kind.charAt(0).toUpperCase() + kind.slice(1) + ': ' + UNITS[kind].join(', ') + '.', meta: { k: 'me4-unit-pick', kind: kind } };
+      }],
+      [1, 'fill', function () {
+        var F = R.pick([['m', 'cm', 100], ['cm', 'mm', 10], ['km', 'm', 1000]]), n = R.int(2, 9);
+        return { q: 'Change the units.', type: 'fill', fill: n + ' ' + F[0] + ' = [[]] ' + F[1], answers: [n * F[2]], hint: '1 ' + F[0] + ' = ' + F[2] + ' ' + F[1] + '.',
+          steps: [n + ' &times; ' + F[2] + ' = ' + A.fmt(n * F[2]) + '.'], explain: n + ' ' + F[0] + ' = ' + A.fmt(n * F[2]) + ' ' + F[1] + '.', meta: { k: 'me4-unit-fill', from: F[0], to: F[1], n: n } };
+      }],
+      [2, 'mistake', function () {
+        var F = R.pick([['m', 'cm', 100, 10], ['cm', 'mm', 10, 100], ['km', 'm', 1000, 100]]), n = R.int(2, 9), p = who(), truth = !R.int(0, 2), said = n * (truth ? F[2] : F[3]);
+        var right = '1 ' + F[0] + ' = ' + F[2] + ' ' + F[1] + ', so ' + n + ' ' + F[0] + ' = ' + A.fmt(n * F[2]) + ' ' + F[1] + '.';
+        return { q: p + ' says <b>' + n + ' ' + F[0] + '</b> is the same as <b>' + A.fmt(said) + ' ' + F[1] + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Every metric unit is 10 times the next one.', 'Bigger units have more of them.', '1 ' + F[0] + ' = ' + F[3] + ' ' + F[1] + '.']), hint: 'How many ' + F[1] + ' are in 1 ' + F[0] + '?', steps: [right], explain: right, meta: { k: 'me4-unit-tf', from: F[0], to: F[1], n: n, said: said } };
+      }]
+    ],
+    'me4-time': [
+      [1, 'line', function (lv) {
+        var h = R.int(8, 15), a = h * 60 + (lv === 1 ? 0 : R.int(1, 5) * 5), len = lv === 1 ? R.int(2, 10) * 5 : R.int(5, 15) * 5, b = a + len;
+        return { q: 'A ' + R.pick(['swim lesson', 'piano lesson', 'library visit']) + ' starts at <b>' + fmtT(a) + '</b> and lasts <b>' + dur(len) + '</b>. Place the end time on the line.', type: 'line', min: h * 60, max: h * 60 + 120, tick: 5, every: 30, snap: 5, answer: b, tol: 0, label: hm,
+          hint: 'Each small mark is 5 minutes. Count on from the start.', steps: ['Start at ' + hm(a) + '.', 'Add ' + dur(len) + ': ' + hm(b) + '.'], explain: 'It ends at ' + fmtT(b) + '.', meta: { k: 'me4-time-line', a: a, len: len } };
+      }],
+      [1, 'fill', function () {
+        var a = R.int(7, 16) * 60 + R.int(7, 11) * 5, b = a - a % 60 + 60 + R.int(1, 9) * 5, top = a - a % 60 + 60;
+        return { q: 'Find the time from <b>' + fmtT(a) + '</b> to <b>' + fmtT(b) + '</b>. Jump to the hour first.', type: 'fill', fill: hm(a) + ' to ' + hm(top) + ': [[]] min<br>' + hm(top) + ' to ' + hm(b) + ': [[]] min<br>Total: [[]] min', answers: [top - a, b - top, b - a],
+          fig: timeLine(a, b), hint: 'How many minutes to the next hour? Then how many after it?', steps: [hm(a) + ' to ' + hm(top) + ' is ' + (top - a) + ' minutes.', hm(top) + ' to ' + hm(b) + ' is ' + (b - top) + ' minutes.', (top - a) + ' + ' + (b - top) + ' = ' + (b - a) + '.'],
+          explain: 'The time is ' + (b - a) + ' minutes.', meta: { k: 'me4-time-fill', a: a, b: b } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.int(7, 16) * 60 + R.int(7, 11) * 5, b = a - a % 60 + 60 + R.int(1, 5) * 5, p = who(), truth = !R.int(0, 1), wrong = (b % 60 + 100) - (a % 60), said = truth ? b - a : wrong;
+        if (said === b - a && !truth) said = b - a + 40;
+        var right = 'Count to the hour, then past it: ' + (a - a % 60 + 60 - a) + ' + ' + b % 60 + ' = ' + (b - a) + ' minutes. An hour has 60 minutes, not 100.';
+        return { q: 'From ' + fmtT(a) + ' to ' + fmtT(b) + ', ' + p + ' says <b>' + said + ' minutes</b> pass. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: clocks(a, b),
+          why: why(right, ['Subtract the times like whole numbers.', 'An hour has 100 minutes.', 'Only the minute hand matters.']), hint: 'Jump to the next hour first.', steps: [right], explain: right, meta: { k: 'me4-time-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'me4-area': [
+      [1, 'tap', function () {
+        var sets = [], areas = [];
+        while (sets.length < 3) { var l = R.int(2, 6), w = R.int(2, 4); if (areas.indexOf(l * w) >= 0) continue; areas.push(l * w); sets.push([l, w]); }
+        var want = R.int(0, 2);
+        return { q: 'Each square is 1 cm' + SQ + '. Tap the rectangle with an area of <b>' + areas[want] + ' cm' + SQ + '</b>.', type: 'tap', tiles: sets.map(function (s) { return small(areaPic(s[0], s[1], { grid: true, unit: 'cm' }), 150); }), answer: want, answerText: 'the ' + sets[want][0] + ' by ' + sets[want][1] + ' rectangle',
+          hint: 'Rows &times; squares in each row.', steps: sets.map(function (s) { return s[0] + ' &times; ' + s[1] + ' = ' + s[0] * s[1] + '.'; }), explain: sets[want][0] + ' &times; ' + sets[want][1] + ' = ' + areas[want] + ' cm' + SQ + '.', meta: { k: 'me4-area-tap', sets: sets } };
+      }],
+      [1, 'match', function () {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var l = R.int(2, 9), w = R.int(2, 6); if (seen[l * w]) continue; seen[l * w] = 1; pairs.push([l + ' m by ' + w + ' m', l * w + ' m' + SQ]); }
+        return { q: 'Match each rectangle to its area.', type: 'match', pairs: pairs, hint: 'Area = length &times; width.', steps: ['Multiply the two side lengths.'],
+          explain: pairs.map(function (p) { return p[0] + ' has an area of ' + p[1]; }).join('. ') + '.', meta: { k: 'me4-area-match', pairs: pairs } };
+      }],
+      [2, 'mistake', function () {
+        var l = R.int(3, 9), w = R.int(2, 7), p = who(), truth = !R.int(0, 2), said = truth ? l * w : R.pick([l + w, 2 * (l + w)]);
+        if (said === l * w && !truth) said = l + w + 1;
+        var right = 'Area = length &times; width = ' + l + ' &times; ' + w + ' = ' + l * w + ' m' + SQ + '.';
+        return { q: 'A patio is ' + l + ' m long and ' + w + ' m wide. ' + p + ' says its area is <b>' + said + ' m' + SQ + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: areaPic(l, w, { unit: 'm' }),
+          why: why(right, ['Area = length + width.', 'Area is the distance around the edge.', 'Area = 2 &times; length.']), hint: 'Area counts the squares that cover it.', steps: [right], explain: right, meta: { k: 'me4-area-tf', l: l, w: w, said: said } };
+      }]
+    ],
+    'me4-side': [
+      [1, 'fill', function (lv) {
+        var w = R.int(2, lv === 1 ? 5 : 9), l = R.int(2, lv === 1 ? 6 : 10), a = l * w;
+        return { q: 'The area is ' + a + ' cm' + SQ + '. One side is ' + w + ' cm. Find the missing side.', type: 'fill', fill: '[[]] &times; ' + w + ' = ' + a + ', so the missing side is [[]] cm.', answers: [l, l],
+          fig: areaPic(l, w, { unit: 'cm', unknown: 'l', area: a }), hint: 'What times ' + w + ' makes ' + a + '?', steps: [a + ' &divide; ' + w + ' = ' + l + '.'], explain: 'The missing side is ' + l + ' cm.', meta: { k: 'me4-side-fill', a: a, w: w } };
+      }],
+      [1, 'pick', function () {
+        var a = R.pick([12, 16, 18, 20, 24, 30, 36]), opts = [], dims = [];
+        for (var x = 1; x <= a; x++) if (a % x === 0 && x <= a / x && x > 1) dims.push([x, a / x]);
+        dims = R.shuffle(dims).slice(0, 2);
+        var wrong = [[dims[0][0] + 1, dims[0][1]], [dims[0][0], dims[0][1] - 1], [2, a / 2 + 1]];
+        dims.concat(wrong).forEach(function (d) { var t = d[0] + ' m by ' + d[1] + ' m'; if (opts.indexOf(t) < 0) opts.push(t); });
+        opts = R.shuffle(opts);
+        var ans = opts.map(function (o, j) { var n = o.match(/\d+/g); return n[0] * n[1] === a ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every garden that has an area of <b>' + a + ' m' + SQ + '</b>.', type: 'pick', options: opts, answer: ans, hint: 'Multiply the two sides of each one.',
+          steps: ['Length &times; width must equal ' + a + '.'], explain: 'These make ' + a + ' m' + SQ + ': ' + ans.map(function (j) { return opts[j]; }).join('; ') + '.', meta: { k: 'me4-side-pick', a: a } };
+      }],
+      [2, 'mistake', function () {
+        var w = R.int(2, 9), l = R.int(3, 10), a = l * w, p = who(), truth = !R.int(0, 2), said = truth ? l : a - w;
+        if (said === l && !truth) said = l + 2;
+        var right = 'Missing side = area &divide; known side = ' + a + ' &divide; ' + w + ' = ' + l + ' m.';
+        return { q: 'A rug has an area of ' + a + ' m' + SQ + ' and is ' + w + ' m wide. ' + p + ' says it is <b>' + said + ' m</b> long. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Subtract the side from the area.', 'Add the side to the area.', 'The missing side is always half the area.']), hint: 'What times ' + w + ' makes ' + a + '?', steps: [right], explain: right, meta: { k: 'me4-side-tf', a: a, w: w, said: said } };
+      }]
+    ]
+  };
+  K.shapes('measuring', SHAPES);
 })();

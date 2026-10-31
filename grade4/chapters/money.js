@@ -449,4 +449,133 @@ A.yt({ gen: function () { return gen.value(2); } }) +
       { id: 'mo4-value', name: 'Good value', code: 'F1.5', gen: gen.value }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     Whole dollars only. q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  var PAYFACTS = [['A debit card uses money that is already in your bank account.', true], ['A credit card borrows money that you pay back later.', true], ['A gift card works at any store.', false],
+    ['Tapping a phone to pay is free money.', false], ['Paying a credit card late costs extra.', true], ['Cash comes out of your bank account each time you spend it.', false]];
+  var SHAPES = {
+    'mo4-pay': [
+      [1, 'match', function () {
+        var ps = R.shuffle(PAY).slice(0, 3), pairs = ps.map(function (p) { return [cap(p[0]), p[1]]; });
+        return { q: 'Match each way to pay to what it does.', type: 'match', pairs: pairs, hint: 'Where does the money come from? When does it leave?',
+          steps: ['Debit: right away from your account. Credit: borrowed, paid back later. Gift card: one store. Cash: bills and coins.'], explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join(' '), meta: { k: 'mo4-pay-match', pairs: pairs } };
+      }],
+      [1, 'mistake', function () {
+        var f = R.pick(PAYFACTS), p = who();
+        var right = f[1] ? 'That is right: ' + f[0].charAt(0).toLowerCase() + f[0].slice(1) : 'That is not right. ' + { 'A gift card works at any store.': 'A gift card only works at one store or company.', 'Tapping a phone to pay is free money.': 'Tapping uses real money from the card linked to the phone.', 'Cash comes out of your bank account each time you spend it.': 'Cash is bills and coins you already have in your hand.' }[f[0]];
+        return { q: p + ' says: "' + f[0] + '" True or false: ' + p + ' is right.', type: 'tf', answer: f[1],
+          why: why(right, ['All ways to pay work the same way.', 'Cards never use real money.', 'You never have to pay for things bought with a card.']),
+          hint: 'Think about where the money comes from.', steps: [right], explain: right, meta: { k: 'mo4-pay-tf', fact: f[0] } };
+      }],
+      [2, 'pick', function () {
+        var opts = R.shuffle(['cash', 'loonies and toonies', 'debit card', 'credit card', 'e-transfer']).slice(0, 4);
+        if (!opts.some(function (o) { return /cash|loonies/.test(o); })) opts[0] = 'cash';
+        var ans = opts.map(function (o, j) { return /cash|loonies/.test(o) ? -1 : j; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every way to pay that does <b>not</b> use bills or coins.', type: 'pick', options: opts.map(cap), answer: ans, hint: 'Which ones send money from a bank account or card?',
+          steps: ['Cash, loonies and toonies are bills and coins.', 'Cards and e-transfers move money without bills or coins.'], explain: 'These do not use bills or coins: ' + ans.map(function (j) { return opts[j]; }).join(', ') + '.', meta: { k: 'mo4-pay-pick' } };
+      }]
+    ],
+    'mo4-total': [
+      [1, 'fill', function (lv) {
+        var items = R.shuffle(GOODS).slice(0, 2).map(function (g) { return [g[0], R.int(g[1], lv === 1 ? Math.min(g[2], 15) : g[2])]; });
+        return { q: 'Find the total cost.', type: 'fill', fill: $s(items[0][1]) + ' + ' + $s(items[1][1]) + ' = $[[]]', answers: [items[0][1] + items[1][1]], fig: tags(items),
+          hint: 'Add the tens, then the ones.', steps: [$s(items[0][1]) + ' + ' + $s(items[1][1]) + ' = ' + $s(items[0][1] + items[1][1]) + '.'], explain: 'The total is ' + $s(items[0][1] + items[1][1]) + '.', meta: { k: 'mo4-total-fill', items: items } };
+      }],
+      [1, 'story', function (lv) {
+        var p = who(), n = R.int(2, lv === 1 ? 3 : 5), each = R.int(2, lv === 1 ? 5 : 9), cap2 = R.int(6, 25);
+        return { q: p + ' buys <b>' + n + '</b> packs of hockey cards at <b>$' + each + '</b> each and a cap for <b>$' + cap2 + '</b>. What is the total cost?', type: 'num', answer: n * each + cap2, unit: '$',
+          hint: 'Multiply for the cards first. Then add the cap.', steps: [n + ' &times; $' + each + ' = $' + n * each + '.', '$' + n * each + ' + $' + cap2 + ' = $' + (n * each + cap2) + '.'],
+          explain: 'The total is $' + (n * each + cap2) + '.', meta: { k: 'mo4-total-story' } };
+      }],
+      [2, 'mistake', function () {
+        var items = R.shuffle(GOODS).slice(0, 3).map(function (g) { return [g[0], R.int(g[1], g[2])]; }), t = items.reduce(function (s, it) { return s + it[1]; }, 0), p = who(), truth = !R.int(0, 2);
+        var said = truth ? t : t - items[2][1];
+        var right = 'Add all three prices: ' + items.map(function (it) { return $s(it[1]); }).join(' + ') + ' = ' + $s(t) + '.';
+        return { q: p + ' buys all three things and says the total is <b>' + $s(said) + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: tags(items),
+          why: why(right, ['You only add the two biggest prices.', 'The total is the most expensive price.', 'Round every price down to find the total.']), hint: 'Add every price.', steps: [right], explain: right, meta: { k: 'mo4-total-tf', items: items, said: said } };
+      }]
+    ],
+    'mo4-change': [
+      [1, 'line', function (lv) {
+        var pay = lv === 1 ? 10 : 20, t = R.int(pay - (lv === 1 ? 9 : 15), pay - 1);
+        return { q: 'A snack costs <b>' + $s(t) + '</b>. You pay with <b>' + $s(pay) + '</b>. Count up, then place your change on the line.', type: 'line', min: 0, max: pay, tick: 1, every: 5, snap: 1, answer: pay - t, tol: 0, label: function (v) { return '$' + v; },
+          fig: countUp(t, pay), hint: 'Count up from ' + $s(t) + ' to ' + $s(pay) + '.', steps: changeSteps(t, pay), explain: 'The change is ' + $s(pay - t) + '.', meta: { k: 'mo4-change-line', t: t, pay: pay } };
+      }],
+      [1, 'fill', function (lv) {
+        var pay = lv === 1 ? 20 : R.pick([50, 100]), t = R.int(pay / 2, pay - 3);
+        if (t % 10 === 0) t += 3;
+        var ten = Math.ceil(t / 10) * 10;
+        return { q: 'Something costs ' + $s(t) + '. You pay with ' + $s(pay) + '. Count up to find the change.', type: 'fill', fill: $s(t) + ' + $[[]] = ' + $s(ten) + '<br>' + $s(ten) + ' + $[[]] = ' + $s(pay) + '<br>Change: $[[]]', answers: [ten - t, pay - ten, pay - t],
+          hint: 'Jump to the next ten first.', steps: changeSteps(t, pay), explain: 'The change is ' + $s(pay - t) + '.', meta: { k: 'mo4-change-fill', t: t, pay: pay } };
+      }],
+      [2, 'mistake', function () {
+        var pay = R.pick([20, 50]), t = R.int(pay / 2, pay - 2), p = who(), truth = !R.int(0, 2), said = truth ? pay - t : pay - t + R.pick([-1, 1, 10]);
+        if (said <= 0) said = pay - t + 1;
+        var right = 'Count up from ' + $s(t) + ' to ' + $s(pay) + ': that is ' + $s(pay - t) + '.';
+        return { q: 'A toy costs ' + $s(t) + '. ' + p + ' pays with ' + $s(pay) + ' and says the change should be <b>' + $s(said) + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: cash(pay, 'Paid with ' + pay + ' dollars'),
+          why: why(right, ['Change is the price plus what you paid.', 'Change is always $10.', 'You get back the price of the toy.']), hint: 'Check: price + change should equal what was paid.', steps: [right], explain: right, meta: { k: 'mo4-change-tf', t: t, pay: pay, said: said } };
+      }]
+    ],
+    'mo4-con': [
+      [1, 'match', function () {
+        var seen = {}, pairs = [];
+        R.shuffle(CON).forEach(function (c) { if (pairs.length < 3 && !seen[c[1]]) { seen[c[1]] = 1; pairs.push([c[0], cap(c[1])]); } });
+        return { q: 'Match each example to the money word.', type: 'match', pairs: pairs, hint: 'Is money coming in, going out, kept for later, given away, or used to grow more?',
+          steps: ['Earn: get money for work. Spend: buy. Save: keep for later. Donate: give to help. Invest: use money so it can grow.'], explain: pairs.map(function (p) { return p[0] + ' ' + p[1] + '.'; }).join(' '), meta: { k: 'mo4-con-match', pairs: pairs } };
+      }],
+      [1, 'mistake', function () {
+        var c = R.pick(CON), p = who(), truth = !R.int(0, 1), said = truth ? c[1] : R.pick(['earning', 'spending', 'saving', 'donating'].filter(function (x) { return x !== c[1]; }));
+        return { q: c[0] + ' ' + p + ' says this is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(c[2], ['Any time money moves, it is spending.', 'Saving means giving money away.', 'Earning means buying something you want.']), hint: 'Is the money coming in, going out, kept, given, or grown?', steps: [c[2]], explain: c[2], meta: { k: 'mo4-con-tf', text: c[0], said: said } };
+      }],
+      [2, 'pick', function () {
+        var want = R.pick(['saving', 'earning', 'donating']), opts = R.shuffle(CON).slice(0, 5);
+        if (!opts.some(function (c) { return c[1] === want; })) opts[0] = CON.filter(function (c) { return c[1] === want; })[0];
+        var ans = opts.map(function (c, j) { return c[1] === want ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every example of <b>' + want + '</b>.', type: 'pick', options: opts.map(function (c) { return c[0]; }), answer: ans, hint: { saving: 'Saving keeps money for later.', earning: 'Earning gets money for work.', donating: 'Donating gives money to help others.' }[want],
+          steps: ['Read each one. Ask where the money goes.'], explain: 'These are ' + want + ': ' + ans.map(function (j) { return opts[j][0]; }).join(' '), meta: { k: 'mo4-con-pick', want: want } };
+      }]
+    ],
+    'mo4-save': [
+      [1, 'line', function (lv) {
+        var p = who(), per = R.int(2, lv === 1 ? 5 : 9), w = R.int(2, lv === 1 ? 6 : 10);
+        return { q: p + ' saves <b>$' + per + '</b> each week. Place how much ' + p + ' has after <b>' + w + ' weeks</b>.', type: 'line', min: 0, max: per * 10, tick: per, every: per * 5, snap: per, answer: per * w, tol: 0, label: function (v) { return '$' + v; },
+          hint: 'Each jump is $' + per + '. Make ' + w + ' jumps.', steps: [w + ' &times; $' + per + ' = $' + per * w + '.'], explain: p + ' has $' + per * w + ' after ' + w + ' weeks.', meta: { k: 'mo4-save-line', per: per, w: w } };
+      }],
+      [1, 'fill', function () {
+        var per = R.int(3, 9), p = who();
+        return { q: p + ' saves <b>$' + per + '</b> each week. Fill in the savings table.', type: 'fill', fill: '<div class="tbl"><table><tr><th>Week</th><td>1</td><td>2</td><td>3</td><td>5</td></tr><tr><th>Saved ($)</th><td>' + per + '</td><td>[[]]</td><td>[[]]</td><td>[[]]</td></tr></table></div>', answers: [2 * per, 3 * per, 5 * per],
+          hint: 'Each week adds $' + per + '.', steps: ['Week 2: $' + 2 * per + '. Week 3: $' + 3 * per + '.', 'Week 5: 5 &times; $' + per + ' = $' + 5 * per + '.'], explain: 'Savings grow by $' + per + ' each week.', meta: { k: 'mo4-save-fill', per: per } };
+      }],
+      [2, 'mistake', function () {
+        var per = R.int(3, 9), w = R.int(3, 8), goal = per * w + R.int(1, per - 1), p = who(), truth = !R.int(0, 1), said = truth ? w + 1 : w;
+        var right = '$' + goal + ' &divide; $' + per + ' = ' + w + ' R ' + (goal - per * w) + '. After ' + w + ' weeks there is still $' + (goal - per * w) + ' to go, so it takes ' + (w + 1) + ' weeks.';
+        return { q: 'A board game costs <b>$' + goal + '</b>. ' + p + ' saves <b>$' + per + '</b> each week and says it will take <b>' + said + ' weeks</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: goalBar(goal, per, 0),
+          why: why(right, ['You can leave the leftover dollars out.', 'Saving always takes 10 weeks.', 'Divide the price by 10.']), hint: 'Is there a remainder? It still needs a week.', steps: [right], explain: right, meta: { k: 'mo4-save-tf', goal: goal, per: per, said: said } };
+      }]
+    ],
+    'mo4-value': [
+      [1, 'tap', function () {
+        var g = R.pick(GOODS), ps = [];
+        while (ps.length < 3) { var v = R.int(g[1] + 2, g[2] + 3); if (ps.indexOf(v) < 0) ps.push(v); }
+        var best = Math.min.apply(null, ps), names = ['Store A', 'Store B', 'Store C'];
+        return { q: 'The same ' + g[0] + ' is sold at three stores. Tap the <b>best price</b>.', type: 'tap', tiles: ps.map(function (v, i) { return tags([[names[i], v]]); }), answer: ps.indexOf(best), answerText: names[ps.indexOf(best)] + ', ' + $s(best),
+          hint: 'For the same item, the lowest price is the best deal.', steps: ['Compare ' + ps.map($s).join(', ') + '.'], explain: names[ps.indexOf(best)] + ' has the lowest price, ' + $s(best) + '.', meta: { k: 'mo4-value-tap', ps: ps } };
+      }],
+      [1, 'fill', function () {
+        var n = R.pick([2, 3, 4, 5]), each = R.int(2, 7);
+        return { q: 'A box of <b>' + n + '</b> juice boxes costs <b>$' + n * each + '</b>. How much is each juice box?', type: 'fill', fill: '$' + n * each + ' &divide; ' + n + ' = $[[]] each', answers: [each],
+          hint: 'Share the price equally among the ' + n + ' juice boxes.', steps: [n + ' &times; $' + each + ' = $' + n * each + '.'], explain: 'Each juice box costs $' + each + '.', meta: { k: 'mo4-value-fill' } };
+      }],
+      [2, 'mistake', function () {
+        var price = R.int(20, 40), ship = R.int(4, 10), other = price + R.int(1, ship - 1), p = who(), saysOnline = !R.int(0, 1), onlineBest = price + ship < other;
+        var right = 'Online costs ' + $s(price) + ' + ' + $s(ship) + ' = ' + $s(price + ship) + ' in all. The local store costs ' + $s(other) + '.';
+        return { q: 'Online: ' + $s(price) + ' plus ' + $s(ship) + ' shipping. Local store: ' + $s(other) + '. ' + p + ' says the <b>' + (saysOnline ? 'online store' : 'local store') + '</b> costs less in all. True or false: ' + p + ' is right.', type: 'tf', answer: saysOnline === onlineBest,
+          why: why(right, ['Shipping is free, so leave it out.', 'Online is always cheaper.', 'The store with the bigger sign is cheaper.']), hint: 'Add the shipping first.', steps: [right], explain: right, meta: { k: 'mo4-value-tf', price: price, ship: ship, other: other, saysOnline: saysOnline } };
+      }]
+    ]
+  };
+  K.shapes('money', SHAPES);
 })();

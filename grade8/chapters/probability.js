@@ -227,4 +227,112 @@ A.yt({ q: 'If you flip two coins 400 times, about how many times would you expec
       run();
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  var SCEN = [['You flip a coin, then roll a die.', 'Independent'], ['You draw a card, put it back, then draw again.', 'Independent'], ['You spin a spinner twice.', 'Independent'], ['You draw a marble and do not put it back, then draw again.', 'Dependent'], ['You pick a student for captain, then a different student for co-captain.', 'Dependent'], ['You take a cookie from a jar and eat it, then take another.', 'Dependent']];
+  var SHAPES = {
+    'pb-single': [
+      [1, 'line', function (lv) {
+        var r = R.int(1, 7), b = R.int(1, 7), t = r + b;
+        return { q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. Place <b>P(red)</b> on the probability line.', type: 'line', min: 0, max: 1, tick: 0.1, every: 0.5, snap: 0.01, answer: Math.round(r / t * 100) / 100, tol: 0.06, fig: bag(r, b),
+          hint: 'P(red) = red &divide; all. 0 means impossible and 1 means certain.', steps: ['P(red) = ' + r + '/' + t + ' &asymp; ' + (r / t).toFixed(2) + '.'], explain: 'P(red) = ' + TX(r, t) + ' &asymp; ' + (r / t).toFixed(2) + '. Close is fine.', meta: { k: 'ps-line', n: r, t: t } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), t = R.pick([20, 50, 100, 200]), k = R.int(1, 10);
+        return { q: 'The school fun fair sells <b>' + t + '</b> raffle tickets. ' + who + ' buys <b>' + k + '</b>. What is the probability ' + who + ' wins? Type a fraction.', type: 'num', answer: k / t, show: TX(k, t),
+          hint: 'Winning tickets ' + who + ' holds &divide; all tickets.', steps: ['P = ' + k + '/' + t + (G(k, t) > 1 ? ' = ' + TX(k, t) : '') + '.'], explain: 'P(win) = ' + TX(k, t) + '.', meta: { k: 'ps-story', n: k, t: t } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), r = R.int(1, 7), b = R.int(1, 7), t = r + b, truth = R.int(0, 1), said = truth ? TX(r, t) : r + '/' + b;
+        return K.tf({ q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. ' + who + ' says <b>P(red) = ' + said + '</b>. True or false?', truth: truth,
+          right: 'Compare red with <b>all</b> the marbles: ' + r + ' out of ' + t + ', so P(red) = ' + TX(r, t) + '.', wrong: ['Compare red with blue.', 'P(red) is the number of red marbles.'],
+          hint: 'Probability compares the favourable outcomes with all outcomes.', meta: { k: 'ps-tf', n: r, t: t, said: said } });
+      }],
+      [2, 'order', function (lv) {
+        var c = R.shuffle([R.int(1, 3), R.int(4, 6), R.int(7, 9)]), cols = ['red', 'blue', 'green'], tot = c[0] + c[1] + c[2];
+        var list = cols.map(function (x, i) { return [x, c[i]]; }).sort(function (a, b) { return a[1] - b[1]; });
+        return { q: 'A bag has ' + c[0] + ' red, ' + c[1] + ' blue and ' + c[2] + ' green marbles. Order the colours from <b>least likely</b> to <b>most likely</b>.', type: 'order', items: list.map(function (x) { return 'P(' + x[0] + ')'; }), first: 'least likely', last: 'most likely',
+          hint: 'More marbles of a colour means more likely.', steps: list.map(function (x) { return 'P(' + x[0] + ') = ' + x[1] + '/' + tot; }), explain: 'From least to most likely: ' + list.map(function (x) { return x[0]; }).join(', ') + '.', meta: { k: 'ps-order', counts: { red: c[0], blue: c[1], green: c[2] } } };
+      }]
+    ],
+    'pb-indep': [
+      [1, 'fill', function (lv) {
+        var a = R.pick([2, 3, 4, 5]), b = R.pick([2, 3, 4, 6]), ka = R.int(1, a - 1), kb = R.int(1, b - 1);
+        return { q: 'P(A) = ' + raw(ka, a) + ' and P(B) = ' + raw(kb, b) + '. The events are independent. Find P(A and B). (Do not simplify.)', type: 'fill', fill: '<span class="math">' + raw(ka, a) + ' &times; ' + raw(kb, b) + ' = [[]]/[[]]</span>', answers: [ka * kb, a * b],
+          hint: 'For independent events, multiply the probabilities.', steps: [ka + ' &times; ' + kb + ' = ' + ka * kb + '. ' + a + ' &times; ' + b + ' = ' + a * b + '.'], explain: 'P(A and B) = ' + ka * kb + '/' + a * b + (G(ka * kb, a * b) > 1 ? ' = ' + TX(ka * kb, a * b) : '') + '.', meta: { k: 'pi-fill', pa: [ka, a], pb: [kb, b] } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), ev = R.pick([['a 6', 1], ['an even number', 3], ['a number less than 3', 2], ['a 1 or a 2', 2]]);
+        return { q: who + ' flips a coin and rolls a die. What is P(heads <b>and</b> ' + ev[0] + ')? Type a fraction.', type: 'num', answer: ev[1] / 12, show: TX(ev[1], 12),
+          hint: 'P(heads) = 1/2. Find P(' + ev[0] + ') on a die. Multiply.', steps: ['P(heads) = 1/2.', 'P(' + ev[0] + ') = ' + ev[1] + '/6.', '1/2 &times; ' + ev[1] + '/6 = ' + ev[1] + '/12 = ' + TX(ev[1], 12) + '.'], explain: 'P = ' + TX(ev[1], 12) + '.', meta: { k: 'pi-story', ev: ev[0] } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.pick([2, 3, 4]), b = R.pick([2, 3, 4]), truth = R.int(0, 1), said = truth ? TX(1, a * b) : TX(a + b, a * b);
+        return K.tf({ q: 'Spinner A has ' + a + ' equal parts and spinner B has ' + b + '. Each has one green part. ' + who + ' says P(both green) = <b>' + said + '</b>. True or false?', truth: truth,
+          right: 'Multiply: 1/' + a + ' &times; 1/' + b + ' = ' + TX(1, a * b) + '. Both green is less likely than either one alone.', wrong: ['Add the two probabilities.', 'Both green is more likely than one green.'],
+          hint: 'For "and" with independent events, multiply.', meta: { k: 'pi-tf', a: a, b: b, said: said } });
+      }]
+    ],
+    'pb-dep': [
+      [1, 'fill', function (lv) {
+        var r = R.int(2, 7), b = R.int(2, 7);
+        return { q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. You draw a red one and keep it. What is left?', type: 'fill', fill: '[[]] red out of [[]] marbles, so P(red next) = [[]]/[[]]', answers: [r - 1, r + b - 1, r - 1, r + b - 1], fig: bag(r, b),
+          hint: 'One red marble is gone. The total is one less too.', steps: ['Red left: ' + r + ' &minus; 1 = ' + (r - 1) + '.', 'Total left: ' + (r + b) + ' &minus; 1 = ' + (r + b - 1) + '.'], explain: 'P(red next) = ' + (r - 1) + '/' + (r + b - 1) + '.', meta: { k: 'pd-fill', r: r, b: b } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), r = R.int(2, 6), b = R.int(2, 6), t = r + b, back = R.int(0, 1), say = R.int(0, 1) ? r + '/' + t : (r - 1) + '/' + (t - 1);
+        var right = back ? r + '/' + t : (r - 1) + '/' + (t - 1);
+        return K.tf({ q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. You draw a red marble and <b>' + (back ? 'put it back' : 'do not put it back') + '</b>. ' + who + ' says P(red on the 2nd draw) = <b>' + say + '</b>. True or false?', truth: say === right,
+          right: back ? 'The marble goes back, so the bag is the same: ' + r + '/' + t + '.' : 'One red is gone and the bag has one fewer marble: ' + (r - 1) + '/' + (t - 1) + '.', wrong: ['The second draw never changes.', 'The second draw is always less likely.'],
+          hint: 'Is the bag the same for the second draw?', meta: { k: 'pd-tf', r: r, t: t, back: !!back, say: say } });
+      }],
+      [1, 'which', function (lv) {
+        var s = R.pick(SCEN);
+        return K.pick1({ q: s[0] + ' Are the two events independent or dependent?', right: s[1], wrong: [s[1] === 'Independent' ? 'Dependent' : 'Independent'],
+          hint: 'Does the first event change the chances for the second?', steps: [s[1] === 'Dependent' ? 'The first event changes what is left, so the second chance changes.' : 'The first event does not change the second one.'], explain: 'They are ' + s[1].toLowerCase() + '.', meta: { k: 'pd-kind', s: s[0] } });
+      }]
+    ],
+    'pb-venn': [
+      [1, 'fill', function (lv) {
+        var names = R.pick([['Band', 'Choir'], ['Hockey', 'Soccer'], ['Art club', 'Drama club']]), both = R.int(2, 8), ao = R.int(2, 12), bo = R.int(2, 12);
+        return { q: (ao + both) + ' students are in ' + names[0] + ', ' + (bo + both) + ' are in ' + names[1] + ', and ' + both + ' are in both. Fill in the Venn diagram parts.', type: 'fill', fill: names[0] + ' only: [[]] &nbsp; ' + names[1] + ' only: [[]]', answers: [ao, bo],
+          hint: 'The overlap is counted in both totals. Take it away from each.', steps: [names[0] + ' only: ' + (ao + both) + ' &minus; ' + both + ' = ' + ao + '.', names[1] + ' only: ' + (bo + both) + ' &minus; ' + both + ' = ' + bo + '.'], explain: names[0] + ' only ' + ao + ', ' + names[1] + ' only ' + bo + ', both ' + both + '.', meta: { k: 'pv-fill', A: ao + both, B: bo + both, both: both } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), both = R.int(2, 6), ao = R.int(3, 10), bo = R.int(3, 10), ne = R.int(1, 6), tot = ao + both + bo + ne, truth = R.int(0, 1), num = truth ? ao + both + bo : ao + bo + 2 * both;
+        return K.tf({ q: 'Look at the Venn diagram. ' + who + ' says P(Cats or Dogs) = <b>' + num + '/' + tot + '</b>. True or false?', truth: truth, fig: venn('Cats', 'Dogs', ao, both, bo, ne, ''),
+          right: 'Count each part inside the circles once: ' + ao + ' + ' + both + ' + ' + bo + ' = ' + (ao + both + bo) + ', so P = ' + (ao + both + bo) + '/' + tot + '.', wrong: ['Add the two circle totals, so the overlap counts twice.', 'Only count the overlap.'],
+          hint: 'Is the overlap counted once or twice?', meta: { k: 'pv-tf', ao: ao, both: both, bo: bo, tot: tot, num: num } });
+      }],
+      [1, 'match', function (lv) {
+        return K.until(function () {
+          var both = R.int(2, 8), ao = R.int(2, 12), bo = R.int(2, 12), ne = R.int(1, 9), tot = ao + both + bo + ne, v = [ao, both, bo, ne];
+          if (new Set(v).size < 4) return null;
+          return { q: 'Of ' + tot + ' students, ' + (ao + both) + ' swim, ' + (bo + both) + ' skate, and ' + both + ' do both. Match each part of the Venn diagram to its count.', type: 'match', pairs: [['Swim only', String(ao)], ['Both', String(both)], ['Skate only', String(bo)], ['Neither', String(ne)]],
+            hint: 'Start with the overlap. Then take it away from each total. Neither is what is left.', steps: ['Swim only: ' + (ao + both) + ' &minus; ' + both + ' = ' + ao + '.', 'Skate only: ' + (bo + both) + ' &minus; ' + both + ' = ' + bo + '.', 'Neither: ' + tot + ' &minus; ' + (ao + both + bo) + ' = ' + ne + '.'], explain: 'Swim only ' + ao + ', both ' + both + ', skate only ' + bo + ', neither ' + ne + '.', meta: { k: 'pv-match', A: ao + both, B: bo + both, both: both, tot: tot } };
+        });
+      }]
+    ],
+    'pb-exp': [
+      [1, 'mistake', function (lv) {
+        var who = K.name(), trials = R.pick([50, 100, 200, 300]), truth = R.int(0, 1), said = truth ? trials / 2 : trials / 4;
+        return K.tf({ q: who + ' will flip a coin <b>' + trials + '</b> times. ' + who + ' says to expect about <b>' + said + '</b> heads. True or false?', truth: truth,
+          right: 'P(heads) = 1/2, so expect about 1/2 &times; ' + trials + ' = ' + trials / 2 + ' heads.', wrong: ['You can never expect any number.', 'Expect heads about one time in four.'],
+          hint: 'Expected count = probability &times; number of trials.', meta: { k: 'pe-tf', p: 0.5, trials: trials, said: said } });
+      }],
+      [1, 'fill', function (lv) {
+        var d = R.pick([2, 4, 5, 6, 8, 10]), trials = d * R.int(5, 30);
+        return { q: 'An event has a probability of ' + raw(1, d) + '. You try it ' + trials + ' times. How many times do you expect it?', type: 'fill', fill: '<span class="math">' + raw(1, d) + ' &times; ' + trials + ' = [[]]</span>', answers: [trials / d],
+          hint: 'Divide ' + trials + ' by ' + d + '.', steps: [trials + ' &divide; ' + d + ' = ' + trials / d + '.'], explain: 'Expect about ' + trials / d + ' times.', meta: { k: 'pe-fill', d: d, trials: trials } };
+      }],
+      [1, 'tap', function (lv) {
+        var who = K.name(), trials = 6 * R.pick([10, 20, 50, 100]), e = trials / 6, tiles = R.shuffle([e + R.pick([-3, -2, 2, 3]), Math.round(trials / 2), Math.round(trials / 3) + 1, Math.round(e / 4) + 1]);
+        var best = tiles.slice().sort(function (a, b) { return Math.abs(a - e) - Math.abs(b - e); })[0];
+        return { q: who + ' rolls a die <b>' + trials + '</b> times and counts the 6s. Which result is closest to what you would expect? Tap it.', type: 'tap', tiles: tiles.map(function (t) { return t + ' sixes'; }), answer: tiles.indexOf(best), answerText: best + ' sixes',
+          hint: 'P(6) = 1/6. Expect about ' + trials + ' &divide; 6.', steps: ['Expected: ' + trials + ' &divide; 6 = ' + e + '.', 'Real results vary a little, so ' + best + ' is closest.'], explain: 'About ' + e + ' sixes is expected. ' + best + ' is close.', meta: { k: 'pe-tap', trials: trials } };
+      }]
+    ]
+  };
+  K.shapes('probability', SHAPES);
 })();
