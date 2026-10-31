@@ -57,3 +57,5 @@ html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
 @media (max-width:480px){.qk-cols{gap:8px}.qk-card{padding:8px 10px;font-size:1rem}.qk-fill{font-size:1.1rem}.qk-fill input.qk-blank{width:3.8em!important}}
 /* drawings inside questions, steps and answers never run off a phone screen */
 .pcard svg,.steps svg,.ls-reveal svg,.fb svg,.q svg{max-width:100%;height:auto}
+/* a long list of big numbers in a question (like a counting sequence) may wrap on a phone */
+.qtext .math.big{white-space:normal}

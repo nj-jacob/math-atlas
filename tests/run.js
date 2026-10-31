@@ -128,7 +128,7 @@ async function checkGrade(browser, base, g) {
           const q = Atlas._q, root = document.querySelector('.pq');
           if (!q || !root || !root.querySelector('.pcard')) return { err: 'practice question did not appear' };
           const card = root.querySelector('.pcard');
-          const runsOff = () => [...card.querySelectorAll('*')].some(e => { const b = e.getBoundingClientRect(); return b.width && b.right > window.innerWidth + 2 && !e.closest('.tbl, [style*="overflow"], .qk-pic'); }) || card.scrollWidth > card.clientWidth + 2;
+          const runsOff = () => { const e = [...card.querySelectorAll('*')].find(e => { const b = e.getBoundingClientRect(); return b.width && b.right > window.innerWidth + 2 && !e.closest('.tbl, [style*="overflow"], .qk-pic'); }); return e ? (e.tagName.toLowerCase() + (e.getAttribute('class') ? '.' + e.getAttribute('class').split(' ')[0] : '') + ' "' + (e.textContent || '').trim().slice(0, 40) + '"') : (card.scrollWidth > card.clientWidth + 2 ? 'the card' : ''); };
           let over = runsOff();
           const t = q.type + (q.shape ? ':' + q.shape : '');
           const fb = () => root.querySelector('.fb');
@@ -146,7 +146,7 @@ async function checkGrade(browser, base, g) {
         }, bad);
         answered++;
         if (r.err) fail(where, cid + ' / ' + sid + ' L' + lv + ' ' + (r.t || '') + ': ' + r.err);
-        if (r.over) fail(where, cid + ' / ' + sid + ' L' + lv + ' ' + r.t + ': runs off the side of a phone screen');
+        if (r.over) fail(where, cid + ' / ' + sid + ' L' + lv + ' ' + r.t + ': runs off the side of a phone screen (' + r.over + ')');
         if (r.err) break;
       }
     }
