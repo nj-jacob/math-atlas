@@ -186,6 +186,12 @@
   /* fixed data used in the lesson */
   var FRUIT = { title: 'Our favourite fruit', cats: ['apple', 'banana', 'grapes', 'orange'], n: [5, 7, 4, 2], src: 'survey of Room 12' };
   var PETS = { title: 'Pets at home', lo: 0, hi: 4, n: [6, 4, 3, 1, 1], axis: 'Number of pets' };
+  /* data for the worked examples */
+  var EX = [{ k: 'square', c: 'blue', big: true }, { k: 'circle', c: 'blue', big: false }, { k: 'triangle', c: 'yellow', big: true }, { k: 'circle', c: 'red', big: false }];
+  var PET2 = { title: 'Our favourite pet', cats: ['cat', 'dog', 'fish'], n: [5, 8, 2], src: 'survey of Room 9' };
+  var SNACK = { title: 'Favourite snack', cats: ['apple', 'popcorn', 'cheese', 'crackers'], n: [3, 5, 8, 5] };
+  var GAME10 = { title: 'Room 10 favourite game', cats: ['soccer', 'tag', 'hockey'], n: [9, 6, 4], src: 'survey of Room 10' };
+  var GAME11 = { title: 'Room 11 favourite game', cats: ['soccer', 'tag', 'hockey'], n: [7, 5, 6], src: 'survey of Room 11' };
 
   /* ---------- lessons: one idea at a time ---------- */
   var K = A.kit, CH = 'data';
@@ -308,6 +314,13 @@
           ['A big blue square fits neither. It goes <b>outside</b>.', venn(SET.slice(0, 3), 'red', 'tri')],
           ['Every shape has one place.', venn(SET, 'red', 'tri'), 2000]
         ]),
+        example: K.clip([
+          ['My turn. The rules are <b>blue</b> and <b>big</b>. I ask two questions about each shape.', venn([], 'blue', 'big')],
+          ['A big blue square. Blue? Yes. Big? Yes. It fits both, so it goes in the <b>overlap</b>.', venn(EX.slice(0, 1), 'blue', 'big')],
+          ['A small blue circle. Blue? Yes. Big? No. It goes in the blue circle only.', venn(EX.slice(0, 2), 'blue', 'big')],
+          ['A big yellow triangle. Blue? No. Big? Yes. It goes in the big circle only.', venn(EX.slice(0, 3), 'blue', 'big')],
+          ['A small red circle. No and no. It goes <b>outside</b> both circles.', venn(EX, 'blue', 'big'), 2200]
+        ]),
         try: placeLab,
         ways: [
           { label: 'Two questions', html: '<p>Ask two yes-or-no questions about each thing. Is it red? Is it a triangle?</p><div class="tbl"><table><thead><tr><th>Red?</th><th>Triangle?</th><th>Goes in</th></tr></thead><tbody><tr><td>yes</td><td>yes</td><td>the overlap</td></tr><tr><td>yes</td><td>no</td><td>red only</td></tr><tr><td>no</td><td>yes</td><td>triangle only</td></tr><tr><td>no</td><td>no</td><td>outside</td></tr></tbody></table></div>' },
@@ -324,6 +337,12 @@
           ['A blue square: not red, not triangle.', carroll([SET[1], SET[2]], 'red', 'tri')],
           ['All sorted. Same shapes as the Venn diagram.', carroll(SET, 'red', 'tri'), 2000]
         ]),
+        example: K.clip([
+          ['My turn. The columns are blue and not blue. The rows are square and not square.', carroll([], 'blue', 'sq')],
+          ['A big blue square: the blue column and the square row. It goes where they meet.', carroll(EX.slice(0, 1), 'blue', 'sq')],
+          ['A big yellow triangle: not blue, not square. Bottom right.', carroll([EX[0], EX[2]], 'blue', 'sq')],
+          ['I sort the rest the same way. Every shape has one box.', carroll(EX, 'blue', 'sq'), 2000]
+        ]),
         try: sortLab,
         key: '<p>Find the column. Find the row. It goes where they meet.</p>',
         check: [T('carroll'), P('d2-sort', 2), P('d2-sort', 3)] }
@@ -336,6 +355,12 @@
           ['The 5th mark crosses them. That is a group of 5.', '<div class="fig">' + tally(5) + '</div>'],
           ['More marks: 5, 10, then 11, 12.', '<div class="fig">' + tally(12) + '</div>', 2000]
         ]),
+        example: K.clip([
+          ['My turn. I will make tally marks for 8. I draw 1, 2, 3, 4 marks.', '<div class="fig">' + tally(4) + '</div>'],
+          ['The 5th mark goes across the first 4. That makes a group of 5.', '<div class="fig">' + tally(5) + '</div>'],
+          ['Then I draw 3 more: 6, 7, 8.', '<div class="fig">' + tally(8) + '</div>'],
+          ['I check: count the group by 5, then count on: 5, 6, 7, 8. <b>8</b>.', '<div class="fig">' + tally(8) + '</div>', 2000]
+        ]),
         try: tallyLab,
         key: '<p>Count the groups by 5s. Then count on the single marks by 1s.</p>',
         mistake: '<p>Counting the crossing mark as a separate group, or drawing 5 marks and then crossing them (6).</p>',
@@ -346,6 +371,11 @@
           ['How many Grade 2 students walk?', '<p class="math big">Walk row &rarr; Grade 2 column</p>'],
           ['Where they meet: 5, then 6, 7. <b>7</b>.', '<div class="fig">' + tally(7) + '</div>'],
           ['How many walk in all? Add the Walk row: 7 + 4 = <b>11</b>.', '<p class="math big">7 + 4 = 11</p>', 2000]
+        ]),
+        example: K.clip([
+          ['My turn. How many Grade 3 students take the bus? I find the Bus row and the Grade 3 column.', twoWay(['Walk', 'Bus'], ['Grade 2', 'Grade 3'], [[6, 3], [2, 8]])],
+          ['Where they meet, I count: 5, then 6, 7, 8. <b>8</b> students.', twoWay(['Walk', 'Bus'], ['Grade 2', 'Grade 3'], [[6, 3], [2, 8]])],
+          ['How many take the bus in all? I add the Bus row: 2 + 8 = <b>10</b>.', '<p class="math big">2 + 8 = 10</p>', 2000]
         ]),
         try: surveyLab,
         ways: [
@@ -364,6 +394,12 @@
           ['Banana stops at 7. Grapes stops at 4.', barG(FRUIT)],
           ['7 &minus; 4 = 3. <b>3 more</b> children like bananas.', '<p class="math big">7 &minus; 4 = 3</p>', 2000]
         ]),
+        example: K.clip([
+          ['My turn. A class chose a favourite pet. I read the title first. Each face is 1 child.', picto(PET2)],
+          ['Here is the same data as a bar graph.', barG(PET2)],
+          ['How many more chose dog than cat? Dog stops at 8. Cat stops at 5.', barG(PET2)],
+          ['8 &minus; 5 = 3. <b>3 more</b> children chose dog.', '<p class="math big">8 &minus; 5 = 3</p>', 2000]
+        ]),
         try: graphLab('Change the votes. Watch the graph change.', false),
         key: '<p>Read the title and labels first. Then read the bars.</p>',
         mistake: '<p>Reading the top of a bar between two lines. Have your child slide a finger straight across to the numbers.</p>',
@@ -374,6 +410,12 @@
           ['How many pets do you have? A number line from 0 to 4.', linePlot({ title: 'Pets at home', lo: 0, hi: 4, n: [0, 0, 0, 0, 0], axis: 'Number of pets' })],
           ['Each answer gets an X.', linePlot({ title: 'Pets at home', lo: 0, hi: 4, n: [2, 1, 1, 0, 0], axis: 'Number of pets' })],
           ['15 children. 6 have no pets.', linePlot(PETS), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. I asked 7 friends how many letters are in their name. I draw a line from 3 to 6.', linePlot({ title: 'Letters in our names', lo: 3, hi: 6, n: [0, 0, 0, 0], axis: 'Number of letters' })],
+          ['Each answer gets one X above its number. Ali has 3 letters. Maya and Liam have 4.', linePlot({ title: 'Letters in our names', lo: 3, hi: 6, n: [1, 2, 0, 0], axis: 'Number of letters' })],
+          ['I put an X for every friend. 7 answers, 7 Xs.', linePlot({ title: 'Letters in our names', lo: 3, hi: 6, n: [1, 3, 2, 1], axis: 'Number of letters' })],
+          ['The tallest stack is at 4. Most of my friends have <b>4 letters</b> in their name.', linePlot({ title: 'Letters in our names', lo: 3, hi: 6, n: [1, 3, 2, 1], axis: 'Number of letters' }), 2200]
         ]),
         try: plotLab,
         key: '<p>One X for each answer, above its number.</p>',
@@ -387,6 +429,11 @@
           ['Banana, with 7. The mode is <b>banana</b>.', barG(FRUIT)],
           ['Two tallest bars? Two modes: summer and winter.', barG({ title: 'Favourite season', cats: ['spring', 'summer', 'fall', 'winter'], n: [3, 6, 2, 6] })],
           ['All the same? <b>No mode</b>.', barG({ title: 'Favourite colour', cats: ['red', 'blue', 'green'], n: [4, 4, 4] }), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. What is the mode? I look for the tallest bar.', barG(SNACK)],
+          ['Cheese is the tallest, with 8. No other bar is as tall.', barG(SNACK)],
+          ['The mode is <b>cheese</b>. It is the answer chosen most often.', barG(SNACK), 2000]
         ]),
         try: graphLab('Change the votes to make a new mode, a tie, or no mode.', true),
         ways: [
@@ -403,6 +450,11 @@
           ['Prediction: Room 14 will pick banana too.', '<p class="math big">Room 14: banana?</p>'],
           ['Room 14 votes. Their mode is <b>apple</b>. The prediction was wrong, and that is fine.', barG({ title: 'Room 14 favourite fruit', cats: FRUIT.cats, n: [8, 6, 3, 3], src: 'survey of Room 14' }), 2400]
         ]),
+        example: K.clip([
+          ['My turn. Room 10 voted for a favourite game. Their mode is soccer.', barG(GAME10)],
+          ['I predict Room 11 will pick soccer too. It is only a guess until they vote.', '<p class="g2-big">Room 11: soccer?</p>'],
+          ['Room 11 votes. Their mode is soccer too. This time my prediction matched. I could only know by asking.', barG(GAME11), 2400]
+        ]),
         key: '<p>Predict, collect, check. Data from a new group can be different.</p>',
         check: [P('d2-mode', 3), T('mode')] }
     ] },
@@ -414,6 +466,11 @@
           ['Red and blue. Picking red is <b>possible</b>.', bag({ red: 3, blue: 2 })],
           ['Only blue. Picking red is <b>impossible</b>.', bag({ blue: 5 }, 'A bag with 5 blue marbles')],
           ['So picking <b>not red</b> is <b>certain</b>.', bag({ blue: 5 }, 'A bag with 5 blue marbles'), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. This bag has only green marbles. Picking green is <b>certain</b>. It must happen.', bag({ green: 4 }, 'A bag with 4 green marbles')],
+          ['This bag has green and yellow. Picking green is <b>possible</b>. It might happen.', bag({ green: 2, yellow: 3 })],
+          ['This bag has only yellow. Picking green is <b>impossible</b>. It cannot happen.', bag({ yellow: 5 }, 'A bag with 5 yellow marbles'), 2200]
         ]),
         try: bagLab,
         ways: [

@@ -93,13 +93,15 @@
   function T(k) { return K.T(CH, k); }
   function P(id, lv) { return K.P(CH, id, lv); }
   /* a hexagon with its sides numbered one at a time */
-  function numbered(upto) {
-    var c = regular(6, 110, 95, 76, 0), s = poly(c);
+  /* a regular shape with n sides (6 if not given), sides 1 to upto counted */
+  function numbered(upto, n) {
+    n = n || 6;
+    var c = regular(n, 110, 95, 76, n === 6 ? 0 : undefined), s = poly(c);
     for (var i = 0; i < upto; i++) {
-      var a = c[i], b = c[(i + 1) % 6], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      var a = c[i], b = c[(i + 1) % n], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
       s += K.pop('<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" style="stroke:var(--hi)" stroke-width="7" stroke-linecap="round"/><text x="' + (110 + (mx - 110) * 1.25).toFixed(1) + '" y="' + (95 + (my - 95) * 1.25 + 7).toFixed(1) + '" text-anchor="middle" font-size="20" font-weight="800" style="fill:var(--strand)">' + (i + 1) + '</text>', i === upto - 1 ? 0 : -9);
     }
-    return A.svg(220, 190, s + (upto === 6 ? K.pop(dots(c), 1) : ''), 'A hexagon with ' + upto + ' sides counted');
+    return A.svg(220, 190, s + (upto === n ? K.pop(dots(c), 1) : ''), 'A ' + NAMES[n] + ' with ' + upto + ' sides counted');
   }
   /* a page corner placed on a shape's corner */
   function pageCorner(x, y, fits) {
@@ -199,6 +201,12 @@
           ['4, 5, 6. Back to the start.', numbered(6)],
           ['6 sides and 6 corners. It is a <b>hexagon</b>.', numbered(6), 2000]
         ]),
+        example: K.clip([
+          ['My turn. I will name this shape. I start at one side and call it 1.', numbered(1, 5)],
+          ['I go around, one side at a time: 2, 3.', numbered(3, 5)],
+          ['4, 5. I am back at the start, so I stop.', numbered(5, 5)],
+          ['5 sides and 5 corners. It is a <b>pentagon</b>.', numbered(5, 5), 2000]
+        ]),
         try: { tool: 'geoboard', opts: {}, tasks: [
           { do: 'Make a shape with <b>3 sides</b>. ' + GEO, goal: function (s) { return s.closed && s.sides === 3 && s.area > 0; }, yes: 'A triangle: 3 sides and 3 corners.' },
           { do: 'Now make a shape with <b>4 sides</b>.', goal: function (s) { return s.closed && s.sides === 4 && s.area > 0; }, yes: 'A quadrilateral: 4 sides and 4 corners.' },
@@ -214,6 +222,12 @@
           ['Stretch it. Still 5 sides.', A.svg(220, 180, K.pop(poly(irregular(5, 110, 92, 76, 3))), 'A stretched pentagon')],
           ['Turn it upside down. Still 5 sides.', A.svg(220, 180, K.pop(poly(irregular(5, 110, 92, 76, 3).map(function (q) { return [q[0], 184 - q[1]]; }))), 'A turned pentagon')],
           ['All three are <b>pentagons</b>.', A.svg(330, 120, poly(regular(5, 55, 62, 48)) + poly(irregular(5, 165, 62, 48, 3)) + poly(irregular(5, 275, 62, 48, 3).map(function (q) { return [q[0], 124 - q[1]]; })), 'Three pentagons'), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. Here is a hexagon. I count 6 sides.', A.svg(220, 180, K.pop(poly(regular(6, 110, 92, 76, 0))), 'A hexagon')],
+          ['Now it is stretched. I count the sides again: still 6.', A.svg(220, 180, K.pop(poly(irregular(6, 110, 92, 72, 5))), 'A stretched hexagon')],
+          ['Now it is turned. I count again: still 6.', A.svg(220, 180, K.pop(poly(irregular(6, 110, 92, 72, 5).map(function (q) { return [220 - q[0], 184 - q[1]]; }))), 'A turned hexagon')],
+          ['6 sides each time, so all three are <b>hexagons</b>. The name stays the same.', A.svg(330, 120, poly(regular(6, 55, 62, 48, 0)) + poly(irregular(6, 165, 62, 46, 5)) + poly(irregular(6, 275, 62, 46, 5).map(function (q) { return [550 - q[0], 124 - q[1]]; })), 'Three hexagons'), 2200]
         ]),
         try: namesLab,
         ways: [
@@ -233,6 +247,12 @@
           ['Try the rhombus. It does not fit.', cornerFrame('rhombus', false)],
           ['The rhombus has <b>no square corners</b>.', cornerFrame('rhombus', false), 2000]
         ]),
+        example: K.clip([
+          ['My turn. Does the square have a square corner? I put a page corner on it.', cornerFrame('square', true)],
+          ['It fits exactly. That is a <b>square corner</b>.', cornerFrame('square', true)],
+          ['Now the trapezoid. I put the page corner on it.', cornerFrame('trap', false)],
+          ['It does not fit. That corner is <b>not</b> a square corner.', cornerFrame('trap', false), 2000]
+        ]),
         try: pickLab(function (s) { return s.sq ? 'It has ' + s.sq + ' square corners.' : 'Put a page corner on it. Does it fit?'; }, ['square', 'rhombus', 'righttri', 'hex', 'house', 'eqtri'], function (s) { return s.sq > 0; }, 'Rule: <b>has a square corner</b>.'),
         key: '<p>Check every corner with a page corner. It fits exactly, or it does not.</p>',
         mistake: '<p>Calling any pointy corner a square corner. Use a real page corner to check.</p>',
@@ -244,6 +264,12 @@
           ['A rectangle: 2 long sides and 2 short sides.', one('rectangle')],
           ['A rhombus: 4 equal sides, but no square corners.', one('rhombus')],
           ['Sort them by more than one rule.', '<div class="vrow">' + one('square') + one('rectangle') + one('rhombus') + '</div>', 2000]
+        ]),
+        example: K.clip([
+          ['My turn. I check the sides. This triangle has 3 sides, all the same length.', one('eqtri')],
+          ['This tall triangle has 2 long sides and 1 short side. Not all equal.', one('isotri')],
+          ['This square has 4 sides, all the same length.', one('square')],
+          ['I sort them. All sides equal: the first triangle and the square. Not equal: the tall triangle.', '<div class="vrow">' + one('eqtri') + one('square') + one('isotri') + '</div>', 2400]
         ]),
         try: { tool: 'geoboard', opts: {}, tasks: [
           { do: 'Make a <b>square</b>: 4 equal sides and 4 square corners. ' + GEO, goal: function (s) { return s.closed && s.sides === 4 && s.perimeter != null && s.perimeter * s.perimeter === 16 * s.area && s.area > 0; }, yes: 'A square. All 4 sides match.' },
@@ -260,6 +286,12 @@
           ['Fold it down the middle.', A.svg(220, 180, poly(lib(110, 90).isotri.p) + K.pop(symLines('isotri', 110, 90, 46), 0), 'A tall triangle with a fold line')],
           ['One half lands on the other. They <b>match</b>.', A.svg(220, 180, poly(lib(110, 90).isotri.p) + K.pop(poly([lib(110, 90).isotri.p[0], lib(110, 90).isotri.p[1], [110, lib(110, 90).isotri.p[1][1]]], 'color-mix(in srgb,var(--hi) 60%,var(--card))'), 0) + symLines('isotri', 110, 90, 46), 'The two halves match')],
           ['A fold from a corner to a side does not match. Not a line of symmetry.', A.svg(220, 180, poly(lib(110, 90).isotri.p) + K.pop('<line x1="' + lib(110, 90).isotri.p[1][0] + '" y1="' + lib(110, 90).isotri.p[1][1] + '" x2="72" y2="68" style="stroke:var(--bad)" stroke-width="3" stroke-dasharray="8 5"/>', 0), 'A fold that does not match'), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. Is there a line of symmetry? Here is a house shape.', A.svg(220, 180, poly(lib(110, 90).house.p), 'A house shape')],
+          ['I fold it straight down the middle.', A.svg(220, 180, poly(lib(110, 90).house.p) + K.pop(symLines('house', 110, 90, 46), 0), 'A house shape with a fold line')],
+          ['The left half lands on the right half. They <b>match</b>. That is a line of symmetry.', A.svg(220, 180, poly(lib(110, 90).house.p) + symLines('house', 110, 90, 46), 'A house shape with a line of symmetry')],
+          ['Now I fold from the top corner to a bottom corner. The halves do not match. Not a line of symmetry.', A.svg(220, 180, poly(lib(110, 90).house.p) + K.pop('<line x1="' + lib(110, 90).house.p[2][0] + '" y1="' + lib(110, 90).house.p[2][1] + '" x2="' + lib(110, 90).house.p[0][0] + '" y2="' + lib(110, 90).house.p[0][1] + '" style="stroke:var(--bad)" stroke-width="3" stroke-dasharray="8 5"/>', 0), 'A fold that does not match'), 2400]
         ]),
         try: symLab,
         ways: [
@@ -278,6 +310,12 @@
           ['Corner to corner: 3 and 4.', A.svg(220, 180, poly(lib(110, 90).square.p) + K.pop(symLines('square', 110, 90, 46)), 'A square with 4 lines')],
           ['A square has <b>4 lines of symmetry</b>.', A.svg(220, 180, poly(lib(110, 90).square.p) + symLines('square', 110, 90, 46), 'A square with 4 lines of symmetry'), 2000]
         ]),
+        example: K.clip([
+          ['My turn. How many lines of symmetry does a rectangle have? I fold it side to side: 1.', A.svg(220, 180, poly(lib(110, 90).rectangle.p) + K.pop(symLines('rectangle', 110, 90, 46).split('/>')[0] + '/>'), 'A rectangle with 1 line')],
+          ['I fold it up and down: 2.', A.svg(220, 180, poly(lib(110, 90).rectangle.p) + K.pop(symLines('rectangle', 110, 90, 46)), 'A rectangle with 2 lines')],
+          ['I try corner to corner. The halves do not match, so I do not count it.', A.svg(220, 180, poly(lib(110, 90).rectangle.p) + symLines('rectangle', 110, 90, 46) + K.pop('<line x1="' + lib(110, 90).rectangle.p[0][0] + '" y1="' + lib(110, 90).rectangle.p[0][1] + '" x2="' + lib(110, 90).rectangle.p[2][0] + '" y2="' + lib(110, 90).rectangle.p[2][1] + '" style="stroke:var(--ink2)" stroke-width="2" stroke-dasharray="3 5"/>', 0), 'A rectangle with a diagonal that does not match')],
+          ['A rectangle has <b>2 lines of symmetry</b>.', A.svg(220, 180, poly(lib(110, 90).rectangle.p) + symLines('rectangle', 110, 90, 46), 'A rectangle with 2 lines of symmetry'), 2000]
+        ]),
         try: symLab,
         key: '<p>Try every kind of fold. Count only the ones that match.</p>',
         check: [T('count'), P('s2-sym', 2)] }
@@ -290,6 +328,11 @@
           ['Fill it with 6 triangles.', A.svg(200, 180, K.pop(hexFill('tri', 100, 90, 84)), 'A hexagon of 6 triangles')],
           ['Or with 3 rhombuses.', A.svg(200, 180, K.pop(hexFill('rho', 100, 90, 84)), 'A hexagon of 3 rhombuses')],
           ['Or with 2 trapezoids. The same hexagon each time.', A.svg(200, 180, K.pop(hexFill('trap', 100, 90, 84)), 'A hexagon of 2 trapezoids'), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. I will fill a hexagon a new way.', A.svg(200, 180, hexFill('none', 100, 90, 84), 'An empty hexagon')],
+          ['I use 1 trapezoid, 1 rhombus and 1 triangle. 3 pieces fill it.', A.svg(200, 180, K.pop(hexFill('mix', 100, 90, 84)), 'A hexagon of a trapezoid, a rhombus and a triangle')],
+          ['I check with triangles: the trapezoid is 3, the rhombus is 2, the triangle is 1. 3 + 2 + 1 = 6. The same hexagon.', A.svg(200, 180, hexFill('mix', 100, 90, 84), 'A hexagon of a trapezoid, a rhombus and a triangle'), 2600]
         ]),
         try: hexLab,
         ways: [
@@ -304,6 +347,11 @@
           ['A shape made of 6 squares.', A.svg(400, 120, areaFrame(SHAPES2[0], 'var(--strand)', 4, 4, 2), 'A shape of 6 squares')],
           ['Move the same 6 squares.', A.svg(400, 120, areaFrame(SHAPES2[0], 'var(--strand)', 4, 4, 2) + K.pop(areaFrame(SHAPES2[2], 'var(--sd)', 240, 3, 2)), 'Two shapes of 6 squares')],
           ['They look different. Both cover <b>6 squares</b>.', A.svg(400, 120, areaFrame(SHAPES2[0], 'var(--strand)', 4, 4, 2) + areaFrame(SHAPES2[2], 'var(--sd)', 240, 3, 2), 'Two shapes, same area'), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. This shape is a row of 6 squares.', A.svg(400, 152, areaFrame(SHAPES2[1], 'var(--strand)', 4, 6, 1), 'A row of 6 squares')],
+          ['I move the same 6 squares into a new shape.', A.svg(400, 152, areaFrame(SHAPES2[1], 'var(--strand)', 4, 6, 1) + K.pop(areaFrame(SHAPES2[3], 'var(--sd)', 260, 3, 4)), 'Two shapes of 6 squares')],
+          ['I count the squares in the new shape: 6. They look different, but both cover <b>6 squares</b>. Same area.', A.svg(400, 152, areaFrame(SHAPES2[1], 'var(--strand)', 4, 6, 1) + areaFrame(SHAPES2[3], 'var(--sd)', 260, 3, 4), 'Two shapes, same area'), 2400]
         ]),
         try: { tool: 'geoboard', opts: {}, tasks: [
           { do: 'Make a shape that covers exactly <b>4 squares</b>. ' + GEO, goal: function (s) { return s.closed && s.area === 4; }, yes: 'Area 4. The board shows it.' },
@@ -325,6 +373,12 @@
           ['Turn the copy. Still <b>congruent</b>.', copyOf('righttri', 'turn')],
           ['Flip the copy. Still <b>congruent</b>.', copyOf('righttri', 'flip')],
           ['Make it bigger. Same shape, new size. <b>Not congruent</b>.', copyOf('righttri', 'big'), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. Are these two shapes congruent? The copy is turned.', copyOf('trap', 'turn')],
+          ['I check: same shape, and the sides are the same lengths. Turning does not change that. <b>Congruent</b>.', copyOf('trap', 'turn'), 2000],
+          ['Now the copy is flipped. Same shape, same size. Still <b>congruent</b>.', copyOf('trap', 'flip')],
+          ['This copy is smaller. Same shape, but a new size. <b>Not congruent</b>.', copyOf('trap', 'small'), 2200]
         ]),
         try: copyLab,
         ways: [

@@ -73,6 +73,7 @@
   function ring(i, col) { var x = 50 + (i % 4) * 86, y = i < 4 ? 52 : 142; return K.pop('<circle cx="' + x + '" cy="' + y + '" r="30" fill="none" style="stroke:' + (col || 'var(--strand)') + '" stroke-width="4"/>', 0); }
   function shelfWith(order, extra) { return shelf(order).replace('</svg>', (extra || '') + '</svg>'); }
   var S1 = ['apple', 'star', 'fish', 'cube', 'star', 'cube', 'apple', 'fish'];
+  var S2 = ['fish', 'cube', 'apple', 'star', 'apple', 'fish', 'star', 'cube'];
   /* tap things on the shelf to answer position questions */
   function shelfLab(qs) {
     return K.lab('<p class="t2 lq"></p><div class="fig lsh"></div><div class="out" aria-live="polite"></div>', function (root, done) {
@@ -200,6 +201,11 @@
           ['The fish is to the <b>left</b> of the cube.', shelfWith(S1, ring(3, 'var(--se)') + ring(2))],
           ['The star is <b>between</b> the apple and the fish.', shelfWith(S1, ring(0, 'var(--se)') + ring(2, 'var(--se)') + ring(1)), 2000]
         ]),
+        example: K.clip([
+          ['My turn. What is just to the <b>left</b> of the apple on the top shelf? I find the apple.', shelfWith(S2, ring(2))],
+          ['Left is the side of my left hand. I look one place that way: the <b>cube</b>.', shelfWith(S2, ring(2, 'var(--se)') + ring(1))],
+          ['Next: what is <b>between</b> the fish and the apple? I find both. The cube is in the middle.', shelfWith(S2, ring(0, 'var(--se)') + ring(2, 'var(--se)') + ring(1)), 2200]
+        ]),
         try: shelfLab([['Tap the thing to the <b>left</b> of the fish on the top shelf.', 1, 'The star is left of the fish.'], ['Tap the thing <b>between</b> the star and the apple on the bottom shelf.', 5, 'The cube is in the middle.'], ['Tap the thing to the <b>right</b> of the apple on the top shelf.', 1, 'The star is right of the apple.']]),
         ways: [{ label: 'Make an L', html: '<p>Hold up both hands, palms away, thumbs out. The hand whose thumb and finger make an <b>L</b> is your <b>left</b>.</p>' }],
         key: '<p>Left and right: your left and right as you look at the picture.</p>',
@@ -211,6 +217,11 @@
           ['Find the star on the top shelf.', shelfWith(S1, ring(1))],
           ['Look straight down. The <b>cube</b> is below it.', shelfWith(S1, ring(1, 'var(--se)') + ring(5))],
           ['Find the fish on the bottom shelf. Look straight up: the <b>cube</b> is above it.', shelfWith(S1, ring(7, 'var(--se)') + ring(3)), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. What is <b>below</b> the apple on the top shelf? I find the apple.', shelfWith(S2, ring(2))],
+          ['I look straight down. The <b>star</b> is below it.', shelfWith(S2, ring(2, 'var(--se)') + ring(6))],
+          ['Next: what is <b>above</b> the fish on the bottom shelf? I look straight up: the <b>cube</b>.', shelfWith(S2, ring(5, 'var(--se)') + ring(1)), 2200]
         ]),
         try: shelfLab([['Tap the thing <b>below</b> the apple on the top shelf.', 4, 'The star is straight below the apple.'], ['Tap the thing <b>above</b> the apple on the bottom shelf.', 2, 'The fish is straight above it.'], ['Tap the thing <b>above</b> the star on the bottom shelf.', 0, 'The apple is straight above.']]),
         key: '<p>Above: look straight up. Below: look straight down.</p>',
@@ -225,6 +236,11 @@
           ['Find the pond in the legend. Then find it on the map.', gridSvg(6, 5, TOWN, K.pop(marker(4, 3, 'transparent', '')), 'The pond is circled', true)],
           ['The pond is one square up and one square left of the playground.', gridSvg(6, 5, TOWN, pathSvg([[5, 4], [5, 3], [4, 3]]), 'From the playground up 1 and left 1 to the pond', true), 2200]
         ]),
+        example: K.clip([
+          ['My turn. Where is the library? First I find its symbol in the legend.', gridSvg(6, 5, TOWN, '', 'The neighbourhood map with a legend', true)],
+          ['Then I find the same symbol on the map.', gridSvg(6, 5, TOWN, K.pop(marker(5, 1, 'transparent', '')), 'The library is circled', true)],
+          ['The library is 2 squares right of the school and 1 square down.', gridSvg(6, 5, TOWN, pathSvg([[3, 0], [4, 0], [5, 0], [5, 1]]), 'From the school right 2 and down 1 to the library', true), 2200]
+        ]),
         try: mapLab,
         key: '<p>Find the symbol in the legend first. Then find it on the map.</p>',
         mistake: '<p>Thinking a map shows things the size they really are. The symbols only show <b>where</b> things are.</p>',
@@ -236,6 +252,12 @@
           ['Right 1, 2, 3. <b>Right 3</b>.', gridSvg(6, 5, TOWN, pathSvg([[0, 0], [1, 0], [2, 0], [3, 0]]) + K.pop(marker(3, 0, 'var(--hi)', '')), 'Right 3 to the school')],
           ['Now to the pond: <b>right 1</b>.', gridSvg(6, 5, TOWN, pathSvg([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]]) + K.pop(marker(4, 0, 'var(--hi)', '')), 'Right 1 more')],
           ['Then <b>down 3</b>. Right 1, down 3 reaches the pond.', gridSvg(6, 5, TOWN, pathSvg([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [4, 3]]) + K.pop(marker(4, 3, 'var(--hi)', '')), 'Down 3 to the pond'), 2200]
+        ]),
+        example: K.clip([
+          ['My turn. I will give directions from the store to the library. I start at the store.', gridSvg(6, 5, TOWN, marker(0, 4, 'var(--hi)', ''), 'Start at the store')],
+          ['First I count across: 1, 2, 3, 4, 5. <b>Right 5</b>.', gridSvg(6, 5, TOWN, pathSvg([[0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4]]) + K.pop(marker(5, 4, 'var(--hi)', '')), 'Right 5')],
+          ['Then I count up: 1, 2, 3. <b>Up 3</b>.', gridSvg(6, 5, TOWN, pathSvg([[0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [5, 3], [5, 2], [5, 1]]) + K.pop(marker(5, 1, 'var(--hi)', '')), 'Up 3 to the library')],
+          ['Right 5, then up 3, reaches the library.', gridSvg(6, 5, TOWN, pathSvg([[0, 4], [1, 4], [2, 4], [3, 4], [4, 4], [5, 4], [5, 3], [5, 2], [5, 1]]), 'Right 5 and up 3 from the store to the library'), 2000]
         ]),
         try: walkLab,
         ways: [
@@ -253,6 +275,11 @@
           ['The robot starts on the green square.', robotFrame([1, 1], [{ d: 'right', n: 2 }, { d: 'down', n: 3 }], 0, [3, 4], 5, 5)],
           ['Step 1: move right 2.', robotFrame([1, 1], [{ d: 'right', n: 2 }, { d: 'down', n: 3 }], 1, [3, 4], 5, 5)],
           ['Step 2: move down 3. The robot ends on the <b>star</b>.', robotFrame([1, 1], [{ d: 'right', n: 2 }, { d: 'down', n: 3 }], 2, [3, 4], 5, 5), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. I will run this code. The robot starts on the green square.', robotFrame([0, 0], [{ d: 'right', n: 3 }, { d: 'down', n: 2 }], 0, [3, 2], 5, 5)],
+          ['I read step 1 and do only that: move right 3.', robotFrame([0, 0], [{ d: 'right', n: 3 }, { d: 'down', n: 2 }], 1, [3, 2], 5, 5)],
+          ['Then step 2: move down 2. The robot ends on the <b>star</b>.', robotFrame([0, 0], [{ d: 'right', n: 3 }, { d: 'down', n: 2 }], 2, [3, 2], 5, 5), 2000]
         ]),
         try: codeLab,
         ways: [
@@ -272,6 +299,12 @@
           ['Step 2 goes one square too far.', robotFrame([3, 0], [{ d: 'down', n: 2 }, { d: 'left', n: 2 }], 2, [2, 2], 5, 4, 'var(--bad)')],
           ['Change step 2 to <b>move left 1</b>. Fixed.', robotFrame([3, 0], [{ d: 'down', n: 2 }, { d: 'left', n: 1 }], 2, [2, 2], 5, 4), 2200]
         ]),
+        example: K.clip([
+          ['My turn. This code should reach the star. I run it one step at a time.', robotFrame([0, 1], [{ d: 'right', n: 4 }, { d: 'down', n: 2 }], 0, [3, 3], 5, 4)],
+          ['Step 1: move right 4. The star is only 3 squares across. Step 1 goes one square too far.', robotFrame([0, 1], [{ d: 'right', n: 4 }, { d: 'down', n: 2 }], 1, [3, 3], 5, 4, 'var(--bad)')],
+          ['I change only that step: <b>move right 3</b>.', robotFrame([0, 1], [{ d: 'right', n: 3 }, { d: 'down', n: 2 }], 1, [3, 3], 5, 4)],
+          ['I run it again: right 3, down 2. It reaches the star. Fixed.', robotFrame([0, 1], [{ d: 'right', n: 3 }, { d: 'down', n: 2 }], 2, [3, 3], 5, 4), 2200]
+        ]),
         try: debugLab,
         key: '<p>Run it. Watch where it goes wrong. Change only that step.</p>',
         mistake: '<p>Starting over from scratch, or changing a step that was already right.</p>',
@@ -285,6 +318,11 @@
           ['Step 1: both move.', twoFrame(1)],
           ['Step 2: both move again.', twoFrame(2)],
           ['Step 3: A is 3 right, B is 3 up.', twoFrame(3), 2000]
+        ]),
+        example: K.clip([
+          ['My turn. Robot A moves right. Robot B moves up. They start at the same time.', twoFrame(0)],
+          ['Step 1: I move <b>both</b> robots, not just one.', twoFrame(1)],
+          ['Step 2: I move both again. A is 2 squares right. B is 2 squares up.', twoFrame(2), 2200]
         ]),
         try: twoLab,
         key: '<p>Same time: every robot moves on every step.</p>',
