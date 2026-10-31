@@ -445,4 +445,151 @@ A.yt({ gen: function () { return gen.prob(1); } }) +
       { id: 'da4-pop', name: 'Predict and compare groups', code: 'D2.2', gen: gen.pop }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  var small = K.small;
+  var QUAL = ['Which season do you like best?', 'What colour is your backpack?', 'Which sport do you play?', 'What kind of pet do you have?', 'Which fruit do you like best?'];
+  var QUAN = ['How many siblings do you have?', 'How tall are you, in centimetres?', 'How many minutes do you read each day?', 'How many pets do you have?', 'How long is your walk to school, in minutes?'];
+  var DISPLAYS = [['Favourite colours of 25 students', 'Bar graph'], ['Heights of 20 students, in centimetres', 'Stem-and-leaf plot'], ['Favourite sports in two classes, side by side', 'Double bar graph']];
+  function distinctData(n, lo, hi) { var d = []; while (d.length < n) { var v = R.int(lo, hi); if (d.indexOf(v) < 0) d.push(v); } return d; }
+  var SHAPES = {
+    'da4-kind': [
+      [1, 'pick', function () {
+        var qn = R.shuffle(QUAN).slice(0, R.int(1, 3)), ql = R.shuffle(QUAL).slice(0, 5 - qn.length), opts = R.shuffle(qn.concat(ql));
+        var ans = opts.map(function (o, j) { return qn.indexOf(o) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every survey question that collects <b>quantitative</b> data (numbers).', type: 'pick', options: opts, answer: ans,
+          hint: 'Imagine an answer to each one. Is it a number or a word?', steps: ['Quantitative answers are numbers you count or measure.', 'Qualitative answers are words, like a colour or a sport.'],
+          explain: 'These collect numbers: ' + ans.map(function (j) { return opts[j]; }).join(' '), meta: { k: 'da4-kind-pick' } };
+      }],
+      [1, 'match', function () {
+        var pairs = DISPLAYS.map(function (d) { return d.slice(); });
+        return { q: 'Match each set of data to the best display.', type: 'match', pairs: pairs, hint: 'Two groups side by side need two bars for each category. Many two-digit numbers fit a stem-and-leaf plot.',
+          steps: ['Categories: bar graph. Two groups: double bar graph. Lots of numbers: stem-and-leaf plot.'], explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'da4-kind-match', pairs: pairs } };
+      }],
+      [2, 'mistake', function () {
+        var isQuan = !R.int(0, 1), qq = R.pick(isQuan ? QUAN : QUAL), p = who(), saysQual = !R.int(0, 1), truth = saysQual !== isQuan;
+        var right = 'A typical answer is ' + (isQuan ? 'a number, so the data are quantitative.' : 'a word, so the data are qualitative.');
+        return { q: p + ' says the question <b>"' + qq + '"</b> collects <b>' + (saysQual ? 'qualitative' : 'quantitative') + '</b> data. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Every survey collects numbers, because you count the answers.', 'Questions about people are always qualitative.', 'Long questions collect quantitative data.']),
+          hint: 'Think of an answer. Is it a number or a word?', steps: [right], explain: right, meta: { k: 'da4-kind-tf', says: saysQual ? 'qual' : 'quan' } };
+      }]
+    ],
+    'da4-stem': [
+      [1, 'fill', function (lv) {
+        var d = []; for (var i = 0; i < 7; i++) d.push(R.int(lv === 1 ? 10 : 20, lv === 1 ? 39 : 59));
+        var s = sorted(d);
+        return { q: 'Use the stem-and-leaf plot. Fill in the least and greatest values.', type: 'fill', fill: 'Least: [[]] &nbsp; Greatest: [[]]', answers: [s[0], s[6]], fig: stemLeaf(d),
+          hint: 'The least is the first leaf in the top row. The greatest is the last leaf in the bottom row.', steps: ['Top row, first leaf: ' + s[0] + '.', 'Bottom row, last leaf: ' + s[6] + '.'],
+          explain: 'Least ' + s[0] + ', greatest ' + s[6] + '.', meta: { k: 'da4-stem-fill', d: d } };
+      }],
+      [1, 'line', function (lv) {
+        var d = []; for (var i = 0; i < 7; i++) d.push(R.int(lv === 1 ? 10 : 20, lv === 1 ? 39 : 59));
+        var lo = Math.floor(sorted(d)[0] / 10) * 10, m = median(d);
+        return { q: 'Find the <b>median</b> (middle value) in the plot. Place it on the line.', type: 'line', min: lo, max: lo + 40, tick: 1, every: 10, snap: 1, answer: m, tol: 0, fig: stemLeaf(d),
+          hint: 'The leaves are already in order. Count to the 4th of the 7 values.', steps: ['There are 7 values. The middle one is the 4th.', 'The 4th value is ' + m + '.'],
+          explain: 'The median is ' + m + '.', meta: { k: 'da4-stem-line', d: d } };
+      }],
+      [2, 'mistake', function () {
+        var st = R.int(2, 5), lf = R.int(1, 9), p = who(), truth = !R.int(0, 2), said = truth ? st * 10 + lf : lf * 10 + st;
+        if (said === st * 10 + lf && !truth) said += 1;
+        var right = 'The stem is the tens digit and the leaf is the ones digit, so stem ' + st + ', leaf ' + lf + ' is ' + (st * 10 + lf) + '.';
+        return { q: p + ' says stem <b>' + st + '</b> with leaf <b>' + lf + '</b> stands for <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The leaf is the tens digit.', 'You add the stem and the leaf.', 'The stem is the ones digit.']),
+          hint: 'Stem means tens. Leaf means ones.', steps: [right], explain: right, meta: { k: 'da4-stem-tf', st: st, lf: lf, said: said } };
+      }]
+    ],
+    'da4-graph': [
+      [1, 'fill', function () {
+        var cats = R.pick([['Spring', 'Summer', 'Fall', 'Winter'], ['Soccer', 'Hockey', 'Swim', 'Dance']]), a = cats.map(function () { return R.int(1, 10); }), b = cats.map(function () { return R.int(1, 10); }), i = R.int(0, 3);
+        return { q: 'Read both bars for <b>' + cats[i] + '</b>.', type: 'fill', fill: 'Grade 4: [[]] &nbsp; Grade 5: [[]]', answers: [a[i], b[i]], fig: dbar(cats, a, b, 'Grade 4', 'Grade 5', 'Favourites in two classes'),
+          hint: 'The key shows which colour is each class. Read across from the top of each bar.', steps: ['Grade 4 chose ' + cats[i] + ' ' + a[i] + ' times. Grade 5: ' + b[i] + '.'],
+          explain: 'Grade 4: ' + a[i] + '. Grade 5: ' + b[i] + '.', meta: { k: 'da4-graph-fill', a: a, b: b, i: i } };
+      }],
+      [1, 'mistake', function () {
+        var cats = ['Apple', 'Banana', 'Grape', 'Pear'], a = cats.map(function () { return R.int(1, 10); }), b = cats.map(function () { return R.int(1, 10); }), i = R.int(0, 3), p = who();
+        while (a[i] === b[i]) b[i] = R.int(1, 10);
+        var truth = a[i] > b[i], right = 'For ' + cats[i] + ', Grade 4 has ' + a[i] + ' and Grade 5 has ' + b[i] + '.';
+        return { q: p + ' says more Grade 4 students than Grade 5 students chose <b>' + cats[i] + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: dbar(cats, a, b, 'Grade 4', 'Grade 5', 'Favourite fruit in two classes'),
+          why: why(right, ['The bar on the left is always bigger.', 'Both classes always choose the same.', 'You compare the bars for a different fruit.']),
+          hint: 'Find the two bars above ' + cats[i] + '.', steps: [right], explain: right, meta: { k: 'da4-graph-tf', a: a, b: b, i: i } };
+      }],
+      [2, 'order', function () {
+        var cats = ['Soccer', 'Hockey', 'Swim', 'Dance'], a = R.shuffle([2, 4, 6, 8, 9, 3, 7].slice(0, 4)), b = cats.map(function () { return R.int(1, 10); });
+        var ord = cats.map(function (c, k) { return [c, a[k]]; }).sort(function (x, y) { return y[1] - x[1]; });
+        return { q: 'Put the sports in order from <b>most</b> to <b>least</b> popular in <b>Grade 4</b>.', type: 'order', items: ord.map(function (x) { return x[0]; }), first: 'most', last: 'least',
+          fig: dbar(cats, a, b, 'Grade 4', 'Grade 5', 'Favourite sports in two classes'), hint: 'Look only at the Grade 4 bars.', steps: ['Grade 4: ' + ord.map(function (x) { return x[0] + ' ' + x[1]; }).join(', ') + '.'],
+          explain: 'Most to least: ' + ord.map(function (x) { return x[0]; }).join(', ') + '.', meta: { k: 'da4-graph-order', a: a, cats: cats } };
+      }]
+    ],
+    'da4-mmm': [
+      [1, 'line', function () {
+        var d = []; for (var i = 0; i < 5; i++) d.push(R.int(1, 12));
+        return { q: 'Goals scored in 5 games: ' + d.join(', ') + '. Find the <b>median</b>. Place it on the line.', type: 'line', min: 0, max: 12, tick: 1, every: 2, snap: 1, answer: median(d), tol: 0, fig: towers(d),
+          hint: 'Put the values in order first. The median is the middle one.', steps: ['In order: ' + sorted(d).join(', ') + '.', 'The middle (3rd) value is ' + median(d) + '.'],
+          explain: 'The median is ' + median(d) + '.', meta: { k: 'da4-mmm-line', d: d } };
+      }],
+      [1, 'match', function () {
+        var d, mo, md, rg;
+        do { d = []; for (var i = 0; i < 5; i++) d.push(R.int(1, 12)); mo = modes(d); md = median(d); rg = sorted(d)[4] - sorted(d)[0]; } while (mo.length !== 1 || mo[0] === md || md === rg || mo[0] === rg);
+        var pairs = [['Mode', String(mo[0])], ['Median', String(md)], ['Range', String(rg)]];
+        return { q: 'Data: ' + d.join(', ') + '. Match each word to its value.', type: 'match', pairs: pairs, hint: 'Mode: most often. Median: middle when sorted. Range: greatest minus least.',
+          steps: ['In order: ' + sorted(d).join(', ') + '.'], explain: 'Mode ' + mo[0] + ', median ' + md + ', range ' + rg + '.', meta: { k: 'da4-mmm-match', d: d } };
+      }],
+      [2, 'mistake', function () {
+        var d, mid;
+        do { d = R.shuffle(distinctData(5, 1, 15)); mid = d[2]; } while (mid === median(d));
+        var p = who(), truth = !R.int(0, 2), said = truth ? median(d) : mid;
+        var right = 'Sort first: ' + sorted(d).join(', ') + '. The middle value is ' + median(d) + '.';
+        return { q: 'Data: ' + d.join(', ') + '. ' + p + ' says the median is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The median is the middle number in the list as it is written.', 'The median is the biggest value.', 'The median is the one that appears most.']),
+          hint: 'Did ' + p + ' sort the values first?', steps: [right], explain: right, meta: { k: 'da4-mmm-tf', d: d, said: said } };
+      }]
+    ],
+    'da4-prob': [
+      [1, 'order', function () {
+        var n = R.pick([6, 8]), ks = R.shuffle([0, 1, 2, 3, 4, 5, 6].filter(function (x) { return x <= n; })).slice(0, 3).sort(function (a, b) { return a - b; });
+        return { q: 'Put the spinners in order from <b>least likely</b> to <b>most likely</b> to land on orange.', type: 'order', items: ks.map(function (k, i) { return small(spinner(k, n, 40 + i * 50), 110); }), first: 'least likely', last: 'most likely',
+          hint: 'Count the orange sections on each spinner.', steps: ['Orange sections: ' + ks.join(', ') + ' out of ' + n + '.'],
+          explain: 'More orange sections means more likely.', meta: { k: 'da4-prob-order', ks: ks, n: n } };
+      }],
+      [1, 'match', function () {
+        var n = 4, ks = R.shuffle([0, 1, 2, 3, 4]).slice(0, 3);
+        var pairs = ks.map(function (k) { return [small(spinner(k, n, 30), 100), word(k, n)]; });
+        return { q: 'Match each spinner to how likely it is to land on orange.', type: 'match', pairs: pairs, hint: 'Count the orange sections out of 4. Half would be 2.',
+          steps: ['0 orange: impossible. All orange: certain. Half: equally likely. Less than half: unlikely. More than half: likely.'], explain: ks.map(function (k) { return k + ' of 4 orange: ' + word(k, n); }).join('. ') + '.', meta: { k: 'da4-prob-match', ks: ks, n: n } };
+      }],
+      [2, 'mistake', function () {
+        var n = R.pick([4, 6, 8]), k = R.int(1, n - 1), p = who(), w = word(k, n), truth = !R.int(0, 1), said = truth ? w : (w === 'likely' ? 'unlikely' : 'likely');
+        var right = k + ' of ' + n + ' sections are orange, so landing on orange is ' + w + '.';
+        return { q: p + ' says landing on orange is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: spinner(k, n, 200),
+          why: why(right, ['Any colour you can see is likely.', 'Spinners are always equally likely.', 'Orange is unlikely because it is a bright colour.']),
+          hint: 'Compare the orange sections with half of ' + n + '.', steps: [right], explain: right, meta: { k: 'da4-prob-tf', k2: k, n: n, said: said } };
+      }]
+    ],
+    'da4-pop': [
+      [1, 'mistake', function () {
+        var d = wholeMeanSet(5, 4, 9), mean = sum(d) / 5, add = R.pick([R.int(0, 2), R.int(12, 20)]), p = who(), up = add > mean, saysUp = !R.int(0, 1), truth = saysUp === up;
+        var right = 'The mean is ' + mean + '. The new value, ' + add + ', is ' + (up ? 'more' : 'less') + ' than the mean, so it pulls the mean ' + (up ? 'up' : 'down') + '.';
+        return { q: 'Data: ' + d.join(', ') + '. The value ' + add + ' is added. ' + p + ' says the mean will go <b>' + (saysUp ? 'up' : 'down') + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: towers(d, true),
+          why: why(right, ['Adding a value always makes the mean go up.', 'Adding a value never changes the mean.', 'The mean only depends on the first value.']),
+          hint: 'Is ' + add + ' bigger or smaller than the mean, ' + mean + '?', steps: [right], explain: right, meta: { k: 'da4-pop-tf', d: d, add: add, saysUp: saysUp } };
+      }],
+      [1, 'pick', function () {
+        var d = wholeMeanSet(5, 3, 9), mean = sum(d) / 5, opts = R.shuffle([mean - 3, mean - 1, mean + 1, mean + 4, mean + 6].filter(function (v) { return v >= 0; }));
+        var ans = opts.map(function (v, j) { return v > mean ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Data: ' + d.join(', ') + '. The mean is ' + mean + '. Pick every new value that would make the mean go <b>up</b>.', type: 'pick', options: opts.map(String), answer: ans,
+          hint: 'A value bigger than the mean pulls it up.', steps: ['Pick the values greater than ' + mean + '.'], explain: 'Values greater than ' + mean + ' raise the mean.', meta: { k: 'da4-pop-pick', d: d } };
+      }],
+      [2, 'fill', function () {
+        var d, add;
+        do { d = wholeMeanSet(4, 2, 9); add = R.int(1, 15); } while ((sum(d) + add) % 5 || add === sum(d) / 4);
+        return { q: 'Data: ' + d.join(', ') + '. Then the value <b>' + add + '</b> is added. Fill in the means.', type: 'fill', fill: 'Mean before: [[]] &nbsp; Mean after: [[]]', answers: [sum(d) / 4, (sum(d) + add) / 5],
+          hint: 'Mean = total &divide; how many values.', steps: ['Before: ' + sum(d) + ' &divide; 4 = ' + sum(d) / 4 + '.', 'After: ' + (sum(d) + add) + ' &divide; 5 = ' + (sum(d) + add) / 5 + '.'],
+          explain: 'The mean goes from ' + sum(d) / 4 + ' to ' + (sum(d) + add) / 5 + '.', meta: { k: 'da4-pop-fill', d: d, add: add } };
+      }]
+    ]
+  };
+  K.shapes('data', SHAPES);
 })();
