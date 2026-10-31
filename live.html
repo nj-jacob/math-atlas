@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work together · Math Atlas</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="assets/site.css" id="base-css">
+<link rel="stylesheet" href="assets/family.css">
+</head>
+<body class="liveview">
+<div class="livehead"><div class="wrap">
+  <p id="live-status" aria-live="polite">Starting…</p>
+  <p><button type="button" class="btn alt sm" id="live-end">End session</button> <a href="family.html" class="small">Back to the family page</a></p>
+</div></div>
+<main id="app" tabindex="-1"></main>
+<script type="module">
+  import { configured, auth, db, onAuthStateChanged, whoAmI, doc, getDoc, esc } from './assets/fb.js';
+  import { startViewer } from './assets/live.js';
+  const status = document.getElementById('live-status'), stage = document.getElementById('app');
+  const sid = new URLSearchParams(location.search).get('sid');
+  let stop = null, started = false;
+  document.getElementById('live-end').addEventListener('click', () => { if (stop) stop(); location.href = 'family.html#s/' + encodeURIComponent(sid || ''); });
+  window.addEventListener('pagehide', () => { if (stop) stop(); });
+  if (!configured || !sid) status.textContent = 'Nothing to show.';
+  else onAuthStateChanged(auth, async (user) => {
+    if (started) return;
+    const me = await whoAmI(user);
+    if (!me || (me.role !== 'parent' && me.role !== 'tutor')) { status.innerHTML = 'Please <a href="family.html">sign in</a> as a parent or tutor first.'; return; }
+    const kid = await getDoc(doc(db, 'students', sid)).catch(() => null);
+    if (!kid || !kid.exists()) { status.textContent = 'This student is not shared with you.'; return; }
+    started = true;
+    document.getElementById('base-css').remove();
+    stop = await startViewer(sid, me, kid.data().name, stage, status).catch((e) => { status.textContent = 'Could not start: ' + e.message; return null; });
+  });
+</script>
+</body>
+</html>

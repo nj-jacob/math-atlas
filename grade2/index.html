@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grade 2 Math Atlas</title>
+<meta name="description" content="A free study site for Ontario Grade 2 math with short picture lessons, drawings you can change, adaptive practice and a check-up.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600;700&family=Lexend:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="../assets/family.css">
+<meta name="atlas-site" content="g2">
+<meta name="atlas-prefix" content="g2atlas:">
+</head>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="bar"><div class="wrap">
+  <a class="brand" href="#home"><i aria-hidden="true"></i>Grade 2 Math Atlas</a>
+  <nav aria-label="Main"><a href="#home">Chapters</a><a href="#check-up">Check-up</a><a href="#fact-sheet">Fact sheet</a></nav>
+  <div class="tools" role="group" aria-label="Display settings"><button type="button" id="bigb" aria-pressed="false">Text: normal</button><button type="button" id="themeb">Theme: auto</button></div>
+</div></header>
+<main id="app" tabindex="-1"></main>
+<footer class="site"><div class="wrap">
+  <p>Made for Ontario Grade 2 students and the grown-ups who help them. Metric units and Canadian money throughout.</p>
+  <p>A study aid only. Check details against the Ontario Ministry of Education's 2020 Mathematics curriculum.</p>
+</div></footer>
+<script src="assets/site.js"></script>
+<script src="chapters/numbers-200.js"></script>
+<script src="chapters/facts-20.js"></script>
+<script src="chapters/add-subtract-100.js"></script>
+<script src="chapters/groups-sharing.js"></script>
+<script src="chapters/fractions.js"></script>
+<script src="chapters/patterns.js"></script>
+<script src="chapters/shapes.js"></script>
+<script src="chapters/maps-code.js"></script>
+<script src="chapters/length-time.js"></script>
+<script src="chapters/data.js"></script>
+<script src="chapters/money.js"></script>
+<script src="chapters/fact-sheet.js"></script>
+<script>Atlas.start();</script>
+<script type="module" src="../assets/sync.js"></script>
+</body>
+</html>

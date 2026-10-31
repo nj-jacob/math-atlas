@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en-CA" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grade 7 Math Atlas</title>
+<meta name="description" content="A free study site for Ontario Grade 7 math with picture-first lessons, adaptive practice, quizzes and a check-up.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:ital,wght@0,400;0,700;1,400&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="../assets/family.css">
+<meta name="atlas-site" content="g7">
+<meta name="atlas-prefix" content="g7atlas:">
+</head>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="bar"><div class="wrap">
+  <a class="brand" href="#home"><i aria-hidden="true"></i>Grade 7 Math Atlas</a>
+  <nav aria-label="Main"><a href="#home">Chapters</a><a href="#check-up">Check-up</a><a href="#fact-sheet">Fact sheet</a></nav>
+  <div class="tools" role="group" aria-label="Display settings"><button type="button" id="bigb" aria-pressed="false">Text: normal</button><button type="button" id="themeb">Theme: auto</button></div>
+</div></header>
+<main id="app" tabindex="-1"></main>
+<footer class="site"><div class="wrap">
+  <p>Made for Ontario Grade 7 students. Numbers of five digits or more use a space, like 100&nbsp;000, as in Canadian math classes.</p>
+  <p>A study aid only. Check details against the Ontario Ministry of Education's 2020 Mathematics curriculum.</p>
+</div></footer>
+<script src="assets/site.js"></script>
+<script src="chapters/powers-factors.js"></script>
+<script src="chapters/fractions.js"></script>
+<script src="chapters/mult-div.js"></script>
+<script src="chapters/integers.js"></script>
+<script src="chapters/percent-ratio.js"></script>
+<script src="chapters/algebra.js"></script>
+<script src="chapters/data-probability.js"></script>
+<script src="chapters/shapes-moves.js"></script>
+<script src="chapters/circles-volume.js"></script>
+<script src="chapters/money.js"></script>
+<script src="chapters/fact-sheet.js"></script>
+<script>Atlas.start();</script>
+<script type="module" src="../assets/sync.js"></script>
+</body>
+</html>

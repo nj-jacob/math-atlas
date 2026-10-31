@@ -1,0 +1,69 @@
+rules_version = '2';
+// Math Atlas family accounts.
+// users/{uid}            one per login: role is parent, tutor or student
+// students/{sid}         one per child: who may see them, and practice a tutor or parent suggests
+// students/{sid}/progress/{site}   saved progress for one grade site (g5, g3)
+// students/{sid}/days/{id}         daily totals, for the activity chart
+// students/{sid}/notes/{id}        short notes from parents and tutors
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function signedIn() { return request.auth != null; }
+    function myEmail() {
+      return request.auth.token.email != null && request.auth.token.email_verified == true
+        ? request.auth.token.email.lower() : '';
+    }
+    function kid(sid) { return get(/databases/$(database)/documents/students/$(sid)).data; }
+    function isKid(s) { return signedIn() && s.uid == request.auth.uid; }
+    function isOwner(s) { return signedIn() && s.ownerUid == request.auth.uid; }
+    function isLinked(s) {
+      return signedIn() && myEmail() != '' && (myEmail() in s.parentEmails || myEmail() in s.tutorEmails);
+    }
+    function canSee(s) { return isKid(s) || isOwner(s) || isLinked(s); }
+    function adult(s) { return isOwner(s) || isLinked(s); }
+    function emails(l) { return l is list && l.size() <= 10; }
+
+    match /users/{uid} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role in ['parent', 'tutor', 'student']
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60;
+      allow update: if signedIn() && request.auth.uid == uid
+        && request.resource.data.role == resource.data.role
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60;
+    }
+
+    match /students/{sid} {
+      allow read: if canSee(resource.data);
+      allow create: if signedIn()
+        && request.resource.data.ownerUid == request.auth.uid
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60
+        && emails(request.resource.data.parentEmails) && emails(request.resource.data.tutorEmails);
+      allow update: if (isOwner(resource.data)
+          && request.resource.data.ownerUid == resource.data.ownerUid
+          && request.resource.data.name is string && request.resource.data.name.size() <= 60
+          && emails(request.resource.data.parentEmails) && emails(request.resource.data.tutorEmails))
+        || (isLinked(resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['assigned', 'updated']));
+      allow delete: if isOwner(resource.data);
+
+      match /progress/{site} {
+        allow read: if canSee(kid(sid));
+        allow write: if isKid(kid(sid));
+      }
+      match /days/{day} {
+        allow read: if canSee(kid(sid));
+        allow write: if isKid(kid(sid));
+      }
+      // "Work together": the short connection handshake between the student and an adult on their account
+      match /live/{lid} {
+        allow read, write: if canSee(kid(sid));
+      }
+      match /notes/{nid} {
+        allow read: if canSee(kid(sid));
+        allow create: if adult(kid(sid)) && request.resource.data.byUid == request.auth.uid
+          && request.resource.data.text is string && request.resource.data.text.size() <= 1000;
+        allow delete: if signedIn() && resource.data.byUid == request.auth.uid;
+      }
+    }
+  }
+}

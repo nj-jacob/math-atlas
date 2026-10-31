@@ -1,0 +1,33 @@
+# Publishes the site to Firebase (ontario-math-atlas.web.app) every time main changes.
+# Needs one repository secret, FIREBASE_SERVICE_ACCOUNT: the JSON key from
+# Firebase console > Project settings > Service accounts > Generate new private key.
+name: Publish to Firebase
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+concurrency: deploy
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Write the service account key
+        id: key
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then echo "::warning::FIREBASE_SERVICE_ACCOUNT secret is not set yet, so nothing was published."; exit 0; fi
+          printf '%s' "$SA" > "$RUNNER_TEMP/sa.json"
+          echo "ready=yes" >> "$GITHUB_OUTPUT"
+      - name: Deploy site and privacy rules
+        if: steps.key.outputs.ready == 'yes'
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: npx --yes firebase-tools@15 deploy --project ontario-math-atlas --non-interactive --force
+      - name: Remove the key
+        if: always()
+        run: rm -f "$RUNNER_TEMP/sa.json"

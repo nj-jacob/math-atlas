@@ -1,0 +1,222 @@
+(function () {
+  var A = Atlas, R = A.R, D = A.draw, M = '&minus;';
+  /* hundred chart with a start cell, an end cell and the cells passed through */
+  function chart(start, end, path) {
+    var c = 46, s = '', on = {};
+    (path || []).forEach(function (v) { on[v] = 1; });
+    for (var v = 1; v <= 100; v++) {
+      var i = v - 1, x = 2 + (i % 10) * c, y = 2 + Math.floor(i / 10) * c;
+      var fill = v === start ? 'var(--hi)' : v === end ? 'var(--strand)' : on[v] ? 'color-mix(in srgb,var(--strand) 25%,var(--card))' : 'var(--card)';
+      s += '<rect x="' + x + '" y="' + y + '" width="' + c + '" height="' + c + '" style="fill:' + fill + ';stroke:var(--line)" stroke-width="1.5"/>';
+      s += '<text x="' + (x + c / 2) + '" y="' + (y + c / 2 + 7) + '" text-anchor="middle" font-size="19" font-weight="' + (v === start || v === end ? 800 : 400) + '"' + (v === end ? ' style="fill:#fff"' : '') + '>' + v + '</text>';
+    }
+    return A.svg(10 * c + 4, 10 * c + 4, s, 'Hundred chart. Start at ' + start + (end ? ', end at ' + end : '') + '.');
+  }
+  function tensOnesPath(a, t, o) {
+    var p = [], v = a;
+    for (var i = 0; i < t; i++) { v += 10; p.push(v); }
+    for (var j = 0; j < o; j++) { v += 1; p.push(v); }
+    return p;
+  }
+  /* open number line: start, then jumps (each {d, t}) forward or back */
+  function openLine(start, jumps, label) {
+    var vals = [start], v = start;
+    jumps.forEach(function (j) { v += j; vals.push(v); });
+    var lo = Math.min.apply(null, vals), hi = Math.max.apply(null, vals), W = 540, x0 = 30, x1 = W - 30, y = 92, s = '';
+    var X = function (q) { return x0 + (x1 - x0) * (q - lo) / Math.max(1, hi - lo); };
+    s += '<defs><marker id="olm" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--strand)"/></marker></defs>';
+    s += '<line x1="12" y1="' + y + '" x2="' + (W - 12) + '" y2="' + y + '" style="stroke:var(--ink)" stroke-width="3" stroke-linecap="round"/>';
+    vals.forEach(function (q, i) {
+      var x = X(q);
+      s += '<line x1="' + x + '" y1="' + (y - 9) + '" x2="' + x + '" y2="' + (y + 9) + '" style="stroke:var(--ink)" stroke-width="2.5"/>';
+      s += '<text x="' + x + '" y="' + (y + 32) + '" text-anchor="middle" font-size="19" font-weight="' + (i === 0 || i === vals.length - 1 ? 800 : 400) + '">' + q + '</text>';
+    });
+    jumps.forEach(function (j, i) {
+      var xa = X(vals[i]), xb = X(vals[i + 1]), mid = (xa + xb) / 2, h = Math.min(60, 18 + Math.abs(xb - xa) * 0.3);
+      s += '<path d="M' + xa + ' ' + (y - 6) + ' Q' + mid + ' ' + (y - 6 - 2 * h) + ' ' + xb + ' ' + (y - 8) + '" fill="none" style="stroke:var(--strand)" stroke-width="3" marker-end="url(#olm)"/>';
+      s += '<text x="' + mid + '" y="' + (y - 12 - h) + '" text-anchor="middle" font-size="18" font-weight="800" style="fill:var(--strand)">' + (j > 0 ? '+' + j : M + -j) + '</text>';
+    });
+    s += '<circle cx="' + X(start) + '" cy="' + y + '" r="7" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>';
+    return A.svg(W, y + 42, s, label || 'Open number line from ' + start + ' to ' + v);
+  }
+  /* two numbers in base-ten blocks, side by side */
+  function pair(a, b, sym) {
+    return '<div class="vrow"><figure>' + D.num10(a, { u: 7 }) + '<figcaption>' + a + '</figcaption></figure><figure><span class="big">' + (sym || '+') + '</span></figure><figure>' + D.num10(b, { u: 7 }) + '<figcaption>' + b + '</figcaption></figure></div>';
+  }
+  function tens(n) { return Math.floor(n / 10); }
+  function addSteps(a, b) {
+    var t = tens(a) * 10 + tens(b) * 10, o = a % 10 + b % 10;
+    return ['Add the tens: ' + tens(a) * 10 + ' + ' + tens(b) * 10 + ' = ' + t + '.', 'Add the ones: ' + a % 10 + ' + ' + b % 10 + ' = ' + o + '.', 'Put them together: ' + t + ' + ' + o + ' = ' + (a + b) + '.' + (o >= 10 ? ' The ' + o + ' ones made another ten.' : '')];
+  }
+  function subSteps(a, b) {
+    return ['Start at ' + a + '. Jump back ' + tens(b) * 10 + ' (the tens): ' + (a - tens(b) * 10) + '.', 'Jump back ' + b % 10 + ' (the ones): ' + (a - b) + '.', 'So ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.<div class="fig">' + openLine(a, [-tens(b) * 10, -(b % 10)].filter(function (x) { return x; })) + '</div>'];
+  }
+
+  A.register('add-subtract-100', {
+    html:
+'<section class="sec"><h2><span class="n">1</span>Adding tens</h2>' +
+'<p>On a hundred chart, moving <b>down one row</b> adds 10. Moving <b>right one square</b> adds 1.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p><span class="big">34 + 20</span> &nbsp; I start at 34 and move down 2 rows: 44, 54. So 34 + 20 = <b>54</b>. The ones digit stays 4. Only the tens change.</p>' +
+'<div class="fig">' + chart(34, 54, [44]) + '</div></div>' +
+'<div class="yt" data-yt="tens"></div>' +
+'<div class="lab"><span class="lt">Try it: move on the hundred chart</span>' +
+'<div class="ctrl"><label for="hs">Start at<input type="number" id="hs" min="1" max="99" value="23"></label><label for="ht">Add tens<select id="ht"><option>0</option><option>1</option><option selected>2</option><option>3</option><option>4</option><option>5</option></select></label><label for="ho">Add ones<select id="ho"><option>0</option><option>1</option><option>2</option><option>3</option><option>4</option><option selected>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label></div>' +
+'<div class="fig" id="hfig"></div><div class="out" id="hout"></div></div>' +
+'<div class="key"><b class="t">Key idea</b><p>Adding tens is like adding ones, with tens: 3 + 2 = 5, so 30 + 20 = 50.</p></div>' +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">2</span>Adding two-digit numbers</h2>' +
+'<p>Add the <b>tens</b>, then add the <b>ones</b>. If there are 10 or more ones, trade 10 ones for 1 ten.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p><span class="big">36 + 27</span> &nbsp; Tens: 30 + 20 = 50. Ones: 6 + 7 = 13. 13 ones is 1 ten and 3 ones. 50 + 13 = <b>63</b>.</p>' + pair(36, 27) +
+'<div class="fig">' + D.base10(0, 6, 3, { u: 7, label: '6 tens and 3 ones after trading, which is 63' }) + '</div><p class="t2" style="text-align:center">After trading: 6 tens and 3 ones.</p></div>' +
+'<div class="yt" data-yt="add2"></div>' +
+'<div class="lab"><span class="lt">Try it: add with blocks</span>' +
+'<div class="ctrl"><label for="aa">First number<input type="number" id="aa" min="0" max="99" value="48"></label><label for="ab">Second number<input type="number" id="ab" min="0" max="99" value="35"></label></div>' +
+'<div id="afig"></div><div class="btnrow"><button type="button" class="btn" id="ago">Put them together</button><button type="button" class="btn alt" id="atr">Trade 10 ones for 1 ten</button></div><div class="fig" id="afig2"></div><div class="out" id="aout"></div></div>' +
+'<div class="mistake"><b class="t">Common mistake</b><p>Writing 513 for 36 + 27, by putting 5 tens and 13 ones side by side. 13 ones must be traded: it is 1 ten and 3 ones. The answer is 63.</p></div>' +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">3</span>Mental math to 50</h2>' +
+'<p>You can add in your head with jumps on an <b>open number line</b>: jump the tens, then jump the ones.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p><span class="big">18 + 25</span> &nbsp; I start at 25, the bigger number. Jump 10 to 35. Then jump 8 to 43. So 18 + 25 = <b>43</b>.</p>' +
+'<div class="fig">' + openLine(25, [10, 8]) + '</div></div>' +
+'<div class="yt" data-yt="mental"></div>' +
+'<p><b>Estimate</b> first to know about how big the answer should be. Use the closest ten for each number.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p>Estimate 19 + 22. 19 is close to 20. 22 is close to 20. 20 + 20 = 40, so the answer is <b>about 40</b>. The exact answer is 41. That is close to 40, so it makes sense.</p></div>' +
+'<div class="yt" data-yt="est"></div>' +
+'<div class="key"><b class="t">Key idea</b><p>Adding numbers in a different order or in different groups gives the same total. 18 + 25 = 25 + 18. Pick the order that is easiest.</p></div>' +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">4</span>Subtracting to 100</h2>' +
+'<p>To subtract, you can <b>jump back</b> on a number line: jump back the tens, then the ones.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p><span class="big">52 ' + M + ' 17</span> &nbsp; Start at 52. Jump back 10 to 42. Jump back 7 to 35. So 52 ' + M + ' 17 = <b>35</b>.</p>' +
+'<div class="fig">' + openLine(52, [-10, -7]) + '</div></div>' +
+'<div class="yt" data-yt="back"></div>' +
+'<p>You can also <b>count up</b> from the smaller number. This works well when the numbers are close together.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p><span class="big">61 ' + M + ' 58</span> &nbsp; From 58, count up 2 to 60, then 1 more to 61. That is 3 in all. So 61 ' + M + ' 58 = <b>3</b>.</p>' +
+'<div class="fig">' + openLine(58, [2, 1]) + '</div></div>' +
+'<div class="lab"><span class="lt">Try it: jump back</span>' +
+'<div class="ctrl"><label for="sa">Start at<input type="number" id="sa" min="0" max="100" value="73"></label><label for="sb">Take away<input type="number" id="sb" min="0" max="100" value="28"></label></div>' +
+'<div class="fig" id="sfig"></div><div class="out" id="sout"></div></div>' +
+'<div class="mistake"><b class="t">Common mistake</b><p>For 52 ' + M + ' 17, taking 2 ' + M + ' 7 as "7 ' + M + ' 2 = 5" and getting 45. You cannot turn it around. Jump back the 7 on a number line instead: 42, then back 7 is 35.</p></div>' +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">5</span>Story problems</h2>' +
+'<p>Read the story and ask: do I know the whole, or the parts? Draw a bar to see it.</p>' +
+'<div class="eg"><b class="t">Watch me</b><p>A class has 26 girls and 29 boys. How many children in all? I know both <b>parts</b>, so I add: 26 + 29 = <b>55</b>.</p>' + bar(26, 29, 'w') + '</div>' +
+'<div class="eg"><b class="t">Watch me</b><p>A bus has 64 seats. 38 people are sitting. How many seats are empty? I know the <b>whole</b> and one part, so I subtract: 64 ' + M + ' 38 = <b>26</b>.</p>' + bar(38, 26, 'b') + '</div>' +
+'<div class="yt" data-yt="story"></div>' +
+'<div class="key"><b class="t">Key idea</b><p>Know both parts? Add to find the whole. Know the whole and one part? Subtract to find the other part.</p></div>' +
+'</section>',
+
+    init: function (root) {
+      var $ = A.$;
+      function h() {
+        var s = Math.max(1, Math.min(99, parseInt($('#hs', root).value, 10) || 1)), t = +$('#ht', root).value, o = +$('#ho', root).value, e = s + 10 * t + o;
+        if (e > 100) { $('#hfig', root).innerHTML = chart(s, 0, []); $('#hout', root).innerHTML = '<p>' + s + ' + ' + (10 * t + o) + ' is more than 100, so it goes off this chart. Try a smaller start.</p>'; return; }
+        var p = tensOnesPath(s, t, o);
+        $('#hfig', root).innerHTML = chart(s, e, p.slice(0, -1));
+        $('#hout', root).innerHTML = '<p><span class="big">' + s + ' + ' + (10 * t + o) + ' = ' + e + '</span></p><p class="t2">' + (t ? 'Down ' + t + ' row' + (t > 1 ? 's' : '') + ' for ' + 10 * t + '. ' : '') + (o ? 'Right ' + o + ' square' + (o > 1 ? 's' : '') + ' for ' + o + '.' : '') + ' At the end of a row, keep going on the next row.</p>';
+      }
+      A.bind(root, ['hs', 'ht', 'ho'], h);
+      var stage = 0;
+      function ad() {
+        var a = Math.max(0, Math.min(99, parseInt($('#aa', root).value, 10) || 0)), b = Math.max(0, Math.min(99, parseInt($('#ab', root).value, 10) || 0));
+        var t = tens(a) + tens(b), o = a % 10 + b % 10;
+        $('#afig', root).innerHTML = pair(a, b);
+        $('#ago', root).disabled = stage > 0;
+        $('#atr', root).disabled = !(stage === 1 && o >= 10);
+        if (stage === 0) { $('#afig2', root).innerHTML = ''; $('#aout', root).innerHTML = ''; return; }
+        var tt = stage === 2 ? t + 1 : t, oo = stage === 2 ? o - 10 : o;
+        $('#afig2', root).innerHTML = D.base10(Math.floor(tt / 10), tt % 10, oo, { u: 7, label: tt + ' tens and ' + oo + ' ones' }).replace('<svg', '<svg');
+        $('#aout', root).innerHTML = '<p>' + tt + ' tens and ' + oo + ' ones' + (stage === 1 && o >= 10 ? '. That is 10 or more ones, so trade 10 of them for a ten.' : '.') + '</p>' +
+          (stage === 2 || o < 10 ? '<p><span class="big">' + a + ' + ' + b + ' = ' + (a + b) + '</span></p>' : '');
+      }
+      $('#ago', root).addEventListener('click', function () { stage = 1; ad(); });
+      $('#atr', root).addEventListener('click', function () { stage = 2; ad(); });
+      ['aa', 'ab'].forEach(function (k) { $('#' + k, root).addEventListener('input', function () { stage = 0; ad(); }); });
+      ad();
+      function sb() {
+        var a = Math.max(0, Math.min(100, parseInt($('#sa', root).value, 10) || 0)), b = Math.max(0, Math.min(100, parseInt($('#sb', root).value, 10) || 0));
+        if (b > a) { $('#sfig', root).innerHTML = ''; $('#sout', root).innerHTML = '<p>Take away a number that is not more than ' + a + '.</p>'; return; }
+        var j = [-tens(b) * 10, -(b % 10)].filter(function (x) { return x; });
+        $('#sfig', root).innerHTML = j.length ? openLine(a, j) : '';
+        $('#sout', root).innerHTML = '<p><span class="big">' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '</span></p><p class="t2">Check by adding: ' + (a - b) + ' + ' + b + ' = ' + a + '.</p>';
+      }
+      A.bind(root, ['sa', 'sb'], sb);
+    },
+
+    turns: {
+      tens: function () { var a = R.int(11, 59), t = R.int(1, 4) * 10; return { q: '<span class="math big">' + a + ' + ' + t + ' = ?</span>', type: 'num', answer: a + t, fig: chart(a, 0, []), hint: 'Find ' + a + ' on the chart. Move down one row for each ten.', explain: 'Down ' + t / 10 + ' row' + (t > 10 ? 's' : '') + ' from ' + a + ' is ' + (a + t) + '. The ones digit stays ' + a % 10 + '.' }; },
+      add2: function () { var a = R.int(14, 48), b = R.int(15, 49 - (a % 10 > 5 ? 0 : 0)); if (a + b > 100) b = 100 - a - 3; return { q: '<span class="math big">' + a + ' + ' + b + ' = ?</span>', type: 'num', answer: a + b, fig: pair(a, b), hint: 'Add the tens first: ' + tens(a) * 10 + ' + ' + tens(b) * 10 + '. Then add the ones: ' + a % 10 + ' + ' + b % 10 + '.', explain: addSteps(a, b).join(' ') }; },
+      mental: function () { var a = R.int(11, 19), b = R.int(21, 29); return { q: '<span class="math big">' + a + ' + ' + b + ' = ?</span> Start at ' + b + '.', type: 'num', answer: a + b, hint: 'From ' + b + ', jump 10 to ' + (b + 10) + '. Then jump ' + (a - 10) + ' more.', explain: b + ' + 10 = ' + (b + 10) + ', then + ' + (a - 10) + ' = ' + (a + b) + '.' }; },
+      est: function () { var a = R.pick([19, 21, 29, 31, 18, 22]), b = R.pick([11, 19, 21, 9, 12]); var e = Math.round(a / 10) * 10 + Math.round(b / 10) * 10; var o = R.mc(String(e), [String(e + 20), String(e - 20 > 0 ? e - 20 : e + 30), String(a + b + 10)]); return { q: 'Estimate. <span class="math big">' + a + ' + ' + b + '</span> is about&hellip;', type: 'mc', options: o.options, answer: o.answer, hint: 'Change each number to its closest ten, then add the tens.', explain: a + ' is close to ' + Math.round(a / 10) * 10 + ' and ' + b + ' is close to ' + Math.round(b / 10) * 10 + '. About ' + e + '. (Exactly ' + (a + b) + '.)' }; },
+      back: function () { var a = R.int(45, 95), b = R.int(12, 39); while (b % 10 === 0 || b > a) b = R.int(12, 39); return { q: '<span class="math big">' + a + ' ' + M + ' ' + b + ' = ?</span>', type: 'num', answer: a - b, hint: 'Jump back ' + tens(b) * 10 + ' from ' + a + '. Then jump back ' + b % 10 + ' more.', explain: a + ' ' + M + ' ' + tens(b) * 10 + ' = ' + (a - tens(b) * 10) + ', then ' + M + ' ' + b % 10 + ' = ' + (a - b) + '.' }; },
+      story: function () {
+        var k = R.int(0, 1), a = R.int(15, 45), b = R.int(12, 40);
+        if (k) return { q: 'A shelf holds ' + (a + b) + ' books. ' + a + ' books are on it now. How many more books will fit?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: 'You know the whole (' + (a + b) + ') and one part (' + a + '). Subtract.', explain: (a + b) + ' ' + M + ' ' + a + ' = ' + b + '.' };
+        return { q: 'Jo picked ' + a + ' apples. Tia picked ' + b + ' apples. How many apples in all?', type: 'num', answer: a + b, fig: bar(a, b, 'w'), hint: 'You know both parts. Add them.', explain: a + ' + ' + b + ' = ' + (a + b) + '.' };
+      }
+    },
+
+    quiz: [
+      { q: '<span class="math big">46 + 30 = ?</span>', type: 'num', answer: 76, hint: 'Add 3 tens. The ones digit stays 6.', explain: '4 tens + 3 tens = 7 tens. 46 + 30 = 76.' },
+      { q: '<span class="math big">38 + 45 = ?</span>', type: 'num', answer: 83, fig: pair(38, 45), hint: 'Tens: 30 + 40. Ones: 8 + 5. Is that 10 or more ones?', explain: '30 + 40 = 70. 8 + 5 = 13. 70 + 13 = 83.' },
+      { q: '<span class="math big">23 + 19 = ?</span>', type: 'num', answer: 42, fig: openLine(23, [10, 9]), hint: 'Start at 23. Jump 10, then jump 9.', explain: '23 + 10 = 33, then 33 + 9 = 42.' },
+      { q: '<span class="math big">70 &minus; 26 = ?</span>', type: 'num', answer: 44, hint: 'Jump back 20 from 70. Then jump back 6.', explain: '70 &minus; 20 = 50. 50 &minus; 6 = 44.' },
+      { q: 'Which is the best estimate for <span class="math">29 + 32</span>?', type: 'mc', options: ['about 40', 'about 50', 'about 60', 'about 70'], answer: 2, hint: 'Change 29 and 32 to their closest tens.', explain: '29 is close to 30 and 32 is close to 30. 30 + 30 = 60. (Exactly 61.)' },
+      { q: 'A box has 50 crackers. Ravi eats 12. How many crackers are left?', type: 'num', answer: 38, fig: bar(12, 38, 'b'), hint: 'You know the whole (50) and one part (12). Subtract.', explain: '50 &minus; 10 = 40, then 40 &minus; 2 = 38.' },
+      { q: 'Which number sentence matches? <i>Kim has 34 shells. She finds some more. Now she has 52.</i>', type: 'mc', options: ['34 + 52 = &#9633;', '34 + &#9633; = 52', '52 + &#9633; = 34', '&#9633; &minus; 34 = 52'], answer: 1, hint: 'She starts with 34, adds an unknown amount, and ends with 52.', explain: '34 plus the shells she found equals 52: 34 + &#9633; = 52. The box is 18.' }
+    ],
+
+    practice: [
+      { id: 'a2-tens', name: 'Add and take away tens', code: 'B2.3', gen: function (lv) {
+        var a = lv === 1 ? R.int(1, 5) * 10 : R.int(11, 59), t = R.int(1, 4) * 10, sub = lv === 3 && R.int(0, 1);
+        if (sub) { a = R.int(45, 99); t = R.int(1, 4) * 10; return { q: '<span class="math big">' + a + ' ' + M + ' ' + t + ' = ?</span>', type: 'num', answer: a - t, fig: '', hint: 'Take away ' + t / 10 + ' tens. The ones digit stays ' + a % 10 + '.', steps: [a + ' has ' + tens(a) + ' tens.', tens(a) + ' tens ' + M + ' ' + t / 10 + ' tens = ' + (tens(a) - t / 10) + ' tens.', 'The ones stay ' + a % 10 + ': ' + (a - t) + '.'], explain: a + ' ' + M + ' ' + t + ' = ' + (a - t) + '.' }; }
+        return { q: '<span class="math big">' + a + ' + ' + t + ' = ?</span>', type: 'num', answer: a + t, fig: lv === 1 ? D.base10(0, tens(a) + t / 10, 0, { u: 7, label: (tens(a) + t / 10) + ' ten rods' }) : lv === 2 ? chart(a, 0, []) : '', hint: 'Add the tens. The ones digit stays ' + a % 10 + '.', steps: [a + ' has ' + tens(a) + ' tens.', tens(a) + ' + ' + t / 10 + ' = ' + (tens(a) + t / 10) + ' tens.', 'The ones stay ' + a % 10 + ': ' + (a + t) + '.'], explain: a + ' + ' + t + ' = ' + (a + t) + '.' };
+      } },
+      { id: 'a2-add', name: 'Add two-digit numbers', code: 'B2.4', gen: function (lv) {
+        var a, b;
+        if (lv === 1) { a = R.int(1, 5) * 10 + R.int(1, 4); b = R.int(1, 4) * 10 + R.int(1, 5); }
+        else { a = R.int(1, 6) * 10 + R.int(5, 9); b = R.int(1, 2) * 10 + R.int(10 - a % 10, 9); }
+        if (lv === 3) return { q: 'What number goes in the box? <span class="math big">' + a + ' + &#9633; = ' + (a + b) + '</span>', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: 'Count up from ' + a + ' to ' + (a + b) + ' with jumps: first to the next ten.', steps: ['From ' + a + ', jump ' + (10 - a % 10) + ' to ' + (a + 10 - a % 10) + '.', 'Then jump to ' + (a + b) + ': that is ' + (a + b - (a + 10 - a % 10)) + ' more.', 'Total jumps: ' + (10 - a % 10) + ' + ' + (a + b - (a + 10 - a % 10)) + ' = ' + b + '.'], explain: a + ' + ' + b + ' = ' + (a + b) + '.' };
+        return { q: '<span class="math big">' + a + ' + ' + b + ' = ?</span>', type: 'num', answer: a + b, fig: pair(a, b), hint: 'Add the tens. Then add the ones. Trade if there are 10 or more ones.', steps: addSteps(a, b), explain: a + ' + ' + b + ' = ' + (a + b) + '.' };
+      } },
+      { id: 'a2-sub', name: 'Subtract to 100', code: 'B2.4', gen: function (lv) {
+        var a, b;
+        if (lv === 1) { a = R.int(3, 9) * 10 + R.int(5, 9); b = R.int(1, tens(a) - 1) * 10 + R.int(1, a % 10); }
+        else if (lv === 2) { a = R.int(4, 9) * 10 + R.int(0, 4); b = R.int(1, 3) * 10 + R.int(a % 10 + 1, 9); }
+        else { a = R.int(3, 10) * 10; b = R.int(11, a - 5); if (b % 10 === 0) b++; }
+        return { q: '<span class="math big">' + a + ' ' + M + ' ' + b + ' = ?</span>', type: 'num', answer: a - b, fig: lv === 1 ? pair(a, b, M) : '', hint: 'Jump back ' + tens(b) * 10 + ', then jump back ' + b % 10 + '.', steps: subSteps(a, b), explain: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '. Check: ' + (a - b) + ' + ' + b + ' = ' + a + '.' };
+      } },
+      { id: 'a2-mental', name: 'Mental math and estimating', code: 'B2.3', gen: function (lv) {
+        if (lv === 3) {
+          var x = R.int(11, 29), y = R.int(11, 24), e = Math.round(x / 10) * 10 + Math.round(y / 10) * 10;
+          var o = R.mc(String(e), [String(e + 10), String(e - 10), String(e + 20)]);
+          return { q: 'Estimate. <span class="math big">' + x + ' + ' + y + '</span> is about&hellip;', type: 'mc', options: o.options, answer: o.answer, hint: 'Change each number to its closest ten.', steps: [x + ' is closest to ' + Math.round(x / 10) * 10 + '.', y + ' is closest to ' + Math.round(y / 10) * 10 + '.', 'Add the tens: ' + e + '.'], explain: 'About ' + e + '. (Exactly ' + (x + y) + '.)' };
+        }
+        var a = R.int(lv === 1 ? 10 : 12, lv === 1 ? 30 : 29), b = lv === 1 ? R.pick([5, 8, 9, 10, 11]) : R.int(11, 19);
+        if (a + b > 50) a = 50 - b;
+        var big = Math.max(a, b), small = Math.min(a, b), j = [tens(small) * 10, small % 10].filter(function (q) { return q; });
+        return { q: '<span class="math big">' + a + ' + ' + b + ' = ?</span>', type: 'num', answer: a + b, hint: 'Start at ' + big + '. Jump ' + (tens(small) ? 'the tens, then the ones' : small) + '.', steps: ['Start at the bigger number, ' + big + '.', 'Jump ' + j.join(', then jump ') + '.', 'You land on ' + (a + b) + '.<div class="fig">' + openLine(big, j) + '</div>'], explain: a + ' + ' + b + ' = ' + (a + b) + '.' };
+      } },
+      { id: 'a2-story', name: 'Story problems to 100', code: 'B2.4', gen: function (lv) {
+        var a = R.int(12, 48), b = R.int(11, 45), w = a + b, kind = lv === 1 ? 0 : lv === 2 ? R.int(0, 1) : R.int(1, 2);
+        var nm = R.pick(['Ava', 'Ben', 'Raj', 'Lin', 'Zoe', 'Tom']);
+        if (kind === 0) return { q: nm + ' has ' + a + ' blue blocks and ' + b + ' yellow blocks. How many blocks in all?', type: 'num', answer: w, fig: bar(a, b, 'w'), hint: 'You know both parts. Add.', steps: ['Both parts are known: ' + a + ' and ' + b + '.'].concat(addSteps(a, b)), explain: a + ' + ' + b + ' = ' + w + '.' };
+        if (kind === 1) return { q: 'There are ' + w + ' children at the park. ' + a + ' go home. How many are still at the park?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: 'You know the whole (' + w + ') and one part (' + a + '). Subtract.', steps: subSteps(w, a), explain: w + ' ' + M + ' ' + a + ' = ' + b + '.' };
+        return { q: nm + ' has ' + w + ' stickers. Sam has ' + a + ' stickers. How many <b>more</b> stickers does ' + nm + ' have?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: '"How many more" means find the difference. Subtract ' + w + ' ' + M + ' ' + a + ', or count up from ' + a + '.', steps: subSteps(w, a), explain: w + ' ' + M + ' ' + a + ' = ' + b + '.' };
+      } }
+    ]
+  });
+  /* part-part-whole bar: hide 'w' or 'b' to put a ? there */
+  function bar(a, b, hide) {
+    var W = 460, u = (W - 8) / (a + b), s = '';
+    s += D.rr(4, 4, W - 8, 42, 10, 'color-mix(in srgb,var(--strand) 18%,var(--card))', 'style="stroke:var(--ink)" stroke-width="2.5"');
+    s += '<text x="' + W / 2 + '" y="33" text-anchor="middle" font-size="22" font-weight="800">' + (hide === 'w' ? '?' : a + b) + '</text>';
+    s += D.rr(4, 54, a * u, 42, 10, 'var(--strand)', 'style="stroke:var(--ink)" stroke-width="2.5"') + D.rr(4 + a * u, 54, b * u, 42, 10, 'var(--hi)', 'style="stroke:var(--ink)" stroke-width="2.5"');
+    s += '<text x="' + (4 + a * u / 2) + '" y="83" text-anchor="middle" font-size="22" font-weight="800" style="fill:#fff">' + a + '</text>';
+    s += '<text x="' + (4 + a * u + b * u / 2) + '" y="83" text-anchor="middle" font-size="22" font-weight="800" style="fill:#2b2118">' + (hide === 'b' ? '?' : b) + '</text>';
+    return '<div class="fig">' + A.svg(W, 100, s, 'Bar model. Whole ' + (hide === 'w' ? 'unknown' : a + b) + '. Parts ' + a + ' and ' + (hide === 'b' ? 'unknown' : b) + '.') + '</div>';
+  }
+})();

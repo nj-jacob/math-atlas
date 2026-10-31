@@ -1,0 +1,68 @@
+/* Math Atlas family accounts: sign-in bar on grade sites, and the family page. Uses the colours in site.css. */
+.acct{display:flex;align-items:center;gap:8px;font-size:.85rem;font-weight:700}
+.acct a{color:var(--ink2)}
+.acct .who{color:var(--ink)}
+.acct button{font:inherit;font-size:.8rem;font-weight:700;color:var(--ink2);background:var(--card);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px;min-height:32px;cursor:pointer}
+.acct button:hover{color:var(--ink);border-color:var(--ink2)}
+.fromadults{border-left-color:var(--sc)}
+.anote{margin:.4em 0}
+div.anote{border-top:1px solid var(--line);padding:8px 0}
+div.anote p{margin:.2em 0}
+
+.brand i.m::after{content:"M"}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:640px){.two{grid-template-columns:1fr}}
+.two .sec{margin:12px 0}
+.panel label{display:block;font-weight:700;margin:10px 0}
+.panel label.inl{display:inline-flex;align-items:center;gap:6px;font-weight:400;margin:4px 16px 4px 0}
+.panel input[type=text],.panel input[type=email],.panel input[type=password],.panel input:not([type]),
+#f-share input,#f-share select,#f-reset input,#f-note textarea{display:block;width:100%;font:inherit;font-weight:400;margin-top:4px;padding:8px 10px;
+  border:1.5px solid var(--line);border-radius:8px;background:var(--paper);color:var(--ink);min-height:44px}
+#f-share label,#f-reset label{display:block;font-weight:700}
+#f-share p,#f-reset p{align-self:end;margin:0}
+fieldset{border:0;padding:0;margin:6px 0}
+legend{font-weight:700;padding:0}
+.small{font-size:.88rem}
+.btn.sm{min-height:32px;padding:2px 10px;font-size:.82rem}
+.btn[aria-pressed="true"]{background:var(--hi)}
+a.btn{display:inline-flex;align-items:center;text-decoration:none}
+
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+@media (max-width:640px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{border:1px solid var(--line);border-radius:10px;padding:10px 12px;background:var(--paper)}
+.tile b{display:block;font-family:var(--display);font-size:1.6rem;line-height:1.1}
+.tile span{font-size:.85rem;color:var(--ink2)}
+.chart svg{width:100%;height:auto;display:block}
+.chart .gl{stroke:var(--line);stroke-width:1}
+.chart .ax{fill:var(--ink2);font-size:11px;font-family:var(--body)}
+.chart .bar{fill:var(--accent)}
+.chart .hit{fill:transparent}
+.chart .hit:hover{fill:color-mix(in srgb,var(--accent) 10%,transparent)}
+details summary{cursor:pointer;font-weight:700}
+details.chap{border-top:3px solid var(--strand);border-radius:6px;margin:10px 0;padding:8px 0 0}
+details.chap .ct{color:var(--ink)}
+details.chap summary .t2{font-weight:400;font-size:.9rem}
+.cards.kids .card{min-height:0}
+@media print{.acct,.fromadults{display:none}}
+ul.activity{list-style:none;padding:0;margin:8px 0}
+ul.activity li{padding:6px 0;border-top:1px solid var(--line)}
+ul.activity li:first-child{border-top:0}
+ul.activity .when{display:block;font-size:.85rem;color:var(--ink2)}
+
+/* Work together */
+.livebar{position:fixed;left:12px;right:12px;bottom:12px;z-index:60;max-width:720px;margin:0 auto;background:var(--ink);color:var(--card);
+  border-radius:12px;padding:10px 14px;font-size:.95rem;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.livebar b{color:var(--hi)}
+.livebar button{font:inherit;font-weight:700;margin-left:6px;border:2px solid var(--hi);background:var(--hi);color:#13203a;border-radius:8px;padding:4px 12px;min-height:36px;cursor:pointer}
+.livebar button#live-no,.livebar button#live-stop{background:transparent;color:var(--card)}
+.livept{position:absolute;z-index:70;pointer-events:none;transform:translate(-3px,-3px);transition:left .08s linear,top .08s linear}
+.livept i{display:block;width:16px;height:16px;border-radius:50%;background:#c2334a;border:3px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.4)}
+.livept.kid i{background:#2563c9}
+.livept span{position:absolute;left:18px;top:12px;white-space:nowrap;font:700 12px/1.2 system-ui,sans-serif;background:#13203a;color:#fff;padding:2px 6px;border-radius:6px}
+.liveflash{outline:4px solid #ffd23f !important;outline-offset:2px;transition:outline-color .6s}
+.livehead{position:sticky;top:0;z-index:50;background:#13203a;color:#fff;font-family:system-ui,sans-serif;font-size:.95rem}
+.livehead .wrap{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px;padding-top:6px;padding-bottom:6px}
+.livehead p{margin:0}
+.livehead a{color:#ffd23f}
+.livehead .btn{min-height:32px}
+@media print{.livebar,.livept{display:none}}

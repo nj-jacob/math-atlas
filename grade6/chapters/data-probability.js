@@ -1,0 +1,299 @@
+(function () {
+  var A = Atlas, R = A.R, gcd = A.gcd;
+  function cl(x) { return Math.round(x * 100) / 100; }
+  function frac(n, d) { var g = gcd(n, d) || 1; return n === 0 ? '0' : n === d ? '1' : A.fr(n / g, d / g); }
+  /* histogram: counts per interval, labels at the boundaries */
+  function hist(bins, lo, w, title, xlab) {
+    var W = 520, H = 250, x0 = 56, y0 = 200, mx = Math.max.apply(null, bins.concat([1])), top = Math.ceil(mx / 2) * 2, s = '', bw = (W - x0 - 10) / bins.length;
+    function Y(v) { return y0 - (y0 - 30) * v / top; }
+    for (var g = 0; g <= top; g += top > 10 ? 2 : 1) s += '<line x1="' + x0 + '" y1="' + Y(g) + '" x2="' + (W - 10) + '" y2="' + Y(g) + '" style="stroke:var(--line)"/><text x="' + (x0 - 8) + '" y="' + (Y(g) + 5) + '" text-anchor="end" font-size="16">' + g + '</text>';
+    bins.forEach(function (c, i) {
+      var x = x0 + i * bw;
+      s += '<rect x="' + x + '" y="' + Y(c) + '" width="' + bw + '" height="' + (y0 - Y(c)) + '" style="fill:color-mix(in srgb,var(--strand) 70%,var(--card));stroke:var(--ink)" stroke-width="1.5"/>';
+      if (bins.length <= 8 || i % 2 === 0) s += '<text x="' + x + '" y="' + (y0 + 20) + '" text-anchor="middle" font-size="16">' + (lo + i * w) + '</text>';
+    });
+    s += '<text x="' + (W - 10) + '" y="' + (y0 + 20) + '" text-anchor="middle" font-size="16">' + (lo + bins.length * w) + '</text>';
+    s += '<line x1="' + x0 + '" y1="' + y0 + '" x2="' + (W - 10) + '" y2="' + y0 + '" style="stroke:var(--ink)" stroke-width="2"/><line x1="' + x0 + '" y1="' + y0 + '" x2="' + x0 + '" y2="24" style="stroke:var(--ink)" stroke-width="2"/>';
+    s += '<text x="' + ((x0 + W) / 2) + '" y="16" text-anchor="middle" font-size="17" class="tb">' + title + '</text><text x="' + ((x0 + W) / 2) + '" y="' + (y0 + 44) + '" text-anchor="middle" font-size="16" class="t2">' + xlab + '</text>';
+    s += '<text x="16" y="' + ((y0 + 30) / 2) + '" font-size="16" class="t2" transform="rotate(-90 16 ' + ((y0 + 30) / 2) + ')" text-anchor="middle">frequency</text>';
+    return A.svg(W, H, s, title + '. Histogram with ' + bins.length + ' intervals of width ' + w + ' starting at ' + lo + '. Counts: ' + bins.join(', '));
+  }
+  function bin(data, lo, w, n) { var b = []; for (var i = 0; i < n; i++) b.push(0); data.forEach(function (d) { var k = Math.floor((d - lo) / w); if (k >= 0 && k < n) b[k]++; }); return b; }
+  /* broken-line graph with a y axis that can start above zero */
+  function bline(xs, ys, ymin, ymax, step, title, ylab) {
+    var W = 520, H = 250, x0 = 60, y0 = 200, s = '';
+    function X(i) { return x0 + 20 + (W - x0 - 40) * i / (xs.length - 1); }
+    function Y(v) { return y0 - (y0 - 30) * (v - ymin) / (ymax - ymin); }
+    for (var g = ymin; g <= ymax; g += step) s += '<line x1="' + x0 + '" y1="' + Y(g) + '" x2="' + (W - 10) + '" y2="' + Y(g) + '" style="stroke:var(--line)"/><text x="' + (x0 - 8) + '" y="' + (Y(g) + 5) + '" text-anchor="end" font-size="16">' + g + '</text>';
+    xs.forEach(function (x, i) { s += '<text x="' + X(i) + '" y="' + (y0 + 22) + '" text-anchor="middle" font-size="16">' + x + '</text>'; });
+    s += '<polyline points="' + ys.map(function (v, i) { return X(i) + ',' + Y(v); }).join(' ') + '" fill="none" style="stroke:var(--strand)" stroke-width="3"/>';
+    ys.forEach(function (v, i) { s += '<circle cx="' + X(i) + '" cy="' + Y(v) + '" r="5" style="fill:var(--strand)"/>'; });
+    s += '<line x1="' + x0 + '" y1="' + y0 + '" x2="' + (W - 10) + '" y2="' + y0 + '" style="stroke:var(--ink)" stroke-width="2"/><line x1="' + x0 + '" y1="' + y0 + '" x2="' + x0 + '" y2="24" style="stroke:var(--ink)" stroke-width="2"/>';
+    if (ymin > 0) s += '<path d="M' + (x0 - 7) + ' ' + (y0 - 8) + ' l14 -5 M' + (x0 - 7) + ' ' + (y0 - 2) + ' l14 -5" style="stroke:var(--bad)" stroke-width="2"/>';
+    s += '<text x="' + ((x0 + W) / 2) + '" y="16" text-anchor="middle" font-size="17" class="tb">' + title + '</text><text x="16" y="' + ((y0 + 30) / 2) + '" font-size="16" class="t2" transform="rotate(-90 16 ' + ((y0 + 30) / 2) + ')" text-anchor="middle">' + ylab + '</text>';
+    return A.svg(W, H - 20, s, title + '. Broken-line graph. Values: ' + ys.join(', ') + '. The vertical axis starts at ' + ymin + '.');
+  }
+  /* dot plot with mean (triangle) and median (bar) marked */
+  function dotplot(data, lo, hi) {
+    var W = 540, x0 = 30, x1 = 510, y0 = 150, s = '', cnt = {}, st = hi - lo > 20 ? 5 : hi - lo > 10 ? 2 : 1;
+    function X(v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); }
+    s += '<line x1="' + x0 + '" y1="' + y0 + '" x2="' + x1 + '" y2="' + y0 + '" style="stroke:var(--ink)" stroke-width="2"/>';
+    for (var t = lo; t <= hi; t++) { s += '<line x1="' + X(t) + '" y1="' + (y0 - 5) + '" x2="' + X(t) + '" y2="' + (y0 + 5) + '" style="stroke:var(--ink)"/>'; if ((t - lo) % st === 0) s += '<text x="' + X(t) + '" y="' + (y0 + 24) + '" text-anchor="middle" font-size="17">' + t + '</text>'; }
+    data.forEach(function (d) { cnt[d] = (cnt[d] || 0) + 1; s += '<circle cx="' + X(d) + '" cy="' + (y0 - 12 - (cnt[d] - 1) * 16) + '" r="7" style="fill:var(--strand);stroke:var(--ink)"/>'; });
+    var st2 = stats(data);
+    s += '<path d="M' + X(st2.mean) + ' ' + (y0 + 30) + ' l-9 14 h18z" style="fill:var(--hi);stroke:var(--ink)"/><text x="' + X(st2.mean) + '" y="' + (y0 + 62) + '" text-anchor="middle" font-size="16" class="tb">mean</text>';
+    s += '<line x1="' + X(st2.median) + '" y1="' + (y0 - 116) + '" x2="' + X(st2.median) + '" y2="' + (y0 + 4) + '" style="stroke:var(--bad)" stroke-width="2.5" stroke-dasharray="6 4"/><text x="' + X(st2.median) + '" y="' + (y0 - 122) + '" text-anchor="middle" font-size="16" class="tb" style="fill:var(--bad)">median</text>';
+    return A.svg(W, y0 + 70, s, 'Dot plot of ' + data.length + ' values. Mean ' + cl(st2.mean) + ', median ' + st2.median + '.');
+  }
+  function stats(d) {
+    var s = d.slice().sort(function (a, b) { return a - b; }), n = s.length, sum = s.reduce(function (a, b) { return a + b; }, 0), cnt = {}, best = 0, modes = [];
+    s.forEach(function (v) { cnt[v] = (cnt[v] || 0) + 1; best = Math.max(best, cnt[v]); });
+    Object.keys(cnt).forEach(function (k) { if (cnt[k] === best && best > 1) modes.push(+k); });
+    return { sorted: s, n: n, sum: sum, mean: sum / n, median: n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2, modes: modes.sort(function (a, b) { return a - b; }), range: s[n - 1] - s[0] };
+  }
+  /* probability line from 0 to 1 with a marked value */
+  function pline(p, lab) {
+    var W = 540, x0 = 30, x1 = 510, s = '';
+    function X(v) { return x0 + (x1 - x0) * v; }
+    s += '<line x1="' + x0 + '" y1="40" x2="' + x1 + '" y2="40" style="stroke:var(--ink)" stroke-width="3"/>';
+    [[0, 'impossible', '0'], [0.5, 'even chance', '1/2'], [1, 'certain', '1']].forEach(function (k) { s += '<line x1="' + X(k[0]) + '" y1="30" x2="' + X(k[0]) + '" y2="50" style="stroke:var(--ink)" stroke-width="2"/><text x="' + X(k[0]) + '" y="72" text-anchor="middle" font-size="17">' + k[2] + '</text><text x="' + Math.min(Math.max(X(k[0]), 60), 480) + '" y="92" text-anchor="middle" font-size="15" class="t2">' + k[1] + '</text>'; });
+    s += '<text x="' + X(0.22) + '" y="92" text-anchor="middle" font-size="15" class="t2">unlikely</text><text x="' + X(0.78) + '" y="92" text-anchor="middle" font-size="15" class="t2">likely</text>';
+    if (p !== null && p !== undefined) s += '<circle cx="' + X(p) + '" cy="40" r="10" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="' + Math.min(Math.max(X(p), 50), 490) + '" y="18" text-anchor="middle" font-size="17" class="tb">' + (lab || '') + '</text>';
+    return A.svg(W, 100, s, 'Probability line from 0 to 1' + (p !== null && p !== undefined ? ' with a point at ' + cl(p) : ''));
+  }
+  /* grid of outcomes for two independent events */
+  function ogrid(a, b, hl, la, lb) {
+    var cw = 54, ch = 34, s = '', W = 90 + b.length * cw, H = 40 + a.length * ch;
+    b.forEach(function (y, j) { s += '<text x="' + (90 + j * cw + cw / 2) + '" y="26" text-anchor="middle" font-size="16" class="tb">' + y + '</text>'; });
+    a.forEach(function (x, i) {
+      s += '<text x="80" y="' + (40 + i * ch + 23) + '" text-anchor="end" font-size="16" class="tb">' + x + '</text>';
+      b.forEach(function (y, j) {
+        var on = hl && hl(x, y);
+        s += '<rect x="' + (90 + j * cw) + '" y="' + (40 + i * ch) + '" width="' + cw + '" height="' + ch + '" style="fill:' + (on ? 'color-mix(in srgb,var(--strand) 60%,var(--card))' : 'var(--card)') + ';stroke:var(--line)"/><text x="' + (90 + j * cw + cw / 2) + '" y="' + (40 + i * ch + 23) + '" text-anchor="middle" font-size="14"' + (on ? ' font-weight="700"' : ' class="t2"') + '>' + x.charAt(0) + y + '</text>';
+      });
+    });
+    s += '<text x="' + (90 + b.length * cw / 2) + '" y="10" text-anchor="middle" font-size="14" class="t2">' + lb + '</text><text x="4" y="30" font-size="14" class="t2">' + la + '</text>';
+    return A.svg(W, H, s, 'Outcome grid: ' + a.length + ' rows by ' + b.length + ' columns gives ' + a.length * b.length + ' equally likely outcomes');
+  }
+  var HEIGHTS = [138, 141, 143, 145, 146, 147, 148, 149, 150, 150, 151, 152, 152, 153, 154, 155, 155, 156, 157, 158, 159, 160, 161, 163, 166];
+
+  A.register('data-probability', {
+    html:
+'<section class="sec"><h2><span class="n">1</span>Kinds of data</h2>' +
+'<p><b>Qualitative</b> data are words or categories: favourite sport, eye colour. <b>Quantitative</b> data are numbers. Quantitative data come in two kinds:</p>' +
+'<div class="tbl"><table><thead><tr><th class="l"></th><th class="l">Discrete</th><th class="l">Continuous</th></tr></thead><tbody>' +
+'<tr><td class="l">What it is</td><td class="l">counted, only certain values</td><td class="l">measured, any value in a range</td></tr>' +
+'<tr><td class="l">Examples</td><td class="l">number of pets, goals in a game, people on a bus</td><td class="l">height, time to run 100 m, temperature, mass</td></tr>' +
+'<tr><td class="l">Ask yourself</td><td class="l">Can there be 2.5 of them? <b>No</b>.</td><td class="l">Can it be 2.5, or 2.57? <b>Yes</b>.</td></tr></tbody></table></div>' +
+'<div class="key"><b class="t">Key idea</b><p>If you <b>count</b> it, it is discrete. If you <b>measure</b> it, it is continuous.</p></div>' +
+'<p>To answer a question about a <b>population</b> (a whole group), you often collect data from a smaller <b>sample</b> of it. Continuous data and wide-ranging data are usually grouped into <b>intervals</b> like 140 to 145 cm.</p>' +
+A.yt({ q: 'The time it takes each student to walk to school is&hellip;', type: 'mc', options: ['qualitative', 'discrete', 'continuous'], answer: 2,
+  hint: 'Say the rule: counted or measured? Time is measured with a clock.', explain: 'Time is measured and can be any value, like 12.5 minutes, so it is continuous.' }) +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">2</span>Histograms</h2>' +
+'<p>A <b>histogram</b> shows how many values fall in each interval. It looks like a bar graph, but the bars <b>touch</b>, because the number line underneath has no gaps. Use it for continuous data or data with many values.</p>' +
+'<div class="lab"><span class="lt">Try it: choose the interval width</span>' +
+'<p class="t2" style="margin:.3em 0">Heights of 25 Grade 6 students, in cm: ' + HEIGHTS.join(', ') + '</p>' +
+'<div class="ctrl"><label for="hw">Interval width<select id="hw"><option>2</option><option selected>5</option><option>10</option><option>15</option></select></label></div>' +
+'<div class="fig" id="hfig"></div><div class="out" id="hout"></div></div>' +
+'<div class="mistake"><b class="t">Common mistake</b><p>Putting a value in two intervals. A height of exactly 145 cm goes in the 145 to 150 interval, not 140 to 145. Each interval includes its start number but not its end number.</p></div>' +
+A.yt({ q: 'In the histogram with width 5, how many students are at least 150 cm but less than 155 cm?', type: 'num', answer: 7,
+  hint: 'Find the bar that starts at 150. Read its height on the left scale.', explain: 'The bar from 150 to 155 has height 7: the values 150, 150, 151, 152, 152, 153 and 154.' }) +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">3</span>Broken-line graphs and choosing a graph</h2>' +
+'<p>A <b>broken-line graph</b> shows how something changes over time, like temperature through a day. Points are joined with straight lines.</p>' +
+'<div class="tbl"><table><thead><tr><th class="l">Your data</th><th class="l">Good choice</th></tr></thead><tbody>' +
+'<tr><td class="l">Categories (favourite fruit)</td><td class="l">bar graph or pictograph</td></tr><tr><td class="l">Many numbers grouped in intervals (heights)</td><td class="l">histogram</td></tr>' +
+'<tr><td class="l">Change over time (temperature each hour)</td><td class="l">broken-line graph</td></tr><tr><td class="l">Parts of a whole (how you spend a day)</td><td class="l">circle graph</td></tr></tbody></table></div>' +
+'<p>Every graph needs a <b>title</b>, <b>labels</b> on both axes, and the <b>source</b> of the data. An <b>infographic</b> combines several graphs, numbers and short text to tell one story about a data set.</p>' +
+'<div class="lab"><span class="lt">Try it: spot a misleading graph</span>' +
+'<p class="t2" style="margin:.3em 0">Average monthly hydro bill for a family, in dollars (made-up data).</p>' +
+'<div class="ctrl"><label for="mz">Vertical axis starts at<select id="mz"><option value="0">0 (honest)</option><option value="80" selected>80 (zoomed in)</option></select></label></div>' +
+'<div class="fig" id="mfig"></div><div class="out" id="mout"></div></div>' +
+'<div class="key"><b class="t">Key idea</b><p>Before you trust a graph, read the scale. A vertical axis that does not start at zero can make a small change look huge.</p></div>' +
+A.yt({ q: 'Which graph is best for showing the number of visitors to a park each month for a year?', type: 'mc', options: ['histogram', 'broken-line graph', 'circle graph'], answer: 1,
+  hint: 'Say the rule: change over time uses a broken-line graph.', explain: 'Months are time, so a broken-line graph shows how visits change.' }) +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">4</span>Mean, median, mode and range</h2>' +
+'<div class="tbl"><table><thead><tr><th class="l">Measure</th><th class="l">How to find it</th><th class="l">For 3, 5, 5, 7, 10</th></tr></thead><tbody>' +
+'<tr><td class="l"><b>Mean</b></td><td class="l">add all values, divide by how many</td><td class="l">30 &divide; 5 = 6</td></tr>' +
+'<tr><td class="l"><b>Median</b></td><td class="l">middle value when in order (average of the two middle ones if there is an even number)</td><td class="l">5</td></tr>' +
+'<tr><td class="l"><b>Mode</b></td><td class="l">most common value (there can be none, or more than one)</td><td class="l">5</td></tr>' +
+'<tr><td class="l"><b>Range</b></td><td class="l">greatest &minus; least: shows the spread</td><td class="l">10 &minus; 3 = 7</td></tr></tbody></table></div>' +
+'<p>The mean is the <b>balance point</b> of the data. The median splits the data into two halves.</p>' +
+'<div class="lab"><span class="lt">Try it: change the data</span>' +
+'<div class="ctrl"><label for="mdd">Values (whole numbers 0 to 30, with commas)<input type="text" id="mdd" value="4, 7, 7, 9, 12, 15" style="width:16em"></label></div>' +
+'<div class="fig" id="mdfig"></div><div class="out" id="mdout"></div></div>' +
+'<div class="eg"><b class="t">Worked example: compare two data sets</b><p>Team A scored 2, 3, 3, 4, 8 goals. Team B scored 3, 3, 4, 4, 6. Both means are 4. Team A has a range of 6, team B a range of 3. Team B is more <b>consistent</b>.</p></div>' +
+A.yt({ q: 'What is the median of 8, 3, 12, 5, 9, 6?', type: 'num', answer: 7,
+  hint: 'Say the steps: put them in order first. With 6 values, average the two in the middle.', explain: 'In order: 3, 5, 6, 8, 9, 12. The middle two are 6 and 8. (6 + 8) &divide; 2 = 7.' }) +
+'</section>' +
+
+'<section class="sec"><h2><span class="n">5</span>Probability</h2>' +
+'<p>Probability is how likely something is, from 0 (impossible) to 1 (certain). With equally likely outcomes:</p>' +
+'<p class="math" style="font-size:1.1rem;white-space:normal">probability = (number of favourable outcomes) &divide; (number of possible outcomes)</p>' +
+'<p>Rolling a 5 on a six-sided die: ' + A.fr(1, 6) + ', about 0.17 or 17%.</p><div class="fig">' + pline(1 / 6, 'roll a 5') + '</div>' +
+'<p>Two events are <b>independent</b> when one does not change the other, like flipping a coin and rolling a die. List all the outcomes in a grid. A coin and a die give 2 &times; 6 = 12 outcomes. Getting heads <b>and</b> a 6 is 1 of 12: ' + A.fr(1, 12) + '.</p>' +
+'<div class="fig">' + ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], function (x, y) { return x === 'H' && y === 6; }, 'coin', 'die') + '</div>' +
+'<p><b>Theoretical probability</b> is what should happen. <b>Experimental probability</b> is what does happen when you try it. With more trials, they usually get closer.</p>' +
+'<div class="lab"><span class="lt">Try it: flip a coin and roll a die</span>' +
+'<div class="ctrl"><label for="prt">Target<select id="prt"><option value="H6">heads and a 6</option><option value="He">heads and an even number</option><option value="T12">tails and a 1 or 2</option></select></label></div>' +
+'<div class="btnrow"><button type="button" class="btn" data-n="10">Do it 10 times</button><button type="button" class="btn" data-n="100">100 times</button><button type="button" class="btn" data-n="1000">1000 times</button><button type="button" class="btn alt" id="prr">Reset</button></div>' +
+'<div class="fig" id="prfig"></div><div class="out" id="prout"></div></div>' +
+'<div class="mistake"><b class="t">Common mistake</b><p>Thinking a result is "due". If you flip 5 heads in a row, the next flip is still ' + A.fr(1, 2) + ' heads. The coin does not remember.</p></div>' +
+A.yt({ q: 'A spinner has 4 equal parts: red, blue, green, yellow. You spin it and flip a coin. What is the probability of red and tails?', type: 'mc', options: ['1/4', '1/8', '1/6', '1/2'], answer: 1,
+  hint: 'Say the steps: count all outcomes in a grid, 4 &times; 2. How many are red and tails?', explain: '4 &times; 2 = 8 outcomes, and only 1 is red-tails. ' + A.fr(1, 8) + '.' }) +
+'</section>',
+
+    init: function (root) {
+      var $ = A.$;
+      function hs() {
+        var w = +$('#hw', root).value, lo = Math.floor(136 / w) * w, n = Math.ceil((168 - lo) / w), b = bin(HEIGHTS, lo, w, n);
+        $('#hfig', root).innerHTML = hist(b, lo, w, 'Heights of 25 students', 'height (cm)');
+        var big = b.indexOf(Math.max.apply(null, b));
+        $('#hout', root).innerHTML = '<p>' + n + ' intervals of ' + w + ' cm. The tallest bar is ' + (lo + big * w) + ' to ' + (lo + (big + 1) * w) + ' cm, with ' + b[big] + ' students.</p><p class="t2">' + (w <= 2 ? 'Very narrow intervals: lots of short bars and the shape is hard to see.' : w >= 15 ? 'Very wide intervals: only a few bars, so detail is lost.' : 'A good width: the shape of the data is easy to see.') + '</p>';
+      }
+      A.bind(root, ['hw'], hs);
+      function mz() {
+        var z = +$('#mz', root).value, ys = [92, 94, 95, 97, 98, 101];
+        $('#mfig', root).innerHTML = bline(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], ys, z, 110, z ? 5 : 10, 'Monthly hydro bill', 'dollars');
+        $('#mout', root).innerHTML = z ? '<p>The line looks like it shoots up. But the axis starts at $80 (see the zigzag). The bill only went from $92 to $101.</p>' : '<p>With the axis starting at 0, you can see the change is small: $92 to $101, about 10%.</p>';
+      }
+      A.bind(root, ['mz'], mz);
+      function md() {
+        var d = $('#mdd', root).value.split(/[,\s]+/).map(function (x) { return parseInt(x, 10); }).filter(function (x) { return !isNaN(x) && x >= 0 && x <= 30; }).slice(0, 20);
+        if (!d.length) { $('#mdfig', root).innerHTML = ''; $('#mdout', root).innerHTML = '<p>Type some whole numbers from 0 to 30, separated by commas.</p>'; return; }
+        var s = stats(d);
+        $('#mdfig', root).innerHTML = dotplot(d, 0, 30);
+        $('#mdout', root).innerHTML = '<p>In order: ' + s.sorted.join(', ') + ' (' + s.n + ' values)</p><div class="tbl"><table><tbody>' +
+          '<tr><th class="l">Mean</th><td class="l">' + s.sum + ' &divide; ' + s.n + ' = ' + (s.sum % s.n ? '<b>' + cl(s.mean) + '</b> (rounded)' : '<b>' + s.mean + '</b>') + '</td></tr>' +
+          '<tr><th class="l">Median</th><td class="l"><b>' + s.median + '</b>' + (s.n % 2 ? ' (the middle value)' : ' (average of ' + s.sorted[s.n / 2 - 1] + ' and ' + s.sorted[s.n / 2] + ')') + '</td></tr>' +
+          '<tr><th class="l">Mode</th><td class="l"><b>' + (s.modes.length ? s.modes.join(' and ') : 'none') + '</b></td></tr>' +
+          '<tr><th class="l">Range</th><td class="l">' + s.sorted[s.n - 1] + ' &minus; ' + s.sorted[0] + ' = <b>' + s.range + '</b></td></tr></tbody></table></div><p class="t2">Try adding one very big value like 30. The mean moves a lot. The median hardly moves.</p>';
+      }
+      A.bind(root, ['mdd'], md);
+      var tally = { n: 0, hit: 0 };
+      function tgt() { var t = $('#prt', root).value; return t === 'H6' ? [function (c, d) { return c === 'H' && d === 6; }, 1, 12] : t === 'He' ? [function (c, d) { return c === 'H' && d % 2 === 0; }, 3, 12] : [function (c, d) { return c === 'T' && d <= 2; }, 2, 12]; }
+      function pr() {
+        var t = tgt(), th = t[1] / t[2];
+        $('#prfig', root).innerHTML = ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], t[0], 'coin', 'die');
+        var ex = tally.n ? tally.hit / tally.n : null;
+        $('#prout', root).innerHTML = '<p><b>Theoretical:</b> ' + t[1] + ' of 12 outcomes = ' + frac(t[1], t[2]) + ' &#8776; ' + cl(th) + ' (' + Math.round(th * 100) + '%)</p>' +
+          '<p><b>Experimental:</b> ' + (tally.n ? tally.hit + ' of ' + A.fmt(tally.n) + ' tries = ' + cl(ex) + ' (' + Math.round(ex * 100) + '%)' : 'press a button to start') + '</p>' + pline(th, 'theory').replace('</svg>', ex !== null ? '<circle cx="' + (30 + 480 * ex) + '" cy="40" r="7" style="fill:var(--strand);stroke:var(--ink)"/>' + '</svg>' : '</svg>') +
+          '<p class="t2">Orange: theoretical. Green: experimental. More tries usually bring them closer.</p>';
+      }
+      root.querySelectorAll('[data-n]').forEach(function (b) { b.addEventListener('click', function () { var t = tgt(), n = +b.getAttribute('data-n'); for (var i = 0; i < n; i++) { if (t[0](Math.random() < 0.5 ? 'H' : 'T', 1 + Math.floor(Math.random() * 6))) tally.hit++; tally.n++; } pr(); }); });
+      $('#prr', root).addEventListener('click', function () { tally = { n: 0, hit: 0 }; pr(); });
+      $('#prt', root).addEventListener('change', function () { tally = { n: 0, hit: 0 }; pr(); });
+      pr();
+    },
+
+    quiz: [
+      { q: 'Which is <b>discrete</b> data?', type: 'mc', options: ['the mass of a backpack', 'the number of books in a backpack', 'the length of a pencil', 'the time to finish a test'], answer: 1,
+        hint: 'Discrete data are counted. Which one do you count?', explain: 'You count books, and you cannot have 2.5 books. The others are measured, so they are continuous.' },
+      { q: 'How many students are 155 cm or taller?', type: 'num', answer: 10, fig: hist(bin(HEIGHTS, 135, 5, 7), 135, 5, 'Heights of 25 students', 'height (cm)'),
+        hint: 'Add the bars that start at 155 or more.', explain: 'The 155 to 160 bar has 6, the 160 to 165 bar has 3 and the 165 to 170 bar has 1: 6 + 3 + 1 = 10.' },
+      { q: 'Why might this graph be misleading?', type: 'mc', options: ['It has no title', 'The vertical axis does not start at 0', 'The line should be a bar', 'There are too many months'], answer: 1, fig: bline(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], [92, 94, 95, 97, 98, 101], 80, 110, 5, 'Monthly hydro bill', 'dollars'),
+        hint: 'Look at the numbers on the left side.', explain: 'The axis starts at 80, so a rise from $92 to $101 looks much bigger than it is.' },
+      { q: 'What is the mean of 12, 15, 9, 20, 14?', type: 'num', answer: 14,
+        hint: 'Add them all, then divide by 5.', explain: '12 + 15 + 9 + 20 + 14 = 70. 70 &divide; 5 = 14.' },
+      { q: 'What is the range of 34, 28, 41, 30, 37?', type: 'num', answer: 13,
+        hint: 'Greatest minus least.', explain: '41 &minus; 28 = 13.' },
+      { q: 'A bag has 3 red, 5 blue and 2 green marbles. What is the probability of picking blue, as a percent?', type: 'num', answer: 50, unit: '%', fig: pline(0.5, 'blue'),
+        hint: 'Blue marbles &divide; all marbles. Then change to a percent.', explain: '5 of 10 marbles are blue: ' + A.fr(5, 10) + ' = 0.5 = 50%.' },
+      { q: 'You roll a die and flip a coin. What is the probability of an even number and heads?', type: 'mc', options: ['1/2', '1/4', '1/12', '3/6'], answer: 1, fig: ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], function (x, y) { return x === 'H' && y % 2 === 0; }, 'coin', 'die'),
+        hint: 'Count the shaded outcomes in the grid out of 12.', explain: 'H2, H4 and H6: 3 of 12 = ' + A.fr(3, 12) + ' = ' + A.fr(1, 4) + '.' }
+    ],
+
+    practice: [
+      { id: 'dp-type', name: 'Kinds of data', code: 'D1.1', gen: function (lv) {
+        var items = [['the number of siblings each student has', 'discrete'], ['the number of cars in a parking lot', 'discrete'], ['how many goals each player scored', 'discrete'], ['the number of texts sent in a day', 'discrete'],
+          ['the height of each tree in a park', 'continuous'], ['the time each runner takes', 'continuous'], ['the temperature at noon each day', 'continuous'], ['the mass of each apple', 'continuous'], ['how much rain fell each day', 'continuous'],
+          ['each student’s favourite season', 'qualitative'], ['the colour of each car', 'qualitative'], ['the type of pet each family has', 'qualitative']];
+        var pool = lv === 1 ? items.filter(function (x) { return x[1] !== 'qualitative'; }) : items, it = R.pick(pool);
+        var opts = lv === 1 ? ['discrete', 'continuous'] : ['qualitative', 'discrete', 'continuous'];
+        return { q: 'What kind of data is <b>' + it[0] + '</b>?', type: 'mc', options: opts, answer: opts.indexOf(it[1]), v: { it: it[0], k: it[1] },
+          hint: 'Is it words? Then qualitative. Counted? Discrete. Measured? Continuous.', steps: ['Are the data words or numbers? ' + (it[1] === 'qualitative' ? 'Words or categories.' : 'Numbers.'), it[1] === 'qualitative' ? 'Categories are qualitative.' : 'Are they counted or measured? ' + (it[1] === 'discrete' ? 'Counted.' : 'Measured.'), 'So it is ' + it[1] + '.'],
+          explain: it[0].charAt(0).toUpperCase() + it[0].slice(1) + ' is ' + it[1] + (it[1] === 'discrete' ? ': it is counted.' : it[1] === 'continuous' ? ': it is measured.' : ': it is categories, not numbers.') };
+      } },
+      { id: 'dp-mmm', name: 'Mean, median, mode, range', code: 'D1.5', gen: function (lv) {
+        var n = lv === 1 ? 5 : R.pick([5, 6, 7]), d = [];
+        for (var i = 0; i < n; i++) d.push(R.int(1, lv === 3 ? 50 : 20));
+        var kind = R.pick(lv === 1 ? ['range', 'median', 'mode'] : ['mean', 'median', 'range', 'mean']);
+        if (kind === 'mode') { d[1] = d[3]; }
+        var s = stats(d);
+        if (kind === 'mode' && s.modes.length !== 1) { d = [3, 5, 5, 8, 9]; s = stats(d); }
+        if (kind === 'mean' && s.sum % n) { d[0] += n - s.sum % n; s = stats(d); }
+        var ansV = kind === 'mean' ? s.mean : kind === 'median' ? s.median : kind === 'mode' ? s.modes[0] : s.range;
+        var steps = { mean: ['Add them: ' + d.join(' + ') + ' = ' + s.sum + '.', 'Divide by how many values: ' + s.sum + ' &divide; ' + n + '.', 'Mean = ' + s.mean + '.'],
+          median: ['Put them in order: ' + s.sorted.join(', ') + '.', n % 2 ? 'There are ' + n + ' values, so the middle is value number ' + (n + 1) / 2 + '.' : 'There are ' + n + ' values, so average the two middle ones: ' + s.sorted[n / 2 - 1] + ' and ' + s.sorted[n / 2] + '.', 'Median = ' + s.median + '.'],
+          mode: ['Put them in order: ' + s.sorted.join(', ') + '.', 'Look for the value that appears most often.', 'Mode = ' + s.modes[0] + '.'],
+          range: ['Find the greatest: ' + s.sorted[n - 1] + '. Find the least: ' + s.sorted[0] + '.', 'Subtract: ' + s.sorted[n - 1] + ' &minus; ' + s.sorted[0] + '.', 'Range = ' + s.range + '.'] }[kind];
+        return { q: 'Find the <b>' + kind + '</b> of: <span class="math">' + d.join(', ') + '</span>', type: 'num', answer: ansV, v: { d: d, kind: kind }, fig: lv === 1 ? dotplot(d, 0, 20) : '',
+          hint: { mean: 'Add them all, then divide by ' + n + '.', median: 'Put them in order first.', mode: 'Which value appears most often?', range: 'Greatest minus least.' }[kind], steps: steps, explain: 'The ' + kind + ' is ' + ansV + '.' };
+      } },
+      { id: 'dp-hist', name: 'Read a histogram', code: 'D1.3', gen: function (lv) {
+        var w = R.pick([5, 10]), lo = R.pick([0, 10, 20, 30]), nb = R.int(4, 6), b = [];
+        for (var i = 0; i < nb; i++) b.push(R.int(1, 9));
+        var ctx = R.pick(['Minutes spent on homework', 'Kilometres biked this week', 'Ages of people at a concert', 'Scores on a test']);
+        var k = R.int(0, nb - 1), title = ctx;
+        if (lv === 1) return { q: 'How many values are in the interval ' + (lo + k * w) + ' to ' + (lo + (k + 1) * w) + '?', type: 'num', answer: b[k], fig: hist(b, lo, w, title, ''), v: { b: b, k: k, kind: 'one' },
+          hint: 'Find the bar that starts at ' + (lo + k * w) + '. Read across to the scale.', steps: ['Find ' + (lo + k * w) + ' on the bottom.', 'The bar from ' + (lo + k * w) + ' to ' + (lo + (k + 1) * w) + ' is ' + b[k] + ' high.', 'There are ' + b[k] + ' values.'], explain: 'That bar has height ' + b[k] + '.' };
+        if (lv === 2) { var tot = b.reduce(function (a, c) { return a + c; }, 0);
+          return { q: 'How many values are shown in this histogram altogether?', type: 'num', answer: tot, fig: hist(b, lo, w, title, ''), v: { b: b, kind: 'total' },
+            hint: 'Add the heights of all the bars.', steps: ['Read each bar: ' + b.join(', ') + '.', 'Add them.', b.join(' + ') + ' = ' + tot + '.'], explain: 'The total is ' + tot + '.' }; }
+        var cut = R.int(1, nb - 1), above = b.slice(cut).reduce(function (a, c) { return a + c; }, 0);
+        return { q: 'How many values are ' + (lo + cut * w) + ' or more?', type: 'num', answer: above, fig: hist(b, lo, w, title, ''), v: { b: b, cut: cut, kind: 'above' },
+          hint: 'Add the bars that start at ' + (lo + cut * w) + ' or later.', steps: ['The bars starting at ' + (lo + cut * w) + ' or more are: ' + b.slice(cut).join(', ') + '.', 'Add them.', 'Total: ' + above + '.'], explain: b.slice(cut).join(' + ') + ' = ' + above + '.' };
+      } },
+      { id: 'dp-graph', name: 'Choose and read graphs', code: 'D1.6', gen: function (lv) {
+        if (lv === 1) { var c = R.pick([['the temperature every hour for a day', 'broken-line graph'], ['the height of a plant each week', 'broken-line graph'], ['the heights of 50 students', 'histogram'], ['the times of 40 runners in a race', 'histogram'], ['the favourite sport of each student', 'bar graph'], ['the number of each colour of car in a lot', 'bar graph']]);
+          var o = ['bar graph', 'histogram', 'broken-line graph'];
+          return { q: 'Which graph is best for <b>' + c[0] + '</b>?', type: 'mc', options: o, answer: o.indexOf(c[1]), v: { c: c },
+            hint: 'Categories: bar graph. Many numbers in intervals: histogram. Change over time: broken-line graph.', steps: ['What kind of data is it?', c[1] === 'broken-line graph' ? 'It changes over time.' : c[1] === 'histogram' ? 'It is many measured numbers that can be grouped in intervals.' : 'It is categories.', 'Best choice: ' + c[1] + '.'], explain: 'A ' + c[1] + ' fits ' + c[0] + '.' }; }
+        var ys = [], v0 = R.int(5, 15);
+        for (var i = 0; i < 6; i++) { v0 += R.int(-3, 5); ys.push(Math.max(1, v0)); }
+        var xs = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], mx = Math.ceil((Math.max.apply(null, ys) + 1) / 5) * 5;
+        if (lv === 2) { var k = R.int(0, 5);
+          return { q: 'This graph shows the temperature at noon (&deg;C). What was it on ' + xs[k] + '?', type: 'num', answer: ys[k], fig: bline(xs, ys, 0, mx, mx > 20 ? 5 : 1 * 5, 'Noon temperature', '&deg;C').replace(/<circle/g, '<circle').replace('</svg>', ys.map(function (v, i) { return '<text x="' + (80 + 420 * i / 5) + '" y="' + (200 - 170 * v / mx - 12) + '" text-anchor="middle" font-size="15" class="tb">' + v + '</text>'; }).join('') + '</svg>'), v: { ys: ys, k: k, kind: 'read' },
+            hint: 'Find ' + xs[k] + ' on the bottom. Go up to the point.', steps: ['Find ' + xs[k] + '.', 'Go up to the dot.', 'It shows ' + ys[k] + '&deg;C.'], explain: 'On ' + xs[k] + ' it was ' + ys[k] + '&deg;C.' }; }
+        var best = 0, bi = 0; for (var j = 1; j < 6; j++) if (ys[j] - ys[j - 1] > best) { best = ys[j] - ys[j - 1]; bi = j; }
+        if (best <= 0) { ys[3] = ys[2] + 4; best = 4; bi = 3; for (var j2 = 1; j2 < 6; j2++) if (ys[j2] - ys[j2 - 1] > ys[bi] - ys[bi - 1]) bi = j2; best = ys[bi] - ys[bi - 1]; }
+        var ties = 0; for (var j3 = 1; j3 < 6; j3++) if (ys[j3] - ys[j3 - 1] === best) ties++;
+        if (ties > 1) { ys[bi] += 1; best += 1; if (bi < 5) ys[bi + 1] += 1; }
+        mx = Math.ceil((Math.max.apply(null, ys) + 1) / 5) * 5;
+        var o2 = R.mc(xs[bi - 1] + ' to ' + xs[bi], [1, 2, 3, 4, 5].filter(function (j) { return j !== bi; }).map(function (j) { return xs[j - 1] + ' to ' + xs[j]; }));
+        return { q: 'Between which two days did the temperature rise the most?', type: 'mc', options: o2.options, answer: o2.answer, fig: bline(xs, ys, 0, mx, 5, 'Noon temperature', '&deg;C').replace('</svg>', ys.map(function (v, i) { return '<text x="' + (80 + 420 * i / 5) + '" y="' + (200 - 170 * v / mx - 12) + '" text-anchor="middle" font-size="15" class="tb">' + v + '</text>'; }).join('') + '</svg>'), v: { ys: ys, kind: 'rise' },
+          hint: 'Look for the steepest line going up.', steps: ['Find the change for each pair of days.', 'The biggest rise is ' + best + '&deg;C.', 'That is ' + xs[bi - 1] + ' to ' + xs[bi] + '.'], explain: 'The steepest rise, ' + best + '&deg;C, is ' + xs[bi - 1] + ' to ' + xs[bi] + '.' };
+      } },
+      { id: 'dp-prob', name: 'Probability of one event', code: 'D2.1', gen: function (lv) {
+        var a = R.int(1, 6), b = R.int(1, 6), c = R.int(1, 6), tot = a + b + c, col = R.pick([['red', a], ['blue', b], ['green', c]]);
+        var bag = 'A bag has ' + a + ' red, ' + b + ' blue and ' + c + ' green marbles. ';
+        if (lv === 1) { var o = R.mc(frac(col[1], tot), [frac(col[1], tot - col[1]) , frac(1, 3), frac(Math.max(1, tot - col[1]), tot), frac(1, tot)].filter(function (x) { return x !== frac(col[1], tot); }));
+          return { q: bag + 'What is the probability of picking ' + col[0] + '?', type: 'mc', options: o.options, answer: o.answer, v: { f: col[1], t: tot },
+            hint: 'Favourable outcomes &divide; all outcomes.', steps: ['There are ' + col[1] + ' ' + col[0] + ' marbles.', 'There are ' + a + ' + ' + b + ' + ' + c + ' = ' + tot + ' marbles in all.', 'Probability = ' + A.fr(col[1], tot) + (gcd(col[1], tot) > 1 ? ' = ' + frac(col[1], tot) : '') + '.'], explain: col[1] + ' of ' + tot + ' marbles are ' + col[0] + ': ' + frac(col[1], tot) + '.' }; }
+        var sides = R.pick([4, 5, 10, 20, 25]), fav = R.int(1, sides - 1), pct = fav * 100 / sides;
+        if (lv === 2) return { q: 'A spinner has ' + sides + ' equal sections. ' + fav + ' are blue. What is the probability of blue, as a percent?', type: 'num', unit: '%', answer: pct, fig: pline(fav / sides, 'blue'), v: { f: fav, t: sides },
+          hint: 'Write ' + A.fr(fav, sides) + ', then make the bottom 100.', steps: ['Probability = ' + A.fr(fav, sides) + '.', 'Multiply top and bottom by ' + 100 / sides + ': ' + A.fr(fav * 100 / sides, 100) + '.', 'That is ' + pct + '%.'], explain: A.fr(fav, sides) + ' = ' + pct + '%.' };
+        var trials = R.pick([20, 40, 50, 100, 200]), p = R.pick([[1, 2], [1, 4], [1, 5], [3, 4], [2, 5], [1, 10]]), exp = trials * p[0] / p[1];
+        return { q: 'The probability of winning a game is ' + A.fr(p[0], p[1]) + '. If you play ' + trials + ' times, about how many times should you win?', type: 'num', answer: exp, v: { p: p, n: trials },
+          hint: 'Find ' + A.fr(p[0], p[1]) + ' of ' + trials + '.', steps: ['Predicted wins = probability &times; number of tries.', trials + ' &divide; ' + p[1] + ' = ' + trials / p[1] + '.', '&times; ' + p[0] + ' = ' + exp + '.'], explain: A.fr(p[0], p[1]) + ' of ' + trials + ' is ' + exp + '. The real number may be a bit different.' };
+      } },
+      { id: 'dp-two', name: 'Two independent events', code: 'D2.2', gen: function (lv) {
+        var A1 = R.pick([[['H', 'T'], 'flip a coin', 'coin'], [['R', 'B', 'G'], 'spin a 3-colour spinner (red, blue, green)', 'spinner'], [['R', 'B', 'G', 'Y'], 'spin a 4-colour spinner (red, blue, green, yellow)', 'spinner']]);
+        var B1 = R.pick([[[1, 2, 3, 4, 5, 6], 'roll a die', 'die'], [[1, 2, 3, 4], 'spin a spinner numbered 1 to 4', 'number']]);
+        var a = R.pick(A1[0]), names = { H: 'heads', T: 'tails', R: 'red', B: 'blue', G: 'green', Y: 'yellow' };
+        var cond = lv === 1 ? [function (y) { return y === B1[0][B1[0].length - 1]; }, 'a ' + B1[0][B1[0].length - 1]] : lv === 2 ? [function (y) { return y % 2 === 0; }, 'an even number'] : [function (y) { return y >= B1[0].length - 2; }, 'a ' + (B1[0].length - 2) + ' or higher'];
+        var fav = B1[0].filter(cond[0]).length, tot = A1[0].length * B1[0].length;
+        var o = R.mc(frac(fav, tot), [frac(fav, B1[0].length), frac(1, A1[0].length + B1[0].length), frac(fav + 1, tot), frac(1, A1[0].length)].filter(function (x) { return x !== frac(fav, tot); }));
+        return { q: 'You ' + A1[1] + ' and ' + B1[1] + '. What is the probability of ' + names[a] + ' and ' + cond[1] + '?', type: 'mc', options: o.options, answer: o.answer, v: { fav: fav, tot: tot },
+          fig: lv < 3 ? ogrid(A1[0], B1[0], function (x, y) { return x === a && cond[0](y); }, A1[2], B1[2]) : '',
+          hint: 'Count all outcomes: ' + A1[0].length + ' &times; ' + B1[0].length + '. Then count the ones that match.', steps: ['All outcomes: ' + A1[0].length + ' &times; ' + B1[0].length + ' = ' + tot + '.', 'Matching outcomes: ' + names[a] + ' with ' + B1[0].filter(cond[0]).join(', ') + ': ' + fav + '.', 'Probability = ' + A.fr(fav, tot) + (gcd(fav, tot) > 1 ? ' = ' + frac(fav, tot) : '') + '.' + (lv === 3 ? ogrid(A1[0], B1[0], function (x, y) { return x === a && cond[0](y); }, A1[2], B1[2]) : '')],
+          explain: fav + ' of ' + tot + ' outcomes: ' + frac(fav, tot) + '.' };
+      } }
+    ]
+  });
+})();

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en-CA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Grade 1 Math Atlas</title>
+<meta name="description" content="Free lessons for Ontario Grade 1 math: lots of pictures, lots of practice, read-aloud on every page, and a check-up.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Andika:wght@400;700&family=Fredoka:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/site.css">
+<link rel="stylesheet" href="../assets/family.css">
+<meta name="atlas-site" content="g1">
+<meta name="atlas-prefix" content="g1atlas:">
+</head>
+<body>
+<a class="skip" href="#app">Skip to content</a>
+<header class="bar"><div class="wrap">
+  <a class="brand" href="#home"><svg viewBox="0 0 46 22" width="46" height="22" aria-hidden="true"><rect x="1" y="1" width="44" height="20" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M9.8 1v20M18.6 1v20M27.4 1v20M36.2 1v20M1 11h44" stroke="currentColor" stroke-width="1"/><circle cx="5.4" cy="6" r="3" fill="#e04b3a"/></svg>Grade 1 Math Atlas</a>
+  <nav aria-label="Main"><a href="#home">Chapters</a><a href="#check-up">Check-up</a><a href="#fact-sheet">Fact sheet</a></nav>
+  <div class="tools" role="group" aria-label="Display and reading settings"><button type="button" id="autob" aria-pressed="false">Read questions: off</button><button type="button" id="bigb" aria-pressed="false">Text: normal</button><button type="button" id="themeb">Theme: auto</button></div>
+</div></header>
+<main id="app" tabindex="-1"></main>
+<footer class="site"><div class="wrap">
+  <p>Made for Ontario Grade 1 students and the grown-ups who help them. Canadian coins and bills, metric units, Canadian spelling.</p>
+  <p>A study aid only. Check details against the Ontario Ministry of Education's 2020 Mathematics curriculum.</p>
+</div></footer>
+<script src="assets/site.js"></script>
+<script src="chapters/counting.js"></script>
+<script src="chapters/tens-ones.js"></script>
+<script src="chapters/add-sub-10.js"></script>
+<script src="chapters/add-sub-50.js"></script>
+<script src="chapters/groups-shares.js"></script>
+<script src="chapters/patterns.js"></script>
+<script src="chapters/shapes-position.js"></script>
+<script src="chapters/measuring.js"></script>
+<script src="chapters/data.js"></script>
+<script src="chapters/money.js"></script>
+<script src="chapters/fact-sheet.js"></script>
+<script>Atlas.start();</script>
+<script type="module" src="../assets/sync.js"></script>
+</body>
+</html>
