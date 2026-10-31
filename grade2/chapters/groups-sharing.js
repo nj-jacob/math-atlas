@@ -370,4 +370,142 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  function grpPics(g, n) {
+    var set = [[g, n], [n, g], [g, n + 1]].filter(function (p, i, a) { return a.findIndex(function (x) { return x[0] === p[0] && x[1] === p[1]; }) === i; });
+    if (set.length < 3) set.push([g + 1, n]);
+    return R.shuffle(set);
+  }
+  function pieceName(n, d) { return n + ' ' + (d === 2 ? (n === 1 ? 'half' : 'halves') : (n === 1 ? 'fourth' : 'fourths')); }
+  K.shapes(CH, {
+    'g2-groups': [
+      [1, 'tap', function (lv) {
+        var g = R.int(2, lv === 1 ? 3 : 4), n = R.int(2, 5); if (g === n) n++;
+        var set = grpPics(g, n);
+        return { q: 'Tap the picture that shows <b>' + g + ' groups of ' + n + '</b>.', type: 'tap', tiles: set.map(function (p) { return plates(p[0], p[1], 'dot', 'Plates'); }), answer: set.findIndex(function (p) { return p[0] === g && p[1] === n; }), answerText: g + ' plates with ' + n + ' on each',
+          hint: 'Count the plates first. You need ' + g + '. Then check ' + n + ' on each.', steps: ['Count the plates: ' + g + '.', 'Count one plate: ' + n + '.'],
+          explain: g + ' plates with ' + n + ' on each plate is ' + g + ' groups of ' + n + '.', meta: { k: 'g2-grp-tap', set: set, g: g, n: n } };
+      }],
+      [1, 'fill', function (lv) {
+        var g = R.int(3, lv === 1 ? 4 : 5), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 6), blanks = [];
+        for (var i = 2; i <= g; i++) blanks.push(i * n);
+        return { q: 'Skip count to find <b>' + g + ' groups of ' + n + '</b>.', type: 'fill', fill: n + ', ' + blanks.map(function () { return '[[]]'; }).join(', '), answers: blanks, fig: plates(g, n, 'dot'),
+          hint: 'Count by ' + n + 's, once for each plate.', steps: ['Start at ' + n + '. Add ' + n + ' each time.'],
+          explain: skip(g, n) + '. So ' + g + ' groups of ' + n + ' is ' + g * n + '.', meta: { k: 'g2-grp-fill', g: g, n: n } };
+      }],
+      [2, 'match', function (lv) {
+        var p = [], seen = {};
+        while (p.length < 3) { var g = R.int(2, 5), n = R.int(2, 5); if (seen[g * n]) continue; seen[g * n] = 1; p.push([g + ' groups of ' + n, String(g * n)]); }
+        return { q: 'Match each set of groups to how many in all.', type: 'match', pairs: p,
+          hint: 'Skip count by the number in each group.', steps: ['3 groups of 4: 4, 8, 12.'],
+          explain: p.map(function (x) { return x[0] + ' is ' + x[1]; }).join('. ') + '.', meta: { k: 'g2-grp-match', pairs: p } };
+      }],
+      [2, 'mistake', function (lv) {
+        var g = R.int(3, 5), n = R.int(3, 6), name = who(), truth = !R.int(0, 2), said = truth ? g * n : g + n;
+        var right = g + ' groups of ' + n + ' is ' + rep(g, n) + ' = ' + g * n + '.';
+        return { q: name + ' says <b>' + g + ' groups of ' + n + '</b> is ' + said + ' in all. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: plates(g, n, 'dot'),
+          why: why(right, ['Add the number of groups and the number in a group.', 'Count only one group.', 'Count the plates.']),
+          hint: 'Skip count by ' + n + 's, once for each group.', steps: [right], explain: right, meta: { k: 'g2-grp-tf', g: g, n: n, said: said } };
+      }]
+    ],
+    'g2-parts': [
+      [1, 'match', function (lv) {
+        var d = lv === 1 ? 2 : R.pick([2, 4]), p = R.shuffle([1, 2, 3, 4]).slice(0, 3).map(function (w) { return [pieceName(w * d, d), w + ' whole' + (w > 1 ? 's' : '')]; });
+        return { q: 'Match the pieces to the wholes they make.', type: 'match', pairs: p,
+          hint: (d === 2 ? '2 halves' : '4 fourths') + ' make 1 whole.', steps: ['Count the pieces in ' + d + 's. Each ' + d + ' is one whole.'],
+          explain: p.map(function (x) { return x[0] + ' make ' + x[1]; }).join('. ') + '.', meta: { k: 'g2-parts-match', pairs: p } };
+      }],
+      [1, 'tap', function (lv) {
+        var d = lv === 1 ? 2 : 4, set = R.shuffle([1, 2, 3]).map(function (w) { return w * d; }), w = R.int(1, 3);
+        return { q: 'Tap the picture that makes <b>' + w + ' whole' + (w > 1 ? 's' : '') + '</b>.', type: 'tap', tiles: set.map(function (n) { return partsToWholes(n, d); }), answer: set.indexOf(w * d), answerText: pieceName(w * d, d),
+          hint: 'Count the full circles in each picture.', steps: [(d === 2 ? '2 halves' : '4 fourths') + ' make 1 whole circle.'],
+          explain: pieceName(w * d, d) + ' make ' + w + ' whole' + (w > 1 ? 's' : '') + '.', meta: { k: 'g2-parts-tap', set: set, d: d, w: w } };
+      }],
+      [2, 'pick', function (lv) {
+        var target = R.pick([2, 3]), opts = R.shuffle([[target * 2, 2], [target * 4, 4], [target * 2 + 1, 2], [target * 4 - 2, 4], [target, 2]]);
+        var ans = opts.map(function (o, j) { return o[0] === target * o[1] ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every amount that makes exactly <b>' + target + ' wholes</b>.', type: 'pick', options: opts.map(function (o) { return pieceName(o[0], o[1]); }), answer: ans,
+          hint: '2 halves make 1 whole. 4 fourths make 1 whole.', steps: [target + ' wholes is ' + target * 2 + ' halves or ' + target * 4 + ' fourths.'],
+          explain: pieceName(target * 2, 2) + ' and ' + pieceName(target * 4, 4) + ' each make ' + target + ' wholes.', meta: { k: 'g2-parts-pick', opts: opts, target: target } };
+      }],
+      [3, 'mistake', function (lv) {
+        var d = R.pick([2, 4]), w = R.int(2, 3), n = w * d, name = who(), truth = !R.int(0, 2), said = truth ? w : n;
+        var right = (d === 2 ? '2 halves' : '4 fourths') + ' make 1 whole, so ' + pieceName(n, d) + ' make ' + w + ' wholes.';
+        return { q: name + ' says ' + pieceName(n, d) + ' of a pie make <b>' + said + ' whole pies</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Every piece is a whole pie.', 'Halves and fourths are the same size.', 'You need 10 pieces for a whole.']),
+          hint: 'How many ' + (d === 2 ? 'halves' : 'fourths') + ' make one whole?', steps: [right], explain: right, meta: { k: 'g2-parts-tf', n: n, d: d, said: said } };
+      }]
+    ],
+    'g2-share': [
+      [1, 'match', function (lv) {
+        var p = [], seen = {};
+        while (p.length < 3) { var k = R.int(2, lv === 1 ? 3 : 4), e = R.int(1, 5); if (seen[e]) continue; seen[e] = 1; p.push([k * e + ' shared by ' + k, e + ' each']); }
+        return { q: 'Match each sharing to how many each person gets.', type: 'match', pairs: p,
+          hint: 'Deal them out one at a time, or think: how many groups of the same size?', steps: ['12 shared by 3: 3 friends get 4 each, because 4 + 4 + 4 = 12.'],
+          explain: p.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'g2-share-match', pairs: p } };
+      }],
+      [1, 'story', function (lv) {
+        var name = who(), k = R.int(2, lv === 1 ? 3 : 4), e = R.int(2, Math.floor(12 / k)), n = k * e, c = R.pick(['grapes', 'crackers', 'stickers', 'maple cookies']);
+        return { q: name + ' shares ' + n + ' ' + c + ' equally with ' + (k === 2 ? '1 friend' : (k - 1) + ' friends') + '. That is ' + k + ' people in all. How many ' + c + ' does each person get?', type: 'num', answer: e, fig: lv === 1 ? share(n, k, k + ' people') : '',
+          hint: 'Deal one to each of the ' + k + ' people, again and again.', steps: ['Each round gives out ' + k + '.', 'After ' + e + ' rounds all ' + n + ' are gone.'],
+          explain: n + ' shared by ' + k + ' is ' + e + ' each.', meta: { k: 'g2-share-story', n: n, per: k } };
+      }],
+      [2, 'mistake', function (lv) {
+        var k = R.int(2, 4), e = R.int(2, 4), n = k * e, name = who(), truth = !R.int(0, 2), said = truth ? e : (e === k ? e + 1 : k);
+        var right = 'Deal ' + n + ' into ' + k + ' equal groups. Each group gets ' + e + ', because ' + rep(k, e) + ' = ' + n + '.';
+        return { q: name + ' shares ' + n + ' apples equally into ' + k + ' baskets and says each basket gets <b>' + said + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Each basket gets as many as there are baskets.', 'Each basket gets half of them.', 'Put all the apples in the first basket.']),
+          hint: 'Check: does ' + said + ' in each of ' + k + ' baskets make ' + n + '?', steps: [right], explain: right, meta: { k: 'g2-share-tf', n: n, per: k, said: said } };
+      }]
+    ],
+    'g2-takeaway': [
+      [1, 'order', function (lv) {
+        var k = lv === 1 ? 2 : R.int(2, 5), g = R.int(3, Math.min(5, Math.floor(15 / k))), seq = [];
+        for (var i = g; i >= 0; i--) seq.push(i * k);
+        return { q: 'Take away ' + k + ' at a time from ' + g * k + ' until you reach 0. Put the numbers in order.', type: 'order', items: seq.map(String), first: 'start', last: 'end',
+          hint: 'Start at ' + g * k + '. Take away ' + k + ' each time.', steps: [g * k + ' &minus; ' + k + ' = ' + (g - 1) * k + '.'],
+          explain: seq.join(', ') + '. That is ' + g + ' groups of ' + k + '.', meta: { k: 'g2-take-order', per: k, n: g * k } };
+      }],
+      [1, 'story', function (lv) {
+        var name = who(), k = lv === 1 ? 2 : R.int(2, 5), g = R.int(2, Math.floor(12 / k)), n = k * g, c = R.pick([['apples', 'bag'], ['mittens', 'pair'], ['markers', 'cup'], ['pucks', 'bucket']]);
+        if (c[0] === 'mittens') k = 2, n = k * g;
+        return { q: name + ' has ' + n + ' ' + c[0] + ' and puts ' + k + ' in each ' + c[1] + '. How many ' + (c[1] === 'pair' ? 'pairs' : c[1] + 's') + '?', type: 'num', answer: n / k, fig: lv === 1 ? D.things(n, { kind: 'cube', cols: 12, r: 9 }) : '',
+          hint: 'Take away ' + k + ' at a time. Count how many times.', steps: ['Count by ' + k + 's to ' + n + ': ' + skip(n / k, k) + '.'],
+          explain: n + ' in groups of ' + k + ' makes ' + n / k + ' groups.', meta: { k: 'g2-take-story', n: n, per: k } };
+      }],
+      [2, 'mistake', function (lv) {
+        var k = R.int(2, 5), g = R.int(2, 5), n = k * g, name = who(), truth = !R.int(0, 2), said = truth ? g : n - k === g ? g + 1 : n - k;
+        var right = 'Take away ' + k + ' at a time: ' + Array.apply(null, Array(g + 1)).map(function (_, i) { return n - i * k; }).join(', ') + '. That is ' + g + ' groups.';
+        return { q: name + ' puts ' + n + ' crayons in boxes of ' + k + ' and says that makes <b>' + said + ' boxes</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Take away ' + k + ' just once.', 'The number of boxes is the number of crayons.', 'Add ' + k + ' to the number of crayons.']),
+          hint: 'Take away ' + k + ' at a time. Count the jumps to 0.', steps: [right], explain: right, meta: { k: 'g2-take-tf', n: n, per: k, said: said } };
+      }]
+    ],
+    'g2-story': [
+      [1, 'which', function (lv) {
+        var name = who(), g = R.int(2, 4), n = R.int(2, 5), kind = R.pick(['total', 'share']), q;
+        if (kind === 'total') q = name + ' has ' + g + ' bags with ' + n + ' marbles in each bag. How many marbles in all?';
+        else q = name + ' has ' + g * n + ' marbles to share equally into ' + g + ' bags. How many in each bag?';
+        return { q: q + ' <b>Which way solves it?</b>', type: 'mc', options: ['Put equal groups together', 'Share out equally'], answer: kind === 'total' ? 0 : 1,
+          hint: kind === 'total' ? 'Do you know how many in each group?' : 'Do you know the total, and need to split it?',
+          steps: [kind === 'total' ? 'The groups are already made. Put them together: ' + rep(g, n) + ' = ' + g * n + '.' : 'Split the total into ' + g + ' equal groups: ' + n + ' each.'],
+          explain: kind === 'total' ? g * n + ' marbles in all.' : n + ' in each bag.', meta: { k: 'g2-which', kind: kind } };
+      }],
+      [1, 'tap', function (lv) {
+        var name = who(), g = R.int(2, 4), n = R.int(2, 5); if (g === n) n++;
+        var set = grpPics(g, n);
+        return { q: name + ' puts <b>' + n + '</b> strawberries on each of <b>' + g + '</b> plates. Tap the picture that shows it.', type: 'tap', tiles: set.map(function (p) { return plates(p[0], p[1], 'dot', 'Plates'); }), answer: set.findIndex(function (p) { return p[0] === g && p[1] === n; }), answerText: g + ' plates with ' + n + ' each',
+          hint: 'Count the plates, then count one plate.', steps: ['You need ' + g + ' plates with ' + n + ' on each.'],
+          explain: g + ' plates with ' + n + ' on each: ' + g * n + ' strawberries.', meta: { k: 'g2-story-tap', set: set, g: g, n: n } };
+      }],
+      [2, 'mistake', function (lv) {
+        var g = R.int(3, 5), n = R.int(2, 4), name = who(), truth = !R.int(0, 2), said = truth ? g * n : g + n;
+        var right = g + ' vases with ' + n + ' flowers each: ' + rep(g, n) + ' = ' + g * n + '.';
+        return { q: 'There are ' + g + ' vases. Each vase has ' + n + ' flowers. ' + name + ' says there are <b>' + said + '</b> flowers in all. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Add the number of vases and the number of flowers.', 'Count the flowers in one vase.', 'There are as many flowers as vases.']),
+          hint: 'Picture ' + g + ' vases. Skip count by ' + n + 's.', steps: [right], explain: right, meta: { k: 'g2-story-tf', g: g, n: n, said: said } };
+      }]
+    ]
+  });
 })();

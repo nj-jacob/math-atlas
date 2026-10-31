@@ -2,10 +2,11 @@
    (assets/lesson.js and assets/manip.js). Grade 7 only; the shared files are never changed here.
    - K.slides(frames): a "Watch" clip made from the chapter's own drawings. Each frame fades in and its drawing builds itself.
    - K.lab(html, init, tasks): a "Try it" built from one of the chapter's interactive drawings, with challenges that check themselves.
-   - K.ck(skillId, level): a quick check made by a practice skill, so lessons, practice and check-ups share one question bank. */
+   - K.ck(skillId, level): a quick check made by a practice skill, so lessons, practice and check-ups share one question bank.
+   - K.shapes(chapterId, SHAPES): more ways to ask each practice skill, with small helpers for writing them (K.why, K.uniq, K.picks). */
 (function () {
   'use strict';
-  var A = window.Atlas, K = (A.k7 = {});
+  var A = window.Atlas, R = A.R, K = (A.k7 = {});
 
   /* frames: [{ say: caption, fig: html or function returning html, ms }] */
   K.slides = function (frames) {
@@ -92,4 +93,37 @@
   };
   /* a fixed question, or a function that makes one */
   K.q = function (fn) { return fn; };
+  /* ---------- question shapes: more ways to practise each skill (see docs/QUESTIONS.md) ----------
+     Each chapter ends with a SHAPES block, { skillId: [[minLevel, 'shape', fn(lv)], ...] }, passed to K.shapes.
+     Every shape sets meta.k, and tests/verify/grade7.js checks its answer independently. */
+  K.name = function () { return A.Q.name(); };
+  K.two = function () { return A.Q.two(); };
+  /* a "why" list for true/false questions: the right reason plus wrong ones, shuffled */
+  K.why = function (right, wrong) { var o = R.shuffle([right].concat(wrong)); return { options: o, answer: o.indexOf(right) }; };
+  /* n different values from make(); key(v) says when two values count as the same */
+  K.uniq = function (n, make, key) {
+    var out = [], seen = {}, tries = 0;
+    key = key || String;
+    while (out.length < n && tries++ < 400) { var v = make(), k = key(v); if (!seen[k]) { seen[k] = 1; out.push(v); } }
+    return out;
+  };
+  /* indexes of the values that pass test, or null when none or all of them do (a pick question needs both kinds) */
+  K.picks = function (vals, test) {
+    var a = [];
+    vals.forEach(function (v, i) { if (test(v)) a.push(i); });
+    return a.length && a.length < vals.length ? a : null;
+  };
+  /* keep calling make() until it returns a question (make returns null to ask for another try) */
+  K.retry = function (make) { for (var i = 0; i < 60; i++) { var q = make(); if (q) return q; } throw new Error('shape could not be made'); };
+  /* turn on the shapes for a chapter, and a fresh chapter quiz each time */
+  K.shapes = function (chId, SHAPES) {
+    var ch = A.chapters[chId];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  };
 })();

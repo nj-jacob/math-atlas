@@ -374,4 +374,140 @@ A.yt({ q: '<span class="math">7.38 &divide; 3 = ?</span>', type: 'num', answer: 
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name, OPS = ['Add', 'Subtract', 'Multiply', 'Divide'];
+    function h(x) { return dec(x * 10); } /* x in hundredths */
+    function wayQ(story, op, how) {
+      return { q: story + ' Which way do you solve it?', type: 'mc', options: OPS.slice(), answer: op, hint: 'Picture what happens in the story.', steps: [how],
+        explain: how, meta: { k: 'g6-dops-way' } };
+    }
+    var SHAPES = {
+      'do-est': [
+        [1, 'line', function () {
+          var a = R.int(110, 980), b = R.int(110, 980);
+          while (a % 100 === 50 || b % 100 === 50) { a = R.int(110, 980); b = R.int(110, 980); }
+          var e = Math.round(a / 100) + Math.round(b / 100);
+          return { q: 'Round each number to the nearest whole, then place your estimate for <span class="math">' + h(a) + ' + ' + h(b) + '</span>.', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: e,
+            hint: 'Round ' + h(a) + ' and ' + h(b) + ' to whole numbers first.', steps: [h(a) + ' is about ' + Math.round(a / 100) + '. ' + h(b) + ' is about ' + Math.round(b / 100) + '.', 'Add: ' + e + '.'], explain: 'About ' + e + '.', meta: { k: 'g6-est-line', a: a, b: b } };
+        }],
+        [1, 'mistake', function () {
+          var a = R.int(110, 980), b = R.int(110, 980), who = nm();
+          while (a % 100 < 55 || a % 100 > 95) a = R.int(110, 980);
+          var e = Math.round(a / 100) + Math.round(b / 100), truth = !R.int(0, 2), said = truth ? e : Math.floor(a / 100) + Math.round(b / 100);
+          return { q: who + ' estimates <span class="math">' + h(a) + ' + ' + h(b) + '</span> as about <b>' + said + '</b>. True or false: that is the estimate you get by rounding each number to the nearest whole.', type: 'tf', answer: truth,
+            why: why(h(a) + ' rounds to ' + Math.round(a / 100) + ' and ' + h(b) + ' rounds to ' + Math.round(b / 100) + ', so the estimate is ' + e + '.', ['To estimate, just drop the decimal part.', 'An estimate can be any number close by.']),
+            hint: 'Round each number first.', steps: [h(a) + ' &rarr; ' + Math.round(a / 100) + ', ' + h(b) + ' &rarr; ' + Math.round(b / 100) + '.'], explain: 'The estimate is ' + e + '.', meta: { k: 'g6-est-tf', a: a, b: b, said: said } };
+        }],
+        [1, 'story', function () {
+          var who = nm(), p, s, budget = R.pick([20, 25, 30]);
+          do { p = [R.int(250, 990), R.int(250, 990), R.int(250, 990)]; s = p[0] + p[1] + p[2]; } while (Math.abs(s - budget * 100) < 200);
+          return { q: who + ' has $' + budget + '. A scarf costs ' + A.money(p[0]) + ', a mug ' + A.money(p[1]) + ' and a book ' + A.money(p[2]) + '. Estimate: is that enough for all three?', type: 'mc', options: ['Yes', 'No'], answer: s <= budget * 100 ? 0 : 1,
+            hint: 'Round each price to the nearest dollar and add.', steps: ['About $' + Math.round(p[0] / 100) + ' + $' + Math.round(p[1] / 100) + ' + $' + Math.round(p[2] / 100) + ' = $' + (Math.round(p[0] / 100) + Math.round(p[1] / 100) + Math.round(p[2] / 100)) + '.'],
+            explain: 'The real total is ' + A.money(s) + '.', meta: { k: 'g6-est-story', p: p, budget: budget } };
+        }]
+      ],
+      'do-addsub': [
+        [1, 'way', function () {
+          var who = nm(), a = R.int(150, 990), b = R.int(110, a - 20), pick = R.int(0, 1);
+          return pick ? wayQ(who + ' had ' + h(a) + ' m of string and used ' + h(b) + ' m. How much is left?', 1, 'Some is taken away and you want what is left: subtract.')
+            : wayQ(who + ' walked ' + h(a) + ' km on Saturday and ' + h(b) + ' km on Sunday. How far is that in all?', 0, 'Two amounts join together: add.');
+        }],
+        [1, 'story', function () {
+          var who = nm(), a = R.int(150, 990), b = R.int(110, a - 20), op = R.pick([1, -1]);
+          var q = op > 0 ? 'A backpack has a mass of ' + h(a) + ' kg. ' + who + ' adds a lunch with a mass of ' + h(b) + ' kg. What is the mass in all?' : who + ' had ' + A.money(a) + '. A snack cost ' + A.money(b) + '. How much money is left?';
+          return { q: q, type: 'num', unit: op > 0 ? 'kg' : '$', answer: (a + op * b) / 100, hint: 'Line up the decimal points.', steps: [h(a) + (op > 0 ? ' + ' : ' &minus; ') + h(b) + ' = ' + h(a + op * b) + '.'],
+            explain: 'The answer is ' + h(a + op * b) + '.', meta: { k: 'g6-as-story', a: a, b: b } };
+        }],
+        [1, 'mistake', function () {
+          var a = R.int(11, 99), b = R.int(101, 999), who = nm(), truth = !R.int(0, 2); if (b % 10 === 0) b++;
+          var right = a * 100 + b * 10, said = truth ? right : a * 10 + b * 10;
+          return { q: who + ' says <span class="math">' + dec(a * 100) + ' + ' + dec(b * 10) + ' = ' + dec(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Lining up the decimal points gives ' + dec(a * 100, 2) + ' + ' + dec(b * 10) + ' = ' + dec(right) + '.', ['Line up the last digits on the right.', 'Add the digits and put the point anywhere.']),
+            hint: 'Line up the decimal points. Write ' + dec(a * 100) + ' as ' + dec(a * 100, 2) + '.', steps: [dec(a * 100, 2) + ' + ' + dec(b * 10) + ' = ' + dec(right) + '.'], explain: 'The sum is ' + dec(right) + '.', meta: { k: 'g6-as-tf', a: a * 100, b: b * 10, said: said } };
+        }]
+      ],
+      'do-mult': [
+        [1, 'fill', function () {
+          var w = R.int(2, 9), t = R.int(1, 9);
+          return { q: 'Multiply <span class="math">' + w + ' &times; 0.' + t + '</span>.', type: 'fill', fill: w + ' &times; ' + t + ' tenths = [[]] tenths = [[]]', answers: [w * t, w * t / 10],
+            hint: 'Multiply the tenths like whole numbers first.', steps: [w + ' &times; ' + t + ' = ' + w * t + ' tenths.', w * t + ' tenths = ' + dec(w * t * 100) + '.'], explain: w + ' &times; 0.' + t + ' = ' + dec(w * t * 100) + '.', meta: { k: 'g6-mul-fill', w: w, t: t } };
+        }],
+        [1, 'story', function () {
+          var w = R.int(3, 9), t = R.int(2, 9), c = R.pick([['Each bead has a mass of', 'g', 'beads', 'What is their total mass?'], ['Each tile is', 'm long', 'tiles are placed end to end', 'How long is the row?'], ['A bottle holds', 'L', 'bottles are filled', 'How much is that in all?']]);
+          return { q: c[0] + ' 0.' + t + ' ' + c[1] + '. ' + w + ' ' + c[2] + '. ' + c[3], type: 'num', answer: w * t / 10, hint: w + ' groups of 0.' + t + '.', steps: [w + ' &times; ' + t + ' tenths = ' + w * t + ' tenths = ' + dec(w * t * 100) + '.'],
+            explain: dec(w * t * 100) + '.', meta: { k: 'g6-mul-num', w: w, t: t } };
+        }],
+        [1, 'mistake', function () {
+          var w = R.int(3, 9), t = R.int(2, 9), who = nm(), truth = !R.int(0, 2), said = truth ? w * t * 100 : w * t * 10;
+          return { q: who + ' says <span class="math">' + w + ' &times; 0.' + t + ' = ' + dec(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(w + ' &times; ' + t + ' tenths = ' + w * t + ' tenths, which is ' + dec(w * t * 100) + '.', ['Count the digits and put the point two places from the end.', 'Multiplying always makes a bigger number.']),
+            hint: 'Count tenths: ' + w + ' &times; ' + t + ' tenths.', steps: [w * t + ' tenths = ' + dec(w * t * 100) + '.'], explain: w + ' &times; 0.' + t + ' = ' + dec(w * t * 100) + '.', meta: { k: 'g6-mul-tf', w: w, t: t, said: said } };
+        }],
+        [2, 'match', function () {
+          var ts = R.shuffle([2, 3, 4, 5, 6, 7, 8, 9]).slice(0, 3), ws = R.shuffle([2, 3, 4, 5, 6, 7]).slice(0, 3), seen = {}, items = [];
+          ts.forEach(function (t, j) { var w = ws[j]; if (!seen[w * t]) { seen[w * t] = 1; items.push([w, t]); } });
+          while (items.length < 3) { var w2 = R.int(2, 9), t2 = R.int(2, 9); if (!seen[w2 * t2]) { seen[w2 * t2] = 1; items.push([w2, t2]); } }
+          return { q: 'Match each product to its answer.', type: 'match', pairs: items.map(function (it) { return [it[0] + ' &times; 0.' + it[1], dec(it[0] * it[1] * 100)]; }),
+            hint: 'Multiply the whole numbers, then make it tenths.', steps: ['For example, 4 &times; 0.3 = 12 tenths = 1.2.'], explain: items.map(function (it) { return it[0] + ' &times; 0.' + it[1] + ' = ' + dec(it[0] * it[1] * 100); }).join('. ') + '.', meta: { k: 'g6-mul-match' } };
+        }]
+      ],
+      'do-divt': [
+        [1, 'fill', function () {
+          var t = R.pick([2, 4, 5]), w = R.int(1, 6) * (t === 4 ? 2 : 1);
+          return { q: 'Work out <span class="math">' + w + ' &divide; 0.' + t + '</span> in two steps.', type: 'fill', fill: 'Tenths in ' + w + ': [[]] &nbsp; Groups of ' + t + ' tenths: [[]]', answers: [w * 10, w * 10 / t],
+            hint: 'One whole is 10 tenths.', steps: [w + ' = ' + w * 10 + ' tenths.', w * 10 + ' &divide; ' + t + ' = ' + w * 10 / t + '.'], explain: w + ' &divide; 0.' + t + ' = ' + w * 10 / t + '.', meta: { k: 'g6-dvt-fill', w: w, t: t } };
+        }],
+        [1, 'mistake', function () {
+          var w = R.int(2, 9), who = nm(), truth = !R.int(0, 2), said = truth ? w * 2 : w / 2;
+          return { q: who + ' says <span class="math">' + w + ' &divide; 0.5 = ' + dec(said * 1000) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Each whole holds two halves, so ' + w + ' wholes hold ' + w * 2 + ' halves.', ['Dividing always makes a number smaller.', 'Dividing by 0.5 is the same as dividing by 2.']),
+            hint: 'How many halves fit in ' + w + '?', steps: [w + ' &times; 2 = ' + w * 2 + '.'], explain: w + ' &divide; 0.5 = ' + w * 2 + '.', meta: { k: 'g6-dvt-tf', w: w, said: said } };
+        }],
+        [1, 'way', function () {
+          var w = R.int(2, 9), t = R.pick([2, 5]), who = nm();
+          return wayQ(who + ' has ' + w + ' L of juice. Each cup holds 0.' + t + ' L. How many cups can ' + who + ' fill?', 3, 'You want how many groups of 0.' + t + ' fit into ' + w + ': divide.');
+        }]
+      ],
+      'do-divw': [
+        [1, 'story', function () {
+          var n = R.int(2, 6), each = R.int(105, 990), k = each * n, two = Q.two();
+          return { q: two[0] + ' and friends share ' + A.money(k) + ' equally among ' + n + ' people. How much does each person get?', type: 'num', unit: '$', answer: each / 100,
+            hint: 'Divide ' + A.money(k) + ' by ' + n + '.', steps: [A.money(k) + ' &divide; ' + n + ' = ' + A.money(each) + '.'], explain: 'Each gets ' + A.money(each) + '.', meta: { k: 'g6-dvw-story', total: k, n: n } };
+        }],
+        [1, 'mistake', function () {
+          var n = R.int(2, 6), each = R.int(11, 99), k = each * n, who = nm(), truth = !R.int(0, 2), said = truth ? each : each * 10;
+          return { q: who + ' says <span class="math">' + dec(k * 100) + ' &divide; ' + n + ' = ' + dec(said * 100) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Estimate: ' + dec(k * 100) + ' &divide; ' + n + ' is about ' + Math.round(k / n / 10) + ', so the answer is ' + dec(each * 100) + '.', ['The decimal point always moves one place right.', 'Dividing by a whole number removes the decimal point.']),
+            hint: 'Estimate first. Is the answer about right?', steps: [dec(k * 100) + ' &divide; ' + n + ' = ' + dec(each * 100) + '.'], explain: 'The answer is ' + dec(each * 100) + '.', meta: { k: 'g6-dvw-tf', k10: k, n: n, said: said } };
+        }],
+        [1, 'match', function () {
+          var items = [], seen = {};
+          while (items.length < 3) { var n = R.int(2, 5), each = R.int(11, 49); if (!seen[each]) { seen[each] = 1; items.push([each * n, n]); } }
+          return { q: 'Match each division to its answer.', type: 'match', pairs: items.map(function (it) { return [dec(it[0] * 100) + ' &divide; ' + it[1], dec(it[0] / it[1] * 100)]; }),
+            hint: 'Divide as if there were no point, then put it back.', steps: ['Estimate each one to check.'], explain: items.map(function (it) { return dec(it[0] * 100) + ' &divide; ' + it[1] + ' = ' + dec(it[0] / it[1] * 100); }).join('. ') + '.', meta: { k: 'g6-dvw-match' } };
+        }]
+      ],
+      'do-multi': [
+        [1, 'order', function () {
+          var n = R.int(2, 5), p = R.int(105, 450), extra = R.int(150, 600), pay = Math.ceil((n * p + extra) / 500) * 500 + 500, item = R.pick(['muffins', 'pens', 'apples']);
+          return { q: 'You buy ' + n + ' ' + item + ' at ' + A.money(p) + ' each and a drink for ' + A.money(extra) + '. You pay with ' + A.money(pay) + '. Put the steps for finding your change in order.', type: 'order',
+            items: ['Multiply to find the cost of the ' + item + '.', 'Add the cost of the drink.', 'Subtract the total from ' + A.money(pay) + '.'], first: 'first', last: 'last',
+            hint: 'You need the total cost before you can find the change.', steps: ['Cost of ' + item + ', then the total, then the change.'], explain: 'Multiply, add, then subtract.', meta: { k: 'g6-multi-order' } };
+        }],
+        [1, 'fill', function () {
+          var n = R.int(2, 5), p = R.int(105, 450), pay = Math.ceil(n * p / 500) * 500 + 500, item = R.pick(['notebooks', 'juice boxes', 'markers']);
+          return { q: 'You buy ' + n + ' ' + item + ' at ' + A.money(p) + ' each and pay with ' + A.money(pay) + '.', type: 'fill', fill: 'Cost: $[[]] &nbsp; Change: $[[]]', answers: [n * p / 100, (pay - n * p) / 100],
+            hint: 'Multiply first, then subtract.', steps: [n + ' &times; ' + A.money(p) + ' = ' + A.money(n * p) + '.', A.money(pay) + ' &minus; ' + A.money(n * p) + ' = ' + A.money(pay - n * p) + '.'], explain: 'Change: ' + A.money(pay - n * p) + '.', meta: { k: 'g6-multi-fill', n: n, p: p, pay: pay } };
+        }],
+        [1, 'mistake', function () {
+          var n = R.int(2, 5), p = R.int(105, 450), extra = R.int(150, 600), tot = n * p + extra, pay = Math.ceil(tot / 500) * 500 + 500, who = nm(), truth = !R.int(0, 2), said = truth ? pay - tot : pay - n * p;
+          return { q: 'You buy ' + n + ' tickets at ' + A.money(p) + ' each and popcorn for ' + A.money(extra) + '. You pay with ' + A.money(pay) + '. ' + who + ' says the change is <b>' + A.money(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('The total is ' + A.money(tot) + ', so the change is ' + A.money(pay - tot) + '.', ['The change is what the tickets cost.', 'You only subtract the popcorn.']),
+            hint: 'Find the full total first.', steps: [n + ' &times; ' + A.money(p) + ' + ' + A.money(extra) + ' = ' + A.money(tot) + '.', A.money(pay) + ' &minus; ' + A.money(tot) + ' = ' + A.money(pay - tot) + '.'], explain: 'Change: ' + A.money(pay - tot) + '.', meta: { k: 'g6-multi-tf', n: n, p: p, extra: extra, pay: pay, said: said } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

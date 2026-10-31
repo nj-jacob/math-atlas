@@ -544,13 +544,8 @@ thumbs() +
             explain: k + '/' + tot + ' is ' + (k * 2 < tot ? 'less than' : k * 2 > tot ? 'more than' : 'equal to') + ' 1/2.' };
         }
         var o = R.mc(k + '/' + tot, [(tot - k) + '/' + tot, k + '/' + (tot - k), '1/' + tot]);
-        var pie = '';
-        for (var i = 0; i < tot; i++) {
-          var a0 = (-90 + i * 360 / tot) * Math.PI / 180, a1 = (-90 + (i + 1) * 360 / tot) * Math.PI / 180;
-          pie += '<path d="M70,70 L' + (70 + 62 * Math.cos(a0)) + ',' + (70 + 62 * Math.sin(a0)) + ' A62,62 0 0 1 ' + (70 + 62 * Math.cos(a1)) + ',' + (70 + 62 * Math.sin(a1)) + ' Z" style="fill:' + (i < k ? 'var(--strand)' : 'var(--card)') + ';stroke:var(--ink)" stroke-width="2"/>';
-        }
         return { q: 'A spinner has ' + tot + ' equal sections. ' + k + ' are shaded. What is the probability of landing on a shaded section?', type: 'mc', options: o.options, answer: o.answer,
-          fig: A.svg(140, 140, pie, 'Spinner with ' + k + ' of ' + tot + ' sections shaded'), hint: 'Shaded sections over all sections.',
+          fig: spinner(k, tot), hint: 'Shaded sections over all sections.',
           steps: ['Count the shaded sections: ' + k + '.', 'Count all the sections: ' + tot + '.', 'Probability = ' + k + '/' + tot + '.'], explain: k + ' out of ' + tot + ' equally likely sections: ' + k + '/' + tot + '.' };
       } },
       { id: 'da-exp', name: 'Theoretical and experimental', code: 'D2.2', gen: function (lv) {
@@ -569,4 +564,215 @@ thumbs() +
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  function mth(x) { return '<span class="math">' + x + '</span>'; }
+  /* a spinner with tot equal sections, k of them shaded */
+  function spinner(k, tot, r) {
+    r = r || 62;
+    var s = '', c = r + 8;
+    for (var i = 0; i < tot; i++) {
+      var a0 = (-90 + i * 360 / tot) * Math.PI / 180, a1 = (-90 + (i + 1) * 360 / tot) * Math.PI / 180;
+      s += '<path d="M' + c + ',' + c + ' L' + (c + r * Math.cos(a0)) + ',' + (c + r * Math.sin(a0)) + ' A' + r + ',' + r + ' 0 0 1 ' + (c + r * Math.cos(a1)) + ',' + (c + r * Math.sin(a1)) + ' Z" style="fill:' + (i < k ? 'var(--strand)' : 'var(--card)') + ';stroke:var(--ink)" stroke-width="2"/>';
+    }
+    return A.svg(2 * c, 2 * c, s, 'Spinner with ' + k + ' of ' + tot + ' sections shaded');
+  }
+  /* a bar graph whose bars can be tapped (data-hit = the bar's index) */
+  function vbars(vals, names, title) {
+    var top = Math.ceil(Math.max.apply(null, vals) / 5) * 5, W = 70 + vals.length * 80, s = '';
+    for (var t = 0; t <= top; t += 5) { var y = 170 - t / top * 140; s += '<line x1="50" y1="' + y + '" x2="' + (W - 10) + '" y2="' + y + '" style="stroke:var(--line)"/><text x="44" y="' + (y + 5) + '" text-anchor="end" font-size="13" class="t2">' + t + '</text>'; }
+    vals.forEach(function (v, i) {
+      var h = v / top * 140, x = 64 + i * 80;
+      s += '<g data-hit="' + i + '" aria-label="' + names[i] + ': ' + v + '"><rect x="' + x + '" y="' + (170 - h) + '" width="56" height="' + h + '" rx="4" style="fill:' + SB[i % 3] + '"/>' +
+        '<text x="' + (x + 28) + '" y="192" text-anchor="middle" font-size="14">' + names[i] + '</text></g>';
+    });
+    s += '<line x1="50" y1="170" x2="' + (W - 10) + '" y2="170" style="stroke:var(--ink)" stroke-width="2"/>';
+    return A.svg(W, 200, s, (title || 'Bar graph') + ': ' + names.map(function (n, i) { return n + ' ' + vals[i]; }).join(', '));
+  }
+  /* k different whole numbers from lo to hi, at least gap apart so bars are easy to tell apart */
+  function distinctVals(k, lo, hi, gap) { var v = []; while (v.length < k) { var x = R.int(lo, hi); if (v.every(function (y) { return Math.abs(x - y) >= (gap || 1); })) v.push(x); } return v; }
+  var FOODS = ['Apples', 'Grapes', 'Pears', 'Kiwis'];
+  var SHAPES = {
+    'da-sample': [
+      [1, 'pick', function (lv) {
+        var who = 'students at the school', good = ['People picked at random from all the ' + who, 'Every 10th name on a list of all the ' + who], bad = ['Only your close friends', 'Only the players on one team', 'Only the first 3 people you see'];
+        var opts = R.shuffle(good.slice(0, R.int(1, 2)).concat(bad));
+        return K.pick('You want to know the favourite lunch of all the ' + who + '. Pick every sample that is <b>representative</b>.', opts, function (o) { return good.indexOf(o) >= 0; }, String, {
+          hint: 'A fair sample gives everyone a chance to be picked.', steps: ['Ask: could anyone at the school be picked?', 'A sample that leaves groups out is biased.'],
+          explain: 'Picking at random, or every 10th name from the full list, gives everyone a chance.', meta: { k: 'g5da-pick' } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = nm(), truth = !R.int(0, 2), plan = truth ? 'picking 30 names at random from the whole school list' : R.pick(['asking only the hockey team', 'asking only friends in the same class', 'asking only the students at the library at lunch']);
+        var right = 'A representative sample gives every student a fair chance to be picked. Picking at random from the whole school list does that.';
+        return K.tf(who, 'that ' + plan + ' is a good way to learn what the whole school thinks.', truth, right,
+          ['Any group of students is fine.', 'Asking friends is best because they answer honestly.', 'A bigger group is always fair, even if it leaves people out.'],
+          { hint: 'Could every student be picked?', meta: { k: 'g5da-tf', plan: plan } });
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [['Population', 'Everyone you want to learn about'], ['Sample', 'The group you actually ask'], ['Biased sample', 'A sample that leaves some groups out']];
+        if (lv > 1) pairs.push(['Random sample', 'Everyone has the same chance to be picked']);
+        return { q: 'Match each word to what it means.', type: 'match', pairs: pairs,
+          hint: 'The population is the whole group. The sample is part of it.', steps: ['Population: the whole group.', 'Sample: the part you ask.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1].toLowerCase(); }).join('. ') + '.', meta: { k: 'g5da-match' } };
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), pop = R.int(3, 9) * 100 + R.int(0, 9) * 10, n = R.int(2, 6) * 10;
+        return { q: who + '\'s school has ' + pop + ' students. ' + who + ' asks ' + n + ' of them about a new club. How many people are in the <b>sample</b>?', type: 'num', answer: n,
+          hint: 'The sample is the people who were actually asked.', steps: ['The population is all ' + pop + ' students.', 'The sample is the ' + n + ' students ' + who + ' asked.'],
+          explain: 'The sample has ' + n + ' people.', meta: { k: 'g5da-story' } };
+      }]
+    ],
+    'da-rel': [
+      [1, 'fill', function (lv) {
+        var tot = R.pick([10, 20, 25, 50]), n = R.int(1, tot - 1), k = 100 / tot;
+        return { q: n + ' of ' + tot + ' students walk to school. Fill in the blanks.', type: 'fill', fill: (n + '/' + tot + ' = [[]]/100') + '<br>' + ('= [[]]%'), answers: [n * k, n * k],
+          fig: lv === 1 ? people(n, tot) : '', hint: 'What times ' + tot + ' makes 100?', steps: [tot + ' &times; ' + k + ' = 100.', n + ' &times; ' + k + ' = ' + n * k + ', so ' + n * k + '/100 = ' + n * k + '%.'],
+          explain: n + '/' + tot + ' = ' + n * k + '%.', meta: { k: 'g5da-relfill' } };
+      }],
+      [1, 'tap', function (lv) {
+        var tot = R.pick([10, 20, 25, 50]), n = R.int(1, tot - 1), pct = n * 100 / tot, set = [pct];
+        [n, 100 - pct, pct + 10 <= 99 ? pct + 10 : pct - 10].forEach(function (v) { if (set.indexOf(v) < 0 && set.length < 3) set.push(v); });
+        set = R.shuffle(set);
+        return { q: 'In a survey, ' + n + ' of ' + tot + ' students have a pet. Tap the hundred grid that shows this relative frequency.', type: 'tap', tiles: set.map(function (v) { return A.draw.grid(v, 9); }), answer: set.indexOf(pct), answerText: 'the grid with ' + pct + ' squares shaded',
+          hint: 'Make ' + n + '/' + tot + ' out of 100.', steps: [n + '/' + tot + ' = ' + pct + '/100.', 'Look for ' + pct + ' shaded squares.'],
+          explain: n + '/' + tot + ' = ' + pct + '%.', meta: { k: 'g5da-reltap' } };
+      }],
+      [1, 'story', function (lv) {
+        var a = R.pick([10, 20, 25]), b = R.pick([20, 25, 50]), x, y;
+        do { x = R.int(2, a - 1); y = R.int(2, b - 1); } while (x * b === y * a);
+        var rooms = ['Room 12', 'Room 14'];
+        return { q: 'In Room 12, ' + x + ' of ' + a + ' students play an instrument. In Room 14, ' + y + ' of ' + b + ' do. Which room has the greater relative frequency?', type: 'mc', options: rooms, answer: x / a > y / b ? 0 : 1,
+          hint: 'Change both to percents, then compare.', steps: ['Room 12: ' + x + '/' + a + ' = ' + x * 100 / a + '%.', 'Room 14: ' + y + '/' + b + ' = ' + y * 100 / b + '%.'],
+          explain: (x / a > y / b ? 'Room 12' : 'Room 14') + ' has the greater relative frequency.', meta: { k: 'g5da-relstory' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var tot = R.pick([20, 25, 50]), n = R.int(1, tot - 1), who = nm(), truth = !R.int(0, 2), said = truth ? n * 100 / tot : n;
+        var right = n + '/' + tot + ' = ' + n * 100 / tot + '/100, so the relative frequency is ' + n * 100 / tot + '%.';
+        return K.tf(who, n + ' out of ' + tot + ' is <b>' + said + '%</b>.', truth, right,
+          ['A count is always the same as a percent.', 'Percent means out of ' + tot + '.', 'Divide ' + tot + ' by ' + n + '.'],
+          { hint: 'Percent means out of 100. Is the total 100?', meta: { k: 'g5da-reltf', said: said } });
+      }]
+    ],
+    'da-graph': [
+      [1, 'tap', function (lv) {
+        var vals = distinctVals(4, 3, lv === 1 ? 18 : 25, lv === 1 ? 3 : 2), most = !R.int(0, 1) || lv === 1, best = vals.indexOf(most ? Math.max.apply(null, vals) : Math.min.apply(null, vals));
+        return { q: 'Students voted for their favourite fruit. Tap the bar for the <b>' + (most ? 'most' : 'least') + ' popular</b> fruit.', type: 'tap', pic: vbars(vals, FOODS, 'Favourite fruit'), answer: String(best), answerText: FOODS[best],
+          hint: (most ? 'The tallest' : 'The shortest') + ' bar has the ' + (most ? 'most' : 'fewest') + ' votes.', steps: ['Compare the heights of the bars.', FOODS[best] + ' has ' + vals[best] + ' votes.'],
+          explain: FOODS[best] + ' is the ' + (most ? 'most' : 'least') + ' popular, with ' + vals[best] + ' votes.', meta: { k: 'g5da-tap', vals: vals, most: most } };
+      }],
+      [1, 'fill', function (lv) {
+        var p = [R.int(3, 12), R.int(3, 12), R.int(3, 12)], q2 = [R.int(3, 12), R.int(3, 12), R.int(3, 12)], cats = ['Walk', 'Bus', 'Car'];
+        return { q: 'Read the Gr 5 bar. Fill in each part.', type: 'fill', fig: stacked([{ name: 'Gr 5', parts: p }, { name: 'Gr 6', parts: q2 }], cats, SB, false), fill: 'Walk: [[]]<br>Bus: [[]]<br>Car: [[]]<br>Total: [[]]', answers: p.concat([p[0] + p[1] + p[2]]),
+          hint: 'Each part of the bar has its number on it. The total is all the parts added.', steps: ['Use the key to match colours to Walk, Bus and Car.', 'Add the parts for the total: ' + p.join(' + ') + ' = ' + (p[0] + p[1] + p[2]) + '.'],
+          explain: 'Gr 5: ' + p.join(', ') + ', total ' + (p[0] + p[1] + p[2]) + '.', meta: { k: 'g5da-fill', parts: p } };
+      }],
+      [1, 'mistake', function (lv) {
+        var z = R.pick([80, 90]), a = R.int(91, 95), b = a + R.int(2, 4), who = nm();
+        var right = 'The real difference is only ' + (b - a) + '. The scale starts at ' + z + ', not 0, so the bar for ' + b + ' only looks much taller.';
+        return K.tf(who, 'the graph shows that ' + b + ' is about three times as many as ' + a + '.', false, right,
+          ['A taller bar always means many times more.', 'The scale does not matter.', 'Graphs always start at 0.'],
+          { fig: misBars(a, b, z, 'Scale from ' + z), hint: 'Look at where the scale begins.', meta: { k: 'g5da-graphtf', a: a, b: b } });
+      }],
+      [2, 'order', function (lv) {
+        var vals = distinctVals(4, 3, 25, 2), idx = [0, 1, 2, 3].sort(function (i, j) { return vals[j] - vals[i]; });
+        return { q: 'Order the fruits from <b>most to least</b> popular.', type: 'order', fig: vbars(vals, FOODS, 'Favourite fruit'), items: idx.map(function (i) { return FOODS[i]; }), first: 'most', last: 'least',
+          hint: 'Start with the tallest bar.', steps: ['Read the value of each bar.', 'Put them from biggest to smallest.'],
+          explain: 'From most to least: ' + idx.map(function (i) { return FOODS[i] + ' (' + vals[i] + ')'; }).join(', ') + '.', meta: { k: 'g5da-order', vals: vals } };
+      }]
+    ],
+    'da-mmm': [
+      [1, 'fill', function (lv) {
+        var n = lv === 1 ? 3 : 5, m = R.int(5, 15), d, last;
+        do { d = []; for (var i = 0; i < n - 1; i++) d.push(m + R.int(-3, 3)); last = m * n - d.reduce(function (x, y) { return x + y; }, 0); } while (last < 1 || Math.abs(last - m) > 6);
+        d.push(last);
+        return { q: 'Find the <b>mean</b> of ' + mth(d.join(', ')) + '. Fill in the blanks.', type: 'fill', fill: 'Total: [[]]<br>Mean: [[]] &divide; ' + n + ' = [[]]', answers: [m * n, m * n, m],
+          fig: dotplot(d), hint: 'Add them all. Then share the total equally among ' + n + '.', steps: [d.join(' + ') + ' = ' + m * n + '.', m * n + ' &divide; ' + n + ' = ' + m + '.'],
+          explain: 'The mean is ' + m + '.', meta: { k: 'g5da-mmmfill', d: d } };
+      }],
+      [1, 'tap', function (lv) {
+        var d = R.shuffle(distinctVals(5, 1, lv === 1 ? 20 : 60)), srt = d.slice().sort(function (a, b) { return a - b; });
+        return { q: 'Tap the <b>median</b> of these numbers.', type: 'tap', tiles: d.map(function (v) { return '<span class="math" style="font-size:1.3em">' + v + '</span>'; }), answer: d.indexOf(srt[2]), answerText: String(srt[2]),
+          hint: 'Put the numbers in order first.', steps: ['In order: ' + srt.join(', ') + '.', 'The middle one is ' + srt[2] + '.'],
+          explain: 'The median is ' + srt[2] + '.', meta: { k: 'g5da-mmmtap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var d = R.shuffle(distinctVals(5, 1, 30)), srt = d.slice().sort(function (a, b) { return a - b; }), who = nm();
+        while (d[2] === srt[2]) d = R.shuffle(d);
+        var truth = !R.int(0, 2), said = truth ? srt[2] : d[2];
+        var right = 'Put the numbers in order first: ' + srt.join(', ') + '. The middle one is ' + srt[2] + '.';
+        return K.tf(who, 'the median of ' + mth(d.join(', ')) + ' is <b>' + said + '</b>.', truth, right,
+          ['The median is the middle number as the list is written.', 'The median is the biggest number.', 'The median is the one that shows up most.'],
+          { hint: 'What do you do before finding the middle?', meta: { k: 'g5da-mmmtf', d: d, said: said } });
+      }],
+      [2, 'match', function (lv) {
+        var d, mean, med, mode, t = 0;
+        do { var a = R.int(2, 9); d = [a, a, a + R.int(2, 5), a + R.int(6, 9), a + R.int(10, 14)]; var s = d.reduce(function (x, y) { return x + y; }, 0); mean = s / 5; med = d[2]; mode = a; } while ((mean % 1 || new Set([mean, med, mode]).size < 3) && t++ < 100);
+        if (mean % 1) { d = [3, 3, 6, 10, 13]; mean = 7; med = 6; mode = 3; }
+        return { q: 'For ' + mth(R.shuffle(d).join(', ')) + ', match each word to its value.', type: 'match', pairs: [['Mean', String(mean)], ['Median', String(med)], ['Mode', String(mode)]],
+          hint: 'Mean: add and share. Median: the middle in order. Mode: the most common.', steps: ['In order: ' + d.join(', ') + '.', 'Mean: ' + d.join(' + ') + ' = ' + mean * 5 + ', &divide; 5 = ' + mean + '.', 'Median: ' + med + '. Mode: ' + mode + '.'],
+          explain: 'Mean ' + mean + ', median ' + med + ', mode ' + mode + '.', meta: { k: 'g5da-mmmmatch' } };
+      }]
+    ],
+    'da-prob': [
+      [1, 'tap', function (lv) {
+        var tot = R.pick([6, 8, 10, 12]), k = R.int(1, tot - 1);
+        if (k * 2 === tot) k--;
+        var set = R.shuffle([[k, tot - k], [tot - k, k], [k, tot - k + 2]]);
+        return { q: 'Tap the bag where the probability of picking <b>red</b> is <b>' + k + '/' + tot + '</b>.', type: 'tap', tiles: set.map(function (x) { return marbles(x[0], x[1]); }), answer: set.map(String).indexOf(String([k, tot - k])), answerText: 'the bag with ' + k + ' red of ' + tot,
+          hint: 'Count the red marbles and all the marbles.', steps: ['You need ' + k + ' red marbles.', 'You need ' + tot + ' marbles in all.'],
+          explain: k + ' red out of ' + tot + ' marbles is ' + k + '/' + tot + '.', meta: { k: 'g5da-probtap' } };
+      }],
+      [1, 'line', function (lv) {
+        var tot = R.pick(lv === 1 ? [2, 4, 5] : [4, 5, 6, 8, 10]), k = R.int(0, tot);
+        return { q: 'A spinner has ' + tot + ' equal sections. ' + k + ' are shaded. Mark the probability of landing on shaded.', type: 'line', min: 0, max: 1, tick: 1 / tot, every: 1, snap: 1 / tot, answer: k / tot, tol: 1e-4, hideValue: true,
+          fig: spinner(k, tot, 50), hint: 'The probability is shaded sections over all sections. 0 is impossible and 1 is certain.', steps: ['The probability is ' + k + '/' + tot + '.', 'The line is cut into ' + tot + ' equal jumps. Count ' + k + ' jumps from 0.'],
+          explain: 'The probability is ' + k + '/' + tot + (k === 0 ? ': impossible.' : k === tot ? ': certain.' : '.'), meta: { k: 'g5da-probline', k2: k, tot: tot } };
+      }],
+      [1, 'pick', function (lv) {
+        var tot = R.pick([8, 10, 12]), cols = ['red', 'blue', 'green', 'yellow'], cnt;
+        do { cnt = []; var left = tot; for (var i = 0; i < 3; i++) { var c = R.int(1, left - (3 - i)); cnt.push(c); left -= c; } cnt.push(left); } while (!cnt.some(function (c) { return c * 4 > tot; }));
+        return K.pick('A bag has ' + cnt.map(function (c, j) { return c + ' ' + cols[j]; }).join(', ') + ' marbles. Pick every colour with a probability <b>greater than 1/4</b>.', [0, 1, 2, 3], function (j) { return cnt[j] * 4 > tot; }, function (j) { return cols[j]; }, {
+          hint: '1/4 of ' + tot + ' is ' + tot / 4 + '. Which colours have more than that?', steps: cnt.map(function (c, j) { return cols[j] + ': ' + c + '/' + tot + '.'; }),
+          explain: 'The probabilities are ' + cnt.map(function (c, j) { return cols[j] + ' ' + c + '/' + tot; }).join(', ') + '.', meta: { k: 'g5da-probpick' } });
+      }],
+      [2, 'mistake', function (lv) {
+        var tot = R.pick([6, 8, 10, 12]), k = R.int(1, tot - 1), who = nm(), truth = !R.int(0, 2), said = truth ? k + '/' + tot : k + '/' + (tot - k);
+        if (!truth && k === tot - k) k = Math.max(1, k - 1), said = k + '/' + (tot - k);
+        var right = 'Probability is shaded sections over all ' + tot + ' sections: ' + k + '/' + tot + '.';
+        return K.tf(who, 'the probability of landing on shaded is <b>' + said + '</b>.', truth, right,
+          ['Compare shaded to unshaded.', 'Probability is always 1/2 for two colours.', 'Count only the white sections.'],
+          { fig: spinner(k, tot), hint: 'The bottom number is all the sections.', meta: { k: 'g5da-probtf', k2: k, tot: tot, said: said } });
+      }]
+    ],
+    'da-exp': [
+      [1, 'fill', function (lv) {
+        var rolls = 6 * R.int(3, lv === 1 ? 10 : 30);
+        return { q: 'You roll a fair 6-sided die <b>' + rolls + '</b> times. About how many times would you expect each? Fill in the blanks.', type: 'fill', fill: 'a 4: about [[]] times<br>an even number: about [[]] times', answers: [rolls / 6, rolls / 2],
+          hint: 'A 4 is 1 of 6 sides. Even numbers are 3 of 6 sides.', steps: ['1/6 of ' + rolls + ' = ' + rolls / 6 + '.', '3/6 = 1/2 of ' + rolls + ' = ' + rolls / 2 + '.'],
+          explain: 'Expect about ' + rolls / 6 + ' fours and ' + rolls / 2 + ' even numbers.', meta: { k: 'g5da-expfill' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = nm(), n = R.pick([10, 20]), h = n / 2 + R.int(2, 4);
+        var right = 'A fair coin always has a theoretical probability of 1/2. ' + h + '/' + n + ' is the experimental result, which can be a little different.';
+        return K.tf(who, 'after getting ' + h + ' heads in ' + n + ' flips, the theoretical probability of heads is now <b>' + h + '/' + n + '</b>.', false, right,
+          ['Experiments change the theoretical probability.', 'The coin has learned to land on heads.', 'The next flip must be tails.'],
+          { hint: 'Does flipping a coin change the coin?', meta: { k: 'g5da-exptf' } });
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), n = R.pick([20, 30, 40, 50]), got = R.int(2, Math.floor(n / 3)), face = R.int(1, 6);
+        return { q: who + ' rolled a die ' + n + ' times and got a ' + face + ' on ' + got + ' of them. What is the experimental probability of rolling a ' + face + '?', type: 'fill', fill: ('[[]]/' + n), answers: [got],
+          hint: 'Use what actually happened: times it happened over the number of rolls.', steps: ['It happened ' + got + ' times.', 'There were ' + n + ' rolls.'],
+          explain: 'The experimental probability is ' + got + '/' + n + '. The theoretical probability is 1/6.', meta: { k: 'g5da-expstory' } };
+      }],
+      [2, 'match', function (lv) {
+        var k = R.pick([1, 3]), pairs = [['Heads on a coin', '1/2'], ['A 5 on a 6-sided die', '1/6'], [k === 1 ? 'Shaded, with 1 of 4 sections shaded' : 'Shaded, with 3 of 4 sections shaded', k + '/4']];
+        if (lv === 3) pairs.push(['A 7 on a 6-sided die', '0']);
+        return { q: 'Match each event to its theoretical probability.', type: 'match', pairs: pairs,
+          hint: 'Count the ways it can happen. Count all the equally likely results.', steps: ['A coin has 2 sides. A die has 6 faces. The spinner has 4 sections.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'g5da-expmatch' } };
+      }]
+    ]
+  };
+  K.shapes('data-probability', SHAPES);
 })();

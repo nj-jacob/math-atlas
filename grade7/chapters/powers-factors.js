@@ -613,4 +613,176 @@
       } }
     ]
   });
+
+  /* ---------- question shapes: more ways to practise each skill ---------- */
+  function isSq(n) { var r = Math.round(Math.sqrt(n)); return r * r === n; }
+  function bigNum(len) { var s = String(R.int(1, 9)); for (var i = 1; i < len; i++) s += R.int(0, 9); return +s; }
+  function digitAt(n, e) { return Math.floor(n / Math.pow(10, e)) % 10; }
+  var PLACE = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands', 'millions', 'ten millions', 'hundred millions', 'billions'];
+  K.shapes('powers-factors', {
+    'pf-read': [
+      [1, 'tap', function () {
+        return K.retry(function () {
+          var e = R.int(3, 7), d = R.int(1, 9), at = R.int(0, 3);
+          var set = K.uniq(4, function () { return bigNum(8); }).map(function (n, i) { var cur = digitAt(n, e), want = i === at ? d : cur === d ? d % 9 + 1 : cur; return n + (want - cur) * Math.pow(10, e); });
+          var hits = K.picks(set, function (n) { return digitAt(n, e) === d; });
+          if (!hits || hits.length !== 1 || new Set(set).size !== 4) return null;
+          return { q: 'Tap the number with a <b>' + d + '</b> in the <b>' + PLACE[e] + '</b> place.', type: 'tap', tiles: set.map(function (n) { return '<span class="math">' + fmt(n) + '</span>'; }), answer: hits[0],
+            hint: 'Count places from the right: ones, tens, hundreds, then the next period.', steps: ['The ' + PLACE[e] + ' place is ' + (e + 1) + ' digits from the right.', 'Check that digit in each number.'],
+            explain: 'In ' + fmt(set[hits[0]]) + ', the ' + d + ' is in the ' + PLACE[e] + ' place, worth ' + fmt(d * Math.pow(10, e)) + '.', meta: { k: 'pf-read-tap', set: set, e: e, d: d } };
+        });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), m = R.int(1, lv === 1 ? 9 : 99), t = R.int(0, 999), o = R.int(1, 999), n = m * 1e6 + t * 1e3 + o;
+        var what = R.pick(['people visited a museum website', 'litres of water went through a town pipe', 'steps were counted by a school club', 'passengers flew through an airport']);
+        return { q: who + ' reads that <b>' + m + ' million, ' + t + ' thousand, ' + o + '</b> ' + what + ' last year. Write the number in standard form.', type: 'num', answer: n,
+          hint: 'Write each period as three digits: millions, then thousands, then ones.', steps: ['Millions: ' + m + '.', 'Thousands: ' + String(t + 1000).slice(1) + '.', 'Ones: ' + String(o + 1000).slice(1) + '.', 'Together: ' + fmt(n) + '.'],
+          explain: m + ' million, ' + t + ' thousand, ' + o + ' is ' + fmt(n) + '.', meta: { k: 'pf-read-story', m: m, t: t, o: o } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), n = bigNum(R.int(8, 10)), e = R.int(4, String(n).length - 1), d = digitAt(n, e);
+        while (!d) { n = bigNum(String(n).length); d = digitAt(n, e); }
+        var truth = R.int(0, 1), said = truth ? d * Math.pow(10, e) : d * Math.pow(10, e + R.pick([-1, 1]));
+        var right = 'The ' + d + ' is in the ' + PLACE[e] + ' place, so it is worth ' + fmt(d * Math.pow(10, e)) + '.';
+        var shown = String(n), at = shown.length - 1 - e, h = '';
+        for (var k = 0; k < shown.length; k++) h += (k && (shown.length - k) % 3 === 0 ? ' ' : '') + (k === at ? '<u><b>' + d + '</b></u>' : shown.charAt(k));
+        return { q: who + ' says the underlined digit in <span class="math">' + h + '</span> is worth <b>' + fmt(said) + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The digit is worth just ' + d + '.', 'Count places from the left to find its value.']),
+          hint: 'Count places from the right of the number.', steps: [right], explain: right, meta: { k: 'pf-read-tf', n: n, e: e, said: said } };
+      }]
+    ],
+    'pf-expand': [
+      [1, 'match', function () {
+        var ks = R.shuffle([2, 3, 4, 5, 6, 7]).slice(0, 4), pairs = ks.map(function (k) { return [pw(10, k), fmt(Math.pow(10, k))]; });
+        return { q: 'Match each power of ten to its standard form.', type: 'match', pairs: pairs,
+          hint: 'The exponent counts the zeros after the 1.', steps: ['10<sup>3</sup> is 1 followed by 3 zeros: 1000.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'pf-pow10-match', ks: ks } };
+      }],
+      [1, 'fill', function (lv) {
+        var e1 = R.int(5, 8), e2 = R.int(lv === 1 ? 2 : 1, e1 - 2), a = R.int(1, 9), b = R.int(1, 9), n = a * Math.pow(10, e1) + b * Math.pow(10, e2);
+        return { q: 'Fill in the blanks to write <span class="math">' + fmt(n) + '</span> in expanded form.', type: 'fill', fill: '<span class="math">' + fmt(n) + ' = [[]] &times; ' + pw(10, e1) + ' + [[]] &times; ' + pw(10, e2) + '</span>', answers: [a, b],
+          hint: 'Find the two non-zero digits. Which place is each one in?', steps: ['The ' + a + ' has ' + e1 + ' digits after it.', 'The ' + b + ' has ' + e2 + ' digits after it.'],
+          explain: fmt(n) + ' = ' + a + ' &times; ' + pw(10, e1) + ' + ' + b + ' &times; ' + pw(10, e2) + '.', meta: { k: 'pf-expand-fill', n: n, e1: e1, e2: e2 } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), k = R.int(3, 9), truth = R.int(0, 1), said = truth ? Math.pow(10, k) : Math.pow(10, k - 1);
+        var right = '10<sup>' + k + '</sup> is 1 followed by ' + k + ' zeros: ' + fmt(Math.pow(10, k)) + '.';
+        return { q: who + ' says <span class="math">' + pw(10, k) + ' = ' + fmt(said) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['10<sup>' + k + '</sup> means 10 &times; ' + k + ' = ' + 10 * k + '.', 'The exponent counts all the digits, so there are ' + (k - 1) + ' zeros.']),
+          hint: 'The exponent counts the zeros.', steps: [right], explain: right, meta: { k: 'pf-pow10-tf', e: k, said: said } };
+      }]
+    ],
+    'pf-power': [
+      [1, 'match', function (lv) {
+        var list = K.uniq(3, function () { var b = R.int(2, lv === 1 ? 6 : 9), e = R.int(2, b > 5 ? 3 : 4); return [b, e]; }, function (p) { return Math.pow(p[0], p[1]); });
+        var pairs = list.map(function (p) { return [pw(p[0], p[1]), fmt(Math.pow(p[0], p[1]))]; });
+        return { q: 'Match each power to its value.', type: 'match', pairs: pairs,
+          hint: 'Multiply the base by itself, as many times as the exponent says.', steps: ['3<sup>4</sup> = 3 &times; 3 &times; 3 &times; 3 = 81.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'pf-power-match', list: list } };
+      }],
+      [1, 'order', function () {
+        var list = K.uniq(4, function () { var b = R.int(2, 9), e = R.int(2, b > 4 ? 3 : 5); return [b, e]; }, function (p) { return Math.pow(p[0], p[1]); });
+        list.sort(function (x, y) { return Math.pow(x[0], x[1]) - Math.pow(y[0], y[1]); });
+        return { q: 'Put these powers in order from <b>least</b> to <b>greatest</b>.', type: 'order', items: list.map(function (p) { return pw(p[0], p[1]); }), first: 'least', last: 'greatest',
+          hint: 'Work out each power first. Do not compare the digits.', steps: list.map(function (p) { return pw(p[0], p[1]) + ' = ' + fmt(Math.pow(p[0], p[1])); }),
+          explain: 'In order: ' + list.map(function (p) { return pw(p[0], p[1]) + ' (' + fmt(Math.pow(p[0], p[1])) + ')'; }).join(', ') + '.', meta: { k: 'pf-power-order', list: list } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), b = R.int(2, 9), e = R.int(2, 4), v = Math.pow(b, e), said = R.int(0, 1) ? v : b * e;
+        var right = pw(b, e) + ' means ' + Array(e + 1).join(b + ' &times; ').slice(0, -9) + ' = ' + fmt(v) + '.';
+        return { q: who + ' says <span class="math">' + pw(b, e) + ' = ' + fmt(said) + '</span>. True or false?', type: 'tf', answer: said === v,
+          why: K.why(right, ['A power means base times exponent.', 'A power means base plus exponent.']),
+          hint: 'Write the power as repeated multiplication.', steps: [right], explain: right, meta: { k: 'pf-power-tf', b: b, e: e, said: said } };
+      }]
+    ],
+    'pf-root': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var opts = K.uniq(6, function () { return R.int(0, 1) ? Math.pow(R.int(2, 15), 2) : R.int(10, 200); });
+          var ans = K.picks(opts, isSq);
+          if (!ans) return null;
+          return { q: 'Pick every <b>perfect square</b>.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'A perfect square is a whole number times itself, like 7 &times; 7 = 49.', steps: ['Think of the squares: 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196, 225.'],
+            explain: ans.map(function (j) { return opts[j] + ' = ' + Math.sqrt(opts[j]) + '<sup>2</sup>'; }).join(', ') + '.', meta: { k: 'pf-sq-pick', opts: opts } };
+        });
+      }],
+      [1, 'line', function () {
+        var r = R.int(2, 14);
+        return { q: 'Place <span class="math">&radic;' + r * r + '</span> on the number line.', type: 'line', min: 0, max: 15, tick: 1, every: 5, snap: 1, answer: r,
+          hint: 'Which number times itself makes ' + r * r + '?', steps: [r + ' &times; ' + r + ' = ' + r * r + '.', 'So &radic;' + r * r + ' = ' + r + '.'],
+          explain: '&radic;' + r * r + ' = ' + r + ', because ' + r + ' &times; ' + r + ' = ' + r * r + '.', meta: { k: 'pf-root-line', n: r * r } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), r = R.int(3, 15), n = r * r, truth = R.int(0, 1), said = truth ? r : n / 2;
+        var right = r + ' &times; ' + r + ' = ' + n + ', so &radic;' + n + ' = ' + r + '.';
+        return { q: who + ' says <span class="math">&radic;' + n + ' = ' + fmt(said) + '</span>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The square root is half the number.', 'The square root is the number times 2.']),
+          hint: 'Check: multiply the answer by itself.', steps: [right], explain: right, meta: { k: 'pf-root-tf', n: n, said: said } };
+      }]
+    ],
+    'pf-gcf': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var g = R.int(2, 6), a = g * R.int(2, 6), b = g * R.int(2, 6);
+          if (a === b) return null;
+          var opts = K.uniq(6, function () { return R.int(2, 12); }).sort(function (x, y) { return x - y; });
+          var ans = K.picks(opts, function (v) { return a % v === 0 && b % v === 0; });
+          if (!ans) return null;
+          return { q: 'Pick every <b>common factor</b> of ' + a + ' and ' + b + '.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'A common factor divides both numbers with nothing left over.', steps: ['Factors of ' + a + ': ' + factors(a).join(', ') + '.', 'Factors of ' + b + ': ' + factors(b).join(', ') + '.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' divide both ' + a + ' and ' + b + '.', meta: { k: 'pf-cf-pick', a: a, b: b, opts: opts } };
+        });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), g = R.int(2, lv === 1 ? 6 : 12), m, n;
+        do { m = R.int(2, 7); n = R.int(2, 7); } while (m === n || gcd(m, n) !== 1);
+        var a = g * m, b = g * n, it = R.pick([['granola bars', 'apples', 'snack bags'], ['red beads', 'blue beads', 'bracelets'], ['pencils', 'erasers', 'school kits'], ['hot dogs', 'juice boxes', 'picnic plates']]);
+        return { q: who + ' has ' + a + ' ' + it[0] + ' and ' + b + ' ' + it[1] + '. ' + who + ' wants to make identical ' + it[2] + ', using all of them. What is the greatest number of ' + it[2] + ' ' + who + ' can make?', type: 'num', answer: g,
+          hint: 'The number of ' + it[2] + ' must divide both ' + a + ' and ' + b + '. Find the greatest one that does.', steps: ['Factors of ' + a + ': ' + factors(a).join(', ') + '.', 'Factors of ' + b + ': ' + factors(b).join(', ') + '.', 'The greatest common factor is ' + g + '.'],
+          explain: 'GCF(' + a + ', ' + b + ') = ' + g + ', so ' + g + ' ' + it[2] + ', each with ' + m + ' ' + it[0] + ' and ' + n + ' ' + it[1] + '.', meta: { k: 'pf-gcf-story', a: a, b: b } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), g = R.int(2, 8), m, n;
+        do { m = R.int(2, 6); n = R.int(2, 6); } while (m === n || gcd(m, n) !== 1);
+        var a = g * m, b = g * n, f = factors(g).filter(function (x) { return x > 1 && x < g; }), truth = R.int(0, 1) || !f.length, said = truth ? g : R.pick(f);
+        var right = 'The common factors of ' + a + ' and ' + b + ' are ' + factors(g).join(', ') + '. The greatest is ' + g + '.';
+        return { q: who + ' says the greatest common factor of ' + a + ' and ' + b + ' is <b>' + said + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['Any common factor is the GCF.', 'The GCF is always the smaller number.']),
+          hint: 'List the factors of both numbers.', steps: [right], explain: right, meta: { k: 'pf-gcf-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'pf-lcm': [
+      [1, 'pick', function () {
+        return K.retry(function () {
+          var a = R.int(2, 6), b = R.int(3, 8);
+          if (a === b) return null;
+          var L = lcm(a, b), opts = K.uniq(6, function () { return R.int(0, 2) ? L * R.int(1, 4) : R.int(6, 60); }).sort(function (x, y) { return x - y; });
+          var ans = K.picks(opts, function (v) { return v % a === 0 && v % b === 0; });
+          if (!ans) return null;
+          return { q: 'Pick every <b>common multiple</b> of ' + a + ' and ' + b + '.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'A common multiple is in both times tables.', steps: ['The lowest common multiple is ' + L + '.', 'Every common multiple is a multiple of ' + L + '.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' are in both the ' + a + ' and the ' + b + ' times tables.', meta: { k: 'pf-cm-pick', a: a, b: b, opts: opts } };
+        });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), a, b;
+        do { a = R.int(2, lv === 1 ? 8 : 15); b = R.int(3, lv === 1 ? 10 : 20); } while (a === b || lcm(a, b) > 120 || lcm(a, b) === Math.max(a, b));
+        var it = R.pick([['Bus A comes every ' + a + ' minutes', 'bus B every ' + b + ' minutes', 'Both buses are at the stop now. In how many minutes will they next be there together?'],
+          ['One light blinks every ' + a + ' seconds', 'another every ' + b + ' seconds', 'They just blinked together. In how many seconds will they next blink together?'],
+          ['Hot dogs come in packs of ' + a, 'buns in packs of ' + b, 'What is the smallest number of each ' + who + ' can buy to have the same number of hot dogs and buns?']]);
+        return { q: it[0] + ', and ' + it[1] + '. ' + it[2], type: 'num', answer: lcm(a, b),
+          hint: 'Count by ' + a + 's and by ' + b + 's. Find the first number in both lists.', steps: ['By ' + a + 's: ' + [1, 2, 3, 4, 5].map(function (i) { return a * i; }).join(', ') + ', ...', 'By ' + b + 's: ' + [1, 2, 3, 4, 5].map(function (i) { return b * i; }).join(', ') + ', ...', 'The first match is ' + lcm(a, b) + '.'],
+          explain: 'The lowest common multiple of ' + a + ' and ' + b + ' is ' + lcm(a, b) + '.', meta: { k: 'pf-lcm-story', a: a, b: b } };
+      }],
+      [2, 'mistake', function () {
+        var who = K.name(), a, b;
+        do { a = R.int(2, 10); b = R.int(3, 12); } while (a === b || gcd(a, b) === 1 || a % b === 0 || b % a === 0);
+        var truth = R.int(0, 1), said = truth ? lcm(a, b) : a * b;
+        var right = 'Count by ' + Math.max(a, b) + 's: the first one that ' + Math.min(a, b) + ' also divides is ' + lcm(a, b) + '.';
+        return { q: who + ' says the lowest common multiple of ' + a + ' and ' + b + ' is <b>' + said + '</b>. True or false?', type: 'tf', answer: !!truth,
+          why: K.why(right, ['The LCM is always the two numbers multiplied.', 'The LCM is the larger of the two numbers.']),
+          hint: 'Is there a smaller number in both times tables?', steps: [right], explain: right, meta: { k: 'pf-lcm-tf', a: a, b: b, said: said } };
+      }]
+    ]
+  });
 })();

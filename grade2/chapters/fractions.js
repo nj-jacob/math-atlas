@@ -378,4 +378,138 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  /* [parts shaded, parts in all] pairs, no two the same amount */
+  function partSet(num, den, lv) {
+    var set = [[num, den]], tries = 0;
+    while (set.length < 3 && tries++ < 50) {
+      var d = R.pick(lv === 1 ? [2, 3, 4] : [2, 3, 4, 6]), n = R.int(1, d - 1);
+      if (!set.some(function (p) { return p[0] * d === n * p[1]; })) set.push([n, d]);
+    }
+    return R.shuffle(set);
+  }
+  function unitBar(d) { return rect(d, 1, 220, false, 'A bar cut into ' + d + ' equal parts, 1 shaded'); }
+  K.shapes(CH, {
+    'r2-name': [
+      [1, 'tap', function (lv) {
+        var den = R.pick(lv === 1 ? [2, 4] : [2, 3, 4, 6]), num = lv === 1 ? 1 : R.int(1, den - 1), set = partSet(num, den, lv);
+        return { q: 'Tap the circle with <b>' + fw(num, den) + '</b> shaded.', type: 'tap', tiles: set.map(function (p) { return pie(p[1], p[0], 44); }),
+          answer: set.findIndex(function (p) { return p[0] === num && p[1] === den; }), answerText: 'the circle cut into ' + MANY[den] + ' with ' + num + ' shaded',
+          hint: MANY[den] + ' means ' + den + ' equal parts. Find a circle with ' + den + ' parts.', steps: ['Look for a circle cut into ' + den + ' equal parts.', 'Then check that ' + num + ' part' + (num > 1 ? 's are' : ' is') + ' shaded.'],
+          explain: fw(num, den) + ' is ' + num + ' of ' + den + ' equal parts.', meta: { k: 'r2-name-tap', set: set } };
+      }],
+      [1, 'match', function (lv) {
+        var set = partSet(lv === 1 ? 1 : R.int(1, 2), lv === 1 ? R.pick([2, 4]) : R.pick([3, 4, 6]), lv);
+        var p = set.map(function (x) { return [pie(x[1], x[0], 36), fw(x[0], x[1])]; });
+        return { q: 'Match each circle to how much is shaded.', type: 'match', pairs: p,
+          hint: 'Count all the parts for the name. Count the shaded parts for the number.', steps: ['A circle cut into 4 equal parts with 1 shaded shows one fourth.'],
+          explain: set.map(function (x) { return x[1] + ' parts with ' + x[0] + ' shaded is ' + fw(x[0], x[1]); }).join('. ') + '.', meta: { k: 'r2-name-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var pairs = [[1, 3], [1, 4], [2, 6], [1, 6], [2, 3]], c = R.pick(pairs), num = c[0], den = c[1], name = who(), truth = !R.int(0, 2);
+        var said = truth ? fw(num, den) : (ONE[den - num] ? fw(num, den - num) : fw(den - num, den));
+        var right = 'There are ' + den + ' equal parts and ' + num + ' shaded, so it is ' + fw(num, den) + '.';
+        return { q: name + ' says <b>' + said + '</b> of this circle is shaded. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: pie(den, num, 56),
+          why: why(right, ['Count only the parts that are not shaded.', 'Bigger numbers always mean bigger parts.', 'Count the shaded parts and the unshaded parts as two groups.']),
+          hint: 'Count all the equal parts. Then count the shaded ones.', steps: [right], explain: right, meta: { k: 'r2-name-tf' } };
+      }]
+    ],
+    'r2-fair': [
+      [1, 'tap', function (lv) {
+        var d = R.pick([3, 4]), set = R.shuffle([[d, 0], [d, 1], [d === 3 ? 4 : 3, 0]]);
+        return { q: 'Tap the bar cut into <b>fair shares for ' + d + ' people</b>.', type: 'tap', tiles: set.map(function (x) { return rect(x[0], 0, 200, !!x[1]); }),
+          answer: set.findIndex(function (x) { return x[0] === d && !x[1]; }), answerText: 'the bar with ' + d + ' parts that are all the same size',
+          hint: 'You need ' + d + ' parts, and every part the same size.', steps: ['Count the parts in each bar.', 'Then check that the parts are all the same size.'],
+          explain: 'Fair shares for ' + d + ' people means ' + d + ' parts that are all the same size.', meta: { k: 'r2-fair-tap', d: d } };
+      }],
+      [1, 'mistake', function (lv) {
+        var d = R.pick([3, 4]), fair = !R.int(0, 1), name = who();
+        var right = fair ? 'All ' + d + ' parts are the same size.' : 'The parts are not the same size, so the shares are not fair.';
+        return { q: name + ' says this bar is cut into fair shares because it has ' + d + ' parts. True or false: it is cut into fair shares.', type: 'tf', answer: fair, fig: rect(d, 0, 300, !fair),
+          why: why(right, ['Any bar with ' + d + ' parts is fair.', 'Fair shares are always halves.', 'Bigger parts are fairer.']),
+          hint: 'Having ' + d + ' parts is not enough. Are the parts the same size?', steps: [right], explain: right, meta: { k: 'r2-fair-tf' } };
+      }],
+      [2, 'pick', function (lv) {
+        var list = [[3, 0], [4, 0], [2, 0], [3, 1], [4, 1]], set = R.shuffle(list).slice(0, 4);
+        if (!set.some(function (x) { return !x[1]; })) set[0] = [6, 0];
+        if (set.every(function (x) { return !x[1]; })) set[0] = [3, 1];
+        set = R.shuffle(set);
+        return { q: 'Pick every bar that is cut into <b>fair shares</b>.', type: 'pick', options: set.map(function (x) { return rect(x[0], 0, 200, !!x[1]); }),
+          answer: set.map(function (x, j) { return x[1] ? -1 : j; }).filter(function (j) { return j >= 0; }),
+          hint: 'Fair shares are all the same size. Compare the parts in each bar.', steps: ['Look at each bar on its own.', 'Keep the bars where every part is the same size.'],
+          explain: 'Fair shares are equal parts. The bars with parts of different sizes are not fair.', meta: { k: 'r2-fair-pick' } };
+      }]
+    ],
+    'r2-compare': [
+      [1, 'tap', function (lv) {
+        var set = R.shuffle([2, 3, 4, 6]).slice(0, lv === 1 ? 2 : 3), big = Math.min.apply(null, set);
+        return { q: 'Each bar is the same size. Tap the bar with the <b>biggest</b> shaded part.', type: 'tap', tiles: set.map(unitBar), answer: set.indexOf(big), answerText: 'one ' + ONE[big],
+          hint: 'Fewer parts means bigger parts.', steps: ['Count the parts in each bar.', 'The bar with the fewest parts has the biggest part: ' + MANY[big] + '.'],
+          explain: 'One ' + ONE[big] + ' is the biggest, because that bar is cut into the fewest parts.', meta: { k: 'r2-cmp-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var ds = R.shuffle([2, 3, 4, 6]).slice(0, 2), name = who(), truth = ds[0] < ds[1];
+        var big = Math.min(ds[0], ds[1]), small = Math.max(ds[0], ds[1]);
+        var right = 'One ' + ONE[big] + ' is bigger. The thing is cut into fewer parts, so each part is bigger.';
+        return { q: name + ' says <b>one ' + ONE[ds[0]] + '</b> of a sandwich is bigger than one ' + ONE[ds[1]] + ' of the same sandwich. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          fig: lv === 1 ? '<div class="vrow">' + unitBar(ds[0]) + unitBar(ds[1]) + '</div>' : '',
+          why: why(right, ['One ' + ONE[small] + ' is bigger, because ' + small + ' is more than ' + big + '.', 'They are the same, because both are one part.', 'You cannot tell without a ruler.']),
+          hint: 'More parts means smaller parts.', steps: [right], explain: right, meta: { k: 'r2-cmp-tf' } };
+      }],
+      [2, 'order', function (lv) {
+        var ds = R.shuffle([2, 3, 4, 6]).slice(0, lv === 2 ? 3 : 4).sort(function (a, b) { return a - b; });
+        return { q: 'These are parts of the same pizza. Put them in order from <b>biggest to smallest</b>.', type: 'order', items: ds.map(function (d) { return 'one ' + ONE[d]; }), first: 'biggest', last: 'smallest',
+          hint: 'The fewer the parts, the bigger each part.', steps: ['Halves are the biggest parts, then thirds, then fourths, then sixths.'],
+          explain: ds.map(function (d) { return 'one ' + ONE[d]; }).join(', then ') + '.', meta: { k: 'r2-cmp-order' } };
+      }]
+    ],
+    'r2-share': [
+      [1, 'story', function (lv) {
+        var name = who(), s = lv === 1 ? 2 : R.pick([2, 3, 4]), w = R.int(1, 3), n = s * w + R.int(1, s - 1), c = R.pick(['pancakes', 'granola bars', 'sandwiches', 'muffins']);
+        return { q: name + ' shares ' + n + ' ' + c + ' equally with ' + (s === 2 ? '1 friend' : (s - 1) + ' friends') + '. That is ' + s + ' people. How many <b>whole</b> ' + c + ' does each person get?', type: 'num', answer: w,
+          fig: lv === 1 ? dealBars(n, s) : '', hint: 'Give out whole ones first, one to each person, until there are not enough to go around.',
+          steps: ['Each round gives out ' + s + '.', 'After ' + w + ' rounds, ' + (n - s * w) + ' ' + (n - s * w === 1 ? 'is' : 'are') + ' left. That is not enough for everyone to get one more whole.'],
+          explain: 'Each person gets ' + w + ' whole ' + c + '. The rest are cut into ' + MANY[s] + '.', meta: { k: 'r2-share-story' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var s = lv === 1 ? 2 : R.pick([2, 3, 4]), w = R.int(1, 3), n = s * w + R.int(1, s - 1), name = who(), truth = !R.int(0, 2);
+        var said = truth ? shareWords(n, s) : w + ' whole' + (w === 1 ? '' : 's'), right = 'Each friend gets ' + shareWords(n, s) + '. The leftover bars are cut into ' + MANY[s] + '.';
+        return { q: n + ' bars are shared equally by ' + s + ' friends. ' + name + ' says each friend gets <b>' + said + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: lv === 1 ? dealBars(n, s) : '',
+          why: why(right, ['The leftover bars are thrown away.', 'Each friend gets one more whole bar.', 'Only one friend gets the leftover bars.']),
+          hint: 'Whole bars first. Then share the leftover bars too.', steps: [right], explain: right, meta: { k: 'r2-share-tf' } };
+      }],
+      [2, 'match', function (lv) {
+        var s = R.pick([2, 3, 4]), seen = {}, p = [];
+        while (p.length < 3) { var n = R.int(s + 1, 10); var t = shareWords(n, s); if (seen[t]) continue; seen[t] = 1; p.push([n + ' bars for ' + s + ' friends', t]); }
+        return { q: 'Match each sharing to what each friend gets.', type: 'match', pairs: p,
+          hint: 'Give out whole bars first. Then cut the leftover bars into ' + MANY[s] + '.', steps: ['5 bars for 2 friends: 2 wholes each, and the last bar is cut in half.'],
+          explain: p.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'r2-share-match' } };
+      }]
+    ],
+    'r2-thirds': [
+      [1, 'match', function (lv) {
+        var p = R.shuffle([[fw(1, 3), fw(2, 6)], [fw(2, 3), fw(4, 6)], [fw(3, 3), fw(6, 6)], [fw(1, 2), fw(3, 6)]]).slice(0, 3);
+        return { q: 'Match the amounts that are the same.', type: 'match', pairs: p, fig: lv === 1 ? thirdsSixths(1) : '',
+          hint: 'Each third is the same as two sixths.', steps: ['Cut each third in half to make sixths.', 'So one third is two sixths.'],
+          explain: p.map(function (x) { return x[0] + ' is ' + x[1]; }).join('. ') + '.', meta: { k: 'r2-thirds-match' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var c = lv === 1 ? 1 : R.int(1, 2), name = who(), truth = !R.int(0, 1), x = truth ? 2 * c : R.pick([c, 2 * c + 1]);
+        var right = 'Each third is two sixths, so ' + fw(c, 3) + ' is ' + fw(2 * c, 6) + '.';
+        return { q: name + ' says <b>' + fw(c, 3) + '</b> and <b>' + fw(x, 6) + '</b> of the same bar are the same amount. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: lv === 1 ? thirdsSixths(c) : '',
+          why: why(right, ['Thirds and sixths can never be the same.', 'The same number of parts is always the same amount.', 'Sixths are bigger than thirds.']),
+          hint: 'Cut each third in half. How many sixths is that?', steps: [right], explain: right, meta: { k: 'r2-thirds-tf' } };
+      }],
+      [2, 'pick', function (lv) {
+        var half = !R.int(0, 1), target = half ? 'one half' : 'one whole';
+        var opts = half ? [fw(2, 4), fw(3, 6), fw(1, 3), fw(2, 6), fw(3, 4)] : [fw(2, 2), fw(3, 3), fw(6, 6), fw(2, 3), fw(5, 6)];
+        opts = R.shuffle(opts);
+        var ok = half ? [fw(2, 4), fw(3, 6)] : [fw(2, 2), fw(3, 3), fw(6, 6)];
+        return { q: 'Pick every amount that is the same as <b>' + target + '</b> of a bar.', type: 'pick', options: opts, answer: opts.map(function (o, j) { return ok.indexOf(o) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: half ? 'One half is half of all the parts.' : 'One whole means every part.', steps: [half ? 'Two fourths is 2 of 4 parts, half of them. Three sixths is 3 of 6 parts, half of them.' : 'Two halves, three thirds and six sixths each use all the parts.'],
+          explain: ok.join(', ') + ' are the same as ' + target + '.', meta: { k: 'r2-thirds-pick' } };
+      }]
+    ]
+  });
 })();

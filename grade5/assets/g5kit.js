@@ -2,7 +2,8 @@
    K.watch(frames)   a "Watch" clip built from drawings: each frame swaps in a new picture, and the parts that are new animate in.
    K.widget(ch, i)   a "Try it" activity that reuses the i-th interactive drawing of a chapter's original lesson.
    K.disks(el, o)    place value disks from hundredths to hundred thousands: tap to light and count, group 10 into 1, break 1 into 10.
-   K.P(ch, skill, lv) a quick check made by a practice skill's question maker. */
+   K.P(ch, skill, lv) a quick check made by a practice skill's question maker.
+   K.shapes(ch, SHAPES) more ways to ask each practice skill (see docs/QUESTIONS.md); K.why, K.tf, K.pick, K.digits help build them. */
 (function () {
   'use strict';
   var A = window.Atlas, M = window.Manip, K = (A.kit = {});
@@ -73,6 +74,45 @@
         if (pre) { t.fast = true; Promise.resolve(pre(t)).then(function () { t.fast = false; ready = true; }); }
       }
     };
+  };
+
+  /* ---------- more ways to ask: question shapes (assets/engine/qkit.js, docs/QUESTIONS.md) ---------- */
+  /* the reason list for a true-or-false question */
+  K.why = function (right, wrong) { var o = A.R.mc(right, wrong); return { options: o.options, answer: o.answer }; };
+  /* a "mistake" question: who said claim; truth says if they are right; right is the true reason */
+  K.tf = function (who, claim, truth, right, wrong, extra) {
+    return Object.assign({ q: who + ' says ' + claim + ' True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+      why: K.why(right, wrong), steps: [right], explain: right }, extra);
+  };
+  /* a "pick every answer that fits" question; fits(v) says which values are right */
+  K.pick = function (q, values, fits, show, extra) {
+    var ans = [];
+    values.forEach(function (v, j) { if (fits(v)) ans.push(j); });
+    return Object.assign({ q: q, type: 'pick', options: values.map(show || A.fmt), answer: ans }, extra);
+  };
+  /* a number in big digits; each digit can be tapped (data-hit = its index in the plain digits) */
+  K.digits = function (n) {
+    var s = String(n), w = Math.min(76, 380 / s.length), gap = s.length > 4 ? 14 : 0, h = '', x = 4;
+    for (var i = 0; i < s.length; i++) {
+      if (gap && i === s.length - 3) x += gap;
+      h += '<g data-hit="' + i + '" aria-label="the ' + s.charAt(i) + ' in the ' + A.PLACES[s.length - 1 - i] + ' place"><rect x="' + x + '" y="4" width="' + (w - 8) + '" height="84" rx="12" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
+        '<text x="' + (x + (w - 8) / 2) + '" y="64" text-anchor="middle" font-size="50" font-weight="700" style="fill:var(--ink);font-family:var(--display)">' + s.charAt(i) + '</text></g>';
+      x += w;
+    }
+    return A.svg(x + 4, 92, h, 'The number ' + A.fmt(n) + ' in big digits');
+  };
+  /* wrap every practice skill of a chapter: its first way of asking ("plain") plus the new shapes.
+     SHAPES = { skillId: [[minLevel, 'name', fn(lv)], ...] }. Chapter quizzes are made fresh each time. */
+  K.shapes = function (chId, SHAPES) {
+    var ch = A.chapters[chId];
+    if (!A.Q || !ch) return;
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (x) { return x[1]; }));
+      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
   };
 
   /* ---------- quick checks from practice skills ---------- */

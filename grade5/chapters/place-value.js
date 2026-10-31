@@ -708,4 +708,225 @@
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var K = A.kit, nm = function () { return A.Q.name(); };
+  function under(n, i) {
+    var f = A.fmt(n), k = -1, out = '';
+    for (var j = 0; j < f.length; j++) { var c = f.charAt(j); if (c !== ' ') k++; out += c !== ' ' && k === i ? '<u>' + c + '</u>' : c; }
+    return '<span class="math">' + out + '</span>';
+  }
+  function nonzero(n) { var s = String(n), i; do { i = R.int(0, s.length - 1); } while (s.charAt(i) === '0'); return i; }
+  function parts(n) { var s = String(n), out = []; for (var i = 0; i < s.length; i++) { var v = +s.charAt(i) * Math.pow(10, s.length - 1 - i); if (v) out.push(v); } return out; }
+  function nearest(n, p) { var lo = Math.floor(n / p) * p; return n - lo >= p / 2 ? lo + p : lo; }
+  function big(lv) { return lv === 1 ? R.int(1000, 9999) : R.int(10000, 99999); }
+  var SHAPES = {
+    'pv-value': [
+      [1, 'tap', function (lv) {
+        var n = big(lv), s = String(n), i = nonzero(n), p = s.length - 1 - i, val = +s.charAt(i) * Math.pow(10, p);
+        return { q: 'Tap the digit that is worth <b>' + A.fmt(val) + '</b>.', type: 'tap', pic: K.digits(n), answer: String(i), answerText: 'the ' + s.charAt(i) + ' in the ' + A.PLACES[p] + ' place',
+          hint: A.fmt(val) + ' is ' + s.charAt(i) + ' ' + A.PLACES[p] + '. Find the ' + A.PLACES[p] + ' place.', steps: ['Name the places from the right: ones, tens, hundreds, thousands, ten thousands.', 'The ' + A.PLACES[p] + ' place holds a ' + s.charAt(i) + '.', s.charAt(i) + ' &times; ' + A.fmt(Math.pow(10, p)) + ' = ' + A.fmt(val) + '.'],
+          explain: 'In ' + A.fmt(n) + ', the ' + s.charAt(i) + ' is in the ' + A.PLACES[p] + ' place, so it is worth ' + A.fmt(val) + '.', meta: { k: 'g5pv-tap', n: n, val: val } };
+      }],
+      [1, 'story', function (lv) {
+        var c = R.pick([['A hockey arena in Halifax has', 'seats'], ['A school library in Regina has', 'books'], ['A farm in Alberta grew', 'pumpkins'], ['A food bank in Toronto packed', 'meals']]);
+        var n = big(lv), s = String(n), i = nonzero(n), p = s.length - 1 - i, val = +s.charAt(i) * Math.pow(10, p);
+        return { q: c[0] + ' ' + under(n, i) + ' ' + c[1] + '. How many ' + c[1] + ' does the underlined <b>' + s.charAt(i) + '</b> stand for?', type: 'num', answer: val,
+          hint: 'Which place is the underlined digit in?', steps: ['The ' + s.charAt(i) + ' is in the ' + A.PLACES[p] + ' place.', s.charAt(i) + ' ' + A.PLACES[p] + ' = ' + A.fmt(val) + '.'],
+          explain: 'The ' + s.charAt(i) + ' stands for ' + A.fmt(val) + ' ' + c[1] + '.', meta: { k: 'g5pv-story', n: n, i: i } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], items = [], seen = {};
+        while (pairs.length < 3) {
+          var n = big(lv), i = nonzero(n), val = +String(n).charAt(i) * Math.pow(10, String(n).length - 1 - i);
+          if (seen[val]) continue;
+          seen[val] = 1; items.push([n, i]); pairs.push([under(n, i), A.fmt(val)]);
+        }
+        return { q: 'Match each underlined digit to its value.', type: 'match', pairs: pairs,
+          hint: 'For each number, name the place of the underlined digit.', steps: ['Ones are worth 1, tens 10, hundreds 100, thousands 1000, ten thousands 10 000.', 'Multiply the digit by the value of its place.'],
+          explain: pairs.map(function (x) { return A.fmt(+x[0].replace(/<[^>]+>/g, '').replace(/\s/g, '')) + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'g5pv-match', items: items } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(10000, 99999), s = String(n), i = nonzero(n), p = s.length - 1 - i, d = +s.charAt(i), val = d * Math.pow(10, p), who = nm();
+        var truth = !R.int(0, 2), said = truth ? val : (p ? R.pick([d, d * Math.pow(10, p - 1)]) : d * 10);
+        var right = 'The ' + d + ' is in the ' + A.PLACES[p] + ' place, so it is worth ' + A.fmt(val) + '.';
+        return K.tf(who, 'the underlined ' + d + ' in ' + under(n, i) + ' is worth <b>' + A.fmt(said) + '</b>.', truth, right,
+          ['A digit is always worth just itself.', 'The biggest digit is always worth the most.', 'Count places from the left to find the value.'],
+          { hint: 'Find the place of the underlined digit first.', meta: { k: 'g5pv-tf', n: n, i: i, said: said } });
+      }]
+    ],
+    'pv-disks': [
+      [1, 'tap', function (lv) {
+        var d = [R.int(1, 4), R.int(1, 5), R.int(0, 5), R.int(1, 6)], n = d[0] * 1000 + d[1] * 100 + d[2] * 10 + d[3];
+        var alt = [d[0] * 1000 + d[2] * 100 + d[1] * 10 + d[3], d[0] * 1000 + d[1] * 100 + d[3] * 10 + d[2], d[1] * 1000 + d[0] * 100 + d[2] * 10 + d[3]];
+        var set = [n];
+        alt.forEach(function (v) { if (set.indexOf(v) < 0 && set.length < 3 && v >= 1000) set.push(v); });
+        if (set.length < 2) set.push(n + 100);
+        set = R.shuffle(set);
+        var draw = function (v) { var g = [], s = String(v); for (var k = 0; k < 4; k++) if (+s.charAt(k)) g.push({ p: 3 - k, n: +s.charAt(k) }); return A.draw.disks(g); };
+        return { q: 'Which disks show <b>' + A.fmt(n) + '</b>? Tap them.', type: 'tap', tiles: set.map(draw), answer: set.indexOf(n), answerText: 'the disks for ' + A.fmt(n),
+          hint: A.fmt(n) + ' has ' + d[0] + ' thousands and ' + d[1] + ' hundreds. Check those rows first.', steps: ['Count the thousands disks in each picture. You need ' + d[0] + '.', 'Then check the hundreds (' + d[1] + '), tens (' + d[2] + ') and ones (' + d[3] + ').'],
+          explain: A.fmt(n) + ' is ' + d[0] + ' thousands, ' + d[1] + ' hundreds, ' + d[2] + ' tens and ' + d[3] + ' ones.', meta: { k: 'g5pv-disktap', n: n, set: set } };
+      }],
+      [1, 'fill', function (lv) {
+        var top = lv === 1 ? 3 : 4, c = [], g = [], n = 0, names = [];
+        for (var p = top; p >= 0; p--) { var k = p === top ? R.int(1, 5) : R.int(0, 6); c.push(k); n += k * Math.pow(10, p); if (k) g.push({ p: p, n: k }); names.push('[[]] ' + A.PLACES[p]); }
+        return { q: 'Count the disks in each place. Fill in the blanks.', type: 'fill', fig: A.draw.disks(g), fill: names.join(', ') + ' make <span class="math">' + A.fmt(n) + '</span>.', answers: c,
+          hint: 'A place with no disks gets 0.', steps: ['Count one row at a time, from the biggest place down.', 'Write 0 for any place with no disks.'],
+          explain: c.map(function (k, j) { return k + ' ' + A.PLACES[top - j]; }).join(', ') + ' make ' + A.fmt(n) + '.', meta: { k: 'g5pv-diskfill', n: n } };
+      }],
+      [1, 'build', function (lv) {
+        var m = R.int(11, lv === 1 ? 49 : 99), n = m * 10, down = lv > 1 && !R.int(0, 1);
+        return { q: (down ? 'Show <b>' + A.fmt(n * 10) + ' &divide; 10</b>' : 'Show <b>10 times ' + m + '</b>') + ' with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', answer: n,
+          hint: down ? 'Dividing by 10 moves every digit one place to the right.' : 'Times 10, each ten becomes a hundred and each one becomes a ten.',
+          steps: [down ? A.fmt(n * 10) + ' &divide; 10 = ' + n + '.' : m + ' &times; 10 = ' + n + '.', n + ' is ' + Math.floor(n / 100) + ' flats and ' + Math.floor(n / 10) % 10 + ' rods.'],
+          explain: (down ? A.fmt(n * 10) + ' &divide; 10' : '10 &times; ' + m) + ' = ' + n + '. Each digit moved one place.', meta: { k: 'g5pv-build', m: m, n: n, down: down } };
+      }],
+      [2, 'mistake', function (lv) {
+        var c = [R.int(1, 9), R.int(0, 5), R.int(1, 5), R.int(1, 4)], t = R.int(0, 2), who = nm();
+        c[t] += 10;
+        var n = 0, g = [];
+        for (var p = 3; p >= 0; p--) { n += c[p] * Math.pow(10, p); g.push({ p: p, n: c[p] }); }
+        var truth = !R.int(0, 2), said = truth ? n : n - Math.pow(10, t + 1);
+        var right = c[t] + ' ' + A.PLACES[t] + ' is 1 ' + A.PLACE1[t + 1] + ' and ' + (c[t] - 10) + ' ' + A.PLACES[t] + ', so the disks show ' + A.fmt(n) + '.';
+        return K.tf(who, 'these disks show <b>' + A.fmt(said) + '</b>.', truth, right,
+          ['A place can hold 10 or more, so write ' + c[t] + ' there.', 'Ten of a place make 10 of the next place.', 'Just count all the disks.'],
+          { fig: A.draw.disks(g), hint: 'Is there a place with 10 or more disks? Trade 10 of them first.', meta: { k: 'g5pv-disktf', c: c, said: said } });
+      }]
+    ],
+    'pv-forms': [
+      [1, 'fill', function (lv) {
+        var n = lv === 1 ? R.int(1, 9) * 1000 + R.int(1, 9) * 100 + R.int(1, 9) * 10 + R.int(1, 9) : R.int(1, 9) * 10000 + R.int(1, 9) * 1000 + R.int(0, 9) * 100 + R.int(1, 9) * 10 + R.int(1, 9);
+        var ps = parts(n);
+        return { q: 'Write <span class="math">' + A.fmt(n) + '</span> in expanded form.', type: 'fill', fill: '<span class="math">' + A.fmt(n) + '</span> = ' + ps.map(function () { return '[[]]'; }).join(' + '), answers: ps,
+          hint: 'Each digit becomes its value. Start with the biggest place.', steps: ['Read each digit with its place, from the left.', 'Write each value: ' + ps.map(A.fmt).join(' + ') + '.'],
+          explain: A.fmt(n) + ' = ' + ps.map(A.fmt).join(' + ') + '.', meta: { k: 'g5pv-formfill', n: n } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) {
+          var n = big(lv);
+          if (lv > 1) n -= Math.floor(n / 100) % 10 * 100;
+          if (seen[n]) continue;
+          seen[n] = 1; pairs.push([parts(n).map(A.fmt).join(' + '), A.fmt(n)]);
+        }
+        return { q: 'Match each expanded form to its number.', type: 'match', pairs: pairs,
+          hint: 'Add the parts place by place. A missing place gets a 0.', steps: ['Look at the biggest part first. It tells you how many digits the number has.', 'Fill each place. Write 0 where a part is missing.'],
+          explain: pairs.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'g5pv-formmatch', pairs: pairs } };
+      }],
+      [1, 'mistake', function (lv) {
+        var n = R.int(1, 9) * 10000 + R.int(1, 9) * 100 + R.int(0, 9) * 10 + R.int(1, 9), ps = parts(n), who = nm();
+        var truth = !R.int(0, 2), said = truth ? n : +String(n).replace(/0/g, '');
+        var right = ps.map(A.fmt).join(' + ') + ' has no thousands, so the thousands place needs a 0: ' + A.fmt(n) + '.';
+        return K.tf(who, '<span class="math">' + ps.map(A.fmt).join(' + ') + '</span> = <b>' + A.fmt(said) + '</b>.', truth, right,
+          ['You can skip a place that has nothing in it.', 'Just write the first digit of each part side by side.', 'Expanded form and standard form are never equal.'],
+          { hint: 'Is every place filled? A missing place needs a 0.', meta: { k: 'g5pv-formtf', parts: ps, said: said } });
+      }]
+    ],
+    'pv-words': [
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) {
+          var n = lv === 1 ? R.int(1, 9) * 1000 + R.int(0, 999) : R.int(10, 99) * 1000 + R.int(0, 999);
+          if (seen[n]) continue;
+          seen[n] = 1; pairs.push([words(n), A.fmt(n)]);
+        }
+        return { q: 'Match each number in words to its digits.', type: 'match', pairs: pairs,
+          hint: 'Read the thousands part first, then the last three digits.', steps: ['The words before "thousand" give the thousands part.', 'The words after "thousand" give the last three digits.'],
+          explain: pairs.map(function (x) { return x[0] + ' is ' + x[1]; }).join('. ') + '.', meta: { k: 'g5pv-wordmatch', pairs: pairs } };
+      }],
+      [1, 'tap', function (lv) {
+        var n = lv === 1 ? R.int(1, 9) * 1000 + R.int(1, 9) * 10 + R.int(0, 9) : R.int(10, 99) * 1000 + R.int(1, 9) * 10 + R.int(0, 9), th = Math.floor(n / 1000), on = n % 1000;
+        var set = [n];
+        [th * 10000 + on, th * 100 + on, +String(n).replace(/0/g, '')].forEach(function (v) { if (set.indexOf(v) < 0 && set.length < 3) set.push(v); });
+        set = R.shuffle(set);
+        return { q: 'Tap the number <b>' + words(n) + '</b>.', type: 'tap', tiles: set.map(function (v) { return '<span class="math" style="font-size:1.4em">' + A.fmt(v) + '</span>'; }), answer: set.indexOf(n), answerText: A.fmt(n),
+          hint: 'After "thousand" you need three digits. Use 0 for an empty place.', steps: ['"' + b1000(th) + ' thousand" is ' + th + ' thousands.', 'The rest is ' + on + ', written with three digits: ' + ('00' + on).slice(-3) + '.'],
+          explain: words(n) + ' is ' + A.fmt(n) + '.', meta: { k: 'g5pv-wordtap', set: set } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(10, 99) * 1000 + R.int(1, 9) * 10 + R.int(1, 9), who = nm();
+        var truth = !R.int(0, 2), said = truth ? n : Math.floor(n / 1000) * 100 + n % 100;
+        var right = 'After the thousands, there are three places: hundreds, tens and ones. The hundreds place needs a 0, so it is ' + A.fmt(n) + '.';
+        return K.tf(who, '<b>' + words(n) + '</b> is written <span class="math">' + A.fmt(said) + '</span>.', truth, right,
+          ['Write each part just as you hear it.', 'There is no hundreds part, so leave that place out.', 'Words and digits can never match.'],
+          { hint: 'How many digits come after the thousands?', meta: { k: 'g5pv-wordtf', said: said } });
+      }]
+    ],
+    'pv-compare': [
+      [1, 'order', function (lv) {
+        var base = lv === 1 ? R.int(1, 9) * 1000 : R.int(1, 9) * 10000, vals = [];
+        while (vals.length < 4) { var v = base + R.int(0, lv === 1 ? 999 : 9999); if (vals.indexOf(v) < 0) vals.push(v); }
+        vals.sort(function (a, b) { return a - b; });
+        return { q: 'Put these numbers in order from <b>least to greatest</b>.', type: 'order', items: vals.map(A.fmt), first: 'least', last: 'greatest',
+          hint: 'They all start the same. Compare the next place.', steps: ['Line the numbers up by place.', 'Find the first place where the digits are different. The smaller digit comes first.'],
+          explain: 'From least to greatest: ' + vals.map(A.fmt).join(', ') + '.', meta: { k: 'g5pv-order' } };
+      }],
+      [1, 'story', function (lv) {
+        var who = A.Q.two(), c = R.pick([['steps on a step counter', 'more steps'], ['points in a reading challenge', 'more points'], ['pennies in a fundraiser jar', 'more pennies']]);
+        var a = big(lv), b = a + R.pick([-1, 1]) * R.int(1, 9) * Math.pow(10, R.int(1, 2));
+        if (b < 1000) b = a + 100;
+        return { q: who[0] + ' has ' + A.fmt(a) + ' ' + c[0] + '. ' + who[1] + ' has ' + A.fmt(b) + '. Who has ' + c[1] + '?', type: 'mc', options: who, answer: a > b ? 0 : 1,
+          hint: 'Compare the digits from the left. Find the first place that is different.', steps: ['Line up ' + A.fmt(a) + ' and ' + A.fmt(b) + ' by place.', 'The first different digit tells you which is greater.'],
+          explain: (a > b ? who[0] : who[1]) + ' has ' + c[1] + ', because ' + A.fmt(Math.max(a, b)) + ' &gt; ' + A.fmt(Math.min(a, b)) + '.', meta: { k: 'g5pv-story2', a: a, b: b } };
+      }],
+      [1, 'pick', function (lv) {
+        var x = big(lv), more = !!R.int(0, 1), vals = [];
+        /* two above, two below and one either way, so there is always something to pick and something to leave */
+        while (vals.length < 5) { var dir = vals.length < 2 ? 1 : vals.length < 4 ? -1 : R.pick([-1, 1]), v = x + dir * R.int(1, 9) * Math.pow(10, R.int(0, lv === 1 ? 2 : 3)); if (v > 0 && vals.indexOf(v) < 0) vals.push(v); }
+        vals = R.shuffle(vals);
+        var fits = function (v) { return more ? v > x : v < x; };
+        return K.pick('Pick every number ' + (more ? 'greater' : 'less') + ' than <b>' + A.fmt(x) + '</b>.', vals, fits, A.fmt, {
+          hint: 'Compare each one with ' + A.fmt(x) + ', starting from the left.', steps: ['Check each number. Find the first place where it differs from ' + A.fmt(x) + '.', 'A bigger digit there means a greater number.'],
+          explain: 'The numbers ' + (more ? 'greater' : 'less') + ' than ' + A.fmt(x) + ': ' + vals.filter(fits).map(A.fmt).join(', ') + '.', meta: { k: 'g5pv-pick', x: x, more: more, vals: vals } });
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(7, 9) * 1000 + R.int(7, 9) * 100 + R.int(70, 99), b = 10000 + R.int(0, 2) * 1000 + R.int(0, 299), who = nm();
+        var right = A.fmt(b) + ' has 5 digits and ' + A.fmt(a) + ' has only 4, so ' + A.fmt(b) + ' is greater.';
+        return K.tf(who, '<span class="math">' + A.fmt(a) + '</span> is greater than <span class="math">' + A.fmt(b) + '</span> because its digits are bigger.', a > b, right,
+          ['Big digits always make a bigger number.', 'Compare the ones digits first.', 'Add up the digits. The bigger total wins.'],
+          { hint: 'Count the digits in each number first.', meta: { k: 'g5pv-cmptf', a: a, b: b } });
+      }]
+    ],
+    'pv-round': [
+      [1, 'line', function (lv) {
+        var p = lv === 1 ? R.pick([10, 100]) : 1000, n, lo;
+        do { n = p === 10 ? R.int(101, 999) : p === 100 ? R.int(1001, 9999) : R.int(10001, 99999); lo = Math.floor(n / p) * p; } while (n === lo || n - lo === p / 2);
+        var ans = nearest(n, p), name = { 10: 'ten', 100: 'hundred', 1000: 'thousand' }[p];
+        return { q: 'Round <span class="math">' + A.fmt(n) + '</span> to the nearest <b>' + name + '</b>. Mark your answer on the line.', type: 'line', min: lo - p, max: lo + 2 * p, tick: p / 10, every: p, snap: p, answer: ans, tol: 0,
+          fig: hill(n, p), hint: 'Is ' + A.fmt(n) + ' closer to ' + A.fmt(lo) + ' or to ' + A.fmt(lo + p) + '?', steps: ['The ' + name + 's on either side are ' + A.fmt(lo) + ' and ' + A.fmt(lo + p) + '.', 'Halfway is ' + A.fmt(lo + p / 2) + '. ' + A.fmt(n) + ' is ' + (n > lo + p / 2 ? 'past' : 'before') + ' halfway.', 'So it rounds to ' + A.fmt(ans) + '.'],
+          explain: A.fmt(n) + ' rounds to ' + A.fmt(ans) + '.', meta: { k: 'g5pv-roundline', n: n, p: p } };
+      }],
+      [1, 'pick', function (lv) {
+        var p = lv === 1 ? 100 : 1000, t = (lv === 1 ? R.int(11, 98) : R.int(11, 98)) * p, vals = [];
+        while (vals.length < 5) { var v = t + R.int(-p, p); if (v !== t - p / 2 && v !== t + p / 2 && vals.indexOf(v) < 0) vals.push(v); }
+        var fits = function (v) { return Math.abs(v - t) < p / 2; };
+        if (!vals.some(fits)) vals[0] = t + R.int(1, p / 2 - 1);
+        if (vals.every(fits)) vals[1] = t + p / 2 + R.int(1, p / 2 - 1);
+        vals = vals.filter(function (v, i) { return vals.indexOf(v) === i; });
+        return K.pick('Pick every number that rounds to <b>' + A.fmt(t) + '</b> (nearest ' + (p === 100 ? 'hundred' : 'thousand') + ').', vals, fits, A.fmt, {
+          hint: 'A number rounds to ' + A.fmt(t) + ' if it is between ' + A.fmt(t - p / 2) + ' and ' + A.fmt(t + p / 2) + '.', steps: ['Halfway points are ' + A.fmt(t - p / 2) + ' and ' + A.fmt(t + p / 2) + '.', 'Pick the numbers between them.'],
+          explain: 'These round to ' + A.fmt(t) + ': ' + vals.filter(fits).map(A.fmt).join(', ') + '.', meta: { k: 'g5pv-roundpick', t: t, p: p, vals: vals } });
+      }],
+      [1, 'mistake', function (lv) {
+        var p = lv === 1 ? 100 : 1000, n, lo;
+        do { n = p === 100 ? R.int(1001, 9999) : R.int(10001, 99999); lo = Math.floor(n / p) * p; } while (n - lo < p / 10 || n - lo === p / 2);
+        var ans = nearest(n, p), who = nm(), truth = !R.int(0, 2), said = truth ? ans : (ans === lo ? lo + p : lo);
+        var dg = Math.floor((n % p) / (p / 10)), name = p === 100 ? 'hundred' : 'thousand';
+        var right = 'The digit after the ' + name + 's place is ' + dg + ', so ' + A.fmt(n) + ' rounds ' + (ans > lo ? 'up' : 'down') + ' to ' + A.fmt(ans) + '.';
+        return K.tf(who, '<span class="math">' + A.fmt(n) + '</span> rounded to the nearest ' + name + ' is <b>' + A.fmt(said) + '</b>.', truth, right,
+          ['Always round down, so the number gets smaller.', 'Look at the ones digit to decide.', 'Always round up, so you have enough.'],
+          { hint: 'Look at the digit just right of the ' + name + 's place.', meta: { k: 'g5pv-roundtf', n: n, p: p, said: said } });
+      }],
+      [2, 'story', function (lv) {
+        var c = R.pick(['fans came to a hockey game in Winnipeg', 'people ran a marathon in Ottawa', 'visitors came to a fair in Calgary']), n = R.int(10001, 99999), p = lv === 3 ? 10000 : 1000;
+        if (n % p === p / 2) n++;
+        var ans = nearest(n, p), name = p === 1000 ? 'thousand' : 'ten thousand';
+        return { q: A.fmt(n) + ' ' + c + '. A reporter rounds to the nearest <b>' + name + '</b>. What number does the reporter write?', type: 'num', answer: ans,
+          hint: 'Find the ' + name + 's on either side of ' + A.fmt(n) + '.', steps: ['The ' + name + 's on either side are ' + A.fmt(Math.floor(n / p) * p) + ' and ' + A.fmt(Math.floor(n / p) * p + p) + '.', 'Look at the next digit to the right to decide.'],
+          explain: A.fmt(n) + ' rounds to ' + A.fmt(ans) + '.', meta: { k: 'g5pv-roundstory', n: n, p: p } };
+      }]
+    ]
+  };
+  K.shapes('place-value', SHAPES);
 })();

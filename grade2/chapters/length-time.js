@@ -424,4 +424,127 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who, TIME = ['seconds', 'minutes', 'hours'];
+  function cmText(cm) { return cm % 100 === 0 ? cm / 100 + ' m' : cm > 100 ? Math.floor(cm / 100) + ' m and ' + cm % 100 + ' cm' : cm + ' cm'; }
+  /* one event for each unit of time, shortest first */
+  function eventsByUnit() { return TIME.map(function (u) { return R.pick(EVENTS.filter(function (e) { return e[1] === u; })); }); }
+  K.shapes(CH, {
+    'l2-units': [
+      [1, 'tap', function (lv) {
+        var u = R.pick(['cube', 'eraser']), set = R.shuffle(['crayon', 'pencil', 'book', 'ribbon']).slice(0, 3), o = set[0], n = OBJ[o].cm / UNIT[u].cm;
+        set = R.shuffle(set);
+        return { q: 'Tap the thing that is <b>' + n + ' ' + (n === 1 ? UNIT[u].n : UNIT[u].many) + '</b> long.', type: 'tap', tiles: set.map(function (x) { return measured(x, u, 9); }), answer: set.indexOf(o), answerText: 'the ' + OBJ[o].n,
+          hint: 'Count the ' + UNIT[u].many + ' under each thing.', steps: ['Count the ' + UNIT[u].many + ' under each one.', 'The ' + OBJ[o].n + ' has ' + n + '.'],
+          explain: 'The ' + OBJ[o].n + ' is ' + n + ' ' + UNIT[u].many + ' long.', meta: { k: 'l2-units-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var u = R.pick(['cube', 'eraser']), set = R.shuffle(['crayon', 'pencil', 'book', 'ribbon']).slice(0, 3);
+        return { q: 'Match each thing to how many ' + UNIT[u].many + ' long it is.', type: 'match', pairs: set.map(function (x) { return [measured(x, u, 9), OBJ[x].cm / UNIT[u].cm + ' ' + UNIT[u].many]; }),
+          hint: 'Count each ' + UNIT[u].n + ' once, from one end to the other.', steps: ['Count the ' + UNIT[u].many + ' under each thing.'],
+          explain: set.map(function (x) { return 'The ' + OBJ[x].n + ' is ' + OBJ[x].cm / UNIT[u].cm + ' ' + UNIT[u].many; }).join('. ') + '.', meta: { k: 'l2-units-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var o = R.pick(['pencil', 'book', 'ribbon']), u = R.pick(['cube', 'eraser']), u2 = u === 'cube' ? 'eraser' : 'cube', n = OBJ[o].cm / UNIT[u].cm, name = who(), said = R.pick(['more', 'fewer']);
+        var truth = (UNIT[u2].cm < UNIT[u].cm) === (said === 'more');
+        var right = UNIT[u2].many + ' are ' + (UNIT[u2].cm < UNIT[u].cm ? 'smaller, so you need more' : 'bigger, so you need fewer') + ': ' + OBJ[o].cm / UNIT[u2].cm + ' ' + UNIT[u2].many + '.';
+        return { q: 'The ' + OBJ[o].n + ' is ' + n + ' ' + UNIT[u].many + ' long. ' + name + ' says it would take <b>' + said + '</b> ' + UNIT[u2].many + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: measured(o, u),
+          why: why(right, ['Any unit gives the same number.', 'Bigger units always give a bigger number.', 'You can only measure with cubes.']),
+          hint: 'Bigger units: fewer needed. Smaller units: more needed.', steps: [right], explain: right, meta: { k: 'l2-units-tf' } };
+      }]
+    ],
+    'l2-cmm': [
+      [1, 'match', function (lv) {
+        var p = R.shuffle([100, 200, 150, 300, 250].map(function (cm) { return [cmText(cm), cm + ' cm']; })).slice(0, 3);
+        return { q: 'Match the lengths that are the same.', type: 'match', pairs: p,
+          hint: '1 m is 100 cm.', steps: ['1 m = 100 cm, so 2 m = 200 cm.'], explain: p.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'l2-cmm-match' } };
+      }],
+      [1, 'order', function (lv) {
+        var set = R.shuffle([30, 80, 100, 150, 200, 300]).slice(0, lv === 1 ? 3 : 4).sort(function (a, b) { return a - b; });
+        return { q: 'Put these lengths in order from <b>shortest</b> to longest.', type: 'order', items: set.map(cmText), first: 'shortest', last: 'longest',
+          hint: 'Change metres to centimetres first. 1 m is 100 cm.', steps: ['1 m = 100 cm.', 'Compare them all in centimetres.'],
+          explain: set.map(cmText).join(', ') + '.', meta: { k: 'l2-cmm-order' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var m = R.int(1, 3), c = R.pick([20, 50, 90]), name = who(), truth = R.int(0, 1) === 1, says = truth ? 'longer' : 'shorter';
+        var right = m + ' m is ' + 100 * m + ' cm, which is longer than ' + c + ' cm.';
+        return { q: name + ' says <b>' + m + ' m</b> is ' + says + ' than <b>' + c + ' cm</b>' + (truth ? '.' : ', because ' + m + ' is less than ' + c + '.') + ' True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Only the numbers matter, not the units.', 'Centimetres are longer than metres.', 'They are the same length.']),
+          hint: 'Change metres to centimetres first.', steps: [right], explain: right, meta: { k: 'l2-cmm-tf' } };
+      }]
+    ],
+    'l2-ruler': [
+      [1, 'line', function (lv) {
+        var a = lv === 1 ? 0 : R.int(1, 3), l = R.int(2, 12 - a);
+        return { q: 'A crayon starts at <b>' + a + '</b> on a ruler and is <b>' + l + ' cm</b> long. Show where it ends.', type: 'line', min: 0, max: 12, tick: 1, every: 1, snap: 1, answer: a + l, unit: 'cm', hideValue: true,
+          hint: 'Start at ' + a + ' and count ' + l + ' centimetres.', steps: ['Start at ' + a + '.', a + ' + ' + l + ' = ' + (a + l) + '.'],
+          explain: 'It ends at ' + (a + l) + '.', meta: { k: 'l2-ruler-line' } };
+      }],
+      [1, 'tap', function (lv) {
+        var a = lv === 1 ? 0 : R.int(1, 2), lens = R.shuffle([3, 4, 5, 6]).slice(0, 3), l = lens[0], set = R.shuffle(lens);
+        return { q: 'Tap the crayon that is <b>' + l + ' cm</b> long.', type: 'tap', tiles: set.map(function (x) { return ruler(9, a, x, 'crayon'); }), answer: set.indexOf(l), answerText: 'the crayon from ' + a + ' to ' + (a + l),
+          hint: a ? 'Each crayon starts at ' + a + '. Count from there.' : 'Each crayon starts at 0. Read the number at its end.', steps: ['Find where each crayon starts and ends.', 'Count the centimetres between.'],
+          explain: 'From ' + a + ' to ' + (a + l) + ' is ' + l + ' cm.', meta: { k: 'l2-ruler-tap' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(1, 4), l = R.int(3, 7), name = who(), truth = !R.int(0, 2), said = truth ? l : a + l;
+        var right = 'It starts at ' + a + ' and ends at ' + (a + l) + ', so it is ' + l + ' cm long.';
+        return { q: name + ' says the pencil is <b>' + said + ' cm</b> long. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: ruler(12, a, l, 'pencil'),
+          why: why(right, ['Read only the number at the end.', 'Count the marks, not the spaces.', 'Add the start and the end.']),
+          hint: 'Where does the pencil start? Count from there.', steps: [right], explain: right, meta: { k: 'l2-ruler-tf' } };
+      }]
+    ],
+    'l2-timeunit': [
+      [1, 'match', function (lv) {
+        var ev = eventsByUnit();
+        return { q: 'Match each thing to the unit that fits how long it takes.', type: 'match', pairs: ev.map(function (e) { return [e[0], e[1]]; }),
+          hint: 'Over in a blink? Seconds. A few minutes? Minutes. Most of a day? Hours.', steps: ['Picture each one happening.'],
+          explain: ev.map(function (e) { return e[0] + ' takes ' + e[1]; }).join('. ') + '.', meta: { k: 'l2-tu-match' } };
+      }],
+      [1, 'order', function (lv) {
+        var ev = eventsByUnit();
+        return { q: 'Put these in order from <b>shortest</b> time to longest.', type: 'order', items: ev.map(function (e) { return e[0]; }), first: 'shortest', last: 'longest',
+          hint: 'Seconds are short, minutes are longer, hours are longest.', steps: ['Think of the unit for each one.'],
+          explain: ev.map(function (e) { return e[0] + ' (' + e[1] + ')'; }).join(', then ') + '.', meta: { k: 'l2-tu-order' } };
+      }],
+      [2, 'fill', function (lv) {
+        var two = lv === 3;
+        return { q: 'Fill in the missing numbers.', type: 'fill', fill: (two ? '2 minutes' : '1 minute') + ' = [[]] seconds. ' + (two ? '2 hours' : '1 hour') + ' = [[]] minutes.', answers: two ? [120, 120] : [60, 60],
+          hint: '1 minute is 60 seconds. 1 hour is 60 minutes.', steps: ['1 minute = 60 seconds.', '1 hour = 60 minutes.'],
+          explain: two ? '60 + 60 = 120 for both.' : 'Both are 60.', meta: { k: 'l2-tu-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var big = R.pick(['minute', 'hour']), small = big === 'minute' ? 'seconds' : 'minutes', name = who(), truth = !R.int(0, 2), said = truth ? 60 : R.pick([100, 10, 30]);
+        var right = '1 ' + big + ' is 60 ' + small + '.';
+        return { q: name + ' says 1 ' + big + ' is <b>' + said + '</b> ' + small + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Time works like centimetres: 100 make the next unit.', 'Each unit is 10 of the one before.', 'It changes every day.']),
+          hint: 'Think of a clock. How many minutes go around once?', steps: [right], explain: right, meta: { k: 'l2-tu-tf' } };
+      }]
+    ],
+    'l2-hours': [
+      [1, 'tap', function (lv) {
+        var h = R.int(1, 12), set = [h], tries = 0;
+        while (set.length < 3 && tries++ < 20) { var x = R.int(1, 12); if (set.indexOf(x) < 0) set.push(x); }
+        set = R.shuffle(set);
+        return { q: 'Tap the clock that shows <b>' + hourName(h) + '</b>.', type: 'tap', tiles: set.map(function (x) { return clock(x, 0, 46); }), answer: set.indexOf(h), answerText: 'the clock with the short hand on ' + h,
+          hint: 'The long hand points to 12. The short hand shows the hour.', steps: ['Look at the short hand on each clock.', 'Find the one pointing to ' + h + '.'],
+          explain: 'At ' + hourName(h) + ', the short hand points to ' + h + ' and the long hand to 12.', meta: { k: 'l2-hrs-tap' } };
+      }],
+      [1, 'fill', function (lv) {
+        var s = R.int(1, lv === 1 ? 6 : 10), l = R.int(1, lv === 1 ? 3 : 12 - s);
+        return { q: 'Read the clocks.', type: 'fill', fig: '<div class="vrow"><figure>' + clock(s, 0, 50) + '<figcaption>Start</figcaption></figure><figure>' + clock(s + l, 0, 50) + '<figcaption>End</figcaption></figure></div>',
+          fill: 'It starts at [[]] o’clock and ends at [[]] o’clock. That is [[]] hours.', answers: [s, s + l, l],
+          hint: 'Read each short hand. Then count the jumps from start to end.', steps: ['Start: ' + hourName(s) + '. End: ' + hourName(s + l) + '.', 'Count the jumps: ' + l + '.'],
+          explain: 'From ' + hourName(s) + ' to ' + hourName(s + l) + ' is ' + l + ' hour' + (l > 1 ? 's' : '') + '.', meta: { k: 'l2-hrs-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var s = R.int(8, 11), l = R.int(13 - s, 5), e = ((s + l - 1) % 12) + 1, name = who(), truth = !R.int(0, 2), said = truth ? l : Math.abs(s - e);
+        var right = 'Count forward from ' + s + ': ' + l + ' jumps to reach ' + e + '. That is ' + l + ' hours.';
+        return { q: 'A trip starts at ' + hourName(s) + ' and ends at ' + hourName(e) + '. ' + name + ' says it is <b>' + said + '</b> hours. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          fig: '<div class="vrow"><figure>' + clock(s, 0, 50) + '<figcaption>Start</figcaption></figure><figure>' + clock(e, 0, 50) + '<figcaption>End</figcaption></figure></div>',
+          why: why(right, ['Take away the smaller number from the bigger one.', 'Count the starting hour too.', 'Time stops at 12.']),
+          hint: 'Count forward from the start, going past 12 if you need to.', steps: [right], explain: right, meta: { k: 'l2-hrs-tf' } };
+      }]
+    ]
+  });
 })();

@@ -285,6 +285,7 @@
   set('coin-num', q => cents(q.q) === q.answer ? '' : 'total');
   set('coin-match', q => q.pairs.every(p => cents(p[0]) === nums(p[1])[0]) ? '' : 'pairs');
   set('coin-tf', (q, m) => (drawn(q.fig) === m.said) === q.answer ? '' : 'truth');
+  set('make-build', (q, m) => q.tool === 'coins' && q.answer === m.tg && H.num(bold(q)) === m.tg ? '' : 'target');
   set('make-pick', (q, m) => same(q.options.map((o, j) => cents(o) === m.tg ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
   set('make-fill', (q, m) => { const [a, b, c] = q.answers; return a * 25 + b * 10 + c * 5 === m.tg && a + b + c === fewest(m.tg) ? '' : 'coins'; });
   set('make-mc', (q, m) => (cents(q.q) >= m.price ? 'yes' : 'no') === q.options[q.answer] ? '' : 'enough');

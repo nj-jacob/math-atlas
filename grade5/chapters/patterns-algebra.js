@@ -518,4 +518,197 @@
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  function mth(x) { return '<span class="math">' + x + '</span>'; }
+  function seqOf(start, step, n) { var s = []; for (var i = 0; i < n; i++) s.push(start + step * i); return s; }
+  function code(s, a, r) { return '<span class="mono">total = ' + s + '\nrepeat ' + r + ' times:\n    total = total + ' + a + '</span>'; }
+  function ruleText(k, c) { return k + 'n' + (c ? ' + ' + c : ''); }
+  var SHAPES = {
+    'al-next': [
+      [1, 'fill', function (lv) {
+        var grow = lv === 1 || !R.int(0, 1), step = R.int(2, lv === 1 ? 5 : 12), seq = seqOf(grow ? R.int(1, 30) : R.int(80, 140), grow ? step : -step, 5);
+        return { q: 'Fill in the next two terms.', type: 'fill', fill: seq.slice(0, 3).join(', ') + ', [[]], [[]]', answers: seq.slice(3),
+          hint: 'Find the step between two terms next to each other.', steps: ['The step is ' + (grow ? '+' : '&minus;') + step + '.', seq[2] + (grow ? ' + ' : ' &minus; ') + step + ' = ' + seq[3] + '. Then ' + seq[4] + '.'],
+          explain: 'The pattern ' + (grow ? 'adds ' : 'subtracts ') + step + ': ' + seq.join(', ') + '.', meta: { k: 'g5al-fill' } };
+      }],
+      [1, 'tap', function (lv) {
+        var step = R.int(2, lv === 1 ? 5 : 9), seq = seqOf(R.int(1, 20), step, 5), bad = R.int(1, 3);
+        seq[bad] += R.pick([-1, 1]);
+        return { q: 'One number does not fit the pattern. Tap it.', type: 'tap', tiles: seq.map(function (v) { return '<span class="math" style="font-size:1.3em">' + v + '</span>'; }), answer: bad, answerText: String(seq[bad]),
+          hint: 'Find the step using numbers that do fit.', steps: ['The first two numbers that fit go up by ' + step + '.', 'Check each jump. One jump is not ' + step + '.'],
+          explain: 'The pattern adds ' + step + ', so ' + seq[bad] + ' should be ' + (seq[bad - 1] + step) + '.', meta: { k: 'g5al-tap', seq: seq } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), a = R.int(5, 20), k = R.int(2, lv === 1 ? 5 : 15), n = R.int(4, lv === 1 ? 6 : 10);
+        return { q: who + ' has $' + a + ' in week 1. ' + who + ' saves $' + k + ' more each week. How much money will ' + who + ' have in week ' + n + '?', type: 'num', answer: a + k * (n - 1),
+          hint: 'Week 1 is $' + a + '. How many weeks of saving come after week 1?', steps: ['From week 1 to week ' + n + ' is ' + (n - 1) + ' more weeks.', a + ' + ' + (n - 1) + ' &times; ' + k + ' = ' + (a + k * (n - 1)) + '.'],
+          explain: who + ' will have $' + (a + k * (n - 1)) + ' in week ' + n + '.', meta: { k: 'g5al-story' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var step = R.int(3, 12), seq = seqOf(R.int(80, 140), -step, 5), who = nm(), truth = !R.int(0, 2), said = truth ? seq[4] : seq[3] + step;
+        var right = 'The pattern subtracts ' + step + ' each time, so the next term is ' + seq[3] + ' &minus; ' + step + ' = ' + seq[4] + '.';
+        return K.tf(who, 'the next term in ' + mth(seq.slice(0, 4).join(', ')) + ' is <b>' + said + '</b>.', truth, right,
+          ['Patterns always go up.', 'Add the first two terms to get the step.', 'The next term is the first term again.'],
+          { hint: 'Is the pattern growing or shrinking?', meta: { k: 'g5al-tf', said: said } });
+      }]
+    ],
+    'al-rule': [
+      [1, 'match', function (lv) {
+        var set = [], seen = {};
+        while (set.length < 3) { var k = R.int(2, lv === 1 ? 5 : 9), c = lv === 1 ? 0 : R.int(0, 6), key = k + ',' + c; if (!seen[key]) { seen[key] = 1; set.push([k, c]); } }
+        return { q: 'Match each rule to the first four terms it makes.', type: 'match', pairs: set.map(function (x) { return [ruleText(x[0], x[1]), [1, 2, 3, 4].map(function (n) { return x[0] * n + x[1]; }).join(', ')]; }),
+          hint: 'Put n = 1, 2, 3, 4 into each rule.', steps: ['The number in front of n is the step.', 'Check term 1 to see what is added.'],
+          explain: set.map(function (x) { return ruleText(x[0], x[1]) + ' makes ' + [1, 2, 3, 4].map(function (n) { return x[0] * n + x[1]; }).join(', '); }).join('. ') + '.', meta: { k: 'g5al-rulematch' } };
+      }],
+      [1, 'fill', function (lv) {
+        var k = R.int(2, lv === 1 ? 5 : 9), c = lv === 1 ? 0 : R.int(1, 9), n2 = R.int(6, 12);
+        return { q: 'The rule is <b>' + ruleText(k, c) + '</b>. Fill in the values.', type: 'fill', fill: 'Term 5: [[]]<br>Term ' + n2 + ': [[]]', answers: [k * 5 + c, k * n2 + c],
+          hint: 'Replace n with the term number.', steps: [k + ' &times; 5' + (c ? ' + ' + c : '') + ' = ' + (k * 5 + c) + '.', k + ' &times; ' + n2 + (c ? ' + ' + c : '') + ' = ' + (k * n2 + c) + '.'],
+          explain: 'Term 5 is ' + (k * 5 + c) + ' and term ' + n2 + ' is ' + (k * n2 + c) + '.', meta: { k: 'g5al-rulefill', k2: k, c: c } };
+      }],
+      [1, 'line', function (lv) {
+        var k = R.int(2, lv === 1 ? 5 : 10), n = R.int(4, 9);
+        return { q: 'A pattern follows the rule <b>' + k + 'n</b>. Mark <b>term ' + n + '</b> on the number line.', type: 'line', min: 0, max: k * 10, tick: k, every: k * 5, snap: k, answer: k * n, tol: 0,
+          hint: 'Each term is ' + k + ' more than the one before. Jump by ' + k + 's.', steps: ['Term ' + n + ' is ' + k + ' &times; ' + n + '.', k + ' &times; ' + n + ' = ' + k * n + '.'],
+          explain: 'Term ' + n + ' is ' + k * n + '.', meta: { k: 'g5al-ruleline' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var k = R.int(3, 9), c = R.int(1, 9), vals = [1, 2, 3, 4].map(function (n) { return k * n + c; }), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? ruleText(k, c) : 'n + ' + k;
+        var right = 'The values go up by ' + k + ', so the rule has ' + k + 'n. Term 1 is ' + vals[0] + ' = ' + k + ' + ' + c + ', so the rule is ' + ruleText(k, c) + '.';
+        return K.tf(who, 'the rule for ' + mth(vals.join(', ')) + ' is <b>' + said + '</b>.', truth, right,
+          ['The step is always added to n.', 'The rule is the first term times n.', 'Every pattern has the rule n + 1.'],
+          { hint: 'Check the rule with term 2. Does it give ' + vals[1] + '?', meta: { k: 'g5al-ruletf', said: said } });
+      }]
+    ],
+    'al-dec': [
+      [1, 'fill', function (lv) {
+        var st = lv === 1 ? R.pick([1, 2, 5]) : R.pick([1, 2, 5, 25]), up = lv === 1 || !R.int(0, 1), unit = lv === 1 ? 10 : R.pick([10, 1]), c = R.int(1, 30) * 5;
+        if (!up) c += 4 * st * unit;
+        var seq = seqOf(c, (up ? 1 : -1) * st * unit, 5).map(function (v) { return A.clean(v / 100); });
+        return { q: 'Fill in the next two terms.', type: 'fill', fill: seq.slice(0, 3).join(', ') + ', [[]], [[]]', answers: seq.slice(3),
+          hint: 'Find the step. 10 hundredths make 1 tenth, and 10 tenths make 1 whole.', steps: ['The step is ' + (up ? '+' : '&minus;') + A.clean(st * unit / 100) + '.', 'Keep going: ' + seq[3] + ', ' + seq[4] + '.'],
+          explain: seq.join(', ') + '.', meta: { k: 'g5al-decfill' } };
+      }],
+      [1, 'line', function (lv) {
+        var st = R.pick([1, 2]), w = R.int(0, 4), start = w * 10 + R.int(0, 10 - 4 * st - 1), seq = seqOf(start, st, 4).map(function (v) { return A.clean(v / 10); });
+        return { q: 'Mark the next term on the number line: <span class="math">' + seq.slice(0, 3).join(', ') + ', ?</span>', type: 'line', min: w, max: w + 1, tick: 0.1, every: 0.5, snap: 0.1, answer: seq[3], tol: 0,
+          hint: 'How big is each step? Each small mark is 0.1.', steps: ['The step is ' + st / 10 + '.', seq[2] + ' + ' + st / 10 + ' = ' + seq[3] + '.'],
+          explain: 'The next term is ' + seq[3] + '.', meta: { k: 'g5al-decline' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var w = R.int(1, 6), a = w + 0.8, who = nm(), truth = !R.int(0, 2), said = truth ? String(w + 1) + '.0' : w + '.10';
+        var right = w + '.9 + 0.1 = ' + (w + 1) + '.0, because 10 tenths make 1 whole.';
+        return K.tf(who, 'the next term in ' + mth(A.clean(a) + ', ' + w + '.9, ?') + ' is <b>' + said + '</b>.', truth, right,
+          ['After 9 tenths comes 10 tenths, written .10.', 'Decimals can never cross a whole number.', 'The step is 0.01.'],
+          { hint: 'What do 10 tenths make?', meta: { k: 'g5al-dectf', said: said } });
+      }]
+    ],
+    'al-eval': [
+      [1, 'match', function (lv) {
+        var n = R.int(2, lv === 1 ? 5 : 9), list = [], seen = {};
+        while (list.length < 3) { var k = R.int(2, 9), c = lv === 1 ? 0 : R.int(1, 15), v = k * n + c; if (!seen[v]) { seen[v] = 1; list.push([k, c]); } }
+        return { q: 'When <i>n</i> = ' + n + ', match each expression to its value.', type: 'match', pairs: list.map(function (x) { return [x[0] + '<i>n</i>' + (x[1] ? ' + ' + x[1] : ''), String(x[0] * n + x[1])]; }),
+          hint: 'Replace n with ' + n + ' in each one.', steps: ['Multiply first, then add.'],
+          explain: list.map(function (x) { return x[0] + ' &times; ' + n + (x[1] ? ' + ' + x[1] : '') + ' = ' + (x[0] * n + x[1]); }).join('. ') + '.', meta: { k: 'g5al-evalmatch', n: n } };
+      }],
+      [1, 'fill', function (lv) {
+        var k = R.int(2, 9), c = lv === 1 ? 0 : R.int(1, 12), ns = [2, 3, 4].map(function (x) { return x + (lv === 3 ? 7 : 0); });
+        return { q: 'Fill in the table for <b>' + k + 'n' + (c ? ' + ' + c : '') + '</b>.', type: 'fill', fill: ns.map(function (n) { return 'n = ' + n + ': [[]]'; }).join('<br>'), answers: ns.map(function (n) { return k * n + c; }),
+          hint: 'Replace n with each number. Multiply first.', steps: ns.map(function (n) { return k + ' &times; ' + n + (c ? ' + ' + c : '') + ' = ' + (k * n + c) + '.'; }),
+          explain: 'The values are ' + ns.map(function (n) { return k * n + c; }).join(', ') + '.', meta: { k: 'g5al-evalfill', k2: k, c: c } };
+      }],
+      [1, 'story', function (lv) {
+        var c = R.int(3, 6), k = R.int(2, 4), n = R.int(3, lv === 1 ? 6 : 15);
+        return { q: 'A taxi in Halifax costs <b>$' + c + ' + $' + k + ' for each km</b>. The cost is ' + mth(c + ' + ' + k + '<i>n</i>') + ' for <i>n</i> km. How much is a ' + n + ' km ride, in dollars?', type: 'num', answer: c + k * n,
+          hint: 'Replace n with ' + n + '.', steps: [k + ' &times; ' + n + ' = ' + k * n + '.', c + ' + ' + k * n + ' = ' + (c + k * n) + '.'],
+          explain: 'The ride costs $' + (c + k * n) + '.', meta: { k: 'g5al-evalstory' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var k = R.int(2, 9), n = R.int(2, 9), who = nm(), truth = !R.int(0, 2), said = truth ? k * n : Number(String(k) + n);
+        var right = k + '<i>n</i> means ' + k + ' &times; n. When n = ' + n + ', that is ' + k + ' &times; ' + n + ' = ' + k * n + '.';
+        return K.tf(who, mth(k + '<i>n</i>') + ' is <b>' + said + '</b> when <i>n</i> = ' + n + '.', truth, right,
+          [k + 'n means write ' + k + ' and then the value of n.', k + 'n means ' + k + ' + n.', 'You cannot find ' + k + 'n without more information.'],
+          { hint: 'What does a number right next to n mean?', meta: { k: 'g5al-evaltf', k2: k, n: n, said: said } });
+      }]
+    ],
+    'al-solve': [
+      [1, 'pick', function (lv) {
+        var x = R.int(3, lv === 1 ? 20 : 12), opts = [], seen = {}, g = R.int(1, 3), tries = 0;
+        var make = function (good) { var a = R.int(2, 9), t = R.pick(lv === 1 ? ['add', 'sub'] : ['add', 'sub', 'mul']), v = x + (good ? 0 : R.pick([-2, -1, 1, 2])); return { good: good, e: t === 'add' ? '<i>n</i> + ' + a + ' = ' + (v + a) : t === 'sub' ? '<i>n</i> &minus; ' + a + ' = ' + (v - a) : a + ' &times; <i>n</i> = ' + a * v }; };
+        while (opts.length < 5 && tries++ < 60) { var o = make(opts.length < g); if (!seen[o.e]) { seen[o.e] = 1; opts.push(o); } }
+        return K.pick('Pick every equation where <b><i>n</i> = ' + x + '</b>.', R.shuffle(opts), function (o) { return o.good; }, function (o) { return o.e; }, {
+          hint: 'Put ' + x + ' in place of n. Is each one true?', steps: ['Replace n with ' + x + ' in each equation.', 'Work out the left side. Does it match the right side?'],
+          explain: 'Each picked equation is true when n = ' + x + '.', meta: { k: 'g5al-pick', x: x } });
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), a = R.int(5, 30), n = R.int(5, 40), mul = lv > 1 && !R.int(0, 1), k = R.int(3, 8);
+        var q = mul ? who + ' buys ' + k + ' packs of cards. Each pack has the same number of cards. That is ' + k * n + ' cards. How many cards are in each pack?' : who + ' had some stickers. A friend gave ' + who + ' ' + a + ' more. Now ' + who + ' has ' + (n + a) + '. How many stickers did ' + who + ' have at first?';
+        return { q: q, type: 'num', answer: n,
+          hint: mul ? 'Write ' + k + ' &times; n = ' + k * n + '.' : 'Write n + ' + a + ' = ' + (n + a) + '.', steps: [mul ? k + ' &times; n = ' + k * n + '. Divide both sides by ' + k + '.' : 'n + ' + a + ' = ' + (n + a) + '. Subtract ' + a + ' from both sides.', 'n = ' + n + '.'],
+          explain: 'n = ' + n + '.', meta: { k: 'g5al-solvestory', mul: mul } };
+      }],
+      [1, 'which', function (lv) {
+        var t = R.pick(lv === 1 ? ['add', 'sub'] : ['add', 'sub', 'mul']), a = R.int(3, 12), n = R.int(2, 20), eq = t === 'add' ? 'n + ' + a + ' = ' + (n + a) : t === 'sub' ? 'n &minus; ' + a + ' = ' + (n - a > 0 ? n - a : n) : a + ' &times; n = ' + a * n;
+        if (t === 'sub' && n - a <= 0) { n += a; eq = 'n &minus; ' + a + ' = ' + (n - a); }
+        var opts = { add: 'Subtract ' + a + ' from both sides', sub: 'Add ' + a + ' to both sides', mul: 'Divide both sides by ' + a };
+        return K.mc('Which step solves ' + mth(eq) + '?', opts[t], ['Subtract ' + a + ' from both sides', 'Add ' + a + ' to both sides', 'Divide both sides by ' + a, 'Multiply both sides by ' + a].filter(function (o) { return o !== opts[t]; }), {
+          hint: 'Do the opposite of what is done to n.', steps: [t === 'add' ? a + ' is added to n. The opposite of adding is subtracting.' : t === 'sub' ? a + ' is taken from n. The opposite of subtracting is adding.' : 'n is multiplied by ' + a + '. The opposite of multiplying is dividing.'],
+          explain: opts[t] + '. Then n = ' + n + '.', meta: { k: 'g5al-which', t: t, a: a } });
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(5, 30), n = R.int(a + 5, 80), b = n - a, who = nm(), truth = !R.int(0, 2), said = truth ? n : b - a;
+        var right = 'Add ' + a + ' to both sides: ' + b + ' + ' + a + ' = ' + n + '. Check: ' + n + ' &minus; ' + a + ' = ' + b + '.';
+        return K.tf(who, 'the answer to ' + mth('<i>n</i> &minus; ' + a + ' = ' + b) + ' is <b><i>n</i> = ' + said + '</b>.', truth, right,
+          ['Subtract ' + a + ' from both sides.', 'n is always the bigger number on the right.', 'Divide both sides by ' + a + '.'],
+          { hint: 'Put the answer back in. Is it true?', meta: { k: 'g5al-solvetf', said: said } });
+      }]
+    ],
+    'al-ineq': [
+      [1, 'pick', function (lv) {
+        var a = R.int(2, 20), b = R.int(a + 6, 50), edge = b - a, lt = lv === 1 || !R.int(0, 1), opts = [edge - 3, edge - 1, edge, edge + 1, edge + 4].filter(function (v) { return v >= 0; });
+        return K.pick('Pick every whole number that makes ' + mth('<i>n</i> + ' + a + ' ' + (lt ? '&lt;' : '&gt;') + ' ' + b) + ' true.', R.shuffle(opts), function (v) { return lt ? v + a < b : v + a > b; }, String, {
+          hint: 'Try each number: add ' + a + ' and compare with ' + b + '.', steps: ['n + ' + a + ' = ' + b + ' when n = ' + edge + '. That one makes the sides equal, so it does not work.', 'Numbers ' + (lt ? 'less' : 'greater') + ' than ' + edge + ' work.'],
+          explain: 'The solutions are n ' + (lt ? '&lt; ' : '&gt; ') + edge + '.', meta: { k: 'g5al-ineqpick', a: a, b: b, lt: lt } });
+      }],
+      [1, 'line', function (lv) {
+        var a = R.int(2, 20), b = R.int(a + 6, 50), edge = b - a, lt = lv === 1 || !R.int(0, 1);
+        return { q: 'Mark the <b>' + (lt ? 'greatest' : 'least') + '</b> whole number that makes ' + mth('<i>n</i> + ' + a + ' ' + (lt ? '&lt;' : '&gt;') + ' ' + b) + ' true.', type: 'line', min: edge - 5, max: edge + 5, tick: 1, every: 5, snap: 1, answer: lt ? edge - 1 : edge + 1, tol: 0,
+          hint: 'First find where n + ' + a + ' = ' + b + '.', steps: ['n + ' + a + ' = ' + b + ' when n = ' + edge + '.', 'That makes the two sides equal, so step one ' + (lt ? 'down' : 'up') + ': ' + (lt ? edge - 1 : edge + 1) + '.'],
+          explain: 'n ' + (lt ? '&lt; ' : '&gt; ') + edge + ', so the answer is ' + (lt ? edge - 1 : edge + 1) + '.', meta: { k: 'g5al-ineqline', a: a, b: b, lt: lt } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a = R.int(2, 20), b = R.int(a + 6, 50), edge = b - a, who = nm(), truth = !R.int(0, 2), said = truth ? edge - 1 : edge;
+        var right = 'n + ' + a + ' &lt; ' + b + ' needs n + ' + a + ' to be less than ' + b + '. ' + edge + ' + ' + a + ' = ' + b + ' is equal, not less, so the greatest is ' + (edge - 1) + '.';
+        return K.tf(who, 'the greatest whole number that makes ' + mth('<i>n</i> + ' + a + ' &lt; ' + b) + ' true is <b>' + said + '</b>.', truth, right,
+          ['Equal counts as less than.', 'Any number less than ' + b + ' works.', 'An inequality has only one answer.'],
+          { fig: ineq(edge, true), hint: 'Check the answer: is ' + said + ' + ' + a + ' less than ' + b + '?', meta: { k: 'g5al-ineqtf', a: a, b: b, said: said } });
+      }]
+    ],
+    'al-code': [
+      [1, 'fill', function (lv) {
+        var s = R.int(0, 10), a = R.int(2, lv === 1 ? 5 : 9), r = 3;
+        return { q: 'Trace the code. Fill in <i>total</i> after each time through the loop.', type: 'fill', fig: code(s, a, r), fill: 'After 1: [[]]<br>After 2: [[]]<br>After 3: [[]]', answers: [s + a, s + 2 * a, s + 3 * a],
+          hint: 'Start at ' + s + '. Add ' + a + ' each time.', steps: ['Start: ' + s + '.', 'Add ' + a + ' three times: ' + (s + a) + ', ' + (s + 2 * a) + ', ' + (s + 3 * a) + '.'],
+          explain: 'The totals are ' + (s + a) + ', ' + (s + 2 * a) + ' and ' + (s + 3 * a) + '.', meta: { k: 'g5al-codefill', s: s, a: a } };
+      }],
+      [1, 'mistake', function (lv) {
+        var s = R.int(1, 10), a = R.int(2, 6), r = R.int(3, lv === 1 ? 4 : 6), t = s + a * r, who = nm(), truth = !R.int(0, 2), said = truth ? t : s + a;
+        var right = 'The loop runs ' + r + ' times, adding ' + a + ' each time: ' + s + ' + ' + r + ' &times; ' + a + ' = ' + t + '.';
+        return K.tf(who, 'this code ends with total = <b>' + said + '</b>.', truth, right,
+          ['The loop only adds ' + a + ' once.', 'The code ends with the number of repeats.', 'total starts at 0, whatever the first line says.'],
+          { fig: code(s, a, r), hint: 'How many times does the loop run?', meta: { k: 'g5al-codetf', s: s, a: a, r: r, said: said } });
+      }],
+      [1, 'which', function (lv) {
+        var s = R.int(0, 10), a = R.int(2, 6), r = R.int(3, 5), r2 = r + R.int(1, 4), T = s + a * r2;
+        var opts = [r2, r2 + 1, r2 - 1, T].map(function (k) { return 'repeat ' + k + ' times'; });
+        return K.mc('This code ends with total = ' + (s + a * r) + '. You want it to end with <b>total = ' + T + '</b>. Which line should replace <b>repeat ' + r + ' times</b>?' + code(s, a, r), opts[0], opts.slice(1), {
+          hint: 'Each time through the loop adds ' + a + '. How many ' + a + 's do you need to get from ' + s + ' to ' + T + '?', steps: [T + ' &minus; ' + s + ' = ' + (T - s) + '.', (T - s) + ' &divide; ' + a + ' = ' + r2 + ' times.'],
+          explain: s + ' + ' + r2 + ' &times; ' + a + ' = ' + T + ', so use repeat ' + r2 + ' times.', meta: { k: 'g5al-codewhich', s: s, a: a, T: T } });
+      }]
+    ]
+  };
+  K.shapes('patterns-algebra', SHAPES);
 })();

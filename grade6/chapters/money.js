@@ -398,4 +398,137 @@ A.yt({ q: 'You let a friend use your calculator for a test, and they give it bac
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var KIT = A.Q, why = G6.why, nm = KIT.name, OPS = ['Add', 'Subtract', 'Multiply', 'Divide'];
+    var PAYWAY = { cash: 'coins and bills you carry with you', 'debit card': 'takes money straight from your bank account', 'credit card': 'borrowed money that you pay back later',
+      'e-transfer': 'sends money online from your bank account', 'gift card': 'spends only the money loaded on it, often at one store' };
+    var BORROWED = ['credit card', 'buy now, pay later'], FROMBANK = ['debit card', 'e-transfer'], ALLPAY = ['cash', 'debit card', 'credit card', 'e-transfer', 'gift card', 'buy now, pay later'];
+    var NEEDS = ['a warm winter coat', 'healthy food', 'a place to live', 'winter boots', 'clean water'], WANTS = ['the newest phone', 'a third video game', 'concert tickets', 'a designer phone case', 'a new skateboard'];
+    var WHEN = ['saving $10 for a movie this weekend', 'saving $40 for a gift next month', 'saving $300 for a bike next summer', 'saving for college'];
+    /* who acts, and what happens to the thing: swap, returned, or given away */
+    var ACTS = [
+      ['Ali swaps a hockey card for a friend’s comic book. Ali is&hellip;', { swap: 1 }], ['Two classmates exchange lunches. They are&hellip;', { swap: 1 }],
+      ['Mia lets her cousin use her tent for a weekend, and he brings it back. Mia is&hellip;', { returned: 1, owner: 1 }], ['A bank gives a family money for a house, to be paid back with interest. The bank is&hellip;', { returned: 1, owner: 1 }],
+      ['Sam uses his neighbour’s ladder and will give it back on Friday. Sam is&hellip;', { returned: 1, owner: 0 }], ['Leah gets $15 from her dad and will pay it back next week. Leah is&hellip;', { returned: 1, owner: 0 }],
+      ['Noah gives his old coat to a shelter and expects nothing back. Noah is&hellip;', {}], ['Priya spends Saturday helping at a food bank. Priya is&hellip;', {}]
+    ];
+    function way(a) { return a.swap ? 'trading' : a.returned ? (a.owner ? 'lending' : 'borrowing') : 'donating'; }
+    function picked(list) { var l = R.shuffle(list); return { options: l.map(function (x) { return x[0]; }), answer: l.map(function (x, j) { return x[1] ? j : -1; }).filter(function (j) { return j >= 0; }) }; }
+    function goalNums() { var per = R.pick([5, 10, 15, 20, 25]), have = R.int(1, 6) * 5, w = R.int(3, 12), goal = have + per * (w - 1) + R.int(1, per / 5) * 5; return { per: per, have: have, goal: goal, wk: Math.ceil((goal - have) / per) }; }
+    var SHAPES = {
+      'mo-pay': [
+        [1, 'match', function () {
+          var ks = R.shuffle(Object.keys(PAYWAY)).slice(0, 3);
+          return { q: 'Match each way to pay to what it does.', type: 'match', pairs: ks.map(function (k) { return [k.charAt(0).toUpperCase() + k.slice(1), PAYWAY[k]]; }),
+            hint: 'Whose money is it? Where does it come from?', steps: ks.map(function (k) { return k + ': ' + PAYWAY[k] + '.'; }), explain: 'Each way to pay moves money differently.', meta: { k: 'g6-pay-match' } };
+        }],
+        [1, 'pick', function () {
+          var ask = R.pick([['uses <b>borrowed</b> money', BORROWED, 'borrowed'], ['takes money <b>from your bank account</b>', FROMBANK, 'bank']]), o = picked(ALLPAY.map(function (p) { return [p, ask[1].indexOf(p) >= 0]; }));
+          return { q: 'Pick every way to pay that ' + ask[0] + '.', type: 'pick', options: o.options, answer: o.answer,
+            hint: 'Think about where the money comes from.', steps: ['These do: ' + ask[1].join(' and ') + '.'], explain: ask[1].join(' and ') + '.', meta: { k: 'g6-pay-pick', ask: ask[2] } };
+        }],
+        [1, 'mistake', function () {
+          var p = R.pick(ALLPAY), who = nm(), truth = BORROWED.indexOf(p) >= 0;
+          return { q: who + ' says paying with a <b>' + p + '</b> uses borrowed money that must be paid back. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? 'A ' + p + ' lets you spend money now and pay it back later.' : 'A ' + p + ' uses money that is already yours.', ['Every card uses borrowed money.', 'Only cash is real money.']),
+            hint: 'Is the money already yours?', steps: [truth ? 'It is borrowed.' : 'It is your own money.'], explain: truth ? 'True: it is borrowed.' : 'False: it is your own money.', meta: { k: 'g6-pay-tf', p: p } };
+        }]
+      ],
+      'mo-goal': [
+        [1, 'line', function () {
+          var per = R.pick([5, 10, 20, 25]), w = R.int(2, 15), goal = per * w;
+          return { q: 'A ' + R.pick(['bike', 'tent', 'guitar']) + ' costs ' + m(goal) + '. You save ' + m(per) + ' each week. Place the number of weeks it takes on the line.', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: w,
+            hint: 'Divide the cost by what you save each week.', steps: [m(goal) + ' &divide; ' + m(per) + ' = ' + w + '.'], explain: w + ' weeks.', meta: { k: 'g6-goal-line', goal: goal, have: 0, per: per } };
+        }],
+        [1, 'fill', function () {
+          var g0 = goalNums();
+          return { q: 'A game console costs ' + m(g0.goal) + '. You have ' + m(g0.have) + ' and save ' + m(g0.per) + ' each week.', type: 'fill', fill: 'Still needed: $[[]] &nbsp; Weeks: [[]]', answers: [g0.goal - g0.have, g0.wk],
+            hint: 'Subtract first. Then divide and round up.', steps: [m(g0.goal) + ' &minus; ' + m(g0.have) + ' = ' + m(g0.goal - g0.have) + '.', m(g0.goal - g0.have) + ' &divide; ' + m(g0.per) + ' is ' + fmt(cl((g0.goal - g0.have) / g0.per)) + ', so ' + g0.wk + ' weeks.'], explain: g0.wk + ' weeks.', meta: { k: 'g6-goal-fill', goal: g0.goal, have: g0.have, per: g0.per } };
+        }],
+        [1, 'mistake', function () {
+          var g0 = goalNums(), who = nm(), truth = !R.int(0, 2), said = truth ? g0.wk : Math.ceil(g0.goal / g0.per);
+          if (!truth && said === g0.wk) said = g0.wk + 1;
+          return { q: 'Skates cost ' + m(g0.goal) + '. You have ' + m(g0.have) + ' and save ' + m(g0.per) + ' each week. ' + who + ' says it takes <b>' + said + ' weeks</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('You still need ' + m(g0.goal - g0.have) + '. At ' + m(g0.per) + ' a week that takes ' + g0.wk + ' weeks.', ['Divide the full price by the weekly amount.', 'Round down to a whole number of weeks.']),
+            hint: 'Take away what you already have first.', steps: [m(g0.goal) + ' &minus; ' + m(g0.have) + ' = ' + m(g0.goal - g0.have) + '.', 'Weeks: ' + g0.wk + '.'], explain: g0.wk + ' weeks.', meta: { k: 'g6-goal-tf', goal: g0.goal, have: g0.have, per: g0.per, said: said } };
+        }]
+      ],
+      'mo-needs': [
+        [1, 'pick', function () {
+          var o = picked(R.shuffle(NEEDS).slice(0, 2).map(function (x) { return [x, 1]; }).concat(R.shuffle(WANTS).slice(0, 3).map(function (x) { return [x]; })));
+          return { q: 'Pick every <b>need</b>.', type: 'pick', options: o.options, answer: o.answer,
+            hint: 'A need is something you must have to live safely and healthily.', steps: ['Needs: ' + o.answer.map(function (j) { return o.options[j]; }).join(' and ') + '.'], explain: 'The others are wants: nice to have.', meta: { k: 'g6-needs-pick' } };
+        }],
+        [1, 'mistake', function () {
+          var isNeed = !R.int(0, 1), item = R.pick(isNeed ? NEEDS : WANTS), said = R.pick(['need', 'want']), who = nm();
+          return { q: who + ' says <b>' + item + '</b> is a <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: (said === 'need') === isNeed,
+            why: why(isNeed ? 'You must have ' + item + ' to live safely, so it is a need.' : 'You can live well without ' + item + ', so it is a want.', ['Anything that costs a lot is a need.', 'Anything you really like is a need.']),
+            hint: 'Could you live safely and healthily without it?', steps: [item + ' is a ' + (isNeed ? 'need' : 'want') + '.'], explain: 'It is a ' + (isNeed ? 'need' : 'want') + '.', meta: { k: 'g6-needs-tf', item: item, said: said } };
+        }],
+        [1, 'order', function () {
+          return { q: 'Put these saving goals in order from <b>shortest</b> term to longest term.', type: 'order', items: WHEN.slice(), first: 'shortest', last: 'longest',
+            hint: 'How soon is each one needed?', steps: ['This weekend, next month, next summer, then years away.'], explain: 'Short-term goals come soon. Long-term goals take years.', meta: { k: 'g6-needs-order' } };
+        }]
+      ],
+      'mo-interest': [
+        [1, 'fill', function () {
+          var p = R.int(1, 20) * 50, r = R.pick([2, 3, 4, 5, 6, 8]);
+          return { q: 'You save ' + m(p) + ' at ' + r + '% simple interest a year. Find one year of interest.', type: 'fill', fill: '1% of ' + m(p) + ' = $[[]] &nbsp; ' + r + '% = $[[]]', answers: [cl(p / 100), cl(p * r / 100)],
+            hint: '1% is one hundredth: divide by 100.', steps: [m(p) + ' &divide; 100 = ' + m(p / 100) + '.', r + ' &times; ' + m(p / 100) + ' = ' + m(p * r / 100) + '.'], explain: m(p * r / 100) + ' of interest.', meta: { k: 'g6-intr-fill', p: p, r: r } };
+        }],
+        [1, 'way', function () {
+          var p = R.int(2, 20) * 100, r = R.pick([2, 4, 5]), t = R.int(2, 5), one = p * r / 100;
+          return R.int(0, 1) ? { q: 'You earn ' + m(one) + ' of simple interest each year. How much interest do you earn in ' + t + ' years? Which way do you solve it?', type: 'mc', options: OPS.slice(), answer: 2, hint: 'The same amount comes every year.', steps: [t + ' groups of ' + m(one) + ': multiply.'], explain: 'Multiply: ' + t + ' &times; ' + m(one) + ' = ' + m(one * t) + '.', meta: { k: 'g6-intr-way' } }
+            : { q: 'You saved ' + m(p) + ' and earned ' + m(one) + ' interest. How much is in the account now? Which way do you solve it?', type: 'mc', options: OPS.slice(), answer: 0, hint: 'The interest joins your savings.', steps: ['Savings and interest together: add.'], explain: 'Add: ' + m(p) + ' + ' + m(one) + ' = ' + m(p + one) + '.', meta: { k: 'g6-intr-way' } };
+        }],
+        [1, 'mistake', function () {
+          var p = R.int(1, 20) * 100, r = R.pick([2, 3, 4, 5, 6, 8]), t = R.int(2, 4), who = nm(), truth = !R.int(0, 2), said = truth ? p * r * t / 100 : p * r / 100;
+          return { q: 'You borrow ' + m(p) + ' at ' + r + '% simple interest a year for ' + t + ' years. ' + who + ' says the interest is <b>' + m(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('One year is ' + m(p * r / 100) + '. For ' + t + ' years: ' + t + ' &times; ' + m(p * r / 100) + ' = ' + m(p * r * t / 100) + '.', ['Simple interest is charged only once.', 'The interest is ' + r + ' dollars.']),
+            hint: 'Find one year first. How many years are there?', steps: [r + '% of ' + m(p) + ' = ' + m(p * r / 100) + '.', t + ' &times; ' + m(p * r / 100) + ' = ' + m(p * r * t / 100) + '.'], explain: m(p * r * t / 100) + '.', meta: { k: 'g6-intr-tf', p: p, r: r, t: t, said: said } };
+        }]
+      ],
+      'mo-fees': [
+        [1, 'line', function () {
+          var f = R.pick([1.5, 2, 2.5, 3]), n = R.int(2, 4);
+          return { q: 'An ATM charges ' + m(f) + ' each time you use it. You use it ' + n + ' times. Place the total fees, in dollars, on the line.', type: 'line', min: 0, max: 15, tick: 0.5, every: 5, snap: 0.5, answer: f * n,
+            hint: n + ' groups of ' + m(f) + '.', steps: [n + ' &times; ' + m(f) + ' = ' + m(f * n) + '.'], explain: 'The fees are ' + m(f * n) + '.', meta: { k: 'g6-fee-line', f: f, n: n } };
+        }],
+        [1, 'mistake', function () {
+          var mf = R.pick([3, 4, 5, 6, 9, 12]), who = nm(), truth = !R.int(0, 2), said = truth ? mf * 12 : mf * 10;
+          return { q: 'An account charges ' + m(mf) + ' every month. ' + who + ' says that is <b>' + m(said) + '</b> in one year. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('A year has 12 months: 12 &times; ' + m(mf) + ' = ' + m(mf * 12) + '.', ['A year has 10 months.', 'A fee is only charged once a year.']),
+            hint: 'How many months are in a year?', steps: ['12 &times; ' + m(mf) + ' = ' + m(mf * 12) + '.'], explain: m(mf * 12) + ' a year.', meta: { k: 'g6-fee-tf', f: mf, said: said } };
+        }],
+        [1, 'way', function () {
+          var fr = R.pick([5, 10, 15]), k = fr + R.int(2, 12);
+          return { q: 'A plan gives you ' + fr + ' free transactions a month. You make ' + k + '. To find how many you pay for, which way do you solve it?', type: 'mc', options: OPS.slice(), answer: 1,
+            hint: 'Take the free ones away.', steps: [k + ' &minus; ' + fr + ' = ' + (k - fr) + ' paid transactions.'], explain: 'Subtract: ' + (k - fr) + ' are paid.', meta: { k: 'g6-fee-way' } };
+        }]
+      ],
+      'mo-share': [
+        [1, 'match', function () {
+          var ws = R.shuffle(['trading', 'lending', 'borrowing', 'donating']).slice(0, 3), xs = ws.map(function (w) { return R.pick(ACTS.filter(function (a) { return way(a[1]) === w; })); });
+          return { q: 'Match each story to what is happening.', type: 'match', pairs: xs.map(function (x) { return [x[0], way(x[1])]; }),
+            hint: 'Swapped: trading. Given back later: lending or borrowing. Nothing back: donating.', steps: xs.map(function (x) { return way(x[1]) + '.'; }), explain: 'Ask who owns it and whether it comes back.', meta: { k: 'g6-share-match', acts: xs.map(function (x) { return x[1]; }) } };
+        }],
+        [1, 'mistake', function () {
+          var x = R.pick(ACTS), right = way(x[1]), who = nm(), truth = !R.int(0, 2), said = truth ? right : R.pick(['trading', 'lending', 'borrowing', 'donating'].filter(function (w) { return w !== right; }));
+          var last = x[0].match(/^(.*\.) ([^.]*) (is|are)&hellip;$/);
+          return { q: last[1] + ' ' + who + ' says ' + last[2].replace(/^Th/, 'th') + ' ' + last[3] + ' <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('This is ' + right + '.', ['Lending and borrowing mean the same thing.', 'Any gift is a trade.']),
+            hint: 'Is it swapped, given back, or given away?', steps: ['It is ' + right + '.'], explain: 'It is ' + right + '.', meta: { k: 'g6-share-tf', act: x[1], said: said } };
+        }],
+        [2, 'pick', function () {
+          var w = R.pick(['trading', 'donating']), list = R.shuffle(ACTS).slice(0, 6);
+          while (!list.some(function (a) { return way(a[1]) === w; })) list = R.shuffle(ACTS).slice(0, 6);
+          var shown = list.map(function (a) { return [a[0].replace(/ [^.]*&hellip;$/, ''), way(a[1]) === w, a[1]]; }), l = R.shuffle(shown);
+          return { q: 'Pick every story that shows <b>' + w + '</b>.', type: 'pick', options: l.map(function (x) { return x[0]; }), answer: l.map(function (x, j) { return x[1] ? j : -1; }).filter(function (j) { return j >= 0; }),
+            hint: w === 'trading' ? 'Two things are swapped.' : 'Something is given away with nothing back.', steps: ['Look at what happens to the thing.'], explain: 'Those stories show ' + w + '.', meta: { k: 'g6-share-pick', want: w, acts: l.map(function (x) { return x[2]; }) } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

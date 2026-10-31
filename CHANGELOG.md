@@ -4,6 +4,16 @@ Newest first. One line per change, in plain English.
 
 ## 2026-10-31
 - Grade 4: spinners, bar graphs, growing patterns, the robot path and the shape slide show real orange and green again, so the words in the questions match the pictures (the shared theme had turned them teal).
+- Grade 6 "Numbers and integers": every practice skill asks in 4 or more ways (tap the digit, match, number line, order, mistakes to spot). Fresh chapter quiz every time.
+- Grade 6 "Decimals": every practice skill asks in 4 or more ways (tap the digit, order, number line, pick all, mistakes to spot). Fresh chapter quiz every time.
+- Grade 6 "Fractions": every practice skill asks in 4 or more ways (match, fill the blanks, pick all, number line, stories, mistakes to spot). Fresh chapter quiz every time.
+- Grade 6 "Decimal calculations": every practice skill asks in 4 or more ways, including "which way do you solve it?" and multi-step money stories. Fresh chapter quiz every time.
+- Grade 6 "Ratios and percents": every practice skill asks in 4 or more ways (equal ratios to fill, better-buy order, percent on a line, "which way?"). Fresh chapter quiz every time.
+- Grade 6 "Patterns and algebra": every practice skill asks in 4 or more ways (next term on a line, match rules, steps in order, trace code, inequality values). Fresh chapter quiz every time.
+- Grade 6 "Data and probability": every practice skill asks in 4 or more ways (tap the median, read a histogram, tap the warmest day, probability on a line). Fresh chapter quiz every time.
+- Grade 6 "Shapes and grids": every practice skill asks in 4 or more ways (tap the shape, tap the point, tap the front view, match moves). Fresh chapter quiz every time.
+- Grade 6 "Measurement": every practice skill asks in 4 or more ways (tap the angle, units in order, area in steps, faces to match). Fresh chapter quiz every time.
+- Grade 6 "Money": every practice skill asks in 4 or more ways (match ways to pay, saving weeks on a line, needs and wants, "which way?"). Fresh chapter quiz every time.
 - Grade 1 "Counting to 50": every practice skill now asks in at least 4 ways (tap the picture, match, number line, spot the mistake, short stories). Fresh chapter quiz every time.
 - Grade 1 "Tens and Ones": build numbers with blocks, match, fill the blanks, number line, stories and spot the mistake. Fresh chapter quiz every time.
 - Grade 1 "Adding and Subtracting to 10": tap, number line, match, fact families, "which way?" stories and spot the mistake. Fresh chapter quiz every time.
@@ -29,9 +39,30 @@ Newest first. One line per change, in plain English.
 - Grade 8 "Angles, Shapes and Moves": missing angles on a line, parallel-line angle picks, polygon angle sums, transformation rules.
 - Grade 8 "Pythagoras, Area and Volume": Pythagoras step by step, hypotenuse on a number line, circle, composite area, volume and surface area stories.
 - Grade 8 "Money and Planning": exchange "which way?", budget surplus on a line, HST taps, interest stories, coupon and phone-plan choices.
+- Grade 2 "Numbers to 200": every practice skill now asks in 4 different ways (build with blocks, tap, match, number line, put in order, spot the mistake). Fresh chapter quiz every time.
+- Grade 2 "Facts to 20": every practice skill asks in 4 ways, including number lines, ten frames, fact families and "add or subtract?". Fresh chapter quiz every time.
+- Grade 2 "Adding and Subtracting to 100": every practice skill asks in 4 or 5 ways, including building with blocks and spotting a common mistake. Fresh chapter quiz every time.
+- Grade 2 "Equal Groups and Sharing": every practice skill asks in 4 or 5 ways, including picture taps, skip counting and stories. Fresh chapter quiz every time.
+- Grade 2 "Fair Shares": every practice skill asks in 4 ways, still in words only (tap the picture, match, put in order, spot the mistake). Fresh chapter quiz every time.
+- Grade 2 "Patterns and Equal Sides": every practice skill asks in 4 or 5 ways, including "tap what comes next", number lines and true-or-false number sentences. Fresh chapter quiz every time.
+- Grade 2 "Shapes": every practice skill asks in 4 ways, including fold lines and congruent pairs. The house shape now has a pointier roof, so it really has 2 square corners. Fresh chapter quiz every time.
+- Grade 2 "Maps, Moves and Code": every practice skill asks in 4 ways, including tapping places on the map, a robot track and fixing code. Fresh chapter quiz every time.
+- Grade 2 "Length and Time": every practice skill asks in 4 or 5 ways, including reading rulers and clocks by tapping. Fresh chapter quiz every time.
+- Grade 2 "Data and Chance": every practice skill asks in 4 or 5 ways, including sorting by tapping, tallies and "how likely?" bags. Fresh chapter quiz every time.
+- Grade 2 "Money": every practice skill asks in 4 or 5 ways, including tapping the right coins, counting on and "add or subtract?". Fresh chapter quiz every time.
 - Every grade now uses one shared copy of the lesson engine and toolbox (`assets/engine/`) instead of eight copies.
 - New answer types for every grade: tap the picture, pick all that apply, put in order, number line, match pairs, true or false and why, fill the blanks, build with blocks or coins.
 - Grade 3 "Numbers to 1000": every practice skill asks in 4 to 7 different ways. Fresh chapter quiz every time.
+- Grade 5 "Place value": each skill now asks in 4 or 5 ways: tap the digit, match, fill in expanded form, build with blocks, put in order, round on a number line, short stories and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Fractions": tap the bar, place fractions and mixed numbers on a number line, match, pick equal fractions, stories, spot-the-mistake, and "which way?" for adding and for unit fractions. Fresh chapter quiz every time.
+- Grade 5 "Decimals": tap the hundred grid, number lines in tenths and hundredths, match, order, pick, fill, money stories, spot-the-mistake and "which way?" for adding and subtracting. Fresh chapter quiz every time.
+- Grade 5 "Multiply and divide": tap the array, build a product with blocks, area-model and fact-family blanks, stories, "which way?" for multiplying, dividing and remainders, and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Ratios": tap the picture, fill ratio tables, rates on a number line, match, pick equivalent ratios, stories, "which way?" for rates and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Patterns and algebra": find the odd one out, fill the next terms, rules on a number line, match rules and values, pick solutions, inequalities on a number line, trace code, "which step?" and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Data and probability": tap the bar graph, read stacked bars, order results, tap the median, match mean, median and mode, probability on a line, pick and tap bags of marbles, stories and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Shapes and grids": tap the triangle, rectangle, front view or grid point, fill coordinates and images, match transformations, pick congruent shapes and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Measurement": match things to units, order mixed units, convert on a scale, tap the angle, pick acute or obtuse, read base and height, "which formula?", garden stories and spot-the-mistake. Fresh chapter quiz every time.
+- Grade 5 "Money": fill a receipt with HST, change stories, cash rounding (including paying with coins), budget blanks, saving and paying-back stories, tap the best value, match ways to pay and levels of government, and spot-the-mistake. Fresh chapter quiz every time.
 - Grade 4 "Numbers to 10 000": every practice skill asks in 5 ways (tap a digit, build with blocks, number line, match, mistakes to spot). Fresh chapter quiz every time.
 - Grade 4 "Add and Subtract": every skill asks in 4 or 5 ways, including "which way?" (add or subtract, and the quickest mental method), stories and mistakes to spot. Fresh chapter quiz.
 - Grade 4 "Multiply and Divide": every skill asks in 4 or 5 ways, including tap the array, area-model blanks, "which way?" (multiply or divide, and what to do with leftovers) and a rate number line. Fresh chapter quiz.
@@ -50,8 +81,18 @@ Newest first. One line per change, in plain English.
 - Grade 3 "3D Shapes and Directions": every skill asks in 4 or 5 ways, including tap the object, match everyday things to shapes, tap the way you face on a compass, and tap where you end on the map. Fresh chapter quiz.
 - Grade 3 "Length, Perimeter and Area": every skill asks in 5 ways, including mark millimetres on a ruler, order mixed units, tap the shape with a given area, and pick shapes with the same area. Fresh chapter quiz.
 - Grade 3 "Time, Mass and Capacity": every skill asks in 4 or 5 ways, including tap the clock, order morning times, read a balance, and tap the jug. Fresh chapter quiz.
-- Grade 3 "Money: Making Change": every skill asks in 5 ways, including tap the coins, the fewest coins, change on a number line, and "which way?" to find change. Fresh chapter quiz.
+- Grade 3 "Money: Making Change": every skill asks in 5 ways, including tap the coins, build an amount with coins, the fewest coins, change on a number line, and "which way?" to find change. Fresh chapter quiz.
 - Grade 3 answer checks now stop if two checks share a name, so one shape can never be checked by another shape's rule.
 - Mixed review now brings back skills from other chapters already practised.
 - Automatic checks (`tests/`) run on every pull request and before every publish.
 - Picked answers turn green or red again on every grade (the shared theme had hidden this).
+- Grade 7 "Powers, Roots and Factors": every practice skill asks in 4 ways (tap a digit's place, number stories, match powers, put powers in order, place square roots on a line, pick common factors and multiples, spot the mistake). Fresh chapter quiz every time.
+- Grade 7 "Fractions": 4 to 5 ways per skill, including fill-in equivalent fractions, place a fraction on a number line, put fractions in order, "which way?" (pick the first step or the operation), stories and spot the mistake. Fresh chapter quiz.
+- Grade 7 "Multiplying and Dividing": 4 ways per skill, including "which way?" (multiply or divide?), tap the closer rounding, decimal shopping stories, rename-and-divide, order-of-operations steps and spot the mistake. One quiz question became fill-the-blanks so simplest form is checked exactly. Fresh chapter quiz.
+- Grade 7 "Integers": 4 to 5 ways per skill, including number line moves, put integers in order, "positive or negative?" before adding, temperature and scuba stories, add-the-opposite blanks and find the term that doesn't fit. Fresh chapter quiz.
+- Grade 7 "Percents, Ratios and Rates": 4 to 5 ways per skill, including match fractions and percents, place a fraction on a 0 to 100% line, build from 10%, sale-price stories, tap the better buy, equivalent ratio blanks and proportional tables. Fresh chapter quiz.
+- Grade 7 "Patterns, Expressions and Equations": 4 to 5 ways per skill, including match patterns to rules, pick like terms, solve and place x on a number line, two-step equation blanks, inequality solutions, trace a code loop, stories and spot the mistake. Fresh chapter quiz.
+- Grade 7 "Data and Probability": 4 to 5 ways per skill, including sort data and tap the median, mean blanks, match kinds of data, circle-graph angles, "which changes more with an outlier?", marble blanks and pick dependent events. Fresh chapter quiz.
+- Grade 7 "Shapes, Views and Moves": 4 to 5 ways per skill, including tap the solid, count faces/edges/vertices, front-view blanks, tap where a point lands on the grid after a translation, reflection, rotation or dilation, and a map-walk story. Fresh chapter quiz.
+- Grade 7 "Circles, Surface Area and Volume": 4 to 5 ways per skill, including "which formula?", "multiply or divide?" for unit changes, wheel, pizza and fish-tank stories, order boxes by volume and cylinder net blanks. Fresh chapter quiz.
+- Grade 7 "Money Matters": 4 to 5 ways per skill, including "multiply or divide by the rate?", trip money stories, savings weeks on a number line, GIC interest, tap the best account, pick the needs and tap the reliable source. Fresh chapter quiz.

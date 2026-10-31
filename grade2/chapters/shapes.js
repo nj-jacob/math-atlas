@@ -30,7 +30,7 @@
       pent: { p: regular(5, cx, cy + 0.08 * h, 1.1 * h), sides: 5, sq: 0, eq: true, sym: 5, name: 'pentagon' },
       hex: { p: regular(6, cx, cy, 1.1 * h, 0), sides: 6, sq: 0, eq: true, sym: 6, name: 'hexagon' },
       oct: { p: regular(8, cx, cy, 1.15 * h), sides: 8, sq: 0, eq: true, sym: 8, name: 'octagon' },
-      house: { p: [[cx - h, cy + h], [cx - h, cy - 0.1 * h], [cx, cy - 1.1 * h], [cx + h, cy - 0.1 * h], [cx + h, cy + h]], sides: 5, sq: 2, eq: false, sym: 1, name: 'house-shaped pentagon' }
+      house: { p: [[cx - h, cy + h], [cx - h, cy - 0.1 * h], [cx, cy - 1.3 * h], [cx + h, cy - 0.1 * h], [cx + h, cy + h]], sides: 5, sq: 2, eq: false, sym: 1, name: 'house-shaped pentagon' }
     };
   }
   function one(key, label, fill) { var L = lib(80, 70); return A.svg(160 + (key === 'rectangle' || key === 'trap' ? 40 : 0), 140, poly(L[key].p.map(function (q) { return [q[0] + (key === 'rectangle' || key === 'trap' ? 20 : 0), q[1]]; }), fill), label || L[key].name); }
@@ -493,6 +493,134 @@
         var how = R.pick(lv === 1 ? ['same', 'big', 'turn'] : ['turn', 'flip', 'big', 'small', 'same']), k = R.pick(['trap', 'righttri', 'house', 'isotri']), yes = how !== 'big' && how !== 'small';
         return { q: 'Are these two shapes congruent?', type: 'mc', options: ['Yes, congruent', 'No, not congruent'], answer: yes ? 0 : 1, fig: copyOf(k, how), hint: 'Congruent means same size and same shape. Turning or flipping is allowed.', steps: ['Check the shape: is it the same kind of shape?', 'Check the size: are the sides the same lengths?', yes ? 'Yes to both, so they are congruent.' : 'The sides are different lengths, so they are not congruent.'], explain: yes ? 'They are congruent.' : 'They are not congruent: the sizes are different.' };
       } }
+    ]
+  });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  /* a shape with n sides on its own small picture: even sides (regular) or uneven */
+  function sided(n, even, seed) { var p = even ? regular(n, 70, 64, 52) : irregular(n, 70, 64, 50, seed || R.int(1, 9)); return A.svg(140, 128, poly(p), 'A shape with ' + n + ' sides'); }
+  function shown(key) { return A.svg(200, 160, poly(lib(100, 80)[key].p), 'A ' + lib(0, 0)[key].name); }
+  /* a shape from the library with one dashed fold line through its middle, at angle a */
+  function folded(key, a) { var r = 90; return A.svg(200, 160, poly(lib(100, 80)[key].p) + '<line x1="' + (100 - r * Math.cos(a)).toFixed(1) + '" y1="' + (80 - r * Math.sin(a)).toFixed(1) + '" x2="' + (100 + r * Math.cos(a)).toFixed(1) + '" y2="' + (80 + r * Math.sin(a)).toFixed(1) + '" style="stroke:var(--bad)" stroke-width="3" stroke-dasharray="8 5"/>', 'A ' + lib(0, 0)[key].name + ' with a fold line'); }
+  var FOLDS = { isotri: [[Math.PI / 2], [0, Math.PI / 4]], trap: [[Math.PI / 2], [0, Math.PI / 4]], house: [[Math.PI / 2], [0, -Math.PI / 4]], rectangle: [[0, Math.PI / 2], [Math.atan2(1.6, 3), -Math.atan2(1.6, 3)]], rhombus: [[0, Math.PI / 2], [Math.PI / 4, -Math.PI / 4]] };
+  var PIECES = { tri: '6 triangles', rho: '3 rhombuses', trap: '2 trapezoids' };
+  function hexPic(kind) { return A.svg(150, 136, hexFill(kind, 75, 68, 64), 'A hexagon filled with pieces'); }
+  function twoAreas(a, b) { return A.svg(400, 160, grid(4, 4, 32, 4, 4) + cells(a, 'var(--strand)', 32, 4, 4) + grid(4, 4, 32, 210, 4) + cells(b, 'var(--se)', 32, 210, 4), 'Two shapes made of squares'); }
+  var CONG = { same: true, turn: true, flip: true, big: false, small: false };
+  K.shapes(CH, {
+    's2-name': [
+      [1, 'tap', function (lv) {
+        var set = R.shuffle(lv === 1 ? [3, 4, 5, 6] : [3, 4, 5, 6, 8]).slice(0, 3), n = set[0], tiles = R.shuffle(set);
+        return { q: 'Tap the <b>' + NAMES[n] + '</b>.', type: 'tap', tiles: tiles.map(function (s) { return sided(s, lv === 1); }), answer: tiles.indexOf(n), answerText: 'the shape with ' + n + ' sides',
+          hint: 'A ' + NAMES[n] + ' has ' + n + ' sides. Count the sides of each shape.', steps: ['Count the sides of each shape.', 'The one with ' + n + ' sides is the ' + NAMES[n] + '.'],
+          explain: 'A ' + NAMES[n] + ' has ' + n + ' sides.', meta: { k: 's2-name-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var set = R.shuffle(lv === 1 ? [3, 4, 5, 6] : [3, 4, 5, 6, 8]).slice(0, 3);
+        return { q: 'Match each shape to its name.', type: 'match', pairs: set.map(function (n) { return [sided(n, lv === 1), NAMES[n]]; }),
+          hint: 'Count the sides. 3 is a triangle, 4 is a quadrilateral, 5 is a pentagon, 6 is a hexagon.', steps: ['Count the sides of each shape, then find its name.'],
+          explain: set.map(function (n) { return n + ' sides: ' + NAMES[n]; }).join('. ') + '.', meta: { k: 's2-name-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.pick([4, 5, 6, 8]), name = who(), truth = !R.int(0, 2), said = truth ? NAMES[n] : NAMES[n === 8 ? 6 : n + 1];
+        var right = 'It has ' + n + ' sides, so it is a ' + NAMES[n] + '. A shape does not need equal sides to have a name.';
+        return { q: name + ' says this shape is a <b>' + said + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: sided(n, false),
+          why: why(right, ['Only shapes with equal sides have names.', 'You name a shape by how big it is.', 'You name a shape by its colour.']),
+          hint: 'Count the sides, even when the shape looks stretched.', steps: [right], explain: right, meta: { k: 's2-name-tf' } };
+      }]
+    ],
+    's2-sort': [
+      [1, 'pick', function (lv) {
+        var L = lib(0, 0), ask = lv === 1 ? R.pick([3, 4]) : R.pick(['sq', 'eq']);
+        var ok = function (k) { return ask === 'sq' ? L[k].sq > 0 : ask === 'eq' ? L[k].eq : L[k].sides === ask; };
+        var all = ['square', 'rectangle', 'eqtri', 'isotri', 'righttri', 'rhombus', 'trap', 'pent', 'hex', 'house'];
+        var yes = R.shuffle(all.filter(ok)), no = R.shuffle(all.filter(function (k) { return !ok(k); })), y = R.int(1, Math.min(3, yes.length));
+        var keys = R.shuffle(yes.slice(0, y).concat(no.slice(0, 5 - y)));
+        var what = ask === 'sq' ? 'at least one square corner' : ask === 'eq' ? 'all sides the same length' : ask + ' sides';
+        return { q: 'Pick every shape with <b>' + what + '</b>.', type: 'pick', options: keys.map(shown), answer: keys.map(function (k, j) { return ok(k) ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: ask === 'sq' ? 'Check each corner with the corner of a page.' : ask === 'eq' ? 'Compare the sides of each shape.' : 'Count the sides of each shape.', steps: ['Look at one shape at a time.', 'Keep the ones with ' + what + '.'],
+          explain: 'The shapes with ' + what + ' are: ' + keys.filter(ok).map(function (k) { return L[k].name; }).join(', ') + '.', meta: { k: 's2-sort-pick', ask: ask } };
+      }],
+      [1, 'order', function (lv) {
+        var set = R.shuffle([3, 4, 5, 6, 8]).slice(0, lv === 1 ? 3 : 4).sort(function (a, b) { return a - b; });
+        return { q: 'Put these shapes in order from <b>fewest sides</b> to most sides.', type: 'order', items: set.map(function (n) { return NAMES[n]; }), first: 'fewest sides', last: 'most sides',
+          hint: 'Triangle 3, quadrilateral 4, pentagon 5, hexagon 6, octagon 8.', steps: ['Think of how many sides each shape has.'],
+          explain: set.map(function (n) { return NAMES[n] + ' (' + n + ')'; }).join(', ') + '.', meta: { k: 's2-sort-order' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var L = lib(0, 0), key = R.pick(['square', 'rectangle', 'rhombus', 'trap', 'righttri', 'house']), sh = L[key], name = who(), truth = !R.int(0, 2);
+        var said = truth ? sh.sq : (sh.sq === 4 ? 2 : sh.sq + R.pick([1, 2]));
+        var right = 'The ' + sh.name + ' has ' + sh.sq + ' square corner' + (sh.sq === 1 ? '' : 's') + '.';
+        return { q: name + ' says this shape has <b>' + said + '</b> square corner' + (said === 1 ? '' : 's') + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: shown(key),
+          why: why(right, ['Every corner is a square corner.', 'Shapes with 4 sides always have 4 square corners.', 'Pointy corners are square corners.']),
+          hint: 'Check each corner with the corner of a page.', steps: [right], explain: right, meta: { k: 's2-sort-tf' } };
+      }]
+    ],
+    's2-sym': [
+      [1, 'tap', function (lv) {
+        var key = R.pick(lv === 1 ? ['isotri', 'trap', 'house'] : Object.keys(FOLDS)), f = FOLDS[key], good = R.pick(f[0]), set = R.shuffle([good].concat(f[1]));
+        return { q: 'Tap the picture where the dashed line is a <b>line of symmetry</b>.', type: 'tap', tiles: set.map(function (a) { return folded(key, a); }), answer: set.indexOf(good), answerText: 'the fold where both halves match',
+          hint: 'Imagine folding on the line. Do the two halves match exactly?', steps: ['Fold each picture on its line in your head.', 'A line of symmetry makes two halves that match.'],
+          explain: 'Only that fold makes two halves that match.', meta: { k: 's2-sym-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var key = R.pick(lv === 1 ? ['isotri', 'trap', 'house', 'righttri'] : ['rectangle', 'rhombus', 'square', 'isotri']), sh = lib(0, 0)[key], name = who(), truth = !R.int(0, 2);
+        var said = truth ? sh.sym : (key === 'rectangle' || key === 'rhombus' ? 4 : sh.sym + 1);
+        var right = 'The ' + sh.name + ' has ' + sh.sym + ' line' + (sh.sym === 1 ? '' : 's') + ' of symmetry.';
+        return { q: name + ' says this shape has <b>' + said + '</b> line' + (said === 1 ? '' : 's') + ' of symmetry. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: shown(key),
+          why: why(right, ['Every shape has 4 lines of symmetry.', 'A line from corner to corner is always a line of symmetry.', 'Lines of symmetry are the same as sides.']),
+          hint: 'Try each fold. Count only the folds where the halves match.', steps: [right], explain: right, meta: { k: 's2-sym-tf' } };
+      }],
+      [2, 'pick', function (lv) {
+        var L = lib(0, 0), keys = R.shuffle(['isotri', 'trap', 'house', 'rectangle', 'rhombus', 'square']).slice(0, 3).concat(['righttri']);
+        keys = R.shuffle(keys);
+        return { q: 'Pick every shape that has <b>at least one</b> line of symmetry.', type: 'pick', options: keys.map(shown), answer: keys.map(function (k, j) { return L[k].sym ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: 'Can you fold it so the two halves match?', steps: ['Try a fold down the middle of each shape.', 'Then try across and corner to corner.'],
+          explain: 'The ' + L.righttri.name + ' has no line of symmetry. The others do.', meta: { k: 's2-sym-pick' } };
+      }]
+    ],
+    's2-compose': [
+      [1, 'tap', function (lv) {
+        var set = R.shuffle(['tri', 'rho', 'trap']), want = R.pick(set);
+        return { q: 'Tap the hexagon made of <b>' + PIECES[want] + '</b>.', type: 'tap', tiles: set.map(hexPic), answer: set.indexOf(want), answerText: 'the hexagon with ' + PIECES[want],
+          hint: 'Count the pieces in each hexagon.', steps: ['Count the pieces in each one.', 'Find the one with ' + PIECES[want] + '.'],
+          explain: 'That hexagon is made of ' + PIECES[want] + '.', meta: { k: 's2-comp-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var set = R.shuffle(['tri', 'rho', 'trap']);
+        return { q: 'Match each hexagon to the pieces that fill it.', type: 'match', pairs: set.map(function (s) { return [hexPic(s), PIECES[s]]; }),
+          hint: 'Count the pieces in each hexagon.', steps: ['Count each piece once.'], explain: '6 triangles, 3 rhombuses or 2 trapezoids each make one hexagon.', meta: { k: 's2-comp-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.pick(SHAPES2), b = R.pick([[[0, 0], [1, 0], [2, 0], [0, 1], [1, 1]], [[0, 0], [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1]], [[0, 0], [1, 0], [0, 1], [1, 1], [0, 2], [1, 2]]]), name = who(), same = a.length === b.length;
+        var right = 'The blue shape has ' + a.length + ' squares and the orange shape has ' + b.length + '.';
+        return { q: name + ' says these two shapes cover the <b>same area</b>. True or false: ' + name + ' is right.', type: 'tf', answer: same, fig: twoAreas(a, b),
+          why: why(right, ['Shapes that look different always have different areas.', 'The taller shape always covers more.', 'You cannot count area.']),
+          hint: 'Count the squares in each shape.', steps: [right], explain: right + (same ? ' The same, so the areas are the same.' : ' Different, so the areas are different.'), meta: { k: 's2-comp-tf' } };
+      }]
+    ],
+    's2-congruent': [
+      [1, 'tap', function (lv) {
+        var key = R.pick(['trap', 'righttri', 'house', 'isotri']), good = R.pick(lv === 1 ? ['same', 'turn'] : ['turn', 'flip']), set = R.shuffle([good, 'big', 'small']);
+        return { q: 'Tap the pair of shapes that are <b>congruent</b>.', type: 'tap', tiles: set.map(function (h) { return copyOf(key, h); }), answer: set.indexOf(good), answerText: 'the pair that is the same size and shape',
+          hint: 'Congruent means same size and same shape. Turning or flipping is allowed.', steps: ['Check each pair: same shape?', 'Then check: same size?'],
+          explain: 'Only that pair is the same size and the same shape.', meta: { k: 's2-cong-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var key = R.pick(['trap', 'righttri', 'house', 'isotri']), how = R.pick(lv === 1 ? ['turn', 'big'] : ['turn', 'flip', 'small']), name = who();
+        var right = CONG[how] ? 'Turning or flipping does not change the size or shape, so they are congruent.' : 'One shape is a different size, so they are not congruent.';
+        return { q: name + ' says these two shapes are <b>congruent</b>. True or false: ' + name + ' is right.', type: 'tf', answer: CONG[how], fig: copyOf(key, how),
+          why: why(right, ['A turned shape is never congruent.', 'Any two shapes of the same kind are congruent.', 'Colour decides if shapes are congruent.']),
+          hint: 'Same size and same shape? Turning and flipping are allowed.', steps: [right], explain: right, meta: { k: 's2-cong-tf' } };
+      }],
+      [2, 'pick', function (lv) {
+        var key = R.pick(['trap', 'righttri', 'house', 'isotri']), set = R.shuffle(['same', 'turn', 'flip', 'big', 'small']).slice(0, 4);
+        if (set.every(function (h) { return CONG[h]; })) set[0] = 'big';
+        if (!set.some(function (h) { return CONG[h]; })) set[0] = 'turn';
+        return { q: 'Pick every pair of shapes that are <b>congruent</b>.', type: 'pick', options: set.map(function (h) { return copyOf(key, h); }), answer: set.map(function (h, j) { return CONG[h] ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: 'Congruent means same size and same shape. Turning or flipping is allowed.', steps: ['Check the size of each pair first.', 'Pairs that are only turned or flipped are still congruent.'],
+          explain: 'Turned, flipped or exact copies are congruent. Bigger or smaller copies are not.', meta: { k: 's2-cong-pick' } };
+      }]
     ]
   });
 })();
