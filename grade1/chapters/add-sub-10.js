@@ -363,7 +363,7 @@
     ] },
 
     { id: 'story', title: 'Story problems', sub: 'Read, picture, solve, check.', concepts: [
-      { id: 'join', title: 'Stories that join', exp: ['B2.2'], skill: 'a-story',
+      { id: 'story-join', title: 'Stories that join', exp: ['B2.2'], skill: 'a-story',
         body: '<p>Some stories put things <b>together</b>. Words like <b>in all</b>, <b>more came</b>, <b>altogether</b> tell us to add.</p>',
         watch: { tool: 'g1objects', opts: { kind: 'ball', n: 4 }, steps: [
           { say: 'Ava has 4 balls.', ms: 1300 },
