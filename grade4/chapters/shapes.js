@@ -407,4 +407,169 @@ A.yt({ gen: function () { return gen.refl(1); } }) +
       { id: 'sh4-refl', name: 'Reflections', code: 'E1.3', gen: gen.refl }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, who = A.Q && A.Q.name;
+  var small = K.small;
+  var SYM = { square: 4, rectangle: 2, kite: 1, parallelogram: 0 };
+  function symPic(name) { return small(name === 'square' ? rect(3, 3, {}) : name === 'rectangle' ? rect(5, 3, {}) : quad(name, 150), 130); }
+  /* the 0 to 10 grid with lettered points to tap. pts = [{ x, y, key }] */
+  function gridTap(pts, mirror) {
+    var u = 40, o = 36, X = function (x) { return o + x * u; }, Y = function (y) { return 10 + (10 - y) * u; }, s = '';
+    pts.forEach(function (p) {
+      s += '<g data-hit="' + p.key + '" aria-label="point ' + p.key + '"><circle cx="' + X(p.x) + '" cy="' + Y(p.y) + '" r="15" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>' +
+        '<text x="' + X(p.x) + '" y="' + (Y(p.y) + 6) + '" text-anchor="middle" font-size="17" font-weight="700" style="fill:var(--ink)">' + p.key + '</text></g>';
+    });
+    return grid(10, [], null, null, mirror).replace(/<\/svg>$/, s + '</svg>');
+  }
+  /* three different points on the grid: the right one first, then two near misses */
+  function three(x, y, alts) {
+    var out = [[x, y]];
+    alts.forEach(function (a) { if (out.length < 3 && a[0] >= 0 && a[0] <= 10 && a[1] >= 0 && a[1] <= 10 && !out.some(function (p) { return p[0] === a[0] && p[1] === a[1]; })) out.push(a); });
+    while (out.length < 3) { var r = [R.int(0, 10), R.int(0, 10)]; if (!out.some(function (p) { return p[0] === r[0] && p[1] === r[1]; })) out.push(r); }
+    return R.shuffle(out).map(function (p, i) { return { x: p[0], y: p[1], key: 'ABC'.charAt(i) }; });
+  }
+  var FACTS = [['A square is a rectangle.', true, 'A square has 4 right angles, so it is a special rectangle.'], ['Every rectangle has 4 right angles.', true, 'That is what makes it a rectangle.'],
+    ['A rectangle has sides that are perpendicular.', true, 'Sides that meet at a corner make a right angle, so they are perpendicular.'], ['A parallelogram is always a rectangle.', false, 'Most parallelograms do not have right angles.'],
+    ['A rectangle has only 1 pair of parallel sides.', false, 'Both pairs of opposite sides are parallel.'], ['The opposite sides of a rectangle are different lengths.', false, 'Opposite sides of a rectangle are always equal.']];
+  var SHAPES = {
+    'sh4-angle': [
+      [1, 'tap', function (lv) {
+        var want = R.pick(['acute', 'right', 'obtuse']), ts = R.shuffle([R.pick(lv === 1 ? [30, 45, 60] : [70, 80, 85]), 90, R.pick(lv === 1 ? [120, 135, 150] : [95, 100, 110])]);
+        var ans = ts.map(kind).indexOf(want);
+        return { q: 'Tap the <b>' + want + '</b> angle.', type: 'tap', tiles: ts.map(function (t) { return small(angle(t, lv === 1 ? 0 : R.pick([0, 40, 200])), 140); }), answer: ans, answerText: 'the ' + want + ' angle',
+          hint: 'Compare each angle with a square corner.', steps: ['A ' + want + ' angle is ' + KDESC[want] + '.'], explain: 'The ' + want + ' angle is ' + KDESC[want] + '.', meta: { k: 'sh4-angle-tap', ts: ts, want: want } };
+      }],
+      [1, 'match', function () {
+        var ts = [R.pick([30, 45, 60]), 90, R.pick([120, 135, 150])];
+        var pairs = ts.map(function (t) { return [small(angle(t, 0), 120), kind(t)]; });
+        return { q: 'Match each angle to its name.', type: 'match', pairs: pairs, hint: 'Is it smaller than, equal to, or bigger than a square corner?',
+          steps: ['Acute: less than a right angle. Right: a square corner. Obtuse: more than a right angle.'], explain: 'Acute, right and obtuse.', meta: { k: 'sh4-angle-match', ts: ts } };
+      }],
+      [2, 'mistake', function () {
+        var t = R.pick([75, 85, 95, 105, 135, 45]), p = who(), k = kind(t), truth = !R.int(0, 1), said = truth ? k : (k === 'acute' ? 'obtuse' : 'acute');
+        var right = 'This angle is ' + KDESC[k] + ', so it is ' + k + '.';
+        return { q: p + ' says this angle is <b>' + said + '</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: angle(t, R.pick([0, 60, 210])),
+          why: why(right, ['Turning an angle changes its kind.', 'Longer arms make a bigger angle.', 'Every angle that leans is obtuse.']),
+          hint: 'Imagine a square corner on top of it.', steps: [right], explain: right, meta: { k: 'sh4-angle-tf', t: t, said: said } };
+      }],
+      [2, 'pick', function () {
+        var want = R.pick(['acute', 'obtuse']), opts = R.shuffle([20, 45, 89, 90, 91, 120, 170, 180]).slice(0, 5);
+        if (!opts.some(function (t) { return kind(t) === want; })) opts[0] = want === 'acute' ? 60 : 130;
+        var ans = opts.map(function (t, j) { return kind(t) === want ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every angle that is <b>' + want + '</b>.', type: 'pick', options: opts.map(function (t) { return t + '&deg;'; }), answer: ans,
+          hint: want === 'acute' ? 'Acute means less than 90&deg;.' : 'Obtuse means more than 90&deg; and less than 180&deg;.', steps: ['A right angle is 90&deg;. A straight angle is 180&deg;.'],
+          explain: want === 'acute' ? 'Acute angles are less than 90&deg;.' : 'Obtuse angles are between 90&deg; and 180&deg;.', meta: { k: 'sh4-angle-pick', want: want } };
+      }]
+    ],
+    'sh4-rect': [
+      [1, 'pick', function () {
+        var names = R.shuffle(['rectangle', 'square', 'parallelogram', 'trapezoid', 'kite']);
+        var ans = names.map(function (n, j) { return n === 'rectangle' || n === 'square' ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every shape that is a <b>rectangle</b>.', type: 'pick', options: names.map(function (n) { return small(quad(n, 120), 110); }), answer: ans,
+          hint: 'A rectangle has 4 right angles. A square counts too.', steps: ['Check every corner of each shape.', 'The rectangle and the square have 4 right angles.'],
+          explain: 'The rectangle and the square both have 4 right angles.', meta: { k: 'sh4-rect-pick', names: names } };
+      }],
+      [1, 'mistake', function () {
+        var f = R.pick(FACTS), p = who();
+        return { q: p + ' says: "' + f[0] + '" True or false: ' + p + ' is right.', type: 'tf', answer: f[1], fig: rect(5, 3, { right: true, par: true }),
+          why: why(f[2], ['Rectangles can have any angles.', 'Only long shapes are rectangles.', 'A rectangle has 3 sides.']),
+          hint: 'A rectangle has 4 right angles, and its opposite sides are parallel and equal.', steps: [f[2]], explain: f[2], meta: { k: 'sh4-rect-tf', fact: f[0] } };
+      }],
+      [2, 'fill', function () {
+        return { q: 'Fill in the facts about a rectangle that is not a square.', type: 'fill', fill: 'Right angles: [[]] &nbsp; Pairs of parallel sides: [[]] &nbsp; Lines of symmetry: [[]]', answers: [4, 2, 2], fig: rect(5, 3, { right: true, par: true, sym: true }),
+          hint: 'Look at the marks on the picture.', steps: ['The corner marks show the right angles.', 'The arrows show parallel sides. The dashed lines show symmetry.'],
+          explain: '4 right angles, 2 pairs of parallel sides, 2 lines of symmetry.', meta: { k: 'sh4-rect-fill' } };
+      }]
+    ],
+    'sh4-sym': [
+      [1, 'tap', function () {
+        var names = R.shuffle(Object.keys(SYM)).slice(0, 3), target = R.pick(names);
+        return { q: 'Tap the shape with <b>' + (SYM[target] === 0 ? 'no lines' : SYM[target] + ' line' + (SYM[target] > 1 ? 's' : '')) + '</b> of symmetry.', type: 'tap', tiles: names.map(symPic), answer: names.indexOf(target), answerText: 'the ' + target,
+          hint: 'Imagine folding each shape so the halves match.', steps: ['Square: 4. Rectangle: 2. Kite: 1. Parallelogram: 0.'], explain: 'The ' + target + ' has ' + SYM[target] + '.', meta: { k: 'sh4-sym-tap', names: names } };
+      }],
+      [1, 'match', function () {
+        var names = R.shuffle(Object.keys(SYM)).slice(0, 3), pairs = names.map(function (n) { return [symPic(n), SYM[n] + ' line' + (SYM[n] === 1 ? '' : 's')]; });
+        return { q: 'Match each shape to its number of lines of symmetry.', type: 'match', pairs: pairs, hint: 'Try folding up and down, left and right, and corner to corner.',
+          steps: ['Square: 4. Rectangle: 2. Kite: 1. Parallelogram: 0.'], explain: names.map(function (n) { return n + ': ' + SYM[n]; }).join('. ') + '.', meta: { k: 'sh4-sym-match', names: names } };
+      }],
+      [2, 'mistake', function () {
+        var n = R.pick(Object.keys(SYM)), p = who(), truth = !R.int(0, 1), said = truth ? SYM[n] : R.pick([0, 1, 2, 4].filter(function (x) { return x !== SYM[n]; }));
+        var right = 'The ' + n + ' has ' + SYM[n] + ' line' + (SYM[n] === 1 ? '' : 's') + ' of symmetry.';
+        return { q: p + ' says this ' + n + ' has <b>' + said + '</b> line' + (said === 1 ? '' : 's') + ' of symmetry. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: symPic(n),
+          why: why(right, ['Every four-sided shape has 4 lines of symmetry.', 'A corner-to-corner fold always works.', 'Lines of symmetry are the same as sides.']),
+          hint: 'A fold must make both halves match exactly.', steps: [right], explain: right, meta: { k: 'sh4-sym-tf', name: n, said: said } };
+      }]
+    ],
+    'sh4-coord': [
+      [1, 'tap', function () {
+        var x, y; do { x = R.int(1, 9); y = R.int(1, 9); } while (x === y);
+        var pts = three(x, y, [[y, x], [x + 1, y], [x, y - 1]]);
+        return { q: 'Tap the point at <b>(' + x + ', ' + y + ')</b>.', type: 'tap', pic: gridTap(pts), answer: pts.filter(function (p) { return p.x === x && p.y === y; })[0].key, answerText: 'the point at (' + x + ', ' + y + ')',
+          hint: 'Go across first, then up.', steps: ['Start at 0. Go across to ' + x + '.', 'Then go up to ' + y + '.'], explain: '(' + x + ', ' + y + ') is ' + x + ' across and ' + y + ' up.', meta: { k: 'sh4-coord-tap', pts: pts, x: x, y: y } };
+      }],
+      [1, 'fill', function () {
+        var x = R.int(0, 10), y = R.int(0, 10);
+        return { q: 'Write the ordered pair for point A.', type: 'fill', fill: 'A is at ( [[]] , [[]] )', answers: [x, y], fig: grid(10, [{ x: x, y: y, l: 'A' }]),
+          hint: 'The first number is how far across. The second is how far up.', steps: ['Look straight down from A: ' + x + '.', 'Look straight across from A: ' + y + '.'],
+          explain: 'A is at (' + x + ', ' + y + ').', meta: { k: 'sh4-coord-fill', x: x, y: y } };
+      }],
+      [2, 'mistake', function () {
+        var x, y; do { x = R.int(1, 9); y = R.int(1, 9); } while (x === y);
+        var p = who(), truth = !R.int(0, 2), said = truth ? [x, y] : [y, x];
+        var right = 'Across first, then up: P is at (' + x + ', ' + y + ').';
+        return { q: p + ' says point P is at <b>(' + said[0] + ', ' + said[1] + ')</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: grid(10, [{ x: x, y: y, l: 'P' }]),
+          why: why(right, ['Up comes first, then across.', 'The order of the numbers does not matter.', 'Always write the bigger number first.']),
+          hint: 'Which number comes first in an ordered pair?', steps: [right], explain: right, meta: { k: 'sh4-coord-tf', x: x, y: y, said: said } };
+      }]
+    ],
+    'sh4-trans': [
+      [1, 'tap', function (lv) {
+        var x = R.int(1, 5), y = R.int(1, 5), dx = R.int(1, 4), dy = lv === 1 ? 0 : R.int(1, 4) * R.pick([1, -1]);
+        if (y + dy < 0) dy = -dy;
+        var nx = x + dx, ny = y + dy, pts = three(nx, ny, [[x - dx, y + dy], [x + dy, y + dx], [nx, y - dy]]);
+        return { q: 'Point S is at (' + x + ', ' + y + '). It slides <b>' + dirWords(dx, dy) + '</b>. Tap where it lands.', type: 'tap', pic: gridTap(pts), answer: pts.filter(function (p) { return p.x === nx && p.y === ny; })[0].key, answerText: 'the point at (' + nx + ', ' + ny + ')',
+          hint: 'Right and left change the first number. Up and down change the second.', steps: ['Across: ' + x + ' + ' + dx + ' = ' + nx + '.', dy ? 'Up or down: ' + y + (dy > 0 ? ' + ' : ' &minus; ') + Math.abs(dy) + ' = ' + ny + '.' : 'No up or down move.'],
+          explain: 'It lands at (' + nx + ', ' + ny + ').', meta: { k: 'sh4-trans-tap', pts: pts, x: x, y: y, dx: dx, dy: dy } };
+      }],
+      [1, 'fill', function () {
+        var x = R.int(1, 5), y = R.int(1, 5), dx = R.int(-x, 4), dy = R.int(-y, 4);
+        if (!dx && !dy) dx = 2;
+        return { q: 'A point at (' + x + ', ' + y + ') slides <b>' + dirWords(dx, dy) + '</b>. Where does it land?', type: 'fill', fill: '( [[]] , [[]] )', answers: [x + dx, y + dy], fig: grid(10, [{ x: x, y: y, l: 'A' }]),
+          hint: 'Right adds to the first number, left takes away. Up adds to the second number, down takes away.', steps: ['First number: ' + x + ' to ' + (x + dx) + '.', 'Second number: ' + y + ' to ' + (y + dy) + '.'],
+          explain: 'It lands at (' + (x + dx) + ', ' + (y + dy) + ').', meta: { k: 'sh4-trans-fill', x: x, y: y, dx: dx, dy: dy } };
+      }],
+      [2, 'mistake', function () {
+        var x = R.int(1, 5), y = R.int(1, 5), dx = R.int(1, 4), p = who(), truth = !R.int(0, 2), said = truth ? [x + dx, y] : [x, y + dx];
+        var right = 'Sliding right changes the first number: (' + x + ' + ' + dx + ', ' + y + ') = (' + (x + dx) + ', ' + y + ').';
+        return { q: 'A point at (' + x + ', ' + y + ') slides ' + dirWords(dx, 0) + '. ' + p + ' says it lands at <b>(' + said[0] + ', ' + said[1] + ')</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Sliding right changes the second number.', 'Both numbers go up when you slide right.', 'A slide does not change the numbers.']),
+          hint: 'Which number tells how far across?', steps: [right], explain: right, meta: { k: 'sh4-trans-tf', x: x, y: y, dx: dx, said: said } };
+      }]
+    ],
+    'sh4-refl': [
+      [1, 'tap', function () {
+        var m = R.int(3, 7), x = R.int(Math.max(0, m - 3), m - 1), y = R.int(1, 9), nx = 2 * m - x;
+        var all = three(nx, y, [[nx - 1, y], [nx, y === 9 ? y - 1 : y + 1], [m, y]]);
+        return { q: 'Point P at (' + x + ', ' + y + ') is reflected in the dashed mirror line. Tap its image.', type: 'tap', pic: gridTap(all, { v: m }), answer: all.filter(function (p) { return p.x === nx && p.y === y; })[0].key, answerText: 'the point at (' + nx + ', ' + y + ')',
+          hint: 'P is ' + (m - x) + ' from the line. Its image is the same distance on the other side.', steps: ['P is ' + (m - x) + ' to the left of the line at ' + m + '.', 'Go ' + (m - x) + ' to the right of the line: ' + nx + '. The height stays ' + y + '.'],
+          explain: 'The image is at (' + nx + ', ' + y + ').', meta: { k: 'sh4-refl-tap', pts: all, m: m, x: x, y: y } };
+      }],
+      [1, 'fill', function () {
+        var m = R.int(3, 7), x = R.int(Math.max(0, m - 3), m - 1), y = R.int(1, 9);
+        return { q: 'Point P is reflected in the dashed mirror line. Write the ordered pair of its image.', type: 'fill', fill: 'Image: ( [[]] , [[]] )', answers: [2 * m - x, y], fig: grid(10, [{ x: x, y: y, l: 'P' }], null, null, { v: m }),
+          hint: 'Count from P to the line. Count the same on the other side. The height stays the same.', steps: ['P is ' + (m - x) + ' from the line at ' + m + '.', m + ' + ' + (m - x) + ' = ' + (2 * m - x) + '.'],
+          explain: 'The image is at (' + (2 * m - x) + ', ' + y + ').', meta: { k: 'sh4-refl-fill', m: m, x: x, y: y } };
+      }],
+      [2, 'mistake', function () {
+        var m = R.int(3, 7), x = R.int(Math.max(0, m - 3), m - 1), y = R.int(1, 9), p = who(), truth = !R.int(0, 1), said = truth ? 2 * m - x : m + 1 + (m - x);
+        var right = 'The image is as far past the line as P is before it: ' + m + ' + ' + (m - x) + ' = ' + (2 * m - x) + '.';
+        return { q: 'P at (' + x + ', ' + y + ') is reflected in the mirror line at ' + m + '. ' + p + ' says the image is at <b>(' + said + ', ' + y + ')</b>. True or false: ' + p + ' is right.', type: 'tf', answer: truth, fig: grid(10, [{ x: x, y: y, l: 'P' }], null, null, { v: m }),
+          why: why(right, ['The image is always 1 square past the line.', 'A reflection changes the height too.', 'The image is on the same side as P.']),
+          hint: 'Count squares from P to the line, then the same past it.', steps: [right], explain: right, meta: { k: 'sh4-refl-tf', m: m, x: x, said: said } };
+      }]
+    ]
+  };
+  K.shapes('shapes', SHAPES);
 })();
