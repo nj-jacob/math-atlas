@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Lessons: every idea is now a short stack of cards (Watch, Try it, Your turn) shown one at a time, with Back and Next. "Watch" clips no longer start on their own: the student taps Play or steps through one part at a time, and an "Auto-play" switch turns auto-start back on.
 - Polish: the grade header takes less room on a phone (grade name and "All grades" share a line, the menu wraps neatly, Sign in sits beside the display buttons). Every grade has the same footer, with a link to all grades. The "About this site" box no longer says progress is never sent anywhere (family accounts do save it). A calm "page not found" page links back home.
 - Math Plan concept map: tapping a square now opens a short, plain-language note about that expectation right under its row, with the full Ontario wording one tap away. The same plain lines now appear wherever the plan describes an idea.
 - Polish: every page has a site icon for browser tabs and bookmarks. Grade 7 and Grade 8 menus now match the other grades ("Chapters", same order). The home page gives the same placement check time as Math Plan (about 25 minutes). The family page and the "Work together" page say so when sign-in cannot load (no internet or a blocked network), instead of showing a blank page.

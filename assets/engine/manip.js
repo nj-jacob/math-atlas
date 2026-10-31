@@ -1308,64 +1308,80 @@
      A short animated demonstration, like a video clip, built from a tool's own moves.
      steps: [{say: caption, act: function (tool) { return promise }, ms: pause after}]
      Plays once when it scrolls into view. Pause, replay, and step dots to jump to any part. */
+  /* Auto-play is off unless the student or a grown-up switches it on. The choice is remembered in this browser for every grade. */
+  function autoOn() { try { return localStorage.getItem('atlas:autoplay') === '1'; } catch (e) { return false; } }
+  function setAuto(on) { try { localStorage.setItem('atlas:autoplay', on ? '1' : '0'); } catch (e) { /* storage blocked */ } }
+  /* A "Watch" clip: the student plays it, pauses it, or steps one part at a time. Each step is { say, act(tool), ms }. */
   M.player = function (root, tool, steps, o) {
     o = o || {};
-    var k = 0, playing = false, run = 0, started = false;
+    var k = 0, playing = false, run = 0, started = false, n = steps.length;
     root.classList.add('mp-player');
     root.innerHTML = '<div class="mp-stage"></div><p class="mp-cap" aria-live="polite"></p>' +
-      '<div class="mp-pctl"><button type="button" class="mp-pb mp-play" aria-label="Play">Play</button>' +
-      '<button type="button" class="mp-pb mp-again">Replay</button>' +
-      '<span class="mp-dots">' + steps.map(function (s, i) { return '<button type="button" class="mp-sd" data-i="' + i + '" aria-label="Part ' + (i + 1) + ' of ' + steps.length + '"></button>'; }).join('') + '</span></div>';
-    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root);
+      '<div class="mp-pctl"><button type="button" class="mp-pb mp-prev" aria-label="Back one part">&lsaquo;</button>' +
+      '<button type="button" class="mp-pb mp-play">Play</button>' +
+      '<button type="button" class="mp-pb mp-step" aria-label="Next part">&rsaquo;</button>' +
+      '<span class="mp-dots">' + steps.map(function (s, i) { return '<button type="button" class="mp-sd" data-i="' + i + '" aria-label="Part ' + (i + 1) + ' of ' + n + '"></button>'; }).join('') + '</span>' +
+      '<button type="button" class="mp-auto" aria-pressed="false"></button></div>';
+    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root), prevB = qs('.mp-prev', root), stepB = qs('.mp-step', root), autoB = qs('.mp-auto', root);
     stage.appendChild(tool.root);
+    /* k counts the parts already shown; the caption is the part on screen */
+    function dots(i) { qsa('.mp-sd', root).forEach(function (d, j) { d.classList.toggle('on', j < k); d.classList.toggle('cur', j === i); }); }
     function caption(i) {
       cap.innerHTML = steps[i] ? steps[i].say : '';
       if (steps[i] && !tool.fast) bump(cap, 'mp-fade');
-      qsa('.mp-sd', root).forEach(function (d, j) { d.classList.toggle('on', j < i || (j === i && playing)); d.classList.toggle('cur', j === i); });
+      dots(i);
     }
     function ui() {
-      playB.textContent = playing ? 'Pause' : k >= steps.length ? 'Play again' : started ? 'Play' : 'Play';
-      playB.setAttribute('aria-label', playB.textContent);
+      playB.textContent = playing ? 'Pause' : k >= n ? 'Play again' : 'Play';
+      prevB.disabled = playing || k === 0;
+      stepB.disabled = playing || k >= n;
       root.classList.toggle('playing', playing);
+      var on = autoOn();
+      autoB.setAttribute('aria-pressed', String(on));
+      autoB.textContent = 'Auto-play: ' + (on ? 'on' : 'off');
+    }
+    /* show part k with its animation, then count it as shown */
+    function one(my) {
+      var s = steps[k];
+      caption(k);
+      return Promise.resolve(s.act ? s.act(tool) : null).then(function () { if (my === run) { k++; dots(k - 1); } });
     }
     function go() {
-      if (k >= steps.length) { return restart(); }
+      if (k >= n) return jump(0, true);
       playing = true; started = true; ui();
       var my = ++run;
-      function next() {
+      (function next() {
         if (my !== run || !playing) return;
-        if (k >= steps.length) { playing = false; ui(); caption(steps.length - 1); qsa('.mp-sd', root).forEach(function (d) { d.classList.add('on'); }); if (o.onEnd) o.onEnd(); return; }
-        var s = steps[k];
-        caption(k);
-        Promise.resolve(s.act ? s.act(tool) : null).then(function () {
-          return new Promise(function (r) { setTimeout(r, s.ms == null ? 1100 : s.ms); });
-        }).then(function () { if (my !== run) return; k++; next(); });
-      }
-      next();
+        if (k >= n) { playing = false; ui(); if (o.onEnd) o.onEnd(); return; }
+        var ms = steps[k].ms == null ? 1100 : steps[k].ms;
+        one(my).then(function () { return new Promise(function (r) { setTimeout(r, ms); }); }).then(next);
+      })();
     }
     function pause() { playing = false; run++; ui(); }
-    /* jump: rebuild the picture instantly up to part j, then play from there */
+    /* rebuild the picture instantly with parts 0 to j-1 already shown */
     function jump(j, play) {
       pause();
       tool.fast = true;
       tool.reset();
       var p = Promise.resolve();
       steps.slice(0, j).forEach(function (s) { p = p.then(function () { return s.act ? s.act(tool) : null; }); });
-      return p.then(function () { tool.fast = false; k = j; caption(j); if (play) go(); else ui(); });
+      return p.then(function () { tool.fast = false; k = j; caption(j ? j - 1 : 0); if (play) go(); else ui(); });
     }
-    function restart() { return jump(0, true); }
+    function stepOn() { if (playing || k >= n) return; started = true; var my = ++run; stepB.disabled = true; one(my).then(ui); }
     playB.addEventListener('click', function () { if (playing) pause(); else go(); });
-    qs('.mp-again', root).addEventListener('click', restart);
-    qs('.mp-dots', root).addEventListener('click', function (e) { var d = e.target.closest('.mp-sd'); if (d) jump(+d.getAttribute('data-i'), true); });
+    stepB.addEventListener('click', stepOn);
+    prevB.addEventListener('click', function () { if (!playing && k > 0) jump(k - 1); });
+    qs('.mp-dots', root).addEventListener('click', function (e) { var d = e.target.closest('.mp-sd'); if (d) jump(+d.getAttribute('data-i') + 1); });
+    autoB.addEventListener('click', function () { setAuto(!autoOn()); ui(); if (autoOn() && !started && !playing) go(); });
     caption(0); ui();
-    /* start by itself the first time it is on screen */
-    if (o.autoplay !== false && window.IntersectionObserver) {
+    /* with auto-play on, start by itself the first time it is on screen */
+    if (o.autoplay !== false && autoOn() && window.IntersectionObserver) {
       var io = new IntersectionObserver(function (es) {
         es.forEach(function (e) { if (e.isIntersecting && !started) { io.disconnect(); setTimeout(function () { if (!started && document.body.contains(root)) go(); }, 500); } });
       }, { threshold: 0.5 });
       io.observe(root);
     }
-    return { play: go, pause: pause, jump: jump, restart: restart, tool: tool, get playing() { return playing; }, get step() { return k; } };
+    return { play: go, pause: pause, jump: jump, restart: function () { return jump(0, true); }, step: stepOn, tool: tool, get playing() { return playing; }, get at() { return k; } };
   };
 
   /* make a tool by name: Manip.make('base10', element, options) */
