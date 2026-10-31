@@ -396,5 +396,5 @@ A.yt({ q: 'Work out (&minus;45) &divide; (&minus;9).', a: 5, back: 'Divide the s
       }]
     ]
   };
-  K.shapes('integers', SHAPES);
+  Atlas.Q.shapes('integers', SHAPES);
 })();

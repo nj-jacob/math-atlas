@@ -560,5 +560,5 @@ A.yt({ gen: function () { return gen.add(2); } }) +
       }]
     ]
   };
-  K.shapes('decimals', SHAPES);
+  Atlas.Q.shapes('decimals', SHAPES);
 })();

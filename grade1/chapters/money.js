@@ -348,5 +348,5 @@ row(BILLS, function (k) { return M[k].n + ': ' + { b5: 'blue', b10: 'purple', b2
       }]
     ]
   };
-  G.shapes(CH, SHAPES);
+  Atlas.Q.shapes(CH, SHAPES);
 })();

@@ -460,5 +460,5 @@ A.yt({ q: 'Solve 3x &minus; 2 &gt; 7.', opts: ['x &gt; 3', 'x &lt; 3', 'x &gt; 5
     ]
   };
   function F2(v) { return N(cl(v)); }
-  K.shapes('algebra', SHAPES);
+  Atlas.Q.shapes('algebra', SHAPES);
 })();

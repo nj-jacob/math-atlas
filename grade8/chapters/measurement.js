@@ -561,5 +561,5 @@ A.yt({ q: 'A box is 2 cm by 3 cm by 4 cm. What is its surface area?', a: 52, uni
       }]
     ]
   };
-  K.shapes('measurement', SHAPES);
+  Atlas.Q.shapes('measurement', SHAPES);
 })();

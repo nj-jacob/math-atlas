@@ -555,5 +555,5 @@ A.yt({ q: 'Which is smaller?', opts: ['6 &times; 10<sup>&minus;7</sup>', '2 &tim
       }]
     ]
   };
-  K.shapes('big-small', SHAPES);
+  Atlas.Q.shapes('big-small', SHAPES);
 })();

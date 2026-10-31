@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Tidy-up: every grade now uses the one shared `Atlas.Q.shapes` helper (the copies in Grades 1, 3, 4 and 8 are gone). The checks now catch two answer checks that share a key. Match cards give the longer side more room, and fill-the-blank sentences always wrap on a phone.
 - Grade 1 "Counting to 50": every practice skill now asks in at least 4 ways (tap the picture, match, number line, spot the mistake, short stories). Fresh chapter quiz every time.
 - Grade 1 "Tens and Ones": build numbers with blocks, match, fill the blanks, number line, stories and spot the mistake. Fresh chapter quiz every time.
 - Grade 1 "Adding and Subtracting to 10": tap, number line, match, fact families, "which way?" stories and spot the mistake. Fresh chapter quiz every time.

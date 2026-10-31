@@ -403,5 +403,5 @@ A.yt({ q: 'A phone plan is $45 a month for 24 months with a free phone. Another 
       }]
     ]
   };
-  K.shapes('money', SHAPES);
+  Atlas.Q.shapes('money', SHAPES);
 })();

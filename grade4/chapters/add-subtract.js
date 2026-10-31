@@ -884,5 +884,5 @@ A.yt({ gen: function () { return gen.words(2); } }) +
       }]
     ]
   };
-  K.shapes('add-subtract', SHAPES);
+  Atlas.Q.shapes('add-subtract', SHAPES);
 })();
