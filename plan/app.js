@@ -116,7 +116,7 @@
       '<li>Some questions will feel easy and some will feel hard. That is how it finds the right level.</li>' +
       '<li>There is no timer. If you don\'t know, press <b>I don\'t know yet</b>. That is a good answer too.</li>' +
       '<li>You can stop after any area and come back later.</li>' +
-      '<li>Press <b>Read to me</b> to hear a question. Touch the blocks, coins and counters to count them.</li></ul>' +
+      '<li>Touch the blocks, coins and counters to count them.</li></ul>' +
       '<div class="row" style="margin-top:14px"><button class="btn" id="go">Start the check</button><a class="btn quiet" href="#setup">Change name or grade</a></div></div>');
     document.getElementById('go').addEventListener('click', function () { E.startPlacement(st); save(st); go('test'); });
   }
@@ -195,7 +195,7 @@
   function showQ(q, opts) {
     var h = '<div class="qwrap"><div class="qhead"><span class="area">' + esc(opts.title || '') + '</span><div class="prog" aria-hidden="true"><i style="width:' + Math.round((opts.progress || 0) * 100) + '%"></i></div>' +
       (opts.quit ? '<a class="btn quiet sm noprint" href="#">' + opts.quit + '</a>' : '') + '</div>' +
-      '<div class="q" id="qc"><button class="btn alt sm say" id="say" type="button" aria-label="Read the question aloud">🔊 Read to me</button>' +
+      '<div class="q" id="qc">' +
       '<div class="qtext">' + q.text + '</div>' + (q.vis ? '<div class="visbox">' + q.vis + '</div>' + (/class="[^"]*\btap\b/.test(q.vis) ? '<div style="text-align:center"><span class="count" id="cnt" aria-live="polite"></span></div>' + (q.hint ? '<p class="hint">' + esc(q.hint) + '</p>' : '') : '') : '');
     if (q.type === 'mc') {
       var pics = q.choices.some(function (c) { return /<svg/.test(c); });
@@ -210,7 +210,6 @@
     var card = document.getElementById('qc'), done = false, val = '';
     window.MathPlan.q = q;
     wireTaps(card);
-    document.getElementById('say').addEventListener('click', function () { speak(q); });
     function finish(ok, pickedIdx) {
       if (done) return; done = true;
       document.removeEventListener('keydown', keys);
@@ -313,23 +312,7 @@
   }
   function say(box, t) { box.textContent = t; box.classList.remove('bump'); void box.offsetWidth; if (t) box.classList.add('bump'); }
 
-  /* Read aloud with the browser's own voice. */
-  function spoken(html) {
-    return String(html).replace(/<svg[\s\S]*?<\/svg>/g, ' ').replace(/<span class="mx">(\d+)<span class="fr"><i>([^<]*)<\/i><i>([^<]*)<\/i><\/span><\/span>/g, '$1 and $2 over $3')
-      .replace(/<span class="fr"><i>([^<]*)<\/i><i>([^<]*)<\/i><\/span>/g, ' $1 over $2 ').replace(/<sup>2<\/sup>/g, ' squared').replace(/<sup>(\d+)<\/sup>/g, ' to the power of $1')
-      .replace(/<br>/g, '. ').replace(/<[^>]+>/g, '').replace(/&lt;/g, ' is less than ').replace(/&gt;/g, ' is greater than ').replace(/&amp;/g, ' and ')
-      .replace(/×/g, ' times ').replace(/÷/g, ' divided by ').replace(/−(?=\d)/g, ' negative ').replace(/ − /g, ' minus ').replace(/√/g, 'the square root of ')
-      .replace(/(\d) (\d{3})/g, '$1$2').replace(/cm²/g, 'square centimetres').replace(/cm³/g, 'cubic centimetres').replace(/°/g, ' degrees').replace(/\?/g, '?').replace(/\s+/g, ' ').trim();
-  }
-  function speak(q) {
-    if (!('speechSynthesis' in window)) { alert('This browser cannot read aloud.'); return; }
-    stopSpeech();
-    var t = spoken(q.text);
-    if (q.type === 'mc' && !q.choices.some(function (c) { return /<svg/.test(c); })) t += '. The choices are: ' + q.choices.map(spoken).join('; ') + '.';
-    var u = new SpeechSynthesisUtterance(t); u.lang = 'en-CA'; u.rate = 0.9;
-    window.speechSynthesis.speak(u);
-  }
-  function stopSpeech() { try { if (window.__planCleanup) { window.__planCleanup(); window.__planCleanup = null; } if ('speechSynthesis' in window) window.speechSynthesis.cancel(); } catch (e) { /* ignore */ } }
+  function stopSpeech() { if (window.__planCleanup) { window.__planCleanup(); window.__planCleanup = null; } }
 
   /* ---------- placement ---------- */
   function placement(st) {

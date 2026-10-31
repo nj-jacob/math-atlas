@@ -78,7 +78,6 @@ input.f:focus, select.f:focus { border-color: var(--acc); outline: none; }
 @keyframes leave { to { opacity: 0; transform: translateY(-12px); } }
 .qtext { font-size: 22px; line-height: 1.45; margin: 0 0 14px; }
 .qtext .big { display: inline-block; font-size: 28px; margin-top: 8px; letter-spacing: .02em; }
-.say { float: right; margin: -4px 0 8px 12px; }
 .visbox { margin: 8px 0 6px; text-align: center; overflow-x: auto; }
 .visbox svg.vis, .vrow svg.vis { width: 100%; height: auto; display: inline-block; vertical-align: middle; }
 .visbox svg.vis + svg.vis { margin-left: 8px; }
