@@ -1,0 +1,91 @@
+/* Answer checks for Grade 2 question shapes. Each check gets (q, q.meta, helpers) and returns
+   an error message, or '' when the answer is right. Work the answer out here independently:
+   never copy the site's own calculation. */
+(function (V, H) {
+  const set = (k, fn) => { V[k] = fn; };
+  const bold = q => H.strip((q.q.match(/<b>([^<]+)<\/b>/) || [])[1] || '');
+  const same = (a, b) => a.slice().sort().join() === b.slice().sort().join();
+  const digits = n => String(n).split('').map(Number);
+  const ascending = v => v.every((x, i) => !i || x > v[i - 1]);
+  /* ---- Numbers to 200 ---- */
+  set('n2-build', (q, m) => q.answer === m.n && +bold(q) === m.n ? '' : 'build target');
+  set('n2-blocks-tap', (q, m) => m.set[q.answer] === m.n && new Set(m.set).size === m.set.length ? '' : 'tile');
+  set('n2-blocks-tf', (q, m) => (m.said === m.n) === q.answer && H.strip(q.why.options[q.why.answer]).endsWith('show ' + m.n + '.') ? '' : 'truth');
+  set('n2-place-fill', (q, m) => q.answers.reduce((t, d) => t * 10 + d, 0) === m.n && q.answers.every(d => d <= 9) ? '' : 'digits');
+  set('n2-place-match', (q, m) => m.pairs.every(p => { const h = /(\d+) hundred/.exec(p[0]), t = /(\d+) tens?/.exec(p[0]), o = /(\d+) ones?/.exec(p[0]); return (h ? +h[1] * 100 : 0) + +t[1] * 10 + +o[1] === +p[1]; }) ? '' : 'pairs');
+  set('n2-place-story', (q, m) => { const n = +H.strip(q.q).match(/has (\d+)/)[1]; return n === m.n && q.answer * 10 <= n && n < q.answer * 10 + 10 ? '' : 'full groups'; });
+  set('n2-words-match', (q, m) => m.pairs.every(p => H.fromWords(p[0]) === +p[1]) ? '' : 'pairs');
+  set('n2-words-tap', (q, m) => m.set[q.answer] === H.fromWords(bold(q)) ? '' : 'tile');
+  set('n2-words-tf', (q, m) => H.fromWords(bold(q)) === m.n && (m.said === m.n) === q.answer ? '' : 'truth');
+  set('n2-order', (q, m) => { const v = q.items.map(Number); return ascending(m.big ? v.slice().reverse() : v) ? '' : 'order'; });
+  set('n2-line', (q, m) => q.answer === m.n && +bold(q) === m.n ? '' : 'point');
+  set('n2-cmp-story', (q, m) => { const winner = m.less ? Math.min(m.a, m.b) : Math.max(m.a, m.b); return (winner === m.a ? 0 : 1) === q.answer ? '' : 'winner'; });
+  set('n2-skip-order', (q, m) => { const v = q.items.map(Number); return v.every((x, i) => !i || x - v[i - 1] === m.by) ? '' : 'sequence'; });
+  set('n2-skip-line', (q, m) => { let x = 0; for (let i = 0; i < m.n; i++) x += m.by; return x === q.answer ? '' : 'landing'; });
+  set('n2-skip-fill', (q, m) => { const s = q.fill.split(',').map(x => x.trim()); const f = [+s[0], +s[1], q.answers[0], +s[3], q.answers[1]]; return f.every((x, i) => !i || x - f[i - 1] === m.by) ? '' : 'sequence'; });
+  set('n2-est-tap', (q, m) => { const best = m.counts.reduce((a, b, i) => Math.abs(b - m.target) < Math.abs(m.counts[a] - m.target) ? i : a, 0); return best === q.answer && +bold(q).replace('about ', '') === m.target ? '' : 'picture'; });
+  set('n2-est-story', (q, m) => H.num(q.options[q.answer]) === m.per * m.rows ? '' : 'estimate');
+  set('n2-est-tf', (q, m) => { const c = [20, 50, 100, 150, 200]; const d = c.map(x => Math.abs(x - m.n)), best = c[d.indexOf(Math.min(...d))]; return (best === m.said) === q.answer ? '' : 'truth'; });
+  set('n2-eo-tap', (q, m) => { const r = m.want === 'even' ? 0 : 1; const hits = m.set.map((x, i) => (x % 2 === r ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === q.answer ? '' : 'group'; });
+  set('n2-eo-pick', (q, m) => same(m.opts.map((x, j) => ((digits(x).pop() % 2 === 0) === (m.want === 'even') ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('n2-eo-tf', (q, m) => ((digits(m.n).pop() % 2 ? 'odd' : 'even') === m.said) === q.answer ? '' : 'truth');
+  /* ---- Facts to 20 ---- */
+  const val = t => { const s = H.strip(t).replace(/−/g, '-'); const m = s.match(/^(\d+) ([+-]) (\d+)$/); return m[2] === '+' ? +m[1] + +m[3] : +m[1] - +m[3]; };
+  const factTrue = t => { const [l, r] = H.strip(t).replace(/−/g, '-').split(' = '); return val(l) === +r; };
+  set('f2-add-match', (q, m) => m.pairs.every(p => val(p[0]) === +p[1]) ? '' : 'pairs');
+  set('f2-add-line', (q, m) => { let x = m.a; for (let i = 0; i < m.b; i++) x++; return x === q.answer ? '' : 'landing'; });
+  set('f2-add-tf', (q, m) => (m.a + m.b === m.said) === q.answer ? '' : 'truth');
+  set('f2-m10-tap', (q, m) => { const hits = m.set.map((n, i) => (10 - n === m.need ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === q.answer ? '' : 'frame'; });
+  set('f2-m10-match', (q, m) => m.pairs.every(p => +p[0] + +p[1] === 10) ? '' : 'pairs');
+  set('f2-m10-fill', (q, m) => m.x + q.answers[0] === 10 && q.answers[0] + q.answers[1] === m.y ? '' : 'split');
+  set('f2-dbl-pick', (q, m) => same(m.opts.map((s, j) => { const p = s.split(' + '); return +p[0] === +p[1] ? j : -1; }).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('f2-dbl-match', (q, m) => m.pairs.every(p => { const [a, b] = p[0].split(' + ').map(Number); return a === b && a * 2 === +p[1]; }) ? '' : 'pairs');
+  set('f2-near-tf', (q, m) => (m.a + (m.a + 1) === m.said) === q.answer ? '' : 'truth');
+  set('f2-sub-line', (q, m) => { let x = m.w; for (let i = 0; i < m.b; i++) x--; return x === q.answer ? '' : 'landing'; });
+  set('f2-sub-tap', (q, m) => { const hits = m.set.map((f, i) => (val(f) === m.target ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === q.answer ? '' : 'fact'; });
+  set('f2-sub-tf', (q, m) => (m.said + m.b === m.w) === q.answer ? '' : 'truth');
+  set('f2-fam-pick', (q, m) => { const ok = o => { const nums = H.strip(o).match(/\d+/g).map(Number).sort((x, y) => x - y); return nums.join() === [m.a, m.b, m.w].sort((x, y) => x - y).join() && factTrue(o); }; return same(m.opts.map((o, j) => (ok(o) ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks'; });
+  set('f2-fam-fill', (q, m) => q.answers[0] + m.a === m.w ? '' : 'part');
+  set('f2-fam-tf', (q, m) => (m.x - m.y === m.z) === q.answer ? '' : 'truth');
+  set('f2-which', (q, m) => { const t = H.strip(q.q); const add = /more\? Which|gives \d+ more/.test(t) && !/How many more/.test(t); return q.options[q.answer] === (add ? 'Add' : 'Subtract') && (m.kind === 'join') === add ? '' : 'operation'; });
+  set('f2-story-build', (q, m) => { const n = H.strip(q.q).match(/\d+/g).map(Number); return n[0] + n[1] === q.answer ? '' : 'total'; });
+  set('f2-story-tf', (q, m) => (m.w - m.b === m.said && !/\+/.test(H.strip(q.q).split('wrote')[1])) === q.answer ? '' : 'truth');
+  /* ---- Adding and Subtracting to 100 ---- */
+  const near10 = n => { const lo = n - n % 10; return n % 10 >= 5 ? lo + 10 : lo; };
+  set('a2-tens-fill', (q, m) => q.answers.every((x, i) => x === m.a + 10 * (i + 1)) ? '' : 'tens');
+  set('a2-tens-build', (q, m) => q.answer === m.a + m.t && m.t % 10 === 0 ? '' : 'total');
+  set('a2-tens-tf', (q, m) => (m.a + m.t === m.said) === q.answer ? '' : 'truth');
+  set('a2-add-build', (q, m) => { const n = H.strip(q.q).match(/\d+/g).map(Number); return n[0] + n[1] === q.answer ? '' : 'total'; });
+  set('a2-add-fill', (q, m) => { const tn = Math.floor(m.a / 10) * 10 + Math.floor(m.b / 10) * 10, on = m.a % 10 + m.b % 10; return q.answers[0] === tn && q.answers[1] === on && q.answers[2] === m.a + m.b ? '' : 'parts'; });
+  set('a2-add-tf', (q, m) => (m.a + m.b === m.said) === q.answer ? '' : 'truth');
+  set('a2-sub-line', (q, m) => q.answer + m.b === m.a ? '' : 'landing');
+  set('a2-sub-match', (q, m) => m.pairs.every(p => val(p[0]) === +p[1]) ? '' : 'pairs');
+  set('a2-sub-tf', (q, m) => (m.said + m.b === m.a) === q.answer ? '' : 'truth');
+  set('a2-near10', (q, m) => +q.options[q.answer] === near10(m.n) ? '' : 'nearest ten');
+  set('a2-near-match', (q, m) => m.pairs.every(p => near10(+p[0]) === +p[1]) ? '' : 'pairs');
+  set('a2-est-pick', (q, m) => same(m.opts.map((s, j) => { const [x, y] = s.split(' + ').map(Number); return near10(x) + near10(y) === m.target ? j : -1; }).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('a2-mental-tf', (q, m) => (m.a + m.b === m.said) === q.answer ? '' : 'truth');
+  set('a2-which', (q, m) => q.options[q.answer] === (m.kind === 'join' && /in all\?/.test(q.q) ? 'Add' : 'Subtract') ? '' : 'operation');
+  set('a2-story-build', (q, m) => { const n = H.strip(q.q).match(/\d+/g).map(Number); return n[0] + n[1] === q.answer ? '' : 'total'; });
+  set('a2-story-tf', (q, m) => { const used = H.strip(q.q).split('wrote')[1]; return (!/\+/.test(used) && m.w - m.a === m.said) === q.answer ? '' : 'truth'; });
+  /* ---- Equal Groups and Sharing ---- */
+  const groupsOf = t => { const m = /(\d+) groups of (\d+)/.exec(t); return [+m[1], +m[2]]; };
+  const wholes = t => { const m = /(\d+) (half|halves|fourth|fourths)/.exec(t); return +m[1] / (/^hal/.test(m[2]) ? 2 : 4); };
+  set('g2-grp-tap', (q, m) => { const hits = m.set.map((p, i) => (p[0] === m.g && p[1] === m.n ? i : -1)).filter(i => i >= 0); const [g, n] = groupsOf(H.strip(q.q)); return hits.length === 1 && hits[0] === q.answer && g === m.g && n === m.n ? '' : 'picture'; });
+  set('g2-grp-fill', (q, m) => { let t = m.n; return q.answers.every(x => { t += m.n; return x === t; }) && q.answers.length === m.g - 1 ? '' : 'skip count'; });
+  set('g2-grp-match', (q, m) => m.pairs.every(p => { const [g, n] = groupsOf(p[0]); let t = 0; for (let i = 0; i < g; i++) t += n; return t === +p[1]; }) ? '' : 'pairs');
+  set('g2-grp-tf', (q, m) => { let t = 0; for (let i = 0; i < m.g; i++) t += m.n; return (t === m.said) === q.answer ? '' : 'truth'; });
+  set('g2-parts-match', (q, m) => m.pairs.every(p => wholes(p[0]) === parseInt(p[1], 10)) ? '' : 'pairs');
+  set('g2-parts-tap', (q, m) => { const hits = m.set.map((n, i) => (n / m.d === m.w ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === q.answer ? '' : 'picture'; });
+  set('g2-parts-pick', (q, m) => same(q.options.map((o, j) => (wholes(o) === m.target ? j : -1)).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('g2-parts-tf', (q, m) => (m.n / m.d === m.said) === q.answer ? '' : 'truth');
+  set('g2-share-match', (q, m) => m.pairs.every(p => { const [n, k] = p[0].match(/\d+/g).map(Number); return parseInt(p[1], 10) * k === n; }) ? '' : 'pairs');
+  set('g2-share-story', (q, m) => q.answer * m.per === m.n && H.strip(q.q).includes(m.per + ' people') ? '' : 'each');
+  set('g2-share-tf', (q, m) => (m.said * m.per === m.n) === q.answer ? '' : 'truth');
+  set('g2-take-order', (q, m) => { const v = q.items.map(Number); return v[0] === m.n && v[v.length - 1] === 0 && v.every((x, i) => !i || v[i - 1] - x === m.per) ? '' : 'sequence'; });
+  set('g2-take-story', (q, m) => { let n = m.n, c = 0; while (n > 0) { n -= m.per; c++; } return n === 0 && c === q.answer ? '' : 'groups'; });
+  set('g2-take-tf', (q, m) => { let n = m.n, c = 0; while (n > 0) { n -= m.per; c++; } return (c === m.said) === q.answer ? '' : 'truth'; });
+  set('g2-which', (q, m) => q.options[q.answer] === (/in all\?/.test(q.q) ? 'Put equal groups together' : 'Share out equally') ? '' : 'way');
+  set('g2-story-tap', (q, m) => { const n = H.strip(q.q).match(/\d+/g).map(Number); const hits = m.set.map((p, i) => (p[0] === n[1] && p[1] === n[0] ? i : -1)).filter(i => i >= 0); return hits.length === 1 && hits[0] === q.answer ? '' : 'picture'; });
+  set('g2-story-tf', (q, m) => (m.g * m.n === m.said) === q.answer ? '' : 'truth');
+})(window.__verify, window.__H);

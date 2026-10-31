@@ -455,4 +455,148 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  function twoNums(lo) { var a = R.int(lo || 2, 9), b = R.int(lo || 2, 9); return [a, b]; }
+  function factMatch(make, k, q) {
+    var p = [], seen = {};
+    while (p.length < 3) { var f = make(); if (seen[f[1]] || seen['f' + f[0]]) continue; seen[f[1]] = 1; seen['f' + f[0]] = 1; p.push([f[0], String(f[1])]); }
+    return { q: q, type: 'match', pairs: p, hint: 'Work out each one. Use a fact you know to help.', steps: ['Do one card at a time.'],
+      explain: p.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: k, pairs: p } };
+  }
+  K.shapes(CH, {
+    'f2-add': [
+      [1, 'match', function (lv) { return factMatch(function () { var t = twoNums(lv === 1 ? 1 : 3); return [t[0] + ' + ' + t[1], t[0] + t[1]]; }, 'f2-add-match', 'Match each fact to its sum.'); }],
+      [1, 'line', function (lv) {
+        var a = R.int(lv === 1 ? 2 : 6, 9), b = R.int(lv === 1 ? 1 : 4, 9);
+        return { q: 'Start at <b>' + a + '</b>. Jump <b>' + b + '</b> more. Where do you land?', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: a + b, hideValue: true,
+          hint: 'Count on from ' + a + ', one number for each jump.', steps: ['Count on ' + b + ' from ' + a + '.'],
+          explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'f2-add-line', a: a, b: b } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(5, 9), b = R.int(4, 9), name = who(), truth = !R.int(0, 2), said = truth ? a + b : a + b + R.pick([-1, 1]);
+        var right = a + ' + ' + b + ' = ' + (a + b) + '. ' + (a + b > 10 ? 'Make a ten: ' + a + ' + ' + (10 - a) + ' = 10, then ' + (b - (10 - a)) + ' more is ' + (a + b) + '.' : 'Count on ' + b + ' from ' + a + '.');
+        return { q: name + ' says <span class="math big">' + a + ' + ' + b + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['When you count on, count the number you start on too.', 'The bigger number always comes second.', 'Adding always gives an even number.']),
+          hint: 'Try making a ten first.', steps: [right], explain: right, meta: { k: 'f2-add-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'f2-make10': [
+      [1, 'tap', function (lv) {
+        var set = R.shuffle([R.int(2, 4), R.int(5, 6), R.int(7, 9)]), pick = R.pick(set), need = 10 - pick;
+        return { q: 'Tap the ten-frame that needs <b>' + need + '</b> more to make 10.', type: 'tap', tiles: set.map(function (n) { return D.frames(n, { c: 24 }); }), answer: set.indexOf(pick), answerText: 'the ten-frame with ' + pick,
+          hint: 'Count the empty squares in each ten-frame.', steps: ['Look for ' + need + ' empty squares.'],
+          explain: pick + ' + ' + need + ' = 10.', meta: { k: 'f2-m10-tap', set: set, need: need } };
+      }],
+      [1, 'match', function (lv) {
+        var list = R.shuffle([1, 2, 3, 4, 6, 7, 8, 9]).slice(0, 3), p = list.map(function (a) { return [String(a), String(10 - a)]; });
+        return { q: 'Match the numbers that make <b>10</b> together.', type: 'match', pairs: p,
+          hint: 'Use the ten-frame: filled squares plus empty squares make 10.', steps: ['7 needs 3 more. 3 + 7 = 10.'],
+          explain: p.map(function (x) { return x[0] + ' + ' + x[1] + ' = 10'; }).join('. ') + '.', meta: { k: 'f2-m10-match', pairs: p } };
+      }],
+      [2, 'fill', function (lv) {
+        var x = R.int(6, 9), y = R.int(11 - x, 9);
+        return { q: 'Make a ten to add. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + x + ' + ' + y + ' = ' + x + ' + [[]] + [[]]</span>', answers: [10 - x, y - (10 - x)],
+          hint: x + ' needs ' + (10 - x) + ' more to make 10. Split ' + y + ' into ' + (10 - x) + ' and the rest.', steps: [x + ' + ' + (10 - x) + ' = 10.', y + ' = ' + (10 - x) + ' + ' + (y - (10 - x)) + '.'],
+          explain: x + ' + ' + y + ' = 10 + ' + (y - (10 - x)) + ' = ' + (x + y) + '.', meta: { k: 'f2-m10-fill', x: x, y: y } };
+      }]
+    ],
+    'f2-doubles': [
+      [1, 'pick', function (lv) {
+        var opts = [], seen = {};
+        while (opts.length < 5) {
+          var a = R.int(1, 9), b = opts.length < 2 ? a : R.pick([a, a + 1, a - 1]);
+          if (b < 1) b = a + 1;
+          var s = a + ' + ' + b; if (!seen[s]) { seen[s] = 1; opts.push(s); }
+        }
+        opts = R.shuffle(opts);
+        var ans = opts.map(function (s, j) { var p = s.split(' + '); return p[0] === p[1] ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every <b>double</b>.', type: 'pick', options: opts, answer: ans,
+          hint: 'A double adds a number to itself, like 4 + 4.', steps: ['Look for the same number on both sides of the +.'],
+          explain: ans.map(function (j) { return opts[j]; }).join(', ') + (ans.length > 1 ? ' are doubles.' : ' is a double.'), meta: { k: 'f2-dbl-pick', opts: opts } };
+      }],
+      [1, 'match', function (lv) { return factMatch(function () { var a = R.int(1, lv === 1 ? 6 : 10); return [a + ' + ' + a, 2 * a]; }, 'f2-dbl-match', 'Match each double to its sum.'); }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(4, 9), name = who(), truth = !R.int(0, 2), said = truth ? 2 * a + 1 : 2 * a + 2;
+        var right = a + ' + ' + (a + 1) + ' is the double ' + a + ' + ' + a + ' = ' + 2 * a + ', plus 1 more: ' + (2 * a + 1) + '.';
+        return { q: name + ' says: "' + a + ' + ' + a + ' = ' + 2 * a + ', so <b>' + a + ' + ' + (a + 1) + ' = ' + said + '</b>." True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['A near double is the double plus 2.', 'A near double is the same as the double.', 'Add 10 to the double.']),
+          hint: a + ' + ' + (a + 1) + ' is just 1 more than ' + a + ' + ' + a + '.', steps: [right], explain: right, meta: { k: 'f2-near-tf', a: a, said: said } };
+      }]
+    ],
+    'f2-sub': [
+      [1, 'line', function (lv) {
+        var b = R.int(lv === 1 ? 1 : 3, lv === 1 ? 5 : 9), w = R.int(b + 3, lv === 1 ? 12 : 18);
+        return { q: 'Start at <b>' + w + '</b>. Jump back <b>' + b + '</b>. Where do you land?', type: 'line', min: 0, max: 20, tick: 1, every: 5, snap: 1, answer: w - b, hideValue: true,
+          hint: 'Count back from ' + w + ', one number for each jump.', steps: ['Count back ' + b + ' from ' + w + '.'],
+          explain: w + ' &minus; ' + b + ' = ' + (w - b) + '.', meta: { k: 'f2-sub-line', w: w, b: b } };
+      }],
+      [1, 'tap', function (lv) {
+        var target = R.int(3, 9), b = R.int(2, lv === 1 ? 5 : 9), right = (target + b) + ' &minus; ' + b, set = [right];
+        while (set.length < 3) { var bb = R.int(2, 9), ww = R.int(bb + 1, 18), f = ww + ' &minus; ' + bb; if (ww - bb !== target && set.indexOf(f) < 0) set.push(f); }
+        set = R.shuffle(set);
+        return { q: 'Tap the fact that equals <b>' + target + '</b>.', type: 'tap', tiles: set.map(function (f) { return '<span class="math big">' + f + '</span>'; }), answer: set.indexOf(right), answerText: right.replace('&minus;', '−'),
+          hint: 'Think addition: ' + b + ' plus what makes the first number?', steps: ['Work out each fact.'],
+          explain: right.replace('&minus;', '−') + ' = ' + target + '.', meta: { k: 'f2-sub-tap', set: set, target: target } };
+      }],
+      [2, 'mistake', function (lv) {
+        var b = R.int(4, 9), a = R.int(4, 9), w = a + b, name = who(), truth = !R.int(0, 2), said = truth ? a : a + R.pick([-1, 1]);
+        var right = b + ' + ' + a + ' = ' + w + ', so ' + w + ' &minus; ' + b + ' = ' + a + '.';
+        return { q: name + ' says <span class="math big">' + w + ' &minus; ' + b + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Count back and include the number you start on.', 'Subtracting always gives a number less than 5.', 'Take the smaller number from the bigger digit.']),
+          hint: 'Think: ' + b + ' plus what makes ' + w + '?', steps: [right], explain: right, meta: { k: 'f2-sub-tf', w: w, b: b, said: said } };
+      }]
+    ],
+    'f2-family': [
+      [1, 'pick', function (lv) {
+        var a = R.int(3, 9), b = R.int(2, 9); if (a === b) b = a === 9 ? 8 : a + 1;
+        var w = a + b, right = [a + ' + ' + b + ' = ' + w, w + ' &minus; ' + a + ' = ' + b, w + ' &minus; ' + b + ' = ' + a], wrong = [a + ' &minus; ' + b + ' = ' + Math.abs(a - b), w + ' + ' + a + ' = ' + (w + a), a + ' + ' + w + ' = ' + (a + w)];
+        var opts = R.shuffle(R.shuffle(right).slice(0, 2).concat(R.shuffle(wrong).slice(0, 2)));
+        var ans = opts.map(function (o, j) { return right.indexOf(o) >= 0 ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Pick every fact in the family of <b>' + a + ', ' + b + ' and ' + w + '</b>.', type: 'pick', options: opts, answer: ans,
+          hint: 'A family fact uses only ' + a + ', ' + b + ' and ' + w + '. The whole, ' + w + ', is the biggest.', steps: ['Add the two parts to get ' + w + '. Take a part from ' + w + ' to get the other part.'],
+          explain: 'The family: ' + right.concat([b + ' + ' + a + ' = ' + w]).join(', ') + '.', meta: { k: 'f2-fam-pick', a: a, b: b, w: w, opts: opts } };
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.int(3, 9), b = R.int(2, 9), w = a + b;
+        return { q: 'Use the first fact to fill in the blank.', type: 'fill', fill: '<span class="math">' + a + ' + ' + b + ' = ' + w + ', so ' + w + ' &minus; ' + a + ' = [[]]</span>', answers: [b],
+          hint: 'Same three numbers. Take one part from the whole.', steps: [w + ' is the whole. ' + a + ' and ' + b + ' are the parts.'],
+          explain: w + ' &minus; ' + a + ' = ' + b + '.', meta: { k: 'f2-fam-fill', a: a, w: w } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(3, 9), b = R.int(2, 9); if (a === b) b = a === 9 ? 8 : a + 1;
+        var w = a + b, name = who(), truth = !R.int(0, 2), f = truth ? [w, '&minus;', b, a] : [b, '&minus;', w, a];
+        var right = 'In a family, the whole (' + w + ') is the biggest. ' + w + ' &minus; ' + b + ' = ' + a + ' and ' + w + ' &minus; ' + a + ' = ' + b + '.';
+        return { q: name + ' says <span class="math big">' + f[0] + ' ' + f[1] + ' ' + f[2] + ' = ' + f[3] + '</span> belongs to the family of ' + a + ', ' + b + ' and ' + w + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Any order of the three numbers works.', 'You can take a bigger number from a smaller one and get a whole number.', 'A family has only addition facts.']),
+          hint: 'Which number is the whole? Subtraction starts with the whole.', steps: [right], explain: right, meta: { k: 'f2-fam-tf', x: f[0], y: f[2], z: f[3] } };
+      }]
+    ],
+    'f2-story': [
+      [1, 'which', function (lv) {
+        var name = who(), a = R.int(4, 9), b = R.int(2, 8), kind = R.pick(['join', 'take', 'compare']), w = a + b, q;
+        if (kind === 'join') q = name + ' has ' + a + ' stickers. A friend gives ' + b + ' more. How many stickers now?';
+        else if (kind === 'take') q = name + ' has ' + w + ' crackers and eats ' + b + '. How many are left?';
+        else q = name + ' has ' + w + ' hockey cards. A friend has ' + b + '. How many more does ' + name + ' have?';
+        var opts = ['Add', 'Subtract'];
+        return { q: q + ' <b>Which way solves it?</b>', type: 'mc', options: opts, answer: kind === 'join' ? 0 : 1,
+          hint: kind === 'join' ? 'Is the group getting bigger?' : kind === 'take' ? 'Is some going away?' : 'Are you comparing two groups?',
+          steps: [kind === 'join' ? 'More are coming, so the group gets bigger: add.' : kind === 'take' ? 'Some go away: subtract.' : 'To find how many more, subtract the smaller from the bigger.'],
+          explain: kind === 'join' ? 'Add: ' + a + ' + ' + b + ' = ' + w + '.' : 'Subtract: ' + w + ' &minus; ' + b + ' = ' + a + '.', meta: { k: 'f2-which', kind: kind } };
+      }],
+      [1, 'build', function (lv) {
+        var name = who(), a = R.int(5, 9), b = R.int(lv === 1 ? 2 : 4, 9);
+        return { q: name + ' has <b>' + a + '</b> cubes and gets <b>' + b + '</b> more. Show how many cubes ' + name + ' has now. Then press Check.', type: 'build', tool: 'base10', answer: a + b,
+          hint: 'Add ' + a + ' and ' + b + '. If you get 10 or more, use a rod for the ten.', steps: [a + ' + ' + b + ' = ' + (a + b) + '.', (a + b >= 10 ? 'Show 1 rod and ' + (a + b - 10) + ' small cubes.' : 'Show ' + (a + b) + ' small cubes.')],
+          explain: a + ' + ' + b + ' = ' + (a + b) + ' cubes.', meta: { k: 'f2-story-build', a: a, b: b } };
+      }],
+      [2, 'mistake', function (lv) {
+        var name = who(), b = R.int(4, 9), a = R.int(4, 9), w = a + b, truth = !R.int(0, 2), said = truth ? a : w + b, how = truth ? w + ' &minus; ' + b : w + ' + ' + b;
+        var right = 'The birds flew away, so subtract: ' + w + ' &minus; ' + b + ' = ' + a + '.';
+        return { q: 'There were ' + w + ' birds on a fence. ' + b + ' flew away. ' + name + ' wrote <span class="math big">' + how + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['"Flew away" means add.', 'Always add the two numbers in a story.', 'Subtract the smaller number from 20.']),
+          hint: 'Are there more birds or fewer birds at the end?', steps: [right], explain: right, meta: { k: 'f2-story-tf', w: w, b: b, said: said } };
+      }]
+    ]
+  });
 })();
