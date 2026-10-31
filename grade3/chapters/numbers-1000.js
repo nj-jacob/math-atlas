@@ -145,7 +145,7 @@
       if (i < full) s += '<rect x="' + (x + 1.5) + '" y="' + (y + 1.5) + '" width="' + (sz - 3) + '" height="' + (sz - 3) + '" rx="2" style="fill:var(--p1)"/>';
       else if (i === full && part > 0) s += '<rect x="' + (x + 1.5) + '" y="' + (y + 1.5) + '" width="' + ((sz - 3) * part).toFixed(1) + '" height="' + (sz - 3) + '" rx="2" style="fill:var(--p1);opacity:.55"/>';
     }
-    for (var r = 1; r <= 10; r++) s += '<text x="44" y="' + (6 + r * sz - 8) + '" text-anchor="end" font-size="12" class="t2">' + r * 100 + '</text>';
+    for (var r = 1; r <= 10; r++) s += '<text x="46" y="' + (6 + r * sz - 7) + '" text-anchor="end" font-size="16" class="t2">' + r * 100 + '</text>';
     s += '<rect x="330" y="10" width="20" height="20" rx="2" style="fill:var(--p1)"/><text x="358" y="25" font-size="15">= 10</text>' +
       '<text x="330" y="58" font-size="15">1 row = 100</text><text x="330" y="80" font-size="15">100 squares = 1000</text>';
     return A.svg(480, 270, s, n + ' shown as ' + full + (part ? ' and a part' : '') + ' of 100 squares, each worth 10');
@@ -157,7 +157,287 @@
   };
   function clamp(v, a, b) { v = parseInt(v, 10); if (isNaN(v)) v = a; return Math.max(a, Math.min(b, v)); }
 
+  /* ---------- Lessons: one idea per screen (assets/lesson.js, assets/g3kit.js) ---------- */
+  var CH = 'numbers-1000';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function b10(extra) { var o = { words: words, max: { h: 9, t: 19, o: 19 } }; for (var k in extra) o[k] = extra[k]; return o; }
+  function nb(n) { return '<span class="math big">' + A.fmt(n) + '</span>'; }
+  /* two numbers in place value charts, one above the other, with the column that decides lit */
+  function twoCharts(s) {
+    return '<div>' + chart(s.a, { hl: s.hl, dots: false }) + '<p class="g3-sym">' + (s.sym ? '<b>' + A.fmt(s.a) + ' ' + s.sym + ' ' + A.fmt(s.b) + '</b>' : '&nbsp;') + '</p>' + chart(s.b, { hl: s.hl, dots: false }) + '</div>';
+  }
+  function hillView(s) { return hill(s.n, s.p); }
+  function grid1000(s) { return thousand(s.n); }
+
+  var LESSONS = [
+    { id: 'place', title: 'Hundreds, tens and ones', sub: 'Every digit has a place, and the place gives its value.', concepts: [
+      { id: 'hundred', title: 'Ten tens make one hundred', exp: ['B1.5'], skill: 'n3-blocks',
+        body: '<p>Ten ones make <b>1 ten</b>. In the same way, ten tens make <b>1 hundred</b>. A hundred flat is 10 rods side by side.</p><div class="fig">' + stairs() + '</div>',
+        watch: { tool: 'base10', opts: b10({ t: 7 }), steps: [
+          { say: 'Here are 7 tens. Count by tens: 10, 20 ... 70.', act: function (t) { return t.countAll(240); }, ms: 500 },
+          { say: 'Add 3 more tens: 80, 90, 100.', act: function (t) { t.clearLit(); return t.add('t', 3, 420); } },
+          { say: 'Now there are 10 tens. They slide together into <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
+          { say: '1 hundred is the same amount as 10 tens, or 100 ones.', act: function (t) { return t.pulseCol('h'); }, ms: 1600 }
+        ] },
+        try: { tool: 'base10', opts: b10({ controls: true, t: 8 }), tasks: [
+          { do: 'Add tens until you have 10. Then press <b>Group 10 tens</b>.', goal: function (s) { return s.h >= 1; }, yes: '10 tens became 1 hundred.' },
+          { do: 'Now press <b>Break a hundred</b>. How many tens come back?', reset: false, goal: function (s) { return s.last === 'split-h'; }, yes: '10 tens. It is still worth 100.' }
+        ] },
+        key: '<p><b>10 ones = 1 ten. 10 tens = 1 hundred.</b></p>',
+        check: [TU('s2', 2), SK('n3-value', 1)] },
+
+      { id: 'build', title: 'Build numbers to 999', exp: ['B1.1', 'B1.5'], skill: 'n3-blocks',
+        body: '<p>Any number up to 999 can be built from <b>hundred flats</b>, <b>ten rods</b> and <b>one cubes</b>. Count the hundreds first, then the tens, then the ones.</p>',
+        watch: { tool: 'base10', opts: b10({}), steps: [
+          { say: 'Let\'s build 243. First, 2 hundreds: 100, 200.', act: function (t) { return t.add('h', 2, 500); } },
+          { say: 'Then 4 tens: 210, 220, 230, 240.', act: function (t) { return t.add('t', 4, 380); } },
+          { say: 'Then 3 ones: 241, 242, 243.', act: function (t) { return t.add('o', 3, 320); } },
+          { say: 'Count it all to check.', act: function (t) { return t.countAll(200); } },
+          { say: '2 hundreds, 4 tens and 3 ones make <b>243</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
+          { do: 'Build <b>352</b>.', goal: function (s) { return s.value === 352 && s.t < 10 && s.o < 10; }, yes: '3 hundreds, 5 tens and 2 ones make 352.' },
+          { do: 'Build <b>608</b>. There are no tens.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 608 && s.o < 10; }, yes: '6 hundreds, 0 tens and 8 ones make 608.' },
+          { do: '<b>Tap each block</b> to count what you built. Start with the hundreds.', reset: false, goal: function (s) { return s.allLit; }, yes: 'You counted every block.' }
+        ] },
+        mistake: '<p>Counting each rod or flat as 1. A rod is worth <b>10</b> and a flat is worth <b>100</b>, so count flats by hundreds and rods by tens.</p>',
+        check: [SK('n3-blocks', 1), SK('n3-blocks', 2)] },
+
+      { id: 'value', title: 'A digit\'s place gives its value', exp: ['B1.5'], skill: 'n3-value', hard: true,
+        body: '<p>The same digit can be worth very different amounts. In <b>555</b>, the first 5 is worth 500, the next is worth 50, and the last is worth 5. Its <b>place</b> decides.</p>',
+        watch: { mount: G3.view(function (s) { return chart(s.n, { hl: s.hl, vals: s.vals }); }, { n: 555, hl: -1, vals: false }), steps: [
+          { say: 'Here is 555 in a place value chart.', ms: 1200 },
+          { say: 'The 5 in the ones place is worth <b>5</b>.', act: function (t) { return t.set({ hl: 2, vals: true }, 1300); } },
+          { say: 'The 5 in the tens place is worth <b>50</b>: 5 tens.', act: function (t) { return t.set({ hl: 1 }, 1300); } },
+          { say: 'The 5 in the hundreds place is worth <b>500</b>: 5 hundreds.', act: function (t) { return t.set({ hl: 0 }, 1300); } },
+          { say: 'Same digit, three different values.', act: function (t) { return t.set({ hl: -1 }, 1500); } }
+        ] },
+        try: { mount: G3.play({ state: { n: 352, hl: 1 }, sliders: [{ key: 'n', label: 'Number', min: 100, max: 999 }],
+          selects: [{ key: 'hl', label: 'Light up the', options: [[0, 'hundreds digit'], [1, 'tens digit'], [2, 'ones digit']] }],
+          draw: function (s) { return chart(s.n, { hl: s.hl, vals: true }); },
+          info: function (s) { var d = String(s.n).charAt(s.hl), p = 2 - s.hl; return 'The ' + d + ' is worth <b>' + A.fmt(+d * Math.pow(10, p)) + '</b>'; },
+          tasks: [
+            { do: 'Make a number where the <b>tens digit</b> is worth <b>70</b>.', goal: function (s) { return Math.floor(s.n / 10) % 10 === 7; }, yes: '7 tens is 70.' },
+            { do: 'Make a number where the <b>hundreds digit</b> is worth <b>400</b>.', goal: function (s) { return Math.floor(s.n / 100) === 4; }, yes: '4 hundreds is 400.' }
+          ] }), do: '' },
+        ways: [
+          { label: 'With money', html: '<p>Think of <b>$555</b> as bills: five $100 bills, five $10 bills and five loonies. The $100 bills are worth far more, even though each pile has 5.</p>' },
+          { label: 'Cover the digits', html: '<p>Cover all the digits to the right with your finger and count what is left. In 352, cover the 2: you see <b>35</b> tens. Cover 52: you see <b>3</b> hundreds.</p>' }
+        ],
+        key: '<p>A digit\'s <b>place</b> tells you what it is worth. Ones, tens, hundreds, from right to left.</p>',
+        mistake: '<p>Saying the 5 in 352 is worth 5. Ask the child to name the place first ("tens"), then say the value ("5 tens, which is 50").</p>',
+        check: [SK('n3-value', 1), TU('s1', 0)] },
+
+      { id: 'thousand', title: 'How big is 1000?', exp: ['B1.1', 'B1.4'], skill: 'n3-value',
+        body: '<p>Ten hundreds make <b>1000</b>, one thousand. Each square below is worth 10. One row is 100. All ten rows make 1000.</p>',
+        watch: { mount: G3.view(grid1000, { n: 0 }), steps: [
+          { say: 'Each square is a ten. Fill one row: 100.', act: function (t) { return t.set({ n: 100 }, 900); } },
+          { say: 'Count by hundreds: 200, 300, 400, 500.', act: function (t) { return t.seq([{ n: 200 }, { n: 300 }, { n: 400 }, { n: 500 }], 500); } },
+          { say: '600, 700, 800, 900.', act: function (t) { return t.seq([{ n: 600 }, { n: 700 }, { n: 800 }, { n: 900 }], 500); } },
+          { say: 'One more hundred makes <b>1000</b>: 10 hundreds, or 100 tens.', act: function (t) { return t.set({ n: 1000 }, 1800); } }
+        ] },
+        try: { mount: G3.play({ state: { n: 350 }, sliders: [{ key: 'n', label: 'Fill to', min: 0, max: 1000, step: 10 }], draw: grid1000,
+          info: function (s) { return A.fmt(s.n) + ' is ' + (s.n / 10) + ' tens. It needs ' + A.fmt(1000 - s.n) + ' more to make 1000.'; },
+          tasks: [
+            { do: 'Fill the grid to <b>700</b>.', goal: function (s) { return s.n === 700; }, yes: '7 rows of 100 make 700.' },
+            { do: 'Fill it to <b>1000</b>. How many rows is that?', goal: function (s) { return s.n === 1000; }, yes: '10 rows of 100 make 1000.' }
+          ] }), do: '' },
+        key: '<p><b>1000 = 10 hundreds = 100 tens.</b></p>',
+        check: [TU('s6', 0), TU('s6', 1), TU('s6', 2)] }
+    ] },
+
+    { id: 'write', title: 'Writing numbers', sub: 'Standard form, expanded form and words.', concepts: [
+      { id: 'expanded', title: 'Standard and expanded form', exp: ['B1.1'], skill: 'n3-forms',
+        body: '<p><b>Standard form</b> is how we usually write a number: 352. <b>Expanded form</b> shows what each digit is worth: 300 + 50 + 2.</p>',
+        watch: { mount: G3.view(function (s) { return s.show ? expanded(s.n) : chart(s.n, {}); }, { n: 352, show: false }), steps: [
+          { say: '352 has 3 hundreds, 5 tens and 2 ones.', ms: 1400 },
+          { say: 'Each digit drops down to show its value.', act: function (t) { return t.set({ show: true }, 1600); } },
+          { say: 'So 352 = <b>300 + 50 + 2</b>.', ms: 1800 },
+          { say: 'For 407, there are no tens: 407 = <b>400 + 7</b>.', act: function (t) { return t.set({ n: 407 }, 2000); } }
+        ] },
+        try: { tool: 'base10', opts: b10({ controls: true, expanded: true }), tasks: [
+          { do: 'Build the number that is <b>500 + 30 + 6</b>.', goal: function (s) { return s.value === 536 && s.t < 10 && s.o < 10; }, yes: '500 + 30 + 6 = 536.' },
+          { do: 'Build <b>900 + 4</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 904 && s.o < 10; }, yes: '900 + 4 = 904. The 0 holds the tens place.' }
+        ] },
+        key: '<p>Expanded form adds up the value of each digit.</p>',
+        mistake: '<p>Writing 300 + 50 + 2 as "30052". Show that each part is a value to add, not digits to stick together.</p>',
+        check: [SK('n3-forms', 1), TU('s2', 0)] },
+
+      { id: 'words', title: 'Numbers in words', exp: ['B1.1'], skill: 'n3-words',
+        body: '<p>To read a number like 640, say the <b>hundreds</b> first, then the last two digits: "six hundred forty". We do not say "and".</p>',
+        watch: { tool: 'base10', opts: b10({}), steps: [
+          { say: 'Build 6 hundreds: "six hundred".', act: function (t) { return t.add('h', 6, 260); } },
+          { say: 'Add 4 tens: "six hundred forty".', act: function (t) { return t.add('t', 4, 300); } },
+          { say: 'Add 5 ones: "six hundred forty-five".', act: function (t) { return t.add('o', 5, 260); }, ms: 2000 }
+        ] },
+        try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
+          { do: 'Build <b>seven hundred twelve</b>.', goal: function (s) { return s.value === 712 && s.t < 10 && s.o < 10; }, yes: 'Seven hundred twelve is 712.' },
+          { do: 'Build <b>three hundred five</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 305 && s.o < 10; }, yes: 'Three hundred five is 305.' }
+        ] },
+        key: '<p>Say the hundreds, then the last two digits.</p>',
+        mistake: '<p>Leaving out the zero. Three hundred five is <b>305</b>, not 35. The 0 keeps the tens place open.</p>',
+        check: [SK('n3-words', 1), TU('s2', 1)] },
+
+      { id: 'trade', title: 'One number, many ways', exp: ['B1.5'], skill: 'n3-forms', hard: true,
+        body: '<p>We can trade blocks and the number stays the same. 243 is 2 hundreds, 4 tens, 3 ones. It is also <b>24 tens and 3 ones</b>.</p>',
+        watch: { tool: 'base10', opts: b10({ h: 2, t: 4, o: 3 }), steps: [
+          { say: 'This is 243.', ms: 1200 },
+          { say: 'Break a hundred into 10 tens.', act: function (t) { return t.split('h'); } },
+          { say: 'Now it is 1 hundred, 14 tens and 3 ones. Still 243.', ms: 1500 },
+          { say: 'Break the other hundred too.', act: function (t) { return t.split('h'); } },
+          { say: '24 tens and 3 ones. The blocks moved, but the number is still <b>243</b>.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'With numbers', html: '<p class="math">200 + 40 + 3 = 243</p><p class="math">100 + 140 + 3 = 243</p><p class="math">240 + 3 = 243</p><p>Every way adds to the same total.</p>' },
+          { label: 'With money', html: '<p>A $100 bill buys the same as ten $10 bills. Trading does not change how much you have.</p>' }
+        ],
+        try: { tool: 'base10', opts: b10({ controls: true, h: 3, t: 1, o: 5 }), tasks: [
+          { do: 'Show <b>315</b> with <b>no hundred flats</b>.', goal: function (s) { return s.value === 315 && s.h === 0; }, yes: '31 tens and 5 ones is still 315.' },
+          { do: 'Show <b>315</b> with <b>more than 9 ones</b>.', setup: function (t) { t.set(3, 1, 5); }, reset: false, goal: function (s) { return s.value === 315 && s.o > 9; }, yes: function (s) { return s.h + ' hundreds, ' + s.t + ' tens and ' + s.o + ' ones is still 315.'; } }
+        ] },
+        key: '<p>Trading 1 hundred for 10 tens, or 1 ten for 10 ones, <b>does not change the number</b>.</p>',
+        check: [SK('n3-forms', 2), TU('s2', 2)] }
+    ] },
+
+    { id: 'skip', title: 'Skip counting to 1000', sub: 'By 50s, 100s and 200s.', concepts: [
+      { id: 'by100', title: 'Count by 100s', exp: ['B1.4'], skill: 'n3-skip',
+        body: '<p>Counting by 100s, only the <b>hundreds digit</b> changes: 300, 400, 500.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 0 }, steps: [
+          { say: 'Start at 0. Jump by 100.', act: function (t) { return t.jumps(100, 3, 300); } },
+          { say: '100, 200, 300. Keep going.', act: function (t) { return t.jumps(100, 4, 300); } },
+          { say: '400, 500, 600, 700 ... all the way to <b>1000</b>.', act: function (t) { return t.jumps(100, 3, 300); }, ms: 1600 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 200, step: 100 }, tasks: [
+          { do: 'Start at 200. Jump by 100 to land on <b>700</b>.', goal: function (s) { return s.at === 700; }, yes: '200, 300, 400, 500, 600, 700. Five jumps.' }
+        ] },
+        key: '<p>By 100s, only the hundreds digit changes.</p>',
+        check: [TU('s3', 0), SK('n3-skip', 1)] },
+
+      { id: 'by50', title: 'Count by 50s', exp: ['B1.4'], skill: 'n3-skip',
+        body: '<p>Two 50s make 100. So counting by 50s, you land on a hundred <b>every second jump</b>: 300, 350, 400, 450.</p>',
+        watch: { tool: 'numberline', opts: { min: 200, max: 700, tick: 10, every: 50, start: 200 }, steps: [
+          { say: 'Start at 200. Jump by 50.', act: function (t) { return t.jumps(50, 2, 350); } },
+          { say: '250, 300. Two jumps make 100.', ms: 900 },
+          { say: '350, 400, 450, 500.', act: function (t) { return t.jumps(50, 4, 350); } },
+          { say: 'The numbers end in 50, then 00, then 50, then 00.', ms: 1800 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 500, tick: 10, every: 50, start: 0, step: 50 }, tasks: [
+          { do: 'Jump by 50 to reach <b>350</b>.', goal: function (s) { return s.at === 350; }, yes: '7 jumps of 50 make 350.' }
+        ] },
+        key: '<p>Two jumps of 50 make 100.</p>',
+        check: [TU('s3', 1), SK('n3-skip', 2)] },
+
+      { id: 'by200', title: 'Count by 200s, forward and back', exp: ['B1.4'], skill: 'n3-skip',
+        body: '<p>A jump of 200 is two hundreds. Forward, add 200. Backward, take away 200: 1000, 800, 600.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 1000 }, steps: [
+          { say: 'Start at 1000. Jump back by 200.', act: function (t) { return t.jumps(-200, 1, 300); } },
+          { say: '800. Keep jumping back.', act: function (t) { return t.jumps(-200, 2, 400); } },
+          { say: '600, 400. Two more: 200, 0.', act: function (t) { return t.jumps(-200, 2, 400); }, ms: 1600 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 0, step: 200 }, tasks: [
+          { do: 'Jump by 200 from 0 to <b>1000</b>. Count your jumps.', goal: function (s) { return s.at === 1000; }, yes: '5 jumps of 200 make 1000.' }
+        ] },
+        key: '<p>By 200s: 200, 400, 600, 800, 1000.</p>',
+        check: [TU('s3', 2), SK('n3-skip', 3)] }
+    ] },
+
+    { id: 'compare', title: 'Compare and order', sub: 'Which is greater, and how to show it.', concepts: [
+      { id: 'biggest', title: 'Compare from the left', exp: ['B1.2'], skill: 'n3-compare',
+        body: '<p>To compare two numbers, start with the <b>biggest place</b>: the hundreds. Only if they are the same do you look at the tens, then the ones.</p>',
+        watch: { mount: G3.view(twoCharts, { a: 601, b: 598, hl: -1, sym: '' }), steps: [
+          { say: 'Which is greater, 601 or 598?', ms: 1300 },
+          { say: 'Look at the hundreds first: 6 hundreds and 5 hundreds.', act: function (t) { return t.set({ hl: 0 }, 1500); } },
+          { say: '6 hundreds is more, so <b>601 is greater</b>. We do not need to look any further.', act: function (t) { return t.set({ sym: '&gt;' }, 2000); } },
+          { say: 'Now 472 and 438. The hundreds are the same.', act: function (t) { return t.set({ a: 472, b: 438, hl: 0, sym: '' }, 1600); } },
+          { say: 'So compare the tens: 7 tens and 3 tens. <b>472 is greater</b>.', act: function (t) { return t.set({ hl: 1, sym: '&gt;' }, 2000); } }
+        ] },
+        try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
+          { do: 'Build a number that is <b>greater than 452</b> but <b>less than 460</b>.', goal: function (s) { return s.value > 452 && s.value < 460; }, yes: function (s) { return s.value + ' is between 452 and 460.'; } },
+          { do: 'Build a number <b>greater than 899</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value > 899; }, yes: function (s) { return s.value + ' has 9 hundreds or more, so it is greater than 899.'; } }
+        ] },
+        mistake: '<p>Looking at the ones first. 601 is greater than 598 even though 1 is less than 8. The hundreds decide first.</p>',
+        check: [TU('s4', 0), SK('n3-compare', 1)] },
+
+      { id: 'symbols', title: 'The symbols &lt; and &gt;', exp: ['B1.2'], skill: 'n3-compare', hard: true,
+        body: '<p><b>&gt;</b> means "is greater than". <b>&lt;</b> means "is less than". The open side always faces the <b>greater</b> number.</p><div class="vs"><div><b class="t">&gt; greater than</b><p class="math big">8 &gt; 3</p></div><div><b class="t">&lt; less than</b><p class="math big">3 &lt; 8</p></div></div>',
+        watch: { mount: G3.view(twoCharts, { a: 406, b: 460, hl: -1, sym: '' }), steps: [
+          { say: 'Compare 406 and 460.', ms: 1200 },
+          { say: 'Same hundreds. The tens decide: 0 tens and 6 tens.', act: function (t) { return t.set({ hl: 1 }, 1500); } },
+          { say: '406 is less than 460. The open side faces 460: <b>406 &lt; 460</b>.', act: function (t) { return t.set({ sym: '&lt;' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'Read it left to right', html: '<p>Read the first number, then the symbol, then the second number. <b>406 &lt; 460</b> says "406 is less than 460". <b>460 &gt; 406</b> says the same thing turned around.</p>' },
+          { label: 'The small end points to the small number', html: '<p>The symbol has a big open end and a small pointed end. The <b>pointed end</b> points to the <b>smaller</b> number: 3 &lt; 8.</p>' },
+          { label: 'On a number line', html: '<p>On a number line, numbers get greater as you go right. 460 is to the right of 406, so 460 is greater.</p>', tool: 'numberline', opts: { min: 400, max: 470, tick: 2, every: 10, start: 406, marks: [{ v: 460, t: '460' }] } }
+        ],
+        try: { mount: G3.play({ state: { a: 529, b: 592, pick: '' }, buttons: [{ label: '&lt;', act: function (s) { s.pick = '<'; } }, { label: '&gt;', act: function (s) { s.pick = '>'; } }, { label: '=', act: function (s) { s.pick = '='; } }],
+          draw: function (s) { return '<p class="math big" style="text-align:center;font-size:2.2rem">' + s.a + ' <b style="color:var(--strand)">' + (s.pick ? s.pick.replace('<', '&lt;').replace('>', '&gt;') : '?') + '</b> ' + s.b + '</p>'; },
+          tasks: [
+            { do: 'Pick the symbol that makes this true.', goal: function (s) { return s.pick === '<'; }, yes: '529 &lt; 592. The tens decide: 2 tens is less than 9 tens.' },
+            { do: 'And this one?', setup: function (s) { s.a = 810; s.b = 801; }, goal: function (s) { return s.pick === '>'; }, yes: '810 &gt; 801. 1 ten is more than 0 tens.' }
+          ] }), do: '' },
+        key: '<p>The open side faces the greater number.</p>',
+        mistake: '<p>Reading &lt; and &gt; backward. Have the child say the sentence out loud, left to right, and check it on a number line.</p>',
+        check: [TU('s4', 1), SK('n3-compare', 2)] },
+
+      { id: 'order', title: 'Put numbers in order', exp: ['B1.2'], skill: 'n3-compare',
+        body: '<p>To order numbers from least to greatest, compare them the same way: hundreds first, then tens, then ones.</p>',
+        watch: { tool: 'numberline', opts: { min: 280, max: 320, tick: 2, every: 10, start: 280 }, steps: [
+          { say: 'Order 299, 302 and 290.', ms: 1200 },
+          { say: '290 is furthest left.', act: function (t) { return t.mark(290, '290'); } },
+          { say: 'Then 299.', act: function (t) { return t.mark(299, '299'); } },
+          { say: '302 is furthest right, so it is the greatest. <b>290, 299, 302</b>.', act: function (t) { return t.mark(302, '302'); }, ms: 2000 }
+        ] },
+        key: '<p>Least to greatest: left to right on a number line.</p>',
+        check: [TU('s4', 2), SK('n3-compare', 3)] }
+    ] },
+
+    { id: 'round', title: 'Rounding', sub: 'Find the closest ten or hundred.', concepts: [
+      { id: 'ten', title: 'Round to the nearest ten', exp: ['B1.3'], skill: 'n3-round',
+        body: '<p>Rounding finds the closest friendly number. To round <b>74</b> to the nearest ten, find the tens on each side: 70 and 80. 74 is closer to <b>70</b>.</p>',
+        watch: { mount: G3.view(hillView, { n: 70, p: 10 }), steps: [
+          { say: 'Picture a hill from 70 to 80. The top is 75, halfway.', ms: 1400 },
+          { say: 'Put 74 on the hill. It is before the top.', act: function (t) { return t.set({ n: 74 }, 1500); } },
+          { say: 'It rolls back down to <b>70</b>.', ms: 1400 },
+          { say: 'Now 77. It is past the top, so it rolls to <b>80</b>.', act: function (t) { return t.set({ n: 77 }, 1800); } },
+          { say: 'Exactly halfway, 75, always rounds <b>up</b> to 80.', act: function (t) { return t.set({ n: 75 }, 1800); } }
+        ] },
+        try: { tool: 'numberline', opts: { min: 60, max: 80, tick: 1, every: 5, start: 74 }, tasks: [
+          { do: 'The marker is on <b>74</b>. Tap the ten it is closest to.', goal: function (s) { return s.at === 70; }, yes: '74 is 4 away from 70 and 6 away from 80. It rounds to 70.' },
+          { do: 'Now tap <b>67</b>, then the ten it rounds to.', setup: function (t) { t.moveTo(67); }, reset: false, goal: function (s) { return s.at === 70; }, yes: '67 is 3 away from 70. It rounds to 70.' }
+        ] },
+        key: '<p>Look at the ones digit. 0 to 4 rounds down. 5 to 9 rounds up.</p>',
+        check: [TU('s5', 0), SK('n3-round', 1)] },
+
+      { id: 'hundred', title: 'Round to the nearest hundred', exp: ['B1.3'], skill: 'n3-round', hard: true,
+        body: '<p>To round to the nearest hundred, find the hundreds on each side, then look at the <b>tens digit</b>. 451 is between 400 and 500. The tens digit is 5, so it rounds <b>up to 500</b>.</p>',
+        watch: { mount: G3.view(hillView, { n: 400, p: 100 }), steps: [
+          { say: 'A hill from 400 to 500. The top is 450.', ms: 1400 },
+          { say: '432 is before the top. It rounds to <b>400</b>.', act: function (t) { return t.set({ n: 432 }, 1700); } },
+          { say: '451 is past the top. It rounds to <b>500</b>.', act: function (t) { return t.set({ n: 451 }, 1700); } },
+          { say: '450, exactly halfway, also rounds up to 500.', act: function (t) { return t.set({ n: 450 }, 1800); } }
+        ] },
+        ways: [
+          { label: 'Look at one digit', html: '<p>Underline the place you round to, then look at the digit just to its <b>right</b>. For the nearest hundred, look at the tens: 4<u>5</u>1. 5 or more, round up.</p>' },
+          { label: 'Count the distance', html: '<p>451 is 51 away from 400 and 49 away from 500. 49 is less, so 500 is closer.</p>', tool: 'numberline', opts: { min: 400, max: 500, tick: 10, every: 50, start: 451 } },
+          { label: 'With money', html: '<p>Is $451 closer to four $100 bills or five? You only need $49 more to make $500, so it is closer to $500.</p>' }
+        ],
+        try: { mount: G3.play({ state: { n: 632, p: 100 }, sliders: [{ key: 'n', label: 'Number', min: 100, max: 999 }],
+          selects: [{ key: 'p', label: 'Round to the nearest', options: [[100, 'hundred'], [10, 'ten']] }],
+          draw: hillView, info: function (s) { var r = Math.round(s.n / s.p) * s.p; return A.fmt(s.n) + ' rounds to <b>' + A.fmt(r) + '</b>'; },
+          tasks: [
+            { do: 'Find a number that rounds to <b>700</b> but is <b>less than</b> 700.', goal: function (s) { return s.p === 100 && s.n < 700 && s.n >= 650; }, yes: function (s) { return s.n + ' is past the top of the 600 to 700 hill.'; } },
+            { do: 'Find a number that rounds <b>down</b> to 300.', goal: function (s) { return s.p === 100 && s.n > 300 && s.n < 350; }, yes: function (s) { return s.n + ' is before the top, so it rolls back to 300.'; } }
+          ] }), do: '' },
+        key: '<p>Look at the digit to the right of the place you round to. 5 or more rounds up.</p>',
+        mistake: '<p>Rounding 950 to 900. 950 is exactly halfway between 900 and 1000, and halfway rounds up, so the answer is <b>1000</b>.</p>',
+        check: [TU('s5', 1), TU('s5', 2), SK('n3-round', 2)] }
+    ] }
+  ];
+
   A.register('numbers-1000', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Ones, tens and hundreds</h2>' +
 '<p>We count things in groups of ten. Ten small cubes make one <b>rod</b>. Ten rods make one <b>flat</b>. Ten flats make one <b>big cube</b>.</p>' +

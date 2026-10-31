@@ -62,7 +62,168 @@
   var ITEMS = ['an apple', 'a juice box', 'a pencil', 'an eraser', 'a granola bar', 'a sticker', 'a banana', 'a muffin'];
   var BIG = ['a book', 'a ball', 'a puzzle', 'a toy car', 'a kite', 'a T-shirt', 'a board game', 'a water bottle'];
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'money';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  /* change handed back one coin at a time, counting up from the price */
+  function changeView(s) {
+    var ch = make(s.paid - s.price).reverse(), got = ch.slice(0, s.k), at = s.price + sumOf(got);
+    return '<div>' + (s.line ? countUp(s.price, s.paid) : '') + coins(got, got.length ? 'Change so far: ' + listName(got) : 'No change yet') + cap(s.say || (s.k ? 'Count up: ' + [money(s.price)].concat(got.map(function (d, i) { return money(s.price + sumOf(got.slice(0, i + 1))); })).join(', ') : 'Price ' + money(s.price) + ', paid ' + money(s.paid))) + '</div>';
+  }
+  function steps(price, paid, last) {
+    var ch = make(paid - price).reverse(), out = [{ say: 'The price is ' + money(price) + '. You pay ' + money(paid) + '. Count up to ' + money(paid) + '.', ms: 1800 }];
+    ch.forEach(function (d, i) { var to = price + sumOf(ch.slice(0, i + 1)); out.push({ say: 'Add a ' + C[d].name + ': ' + money(to) + '.', act: function (t) { return t.set({ k: i + 1 }, 1300); } }); });
+    out.push({ say: last, act: function (t) { return t.set({ line: true }, 2000); } });
+    return out;
+  }
+
+  var LESSONS = [
+    { id: 'coins', title: 'Coins and bills', sub: 'Canadian money, and how to count it.', concepts: [
+      { id: 'names', title: 'Know your money', exp: ['F1.1'], skill: 'mn-count',
+        body: '<p>Canadian coins: <b>nickel</b> (5¢), <b>dime</b> (10¢), <b>quarter</b> (25¢), <b>loonie</b> ($1), <b>toonie</b> ($2). Bills: $5, $10, $20, $50, $100. 100 cents make 1 dollar. There are no pennies, so cash prices end in 0 or 5.</p>',
+        watch: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200] }, steps: [
+          { say: 'A nickel is 5¢.', act: function (t) { return t.add(5); }, ms: 900 },
+          { say: 'A dime is 10¢. It is smaller than a nickel, but worth more.', act: function (t) { return t.add(10); }, ms: 1300 },
+          { say: 'A quarter is 25¢.', act: function (t) { return t.add(25); }, ms: 900 },
+          { say: 'A loonie is $1, and a toonie is $2.', act: function (t) { return t.add(100).then(function () { return t.add(200); }); }, ms: 1500 }
+        ] },
+        try: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200] }, tasks: [
+          { do: 'Put out a <b>toonie</b> and a <b>quarter</b>.', goal: function (s) { return s.n === 2 && s.total === 225; }, yes: '$2.25.' }
+        ] },
+        key: '<p>Nickel 5¢, dime 10¢, quarter 25¢, <b>loonie $1, toonie $2</b>.</p>',
+        mistake: '<p>Thinking bigger coins are worth more. The dime is the smallest coin but worth more than the nickel.</p>',
+        check: [TU('s1', 0), TU('s1', 2)] },
+
+      { id: 'count', title: 'Count from the biggest', exp: ['F1.1'], skill: 'mn-count',
+        body: '<p>Sort the coins and start with the <b>biggest</b>. Count on: quarters by 25s, dimes by 10s, nickels by 5s.</p>',
+        watch: { tool: 'coins', opts: { start: [5, 25, 10, 25] }, steps: [
+          { say: 'Four coins, all mixed up.', ms: 1300 },
+          { say: 'Sort them, biggest first.', act: function (t) { return t.sort(); }, ms: 900 },
+          { say: 'Count on: 25, 50, 60, 65. That is <b>65¢</b>.', act: function (t) { return t.countAll(); }, ms: 2000 }
+        ] },
+        try: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200] }, tasks: [
+          { do: 'Make <b>65¢</b>.', goal: function (s) { return s.total === 65; }, yes: '65¢.' },
+          { do: 'Make <b>$3.40</b>.', goal: function (s) { return s.total === 340; }, yes: '$3.40.' }
+        ] },
+        key: '<p><b>Biggest first</b>, then count on.</p>',
+        check: [TU('s1', 1), SK('mn-count', 1), SK('mn-count', 2)] },
+
+      { id: 'make', title: 'Many ways to make an amount', exp: ['F1.1'], skill: 'mn-make', hard: true,
+        body: '<p>The same amount can be made with different coins. 50¢ is 2 quarters, or 5 dimes, or 1 quarter, 2 dimes and 1 nickel. The <b>fewest coins</b> uses the biggest coins first.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + coins(s.l) + cap(s.say) + '</div>'; }, { l: [25, 25], say: '2 quarters: 50¢' }), steps: [
+          { say: '2 quarters: 50¢.', ms: 1500 },
+          { say: '5 dimes: also 50¢.', act: function (t) { return t.set({ l: [10, 10, 10, 10, 10], say: '5 dimes: 50¢' }, 1600); } },
+          { say: 'A quarter, 2 dimes and a nickel: 50¢ again.', act: function (t) { return t.set({ l: [25, 10, 10, 5], say: '25 + 10 + 10 + 5 = 50¢' }, 1800); } },
+          { say: 'Same amount, different coins. The fewest is <b>2 quarters</b>.', ms: 1800 }
+        ] },
+        ways: [
+          { label: 'Biggest first', html: '<p>To make 85¢ with the fewest coins: take quarters while you can (25, 50, 75), then a dime (85).</p><div class="fig">' + coins([25, 25, 25, 10]) + '</div>' },
+          { label: 'Trade', html: '<p>2 dimes and a nickel make a quarter. 5 nickels make a quarter too. Trading keeps the amount the same.</p>' }
+        ],
+        try: { tool: 'coins', opts: { set: [5, 10, 25] }, tasks: [
+          { do: 'Make <b>75¢</b> using only dimes and nickels.', goal: function (s) { return s.total === 75 && s.items.indexOf(25) < 0; }, yes: function (s) { return s.n + ' coins.'; } },
+          { do: 'Now make <b>75¢</b> with the <b>fewest</b> coins.', goal: function (s) { return s.total === 75 && s.n === 3; }, yes: '3 quarters.' }
+        ] },
+        key: '<p>Same amount, <b>many ways</b>. Fewest: biggest coins first.</p>',
+        mistake: '<p>Counting the number of coins instead of their value (5 coins means 5¢). Ask: "What is each coin worth?"</p>',
+        check: [SK('mn-make', 1), SK('mn-make', 2)] }
+    ] },
+
+    { id: 'dollar', title: 'Change from a dollar', sub: 'Count up from the price.', concepts: [
+      { id: 'countup', title: 'Count up to $1', exp: ['F1.1'], skill: 'mn-cents',
+        body: '<p><b>Change</b> is the money you get back when you pay more than the price. To find it, <b>count up</b> from the price to what you paid. Small coins first, to reach a friendly number.</p>',
+        watch: { mount: G3.view(changeView, { price: 65, paid: 100, k: 0, line: false }), steps: steps(65, 100, 'The change is 10¢ + 25¢ = <b>35¢</b>.') },
+        try: { mount: G3.play({ state: { price: 80, paid: 100, k: 0, line: false }, draw: changeView,
+          sliders: [{ key: 'price', label: 'Price', min: 5, max: 95, step: 5, fmt: function (v) { return v + '¢'; } }],
+          buttons: [{ label: 'Give the next coin', act: function (s) { if (s.k < make(s.paid - s.price).length) s.k++; } }, { label: 'Start over', act: function (s) { s.k = 0; } }],
+          info: function (s) { return s.k === make(s.paid - s.price).length ? 'Change: <b>' + money(s.paid - s.price) + '</b>' : ''; },
+          tasks: [{ do: 'A pencil costs <b>80¢</b>. You pay $1. Count up the change.', goal: function (s) { return s.price === 80 && s.k === make(20).length; }, yes: '2 dimes: 20¢.' },
+            { do: 'Pick your own price and count up the change.', goal: function (s) { return s.price !== 80 && s.k === make(s.paid - s.price).length; }, yes: function (s) { return money(s.price) + ' + ' + money(s.paid - s.price) + ' = $1.'; } }] }), do: '' },
+        key: '<p>Change: <b>count up from the price</b>.</p>',
+        mistake: '<p>Forgetting that $1 = 100¢. Change from $1 is 100 minus the price.</p>',
+        check: [TU('s2', 0), TU('s2', 1), SK('mn-cents', 1)] },
+
+      { id: 'give', title: 'Give the change', exp: ['F1.1'], skill: 'mn-cents', hard: true,
+        body: '<p>Now be the cashier. Work out the change, then <b>hand over coins</b> that make it. $1 is 100¢, so change from $1 is <b>100 minus the price</b>.</p>',
+        watch: { mount: G3.view(changeView, { price: 45, paid: 100, k: 0, line: false }), steps: steps(45, 100, '45 + 55 = 100. The change is <b>55¢</b>.') },
+        ways: [
+          { label: 'Subtract', html: '<p class="math">100 &minus; 45 = 55</p><p>So the change is 55¢.</p>' },
+          { label: 'Make 100', html: '<p>What goes with 45 to make 100? 45 + 5 = 50, and 50 + 50 = 100. 5 + 50 = <b>55¢</b>.</p>' }
+        ],
+        try: { tool: 'coins', opts: { set: [5, 10, 25] }, tasks: [
+          { do: 'A juice box costs <b>65¢</b>. The customer pays $1. Give the change.', goal: function (s) { return s.total === 35; }, yes: '35¢ change.' },
+          { do: 'A muffin costs <b>55¢</b>. Give the change from $1.', goal: function (s) { return s.total === 45; }, yes: '45¢ change.' }
+        ] },
+        key: '<p>Change from $1 = <b>100 &minus; price</b>.</p>',
+        check: [TU('s2', 2), SK('mn-cents', 2), SK('mn-cents', 3)] }
+    ] },
+
+    { id: 'bills', title: 'Change from a bill', sub: 'Whole dollars.', concepts: [
+      { id: 'bill', title: 'Pay with a bill', exp: ['F1.1'], skill: 'mn-dollars',
+        body: '<p>For whole-dollar prices, count up the same way with loonies, toonies and bills.</p>',
+        watch: { mount: G3.view(changeView, { price: 1300, paid: 2000, k: 0, line: false }), steps: steps(1300, 2000, 'The change is $2 + $5 = <b>$7</b>.') },
+        try: { mount: G3.play({ state: { price: 600, paid: 1000, k: 0, line: false }, draw: changeView,
+          sliders: [{ key: 'price', label: 'Price', min: 100, max: 1900, step: 100, fmt: function (v) { return '$' + v / 100; } }],
+          selects: [{ key: 'paid', label: 'You pay with', options: [[500, 'a $5 bill'], [1000, 'a $10 bill'], [2000, 'a $20 bill']], change: function (s) { s.k = 0; } }],
+          buttons: [{ label: 'Give the next coin or bill', act: function (s) { if (s.paid > s.price && s.k < make(s.paid - s.price).length) s.k++; } }, { label: 'Start over', act: function (s) { s.k = 0; } }],
+          info: function (s) { return s.paid <= s.price ? 'That bill is not enough. Pick a bigger one.' : s.k === make(s.paid - s.price).length ? 'Change: <b>' + money(s.paid - s.price) + '</b>' : ''; },
+          tasks: [{ do: 'A book costs <b>$6</b>. Pay with <b>$10</b>. Count up the change.', goal: function (s) { return s.price === 600 && s.paid === 1000 && s.k === make(400).length; }, yes: '$4 change: 2 toonies.' }] }), do: '' },
+        key: '<p>Count up <b>to the bill</b>.</p>',
+        check: [TU('s3', 0), TU('s3', 1), SK('mn-dollars', 1)] },
+
+      { id: 'subtract', title: 'Count up or subtract', exp: ['F1.1'], skill: 'mn-dollars', hard: true,
+        body: '<p>Counting up and subtracting give the same answer. <b>$10 &minus; $7 = $3</b>, and $7 + $3 = $10.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 20, tick: 1, every: 5, start: 7 }, steps: [
+          { say: 'A toy costs $7. You pay $10.', act: function (t) { return t.mark(10, '$10'); }, ms: 1300 },
+          { say: 'Count up: $8, $9, $10. 3 jumps.', act: function (t) { return t.jumps(1, 3, 350); } },
+          { say: 'Or subtract: 10 &minus; 7 = 3. Both give <b>$3</b>.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'Use a fact', html: '<p>15 + 5 = 20, so $20 &minus; $15 = <b>$5</b>.</p>' },
+          { label: 'With bills', html: '<p>Pay $20 for a $12 game. $12 + $3 = $15, then $15 + $5 = $20. $3 + $5 = <b>$8</b>.</p><div class="fig">' + countUp(1200, 2000) + '</div>' }
+        ],
+        key: '<p>Count up <b>or</b> subtract: same change.</p>',
+        mistake: '<p>Adding the price and the bill ($6 + $10 = $16). Ask: "Do you get back more than you paid?"</p>',
+        check: [TU('s3', 2), SK('mn-dollars', 2), SK('mn-dollars', 3)] }
+    ] },
+
+    { id: 'estimate', title: 'Estimating', sub: 'About how much, and is it enough?', concepts: [
+      { id: 'round', title: 'Estimate the change', exp: ['F1.1'], skill: 'mn-estimate',
+        body: '<p>Round the price to a friendly number, like 25¢, 50¢ or 75¢. Then find the change. The estimate tells you if the real change <b>makes sense</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 25, start: 70 }, steps: [
+          { say: 'A muffin costs 70¢. You pay $1.', ms: 1400 },
+          { say: '70 is close to 75: 3 quarters.', act: function (t) { return t.moveTo(75); }, ms: 1200 },
+          { say: 'One more quarter makes $1. About <b>25¢</b> change. The exact change, 30¢, is close.', act: function (t) { return t.jumps(25, 1); }, ms: 2000 }
+        ] },
+        key: '<p>Round to <b>quarters</b>, then count up.</p>',
+        check: [TU('s4', 0), SK('mn-estimate', 1)] },
+
+      { id: 'enough', title: 'Do I have enough?', exp: ['F1.1'], skill: 'mn-estimate', hard: true,
+        body: '<p>Before you pay, add the prices roughly. If they come to <b>less than what you have</b>, you have enough.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + coins([1000], 'A $10 bill') + cap(s.say) + '</div>'; }, { say: 'You have $10' }), steps: [
+          { say: 'You have $10. A puzzle is $4 and a ball is $5.', ms: 1600 },
+          { say: 'Add: 4 + 5 = 9.', act: function (t) { return t.set({ say: '$4 + $5 = $9' }, 1500); } },
+          { say: '9 is less than 10. <b>Enough</b>, with $1 left.', act: function (t) { return t.set({ say: '$9 &lt; $10: enough' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Round up', html: '<p>Prices $3.75 and $4.80? Round up to $4 and $5: $9. If $9 is enough, the real total is enough too.</p>' },
+          { label: 'Take away as you go', html: '<p>$10, spend $4: $6 left. Spend $5: $1 left. Still not below zero, so enough.</p>' }
+        ],
+        try: { mount: G3.play({ state: { a: 4, b: 3 }, draw: function (s) { return coins([1000], 'A $10 bill') + '<p class="g3-sym" style="font-size:1.2rem;color:var(--ink)">$' + s.a + ' + $' + s.b + ' = $' + (s.a + s.b) + '</p>'; },
+          sliders: [{ key: 'a', label: 'First item', min: 1, max: 9, fmt: function (v) { return '$' + v; } }, { key: 'b', label: 'Second item', min: 1, max: 9, fmt: function (v) { return '$' + v; } }],
+          info: function (s) { var t = s.a + s.b; return t <= 10 ? '<b>Enough</b>: $' + (10 - t) + ' left.' : '<b>Not enough</b>: $' + (t - 10) + ' short.'; },
+          tasks: [{ do: 'Choose two items that cost <b>exactly $10</b> together.', goal: function (s) { return s.a + s.b === 10; }, yes: 'Exactly enough, with $0 left.' },
+            { do: 'Now choose two items you <b>cannot</b> afford.', reset: false, goal: function (s) { return s.a + s.b > 10; }, yes: function (s) { return '$' + (s.a + s.b) + ' is more than $10.'; } }] }), do: '' },
+        key: '<p>Total <b>less than or equal to</b> what you have? Enough.</p>',
+        mistake: '<p>Comparing only one price to the money. Add all the prices first.</p>',
+        check: [TU('s4', 1), TU('s4', 2), SK('mn-estimate', 2)] }
+    ] }
+  ];
+
   A.register('money', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Canadian coins and bills</h2>' +
 '<p>In Canada we use these coins: the <b>nickel</b> (5¢), <b>dime</b> (10¢), <b>quarter</b> (25¢), <b>loonie</b> ($1) and <b>toonie</b> ($2). 100 cents make 1 dollar. Bills come in $5, $10, $20, $50 and $100. Canada no longer uses pennies, so cash prices end in 0 or 5.</p>' +

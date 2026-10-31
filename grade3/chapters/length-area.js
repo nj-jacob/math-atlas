@@ -108,7 +108,220 @@
 
   var SHAPES = { rect: [[0, 4], [0, 4], [0, 4]], ell: [[0, 2], [0, 2], [0, 5], [0, 5]], tee: [[0, 5], [0, 5], [1, 3], [1, 3]], step: [[0, 1], [0, 2], [0, 3], [0, 4]] };
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'length-area';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  var UNITN = { 1: '1 cm cubes', 2: '2 cm erasers', 3: '3 cm paper clips', 4: '4 cm sticks', 6: '6 cm crayons', 8: '8 cm straws', 12: '12 cm pencils' };
+  /* a shape whose squares can be tapped to place tiles */
+  function tileFig(rows, tiles) {
+    var c = 60, cols = 0, s = '', n = 0;
+    rows.forEach(function (r) { cols = Math.max(cols, r[0] + r[1]); });
+    rows.forEach(function (r, y) { for (var x = r[0]; x < r[0] + r[1]; x++) {
+      var key = x + ',' + y, on = tiles[key]; if (on) n++;
+      s += '<g data-tap="' + key + '" aria-label="Square in row ' + (y + 1) + ', column ' + (x + 1) + (on ? ', tiled' : ', empty') + '" style="cursor:pointer">' +
+        '<rect x="' + (8 + x * c) + '" y="' + (8 + y * c) + '" width="' + c + '" height="' + c + '" style="fill:var(--card);stroke:var(--ink)" stroke-width="2" stroke-dasharray="5 4"/>' +
+        (on ? '<rect x="' + (11 + x * c) + '" y="' + (11 + y * c) + '" width="' + (c - 6) + '" height="' + (c - 6) + '" rx="5" style="fill:color-mix(in srgb,var(--strand) 60%,var(--card));stroke:var(--ink)" stroke-width="2"/><text x="' + (8 + x * c + c / 2) + '" y="' + (8 + y * c + c / 2 + 6) + '" text-anchor="middle" font-size="17" class="tb">' + n + '</text>' : '') + '</g>';
+    } });
+    return A.svg(16 + cols * c, 16 + rows.length * c, s, 'A shape of ' + rowsArea(rows) + ' squares. ' + n + ' have tiles.');
+  }
+  function tileCount(t) { return Object.keys(t).filter(function (k) { return t[k]; }).length; }
+  function rectList(a) { var l = []; for (var w = 1; w * w <= a; w++) if (a % w === 0) l.push([w, a / w]); return l; }
+  function sameArea(a) {
+    var list = rectList(a), c = a > 12 ? 13 : 22, s = '', y = 8, W = 0;
+    list.forEach(function (p, i) {
+      var col = ['var(--sb)', 'var(--sc)', 'var(--sd)', 'var(--se)', 'var(--sf)'][i % 5];
+      for (var r = 0; r < p[0]; r++) for (var k = 0; k < p[1]; k++) s += '<rect x="' + (8 + k * c) + '" y="' + (y + r * c) + '" width="' + c + '" height="' + c + '" style="fill:color-mix(in srgb,' + col + ' 40%,var(--card));stroke:var(--ink)" stroke-width="1.5"/>';
+      s += '<text x="' + (16 + p[1] * c) + '" y="' + (y + p[0] * c / 2 + 6) + '" font-size="17" class="tb">' + p[0] + ' by ' + p[1] + '</text>';
+      W = Math.max(W, 100 + p[1] * c); y += p[0] * c + 14;
+    });
+    return A.svg(W, y, s, 'Rectangles with an area of ' + a + ' square centimetres: ' + list.map(function (p) { return p[0] + ' by ' + p[1]; }).join(', '));
+  }
+
+  var LESSONS = [
+    { id: 'units', title: 'Units of length', sub: 'Millimetres, centimetres, metres and kilometres.', concepts: [
+      { id: 'ladder', title: 'From small to big', exp: ['E2.2'], skill: 'la-unit',
+        body: '<p>From smallest to biggest: <b>millimetre</b> (mm), <b>centimetre</b> (cm), <b>metre</b> (m), <b>kilometre</b> (km). Bigger units are for longer things.</p>',
+        watch: { mount: G3.view(function (s) { var rows = [['1 mm', 'the thickness of a dime'], ['1 cm', 'the width of your smallest fingernail'], ['1 m', 'one big step, or the width of a door'], ['1 km', 'a 15-minute walk']].slice(0, s.k); return '<div>' + ladder() + '<div class="tbl"><table><tbody>' + rows.map(function (r) { return '<tr><td class="l"><b>' + r[0] + '</b></td><td class="l">' + r[1] + '</td></tr>'; }).join('') + '</tbody></table></div></div>'; }, { k: 0 }), steps: [
+          { say: 'Four units, from biggest at the top to smallest at the bottom.', ms: 1600 },
+          { say: 'A millimetre is tiny: the thickness of a dime.', act: function (t) { return t.set({ k: 1 }, 1400); } },
+          { say: 'A centimetre: the width of your smallest fingernail.', act: function (t) { return t.set({ k: 2 }, 1400); } },
+          { say: 'A metre: one big step. A kilometre: a 15-minute walk.', act: function (t) { return t.set({ k: 4 }, 2000); } }
+        ] },
+        key: '<p>mm &lt; cm &lt; m &lt; km. <b>Long thing, big unit.</b></p>',
+        check: [TU('s1', 1), SK('la-unit', 1), SK('la-unit', 2)] },
+
+      { id: 'ruler', title: 'Read a ruler', exp: ['E2.2', 'E2.1'], skill: 'la-convert',
+        body: '<p>Line up the end of the object with <b>0</b>. Each number is a centimetre. Each small mark is a <b>millimetre</b>. 10 mm = 1 cm.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + ruler(s.mm) + cap(s.say) + '</div>'; }, { mm: 0, say: '' }), steps: [
+          { say: 'Put the pencil at 0.', act: function (t) { return t.set({ mm: 10, say: '10 mm = 1 cm' }, 1200); } },
+          { say: 'It grows: 2 cm, 3 cm, 4 cm...', act: function (t) { return t.seq([{ mm: 20, say: '2 cm' }, { mm: 30, say: '3 cm' }, { mm: 40, say: '4 cm' }, { mm: 50, say: '5 cm' }, { mm: 60, say: '6 cm' }, { mm: 70, say: '7 cm' }], 450); } },
+          { say: 'It ends 3 small marks past 7. That is 7 cm and 3 mm, or <b>73 mm</b>.', act: function (t) { return t.set({ mm: 73, say: '73 mm = 7 cm 3 mm' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { mm: 40 }, draw: function (s) { return ruler(s.mm); },
+          sliders: [{ key: 'mm', label: 'Pencil length', min: 20, max: 100, fmt: function (v) { return v + ' mm'; } }],
+          info: function (s) { var c = Math.floor(s.mm / 10), r = s.mm % 10; return '<b>' + s.mm + ' mm</b> = ' + (r ? c + ' cm and ' + r + ' mm' : c + ' cm'); },
+          tasks: [{ do: 'Make the pencil exactly <b>6 cm</b>.', goal: function (s) { return s.mm === 60; }, yes: '6 cm = 60 mm.' },
+            { do: 'Make it <b>8 cm and 5 mm</b>.', goal: function (s) { return s.mm === 85; }, yes: '85 mm.' }] }), do: '' },
+        key: '<p>Start at <b>0</b>. 10 small marks make 1 cm.</p>',
+        mistake: '<p>Starting at the edge of the ruler or at 1 instead of 0. Check where the 0 mark is before measuring.</p>',
+        check: [TU('s1', 0), SK('la-convert', 1)] },
+
+      { id: 'convert', title: 'Change units', exp: ['E2.2'], skill: 'la-convert', hard: true,
+        body: '<p>1 cm = 10 mm. 1 m = 100 cm. 1 km = 1000 m. To change to a <b>smaller unit</b>, you need <b>more</b> of them, so multiply.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + ladder() + cap(s.say) + '</div>'; }, { say: '3 m = ___ cm' }), steps: [
+          { say: 'How many centimetres are in 3 m?', ms: 1500 },
+          { say: '1 m = 100 cm. So 3 m is 3 hundreds.', act: function (t) { return t.set({ say: '100 + 100 + 100' }, 1800); } },
+          { say: '<b>3 m = 300 cm</b>.', act: function (t) { return t.set({ say: '3 m = 300 cm' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Skip count', html: '<p>4 cm in mm: count by 10s four times: 10, 20, 30, 40. <b>40 mm</b>.</p>' },
+          { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><th class="l">m</th><td>1</td><td>2</td><td>3</td><td>4</td></tr><tr><th class="l">cm</th><td>100</td><td>200</td><td>300</td><td>400</td></tr></tbody></table></div>' },
+          { label: 'Bigger unit, fewer', html: '<p>Going up the ladder, you need fewer units: 200 cm is only 2 m.</p>' }
+        ],
+        key: '<p>Smaller unit: <b>more of them</b>. Multiply by 10, 100 or 1000.</p>',
+        mistake: '<p>Using the wrong number for the step (1 m = 10 cm). Keep the ladder in sight until the three facts are known by heart.</p>',
+        check: [TU('s1', 2), SK('la-convert', 2), SK('la-convert', 3)] }
+    ] },
+
+    { id: 'same', title: 'Different units, same length', sub: 'The count changes, the length does not.', concepts: [
+      { id: 'count', title: 'Small units, big count', exp: ['E2.5'], skill: 'la-count',
+        body: '<p>You can measure the same thing with different units. <b>Small units give a big count. Big units give a small count.</b> The length does not change.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + ribbon(24, s.u) + cap(24 / s.u + ' ' + UNITN[s.u]) + '</div>'; }, { u: 2 }), steps: [
+          { say: 'A ribbon 24 cm long, measured in 2 cm erasers: 12.', ms: 1700 },
+          { say: 'With 4 cm sticks: 6.', act: function (t) { return t.set({ u: 4 }, 1500); } },
+          { say: 'With 12 cm pencils: only 2. <b>Bigger unit, smaller count.</b>', act: function (t) { return t.set({ u: 12 }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { u: 4 }, draw: function (s) { return ribbon(24, s.u); },
+          selects: [{ key: 'u', label: 'Unit', options: [1, 2, 3, 4, 6, 8, 12].map(function (u) { return [u, UNITN[u]]; }) }],
+          info: function (s) { return '<b>' + 24 / s.u + ' ' + UNITN[s.u] + '</b>. ' + 24 / s.u + ' &times; ' + s.u + ' = 24 cm.'; },
+          tasks: [{ do: 'Find the unit that gives the <b>biggest count</b>.', goal: function (s) { return s.u === 1; }, yes: '24 cubes: the smallest unit fits the most times.' },
+            { do: 'Find the unit that measures the ribbon in exactly <b>3</b>.', goal: function (s) { return s.u === 8; }, yes: '3 straws of 8 cm.' }] }), do: '' },
+        key: '<p>Small unit, <b>big count</b>. Big unit, <b>small count</b>.</p>',
+        mistake: '<p>Thinking a bigger count means a longer object. 24 cubes and 2 pencils can measure the same ribbon. Always say the unit with the number.</p>',
+        check: [TU('s2', 0), TU('s2', 1), SK('la-count', 1)] },
+
+      { id: 'unit', title: 'Always say the unit', exp: ['E2.5', 'E2.2'], skill: 'la-count', hard: true,
+        body: '<p>"9 long" does not tell us much. 9 <b>what</b>? 9 cm is short. 9 m is long. A measurement needs a <b>number and a unit</b>.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + ribbon(24, s.u) + cap(s.say) + '</div>'; }, { u: 12, say: 'Is it 2 long?' }), steps: [
+          { say: 'Jo says the ribbon is 2 long.', ms: 1400 },
+          { say: 'Ali says it is 24 long. Who is right?', act: function (t) { return t.set({ u: 1, say: 'Or 24 long?' }, 1700); } },
+          { say: 'Both! <b>2 pencils</b> and <b>24 cm</b>. The unit makes the number make sense.', act: function (t) { return t.set({ say: '2 pencils = 24 cm' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'Hand spans', html: '<p>A desk is 10 hand spans long. Each span is 12 cm. 10 &times; 12 = 120, so the desk is <b>120 cm</b>.</p>' },
+          { label: 'Compare two people', html: '<p>An adult\'s step is longer than a child\'s. The same hallway might be 20 adult steps or 30 child steps. That is why we use standard units like metres.</p>' }
+        ],
+        key: '<p>A measurement is <b>a number and a unit</b>.</p>',
+        check: [TU('s2', 2), SK('la-count', 2)] }
+    ] },
+
+    { id: 'perim', title: 'Perimeter', sub: 'The distance around.', concepts: [
+      { id: 'around', title: 'Add all the sides', exp: ['E2.1'], skill: 'la-perim',
+        body: '<p>The <b>perimeter</b> is the total distance around the outside of a shape. <b>Add the lengths of all the sides.</b></p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + poly([4, 5, 6]) + cap(s.say) + '</div>'; }, { say: '' }), steps: [
+          { say: 'Walk around the triangle: 4 cm.', act: function (t) { return t.set({ say: '4' }, 1100); } },
+          { say: 'Then 5 cm.', act: function (t) { return t.set({ say: '4 + 5' }, 1100); } },
+          { say: 'Then 6 cm. 4 + 5 + 6 = <b>15 cm</b>.', act: function (t) { return t.set({ say: '4 + 5 + 6 = 15 cm' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Curved shapes', html: '<p>Wrap a string around a round plate. Mark where it meets. Lay the string straight along a ruler.</p>' }
+        ],
+        key: '<p>Perimeter: <b>add every side</b>.</p>',
+        mistake: '<p>Missing a side, or counting a side twice. Put a finger on the starting corner and tick each side as you add it.</p>',
+        check: [TU('s3', 1), TU('s3', 2), SK('la-perim', 1)] },
+
+      { id: 'rect', title: 'Perimeter of a rectangle', exp: ['E2.1'], skill: 'la-perim', hard: true,
+        body: '<p>A rectangle has two pairs of matching sides. Add the length and width, then <b>double it</b>. 5 + 3 = 8, and 8 + 8 = 16.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + rect(5, 3) + cap(s.say) + '</div>'; }, { say: '5 cm by 3 cm' }), steps: [
+          { say: 'A 5 cm by 3 cm rectangle.', ms: 1300 },
+          { say: 'Add one length and one width: 5 + 3 = 8.', act: function (t) { return t.set({ say: '5 + 3 = 8' }, 1600); } },
+          { say: 'The other two sides match. Double it: 8 + 8 = <b>16 cm</b>.', act: function (t) { return t.set({ say: '8 + 8 = 16 cm' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Add all four', html: '<p class="math">5 + 3 + 5 + 3 = 16 cm</p>' },
+          { label: 'Walk it', html: '<p>Walk around a rug and count your steps. That count is the perimeter in steps.</p>' }
+        ],
+        try: { mount: G3.play({ state: { l: 5, w: 3, found: {} }, draw: function (s) { return rect(s.l, s.w); },
+          sliders: [{ key: 'l', label: 'Length', min: 1, max: 9, fmt: function (v) { return v + ' cm'; } }, { key: 'w', label: 'Width', min: 1, max: 9, fmt: function (v) { return v + ' cm'; } }],
+          info: function (s) { var p = 2 * (s.l + s.w); if (p === 16) s.found[Math.min(s.l, s.w) + ' by ' + Math.max(s.l, s.w)] = 1; return 'Perimeter: <b>' + p + ' cm</b>. Found with 16 cm: ' + (Object.keys(s.found).join(', ') || 'none yet'); },
+          tasks: [{ do: 'Find <b>3 different rectangles</b> with a perimeter of 16 cm.', goal: function (s) { return Object.keys(s.found).length >= 3; }, yes: 'Length + width is always 8: 1 + 7, 2 + 6, 3 + 5, 4 + 4.' }] }), do: '' },
+        key: '<p>Rectangle: <b>length + width, then double</b>.</p>',
+        mistake: '<p>Adding only the two labelled sides (5 + 3 = 8). Ask: "How many sides does a rectangle have?"</p>',
+        check: [TU('s3', 0), SK('la-perim', 2), SK('la-perim', 3)] }
+    ] },
+
+    { id: 'area', title: 'Area', sub: 'The space a shape covers.', concepts: [
+      { id: 'cover', title: 'Cover and count', exp: ['E2.8', 'E2.9'], skill: 'la-area',
+        body: '<p>The <b>area</b> is how much space a flat shape covers. Cover it with equal square tiles and <b>count the tiles</b>.</p>',
+        watch: { mount: G3.view(function (s) { var t = {}; for (var i = 0; i < s.n; i++) { var r = Math.floor(i / 4), x = i % 4; if (r === 2 && x > 1) continue; t[x + ',' + r] = 1; } return '<div>' + tileFig([[0, 4], [0, 4], [0, 2]], t) + cap(s.say) + '</div>'; }, { n: 0, say: '' }), steps: [
+          { say: 'Cover the shape, one tile at a time.', act: function (t) { var p = []; for (var i = 1; i <= 10; i++) p.push({ n: i }); return t.seq(p, 280); } },
+          { say: 'Count row by row: 4 + 4 + 2 = <b>10 square units</b>.', act: function (t) { return t.set({ say: '4 + 4 + 2 = 10' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { k: 'ell', t: {} }, draw: function (s) { return tileFig(SHAPES[s.k], s.t); },
+          selects: [{ key: 'k', label: 'Shape', options: [['rect', 'rectangle'], ['ell', 'L shape'], ['tee', 'T shape'], ['step', 'steps']], change: function (s) { s.t = {}; } }],
+          tap: function (s, v) { s.t[v] = !s.t[v]; },
+          buttons: [{ label: 'Clear tiles', act: function (s) { s.t = {}; } }],
+          info: function (s) { var n = tileCount(s.t), all = rowsArea(SHAPES[s.k]); return n < all ? n + ' tile' + (n === 1 ? '' : 's') + '. ' + (all - n) + ' gap' + (all - n === 1 ? '' : 's') + ' left.' : '<b>Area = ' + n + ' square units</b>'; },
+          tasks: [{ do: 'Tap each square of the <b>L shape</b> to tile it.', goal: function (s) { return s.k === 'ell' && tileCount(s.t) === rowsArea(SHAPES.ell); }, yes: 'The L shape covers 14 squares: 2 + 2 + 5 + 5.' }] }), do: '' },
+        key: '<p>Area: <b>count the squares that cover it</b>.</p>',
+        check: [TU('s4', 0), SK('la-area', 1)] },
+
+      { id: 'gaps', title: 'No gaps, no overlaps', exp: ['E2.8'], skill: 'la-gaps', hard: true,
+        body: '<p>Tiles must fit edge to edge. <b>Gaps</b> make the count too low. <b>Overlaps</b> make it too high.</p>',
+        watch: { mount: G3.view(function (s) { var g = gapFig(s.m); return '<div>' + g.svg + cap(g.n + ' tiles' + (s.m === 'fit' ? ': the true area' : s.m === 'gap' ? ': too low' : ': too high')) + '</div>'; }, { m: 'fit' }), steps: [
+          { say: '12 tiles fit edge to edge. The area is 12.', ms: 1800 },
+          { say: 'With gaps, only 6 tiles fit. Too low.', act: function (t) { return t.set({ m: 'gap' }, 1800); } },
+          { say: 'With overlaps, 20 tiles. Too high. <b>Only tiles that fit give the true area.</b>', act: function (t) { return t.set({ m: 'over' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'Perimeter is different', html: '<div class="vs"><div><b class="t">Perimeter</b><p>The distance <b>around</b>. In cm or m.</p></div><div><b class="t">Area</b><p>The space <b>inside</b>. In squares: cm&sup2; or m&sup2;.</p></div></div>' },
+          { label: 'Paper tiles', html: '<p>Cut squares of paper and cover a book. Push them edge to edge. Count them.</p>' }
+        ],
+        try: { mount: G3.play({ state: { m: 'gap' }, draw: function (s) { return gapFig(s.m).svg; },
+          buttons: [{ label: 'Tiles fit', act: function (s) { s.m = 'fit'; } }, { label: 'Gaps', act: function (s) { s.m = 'gap'; } }, { label: 'Overlaps', act: function (s) { s.m = 'over'; } }],
+          info: function (s) { return gapFig(s.m).n + ' tiles.'; },
+          tasks: [{ do: 'Show the tiling that gives the <b>true area</b>.', goal: function (s) { return s.m === 'fit'; }, yes: '12 tiles, edge to edge.' }] }), do: '' },
+        key: '<p>Gaps: <b>too low</b>. Overlaps: <b>too high</b>.</p>',
+        mistake: '<p>Gaps make the count too low. Overlaps make the count too high. Only tiles that fit edge to edge give the true area.</p>',
+        check: [TU('s4', 1), TU('s4', 2), SK('la-gaps', 1)] }
+    ] },
+
+    { id: 'square', title: 'Square centimetres and metres', sub: 'Standard units for area.', concepts: [
+      { id: 'cm2', title: 'cm&sup2; and m&sup2;', exp: ['E2.9', 'E2.7'], skill: 'la-area',
+        body: '<p>A <b>square centimetre</b> (cm&sup2;) is a square 1 cm on each side, about a fingernail. A <b>square metre</b> (m&sup2;) is 1 m on each side: four children can stand on one. Different shapes can have the <b>same area</b>.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + sameArea(s.a) + cap(s.say) + '</div>'; }, { a: 12, say: '12 cm&sup2;' }), steps: [
+          { say: 'These rectangles all cover 12 cm&sup2;.', ms: 1800 },
+          { say: '1 by 12, 2 by 6, 3 by 4. Different shapes, <b>same area</b>.', act: function (t) { return t.set({ say: 'Same area, different shapes' }, 2000); } },
+          { say: '16 cm&sup2; can even be a square: 4 by 4.', act: function (t) { return t.set({ a: 16, say: '16 cm&sup2;' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { a: 6 }, draw: function (s) { return sameArea(s.a); },
+          sliders: [{ key: 'a', label: 'Area', min: 4, max: 24, fmt: function (v) { return v + ' cm²'; } }],
+          info: function (s) { var l = rectList(s.a); return l.length + ' rectangle' + (l.length > 1 ? 's' : '') + ' with ' + s.a + ' cm&sup2;.'; },
+          tasks: [{ do: 'Find an area that makes <b>4 different rectangles</b>.', goal: function (s) { return rectList(s.a).length === 4; }, yes: function (s) { return s.a + ' cm&sup2; works: ' + rectList(s.a).map(function (p) { return p[0] + ' by ' + p[1]; }).join(', ') + '.'; } }] }), do: '' },
+        key: '<p>Small things: <b>cm&sup2;</b>. Big things: <b>m&sup2;</b>.</p>',
+        check: [TU('s5', 0), TU('s5', 1), TU('s5', 2), SK('la-area', 2)] },
+
+      { id: 'estimate', title: 'Estimate a curved area', exp: ['E2.9'], skill: 'la-area', hard: true,
+        body: '<p>To estimate the area of a curved shape, count the <b>full squares</b>, then count squares that are <b>more than half</b> full as 1 each. Leave out the small bits.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + circleFig() + cap(s.say) + '</div>'; }, { say: '' }), steps: [
+          { say: 'Count the full squares: 4 (green).', act: function (t) { return t.set({ say: 'Full: 4' }, 1600); } },
+          { say: 'Count the squares more than half full: 8 (yellow).', act: function (t) { return t.set({ say: 'More than half: 8' }, 1600); } },
+          { say: 'Leave out the small corners. 4 + 8 = 12. About <b>12 cm&sup2;</b>.', act: function (t) { return t.set({ say: 'About 12 cm&sup2;' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Between two numbers', html: '<p>The circle covers more than the 4 full squares, and less than the 16 squares it touches. So the area is between 4 and 16 cm&sup2;. 12 fits.</p>' },
+          { label: 'Use your hand', html: '<p>Trace your hand on centimetre grid paper. Count full squares and more-than-half squares.</p>' }
+        ],
+        key: '<p>Full squares, plus <b>more-than-half</b> squares.</p>',
+        mistake: '<p>Counting every square the shape touches, which makes the estimate far too big. Count only squares more than half covered.</p>',
+        check: [SK('la-area', 3), SK('la-gaps', 2)] }
+    ] }
+  ];
+
   A.register('length-area', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Units of length</h2>' +
 '<p>We measure length in <b>metric units</b>. From smallest to biggest they are the <b>millimetre</b> (mm), <b>centimetre</b> (cm), <b>metre</b> (m) and <b>kilometre</b> (km). Each step up is a bigger unit, so you need fewer of them.</p>' +

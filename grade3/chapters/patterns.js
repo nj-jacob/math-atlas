@@ -55,7 +55,256 @@
   function evalE(a, op, b) { return op === '+' ? a + b : op === '-' ? a - b : op === 'x' ? a * b : b ? a / b : NaN; }
   function showOp(op) { return op === '+' ? '+' : op === '-' ? '&minus;' : op === 'x' ? '&times;' : '&divide;'; }
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'patterns';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  function ruleText(op, k) { return op === 'x' ? k + ' &times; n' : 'n ' + showOp(op) + ' ' + k; }
+  function ruleOut(op, k, v) { return op === '+' ? v + k : op === '-' ? v - k : v * k; }
+  /* number machine: n goes in, the rule works, the answer comes out */
+  function machine(op, k, n, hide) {
+    var txt = ruleText(op, k), out = hide ? '?' : ruleOut(op, k, n);
+    var s = '<rect x="10" y="40" width="90" height="60" rx="10" style="fill:var(--card);stroke:var(--ink)" stroke-width="2.5"/><text x="55" y="80" text-anchor="middle" font-size="28" class="tb">' + n + '</text><text x="55" y="28" text-anchor="middle" font-size="16" class="t2">in: n</text>' +
+      '<path d="M104 70 H170" style="stroke:var(--ink)" stroke-width="3"/><polygon points="170,62 184,70 170,78" style="fill:var(--ink)"/>' +
+      '<rect x="190" y="22" width="180" height="96" rx="16" style="fill:color-mix(in srgb,var(--strand) 18%,var(--card));stroke:var(--strand)" stroke-width="3"/><text x="280" y="80" text-anchor="middle" font-size="28" class="tb">' + txt.replace('&times;', '×').replace('&minus;', '−') + '</text>' +
+      '<path d="M374 70 H440" style="stroke:var(--ink)" stroke-width="3"/><polygon points="440,62 454,70 440,78" style="fill:var(--ink)"/>' +
+      '<rect x="460" y="40" width="90" height="60" rx="10" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2.5"/><text x="505" y="80" text-anchor="middle" font-size="28" font-weight="800" style="fill:#13203a">' + out + '</text><text x="505" y="28" text-anchor="middle" font-size="16" class="t2">out</text>';
+    return A.svg(560, 130, s, 'Number machine: put in ' + n + ', rule ' + txt.replace('&times;', 'times').replace('&minus;', 'minus') + ', get out ' + out);
+  }
+  function machineTable(op, k, upto) {
+    var ins = [3, 4, 5, 6, 7, 8, 9, 10].slice(0, upto || 8);
+    return '<div class="tbl"><table><tbody><tr><th class="l">n</th>' + ins.map(function (v) { return '<td>' + v + '</td>'; }).join('') + '</tr><tr><th class="l">' + ruleText(op, k) + '</th>' + ins.map(function (v) { return '<td>' + ruleOut(op, k, v) + '</td>'; }).join('') + '</tr></tbody></table></div>';
+  }
+  /* a pan balance: tips toward the heavier side, level when equal */
+  function balance(lt, lv, rt, rv, show) {
+    var tilt = lv === rv ? 0 : lv > rv ? -8 : 8, s = '';
+    s += '<polygon points="280,200 254,240 306,240" style="fill:var(--line);stroke:var(--ink)" stroke-width="2"/>';
+    s += '<g transform="rotate(' + (-tilt) + ' 280 200)"><line x1="90" y1="200" x2="470" y2="200" style="stroke:var(--ink)" stroke-width="6" stroke-linecap="round"/>' +
+      '<rect x="30" y="140" width="130" height="56" rx="10" style="fill:color-mix(in srgb,var(--strand) 14%,var(--card));stroke:var(--strand)" stroke-width="2.5"/><text x="95" y="177" text-anchor="middle" font-size="24" class="tb">' + lt + '</text>' +
+      '<rect x="400" y="140" width="130" height="56" rx="10" style="fill:color-mix(in srgb,var(--strand) 14%,var(--card));stroke:var(--strand)" stroke-width="2.5"/><text x="465" y="177" text-anchor="middle" font-size="24" class="tb">' + rt + '</text>' +
+      (show ? '<text x="95" y="128" text-anchor="middle" font-size="20" class="t2">= ' + lv + '</text><text x="465" y="128" text-anchor="middle" font-size="20" class="t2">= ' + rv + '</text>' : '') + '</g>';
+    if (show) s += '<text x="280" y="60" text-anchor="middle" font-size="34" font-weight="800" style="fill:' + (lv === rv ? 'var(--good)' : 'var(--bad)') + '">' + (lv === rv ? '=' : '≠') + '</text>';
+    return A.svg(560, 250, s, lt.replace(/×/g, 'times') + (show ? (lv === rv ? ' equals ' : ' does not equal ') : ' and ') + rt.replace(/×/g, 'times'));
+  }
+  function balView(s) { return '<div>' + balance(s.lt, s.lv, s.rt, s.rv, s.show) + cap(s.say) + '</div>'; }
+  var STAR = [4, 5];
+  function withStar(svg) { var cx = 4 + STAR[0] * 40 + 20, cy = 4 + STAR[1] * 40 + 20, p = []; for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 7 : 16; p.push((cx + rr * Math.cos(a)).toFixed(1) + ',' + (cy + rr * Math.sin(a)).toFixed(1)); } return svg.replace('</svg>', '<polygon points="' + p.join(' ') + '" style="fill:var(--sd);stroke:var(--ink)" stroke-width="2" opacity=".9"/></svg>'); }
+  function progText(prog) { return prog.length ? prog.map(function (c) { return c[0] === 'move' ? 'move ' + c[1] : 'turn ' + c[0]; }).join(', ') : '(no code yet)'; }
+  function loopProg(r, m, t) { var p = []; for (var i = 0; i < r; i++) { p.push(['move', m]); p.push([t || 'right']); } return p; }
+  /* two things happening at the same time: robot steps and music on a timeline */
+  function concView(s) {
+    var acts = ['move 2', 'turn right', 'move 2', 'turn right'], w = 110, sv = '';
+    sv += '<text x="6" y="44" font-size="17" class="tb">Robot</text><text x="6" y="110" font-size="17" class="tb">Music</text>';
+    acts.forEach(function (a, i) { var on = i < s.t; sv += '<rect x="' + (80 + i * w) + '" y="20" width="' + (w - 8) + '" height="40" rx="8" style="fill:' + (on ? 'var(--strand)' : 'var(--card)') + ';stroke:var(--strand)" stroke-width="2"/><text x="' + (80 + i * w + (w - 8) / 2) + '" y="46" text-anchor="middle" font-size="16"' + (on ? ' style="fill:#fff" font-weight="700"' : ' class="t2"') + '>' + a + '</text>'; });
+    if (s.music && s.t) sv += '<rect x="80" y="86" width="' + (Math.max(0, s.t) * w - 8) + '" height="40" rx="8" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>' + (s.t ? '<text x="' + (80 + s.t * w / 2) + '" y="112" text-anchor="middle" font-size="16" class="tb">&#9835; playing</text>' : '');
+    sv += '<line x1="' + (80 + s.t * w - 4) + '" y1="10" x2="' + (80 + s.t * w - 4) + '" y2="136" style="stroke:var(--bad)" stroke-width="3"/>';
+    return '<div>' + A.svg(80 + 4 * w + 10, 142, sv, 'A timeline: the robot moves while music plays') + cap(s.say) + '</div>';
+  }
+
+  var LESSONS = [
+    { id: 'repeat', title: 'Repeating patterns', sub: 'Find the part that repeats.', concepts: [
+      { id: 'core', title: 'Find the core', exp: ['C1.1', 'C1.3'], skill: 'pt-repeat',
+        body: '<p>A <b>repeating pattern</b> has a part that repeats over and over. That part is the <b>core</b>. Find the core and you know what comes next.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + row('ABB', s.n, -1, s.box) + cap(s.say) + '</div>'; }, { n: 3, box: false, say: '' }), steps: [
+          { say: 'Circle, square, square.', ms: 1300 },
+          { say: 'Then it starts again.', act: function (t) { return t.seq([{ n: 4 }, { n: 5 }, { n: 6 }, { n: 7 }, { n: 8 }, { n: 9 }], 420); } },
+          { say: 'Box each part that repeats. The core is <b>circle, square, square</b>.', act: function (t) { return t.set({ box: true, say: 'Core: circle, square, square' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { core: 'AB', n: 6, box: false }, draw: function (s) { return row(s.core, s.n, -1, s.box); },
+          selects: [{ key: 'core', label: 'Core', options: [['AB', 'circle, square'], ['ABB', 'circle, square, square'], ['AAB', 'circle, circle, square'], ['ABC', 'circle, square, triangle'], ['ABCD', 'circle, square, triangle, star']] }],
+          buttons: [{ label: 'Add one more', act: function (s) { if (s.n < 16) s.n++; } }, { label: 'Show the cores', act: function (s) { s.box = !s.box; } }],
+          info: function (s) { return 'Next comes a <b>' + SH[s.core.charAt(s.n % s.core.length)] + '</b>.'; },
+          tasks: [{ do: 'Make the pattern <b>circle, square, triangle</b>, and show its cores.', goal: function (s) { return s.core === 'ABC' && s.box; }, yes: 'The core has 3 shapes.' }] }), do: '' },
+        key: '<p>The core is <b>the part that repeats</b>.</p>',
+        check: [TU('s1', 0), TU('s1', 1), SK('pt-repeat', 1)] },
+
+      { id: 'forms', title: 'Same pattern, new look', exp: ['C1.2'], skill: 'pt-repeat',
+        body: '<p>The same pattern can be shown in different ways. Circle, square, square is the same as <b>A, B, B</b>, and the same as <b>clap, snap, snap</b>.</p>',
+        watch: { mount: G3.view(function (s) { var core = 'ABB', n = 6, list = []; for (var i = 0; i < n; i++) list.push(s.form === 'L' ? core.charAt(i % 3) : ACT[core.charAt(i % 3)]); return '<div>' + row(core, n, -1, true) + (s.form ? '<p class="g3-sym" style="font-size:1.3rem;color:var(--ink)">' + list.join(', ') + '</p>' : '') + cap(s.say) + '</div>'; }, { form: '', say: '' }), steps: [
+          { say: 'Circle, square, square.', ms: 1300 },
+          { say: 'As letters: A, B, B.', act: function (t) { return t.set({ form: 'L' }, 1600); } },
+          { say: 'As actions: clap, snap, snap. <b>Same pattern.</b>', act: function (t) { return t.set({ form: 'A' }, 2000); } }
+        ] },
+        key: '<p>Same core, <b>same pattern</b>, even if it looks different.</p>',
+        mistake: '<p>Matching the shapes instead of the structure. A, A, B is not the same as A, B, B. Say the core out loud with letters.</p>',
+        check: [TU('s1', 2), SK('pt-repeat', 2)] },
+
+      { id: 'ahead', title: 'Predict far ahead', exp: ['C1.3'], skill: 'pt-repeat', hard: true,
+        body: '<p>To find a shape far ahead, count by the <b>length of the core</b>. With a core of 3, positions 3, 6, 9 end a core. Position 10 starts a new one.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + row('ABC', s.n, s.mark, true) + cap(s.say) + '</div>'; }, { n: 9, mark: -1, say: 'What is at position 10?' }), steps: [
+          { say: 'The core is circle, square, triangle. 3 shapes.', ms: 1500 },
+          { say: 'Count by 3s: positions 3, 6, 9 end a core.', act: function (t) { return t.set({ say: '3, 6, 9' }, 1600); } },
+          { say: 'Position 10 starts a new core, so it is a <b>circle</b>.', act: function (t) { return t.set({ n: 10, say: 'Position 10: circle' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><th class="l">circle</th><td>1</td><td>4</td><td>7</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">10</td></tr><tr><th class="l">square</th><td>2</td><td>5</td><td>8</td><td>11</td></tr><tr><th class="l">triangle</th><td>3</td><td>6</td><td>9</td><td>12</td></tr></tbody></table></div><p>Each row counts by 3. Find 10: it is in the circle row.</p>' },
+          { label: 'Keep going', html: '<p>Draw or say the pattern until you reach the position. It is slower, but it always works.</p><div class="fig">' + row('ABC', 10, -1, true) + '</div>' }
+        ],
+        try: { mount: G3.play({ state: { core: 'ABB', p: 5 }, draw: function (s) { var L = s.core.length, n = Math.min(16, Math.max(L * 2, Math.ceil(Math.min(s.p, 16) / L) * L)); return row(s.core, n, -1, true); },
+          sliders: [{ key: 'p', label: 'Position', min: 1, max: 40 }],
+          info: function (s) { return 'Position ' + s.p + ': <b>' + SH[s.core.charAt((s.p - 1) % 3)] + '</b>. ' + (Math.floor((s.p - 1) / 3) ? Math.floor((s.p - 1) / 3) + ' full cores come before it.' : ''); },
+          tasks: [{ do: 'The core is circle, square, square. Find a position past 20 that is a <b>circle</b>.', goal: function (s) { return s.p > 20 && (s.p - 1) % 3 === 0; }, yes: function (s) { return 'Position ' + s.p + ' is a circle: one more than a multiple of 3.'; } }] }), do: '' },
+        key: '<p>Count on <b>by the core length</b>.</p>',
+        mistake: '<p>Counting single shapes and losing track. Have the child count whole cores first ("3, 6, 9"), then the last few.</p>',
+        check: [SK('pt-repeat', 3), SK('pt-repeat', 3)] }
+    ] },
+
+    { id: 'grow', title: 'Patterns that grow', sub: 'Repeat an operation each time.', concepts: [
+      { id: 'rule', title: 'Use a pattern rule', exp: ['C1.1', 'C1.3'], skill: 'pt-grow',
+        body: '<p>A <b>pattern rule</b> tells where to start and what to do each time. Start at 2, add 3: <b>2, 5, 8, 11, 14</b>.</p>',
+        watch: { mount: G3.view(function (s) { var v = []; for (var i = 0; i < s.n; i++) v.push(2 + 3 * i); return '<div>' + towers(v) + cap(v.join(', ')) + '</div>'; }, { n: 1 }), steps: [
+          { say: 'Start at 2.', ms: 1200 },
+          { say: 'Add 3 each time.', act: function (t) { return t.seq([{ n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }], 800); } },
+          { say: 'The rule <b>start at 2, add 3</b> gives 2, 5, 8, 11, 14.', ms: 2000 }
+        ] },
+        try: { mount: G3.play({ state: { st: 1, b: 2, sg: 1 }, draw: function (s) { var v = []; for (var i = 0; i < 6; i++) { var x = s.st + s.sg * s.b * i; if (x < 0) break; v.push(x); } return towers(v) + '<p class="g3-sym" style="font-size:1.2rem;color:var(--ink)">' + v.join(', ') + '</p>'; },
+          sliders: [{ key: 'st', label: 'Start at', min: 0, max: 40 }, { key: 'b', label: 'This much', min: 1, max: 10 }],
+          selects: [{ key: 'sg', label: 'Each time', options: [[1, 'add'], [-1, 'take away']] }],
+          tasks: [{ do: 'Make the pattern <b>5, 10, 15, 20</b>.', goal: function (s) { return s.st === 5 && s.b === 5 && s.sg === 1; }, yes: 'Start at 5, add 5.' },
+            { do: 'Make <b>30, 26, 22, 18</b>.', goal: function (s) { return s.st === 30 && s.b === 4 && s.sg === -1; }, yes: 'Start at 30, take away 4.' }] }), do: '' },
+        key: '<p>Rule: <b>start at ___, add (or take away) ___ each time</b>.</p>',
+        check: [TU('s2', 0), TU('s2', 2), SK('pt-grow', 1)] },
+
+      { id: 'find', title: 'Find the rule', exp: ['C1.3', 'C1.4'], skill: 'pt-grow', hard: true,
+        body: '<p>To find a rule, look at <b>how much each number changes</b>. 40, 35, 30, 25: each is 5 less. Start at 40, take away 5.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 40, marks: [{ v: 40, t: '40' }, { v: 35, t: '35' }, { v: 30, t: '30' }, { v: 25, t: '25' }] }, steps: [
+          { say: '40, 35, 30, 25. How does it change?', ms: 1500 },
+          { say: 'Each jump goes back 5.', act: function (t) { return t.jumps(-5, 3, 350); } },
+          { say: 'Rule: <b>start at 40, take away 5</b>. Next is 20.', act: function (t) { return t.jumps(-5, 1).then(function () { return t.mark(20, '20'); }); }, ms: 1800 }
+        ] },
+        ways: [
+          { label: 'Hundreds patterns', html: '<p>125, 225, 325, 425. Only the hundreds digit changes. Rule: start at 125, <b>add 100</b>.</p>' },
+          { label: 'Write the change', html: '<p class="math">40 &rarr; 35 &rarr; 30 &rarr; 25</p><p class="math">&minus;5 &nbsp; &minus;5 &nbsp; &minus;5</p><p>The same change every time is the rule.</p>' }
+        ],
+        try: { tool: 'numberline', opts: { min: 100, max: 1000, tick: 50, every: 100, start: 150, step: [50, 100] }, tasks: [
+          { do: 'The rule is start at 150, <b>add 100</b>. Jump to the 4th number.', goal: function (s) { return s.at === 450; }, yes: '150, 250, 350, 450.' }
+        ] },
+        key: '<p>Find <b>the same change</b> each time.</p>',
+        mistake: '<p>Looking at only the first two numbers. Check the change between every pair.</p>',
+        check: [TU('s2', 1), SK('pt-grow', 2), SK('pt-grow', 3)] }
+    ] },
+
+    { id: 'vars', title: 'Variables', sub: 'A letter that stands for a number.', concepts: [
+      { id: 'letter', title: 'A letter for a number', exp: ['C2.1'], skill: 'pt-var',
+        body: '<p>A <b>variable</b> is a letter or a box that stands for a number. In <span class="math">n + 4 = 10</span>, n is 6, because 6 + 4 = 10.</p>',
+        watch: { mount: G3.view(balView, { lt: 'n + 4', lv: 0, rt: '10', rv: 10, show: false, say: 'n + 4 = 10' }), steps: [
+          { say: 'n + 4 = 10. What number is n?', ms: 1500 },
+          { say: 'Think: what plus 4 makes 10? Count up from 4 to 10: 6.', act: function (t) { return t.set({ say: '4 + 6 = 10' }, 1800); } },
+          { say: 'Put 6 in place of n. Both sides are 10. <b>n = 6</b>.', act: function (t) { return t.set({ lt: '6 + 4', lv: 10, show: true, say: 'n = 6' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { n: 3 }, draw: function (s) { return balance(s.n + ' + 8', s.n + 8, '15', 15, true); },
+          sliders: [{ key: 'n', label: 'Try n =', min: 0, max: 15 }],
+          info: function (s) { return s.n + 8 === 15 ? '<b>n = 7</b>. Both sides are 15.' : s.n + ' + 8 = ' + (s.n + 8) + (s.n + 8 > 15 ? ', too much.' : ', not enough.'); },
+          tasks: [{ do: 'Find n: <span class="math">n + 8 = 15</span>. Balance the scale.', goal: function (s) { return s.n === 7; }, yes: 'n = 7, because 7 + 8 = 15.' }] }), do: '' },
+        key: '<p>A letter <b>stands for a number</b>. Find the number that makes it true.</p>',
+        mistake: '<p>Thinking a letter is always the same number. In one question n might be 6. In the next question, n can be a different number.</p>',
+        check: [TU('s3', 0), TU('s3', 2), SK('pt-var', 1)] },
+
+      { id: 'machine', title: 'Number machines and tables', exp: ['C2.1', 'C1.2'], skill: 'pt-table', hard: true,
+        body: '<p>In a rule like <span class="math">n + 10</span>, n can be <b>any number</b> you put in. A table shows what comes out for each number.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + machine('x', 2, s.n, s.hide) + (s.tbl ? machineTable('x', 2, s.n - 2) : '') + cap(s.say) + '</div>'; }, { n: 3, hide: true, tbl: false, say: '' }), steps: [
+          { say: 'The rule is 2 &times; n. Put in 3.', ms: 1500 },
+          { say: '2 &times; 3 = 6 comes out.', act: function (t) { return t.set({ hide: false, tbl: true }, 1600); } },
+          { say: 'Put in 4, 5, 6. Each answer goes in the table.', act: function (t) { return t.seq([{ n: 4 }, { n: 5 }, { n: 6 }], 1000); } },
+          { say: 'The table shows the rule: <b>out = 2 &times; n</b>.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'Find the rule from a table', html: machineTable('+', 5, 5) + '<p>Each number out is 5 more than n. The rule is <b>n + 5</b>.</p>' },
+          { label: 'Fill in a box', html: '<p>A box works like a letter: <span class="math">5 &times; &#9633; = 30</span>. Count by 5s to 30: 6 jumps. The box is <b>6</b>.</p>' }
+        ],
+        try: { mount: G3.play({ state: { r: '+,10', n: 4 }, draw: function (s) { var r = s.r.split(','); return machine(r[0], +r[1], s.n) + machineTable(r[0], +r[1]); },
+          selects: [{ key: 'r', label: 'Rule', options: [['+,5', 'n + 5'], ['+,10', 'n + 10'], ['-,3', 'n &minus; 3'], ['x,2', '2 &times; n'], ['x,5', '5 &times; n'], ['x,10', '10 &times; n']] }],
+          sliders: [{ key: 'n', label: 'Put in n =', min: 3, max: 10 }],
+          tasks: [{ do: 'Find a rule and an n that give out <b>50</b>.', goal: function (s) { var r = s.r.split(','); return ruleOut(r[0], +r[1], s.n) === 50; }, yes: function (s) { var r = s.r.split(','); return ruleText(r[0], +r[1]).replace('n', s.n) + ' = 50.'; } }] }), do: '' },
+        key: '<p>Put the number <b>in place of n</b>, then work it out.</p>',
+        mistake: '<p>Writing n and the number side by side (2n read as "twenty-something"). Always say "2 times n".</p>',
+        check: [TU('s3', 1), SK('pt-table', 1), SK('pt-table', 2)] }
+    ] },
+
+    { id: 'equal', title: 'Equal or not equal', sub: 'Work out both sides, then compare.', concepts: [
+      { id: 'sides', title: 'Both sides the same', exp: ['C2.2', 'C2.3'], skill: 'pt-equal',
+        body: '<p>Two expressions can look different but have the same value. <span class="math">4 &times; 5</span> and <span class="math">2 &times; 10</span> are both 20, so they are <b>equal</b>.</p>',
+        watch: { mount: G3.view(balView, { lt: '4 × 5', lv: 20, rt: '2 × 10', rv: 20, show: false, say: '' }), steps: [
+          { say: 'Is 4 &times; 5 equal to 2 &times; 10?', ms: 1500 },
+          { say: 'Work out each side: 20 and 20.', act: function (t) { return t.set({ show: true, say: '20 = 20' }, 1800); } },
+          { say: 'The scale balances. <b>4 &times; 5 = 2 &times; 10</b>.', ms: 2000 }
+        ] },
+        try: { mount: G3.play({ state: { a: 3, b: 4 }, draw: function (s) { return balance('6 × 2', 12, s.a + ' × ' + s.b, s.a * s.b, true); },
+          sliders: [{ key: 'a', label: 'Right: first number', min: 1, max: 12 }, { key: 'b', label: 'Right: second number', min: 1, max: 12 }],
+          tasks: [{ do: 'Make the right side equal to <b>6 &times; 2</b>, without using 6 or 2.', goal: function (s) { return s.a * s.b === 12 && [s.a, s.b].indexOf(6) < 0 && [s.a, s.b].indexOf(2) < 0; }, yes: function (s) { return s.a + ' &times; ' + s.b + ' = 12 too.'; } }] }), do: '' },
+        key: '<p>Work out <b>each side</b>. Same value? Equal.</p>',
+        check: [TU('s4', 0), TU('s4', 2), SK('pt-equal', 1)] },
+
+      { id: 'not', title: 'Not equal', exp: ['C2.2'], skill: 'pt-equal', hard: true,
+        body: '<p>If the two sides have different values, they are <b>not equal</b>. We write &ne;. <span class="math">20 &divide; 2 &ne; 20 &minus; 2</span>, because 10 is not 18.</p>',
+        watch: { mount: G3.view(balView, { lt: '20 ÷ 2', lv: 10, rt: '20 − 2', rv: 18, show: false, say: '' }), steps: [
+          { say: '20 &divide; 2 and 20 &minus; 2 look alike. Are they equal?', ms: 1600 },
+          { say: 'Left: 10. Right: 18.', act: function (t) { return t.set({ show: true, say: '10 and 18' }, 1800); } },
+          { say: 'The scale tips. <b>20 &divide; 2 &ne; 20 &minus; 2</b>.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'With counters', html: '<p>20 &divide; 2 is 20 counters in 2 groups: 10 in each. 20 &minus; 2 is 20 counters with 2 taken away: 18 left.</p>' },
+          { label: 'Find the missing number', html: '<p>To make <span class="math">3 + 5 = 2 + &#9633;</span> true, the right side must also be 8. 2 + 6 = 8, so the box is <b>6</b>.</p>' }
+        ],
+        try: { mount: G3.play({ state: { k: 2 }, draw: function (s) { return balance('3 + 5', 8, '2 + ' + s.k, 2 + s.k, true); },
+          sliders: [{ key: 'k', label: 'Box', min: 0, max: 12 }],
+          tasks: [{ do: 'Make <span class="math">3 + 5 = 2 + &#9633;</span> true.', goal: function (s) { return s.k === 6; }, yes: '2 + 6 = 8, the same as 3 + 5.' }] }), do: '' },
+        key: '<p>Different values: <b>&ne; (not equal)</b>.</p>',
+        mistake: '<p>Deciding by how it looks (same numbers, so equal). Always work out both sides first.</p>',
+        check: [TU('s4', 1), SK('pt-equal', 2), SK('pt-equal', 3)] }
+    ] },
+
+    { id: 'code', title: 'Coding', sub: 'Steps in order, loops, and things at the same time.', concepts: [
+      { id: 'steps', title: 'Steps in order', exp: ['C3.1', 'C3.2'], skill: 'pt-code',
+        body: '<p><b>Code</b> is a list of steps a computer follows <b>in order</b>. Steps that come one after another are <b>sequential</b>.</p>',
+        watch: { mount: G3.view(function (s) { var p = [['move', 3], ['right'], ['move', 3]].slice(0, s.k); return '<div>' + withStar(robot(p).svg) + '<pre class="mono">' + progText(p) + '</pre>' + cap(s.say) + '</div>'; }, { k: 0, say: '' }), steps: [
+          { say: 'Get the robot to the star.', ms: 1400 },
+          { say: 'Step 1: move 3.', act: function (t) { return t.set({ k: 1 }, 1300); } },
+          { say: 'Step 2: turn right.', act: function (t) { return t.set({ k: 2 }, 1300); } },
+          { say: 'Step 3: move 3. It reached the star. <b>Order matters.</b>', act: function (t) { return t.set({ k: 3 }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { prog: [] }, draw: function (s) { return withStar(robot(s.prog).svg) + '<pre class="mono">' + progText(s.prog) + '</pre>'; },
+          buttons: [{ label: 'Move 1', act: function (s) { var l = s.prog[s.prog.length - 1]; if (l && l[0] === 'move') l[1]++; else s.prog.push(['move', 1]); } }, { label: 'Turn right', act: function (s) { s.prog.push(['right']); } }, { label: 'Turn left', act: function (s) { s.prog.push(['left']); } }, { label: 'Undo', act: function (s) { var l = s.prog[s.prog.length - 1]; if (l && l[0] === 'move' && l[1] > 1) l[1]--; else s.prog.pop(); } }],
+          info: function (s) { var r = robot(s.prog); return r.off ? 'The robot went off the grid. Press Undo.' : r.steps + ' steps so far.'; },
+          tasks: [{ do: 'Write code to get the robot <b>to the star</b>.', goal: function (s) { var r = robot(s.prog); return r.x === STAR[0] && r.y === STAR[1] && !r.off; }, yes: function (s) { return 'Your code: ' + progText(s.prog) + '.'; } }] }), do: '' },
+        key: '<p>Code runs <b>one step at a time, in order</b>.</p>',
+        check: [TU('s5', 0), SK('pt-code', 1)] },
+
+      { id: 'loop', title: 'Repeat loops', exp: ['C3.1', 'C3.2'], skill: 'pt-code', hard: true,
+        body: '<p>A <b>repeat</b> (or loop) does the same steps many times, so the code is shorter. Repeat 4 times [move 3, turn right] draws a square.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + robot(loopProg(s.k, 3)).svg + '<pre class="mono">repeat 4 times\n  move 3\n  turn right\nend repeat</pre>' + cap(s.say) + '</div>'; }, { k: 0, say: '' }), steps: [
+          { say: 'The loop runs 4 times.', ms: 1300 },
+          { say: 'Each time: move 3, turn right.', act: function (t) { return t.seq([{ k: 1, say: 'Time 1' }, { k: 2, say: 'Time 2' }, { k: 3, say: 'Time 3' }, { k: 4, say: 'Time 4' }], 900); } },
+          { say: 'A square. 4 &times; 3 = <b>12 steps</b>.', act: function (t) { return t.set({ say: '4 &times; 3 = 12 steps' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Write it out long', html: '<pre class="mono">move 3, turn right,\nmove 3, turn right,\nmove 3, turn right,\nmove 3, turn right</pre><p>Same result, but 8 lines instead of a short loop.</p>' },
+          { label: 'Multiply', html: '<p>Steps in all = times repeated &times; steps each time. Repeat 5 times [move 2] is 5 &times; 2 = <b>10</b>.</p>' }
+        ],
+        try: { mount: G3.play({ state: { r: 2, m: 2, t: 'right' }, draw: function (s) { return robot(loopProg(s.r, s.m, s.t)).svg + '<pre class="mono">repeat ' + s.r + ' times\n  move ' + s.m + '\n  turn ' + s.t + '\nend repeat</pre>'; },
+          selects: [{ key: 'r', label: 'Repeat', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']] }, { key: 'm', label: 'Move', options: [[1, '1'], [2, '2'], [3, '3'], [4, '4'], [5, '5']] }, { key: 't', label: 'Then turn', options: [['right', 'right'], ['left', 'left']] }],
+          info: function (s) { var r = robot(loopProg(s.r, s.m, s.t)); return s.r + ' &times; ' + s.m + ' = <b>' + s.r * s.m + ' steps</b>' + (r.off ? '. Part of the path is off the grid.' : ''); },
+          tasks: [{ do: 'Change the code to draw a square with sides of <b>5</b>.', goal: function (s) { return s.r === 4 && s.m === 5; }, yes: '4 &times; 5 = 20 steps.' },
+            { do: 'Make the robot move <b>15 steps</b> in all.', goal: function (s) { return s.r * s.m === 15; }, yes: function (s) { return s.r + ' &times; ' + s.m + ' = 15.'; } }] }), do: '' },
+        key: '<p>Loop: <b>times &times; steps each time</b>.</p>',
+        mistake: '<p>Counting the loop once and forgetting it repeats. Trace the path with a finger and count each lap.</p>',
+        check: [TU('s5', 1), TU('s5', 2), SK('pt-code', 2), SK('pt-code', 3)] },
+
+      { id: 'together', title: 'At the same time', exp: ['C3.1', 'C3.2'], skill: 'pt-code',
+        body: '<p>Some events happen <b>at the same time</b>, like music playing while a robot moves. These are <b>concurrent</b> events.</p>',
+        watch: { mount: G3.view(concView, { t: 0, music: true, say: '' }), steps: [
+          { say: 'Two lines of code start together: the robot and the music.', ms: 1600 },
+          { say: 'The robot does its steps one at a time. The music keeps playing.', act: function (t) { return t.seq([{ t: 1 }, { t: 2 }, { t: 3 }, { t: 4 }], 900); } },
+          { say: 'Both happened <b>at the same time</b>. They are concurrent.', ms: 2000 }
+        ] },
+        key: '<p>Sequential: <b>one after another</b>. Concurrent: <b>at the same time</b>.</p>',
+        check: [G3.turn({ q: 'A robot moves while a light flashes. These events are:', options: ['concurrent', 'sequential'], answer: 0, why: 'They happen at the same time.' }), G3.turn({ q: 'Move 2, then turn, then move 3. These steps are:', options: ['sequential', 'concurrent'], answer: 0, why: 'They happen one after another, in order.' })] }
+    ] }
+  ];
+
   A.register('patterns', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Repeating patterns</h2>' +
 '<p>A <b>repeating pattern</b> has a part that repeats over and over. That part is called the <b>core</b>. Find the core and you can tell what comes next, or what comes far ahead.</p>' +

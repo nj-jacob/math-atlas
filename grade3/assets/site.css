@@ -209,7 +209,6 @@ html.bigtext .opts{grid-template-columns:1fr}
 .pcard{border:2px solid var(--line);border-radius:12px;padding:14px;background:color-mix(in srgb,var(--strand) 3%,var(--card))}
 .plv{font-size:.88rem;color:var(--ink2);margin:0 0 6px}
 .pcard .qtext,.cu .qtext{font-size:1.12rem}
-.say{font:inherit;font-size:.8rem;font-weight:700;color:var(--ink2);background:none;border:1.5px solid var(--line);border-radius:99px;padding:2px 10px;cursor:pointer;margin:0 0 8px;min-height:30px}
 .steps ol{margin:.3em 0;padding-left:1.4em}.steps li{margin:.3em 0}
 .sth{margin:.6em 0 0}
 .lvmsg{font-weight:700;color:var(--ink);margin:.4em 0}
@@ -225,7 +224,7 @@ a.btn{display:inline-block;text-decoration:none}
 .okc{color:var(--good)}.noc{color:var(--bad)}
 .review .q:first-child{border-top:0}
 @media print{
-  .bar,.jump,.pn,footer.site,.btn,.say,.crumb{display:none!important}
+  .bar,.jump,.pn,footer.site,.btn,.crumb{display:none!important}
   body{background:#fff}
   .sec,.quiz{border:1px solid #999;break-inside:avoid-page}
 }
@@ -341,7 +340,6 @@ svg .tap{cursor:pointer}
 svg .tap:focus{outline:none}
 svg .tap:focus>rect:first-child,svg .tap:hover>rect:first-child{stroke:var(--strand);stroke-width:4;stroke-dasharray:none}
 /* read-aloud button for a lesson section */
-.say.secsay{margin:-4px 0 10px}
 /* "this, not that" box */
 .vs{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:12px 0}
 .vs>div{border:2px solid var(--line);border-radius:14px;padding:8px 12px;background:var(--card)}
@@ -350,3 +348,27 @@ svg .tap:focus>rect:first-child,svg .tap:hover>rect:first-child{stroke:var(--str
 .vs b.t{display:block;font-size:.8rem;text-transform:uppercase;letter-spacing:.04em}
 @media (max-width:640px){.math{white-space:normal}.opts:has(svg){grid-template-columns:1fr}}
 .out svg,td svg,th svg{max-width:100%;height:auto}
+/* Grade 3 lesson kit: animated pictures and hands-on activities */
+.g3v{display:flex;justify-content:center}
+.g3v svg,.g3-fig svg{max-width:100%;height:auto}
+.g3-in{animation:g3in .42s cubic-bezier(.2,.8,.3,1) both}
+@keyframes g3in{from{opacity:.55;transform:scale(.985)}to{opacity:1;transform:none}}
+.g3-task{font-weight:600;margin:0 0 8px}
+.g3-info{text-align:center;font-family:var(--display,inherit);font-size:1.15rem;font-weight:600;min-height:1.4em;margin:4px 0}
+.g3-ctl{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:flex-end;justify-content:center}
+.g3-ctl .btnrow{justify-content:center}
+.g3-sl,.g3-sel{display:flex;flex-direction:column;gap:4px;font-weight:600;font-size:.92rem;min-width:180px}
+.g3-sl output{font-weight:700;color:var(--strand)}
+.g3-msg{min-height:1.5em;font-weight:700;color:var(--good);text-align:center}
+.g3-msg.yes{animation:mp-bump .5s cubic-bezier(.3,1.6,.5,1)}
+.g3-nx{text-align:center}
+svg [data-tap]{cursor:pointer;transition:transform .15s}
+svg [data-tap]:hover{opacity:.85}
+svg [data-tap]:focus{outline:none}
+svg [data-tap]:focus>*:first-child{stroke:var(--strand);stroke-width:4}
+svg .g3-glow{filter:drop-shadow(0 0 6px var(--hi))}
+@media (prefers-reduced-motion:reduce){.g3-in,.g3-msg.yes{animation:none}}
+.g3-sym{text-align:center;font-family:var(--display,inherit);font-size:1.5rem;margin:4px 0;min-height:1.6em;color:var(--strand)}
+.g3v>div{width:100%}
+.bar nav a,.tools button{white-space:nowrap}
+@media (max-width:640px){.bar nav{display:flex;flex-wrap:wrap;gap:4px 14px}.tools{flex-wrap:wrap;gap:6px}.tools button{font-size:.74rem;padding:4px 9px}}

@@ -7,7 +7,8 @@
   var PN = ['ones', 'tens', 'hundreds', 'thousands'];
 
   /* the column method, with regrouping marks. Addition: carries above. Subtraction: crossed-out digits with new values above. */
-  function column(a, b, op) {
+  function column(a, b, op, k) {
+    if (k == null) k = 9;
     var da = dg(a), db = dg(b), res = op === '+' ? a + b : a - b, dr = dg(res), cols = res >= 1000 || a >= 1000 ? 4 : 3;
     var cw = 84, x0 = 220 - cw * cols / 2 + 30, s = '', top = da.slice(), changed = [0, 0, 0, 0], carry = [0, 0, 0, 0], p;
     if (op === '+') { var c = 0; for (p = 0; p < 4; p++) { var t = da[p] + db[p] + c; c = t >= 10 ? 1 : 0; if (c && p < 3) carry[p + 1] = 1; } }
@@ -18,16 +19,16 @@
       s += '<rect x="' + (X(p) - cw / 2 + 3) + '" y="2" width="' + (cw - 6) + '" height="24" rx="6" style="fill:var(--p' + p + ')"/>' +
         '<text x="' + X(p) + '" y="19" text-anchor="middle" font-size="15" font-weight="700" style="fill:' + (p ? '#fff' : '#13203a') + '">' + PN[p] + '</text>';
       var showA = p < String(a).length, showB = p < String(b).length, showR = p < String(res).length;
-      if (op === '+' && carry[p]) s += '<text x="' + X(p) + '" y="52" text-anchor="middle" font-size="20" font-weight="700" style="fill:var(--bad)">1</text>';
-      if (op === '-' && changed[p] && showA) {
+      if (op === '+' && carry[p] && p <= k) s += '<text x="' + X(p) + '" y="52" text-anchor="middle" font-size="20" font-weight="700" style="fill:var(--bad)">1</text>';
+      if (op === '-' && changed[p] && showA && (p < k || (p === k && top[p] >= 10) || (p === k + 0 && changed[p - 1]))) {
         s += '<text x="' + X(p) + '" y="52" text-anchor="middle" font-size="20" font-weight="700" style="fill:var(--bad)">' + top[p] + '</text>';
       }
       if (showA) {
         s += '<text x="' + X(p) + '" y="92" text-anchor="middle" font-size="36" font-weight="700" style="font-family:var(--display)' + (op === '-' && changed[p] ? ';fill:var(--ink2)' : '') + '">' + da[p] + '</text>';
-        if (op === '-' && changed[p]) s += '<line x1="' + (X(p) - 14) + '" y1="88" x2="' + (X(p) + 14) + '" y2="70" style="stroke:var(--bad)" stroke-width="3"/>';
+        if (op === '-' && changed[p] && (p < k || (p === k && top[p] >= 10) || changed[p - 1] && p <= k)) s += '<line x1="' + (X(p) - 14) + '" y1="88" x2="' + (X(p) + 14) + '" y2="70" style="stroke:var(--bad)" stroke-width="3"/>';
       }
       if (showB) s += '<text x="' + X(p) + '" y="136" text-anchor="middle" font-size="36" font-weight="700" style="font-family:var(--display)">' + db[p] + '</text>';
-      if (showR) s += '<text x="' + X(p) + '" y="190" text-anchor="middle" font-size="36" font-weight="700" style="font-family:var(--display);fill:var(--p' + p + ')">' + dr[p] + '</text>';
+      if (showR && p < k) s += '<text x="' + X(p) + '" y="190" text-anchor="middle" font-size="36" font-weight="700" style="font-family:var(--display);fill:var(--p' + p + ')">' + dr[p] + '</text>';
     }
     s += '<text x="' + (X(cols - 1) - cw / 2 - 14) + '" y="136" text-anchor="middle" font-size="36" font-weight="700">' + (op === '+' ? '+' : '&minus;') + '</text>';
     s += '<line x1="' + (X(cols - 1) - cw / 2 - 30) + '" y1="150" x2="' + (X(0) + cw / 2) + '" y2="150" style="stroke:var(--ink)" stroke-width="3"/>';
@@ -91,7 +92,185 @@
     return out;
   }
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'add-subtract';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function colView(s) { return '<div>' + column(s.a, s.b, s.op, s.k) + (s.say ? '<p class="g3-sym" style="font-size:1.05rem;color:var(--ink)">' + s.say + '</p>' : '') + '</div>'; }
+  function jumpView(s) { return jumps(s.start, s.parts.slice(0, s.k), s.op); }
+
+  var LESSONS = [
+    { id: 'add', title: 'Adding with regrouping', sub: 'When the ones make 10 or more, trade them for a ten.', concepts: [
+      { id: 'blocks', title: 'Add with blocks', exp: ['B2.4', 'B2.5'], skill: 'as-add',
+        body: '<p>To add, put both numbers together. If you get <b>10 or more ones</b>, group 10 of them into a ten.</p>',
+        watch: { tool: 'base10', opts: { t: 4, o: 7 }, steps: [
+          { say: 'This is 47. Let\'s add 25.', ms: 1200 },
+          { say: 'Add 2 tens and 5 ones.', act: function (t) { return t.add('t', 2, 350).then(function () { return t.add('o', 5, 260); }); } },
+          { say: 'Now there are 12 ones. That is more than 9.', act: function (t) { return t.lightKind('o', 160); }, ms: 700 },
+          { say: 'Group 10 ones into a ten.', act: function (t) { t.clearLit(); return t.group('o'); } },
+          { say: '7 tens and 2 ones. <b>47 + 25 = 72</b>.', ms: 2000 }
+        ] },
+        try: { tool: 'base10', opts: { controls: true, t: 3, o: 8 }, tasks: [
+          { do: 'This is 38. <b>Add 26</b> with the + buttons, then group the ones.', goal: function (s) { return s.value === 64 && s.o < 10; }, yes: '38 + 26 = 64. 14 ones became 1 ten and 4 ones.' },
+          { do: 'Build <b>156</b>, then add <b>75</b>. Group whenever you can.', setup: function (t) { t.set(1, 5, 6); }, reset: false, goal: function (s) { return s.value === 231 && s.o < 10 && s.t < 10; }, yes: '156 + 75 = 231. You grouped ones into a ten and tens into a hundred.' }
+        ] },
+        key: '<p><b>10 ones make 1 ten.</b> Group them so each place has 9 or fewer.</p>',
+        check: [TU('s1', 0), SK('as-add', 1)] },
+
+      { id: 'columns', title: 'Add in columns', exp: ['B2.4', 'B2.5'], skill: 'as-add', hard: true,
+        body: '<p>Line up the digits so ones are under ones and tens are under tens. Add the <b>ones first</b>. If they make 10 or more, write the ones and <b>carry</b> 1 to the tens.</p>',
+        watch: { mount: G3.view(colView, { a: 358, b: 276, op: '+', k: 0, say: '358 + 276. Line up the places.' }), steps: [
+          { say: 'Line up the places. Start with the ones.', ms: 1200 },
+          { say: 'Ones: 8 + 6 = 14. Write 4, carry 1 ten.', act: function (t) { return t.set({ k: 1, say: '8 + 6 = 14: write 4, carry 1' }, 1800); } },
+          { say: 'Tens: 5 + 7 + 1 = 13. Write 3, carry 1 hundred.', act: function (t) { return t.set({ k: 2, say: '5 + 7 + 1 = 13: write 3, carry 1' }, 1800); } },
+          { say: 'Hundreds: 3 + 2 + 1 = 6. <b>358 + 276 = 634</b>.', act: function (t) { return t.set({ k: 3, say: '3 + 2 + 1 = 6' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'Add each place separately', html: '<p>Split both numbers into places and add each part.</p><p class="math">300 + 200 = 500</p><p class="math">50 + 70 = 120</p><p class="math">8 + 6 = 14</p><p class="math"><b>500 + 120 + 14 = 634</b></p>' },
+          { label: 'On a number line', html: '<p>Start at 358 and jump by each part of 276.</p><div class="fig">' + jumps(358, [200, 70, 6], '+') + '</div>' },
+          { label: 'With blocks', html: '<p>Build both numbers. 14 ones: group 10 into a ten. 13 tens: group 10 into a hundred. You end with 6 hundreds, 3 tens, 4 ones.</p>', tool: 'base10', opts: { controls: true, h: 3, t: 5, o: 8 } }
+        ],
+        try: { mount: G3.play({ state: { a: 245, b: 168, k: 0 }, buttons: [{ label: 'Next place', act: function (s) { if (s.k < 3) s.k++; } }, { label: 'Start over', act: function (s) { s.k = 0; } }],
+          sliders: [{ key: 'a', label: 'Top number', min: 100, max: 599 }, { key: 'b', label: 'Bottom number', min: 100, max: 399 }],
+          draw: function (s) { return column(s.a, s.b, '+', s.k); },
+          info: function (s) { var r = regroupText(s.a, s.b, '+'); return s.k ? r[s.k - 1] : 'Press <b>Next place</b> to add the ones.'; },
+          tasks: [{ do: 'Add <b>245 + 168</b> one place at a time.', goal: function (s) { return s.k === 3 && s.a === 245 && s.b === 168; }, yes: '245 + 168 = 413. Two carries.' },
+            { do: 'Pick your own numbers and add them, place by place.', goal: function (s) { return s.k === 3 && !(s.a === 245 && s.b === 168); }, yes: function (s) { return s.a + ' + ' + s.b + ' = ' + (s.a + s.b) + '.'; } }] }), do: '' },
+        key: '<p>Ones first. 10 or more? Write the ones, carry 1.</p>',
+        mistake: '<p>Writing the whole 14 in the ones place, or forgetting to add the carried 1. Ask the child to say "14 is 1 ten and 4 ones" before writing.</p>',
+        check: [TU('s1', 1), TU('s1', 2), SK('as-add', 2)] }
+    ] },
+
+    { id: 'sub', title: 'Subtracting with regrouping', sub: 'When there are not enough ones, trade a ten.', concepts: [
+      { id: 'trade', title: 'Trade a ten to subtract', exp: ['B2.4', 'B2.5'], skill: 'as-sub',
+        body: '<p>To take away 7 ones when you only have 2, <b>break a ten</b> into 10 ones first. Now you have enough.</p>',
+        watch: { tool: 'base10', opts: { t: 5, o: 2 }, steps: [
+          { say: 'This is 52. Take away 17.', ms: 1200 },
+          { say: 'We need to take 7 ones, but there are only 2.', act: function (t) { return t.lightKind('o', 300); }, ms: 800 },
+          { say: 'Break a ten into 10 ones. Now there are 12 ones.', act: function (t) { t.clearLit(); return t.split('t'); } },
+          { say: 'Take away 7 ones and 1 ten.', act: function (t) { return t.remove('o', 7, 160).then(function () { return t.remove('t', 1, 300); }); } },
+          { say: '3 tens and 5 ones are left. <b>52 &minus; 17 = 35</b>.', ms: 2000 }
+        ] },
+        try: { tool: 'base10', opts: { controls: true, t: 6, o: 3 }, tasks: [
+          { do: 'This is 63. <b>Take away 28</b>. Break a ten when you need more ones.', goal: function (s) { return s.value === 35; }, yes: '63 &minus; 28 = 35.' },
+          { do: 'Build <b>304</b>, then take away <b>126</b>.', setup: function (t) { t.set(3, 0, 4); }, reset: false, goal: function (s) { return s.value === 178; }, yes: '304 &minus; 126 = 178. You had to break a hundred first, because there were no tens.' }
+        ] },
+        key: '<p>Not enough? <b>Break 1 ten into 10 ones.</b></p>',
+        check: [TU('s2', 0), TU('s2', 1), SK('as-sub', 1)] },
+
+      { id: 'columns', title: 'Subtract in columns', exp: ['B2.4', 'B2.5'], skill: 'as-sub', hard: true,
+        body: '<p>Line up the places and start with the <b>ones</b>. If the top digit is smaller, trade 1 from the next place: cross it out and write one less, then put 10 more in this place.</p>',
+        watch: { mount: G3.view(colView, { a: 532, b: 278, op: '-', k: 0, say: '532 &minus; 278' }), steps: [
+          { say: 'Ones: 2 is less than 8. Trade a ten: 3 tens become 2, and 2 ones become 12.', act: function (t) { return t.set({ k: 1, say: '12 &minus; 8 = 4' }, 2200); } },
+          { say: 'Tens: 2 is less than 7. Trade a hundred: 5 becomes 4, and 2 tens become 12.', act: function (t) { return t.set({ k: 2, say: '12 &minus; 7 = 5' }, 2200); } },
+          { say: 'Hundreds: 4 &minus; 2 = 2. <b>532 &minus; 278 = 254</b>.', act: function (t) { return t.set({ k: 3, say: '4 &minus; 2 = 2' }, 2000); } },
+          { say: 'Check by adding: 254 + 278 = 532.', ms: 1800 }
+        ] },
+        ways: [
+          { label: 'Count up instead', html: '<p>Start at 278 and count up to 532. Big jumps first.</p><div class="fig">' + jumps(278, [2, 20, 200, 32], '+') + '</div><p>2 + 20 + 200 + 32 = <b>254</b>.</p>' },
+          { label: 'Take away in parts', html: '<p>Take away 278 one place at a time.</p><div class="fig">' + jumps(532, [200, 70, 8], '-') + '</div>' },
+          { label: 'With blocks', html: '<p>Build 532. You cannot take 8 ones from 2, so break a ten. You cannot take 7 tens from 2, so break a hundred.</p>', tool: 'base10', opts: { controls: true, h: 5, t: 3, o: 2 } }
+        ],
+        try: { mount: G3.play({ state: { a: 423, b: 156, k: 0 }, buttons: [{ label: 'Next place', act: function (s) { if (s.k < 3) s.k++; } }, { label: 'Start over', act: function (s) { s.k = 0; } }],
+          sliders: [{ key: 'a', label: 'Top number', min: 400, max: 999 }, { key: 'b', label: 'Take away', min: 100, max: 399 }],
+          draw: function (s) { return column(s.a, s.b, '-', s.k); },
+          info: function (s) { var r = regroupText(s.a, s.b, '-'); return s.k ? r[s.k - 1] : 'Press <b>Next place</b> to start with the ones.'; },
+          tasks: [{ do: 'Work out <b>423 &minus; 156</b>, one place at a time.', goal: function (s) { return s.k === 3 && s.a === 423 && s.b === 156; }, yes: '423 &minus; 156 = 267.' }] }), do: '' },
+        key: '<p>Top digit too small? Trade 1 from the place to its left.</p>',
+        mistake: '<p>Taking the smaller digit from the bigger one, whichever is on top. In 52 &minus; 17 some children do 7 &minus; 2 = 5 and get 45. Ask: "Do we have 7 ones to take away?"</p>',
+        check: [TU('s2', 2), SK('as-sub', 2)] }
+    ] },
+
+    { id: 'mental', title: 'Mental math', sub: 'Jump in friendly steps.', concepts: [
+      { id: 'jump', title: 'Jump on a number line', exp: ['B2.3'], skill: 'as-mental',
+        body: '<p>To add in your head, split the second number into hundreds, tens and ones, and <b>jump</b> one part at a time.</p>',
+        watch: { mount: G3.view(jumpView, { start: 346, parts: [200, 30, 5], op: '+', k: 0 }), steps: [
+          { say: 'Start at 346. Add 235.', ms: 1200 },
+          { say: 'Jump 200: 546.', act: function (t) { return t.set({ k: 1 }, 1300); } },
+          { say: 'Jump 30: 576.', act: function (t) { return t.set({ k: 2 }, 1300); } },
+          { say: 'Jump 5: <b>581</b>. So 346 + 235 = 581.', act: function (t) { return t.set({ k: 3 }, 2000); } }
+        ] },
+        try: { tool: 'numberline', opts: { min: 200, max: 500, tick: 10, every: 50, start: 230, step: [100, 10] }, tasks: [
+          { do: 'Start at 230. Add <b>140</b> with jumps of 100 and 10.', goal: function (s) { return s.at === 370; }, yes: '230 + 100 = 330, then 4 jumps of 10: 370.' }
+        ] },
+        key: '<p>Split the number. Jump hundreds, then tens, then ones.</p>',
+        check: [TU('s3', 0), SK('as-mental', 1)] },
+
+      { id: 'friendly', title: 'Use a friendly number', exp: ['B2.3'], skill: 'as-mental', hard: true,
+        body: '<p>Numbers like 99 or 198 are close to a <b>friendly number</b>. To add 99, add 100, then take back 1.</p>',
+        watch: { mount: G3.view(jumpView, { start: 245, parts: [100, 1], op: '+', k: 0, back: true }), steps: [
+          { say: '245 + 99. 99 is almost 100.', ms: 1300 },
+          { say: 'Add 100: 345.', act: function (t) { return t.set({ k: 1 }, 1400); } },
+          { say: 'That was 1 too many. Take back 1: <b>344</b>.', act: function (t) { return t.set({ parts: [100], k: 1, start: 245, op: '+' }).then(function () { return t.set({ start: 345, parts: [1], op: '-', k: 1 }, 2000); }); } }
+        ] },
+        ways: [
+          { label: 'Make a ten first', html: '<p>To add 38 + 7, take 2 from the 7 to make 40, then add the 5 left: 45.</p>' },
+          { label: 'With money', html: '<p>Something costs $99. Pay $100 and get $1 back. Adding $99 is the same as adding $100 and taking away $1.</p>' }
+        ],
+        key: '<p>Round to a friendly number, then fix the difference.</p>',
+        mistake: '<p>Adding 100 and forgetting to take back the extra 1. Ask: "Did we add too much? By how much?"</p>',
+        check: [TU('s3', 1), TU('s3', 2), SK('as-mental', 2)] }
+    ] },
+
+    { id: 'estimate', title: 'Estimate and check', sub: 'Is the answer about right?', concepts: [
+      { id: 'round', title: 'Estimate by rounding', exp: ['B2.3'], skill: 'as-estimate',
+        body: '<p>To <b>estimate</b>, round each number to a friendly number, then add or subtract. 312 + 487 is about 300 + 500 = <b>800</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: 200, max: 600, tick: 10, every: 100, start: 312 }, steps: [
+          { say: '312 is close to 300.', act: function (t) { return t.mark(312, '312').then(function () { return t.moveTo(300); }); } },
+          { say: '487 is close to 500.', act: function (t) { return t.mark(487, '487').then(function () { return t.moveTo(500); }); } },
+          { say: '300 + 500 = 800. The exact answer, 799, is very close.', ms: 2200 }
+        ] },
+        key: '<p>Round, then calculate. The estimate tells you <b>about</b> how big.</p>',
+        mistake: '<p>Using the estimate as the answer. An estimate is a check, not the answer.</p>',
+        check: [TU('s4', 0), TU('s4', 2), SK('as-estimate', 1)] },
+
+      { id: 'sense', title: 'Does the answer make sense?', exp: ['B2.3'], skill: 'as-estimate',
+        body: '<p>After you calculate, compare with your estimate. If the answer is far away, check your work again.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + column(612, 298, '-', 3).replace(/>314</, '>' + s.ans + '<') + '<p class="g3-sym" style="font-size:1.05rem;color:var(--ink)">' + s.say + '</p></div>'; }, { ans: 314, say: '' }), steps: [
+          { say: 'Mia worked out 612 &minus; 298.', ms: 1200 },
+          { say: 'Estimate: 600 &minus; 300 = 300.', act: function (t) { return t.set({ say: 'Estimate: 600 &minus; 300 = 300' }, 1600); } },
+          { say: 'Her answer is 314. That is close to 300, so it makes sense.', act: function (t) { return t.set({ say: '314 is close to 300. It makes sense.' }, 2000); } }
+        ] },
+        key: '<p>Close to the estimate? Good. Far away? Check again.</p>',
+        check: [TU('s4', 1), SK('as-estimate', 2)] }
+    ] },
+
+    { id: 'equal', title: 'Equal sides and word problems', sub: 'The equal sign means both sides are the same.', concepts: [
+      { id: 'balance', title: 'Both sides are equal', exp: ['C2.3'], skill: 'as-equal', hard: true,
+        body: '<p>The <b>=</b> sign means "is the same as". Both sides must have the same value, like a balance that is level.</p>',
+        watch: { mount: G3.view(function (s) { return balance(s.l, s.r, s.ok); }, { l: '200 + 50', r: '150 + ?', ok: false }), steps: [
+          { say: 'The left side is 200 + 50 = 250.', ms: 1500 },
+          { say: 'The right side has 150 and a missing number.', ms: 1400 },
+          { say: 'Try 50: 150 + 50 = 200. Not level.', act: function (t) { return t.set({ r: '150 + 50' }, 1600); } },
+          { say: 'Try 100: 150 + 100 = 250. Level! The missing number is <b>100</b>.', act: function (t) { return t.set({ r: '150 + 100', ok: true }, 2200); } }
+        ] },
+        ways: [
+          { label: 'Work out one side first', html: '<p>Find the value of the full side: 200 + 50 = 250. Then ask: 150 plus what makes 250? Count up from 150: <b>100</b>.</p>' },
+          { label: 'Move some across', html: '<p>Take 50 from the 200 and give it to the 50. 200 + 50 = 150 + 100. The total does not change.</p>' }
+        ],
+        try: { mount: G3.play({ state: { x: 40 }, sliders: [{ key: 'x', label: 'Missing number', min: 0, max: 200, step: 10 }],
+          draw: function (s) { return balance('320 + 80', '300 + ' + s.x, 300 + s.x === 400); },
+          info: function (s) { return '320 + 80 = 400. 300 + ' + s.x + ' = ' + (300 + s.x) + '.'; },
+          tasks: [{ do: 'Make the balance level.', goal: function (s) { return s.x === 100; }, yes: '320 + 80 = 300 + 100. Both sides are 400.' }] }), do: '' },
+        key: '<p><b>=</b> means both sides have the same value.</p>',
+        mistake: '<p>Reading = as "the answer is". In 400 + 30 = ___ + 10 some children write 430. Have them check that both sides match.</p>',
+        check: [TU('s5', 0), TU('s5', 1), TU('s5', 2), SK('as-equal', 1)] },
+
+      { id: 'word', title: 'Solve word problems', exp: ['B2.5'], skill: 'as-word',
+        body: '<p>Read the story and ask: are things being <b>joined</b> (add), or is something <b>taken away</b> or <b>compared</b> (subtract)? Then estimate, solve, and check.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + (s.k ? column(325, 148, '+', s.k) : '') + '<p class="g3-sym" style="font-size:1.05rem;color:var(--ink)">' + s.say + '</p></div>'; }, { k: 0, say: 'A library has 325 books. It gets 148 more. How many now?' }), steps: [
+          { say: 'More books are joined to the library. That means <b>add</b>.', ms: 1800 },
+          { say: 'Estimate: 300 + 150 = 450.', act: function (t) { return t.set({ say: 'Estimate: 300 + 150 = 450' }, 1600); } },
+          { say: 'Add in columns.', act: function (t) { return t.set({ k: 3, say: '325 + 148 = 473' }, 2000); } },
+          { say: '473 is close to 450. The library has <b>473 books</b>.', ms: 2000 }
+        ] },
+        key: '<p>Joining: add. Taking away or comparing: subtract.</p>',
+        check: [SK('as-word', 1), SK('as-word', 2)] }
+    ] }
+  ];
+
   A.register('add-subtract', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Adding with blocks and columns</h2>' +
 '<p>To add, put the blocks together. If you get <b>10 or more</b> of one kind, trade 10 of them for 1 of the next bigger kind. This is called <b>regrouping</b>.</p>' +

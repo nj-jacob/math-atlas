@@ -59,7 +59,299 @@
     return A.svg(5 * w + 8, Math.ceil(n / 5) * 72 + 8, s, label);
   }
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'multiply-divide';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  /* plates that can hold different amounts while dealing, with a pile still to share */
+  function plates(counts, pile, label) {
+    var k = counts.length, per = k > 5 ? 5 : k, pw = 96, s = '';
+    for (var i = 0; i < k; i++) {
+      var cx = 8 + (i % per) * (pw + 6) + pw / 2, cy = 8 + Math.floor(i / per) * (pw + 6) + pw / 2, n = counts[i];
+      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + pw / 2 + '" style="fill:color-mix(in srgb,var(--strand) 8%,var(--card));stroke:var(--strand)" stroke-width="2.5"/>';
+      var cols = n <= 4 ? 2 : n <= 9 ? 3 : 4, r = n <= 4 ? 12 : n <= 9 ? 10 : 8, gap = r * 2.4, w = (Math.min(n, cols) - 1) * gap, hh = (Math.ceil(n / cols) - 1) * gap;
+      for (var j = 0; j < n; j++) s += '<circle cx="' + (cx - w / 2 + (j % cols) * gap) + '" cy="' + (cy - hh / 2 + Math.floor(j / cols) * gap) + '" r="' + r + '" style="fill:' + DOT2 + ';stroke:var(--ink)" stroke-width="1.5"/>';
+    }
+    var rows = k ? Math.ceil(k / per) : 0, top = rows * (pw + 6) + 14, W = per * (pw + 6) + 10, pr = Math.max(1, Math.ceil(pile / 12));
+    if (pile) {
+      s += '<text x="8" y="' + (top + 16) + '" font-size="17" class="t2">Still to share: ' + pile + '</text>';
+      for (var q = 0; q < pile; q++) s += '<circle cx="' + (18 + (q % 12) * 26) + '" cy="' + (top + 36 + Math.floor(q / 12) * 26) + '" r="10" style="fill:' + DOT2 + ';stroke:var(--ink)" stroke-width="1.5" opacity=".75"/>';
+    }
+    return A.svg(Math.max(W, pile ? 330 : 0), top + (pile ? 30 + pr * 26 : 0), s, label || k + ' plates');
+  }
+  function dealCounts(total, k, dealt) { var c = []; for (var i = 0; i < k; i++) c.push(Math.floor(dealt / k) + (i < dealt % k ? 1 : 0)); return c; }
+  function dealView(s) { return '<div>' + plates(dealCounts(s.total, s.k, s.dealt), s.total - s.dealt) + cap(s.say) + '</div>'; }
+  function bagView(s) { return '<div>' + (s.bags ? groups(s.bags, s.size, s.bags + ' bags of ' + s.size) : '') + (s.total - s.bags * s.size ? plates([], s.total - s.bags * s.size) : '') + cap(s.say) + '</div>'; }
+  function groupView(s) { return '<div>' + groups(s.g, s.n) + cap(s.say) + '</div>'; }
+  function arrView(s) { return '<div>' + array(s.r, s.c, s.sp || 0) + cap(s.say) + '</div>'; }
+  function famView(s) {
+    var f = [s.a + ' &times; ' + s.b + ' = ' + s.a * s.b, s.b + ' &times; ' + s.a + ' = ' + s.a * s.b, s.a * s.b + ' &divide; ' + s.a + ' = ' + s.b, s.a * s.b + ' &divide; ' + s.b + ' = ' + s.a];
+    return '<div>' + array(s.a, s.b, 0, s.a + ' rows of ' + s.b) + '<div class="tbl"><table><tbody><tr>' + f.map(function (x, i) { return '<td class="math"' + (i < s.k ? '' : ' style="opacity:.15"') + '>' + x + '</td>'; }).slice(0, 2).join('') + '</tr><tr>' + f.map(function (x, i) { return '<td class="math"' + (i < s.k ? '' : ' style="opacity:.15"') + '>' + x + '</td>'; }).slice(2).join('') + '</tr></tbody></table></div>' + cap(s.say) + '</div>';
+  }
+  function ratioView(s) {
+    var th = THINGS[s.k][s.t || 0], h = '<table><tbody><tr><th class="l">' + th[1].charAt(0).toUpperCase() + th[1].slice(1) + '</th>', h2 = '<tr><th class="l">' + th[3].charAt(0).toUpperCase() + th[3].slice(1) + '</th>';
+    for (var i = 1; i <= s.n; i++) { var on = i === s.n ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : ''; h += '<td' + on + '>' + i + '</td>'; h2 += '<td' + on + '>' + i * s.k + '</td>'; }
+    return '<div>' + ratioFig(s.k, s.n, s.n + ' ' + (s.n === 1 ? th[0] : th[1]) + ', ' + s.k + ' ' + th[3] + ' each') + '<div class="tbl">' + h + '</tr>' + h2 + '</tr></tbody></table></div>' + cap(s.say) + '</div>';
+  }
+  function addList(g, n) { var a = []; for (var i = 0; i < g; i++) a.push(n); return a.join(' + '); }
+  function chartOf(k) { var l = []; for (var i = 1; i <= 10; i++) l.push(k * i); return l; }
+
+  var LESSONS = [
+    { id: 'groups', title: 'Equal groups', sub: 'Multiplying is adding equal groups.', concepts: [
+      { id: 'equal', title: 'What equal groups are', exp: ['B2.6'], skill: 'md-groups',
+        body: '<p>Groups are <b>equal</b> when each one has the same number. 3 plates with 4 grapes on each is 3 equal groups of 4.</p>',
+        watch: { mount: G3.view(groupView, { g: 1, n: 4, say: '1 group of 4' }), steps: [
+          { say: 'One plate with 4 grapes.', ms: 1200 },
+          { say: 'Add another plate of 4. Each plate has the same number.', act: function (t) { return t.set({ g: 2, say: '2 groups of 4: 4 + 4 = 8' }, 1500); } },
+          { say: 'One more plate of 4.', act: function (t) { return t.set({ g: 3, say: '3 groups of 4: 4 + 4 + 4 = 12' }, 1500); } },
+          { say: '3 equal groups of 4 make <b>12</b>.', ms: 1800 }
+        ] },
+        try: { mount: G3.play({ state: { g: 2, n: 2 }, draw: function (s) { return groups(s.g, s.n); },
+          sliders: [{ key: 'g', label: 'Number of groups', min: 1, max: 10 }, { key: 'n', label: 'In each group', min: 1, max: 10 }],
+          info: function (s) { return s.g + ' group' + (s.g > 1 ? 's' : '') + ' of ' + s.n + ': ' + addList(s.g, s.n) + ' = <b>' + s.g * s.n + '</b>'; },
+          tasks: [{ do: 'Make <b>4 groups of 3</b>.', goal: function (s) { return s.g === 4 && s.n === 3; }, yes: '4 groups of 3 is 12.' },
+            { do: 'Make <b>12</b> again, with a different number of groups.', goal: function (s) { return s.g * s.n === 12 && !(s.g === 4 && s.n === 3); }, yes: function (s) { return s.g + ' groups of ' + s.n + ' is also 12.'; } }] }), do: '' },
+        key: '<p>Equal groups: <b>every group has the same number</b>.</p>',
+        check: [TU('s1', 0), SK('md-groups', 1)] },
+
+      { id: 'times', title: 'The times sign', exp: ['B2.6'], skill: 'md-groups',
+        body: '<p><span class="math">3 &times; 4</span> means "3 groups of 4". The first number is how many groups. The second is how many in each group.</p>',
+        watch: { mount: G3.view(groupView, { g: 5, n: 2, say: '5 groups of 2' }), steps: [
+          { say: '5 plates with 2 on each.', ms: 1300 },
+          { say: 'Add them: 2 + 2 + 2 + 2 + 2 = 10.', act: function (t) { return t.set({ say: '2 + 2 + 2 + 2 + 2 = 10' }, 1800); } },
+          { say: 'A short way to write it: <b>5 &times; 2 = 10</b>.', act: function (t) { return t.set({ say: '5 &times; 2 = 10' }, 2000); } }
+        ] },
+        try: { tool: 'counters', opts: { n: 6, controls: ['pairs'], arrange: 'scatter' }, tasks: [
+          { do: 'Show <b>5 &times; 2</b>: make 10 counters, then pair them up.', goal: function (s) { return s.n === 10 && s.mode === 'pairs'; }, yes: '5 pairs: 5 groups of 2 is 10.' }
+        ] },
+        key: '<p><b>3 &times; 4 means 3 groups of 4.</b></p>',
+        mistake: '<p>Adding the two numbers (3 &times; 4 = 7). Ask: "How many groups? How many in each?" and have the child draw it.</p>',
+        check: [TU('s1', 1), TU('s1', 2), SK('md-groups', 2)] }
+    ] },
+
+    { id: 'arrays', title: 'Arrays', sub: 'Equal rows make multiplying easy to see.', concepts: [
+      { id: 'rows', title: 'Rows and columns', exp: ['B2.6'], skill: 'md-array',
+        body: '<p>An <b>array</b> puts things in equal rows. 3 rows of 5 is <span class="math">3 &times; 5</span>. Count by 5s, one row at a time.</p>',
+        watch: { mount: G3.view(arrView, { r: 1, c: 5, say: '5' }), steps: [
+          { say: 'One row of 5.', ms: 1200 },
+          { say: 'Another row of 5: 10.', act: function (t) { return t.set({ r: 2, say: '5, 10' }, 1300); } },
+          { say: 'A third row: 15.', act: function (t) { return t.set({ r: 3, say: '5, 10, 15' }, 1300); } },
+          { say: '3 rows of 5: <b>3 &times; 5 = 15</b>.', act: function (t) { return t.set({ say: '3 &times; 5 = 15' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { r: 2, c: 3 }, draw: function (s) { return array(s.r, s.c); },
+          sliders: [{ key: 'r', label: 'Rows', min: 1, max: 10 }, { key: 'c', label: 'In each row', min: 1, max: 10 }],
+          info: function (s) { return s.r + ' rows of ' + s.c + ': <b>' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</b>'; },
+          tasks: [{ do: 'Build an array for <b>4 &times; 6</b>.', goal: function (s) { return s.r === 4 && s.c === 6; }, yes: '4 rows of 6 is 24.' },
+            { do: 'Build an array with <b>20</b> dots.', goal: function (s) { return s.r * s.c === 20; }, yes: function (s) { return s.r + ' &times; ' + s.c + ' = 20.'; } }] }), do: '' },
+        key: '<p>Rows &times; how many in each row.</p>',
+        check: [TU('s2', 0), SK('md-array', 1)] },
+
+      { id: 'turn', title: 'Turn-around facts', exp: ['B2.1', 'B2.6'], skill: 'md-array',
+        body: '<p>Turn an array on its side. 4 rows of 6 becomes 6 rows of 4. It is the <b>same dots</b>, so <span class="math">4 &times; 6 = 6 &times; 4</span>.</p>',
+        watch: { mount: G3.view(arrView, { r: 2, c: 5, say: '2 &times; 5 = 10' }), steps: [
+          { say: '2 rows of 5 is 10.', ms: 1500 },
+          { say: 'Turn it on its side.', act: function (t) { return t.set({ r: 5, c: 2, say: '5 &times; 2 = 10' }, 1600); } },
+          { say: 'Now it is 5 rows of 2. Still 10 dots. <b>2 &times; 5 = 5 &times; 2</b>.', ms: 2000 }
+        ] },
+        try: { mount: G3.play({ state: { r: 3, c: 7 }, draw: function (s) { return array(s.r, s.c); },
+          buttons: [{ label: 'Turn it on its side', act: function (s) { var x = s.r; s.r = s.c; s.c = x; s.turned = (s.turned || 0) + 1; } }],
+          info: function (s) { return '<b>' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</b>'; },
+          tasks: [{ do: 'This is 3 &times; 7. <b>Turn it</b> to see 7 &times; 3.', goal: function (s) { return s.r === 7 && s.c === 3; }, yes: 'Same 21 dots. 3 &times; 7 = 7 &times; 3 = 21.' }] }), do: '' },
+        key: '<p>Turn it around: <b>same answer</b>.</p>',
+        check: [TU('s2', 1), SK('md-array', 1)] },
+
+      { id: 'split', title: 'Split a hard fact', exp: ['B2.1', 'B2.6'], skill: 'md-array', hard: true,
+        body: '<p>A big array can be <b>split</b> into two smaller ones you know. 7 &times; 4 is 5 &times; 4 and 2 &times; 4. Add the parts: 20 + 8 = 28.</p>',
+        watch: { mount: G3.view(arrView, { r: 7, c: 4, sp: 0, say: '7 &times; 4 = ?' }), steps: [
+          { say: '7 rows of 4. That is a hard fact.', ms: 1300 },
+          { say: 'Split after 5 rows.', act: function (t) { return t.set({ sp: 5, say: '5 &times; 4 and 2 &times; 4' }, 1600); } },
+          { say: 'The top is 5 &times; 4 = 20. The bottom is 2 &times; 4 = 8.', act: function (t) { return t.set({ say: '20 and 8' }, 1800); } },
+          { say: 'Add the parts: 20 + 8 = <b>28</b>. So 7 &times; 4 = 28.', act: function (t) { return t.set({ say: '7 &times; 4 = 28' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Add one more group', html: '<p>Know 5 &times; 6 = 30? Then 6 &times; 6 is one more group of 6: 30 + 6 = <b>36</b>.</p><div class="fig">' + array(6, 6, 5, '6 rows of 6, split after 5') + '</div>' },
+          { label: 'Double a fact', html: '<p>4 &times; 7 is double 2 &times; 7. 2 &times; 7 = 14, and 14 + 14 = <b>28</b>.</p><div class="fig">' + array(4, 7, 2, '4 rows of 7, split in half') + '</div>' },
+          { label: 'With groups', html: '<p>7 groups of 4 is 5 groups of 4 plus 2 groups of 4.</p><div class="fig">' + groups(7, 4) + '</div>' }
+        ],
+        try: { mount: G3.play({ state: { r: 8, c: 5, sp: 0 }, draw: function (s) { return array(s.r, s.c, s.sp); },
+          sliders: [{ key: 'sp', label: 'Split after row', min: 0, max: 7 }],
+          info: function (s) { return s.sp ? 'Top: ' + s.sp + ' &times; 5 = ' + s.sp * 5 + '. Bottom: ' + (8 - s.sp) + ' &times; 5 = ' + (8 - s.sp) * 5 + '. Together: <b>' + 40 + '</b>' : 'Move the slider to split 8 &times; 5.'; },
+          tasks: [{ do: 'Split <b>8 &times; 5</b> into two facts you know.', goal: function (s) { return s.sp > 0; }, yes: function (s) { return s.sp * 5 + ' + ' + (8 - s.sp) * 5 + ' = 40. Any split gives the same total.'; } },
+            { do: 'Now split it into <b>two equal halves</b>.', reset: false, goal: function (s) { return s.sp === 4; }, yes: '4 &times; 5 = 20, twice: 20 + 20 = 40.' }] }), do: '' },
+        key: '<p><b>Split it, find each part, add the parts.</b></p>',
+        mistake: '<p>Finding only one part and forgetting the other, or adding the row numbers instead of the parts. Point to each part and say its fact aloud together.</p>',
+        check: [TU('s2', 2), SK('md-array', 3)] }
+    ] },
+
+    { id: 'facts', title: 'Facts of 2, 5 and 10', sub: 'Skip count to learn them by heart.', concepts: [
+      { id: 'skip', title: 'Skip count to multiply', exp: ['B2.2'], skill: 'md-facts',
+        body: '<p>To find <span class="math">5 &times; 7</span>, count by 5s seven times: 5, 10, 15, 20, 25, 30, 35.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0 }, steps: [
+          { say: '5 &times; 7: start at 0 and jump by 5, seven times.', ms: 1300 },
+          { say: '5, 10, 15, 20, 25, 30, 35.', act: function (t) { return t.jumps(5, 7, 280); } },
+          { say: '7 jumps of 5 land on <b>35</b>. So 5 &times; 7 = 35.', act: function (t) { return t.mark(35, '35'); }, ms: 2000 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 10, start: 0, step: [2, 5, 10] }, tasks: [
+          { do: 'Find <b>2 &times; 8</b>: jump by 2, eight times.', goal: function (s) { return s.at === 16; }, yes: '8 jumps of 2: 16.' },
+          { do: 'Now find <b>10 &times; 6</b>. Start again from 0.', goal: function (s) { return s.at === 60; }, yes: '6 jumps of 10: 60.' }
+        ] },
+        key: '<p>Count by the number, <b>that many times</b>.</p>',
+        check: [TU('s3', 0), TU('s3', 1), SK('md-facts', 1)] },
+
+      { id: 'patterns', title: 'Patterns in the facts', exp: ['B2.2'], skill: 'md-facts',
+        body: '<p>Each set of facts has a pattern. Facts of 2 are <b>even</b>. Facts of 5 end in <b>5 or 0</b>. Facts of 10 end in <b>0</b>.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + chart100(s.k) + cap(s.say) + '</div>'; }, { k: 2, say: 'Facts of 2' }), steps: [
+          { say: 'Facts of 2: every second number. They are the even numbers.', ms: 2000 },
+          { say: 'Facts of 5: two columns, ending in 5 or 0.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 2000); } },
+          { say: 'Facts of 10: only the last column. They all end in 0.', act: function (t) { return t.set({ k: 10, say: 'Facts of 10' }, 2000); } }
+        ] },
+        try: { tool: 'hundred', opts: {}, tasks: [
+          { do: 'Tap all the facts of 10 on the chart: 10, 20, 30 and on to 100.', goal: function (s) { return s.lit.length === 10 && s.lit.every(function (n) { return n % 10 === 0; }); }, yes: 'They make one straight column. Every one ends in 0.' }
+        ] },
+        key: '<p>2s: even. 5s: end in 5 or 0. 10s: end in 0.</p>',
+        check: [TU('s3', 2), SK('md-facts', 2)] },
+
+      { id: 'missing', title: 'Find the missing number', exp: ['B2.2'], skill: 'md-facts', hard: true,
+        body: '<p>In <span class="math">5 &times; ___ = 30</span>, count by 5s until you reach 30. <b>Count the jumps.</b> That is the missing number.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
+          { say: '5 &times; ___ = 30. Count by 5s to 30.', ms: 1300 },
+          { say: '5, 10, 15, 20, 25, 30.', act: function (t) { return t.jumps(5, 6, 300); } },
+          { say: 'That was 6 jumps. <b>5 &times; 6 = 30</b>.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'Use the chart', html: '<p>Read across the row of 5s until you find 30. It is under the 6.</p><div class="tbl"><table><thead><tr><th>&times;</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<th>' + i + '</th>'; }).join('') + '</tr></thead><tbody><tr><th>5</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<td' + (i === 6 ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : '') + '>' + 5 * i + '</td>'; }).join('') + '</tr></tbody></table></div>' },
+          { label: 'Make groups', html: '<p>Put 30 counters into groups of 5. How many groups? 6.</p><div class="fig">' + groups(6, 5) + '</div>' },
+          { label: 'Think of division', html: '<p>5 &times; ___ = 30 asks the same thing as <span class="math">30 &divide; 5</span>. Both are <b>6</b>.</p>' }
+        ],
+        try: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 10, start: 0, step: [2, 5, 10] }, tasks: [
+          { do: 'Find the missing number: <span class="math">10 &times; ___ = 70</span>. Jump to 70 by 10s and count the jumps.', goal: function (s) { return s.at === 70; }, yes: '7 jumps. 10 &times; 7 = 70.' }
+        ] },
+        key: '<p>Count by the number to the answer. <b>The number of jumps is missing.</b></p>',
+        mistake: '<p>Writing the last number said (30) instead of the number of jumps (6). Have the child hold up one finger for each jump.</p>',
+        check: [SK('md-facts', 3), SK('md-facts', 3)] }
+    ] },
+
+    { id: 'divide', title: 'Dividing', sub: 'Share fairly, or make groups.', concepts: [
+      { id: 'share', title: 'Share fairly', exp: ['B2.6'], skill: 'md-divide',
+        body: '<p><b>Dividing</b> can mean sharing fairly. To share 12 among 3, deal them out one at a time until none are left. <span class="math">12 &divide; 3 = 4</span>.</p>',
+        watch: { mount: G3.view(dealView, { total: 12, k: 3, dealt: 0, say: '' }), steps: [
+          { say: '12 grapes to share among 3 plates.', ms: 1300 },
+          { say: 'Deal one to each plate, round and round.', act: function (t) { var p = []; for (var i = 1; i <= 12; i++) p.push({ dealt: i }); return t.seq(p, 260); } },
+          { say: 'Each plate has 4. <b>12 &divide; 3 = 4</b>.', act: function (t) { return t.set({ say: '12 &divide; 3 = 4' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { total: 15, k: 3, dealt: 0 }, draw: function (s) { return plates(dealCounts(s.total, s.k, s.dealt), s.total - s.dealt); },
+          buttons: [{ label: 'Deal one to each', act: function (s) { s.dealt = Math.min(s.total, s.dealt + s.k); } }, { label: 'Start over', act: function (s) { s.dealt = 0; } }],
+          info: function (s) { return s.dealt < s.total ? 'Each plate has ' + Math.floor(s.dealt / s.k) + ' so far.' : '<b>' + s.total + ' &divide; ' + s.k + ' = ' + s.total / s.k + '</b>'; },
+          tasks: [{ do: 'Share <b>15</b> among <b>3</b> plates. Deal until none are left.', goal: function (s) { return s.dealt === 15; }, yes: 'Each plate has 5. 15 &divide; 3 = 5.' },
+            { do: 'Now share <b>20</b> among <b>4</b>.', setup: function (s) { s.total = 20; s.k = 4; }, goal: function (s) { return s.dealt === 20; }, yes: 'Each plate has 5. 20 &divide; 4 = 5.' }] }), do: '' },
+        key: '<p>Share fairly: <b>deal one to each until none are left.</b></p>',
+        mistake: '<p>Groups that are not equal. When you share 12 among 3, each group must get the same number: 4, 4 and 4. 5, 4 and 3 is not fair.</p>',
+        check: [TU('s4', 0), SK('md-divide', 1)] },
+
+      { id: 'group', title: 'How many groups?', exp: ['B2.6'], skill: 'md-divide',
+        body: '<p>Dividing can also mean making groups. "How many bags of 5 in 20?" Take away 5 at a time and count the bags. <span class="math">20 &divide; 5 = 4</span>.</p>',
+        watch: { mount: G3.view(bagView, { total: 20, size: 5, bags: 0, say: '' }), steps: [
+          { say: '20 stickers. Each bag holds 5.', ms: 1300 },
+          { say: 'Fill bags of 5 until none are left.', act: function (t) { return t.seq([{ bags: 1 }, { bags: 2 }, { bags: 3 }, { bags: 4 }], 650); } },
+          { say: '4 bags. <b>20 &divide; 5 = 4</b>.', act: function (t) { return t.set({ say: '20 &divide; 5 = 4' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { total: 18, size: 2, bags: 0 }, draw: function (s) { return bagView(s); },
+          buttons: [{ label: 'Fill a bag', act: function (s) { if ((s.bags + 1) * s.size <= s.total) s.bags++; } }, { label: 'Start over', act: function (s) { s.bags = 0; } }],
+          info: function (s) { return s.bags + ' bag' + (s.bags === 1 ? '' : 's') + ' of ' + s.size + (s.bags * s.size === s.total ? '. <b>' + s.total + ' &divide; ' + s.size + ' = ' + s.bags + '</b>' : ''); },
+          tasks: [{ do: 'How many bags of <b>2</b> can you fill from <b>18</b>?', goal: function (s) { return s.bags * s.size === s.total; }, yes: '9 bags. 18 &divide; 2 = 9.' },
+            { do: 'How many bags of <b>10</b> from <b>50</b>?', setup: function (s) { s.total = 50; s.size = 10; }, goal: function (s) { return s.bags * s.size === s.total; }, yes: '5 bags. 50 &divide; 10 = 5.' }] }), do: '' },
+        key: '<p>Make groups: <b>take away the group size until none are left, then count the groups.</b></p>',
+        check: [TU('s4', 1), SK('md-divide', 3)] },
+
+      { id: 'think', title: 'Think multiplication', exp: ['B2.1', 'B2.2'], skill: 'md-divide', hard: true,
+        body: '<p>To divide, think of a times fact. <span class="math">40 &divide; 10</span> asks: <b>10 times what is 40?</b> 10 &times; 4 = 40, so the answer is 4.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 50, tick: 5, every: 10, start: 0 }, steps: [
+          { say: '40 &divide; 10. Think: 10 times what is 40?', ms: 1500 },
+          { say: 'Count by 10s to 40.', act: function (t) { return t.jumps(10, 4, 320); } },
+          { say: '4 jumps. 10 &times; 4 = 40, so <b>40 &divide; 10 = 4</b>.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'Share it', html: '<p>Share 40 among 10 people. Each gets 4.</p><div class="fig">' + groups(10, 4) + '</div>' },
+          { label: 'With dimes', html: '<p>How many dimes make 40&cent;? 10&cent;, 20&cent;, 30&cent;, 40&cent;: <b>4 dimes</b>.</p>' },
+          { label: 'In an array', html: '<p>40 dots in rows of 10 make 4 rows.</p><div class="fig">' + array(4, 10) + '</div>' }
+        ],
+        key: '<p>Divide: <b>ask "times what?"</b></p>',
+        mistake: '<p>Subtracting instead of dividing (40 &divide; 10 = 30). Read it as "how many 10s are in 40?"</p>',
+        check: [TU('s4', 2), SK('md-divide', 2)] }
+    ] },
+
+    { id: 'family', title: 'Fact families', sub: 'Multiplying and dividing are linked.', concepts: [
+      { id: 'four', title: 'One array, four facts', exp: ['B2.1'], skill: 'md-family',
+        body: '<p>One array gives <b>four facts</b>: two times facts and two division facts. They use the same three numbers.</p>',
+        watch: { mount: G3.view(famView, { a: 4, b: 5, k: 0, say: '4 rows of 5' }), steps: [
+          { say: '4 rows of 5: 20 dots.', ms: 1300 },
+          { say: '4 &times; 5 = 20.', act: function (t) { return t.set({ k: 1, say: '' }, 1300); } },
+          { say: 'Turned around: 5 &times; 4 = 20.', act: function (t) { return t.set({ k: 2 }, 1300); } },
+          { say: 'Share 20 into 4 rows: 5 in each. 20 &divide; 4 = 5.', act: function (t) { return t.set({ k: 3 }, 1500); } },
+          { say: 'Share 20 into 5 columns: 4 in each. 20 &divide; 5 = 4.', act: function (t) { return t.set({ k: 4, say: 'The fact family of 4, 5 and 20' }, 2200); } }
+        ] },
+        try: { mount: G3.play({ state: { a: 3, b: 10, k: 4 }, draw: famView,
+          sliders: [{ key: 'a', label: 'Rows', min: 2, max: 10 }, { key: 'b', label: 'In each row', min: 2, max: 10 }],
+          tasks: [{ do: 'Show the fact family for <b>2, 5 and 10</b>.', goal: function (s) { return (s.a === 2 && s.b === 5) || (s.a === 5 && s.b === 2); }, yes: '2 &times; 5 = 10, 5 &times; 2 = 10, 10 &divide; 2 = 5, 10 &divide; 5 = 2.' }] }), do: '' },
+        key: '<p>Same three numbers, <b>four facts</b>.</p>',
+        check: [TU('s5', 0), SK('md-family', 1)] },
+
+      { id: 'check', title: 'Check a division', exp: ['B2.1'], skill: 'md-family', hard: true,
+        body: '<p>Use a times fact to <b>check</b> a division. If <span class="math">30 &divide; 5 = 6</span>, then 6 &times; 5 should be 30. It is, so the answer is right.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + groups(s.g, 5) + cap(s.say) + '</div>'; }, { g: 6, say: 'Jo says 35 &divide; 5 = 6' }), steps: [
+          { say: 'Jo says 35 &divide; 5 = 6. Check it.', ms: 1500 },
+          { say: '6 groups of 5 is 30, not 35. Jo is wrong.', act: function (t) { return t.set({ say: '6 &times; 5 = 30' }, 1800); } },
+          { say: 'Add one more group: 7 groups of 5 is 35. <b>35 &divide; 5 = 7</b>.', act: function (t) { return t.set({ g: 7, say: '7 &times; 5 = 35' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Count by the divisor', html: '<p>Count by 5s: 5, 10, 15, 20, 25, 30, 35. That is 7, not 6.</p>' },
+          { label: 'Turn it around', html: '<p>Read the division backwards as a times fact: answer &times; 5 = 35? 6 &times; 5 = 30. 7 &times; 5 = 35. The answer is 7.</p>' }
+        ],
+        key: '<p>Check: <b>answer &times; divisor = total</b>.</p>',
+        mistake: '<p>Checking with the wrong operation (adding 6 + 5). The check is always a times fact using the same three numbers.</p>',
+        check: [TU('s5', 1), TU('s5', 2), SK('md-family', 3)] }
+    ] },
+
+    { id: 'scale', title: 'Scaling up', sub: 'For every 1, there are 2, 5 or 10.', concepts: [
+      { id: 'ratio', title: 'For every 1, there are...', exp: ['B2.9'], skill: 'md-scale',
+        body: '<p>Some things always come in the same amounts. 1 bike has 2 wheels. 1 hand has 5 fingers. 1 dime is 10 cents. Each new one adds the same amount again.</p>',
+        watch: { mount: G3.view(ratioView, { k: 5, n: 1, say: '1 hand, 5 fingers' }), steps: [
+          { say: '1 hand has 5 fingers.', ms: 1300 },
+          { say: 'Each new hand adds 5 more fingers.', act: function (t) { return t.seq([{ n: 2, say: '2 hands: 10' }, { n: 3, say: '3 hands: 15' }, { n: 4, say: '4 hands: 20' }], 900); } },
+          { say: '4 hands have <b>20 fingers</b>. 4 &times; 5 = 20.', act: function (t) { return t.set({ say: '4 &times; 5 = 20' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { k: 2, n: 1 }, draw: ratioView,
+          selects: [{ key: 'k', label: 'For every 1, there are', options: [[2, '2 (bikes and wheels)'], [5, '5 (hands and fingers)'], [10, '10 (dimes and cents)']] }],
+          sliders: [{ key: 'n', label: 'How many', min: 1, max: 10 }],
+          info: function (s) { var th = THINGS[s.k][0]; return '<b>' + s.n + ' ' + (s.n === 1 ? th[0] : th[1]) + ' &rarr; ' + s.n * s.k + ' ' + th[3] + '</b>'; },
+          tasks: [{ do: 'How many wheels do <b>6 bikes</b> have? Show it.', goal: function (s) { return s.k === 2 && s.n === 6; }, yes: '6 &times; 2 = 12 wheels.' },
+            { do: 'Show <b>8 dimes</b>. How many cents?', goal: function (s) { return s.k === 10 && s.n === 8; }, yes: '8 &times; 10 = 80 cents.' }] }), do: '' },
+        key: '<p>For every 1 there are k: <b>multiply by k</b>.</p>',
+        check: [TU('s6', 0), TU('s6', 1), SK('md-scale', 1)] },
+
+      { id: 'back', title: 'Work backwards', exp: ['B2.9'], skill: 'md-scale', hard: true,
+        body: '<p>Sometimes you know the big amount. 70 cents in dimes: how many dimes? Count by 10s to 70 and <b>count the jumps</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 80, tick: 10, every: 10, start: 0 }, steps: [
+          { say: '70 cents in dimes. How many dimes?', ms: 1300 },
+          { say: 'Each dime is 10 cents. Count by 10s to 70.', act: function (t) { return t.jumps(10, 7, 280); } },
+          { say: '7 jumps, so <b>7 dimes</b>. 70 &divide; 10 = 7.', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><th class="l">Dimes</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">7</td></tr><tr><th class="l">Cents</th><td>10</td><td>20</td><td>30</td><td>40</td><td>50</td><td>60</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">70</td></tr></tbody></table></div><p>Find 70 in the cents row. Look up: <b>7</b> dimes.</p>' },
+          { label: 'Make groups', html: '<p>Put 15 fingers into hands of 5: 3 hands.</p><div class="fig">' + groups(3, 5) + '</div>' }
+        ],
+        try: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0, step: [2, 5, 10] }, tasks: [
+          { do: '16 wheels. How many bikes? Jump by 2s to 16 and count the jumps.', goal: function (s) { return s.at === 16; }, yes: '8 jumps, so 8 bikes.' }
+        ] },
+        key: '<p>Know the total? <b>Count by k to it and count the jumps.</b></p>',
+        mistake: '<p>Multiplying again (70 &times; 10) when the question asks how many groups. Ask: "Do we know one group, or the total?"</p>',
+        check: [TU('s6', 2), SK('md-scale', 3)] }
+    ] }
+  ];
+
   A.register('multiply-divide', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Equal groups</h2>' +
 '<p><b>Multiplying</b> is a fast way to add equal groups. <span class="math">3 &times; 4</span> means "3 groups of 4". You can add 4 + 4 + 4, or say 3 &times; 4 = 12.</p>' +

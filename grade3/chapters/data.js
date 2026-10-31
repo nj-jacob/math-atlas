@@ -46,7 +46,7 @@
       y += 42;
     });
     s += icon(150, y + 4, 1) + '<text x="174" y="' + (y + 11) + '" font-size="18">= ' + key + ' ' + (key === 1 ? 'vote' : 'votes') + '</text>';
-    if (src) s += '<text x="' + (W - 8) + '" y="' + (y + 40) + '" text-anchor="end" font-size="14" class="t2">Source: ' + src + '</text>';
+    if (src) s += '<text x="' + (W - 8) + '" y="' + (y + 40) + '" text-anchor="end" font-size="16" class="t2">Source: ' + src + '</text>';
     return A.svg(W, y + (src ? 50 : 24), s, 'Pictograph: ' + title + '. ' + data.map(function (d) { return d[0] + ' ' + d[1]; }).join(', ') + '. Each picture means ' + key + '.');
   }
   /* bar graph with a scale */
@@ -63,8 +63,8 @@
         '<text x="' + (x + bw * 0.32) + '" y="284" text-anchor="middle" font-size="17" class="tb">' + d[0] + '</text>';
     });
     s += '<line x1="' + x0 + '" y1="260" x2="' + (x0 + W) + '" y2="260" style="stroke:var(--ink)" stroke-width="2.5"/><line x1="' + x0 + '" y1="260" x2="' + x0 + '" y2="36" style="stroke:var(--ink)" stroke-width="2.5"/>';
-    s += '<text x="18" y="150" text-anchor="middle" font-size="15" class="t2" transform="rotate(-90 18 150)">' + (ylab || 'Number of votes') + '</text>';
-    if (src) s += '<text x="540" y="306" text-anchor="end" font-size="14" class="t2">Source: ' + src + '</text>';
+    s += '<text x="18" y="150" text-anchor="middle" font-size="16" class="t2" transform="rotate(-90 18 150)">' + (ylab || 'Number of votes') + '</text>';
+    if (src) s += '<text x="540" y="306" text-anchor="end" font-size="16" class="t2">Source: ' + src + '</text>';
     return A.svg(560, 312, s, 'Bar graph: ' + title + '. ' + data.map(function (d) { return d[0] + ' ' + d[1]; }).join(', ') + '. The scale counts by ' + step + '.');
   }
   function tally(n) {
@@ -103,7 +103,200 @@
     pets: { t: 'Pets at home', src: 'Class interviews', d: [['Dog', 14], ['Cat', 10], ['Fish', 4], ['None', 7]] }
   };
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'data';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  var SORTQ = [20, 3, 12, 17, 8, 25, 30, 6];
+  function region(n, a, b) { var x = ATTR[a][1](n), y = ATTR[b][1](n); return x && y ? 'ab' : x ? 'a' : y ? 'b' : 'none'; }
+  var SEASONS = ['Winter', 'Spring', 'Summer', 'Fall'];
+  function survey(v) {
+    return '<div class="tbl"><table><thead><tr><th class="l">Season</th><th class="l">Tally</th><th>Frequency</th></tr></thead><tbody>' + SEASONS.map(function (n, i) { return '<tr><td class="l">' + n + '</td><td class="l">' + (v[i] ? tally(v[i]) : '') + '</td><td>' + v[i] + '</td></tr>'; }).join('') + '</tbody></table></div>';
+  }
+  function modeOf(v) { var c = {}, best = 0, m = []; v.forEach(function (x) { c[x] = (c[x] || 0) + 1; best = Math.max(best, c[x]); }); Object.keys(c).forEach(function (k) { if (c[k] === best && best > 1) m.push(+k); }); return m.sort(function (a, b) { return a - b; }); }
+  function vals5(s) { return [s.x0, s.x1, s.x2, s.x3, s.x4]; }
+  function dotRow(v, hi) {
+    var s = '', sorted = v.slice().sort(function (a, b) { return a - b; });
+    sorted.forEach(function (x, i) { var on = hi && hi.indexOf(x) >= 0; s += '<rect x="' + (6 + i * 58) + '" y="6" width="50" height="50" rx="10" style="fill:' + (on ? 'var(--hi)' : 'var(--card)') + ';stroke:' + (on ? 'var(--ink)' : 'var(--line)') + '" stroke-width="2.5"/><text x="' + (31 + i * 58) + '" y="40" text-anchor="middle" font-size="24" class="tb">' + x + '</text>'; });
+    return A.svg(sorted.length * 58 + 8, 62, s, 'Values in order: ' + sorted.join(', '));
+  }
+
+  var LESSONS = [
+    { id: 'sort', title: 'Sorting with diagrams', sub: 'Sort by attributes.', concepts: [
+      { id: 'venn', title: 'Venn diagrams', exp: ['D1.1'], skill: 'dt-venn',
+        body: '<p>A <b>Venn diagram</b> sorts things with circles. Each circle is an <b>attribute</b>, like "even". Things that fit both go in the <b>overlap</b>. Things that fit neither go outside.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + venn(SORTQ.slice(0, s.k), 'even', 'gt15').svg + cap(s.say) + '</div>'; }, { k: 0, say: '' }), steps: [
+          { say: 'Two circles: "Even" and "Greater than 15".', ms: 1500 },
+          { say: '20 is even and greater than 15. It goes in the overlap.', act: function (t) { return t.set({ k: 1, say: '20: both' }, 1800); } },
+          { say: '3 is neither, so it goes outside. 12 is even only. 17 is greater than 15 only.', act: function (t) { return t.seq([{ k: 2, say: '3: neither' }, { k: 3, say: '12: even only' }, { k: 4, say: '17: greater than 15 only' }], 1100); } },
+          { say: 'Ask two questions for each number: <b>Even? Greater than 15?</b>', ms: 2000 }
+        ] },
+        try: { mount: G3.play({ state: { i: 0, note: '' }, draw: function (s) { return venn(SORTQ.slice(0, s.i), 'even', 'gt15').svg; },
+          buttons: [['a', 'Even only'], ['b', 'Greater than 15 only'], ['ab', 'Both'], ['none', 'Neither']].map(function (r) { return { label: r[1], act: function (s) { if (s.i >= SORTQ.length) return; var n = SORTQ[s.i]; if (region(n, 'even', 'gt15') === r[0]) { s.i++; s.note = ''; } else s.note = 'Not quite. Is ' + n + ' even? Is it greater than 15?'; } }; }),
+          info: function (s) { return s.i < SORTQ.length ? (s.note || '') + ' Where does <b class="big">' + SORTQ[s.i] + '</b> go?' : 'All sorted.'; },
+          tasks: [{ do: 'Sort each number into the right place.', goal: function (s) { return s.i === SORTQ.length; }, yes: 'Every number is in its place.' }] }), do: '' },
+        key: '<p>Ask <b>one question per circle</b>. Yes to both? The overlap.</p>',
+        mistake: '<p>Putting a number that fits both circles in only one of them. Ask both questions every time.</p>',
+        check: [TU('s1', 0), TU('s1', 1), TU('s1', 2), SK('dt-venn', 1)] },
+
+      { id: 'carroll', title: 'Carroll and tree diagrams', exp: ['D1.1'], skill: 'dt-venn', hard: true,
+        body: '<p>A <b>Carroll diagram</b> sorts with a table: one attribute for the rows, one for the columns. A <b>tree diagram</b> asks yes or no questions, one attribute at a time.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + (s.t === 'v' ? venn(NUMS, 'even', 'gt15').svg : carroll(NUMS, 'even', 'gt15')) + cap(s.say) + '</div>'; }, { t: 'v', say: 'A Venn diagram' }), steps: [
+          { say: 'Here are 12 numbers in a Venn diagram.', ms: 1500 },
+          { say: 'The same sort in a Carroll diagram. The overlap becomes the top-left box.', act: function (t) { return t.set({ t: 'c', say: 'The same sort as a table' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'Tree diagram', html: '<p>Is 22 even? <b>Yes</b>. Is it greater than 15? <b>Yes</b>. Is it a multiple of 5? <b>No</b>. Each question is one branch. Three questions sort by three attributes.</p>' },
+          { label: 'Match the boxes', html: '<div class="tbl"><table><tbody><tr><td><b>Both</b> (overlap)</td><td>Even, not greater than 15</td></tr><tr><td>Greater than 15, not even</td><td><b>Neither</b> (outside)</td></tr></tbody></table></div>' }
+        ],
+        try: { mount: G3.play({ state: { a: 'even', b: 'gt15', t: 'carroll' }, draw: function (s) { return s.t === 'venn' ? venn(NUMS, s.a, s.b).svg : carroll(NUMS, s.a, s.b); },
+          selects: [{ key: 'a', label: 'First attribute', options: [['even', 'Even'], ['odd', 'Odd'], ['lt10', 'Less than 10']] }, { key: 'b', label: 'Second attribute', options: [['gt15', 'Greater than 15'], ['m5', 'Multiple of 5']] }, { key: 't', label: 'Diagram', options: [['venn', 'Venn'], ['carroll', 'Carroll']] }],
+          tasks: [{ do: 'Sort by <b>Odd</b> and <b>Multiple of 5</b> in a Carroll diagram.', goal: function (s) { return s.a === 'odd' && s.b === 'm5' && s.t === 'carroll'; }, yes: '15 and 25 are odd multiples of 5.' }] }), do: '' },
+        key: '<p>Rows: one attribute. Columns: the other.</p>',
+        check: [SK('dt-venn', 2), SK('dt-venn', 3)] }
+    ] },
+
+    { id: 'collect', title: 'Collecting data', sub: 'Ask, watch or test, then keep count.', concepts: [
+      { id: 'kinds', title: 'Kinds of data', exp: ['D1.2'], skill: 'dt-picto',
+        body: '<p>To answer a question, collect <b>data</b>. Data in words, like "apple", is <b>qualitative</b>. Data in numbers, like "8 cm tall", is <b>quantitative</b>.</p>',
+        watch: { mount: G3.view(function (s) { var rows = [['What is your favourite fruit?', 'apple, grapes', 'words: qualitative'], ['How tall is your plant?', '8 cm, 12 cm', 'numbers: quantitative'], ['How many pets do you have?', '0, 2, 1', 'numbers: quantitative']].slice(0, s.k); return '<div class="tbl"><table><thead><tr><th class="l">Question</th><th class="l">Answers</th><th class="l">Kind of data</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td class="l">' + r[0] + '</td><td class="l">' + r[1] + '</td><td class="l"><b>' + r[2] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' + cap(s.say); }, { k: 0, say: '' }), steps: [
+          { say: 'Ask a question. Look at the answers.', act: function (t) { return t.set({ k: 1 }, 1600); } },
+          { say: 'Measure something: the answers are numbers.', act: function (t) { return t.set({ k: 2 }, 1600); } },
+          { say: 'Count something: numbers again. <b>Words: qualitative. Numbers: quantitative.</b>', act: function (t) { return t.set({ k: 3 }, 2000); } }
+        ] },
+        key: '<p>Words: <b>qualitative</b>. Numbers: <b>quantitative</b>.</p>',
+        check: [TU('s2', 1), G3.turn({ q: 'You ask "What is your favourite colour?" The answers are:', options: ['qualitative data', 'quantitative data'], answer: 0, why: 'The answers are words, like "blue".' })] },
+
+      { id: 'tally', title: 'Tally marks and tables', exp: ['D1.2'], skill: 'dt-picto',
+        body: '<p>Keep count with <b>tally marks</b>. Every fifth mark crosses the other four, so you can count by 5s. A <b>frequency table</b> shows how many of each.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + tally(s.n) + cap(s.say) + '</div>'; }, { n: 0, say: '' }), steps: [
+          { say: 'One mark for each vote.', act: function (t) { return t.seq([{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }], 450); } },
+          { say: 'The fifth mark crosses the other four.', act: function (t) { return t.set({ n: 5, say: '5' }, 1300); } },
+          { say: 'Keep going: 5, 10, then 11, 12, 13. <b>13 votes</b>.', act: function (t) { var p = []; for (var i = 6; i <= 13; i++) p.push({ n: i, say: i > 10 ? '10, ' + i : String(i) }); return t.seq(p, 380); } }
+        ] },
+        try: { mount: G3.play({ state: { v: [0, 0, 0, 0] }, draw: function (s) { return survey(s.v); },
+          buttons: SEASONS.map(function (n, i) { return { label: n, act: function (s) { if (s.v[i] < 30) s.v[i]++; } }; }).concat([{ label: 'Start over', act: function (s) { s.v = [0, 0, 0, 0]; } }]),
+          info: function (s) { var t = s.v.reduce(function (x, y) { return x + y; }, 0); return t + ' vote' + (t === 1 ? '' : 's') + ' in all.'; },
+          tasks: [{ do: 'Record this survey: <b>Winter 3, Spring 2, Summer 7, Fall 5</b>.', goal: function (s) { return s.v.join() === '3,2,7,5'; }, yes: 'Summer has a group of 5 and 2 more: 7.' }] }), do: '' },
+        key: '<p>Count tallies <b>by 5s, then by 1s</b>.</p>',
+        mistake: '<p>Counting a tally of 5 as 4. The slanted mark is the fifth one. A tally of 3 groups of 5 and 2 more is 17.</p>',
+        check: [TU('s2', 0), TU('s2', 2)] }
+    ] },
+
+    { id: 'graphs', title: 'Pictographs and bar graphs', sub: 'Read the key and the scale.', concepts: [
+      { id: 'picto', title: 'Read a pictograph', exp: ['D1.3', 'D1.5'], skill: 'dt-picto',
+        body: '<p>In a <b>pictograph</b>, one picture can stand for more than one. The <b>key</b> tells you how many. Half a picture is half that many.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + picto('Favourite activity', [['Swim', s.v]], 2, s.src ? 'Room 12 survey' : '') + cap(s.say) + '</div>'; }, { v: 0, src: false, say: '' }), steps: [
+          { say: 'The key says 1 picture = 2 votes.', ms: 1500 },
+          { say: 'Count by 2s: 2, 4, 6.', act: function (t) { return t.seq([{ v: 2, say: '2' }, { v: 4, say: '4' }, { v: 6, say: '6' }], 700); } },
+          { say: 'Half a picture is half of 2, which is 1. Swim has <b>7 votes</b>.', act: function (t) { return t.set({ v: 7, say: '6 + 1 = 7', src: true }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { set: 'fruit', k: 2 }, draw: function (s) { var d = SETS[s.set]; return picto(d.t, d.d, s.k, d.src); },
+          selects: [{ key: 'set', label: 'Data', options: [['sport', 'Favourite sport'], ['fruit', 'Favourite fruit'], ['pets', 'Pets at home']] }, { key: 'k', label: '1 picture =', options: [[1, '1'], [2, '2'], [5, '5']] }],
+          tasks: [{ do: 'Change the key so <b>Pets at home</b> uses the fewest pictures.', goal: function (s) { return s.set === 'pets' && s.k === 5; }, yes: 'With a key of 5, Dog (14) is 2 pictures and part of one.' }] }), do: '' },
+        key: '<p>Read the <b>key</b> first. Count by it.</p>',
+        mistake: '<p>Counting pictures instead of votes. Point to the key and count by it out loud.</p>',
+        check: [TU('s3', 0), TU('s3', 1), SK('dt-picto', 1)] },
+
+      { id: 'bar', title: 'Read a bar graph', exp: ['D1.3', 'D1.5'], skill: 'dt-bar', hard: true,
+        body: '<p>In a <b>bar graph</b>, read the <b>scale</b> on the side. It might count by 1s, 2s, 5s or 10s. A bar between two lines is between those numbers. Every graph needs a title, labels and a source.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + bars('Favourite sport', SETS.sport.d, s.c, 'Room 12 survey') + cap(s.say) + '</div>'; }, { c: 2, say: 'Scale counts by 2' }), steps: [
+          { say: 'This scale counts by 2. Hockey reaches 12.', ms: 1800 },
+          { say: 'Soccer stops halfway between 8 and 10. That is 9.', act: function (t) { return t.set({ say: 'Soccer: 9' }, 1800); } },
+          { say: 'Change the scale to count by 5. Same data, the bars look the same, but the lines change.', act: function (t) { return t.set({ c: 5, say: 'Scale counts by 5' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Compare two bars', html: '<p>How many more chose Hockey than Swim? Read both: 12 and 6. Subtract: 12 &minus; 6 = <b>6</b>.</p>' },
+          { label: 'Same data, two graphs', html: '<div class="fig">' + picto('Favourite sport', SETS.sport.d, 2) + '</div><p>The pictograph and the bar graph show the same votes.</p>' }
+        ],
+        try: { mount: G3.play({ state: { set: 'sport', c: 2 }, draw: function (s) { var d = SETS[s.set]; return bars(d.t, d.d, s.c, d.src); },
+          selects: [{ key: 'set', label: 'Data', options: [['sport', 'Favourite sport'], ['fruit', 'Favourite fruit'], ['pets', 'Pets at home']] }, { key: 'c', label: 'Scale counts by', options: [[1, '1'], [2, '2'], [5, '5'], [10, '10']] }],
+          tasks: [{ do: 'Show <b>Pets at home</b> with a scale that counts by <b>5</b>. Read the Cat bar.', goal: function (s) { return s.set === 'pets' && s.c === 5; }, yes: 'Cat reaches the 10 line exactly: 10.' }] }), do: '' },
+        key: '<p>Read the <b>scale</b>. Between lines? Find the middle.</p>',
+        mistake: '<p>Assuming every line is 1. Ask: "What does the scale count by?"</p>',
+        check: [TU('s3', 2), SK('dt-bar', 1), SK('dt-bar', 2)] }
+    ] },
+
+    { id: 'average', title: 'Mode and mean', sub: 'Most common, and fair share.', concepts: [
+      { id: 'mode', title: 'The mode', exp: ['D1.4'], skill: 'dt-mode',
+        body: '<p>The <b>mode</b> is the value that shows up most often. Put the values in order to spot it. A set can have one mode, more than one, or none.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + (s.sorted ? dotRow(s.v, s.hi) : A.svg(s.v.length * 58 + 8, 62, s.v.map(function (x, i) { return '<rect x="' + (6 + i * 58) + '" y="6" width="50" height="50" rx="10" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/><text x="' + (31 + i * 58) + '" y="40" text-anchor="middle" font-size="24" class="tb">' + x + '</text>'; }).join(''), 'Values: ' + s.v.join(', '))) + cap(s.say) + '</div>'; }, { v: [4, 7, 2, 7, 4, 7], sorted: false, hi: null, say: '' }), steps: [
+          { say: '4, 7, 2, 7, 4, 7. Which shows up most?', ms: 1600 },
+          { say: 'Put them in order.', act: function (t) { return t.set({ sorted: true }, 1500); } },
+          { say: '7 shows up 3 times. The mode is <b>7</b>.', act: function (t) { return t.set({ hi: [7], say: 'Mode: 7' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { x0: 3, x1: 5, x2: 5, x3: 8, x4: 9 }, draw: function (s) { return dotRow(vals5(s), modeOf(vals5(s))); },
+          sliders: [0, 1, 2, 3, 4].map(function (i) { return { key: 'x' + i, label: 'Value ' + (i + 1), min: 1, max: 9 }; }),
+          info: function (s) { var m = modeOf(vals5(s)); return m.length ? 'Mode: <b>' + m.join(' and ') + '</b>' : '<b>No mode</b>: every value shows up once.'; },
+          tasks: [{ do: 'Change the values so there is <b>no mode</b>.', goal: function (s) { return modeOf(vals5(s)).length === 0; }, yes: 'Every value is different, so no mode.' },
+            { do: 'Now make <b>two modes</b>.', reset: false, goal: function (s) { return modeOf(vals5(s)).length === 2; }, yes: function (s) { return 'Modes: ' + modeOf(vals5(s)).join(' and ') + '.'; } }] }), do: '' },
+        key: '<p>Mode: <b>the most common value</b>.</p>',
+        check: [TU('s4', 0), TU('s4', 2), SK('dt-mode', 1)] },
+
+      { id: 'mean', title: 'The mean: a fair share', exp: ['D1.4'], skill: 'dt-mean', hard: true,
+        body: '<p>The <b>mean</b> is a fair share. Move cubes until all the towers are the same height. That height is the mean. Or: <b>add all the values, then divide</b> by how many there are.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + towerFig(s.v, 5) + cap(s.say) + '</div>'; }, { v: [3, 7, 4, 6], say: '3, 7, 4, 6' }), steps: [
+          { say: 'Four towers: 3, 7, 4 and 6 cubes.', ms: 1500 },
+          { say: 'Move a cube from the tallest to the shortest.', act: function (t) { return t.set({ v: [4, 6, 4, 6], say: '4, 6, 4, 6' }, 1400); } },
+          { say: 'And again.', act: function (t) { return t.set({ v: [5, 5, 5, 5], say: '5, 5, 5, 5' }, 1400); } },
+          { say: 'All 5. The mean is <b>5</b>. Check: 3 + 7 + 4 + 6 = 20, and 20 &divide; 4 = 5.', ms: 2200 }
+        ] },
+        ways: [
+          { label: 'Add, then share', html: '<p>4, 6 and 8 books. 4 + 6 + 8 = 18. Share among 3: 18 &divide; 3 = <b>6</b>.</p><div class="fig">' + towerFig([4, 6, 8], 6) + '</div>' },
+          { label: 'Balance it out', html: '<p>8 is 2 more than 6, and 4 is 2 less. They balance out at 6.</p>' }
+        ],
+        try: { mount: G3.play({ state: { a: 2, b: 8, c: 5 }, draw: function (s) { var sum = s.a + s.b + s.c; return towerFig([s.a, s.b, s.c], sum % 3 ? sum / 3 : sum / 3); },
+          sliders: [{ key: 'a', label: 'Tower 1', min: 1, max: 9 }, { key: 'b', label: 'Tower 2', min: 1, max: 9 }, { key: 'c', label: 'Tower 3', min: 1, max: 9 }],
+          info: function (s) { var sum = s.a + s.b + s.c; return s.a + ' + ' + s.b + ' + ' + s.c + ' = ' + sum + '. ' + (sum % 3 ? sum + ' does not share evenly by 3.' : 'Mean: <b>' + sum / 3 + '</b>'); },
+          tasks: [{ do: 'Move one cube at a time until all 3 towers are level.', goal: function (s) { return s.a === 5 && s.b === 5 && s.c === 5; }, yes: 'All 5. The mean of 2, 8 and 5 is 5.' }] }), do: '' },
+        key: '<p>Mean: <b>add, then divide by how many</b>.</p>',
+        mistake: '<p>Mixing up mean and mode. Mode = most common. Mean = fair share. In 2, 2, 8 the mode is 2, but the mean is 12 &divide; 3 = 4.</p>',
+        check: [TU('s4', 1), SK('dt-mean', 1), SK('dt-mean', 2)] }
+    ] },
+
+    { id: 'chance', title: 'How likely is it?', sub: 'From impossible to certain.', concepts: [
+      { id: 'words', title: 'Words for chance', exp: ['D2.1'], skill: 'dt-chance',
+        body: '<p>We say how likely something is with words: <b>impossible</b>, <b>unlikely</b>, <b>equally likely</b>, <b>likely</b>, <b>certain</b>.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + spinner(s.r, s.b) + cap(s.say) + '</div>'; }, { r: 0, b: 4, say: '' }), steps: [
+          { say: 'No red parts. Red is <b>impossible</b>.', act: function (t) { return t.set({ say: 'Red: impossible' }, 1600); } },
+          { say: '1 red, 3 blue. Red is <b>unlikely</b>.', act: function (t) { return t.set({ r: 1, b: 3, say: 'Red: unlikely' }, 1600); } },
+          { say: '2 red, 2 blue. <b>Equally likely</b>.', act: function (t) { return t.set({ r: 2, b: 2, say: 'Equally likely' }, 1600); } },
+          { say: '3 red, 1 blue. Red is <b>likely</b>.', act: function (t) { return t.set({ r: 3, b: 1, say: 'Red: likely' }, 1600); } },
+          { say: 'All red. Red is <b>certain</b>.', act: function (t) { return t.set({ r: 4, b: 0, say: 'Red: certain' }, 1800); } }
+        ] },
+        try: { mount: G3.play({ state: { r: 2, b: 3 }, draw: function (s) { return spinner(s.r, s.b); },
+          sliders: [{ key: 'r', label: 'Red parts', min: 0, max: 8 }, { key: 'b', label: 'Blue parts', min: 0, max: 8 }],
+          info: function (s) { return s.r + s.b ? 'Red is <b>' + likely(s.r, s.r + s.b) + '</b>. Blue is <b>' + likely(s.b, s.r + s.b) + '</b>.' : 'Add some parts.'; },
+          tasks: [{ do: 'Make <b>blue certain</b>.', goal: function (s) { return s.b > 0 && s.r === 0; }, yes: 'All blue: blue is certain, red is impossible.' },
+            { do: 'Make red and blue <b>equally likely</b>.', reset: false, goal: function (s) { return s.r > 0 && s.r === s.b; }, yes: 'Same number of parts: equally likely.' }] }), do: '' },
+        key: '<p>Impossible, unlikely, equally likely, likely, certain.</p>',
+        check: [TU('s5', 0), TU('s5', 1), SK('dt-chance', 1)] },
+
+      { id: 'test', title: 'Predict, then test', exp: ['D2.1', 'D2.2'], skill: 'dt-chance', hard: true,
+        body: '<p>Make a <b>prediction</b>, then collect data to test it. The results change a little each time, but the more likely outcome usually wins.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + spinner(1, 3) + (s.c ? bars('20 spins', [['Red', s.c[0]], ['Blue', s.c[1]]], 2, 'Our spins', 'Number of spins') : '') + cap(s.say) + '</div>'; }, { c: null, say: 'Predict: blue is likely.' }), steps: [
+          { say: '1 red, 3 blue. Predict: blue is likely.', ms: 1500 },
+          { say: 'Spin 20 times: 6 red, 14 blue.', act: function (t) { return t.set({ c: [6, 14], say: '6 red, 14 blue' }, 1800); } },
+          { say: 'Spin 20 more: 4 red, 16 blue. Different, but <b>blue wins both times</b>.', act: function (t) { return t.set({ c: [4, 16], say: '4 red, 16 blue' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'A bag of cubes', html: '<p>9 green and 1 yellow cube. Pick one, put it back, 10 times. You will get mostly green, but maybe a yellow or two.</p>' },
+          { label: 'Different groups', html: '<p>If one class picks hockey most, another class might pick soccer. Data from a different group can come out differently.</p>' }
+        ],
+        try: { mount: G3.play({ state: { r: 1, b: 4, c: null, n: 0 }, draw: function (s) { return spinner(s.r, s.b) + (s.c ? bars('20 spins', [['Red', s.c[0]], ['Blue', s.c[1]]], 2, 'Your spins', 'Number of spins') : ''); },
+          sliders: [{ key: 'r', label: 'Red parts', min: 0, max: 8 }, { key: 'b', label: 'Blue parts', min: 0, max: 8 }],
+          buttons: [{ label: 'Spin 20 times', act: function (s) { if (!(s.r + s.b)) return; var c = [0, 0]; for (var i = 0; i < 20; i++) c[Math.random() * (s.r + s.b) < s.r ? 0 : 1]++; s.c = c; s.n++; } }],
+          info: function (s) { return s.c ? s.c[0] + ' red, ' + s.c[1] + ' blue.' : 'Predict first: which colour will win?'; },
+          tasks: [{ do: 'Make red <b>likely</b>, then spin 20 times. Was your prediction right?', goal: function (s) { return s.r > s.b && s.b > 0 && s.c; }, yes: function (s) { return s.c[0] > s.c[1] ? 'Red won, as predicted.' : 'Blue won this time. That can happen. Spin again.'; } }] }), do: '' },
+        key: '<p>Predict, test, <b>compare</b>.</p>',
+        mistake: '<p>Thinking "likely" means "always". A likely outcome can still lose sometimes. Spin a few rounds together.</p>',
+        check: [TU('s5', 2), SK('dt-chance', 2), SK('dt-chance', 3)] }
+    ] }
+  ];
+
   A.register('data', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Sorting with diagrams</h2>' +
 '<p>We can sort things by their <b>attributes</b>, like "even" or "greater than 15". A <b>Venn diagram</b> uses circles. Things that fit both go where the circles overlap. A <b>Carroll diagram</b> uses a table with rows and columns.</p>' +

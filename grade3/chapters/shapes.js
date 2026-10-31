@@ -72,9 +72,204 @@
     s += '<g transform="translate(' + e[0] + ' ' + e[1] + ') rotate(' + dir * 90 + ')"><polygon points="0,-20 15,14 0,6 -15,14" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2.5" stroke-linejoin="round"/></g>';
     return A.svg(W, H, s, label || 'Map grid with columns A to F and rows 1 to 6');
   }
+  /* structures: parts sized to fit, built from the same point lists as the solids */
+  var BOX = { cube: [110, 110, 110], rprism: [170, 90, 90] };
+  function boxDef(k) { var d = BOX[k], w = d[0], h = d[1], z = d[2], e = S[k].edges.map(function (x) { return x.slice(); });
+    e[6][2] = 1; e[8][2] = 1; /* the roof hides the back and left top edges */
+    return { name: S[k].name, pts: [[0, 0, 0], [w, 0, 0], [w, h, 0], [0, h, 0], [0, 0, z], [w, 0, z], [w, h, z], [0, h, z]], edges: e, vis: S[k].vis }; }
+  function roofDef(k) { var d = BOX[k], w = d[0], h = d[1], z = d[2], r = 70;
+    return { name: 'triangular prism', pts: [[0, h, 0], [w, h, 0], [w / 2, h + r, 0], [0, h, z], [w, h, z], [w / 2, h + r, z]], edges: S.tprism.edges, vis: S.tprism.vis }; }
+  function pyrDef(k) { var d = BOX[k], w = d[0], h = d[1], z = d[2];
+    return { name: 'square-based pyramid', pts: [[0, h, 0], [w, h, 0], [w, h, z], [0, h, z], [w / 2, h + 100, z / 2]], edges: S.spyr.edges, vis: S.spyr.vis }; }
+  var ST = { house: ['cube', 'tprism', 'It looks like a house.'], barn: ['rprism', 'tprism', 'It looks like a barn.'], tower: ['cube', 'spyr', 'It looks like a tower with a pointed roof.'], silo: ['cyl', 'cone', 'It looks like a grain silo.'] };
+  function inner(x) { return x.replace(/^<svg[^>]*>|<\/svg>$/g, ''); }
+  function structFig(k, split) {
+    var c = ST[k], b = c[0], t = c[1], lift = split ? 70 : 0, bot, top;
+    if (b === 'cyl') { bot = solid({ name: 'cylinder', round: 'cyl', rx: 80, ht: 150 }, '', 60, 380); top = solid({ name: 'cone', round: 'cone', rx: 80, ht: 130 }, '', 60, 380 - 150 - lift); }
+    else { bot = solid(split ? b : boxDef(b), '', 30, 380); top = solid(t === 'tprism' ? roofDef(b) : pyrDef(b), '', 30, 380 - lift); }
+    return A.svg(320, 420, '<g>' + inner(bot) + '</g><g>' + inner(top).replace(/var\(--strand\)/g, 'var(--sb)') + '</g>', (split ? 'Taken apart: a ' + S[t].name + ' lifted off a ' : 'A ' + S[t].name + ' on top of a ') + S[b].name);
+  }
   var DIRS = ['up (north)', 'right (east)', 'down (south)', 'left (west)'], DN = ['north', 'east', 'south', 'west'];
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'shapes';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  var HLN = { f: 'faces', e: 'edges', v: 'vertices' };
+  function solidInfo(k) { var d = S[k]; return '<b>' + d.name.charAt(0).toUpperCase() + d.name.slice(1) + '</b>: ' + d.f + ' flat face' + (d.f === 1 ? '' : 's') + ', ' + d.e + ' edge' + (d.e === 1 ? '' : 's') + ', ' + d.v + ' vert' + (d.v === 1 ? 'ex' : 'ices') + '.'; }
+  function boxPair(a, b, c, show) {
+    var u = 18, s = box(3, 2, 4, 20, 150, 2, u) + '<text x="60" y="180" text-anchor="middle" font-size="18" class="tb">A: 3 by 2 by 4</text>' + box(a, b, c, 230, 150, 3, u) + '<text x="' + (230 + a * u / 2 + 10) + '" y="180" text-anchor="middle" font-size="18" class="tb">B: ' + a + ' by ' + b + ' by ' + c + '</text>';
+    return A.svg(440, 190, s, 'Box A is 3 by 2 by 4 cubes. Box B is ' + a + ' by ' + b + ' by ' + c + ' cubes.');
+  }
+  function congruent(a, b, c) { return [a, b, c].sort(function (x, y) { return x - y; }).join() === '2,3,4'; }
+  /* an arrow that turns: quarter and half turns */
+  function compass(dir, say) {
+    var s = '<circle cx="110" cy="110" r="88" style="fill:var(--card);stroke:var(--line)" stroke-width="2"/>';
+    ['N', 'E', 'S', 'W'].forEach(function (l, i) { var a = -Math.PI / 2 + i * Math.PI / 2; s += '<text x="' + (110 + 102 * Math.cos(a)) + '" y="' + (117 + 102 * Math.sin(a)) + '" text-anchor="middle" font-size="20" class="tb">' + l + '</text>'; });
+    s += '<g style="transition:transform .5s ease;transform-origin:110px 110px;transform:rotate(' + dir * 90 + 'deg)"><polygon points="110,40 132,120 110,104 88,120" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2.5" stroke-linejoin="round"/></g>';
+    return '<div>' + A.svg(220, 230, s, 'Facing ' + DN[((dir % 4) + 4) % 4]) + cap(say) + '</div>';
+  }
+  function walkStep(s, act) {
+    if (act === 'f') { var d = [[0, 1], [1, 0], [0, -1], [-1, 0]][s.dir], nx = s.pos[0] + d[0], ny = s.pos[1] + d[1]; if (nx < 0 || nx > 5 || ny < 0 || ny > 5) { s.note = 'That would go off the map. Turn first.'; return; } s.pos = [nx, ny]; s.path.push([nx, ny]); s.log.push('forward 1'); }
+    else { s.dir = (s.dir + (act === 'l' ? 3 : act === 'r' ? 1 : 2)) % 4; s.log.push(act === 'l' ? 'quarter turn left' : act === 'r' ? 'quarter turn right' : 'half turn'); }
+    s.note = '';
+  }
+
+  var LESSONS = [
+    { id: 'solids', title: '3D objects', sub: 'Faces, edges and vertices.', concepts: [
+      { id: 'parts', title: 'Faces, edges and vertices', exp: ['E1.1'], skill: 'sh-count',
+        body: '<p>A <b>face</b> is a flat surface. An <b>edge</b> is where two faces meet. A <b>vertex</b> is a corner where edges meet. Dashed lines are edges hidden at the back.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + solid('cube', s.hl) + cap(s.say) + '</div>'; }, { hl: '', say: 'A cube' }), steps: [
+          { say: 'This is a cube.', ms: 1200 },
+          { say: 'The flat surfaces are <b>faces</b>. A cube has 6.', act: function (t) { return t.set({ hl: 'f', say: '6 faces' }, 1800); } },
+          { say: 'Where two faces meet is an <b>edge</b>. A cube has 12.', act: function (t) { return t.set({ hl: 'e', say: '12 edges' }, 1800); } },
+          { say: 'The corners are <b>vertices</b>. A cube has 8.', act: function (t) { return t.set({ hl: 'v', say: '8 vertices' }, 1800); } }
+        ] },
+        try: { mount: G3.play({ state: { k: 'cube', hl: '' }, draw: function (s) { return solid(s.k, s.hl); },
+          selects: [{ key: 'k', label: 'Object', options: ORDER.map(function (k) { return [k, S[k].name]; }) }],
+          buttons: ['f', 'e', 'v'].map(function (h) { return { label: 'Show ' + HLN[h], act: function (s) { s.hl = s.hl === h ? '' : h; } }; }),
+          info: function (s) { return solidInfo(s.k); },
+          tasks: [{ do: 'Show the <b>vertices</b> of a <b>triangular prism</b>. How many?', goal: function (s) { return s.k === 'tprism' && s.hl === 'v'; }, yes: '6 vertices: 3 on each triangle end.' },
+            { do: 'Find the object with <b>no vertices</b>.', goal: function (s) { return s.k === 'cyl'; }, yes: 'A cylinder has no corners.' }] }), do: '' },
+        key: '<p>Face: <b>flat</b>. Edge: <b>where faces meet</b>. Vertex: <b>corner</b>.</p>',
+        check: [TU('s1', 0), TU('s1', 1), SK('sh-count', 1)] },
+
+      { id: 'kinds', title: 'Prisms and pyramids', exp: ['E1.1'], skill: 'sh-name',
+        body: '<p>A <b>prism</b> has two matching ends joined by rectangles. A <b>pyramid</b> has one base, with triangles that meet at a point. The <b>base</b> gives the object its name.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + solid(s.k, s.hl) + cap(s.say) + '</div>'; }, { k: 'tprism', hl: '', say: '' }), steps: [
+          { say: 'A triangular prism: two triangle ends, joined by rectangles.', act: function (t) { return t.set({ hl: 'f', say: 'Triangular prism' }, 2000); } },
+          { say: 'A square-based pyramid: a square base, with 4 triangles meeting at a point.', act: function (t) { return t.set({ k: 'spyr', hl: 'f', say: 'Square-based pyramid' }, 2200); } },
+          { say: 'A triangular pyramid: every face is a triangle.', act: function (t) { return t.set({ k: 'tpyr', say: 'Triangular pyramid' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { k: 'cube' }, draw: function (s) { return solid(s.k, 'f'); },
+          selects: [{ key: 'k', label: 'Object', options: ORDER.map(function (k) { return [k, S[k].name]; }) }],
+          info: function (s) { return 'Faces: ' + S[s.k].faces + '.'; },
+          tasks: [{ do: 'Find the object with <b>1 square and 4 triangles</b>.', goal: function (s) { return s.k === 'spyr'; }, yes: 'A square-based pyramid.' },
+            { do: 'Find the object with <b>2 triangles and 3 rectangles</b>.', goal: function (s) { return s.k === 'tprism'; }, yes: 'A triangular prism.' }] }), do: '' },
+        key: '<p>Prism: <b>two matching ends</b>. Pyramid: <b>one base and a point</b>.</p>',
+        mistake: '<p>Naming the object by the side faces ("rectangle prism" for a triangular prism). Ask: "What shape are the two ends?"</p>',
+        check: [TU('s1', 2), SK('sh-name', 1), SK('sh-name', 2)] },
+
+      { id: 'count', title: 'Count without missing any', exp: ['E1.1'], skill: 'sh-count', hard: true,
+        body: '<p>Count in an order so you never miss or double count. For edges: <b>the top, the bottom, then the ones going up</b>.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + solid('rprism', 'e') + cap(s.say) + '</div>'; }, { say: '' }), steps: [
+          { say: '4 edges around the top.', act: function (t) { return t.set({ say: '4' }, 1500); } },
+          { say: '4 around the bottom (one is dashed at the back).', act: function (t) { return t.set({ say: '4 + 4' }, 1500); } },
+          { say: '4 going up. 4 + 4 + 4 = <b>12 edges</b>.', act: function (t) { return t.set({ say: '4 + 4 + 4 = 12' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Use the ends', html: '<p>A triangular prism has 2 triangle ends. Each has 3 vertices: 3 + 3 = <b>6</b>. Each has 3 edges, plus 3 joining them: 3 + 3 + 3 = <b>9 edges</b>.</p><div class="fig">' + solid('tprism', 'v') + '</div>' },
+          { label: 'Hold a real box', html: '<p>Hold a cereal box. Put a finger on each corner as you count. Then run a finger along each edge.</p>' },
+          { label: 'Use the table', html: '<div class="tbl"><table><thead><tr><th class="l">Object</th><th>F</th><th>E</th><th>V</th></tr></thead><tbody>' + ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' + S[k].f + '</td><td>' + S[k].e + '</td><td>' + S[k].v + '</td></tr>'; }).join('') + '</tbody></table></div>' }
+        ],
+        key: '<p>Count <b>in order</b>: top, bottom, then up.</p>',
+        mistake: '<p>Forgetting the hidden (dashed) edges and vertices at the back. Point out the dashed lines every time.</p>',
+        check: [SK('sh-count', 2), SK('sh-count', 3)] }
+    ] },
+
+    { id: 'build', title: 'Structures', sub: 'Put objects together, and take them apart.', concepts: [
+      { id: 'apart', title: 'Take a structure apart', exp: ['E1.2'], skill: 'sh-name',
+        body: '<p>Buildings and toys are made of 3D objects put together. A house can be a <b>cube</b> with a <b>triangular prism</b> on top.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + structFig(s.k, s.split) + cap(s.say) + '</div>'; }, { k: 'house', split: false, say: 'A house' }), steps: [
+          { say: 'This looks like a house.', ms: 1300 },
+          { say: 'Lift off the roof. It is a triangular prism.', act: function (t) { return t.set({ split: true, say: 'Triangular prism on a cube' }, 1800); } },
+          { say: 'A grain silo: a cone on a cylinder.', act: function (t) { return t.set({ k: 'silo', split: true, say: 'Cone on a cylinder' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { k: 'barn', split: false }, draw: function (s) { return structFig(s.k, s.split); },
+          selects: [{ key: 'k', label: 'Structure', options: [['house', 'house'], ['barn', 'barn'], ['tower', 'tower'], ['silo', 'silo']] }],
+          buttons: [{ label: 'Take it apart', act: function (s) { s.split = !s.split; } }],
+          info: function (s) { var c = ST[s.k]; return 'A <b>' + S[c[1]].name + '</b> on a <b>' + S[c[0]].name + '</b>.'; },
+          tasks: [{ do: 'Take the <b>tower</b> apart. What is on top?', goal: function (s) { return s.k === 'tower' && s.split; }, yes: 'A square-based pyramid on a cube.' }] }), do: '' },
+        key: '<p>A structure is <b>objects put together</b>.</p>',
+        check: [TU('s2', 1), G3.turn({ q: 'A barn is a rectangular prism with what on top?', options: ['a triangular prism', 'a cone', 'a cylinder'], answer: 0, why: 'The roof has triangle ends joined by rectangles.' })] },
+
+      { id: 'everyday', title: 'Objects all around us', exp: ['E1.2', 'E1.1'], skill: 'sh-name',
+        body: '<p>Look for 3D objects in things you use. A can is a <b>cylinder</b>. A tent is a <b>triangular prism</b>. Look at the flat 2D shapes too: the front of a house shows a square and a triangle.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + solid(s.k, '') + cap(s.say) + '</div>'; }, { k: 'cyl', say: 'A can of soup' }), steps: [
+          { say: 'A can of soup is a cylinder.', ms: 1600 },
+          { say: 'A tent is a triangular prism.', act: function (t) { return t.set({ k: 'tprism', say: 'A tent' }, 1600); } },
+          { say: 'A traffic cone is a cone. A dice is a cube.', act: function (t) { return t.set({ k: 'cone', say: 'A traffic cone' }, 1400).then(function () { return t.set({ k: 'cube', say: 'A dice' }, 1600); }); } }
+        ] },
+        key: '<p>Name the <b>3D object</b>, then the <b>2D faces</b>.</p>',
+        check: [TU('s2', 0), TU('s2', 2)] }
+    ] },
+
+    { id: 'congruent', title: 'Congruent objects', sub: 'Exactly the same size and shape.', concepts: [
+      { id: 'same', title: 'What congruent means', exp: ['E1.3'], skill: 'sh-congruent',
+        body: '<p>Two objects are <b>congruent</b> if they are exactly the same size and shape. Their matching faces and edges are all the same length.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + boxPair(s.a, s.b, s.c) + cap(s.say) + '</div>'; }, { a: 3, b: 2, c: 3, say: '' }), steps: [
+          { say: 'Box A is 3 by 2 by 4. Box B is 3 by 2 by 3.', ms: 1800 },
+          { say: 'B is one cube shorter. <b>Not congruent.</b>', act: function (t) { return t.set({ say: 'Not congruent' }, 1600); } },
+          { say: 'Make B 4 tall. Now every edge matches. <b>Congruent.</b>', act: function (t) { return t.set({ c: 4, say: 'Congruent' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { a: 4, b: 2, c: 3 }, draw: function (s) { return boxPair(s.a, s.b, s.c); },
+          sliders: [{ key: 'a', label: 'B long', min: 1, max: 5 }, { key: 'b', label: 'B deep', min: 1, max: 5 }, { key: 'c', label: 'B tall', min: 1, max: 5 }],
+          info: function (s) { return congruent(s.a, s.b, s.c) ? '<b>Congruent</b>: the same three lengths.' : 'Not congruent yet.'; },
+          tasks: [{ do: 'Make box B exactly like box A: <b>3 long, 2 deep, 4 tall</b>.', goal: function (s) { return s.a === 3 && s.b === 2 && s.c === 4; }, yes: 'Same size, same shape: congruent.' }] }), do: '' },
+        key: '<p>Congruent: <b>same size and same shape</b>.</p>',
+        check: [TU('s3', 2), SK('sh-congruent', 1)] },
+
+      { id: 'turned', title: 'Turned but still congruent', exp: ['E1.3'], skill: 'sh-congruent', hard: true,
+        body: '<p>Turning an object does not change it. A box lying down can be congruent to a box standing up. Check: do they use the <b>same three lengths</b>?</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + boxPair(s.a, s.b, s.c) + cap(s.say) + '</div>'; }, { a: 3, b: 2, c: 4, say: 'The same box' }), steps: [
+          { say: 'B matches A: 3 by 2 by 4.', ms: 1500 },
+          { say: 'Lay B on its side: 4 long, 2 deep, 3 tall.', act: function (t) { return t.set({ a: 4, c: 3, say: '4 by 2 by 3' }, 1800); } },
+          { say: 'It looks different, but it uses 2, 3 and 4. <b>Still congruent.</b>', ms: 2000 }
+        ] },
+        ways: [
+          { label: 'Sort the numbers', html: '<p>Write each box\'s lengths from smallest to biggest. A: 2, 3, 4. B: 2, 3, 4. Same list, so congruent.</p>' },
+          { label: 'Count the cubes', html: '<p>Congruent boxes always use the same number of cubes: 3 &times; 2 &times; 4 = 24. But the same number of cubes is not enough: a 1 by 4 by 6 box also uses 24 and is a different shape.</p>' }
+        ],
+        try: { mount: G3.play({ state: { a: 1, b: 1, c: 1 }, draw: function (s) { return boxPair(s.a, s.b, s.c); },
+          sliders: [{ key: 'a', label: 'B long', min: 1, max: 5 }, { key: 'b', label: 'B deep', min: 1, max: 5 }, { key: 'c', label: 'B tall', min: 1, max: 5 }],
+          info: function (s) { return congruent(s.a, s.b, s.c) ? '<b>Congruent</b>.' : 'Not congruent yet.'; },
+          tasks: [{ do: 'Make B congruent to A, but <b>turned</b>: B must not be 3 long.', goal: function (s) { return congruent(s.a, s.b, s.c) && s.a !== 3; }, yes: function (s) { return s.a + ' by ' + s.b + ' by ' + s.c + ' is A turned.'; } }] }), do: '' },
+        key: '<p>Same three lengths, <b>in any order</b>.</p>',
+        mistake: '<p>Thinking objects are different because one is turned. A box lying down can still be congruent to a box standing up.</p>',
+        check: [TU('s3', 0), TU('s3', 1), SK('sh-congruent', 2)] }
+    ] },
+
+    { id: 'moves', title: 'Giving directions', sub: 'How far, and which way to turn.', concepts: [
+      { id: 'turns', title: 'Quarter and half turns', exp: ['E1.4'], skill: 'sh-turn',
+        body: '<p>A <b>quarter turn</b> turns you to face the side. A <b>half turn</b> turns you to face the opposite way. Four quarter turns bring you all the way around.</p>',
+        watch: { mount: G3.view(function (s) { return compass(s.d, s.say); }, { d: 0, say: 'Facing north' }), steps: [
+          { say: 'Facing north.', ms: 1200 },
+          { say: 'A quarter turn right: now facing east.', act: function (t) { return t.set({ d: 1, say: 'Quarter turn right: east' }, 1500); } },
+          { say: 'A half turn: now facing west, the opposite way.', act: function (t) { return t.set({ d: 3, say: 'Half turn: west' }, 1500); } },
+          { say: 'A quarter turn right: back to north. <b>Turns depend on where you face.</b>', act: function (t) { return t.set({ d: 4, say: 'Quarter turn right: north' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { d: 0 }, draw: function (s) { return compass(s.d, 'Facing ' + DN[((s.d % 4) + 4) % 4]); },
+          buttons: [{ label: 'Quarter turn left', act: function (s) { s.d--; } }, { label: 'Quarter turn right', act: function (s) { s.d++; } }, { label: 'Half turn', act: function (s) { s.d += 2; } }],
+          tasks: [{ do: 'Face <b>south</b> using only one turn.', goal: function (s) { return s.d === 2; }, yes: 'One half turn from north faces south.' },
+            { do: 'Now face <b>east</b>.', reset: false, goal: function (s) { return ((s.d % 4) + 4) % 4 === 1; }, yes: 'From south, a quarter turn left faces east.' }] }), do: '' },
+        key: '<p>Quarter turn: <b>to the side</b>. Half turn: <b>opposite way</b>.</p>',
+        check: [TU('s4', 0), TU('s4', 1), TU('s4', 2), SK('sh-turn', 1)] },
+
+      { id: 'map', title: 'Follow directions on a map', exp: ['E1.4'], skill: 'sh-path', hard: true,
+        body: '<p>Directions say <b>how far to go</b> and <b>which way to turn</b>. Follow them one step at a time, and keep track of which way you face.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + map(s.path, s.dir) + cap(s.say) + '</div>'; }, { path: [[0, 0]], dir: 0, say: 'Start at A1, facing north' }), steps: [
+          { say: 'Start at A1, facing north.', ms: 1300 },
+          { say: 'Forward 3: A2, A3, A4.', act: function (t) { return t.seq([{ path: [[0, 0], [0, 1]] }, { path: [[0, 0], [0, 1], [0, 2]] }, { path: [[0, 0], [0, 1], [0, 2], [0, 3]], say: 'At A4' }], 600); } },
+          { say: 'Quarter turn right: now facing east.', act: function (t) { return t.set({ dir: 1, say: 'Facing east' }, 1300); } },
+          { say: 'Forward 2. You are at <b>C4</b>.', act: function (t) { return t.seq([{ path: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3]] }, { path: [[0, 0], [0, 1], [0, 2], [0, 3], [1, 3], [2, 3]], say: 'At C4' }], 600); } }
+        ] },
+        ways: [
+          { label: 'Turn the map', html: '<p>Turn the page so the arrow points up before each turn. Then left and right are easy to see.</p>' },
+          { label: 'Use compass words', html: '<p>North is up, east is right, south is down, west is left. "Go 2 east" works whichever way you face.</p>' }
+        ],
+        try: { mount: G3.play({ state: { pos: [0, 0], dir: 0, path: [[0, 0]], log: [], note: '' }, draw: function (s) { return map(s.path, s.dir); },
+          buttons: [{ label: 'Forward 1', act: function (s) { walkStep(s, 'f'); } }, { label: 'Quarter turn left', act: function (s) { walkStep(s, 'l'); } }, { label: 'Quarter turn right', act: function (s) { walkStep(s, 'r'); } }, { label: 'Start over', act: function (s) { s.pos = [0, 0]; s.dir = 0; s.path = [[0, 0]]; s.log = []; s.note = ''; } }],
+          info: function (s) { return (s.note ? s.note + ' ' : '') + 'At <b>' + COLS[s.pos[0]] + (s.pos[1] + 1) + '</b>, facing ' + DN[s.dir] + '.'; },
+          tasks: [{ do: 'Walk from A1 to the <b>Library at E6</b>.', goal: function (s) { return s.pos[0] === 4 && s.pos[1] === 5; }, yes: function (s) { return 'Your directions: ' + s.log.join(', ') + '.'; } }] }), do: '' },
+        key: '<p>One step at a time. <b>Keep track of where you face.</b></p>',
+        mistake: '<p>Turning right as if still facing north after an earlier turn. Have the child turn their own body, or the page, at each turn.</p>',
+        check: [SK('sh-path', 1), SK('sh-path', 2)] }
+    ] }
+  ];
+
   A.register('shapes', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Faces, edges and vertices</h2>' +
 '<p>A <b>3D object</b> has length, width and height. A <b>face</b> is a flat surface. An <b>edge</b> is where two faces meet. A <b>vertex</b> is a corner where edges meet. More than one vertex are called <b>vertices</b>. Dashed lines show edges hidden at the back.</p>' +
@@ -155,22 +350,10 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
       }
       root.querySelectorAll('[data-hl]').forEach(function (b) { b.addEventListener('click', function () { var h = b.getAttribute('data-hl'); hl = hl === h ? '' : h; so(); }); });
       A.bind(root, ['sok'], so);
-      /* structures: parts sized to fit, built from the same point lists as the solids */
-      var BOX = { cube: [110, 110, 110], rprism: [170, 90, 90] }, split = false;
-      function boxDef(k) { var d = BOX[k], w = d[0], h = d[1], z = d[2], e = S[k].edges.map(function (x) { return x.slice(); });
-        e[6][2] = 1; e[8][2] = 1; /* the roof hides the back and left top edges */
-        return { name: S[k].name, pts: [[0, 0, 0], [w, 0, 0], [w, h, 0], [0, h, 0], [0, 0, z], [w, 0, z], [w, h, z], [0, h, z]], edges: e, vis: S[k].vis }; }
-      function roofDef(k) { var d = BOX[k], w = d[0], h = d[1], z = d[2], r = 70;
-        return { name: 'triangular prism', pts: [[0, h, 0], [w, h, 0], [w / 2, h + r, 0], [0, h, z], [w, h, z], [w / 2, h + r, z]], edges: S.tprism.edges, vis: S.tprism.vis }; }
-      function pyrDef(k) { var d = BOX[k], w = d[0], h = d[1], z = d[2];
-        return { name: 'square-based pyramid', pts: [[0, h, 0], [w, h, 0], [w, h, z], [0, h, z], [w / 2, h + 100, z / 2]], edges: S.spyr.edges, vis: S.spyr.vis }; }
-      var ST = { house: ['cube', 'tprism', 'It looks like a house.'], barn: ['rprism', 'tprism', 'It looks like a barn.'], tower: ['cube', 'spyr', 'It looks like a tower with a pointed roof.'], silo: ['cyl', 'cone', 'It looks like a grain silo.'] };
-      function inner(x) { return x.replace(/^<svg[^>]*>|<\/svg>$/g, ''); }
+      var split = false;
       function st() {
-        var k = $('#stb', root).value, c = ST[k], b = c[0], t = c[1], lift = split ? 70 : 0, bot, top;
-        if (b === 'cyl') { bot = solid({ name: 'cylinder', round: 'cyl', rx: 80, ht: 150 }, '', 60, 380); top = solid({ name: 'cone', round: 'cone', rx: 80, ht: 130 }, '', 60, 380 - 150 - lift); }
-        else { bot = solid(split ? b : boxDef(b), '', 30, 380); top = solid(t === 'tprism' ? roofDef(b) : pyrDef(b), '', 30, 380 - lift); }
-        $('#stfig', root).innerHTML = A.svg(320, 420, '<g>' + inner(bot) + '</g><g>' + inner(top).replace(/var\(--strand\)/g, 'var(--sb)') + '</g>', (split ? 'Taken apart: a ' + S[t].name + ' lifted off a ' : 'A ' + S[t].name + ' on top of a ') + S[b].name);
+        var k = $('#stb', root).value, c = ST[k], b = c[0], t = c[1];
+        $('#stfig', root).innerHTML = structFig(k, split);
         $('#stsplit', root).textContent = split ? 'Put it together' : 'Take it apart';
         $('#stsplit', root).setAttribute('aria-pressed', split ? 'true' : 'false');
         $('#stout', root).innerHTML = '<p>This ' + k + ' is a <b>' + S[b].name + '</b> with a <b>' + S[t].name + '</b> on top.</p><p>' + c[2] + ' Take it apart and you have <b>2 objects</b>.</p>';

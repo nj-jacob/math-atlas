@@ -75,7 +75,165 @@
   }
   var OBJ = { apple: 9, book: 23, shoe: 15, pencil: 2, orange: 11, mug: 18 };
 
+  /* ---------- Lessons: one idea per screen ---------- */
+  var CH = 'time-mass';
+  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
+  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
+  function hm(t) { return [Math.floor(t / 60) % 12 || 12, t % 60]; }
+  function clockView(s) { var x = hm(s.t); return '<div style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:center">' + clock(x[0], x[1], { fives: s.fives, sec: s.sec, label: 'Clock showing ' + x[0] + ':' + pad(x[1]) }) + (s.dig ? digital(x[0], x[1], s.sec) : '') + '</div>' + cap(s.say); }
+  var clockButtons = [['&minus; 1 hour', -60], ['&minus; 5 min', -5], ['+ 5 min', 5], ['+ 1 hour', 60]].map(function (b) { return { label: b[0], act: function (s) { s.t = ((s.t + b[1]) % 720 + 720) % 720; } }; });
+  function balView(s) { var d = OBJ[s.k] - s.c; return '<div>' + balance(s.k, s.c, d > 0 ? Math.min(12, 3 + d) : d < 0 ? Math.max(-12, d - 3) : 0, 'Pan balance: a ' + s.k + ' and ' + s.c + ' cubes') + cap(s.say) + '</div>'; }
+  function jugView(s) { return '<div>' + jug(8, s.p) + cap(s.say) + '</div>'; }
+
+  var LESSONS = [
+    { id: 'clock', title: 'Reading a clock', sub: 'The short hand and the long hand.', concepts: [
+      { id: 'hands', title: 'Two hands', exp: ['E2.6'], skill: 'tm-read',
+        body: '<p>The <b>short hand</b> shows the hour. The <b>long hand</b> shows the minutes. When the long hand points to 12, it is exactly the hour: <b>o\'clock</b>.</p>',
+        watch: { mount: G3.view(clockView, { t: 180, fives: false, dig: true, say: '3 o\'clock' }), steps: [
+          { say: 'The short hand is on 3. The long hand is on 12. It is <b>3:00</b>.', ms: 2000 },
+          { say: 'In one hour the long hand goes all the way around.', act: function (t) { var p = []; for (var m = 5; m <= 60; m += 5) p.push({ t: 180 + m, say: m === 60 ? '4 o\'clock' : '' }); return t.seq(p, 260); } },
+          { say: 'The short hand moved to 4. It is <b>4:00</b>. One hour = 60 minutes.', ms: 2000 }
+        ] },
+        try: { mount: G3.play({ state: { t: 120, fives: false, dig: false }, draw: clockView, buttons: clockButtons,
+          tasks: [{ do: 'Set the clock to <b>9 o\'clock</b>.', goal: function (s) { return s.t === 540; }, yes: 'Short hand on 9, long hand on 12.' }] }), do: '' },
+        key: '<p>Short hand: <b>hour</b>. Long hand: <b>minutes</b>.</p>',
+        mistake: '<p>Mixing up the hands (reading 3:00 as 12:15). Say "short is hour" every time before reading.</p>',
+        check: [TU('s1', 0), TU('s1', 2), SK('tm-read', 1)] },
+
+      { id: 'fives', title: 'Count the minutes by 5s', exp: ['E2.6'], skill: 'tm-read',
+        body: '<p>The long hand moves <b>5 minutes</b> from one number to the next. Count by 5s to find the minutes. On the 6, it is 30 minutes past.</p>',
+        watch: { mount: G3.view(clockView, { t: 240, fives: true, dig: true, say: '' }), steps: [
+          { say: 'It is 4 o\'clock. Watch the long hand.', ms: 1400 },
+          { say: 'Count by 5s: 5, 10, 15, 20, 25, 30.', act: function (t) { var p = []; for (var m = 5; m <= 30; m += 5) p.push({ t: 240 + m, say: String(m) }); return t.seq(p, 600); } },
+          { say: 'The long hand is on the 6. It is <b>4:30</b>, half past 4.', act: function (t) { return t.set({ say: '4:30' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { t: 180, fives: true, dig: true }, draw: clockView, buttons: clockButtons,
+          tasks: [{ do: 'Set the clock to <b>7:15</b>.', goal: function (s) { return s.t === 435; }, yes: 'Long hand on 3: 5, 10, 15.' },
+            { do: 'Set it to <b>10:40</b>.', goal: function (s) { return s.t === 640; }, yes: 'Long hand on 8: count by 5s to 40.' }] }), do: '' },
+        key: '<p>Long hand: <b>count by 5s</b>.</p>',
+        check: [TU('s1', 1), SK('tm-read', 2)] },
+
+      { id: 'past', title: 'Past and to', exp: ['E2.6'], skill: 'tm-words', hard: true,
+        body: '<p>We also say the time in words. 15 minutes past is <b>quarter past</b>. 30 is <b>half past</b>. 45 is <b>quarter to</b> the next hour. The short hand is between two numbers: read the one it has <b>passed</b>.</p>',
+        watch: { mount: G3.view(clockView, { t: 495, fives: true, dig: true, say: 'quarter past 8' }), steps: [
+          { say: '8:15. The long hand has gone a quarter of the way around: <b>quarter past 8</b>.', ms: 2000 },
+          { say: '8:30: halfway around. <b>Half past 8</b>.', act: function (t) { return t.set({ t: 510, say: 'half past 8' }, 2000); } },
+          { say: '8:45: 15 minutes before 9. <b>Quarter to 9</b>. The short hand is almost at 9, but it has passed only the 8.', act: function (t) { return t.set({ t: 525, say: 'quarter to 9' }, 2400); } }
+        ] },
+        ways: [
+          { label: 'Cut the clock', html: '<p>Think of the clock as a pizza cut into 4 quarters. Each quarter is 15 minutes.</p><div class="fig">' + clock(3, 15, { label: 'Clock at quarter past 3' }) + '</div>' },
+          { label: 'Count back', html: '<p>Quarter to 9: 60 &minus; 15 = 45, so it is 45 minutes past 8: <b>8:45</b>.</p>' }
+        ],
+        try: { mount: G3.play({ state: { t: 360, fives: true, dig: false }, draw: clockView, buttons: clockButtons,
+          info: function (s) { var x = hm(s.t); return 'Say it: <b>' + words(x[0], x[1]) + '</b>'; },
+          tasks: [{ do: 'Show <b>quarter to 7</b>.', goal: function (s) { return s.t === 405; }, yes: 'Quarter to 7 is 6:45.' }] }), do: '' },
+        key: '<p>:15 quarter past. :30 half past. :45 <b>quarter to the next hour</b>.</p>',
+        mistake: '<p>Reading the hour the short hand is closest to, instead of the one it has passed (calling 8:45 "9:45"). Ask: "Which number has it already passed?"</p>',
+        check: [SK('tm-words', 1), SK('tm-words', 2)] }
+    ] },
+
+    { id: 'digital', title: 'Digital time and seconds', sub: 'Numbers on a screen, and very short times.', concepts: [
+      { id: 'screen', title: 'Digital clocks', exp: ['E2.6'], skill: 'tm-words',
+        body: '<p>A <b>digital clock</b> shows the hour, a colon, then the minutes. <b>3:05</b> is 5 minutes past 3. The 0 matters.</p>',
+        watch: { mount: G3.view(clockView, { t: 185, fives: true, dig: true, say: '3:05' }), steps: [
+          { say: '3:05. The hour is 3. The minutes are 05: five minutes past.', ms: 2000 },
+          { say: '3:50 is very different: 50 minutes past 3.', act: function (t) { return t.set({ t: 230, say: '3:50' }, 2000); } },
+          { say: 'Half past 2 is <b>2:30</b>.', act: function (t) { return t.set({ t: 150, say: '2:30' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { t: 60, fives: true, dig: true }, draw: clockView, buttons: clockButtons,
+          tasks: [{ do: 'Make the digital clock show <b>11:05</b>.', goal: function (s) { return s.t === 665; }, yes: '5 minutes past 11.' }] }), do: '' },
+        key: '<p>Hour, colon, <b>two-digit minutes</b>.</p>',
+        mistake: '<p>Reading 3:05 as "3:50" or "3 and 5 hours". The 0 matters: 3:05 is 5 minutes past 3.</p>',
+        check: [TU('s2', 0), SK('tm-words', 3)] },
+
+      { id: 'seconds', title: 'Seconds, minutes and hours', exp: ['E2.6'], skill: 'tm-units',
+        body: '<p>A <b>second</b> is very short: one clap. <b>60 seconds</b> make 1 minute. <b>60 minutes</b> make 1 hour. A timer counts down to zero.</p>',
+        watch: { mount: G3.view(clockView, { t: 120, fives: false, dig: true, sec: 0, say: '' }), steps: [
+          { say: 'The thin red hand counts seconds.', act: function (t) { var p = []; for (var s = 5; s <= 60; s += 5) p.push({ sec: s % 60, say: s + ' seconds' }); return t.seq(p, 300); } },
+          { say: '60 seconds: once around. The long hand moved <b>1 minute</b>.', act: function (t) { return t.set({ t: 121, sec: 0, say: '60 seconds = 1 minute' }, 2200); } }
+        ] },
+        ways: [
+          { label: 'How long?', html: '<div class="tbl"><table><tbody><tr><td class="l">1 second</td><td class="l">a clap</td></tr><tr><td class="l">1 minute</td><td class="l">washing your hands well, 3 times</td></tr><tr><td class="l">1 hour</td><td class="l">a long swimming lesson</td></tr></tbody></table></div>' }
+        ],
+        try: { mount: G3.play({ state: { s: 75 }, draw: function (s) { return digital(Math.floor(s.s / 60), s.s % 60); },
+          sliders: [{ key: 's', label: 'Timer', min: 10, max: 180, step: 5, fmt: function (v) { return v + ' seconds'; } }],
+          info: function (s) { var m = Math.floor(s.s / 60), r = s.s % 60; return s.s + ' seconds = ' + (m ? m + ' minute' + (m > 1 ? 's' : '') + (r ? ' and ' + r + ' seconds' : '') : r + ' seconds'); },
+          tasks: [{ do: 'Set the timer to exactly <b>2 minutes</b>.', goal: function (s) { return s.s === 120; }, yes: '2 &times; 60 = 120 seconds.' }] }), do: '' },
+        key: '<p>60 seconds = 1 minute. <b>60 minutes = 1 hour.</b></p>',
+        check: [TU('s2', 1), TU('s2', 2), SK('tm-units', 1), SK('tm-units', 2)] }
+    ] },
+
+    { id: 'mass', title: 'Mass', sub: 'How heavy, with a pan balance.', concepts: [
+      { id: 'balance', title: 'Use a pan balance', exp: ['E2.4'], skill: 'tm-mass',
+        body: '<p><b>Mass</b> is how heavy something is. On a <b>pan balance</b>, the heavier side goes <b>down</b>. When it is level, the masses are equal.</p>',
+        watch: { mount: G3.view(balView, { k: 'apple', c: 0, say: '' }), steps: [
+          { say: 'An apple on one side. The apple side goes down.', ms: 1500 },
+          { say: 'Add cubes one at a time.', act: function (t) { var p = []; for (var i = 1; i <= 9; i++) p.push({ c: i }); return t.seq(p, 300); } },
+          { say: 'Level! The apple has a mass of <b>9 cubes</b>.', act: function (t) { return t.set({ say: 'Apple = 9 cubes' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { k: 'shoe', c: 0 }, draw: balView,
+          selects: [{ key: 'k', label: 'Object', options: Object.keys(OBJ).map(function (k) { return [k, k]; }), change: function (s) { s.c = 0; } }],
+          buttons: [{ label: '+ 1 cube', act: function (s) { if (s.c < 30) s.c++; } }, { label: '+ 5 cubes', act: function (s) { s.c = Math.min(30, s.c + 5); } }, { label: '&minus; 1 cube', act: function (s) { if (s.c) s.c--; } }],
+          info: function (s) { var d = OBJ[s.k] - s.c; return d > 0 ? 'The ' + s.k + ' is heavier. Add cubes.' : d < 0 ? 'The cubes are heavier. Take some away.' : '<b>Level!</b> The ' + s.k + ' is ' + OBJ[s.k] + ' cubes.'; },
+          tasks: [{ do: 'Find the mass of the <b>shoe</b> in cubes.', goal: function (s) { return s.k === 'shoe' && s.c === OBJ.shoe; }, yes: 'The shoe balances 15 cubes.' }] }), do: '' },
+        key: '<p>Heavier side goes <b>down</b>. Level means <b>equal</b>.</p>',
+        check: [TU('s3', 0), TU('s3', 2), SK('tm-mass', 1)] },
+
+      { id: 'compare', title: 'Bigger is not always heavier', exp: ['E2.4'], skill: 'tm-mass', hard: true,
+        body: '<p>A big pillow can be lighter than a small rock. To compare masses, measure each one with the same unit, then <b>compare the counts</b>.</p>',
+        watch: { mount: G3.view(function (s) { return '<div>' + balance(s.k, OBJ[s.k], 0, 'A level balance: ' + s.k + ' and ' + OBJ[s.k] + ' cubes') + cap(s.say) + '</div>'; }, { k: 'shoe', say: 'Shoe: 15 cubes' }), steps: [
+          { say: 'The shoe balances 15 cubes.', ms: 1600 },
+          { say: 'The mug is smaller, but it balances 18 cubes.', act: function (t) { return t.set({ k: 'mug', say: 'Mug: 18 cubes' }, 1800); } },
+          { say: '18 is more than 15. The <b>mug is heavier</b>, even though it is smaller.', act: function (t) { return t.set({ say: '18 &gt; 15' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Hold them', html: '<p>Hold one object in each hand. Which hand goes down? Then check with a balance, because hands can be fooled.</p>' },
+          { label: 'Mass is not capacity', html: '<div class="vs"><div><b class="t">Mass</b><p>How <b>heavy</b>. Use a balance.</p></div><div><b class="t">Capacity</b><p>How much it <b>holds</b>. Use cups.</p></div></div>' }
+        ],
+        key: '<p>Measure both, then <b>compare the counts</b>.</p>',
+        mistake: '<p>Choosing the bigger object as heavier without measuring. Always check with the balance.</p>',
+        check: [TU('s3', 1), SK('tm-mass', 2), SK('tm-mass', 3)] }
+    ] },
+
+    { id: 'capacity', title: 'Capacity', sub: 'How much a container holds.', concepts: [
+      { id: 'fill', title: 'Count the cups', exp: ['E2.3'], skill: 'tm-cap',
+        body: '<p><b>Capacity</b> is how much a container can hold. Fill it with cups of water and <b>count the cups</b>.</p>',
+        watch: { mount: G3.view(jugView, { p: 0, say: '' }), steps: [
+          { say: 'Pour full cups into the jug.', act: function (t) { var p = []; for (var i = 1; i <= 8; i++) p.push({ p: i, say: i + ' cup' + (i > 1 ? 's' : '') }); return t.seq(p, 450); } },
+          { say: 'Full to the top. The jug holds <b>8 cups</b>.', act: function (t) { return t.set({ say: 'The jug holds 8 cups' }, 2000); } }
+        ] },
+        try: { mount: G3.play({ state: { p: 0, n: 0 }, draw: jugView,
+          buttons: [{ label: 'Pour one cup', act: function (s) { if (s.p < 8) { s.p++; s.n++; } } }, { label: 'Empty the jug', act: function (s) { s.p = 0; s.n = 0; } }],
+          info: function (s) { return s.p === 8 ? '<b>Full!</b> ' + s.n + ' cups.' : s.n + ' cup' + (s.n === 1 ? '' : 's') + ' poured.'; },
+          tasks: [{ do: 'Fill the jug to the top. How many cups does it hold?', goal: function (s) { return s.p === 8; }, yes: 'It holds 8 cups.' }] }), do: '' },
+        key: '<p>Capacity: <b>how many cups fill it</b>.</p>',
+        check: [TU('s4', 2), SK('tm-cap', 1)] },
+
+      { id: 'accurate', title: 'Fill carefully', exp: ['E2.3'], skill: 'tm-cap', hard: true,
+        body: '<p>To be accurate, fill each cup <b>to the top</b>, and fill the container <b>right to the top</b> without spilling. Half-full cups or spills make the count too high. Stopping early makes it too low.</p>',
+        watch: { mount: G3.view(jugView, { p: 0, say: '' }), steps: [
+          { say: 'Pour half-full cups.', act: function (t) { var p = []; for (var i = 1; i <= 16; i++) p.push({ p: i / 2, say: i + ' half cups' }); return t.seq(p, 250); } },
+          { say: 'It took 16 half-full cups. That count is <b>too high</b>: the jug holds 8 full cups.', act: function (t) { return t.set({ say: '16 is too high' }, 2000); } },
+          { say: 'Keep pouring past the top and it spills. That count is too high as well.', act: function (t) { return t.set({ p: 9, say: 'Spilled!' }, 2000); } }
+        ] },
+        ways: [
+          { label: 'Bigger containers', html: '<p>A jug holds 4 cups. A pot holds 3 jugs. Count 4 cups, 3 times: 4, 8, 12. The pot holds <b>12 cups</b>.</p>' },
+          { label: 'Different scoops', html: '<p>A bowl holds 6 big scoops or 12 small scoops. Smaller scoop, bigger count. The bowl did not change.</p>' }
+        ],
+        try: { mount: G3.play({ state: { p: 0, n: 0, sz: 1 }, draw: jugView,
+          selects: [{ key: 'sz', label: 'Each cup is', options: [[1, 'full to the top'], [0.5, 'only half full']], change: function (s) { s.p = 0; s.n = 0; } }],
+          buttons: [{ label: 'Pour one cup', act: function (s) { if (s.p <= 8) { s.p += s.sz; s.n++; } } }, { label: 'Empty the jug', act: function (s) { s.p = 0; s.n = 0; } }],
+          info: function (s) { return s.p > 8 ? 'Spilled! Too high a count.' : s.p === 8 ? '<b>Full</b> with ' + s.n + ' cups.' + (s.sz < 1 ? ' Too high: half-full cups.' : '') : s.n + ' cups poured.'; },
+          tasks: [{ do: 'Fill the jug with <b>half-full cups</b>. How many did it take?', goal: function (s) { return s.sz === 0.5 && s.p === 8; }, yes: '16 half-full cups. Double the true count of 8.' }] }), do: '' },
+        key: '<p>Full cups, full container, <b>no spills</b>.</p>',
+        mistake: '<p>Half-full cups make the count too high, because you need more of them. Stopping before the top makes the count too low. Spilling over the top makes it too high.</p>',
+        check: [TU('s4', 0), TU('s4', 1), SK('tm-cap', 2)] }
+    ] }
+  ];
+
   A.register('time-mass', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Reading a clock</h2>' +
 '<p>An <b>analog clock</b> has two hands. The <b>short hand</b> shows the hour. The <b>long hand</b> shows the minutes. The long hand moves 5 minutes from one number to the next, so count by 5s: 5, 10, 15 and so on. One hour has <b>60 minutes</b>.</p>' +
