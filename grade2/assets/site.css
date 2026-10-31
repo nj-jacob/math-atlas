@@ -303,6 +303,7 @@ ol.code li.on{background:color-mix(in srgb,var(--bad) 14%,var(--card));outline:2
 .g2-fr.g2-in .g2a{animation:g2pop .5s cubic-bezier(.3,1.4,.5,1) both;animation-delay:calc(var(--i,0)*140ms);transform-box:fill-box;transform-origin:center}
 .g2-fr.g2-still .g2a{animation:none}
 .g2-fr p{margin:.4em 0}
+.g2-fr .g2-big{font-size:1.45rem;font-weight:800;line-height:1.3}
 @keyframes g2rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 @keyframes g2pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
 @media (prefers-reduced-motion:reduce){.g2-fr.g2-in,.g2-fr.g2-in .g2a{animation:none}}

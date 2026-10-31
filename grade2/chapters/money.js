@@ -84,6 +84,13 @@
           add(100, 'A <b>loonie</b>: 100¢, or $1.'),
           add(200, 'A <b>toonie</b>: 200¢, or $2.', 2000)
         ] },
+        example: { tool: 'coins', opts: {}, steps: [
+          { say: 'My turn. I name each coin as I put it down.', ms: 1400 },
+          add(10, 'I put down a <b>dime</b>. I say "dime, 10¢".', 1500),
+          add(200, 'I put down a <b>toonie</b>. I say "toonie, $2".', 1500),
+          add(5, 'I put down a <b>nickel</b>. I say "nickel, 5¢".', 1500),
+          { say: 'I say the name and the value together.', ms: 2000 }
+        ] },
         try: { tool: 'coins', opts: {}, tasks: [
           { do: 'Put a <b>quarter</b> on the mat. Tap a coin to take it away.', goal: function (s) { return s.items.indexOf(25) >= 0; }, yes: 'A quarter is 25¢.' },
           { do: 'Clear the mat. Show <b>15¢</b> with 2 coins.', goal: function (s) { return s.total === 15 && s.n === 2; }, yes: 'A dime and a nickel: 10, 15.' }
@@ -98,6 +105,12 @@
           ['The nickel is <b>bigger</b>.', WAL([5], { W: 120, label: 'A nickel' }) + '<p class="math big">5¢</p>'],
           ['The dime is smaller, but worth <b>10¢</b>.', WAL([10], { W: 120, label: 'A dime' }) + '<p class="math big">10¢</p>'],
           ['Go by value, not size.', '<p class="math big">10¢ &gt; 5¢</p>', 2000]
+        ]),
+        example: K.clip([
+          ['My turn. 3 nickels or 2 dimes: which is worth more?', WAL([5, 5, 5], { W: 200, label: '3 nickels' }) + WAL([10, 10], { W: 150, label: '2 dimes' }), 1900],
+          ['I count the nickels: 5, 10, 15. That is <b>15¢</b>.', WAL([5, 5, 5], { W: 200, label: '3 nickels' }) + '<p class="math big">15¢</p>'],
+          ['I count the dimes: 10, 20. That is <b>20¢</b>.', WAL([10, 10], { W: 150, label: '2 dimes' }) + '<p class="math big">20¢</p>'],
+          ['20¢ is more. The nickels look bigger, but I go by value.', '<p class="math big">20¢ &gt; 15¢</p>', 2200]
         ]),
         try: sizeLab,
         ways: [
@@ -120,6 +133,12 @@
           { say: 'Count on: 25, 50, 60, 65.', act: function (t) { return t.countAll(600); }, ms: 1400 },
           { say: 'The total is <b>65¢</b>.', ms: 1800 }
         ] },
+        example: { tool: 'coins', opts: {}, steps: [
+          { say: 'My turn. I have a jumble: a dime, a quarter, a dime, a quarter.', act: function (t) { return t.set([10, 25, 10, 25]); }, ms: 1800 },
+          { say: 'I sort them, biggest first.', act: function (t) { return t.sort(); }, ms: 1000 },
+          { say: 'I count on: 25, 50, 60, 70.', act: function (t) { return t.countAll(600); }, ms: 1400 },
+          { say: 'The total is <b>70¢</b>.', ms: 2000 }
+        ] },
         try: { tool: 'coins', opts: {}, tasks: [
           { do: 'Make <b>65¢</b>. Press "Count it" to check.', goal: function (s) { return s.total === 65; }, yes: '65¢. Biggest coin first makes it easy to count.' },
           { do: 'Clear the mat. Make <b>80¢</b> with exactly <b>4 coins</b>.', goal: function (s) { return s.total === 80 && s.n === 4; }, yes: '3 quarters and a nickel: 25, 50, 75, 80.' }
@@ -136,6 +155,12 @@
       { id: 'ways', title: 'Many ways to make 50¢', exp: ['F1.1'], skill: 'f2-same',
         body: '<p>The same amount can be made with different coins. All of these are <b>50¢</b>.</p>',
         watch: K.clip(SAME[50].map(function (L, i) { return [(i ? 'Or ' : '') + names(L) + ': ' + run(L, c) + '.', WAL(L, { W: 300, label: names(L) + '. Total 50¢' }), i === 3 ? 2000 : 1600]; })),
+        example: K.clip([
+          ['My turn. I will make <b>75¢</b> two ways.', '<p class="math big">75¢</p>'],
+          ['First way: 3 quarters. 25, 50, 75.', WAL([25, 25, 25], { W: 240, label: '3 quarters. Total 75¢' }), 1800],
+          ['Second way: 2 quarters, 2 dimes, 1 nickel. 25, 50, 60, 70, 75.', WAL([25, 25, 10, 10, 5], { W: 320, label: '2 quarters, 2 dimes, 1 nickel. Total 75¢' }), 2200],
+          ['Both make 75¢. Different coins, same amount.', '<p class="math big">75¢ = 75¢</p>', 2000]
+        ]),
         try: { tool: 'coins', opts: {}, tasks: [
           { do: 'Make <b>50¢</b> using only <b>dimes</b>.', goal: function (s) { return s.total === 50 && only(10)(s); }, yes: '5 dimes: 10, 20, 30, 40, 50.' },
           { do: 'Clear the mat. Make <b>50¢</b> another way, with a <b>quarter</b> in it.', goal: function (s) { return s.total === 50 && s.items.indexOf(25) >= 0; }, yes: 'Same amount, different coins.' }
@@ -150,6 +175,12 @@
           { say: '2 loonies make $2, the same as a toonie.', act: function (t) { t.reset(); return t.add(100); }, ms: 300 },
           add(100, '<b>2 loonies = 1 toonie</b>.', 1800)
         ] },
+        example: K.clip([
+          ['My turn. I have a <b>toonie</b>. That is $2.', WAL([200], { W: 120, label: 'A toonie' })],
+          ['I trade it for 2 loonies. Still $2.', WAL([100, 100], { W: 200, label: '2 loonies' })],
+          ['I trade 1 loonie for 4 quarters: 25, 50, 75, 100.', WAL([100, 25, 25, 25, 25], { W: 320, label: '1 loonie, 4 quarters' }), 2000],
+          ['I check: 100, 125, 150, 175, 200. Still <b>$2</b>.', WAL([100, 25, 25, 25, 25], { W: 320, label: '1 loonie, 4 quarters. Total $2' }) + '<p class="math big">$2</p>', 2200]
+        ]),
         try: { tool: 'coins', opts: {}, tasks: [
           { do: 'Make <b>$1</b> using only <b>quarters</b>.', goal: function (s) { return s.total === 100 && only(25)(s); }, yes: '4 quarters make $1.' },
           { do: 'Clear the mat. Make <b>$2</b> with just <b>one coin</b>.', goal: function (s) { return s.total === 200 && s.n === 1; }, yes: 'A toonie is $2.' }
@@ -164,6 +195,12 @@
           add(5000, 'A $50 bill.', 500), add(2000, '$20 makes 70.', 500), add(2000, 'Another $20 makes 90.', 500), add(500, '$5 makes 95.', 500), add(200, 'A toonie: 97.', 600),
           { say: 'Count on: 50, 70, 90, 95, 97. <b>$97</b>.', act: function (t) { return t.countAll(500); }, ms: 1800 }
         ] },
+        example: { tool: 'coins', opts: { set: BSET }, steps: [
+          { say: 'My turn. I have some bills and a loonie.', act: function (t) { return t.set([1000, 2000, 500, 100, 2000]); }, ms: 1600 },
+          { say: 'I sort them, biggest first.', act: function (t) { return t.sort(); }, ms: 1000 },
+          { say: 'I count on: 20, 40, 50, 55, 56.', act: function (t) { return t.countAll(600); }, ms: 1400 },
+          { say: 'The total is <b>$56</b>.', ms: 2000 }
+        ] },
         try: { tool: 'coins', opts: { set: BSET }, tasks: [
           { do: 'Show <b>$35</b>.', goal: function (s) { return s.total === 3500; }, yes: '$35. Count on: 20, 30, 35, or another way.' },
           { do: 'Clear the mat. Show <b>$100</b> without a $100 bill.', goal: function (s) { return s.total === 10000 && s.items.indexOf(10000) < 0; }, yes: 'Same amount, different bills.' }
@@ -174,6 +211,12 @@
       { id: 'sameb', title: 'Same amount with bills', exp: ['F1.1'], skill: 'f2-make', hard: true,
         body: '<p>Bills can make the same amount in different ways. All of these are <b>$100</b>.</p>',
         watch: K.clip(SAMEB[10000].map(function (L, i) { return [(i ? 'Or ' : '') + names(L) + ': ' + run(L, d) + '.', WAL(L, { W: 320, label: names(L) + '. Total $100' }), i === 3 ? 2200 : 1700]; })),
+        example: K.clip([
+          ['My turn. I can pay <b>$20</b> with one $20 bill.', WAL([2000], { W: 160, label: '1 $20 bill' })],
+          ['Or with 2 $10 bills: 10, 20.', WAL([1000, 1000], { W: 260, label: '2 $10 bills. Total $20' })],
+          ['Or with 1 $10 bill and 2 $5 bills: 10, 15, 20.', WAL([1000, 500, 500], { W: 320, label: '1 $10 bill, 2 $5 bills. Total $20' }), 1900],
+          ['Each way makes $20. Same amount, different bills.', '<p class="math big">$20</p>', 2000]
+        ]),
         try: { tool: 'coins', opts: { set: BSET }, tasks: [
           { do: 'Pay <b>$50</b> using only <b>$10 bills</b>.', goal: function (s) { return s.total === 5000 && only(1000)(s); }, yes: '5 tens make $50.' },
           { do: 'Clear the mat. Pay <b>$50</b> with exactly <b>3 bills</b>.', goal: function (s) { return s.total === 5000 && s.n === 3; }, yes: '$20, $20 and $10 make $50.' }
