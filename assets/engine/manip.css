@@ -1,7 +1,7 @@
 /* Math Atlas manipulatives and one-concept lessons. Shared by every grade.
    All colours come from the grade's theme variables, with plain fallbacks, so each grade keeps its own look.
    A grade can set --mp-ones, --mp-tens, --mp-hund, --mp-glow, --mp-radius to tune the tools. */
-.mp{--mo:var(--mp-ones,var(--p0,#e0a100));--mt:var(--mp-tens,var(--p1,#2f9e44));--mh:var(--mp-hund,var(--p2,#2f62c4));
+.mp,.mp-player{--mo:var(--mp-ones,var(--p0,#e0a100));--mt:var(--mp-tens,var(--p1,#2f9e44));--mh:var(--mp-hund,var(--p2,#2f62c4));
   --mg:var(--mp-glow,var(--hi,#f6d36b));--mr:var(--mp-radius,14px);--mline:var(--line,#dfe5ee);--mcard:var(--card,#fff);--mink:var(--ink,#132039);
   position:relative;margin:8px 0}
 .mp .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -222,6 +222,10 @@
 .mp-pctl{display:flex;flex-wrap:wrap;align-items:center;gap:8px}
 .mp-pb{font-weight:700;font-size:.88rem;min-height:40px;padding:2px 14px;border-radius:99px;border:2px solid var(--mline);background:var(--mcard);cursor:pointer}
 .mp-play{background:var(--accent,#0b6e78);border-color:var(--accent,#0b6e78);color:var(--accent-ink,#fff)!important;min-width:84px}
+.mp-prev,.mp-step{min-width:44px;padding:2px 10px;font-size:1.3rem;line-height:1}
+.mp-pb:disabled{opacity:.4;cursor:default}
+.mp-auto{margin-left:auto;font:inherit;font-size:.8rem;font-weight:700;color:var(--ink2,#55627a);min-height:32px;padding:2px 12px;border-radius:99px;border:1px solid var(--mline);background:transparent;cursor:pointer}
+.mp-auto[aria-pressed="true"]{color:var(--ink,#132039);border-color:var(--ink2,#55627a);background:var(--mcard)}
 .mp-dots{display:flex;gap:5px;flex:1;min-width:90px}
 .mp-sd{flex:1;max-width:40px;height:14px;padding:0;border-radius:99px;border:2px solid var(--ink2,#55627a);background:var(--mcard);cursor:pointer;transition:background .3s}
 .mp-sd.on{background:color-mix(in srgb,var(--accent,#0b6e78) 55%,var(--mcard))}
@@ -261,6 +265,21 @@
 @keyframes ls-back{from{opacity:0;transform:translateX(-28px)}to{opacity:1;transform:none}}
 .ls-card>h2 .n{width:auto!important;min-width:40px;padding:0 8px}
 .ls-part{margin:16px 0}
+/* one idea as a stack of cards: step tabs, then the current card with the cards still to come peeking out underneath */
+.ls-steps{list-style:none;display:flex;flex-wrap:wrap;gap:6px;padding:0;margin:4px 0 14px}
+.ls-steps button{display:inline-flex;align-items:center;gap:8px;font:inherit;font-weight:700;font-size:.9rem;color:var(--ink2,#55627a);min-height:40px;padding:4px 14px 4px 6px;border-radius:99px;border:1px solid var(--line,#dfe5ee);background:var(--card,#fff);cursor:pointer}
+.ls-steps i{font-style:normal;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--paper,#f4f6f9);color:var(--ink2,#55627a);font-size:.82rem}
+.ls-steps button[aria-current="step"]{color:var(--ink,#132039);border-color:var(--ink,#132039)}
+.ls-steps button[aria-current="step"] i{background:var(--ink,#132039);color:#fff}
+.ls-steps button.done i{background:var(--good,#17804a);color:#fff}
+.ls-stack{position:relative;padding-bottom:20px}
+.ls-pc{position:relative;z-index:2;background:var(--card,#fff);border:1px solid var(--line,#dfe5ee);border-radius:18px;padding:4px 18px 14px;box-shadow:0 1px 3px rgba(19,32,57,.06)}
+.ls-pc>:first-child{margin-top:14px}
+.ls-stack::before,.ls-stack::after{content:"";position:absolute;left:14px;right:14px;bottom:10px;height:40px;border:1px solid var(--line,#dfe5ee);border-radius:0 0 16px 16px;background:var(--card,#fff);box-shadow:0 1px 3px rgba(19,32,57,.06);z-index:1}
+.ls-stack::after{left:28px;right:28px;bottom:0;z-index:0}
+.ls-stack[data-left="1"]::after,.ls-stack[data-left="0"]::after,.ls-stack[data-left="0"]::before{display:none}
+.ls-flip{animation:ls-in .4s cubic-bezier(.2,.8,.3,1) both}
+.ls-flip.back{animation-name:ls-back}
 .ls-lab{display:inline-flex;align-items:center;gap:8px;font-family:var(--display,inherit);font-weight:600;font-size:1rem;margin:0 0 6px}
 .ls-lab i{font-style:normal;display:inline-grid;place-items:center;width:28px;height:28px;border-radius:50%;background:var(--strand);color:#fff;font-size:.85rem}
 .ls-body p{font-size:1.06rem}
@@ -311,9 +330,11 @@
   .mp-add,.mp-sub{padding:4px 9px}
   .mp-frame{grid-template-columns:repeat(5,minmax(30px,46px))}
   .ls-nav .btn{min-width:0}
+  .ls-pc{padding:2px 12px 12px}
+  .mp-auto{margin-left:0}
 }
 @media (prefers-reduced-motion:reduce){
-  .mp *,.mp,.ls-card,.ls-lesson,.ls-reveal{animation:none!important;transition:none!important}
+  .mp *,.mp,.ls-card,.ls-pc,.ls-lesson,.ls-reveal{animation:none!important;transition:none!important}
 }
 
 /* Common mistakes are coaching notes for a parent or tutor: shown only in the grown-up view */
@@ -324,3 +345,5 @@ html.adult .mistake::after{content:"Grown-up view";position:absolute;top:-11px;r
 /* keep wide feedback lines and slide-in animations inside a phone screen */
 p.ls-got{display:flex;flex-wrap:wrap;max-width:100%}
 .ls-ways,.ls-card{overflow:hidden}
+/* when an idea is a stack of cards, the cards are the panels: the screen around them stays plain */
+html body .ls-card:has(.ls-stack){background:transparent!important;border:0!important;box-shadow:none!important;padding-left:0!important;padding-right:0!important}

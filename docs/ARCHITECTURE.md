@@ -43,6 +43,8 @@ Atlas.register('numbers-1000', {
 - **Practice skills** make a new question every time, at level 1, 2 or 3. The site moves a child up a level after 3 right in a row, and down after 2 misses.
 - **Question shapes**: a skill can ask the same idea in several ways. `Atlas.Q.vary(skillId, level, [[minLevel, 'shape-name', fn], ...])` picks one, never the same shape twice in a row. See `QUESTIONS.md`.
 - **Check-ups** use level 1 of every skill, then a few level-2 questions.
+- **Idea cards**: each idea in a lesson shows as a small stack of cards, one at a time: "Watch" (or "Learn") with the explanation and clip, "Try it" with the key idea, then "Your turn". Back and Next move through the cards first, then to the other ideas. A part the idea doesn't have is left out. An idea with only one part shows as a single page.
+- **Watch clips** (`Manip.player`) don't start on their own. The student taps Play, or steps one part at a time with ‹ and ›. The "Auto-play" switch on any clip turns auto-start on for every clip. It is saved in this browser as `atlas:autoplay`.
 
 ## Math Plan
 

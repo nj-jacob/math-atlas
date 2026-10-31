@@ -1,7 +1,7 @@
 /* Math Atlas lessons: a chapter is a few lessons, a lesson is a few concepts, and the student sees ONE concept per screen.
-   Each concept screen follows the same order: a short explanation, "Watch" (an animated demonstration),
-   "Try it" (a manipulative with small challenges), "See it another way" (extra explanations for harder ideas),
-   the key idea, then "Your turn" (quick checks). Shared by every grade; needs site.js (Atlas) and manip.js (Manip).
+   Each concept screen is a short stack of cards, one at a time: first a short explanation with "Watch" (an animated
+   demonstration the student plays) and "See it another way" (extra explanations for harder ideas), then "Try it"
+   (a manipulative with small challenges) with the key idea, then "Your turn" (quick checks). Shared by every grade; needs site.js (Atlas) and manip.js (Manip).
 
    A chapter opts in with  lessons: [{ id, title, sub, concepts: [concept, ...] }]  in its Atlas.register call.
    concept = { id: 'zero', title, exp: ['B1.1'], skill: 'n2-blocks', hard: true,
@@ -138,14 +138,7 @@
         return '<a href="#' + id + '/learn/' + x.slug + '" class="s' + L.status(x) + '"' + (x === c ? ' aria-current="step"' : '') + ' aria-label="' + x.title + ' (' + ST[L.status(x)] + ')"></a>';
       }).join('') + '</span></div>' +
       '<article class="sec ls-card' + dir + '" id="lesson"><h2><span class="n">' + ls.n + '.' + c.n + '</span>' + c.title + '<span class="ls-badge">' + (st.got ? '<span class="ls-got">Got it</span>' : '') + '</span></h2>' +
-      '<div class="ls-body">' + (c.body || '') + '</div>' +
-      (c.watch ? '<div class="ls-part"><p class="ls-lab"><i>1</i>Watch</p><div class="ls-watch"></div></div>' : '') +
-      (c.try ? '<div class="lab ls-try"><span class="lt">Try it</span><p class="ls-task"></p><div class="ls-tool"></div><p class="ls-done" aria-live="polite"></p><div class="ls-tnext"></div></div>' : '') +
-      (c.ways && c.ways.length ? '<div class="ls-ways"><p>' + (c.hard ? 'Still tricky? See it another way:' : 'See it another way:') + '</p><div class="ls-wtabs">' +
-        c.ways.map(function (w, j) { return '<button type="button" class="btn alt" data-w="' + j + '" aria-pressed="false">' + w.label + '</button>'; }).join('') + '</div><div class="ls-wpanel"></div></div>' : '') +
-      (c.key ? '<div class="key"><b class="t">Key idea</b>' + c.key + '</div>' : '') +
-      (c.mistake ? '<div class="mistake"><b class="t">For grown-ups: a common mistake</b>' + c.mistake + '<p class="t2">If you see this, point back to "Watch" or "Try it" and let the child show you again.</p></div>' : '') +
-      (c.check ? '<div class="yt ls-check"></div>' : '') + '</article>' +
+      cardsHtml(c) + '</article>' +
       '<nav class="ls-nav" aria-label="Ideas">' + (prev ? '<a class="btn alt" href="#' + id + '/learn/' + prev.slug + '">&larr; Back</a>' : '<a class="btn alt" href="#' + id + '">&larr; Lessons</a>') +
       '<a class="btn ls-next" href="#' + id + '/learn/' + (endOfLesson ? 'end-' + ls.id : next.slug) + '">' + (endOfLesson ? 'Finish the lesson' : 'Next idea') + ' &rarr;</a></nav>' + '</div>';
     app.innerHTML = h;
@@ -159,7 +152,66 @@
       var d = $('.ls-dots [aria-current]', app); if (d) d.className = 's' + L.status(c);
     });
     if (ctx.after) ctx.after(card, c);
+    stack(app, card);
     return 'lesson';
+  }
+  /* One idea is split into a short stack of cards (Learn or Watch, Try it, Your turn), shown one at a time like stacked postcards.
+     A part is left out when the idea does not have it. The key idea sits with "Try it" (or with the first card), and the grown-up note sits on the last card. */
+  function cardsHtml(c) {
+    var learn = '<div class="ls-body">' + (c.body || '') + '</div>' +
+      (c.watch ? '<div class="ls-part"><div class="ls-watch"></div></div>' : '') +
+      (c.ways && c.ways.length ? '<div class="ls-ways"><p>' + (c.hard ? 'Still tricky? See it another way:' : 'See it another way:') + '</p><div class="ls-wtabs">' +
+        c.ways.map(function (w, j) { return '<button type="button" class="btn alt" data-w="' + j + '" aria-pressed="false">' + w.label + '</button>'; }).join('') + '</div><div class="ls-wpanel"></div></div>' : '');
+    var key = c.key ? '<div class="key"><b class="t">Key idea</b>' + c.key + '</div>' : '';
+    var mistake = c.mistake ? '<div class="mistake"><b class="t">For grown-ups: a common mistake</b>' + c.mistake + '<p class="t2">If you see this, point back to "Watch" or "Try it" and let the child show you again.</p></div>' : '';
+    var cards = [{ name: c.watch ? 'Watch' : 'Learn', html: learn }];
+    if (c.try) cards.push({ name: 'Try it', html: '<div class="lab ls-try"><span class="lt">Try it</span><p class="ls-task"></p><div class="ls-tool"></div><p class="ls-done" aria-live="polite"></p><div class="ls-tnext"></div></div>' + key });
+    else cards[0].html += key;
+    if (c.check) cards.push({ name: 'Your turn', html: '<div class="yt ls-check"></div>' });
+    cards[cards.length - 1].html += mistake;
+    if (cards.length === 1) return cards[0].html;
+    return '<ol class="ls-steps" aria-label="Cards in this idea">' + cards.map(function (k, i) {
+        return '<li><button type="button" data-k="' + i + '"><i>' + (i + 1) + '</i>' + k.name + '</button></li>';
+      }).join('') + '</ol>' +
+      '<div class="ls-stack">' + cards.map(function (k, i) {
+        return '<section class="ls-pc" data-k="' + i + '" aria-label="Card ' + (i + 1) + ' of ' + cards.length + ': ' + k.name + '">' + k.html + '</section>';
+      }).join('') + '</div>';
+  }
+  /* show one card at a time; Back and Next move through the cards first, then to the previous or next idea */
+  function stack(app, card) {
+    var pcs = $$('.ls-pc', card), steps = $$('.ls-steps button', card), back = $('.ls-nav a', app), next = $('.ls-nav .ls-next', app), k = 0;
+    if (pcs.length < 2) return;
+    var backText = back.innerHTML, nextText = next.innerHTML, sx = null, sy = 0;
+    function show(i, dir) {
+      k = Math.max(0, Math.min(pcs.length - 1, i));
+      pcs.forEach(function (p, j) { p.hidden = j !== k; p.classList.toggle('back', dir < 0); });
+      $('.ls-stack', card).setAttribute('data-left', String(pcs.length - 1 - k));
+      steps.forEach(function (b, j) { if (j === k) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); b.classList.toggle('done', j < k); });
+      back.innerHTML = k ? '&larr; Back' : backText;
+      next.innerHTML = k < pcs.length - 1 ? 'Next: ' + steps[k + 1].textContent.replace(/^\d+/, '') + ' &rarr;' : nextText;
+      if (dir) M.bump(pcs[k], 'ls-flip');
+    }
+    function go(d, e) {
+      if ((d < 0 && !k) || (d > 0 && k === pcs.length - 1)) return; /* past the ends: the links go to the other idea */
+      if (e) e.preventDefault();
+      show(k + d, d);
+      var top = card.getBoundingClientRect().top;
+      if (top < 0) card.scrollIntoView({ block: 'start' });
+    }
+    back.addEventListener('click', function (e) { go(-1, e); });
+    next.addEventListener('click', function (e) { go(1, e); });
+    steps.forEach(function (b, j) { b.addEventListener('click', function () { if (j !== k) show(j, j < k ? -1 : 1); }); });
+    /* swipe sideways on a tablet or phone, but not while using a tool or answering */
+    var st = $('.ls-stack', card);
+    st.addEventListener('touchstart', function (e) {
+      sx = e.target.closest('.mp, .ls-tool, .ls-check, .ls-wpanel, button, input, a') ? null : e.touches[0].clientX; sy = e.touches[0].clientY;
+    }, { passive: true });
+    st.addEventListener('touchend', function (e) {
+      if (sx === null) return;
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy; sx = null;
+      if (Math.abs(dx) > 60 && Math.abs(dx) > 2 * Math.abs(dy)) go(dx < 0 ? 1 : -1);
+    });
+    show(0, 0);
   }
   function makeTool(host, spec) {
     var el = document.createElement('div');
