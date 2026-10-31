@@ -45,7 +45,7 @@ Atlas.register('numbers-1000', {
 - **Check-ups** use level 1 of every skill, then a few level-2 questions.
 - **Idea cards**: each idea in a lesson shows as a small stack of cards, one at a time: "Watch" (or "Learn") with the explanation and clip, "Try it" with the key idea, then "Your turn". Back and Next move through the cards first, then to the other ideas. A part the idea doesn't have is left out. An idea with only one part shows as a single page.
 - **Watch clips** (`Manip.player`) don't start on their own. The student taps Play, or steps one part at a time with ‹ and ›. The "Auto-play" switch on any clip turns auto-start on for every clip. It is saved in this browser as `atlas:autoplay`.
-- **Worked examples ("My turn")**: an idea can add `example` (the same shape as `watch`). It gets its own "My turn" card after the first card: a worked example solved step by step in "I" language. It is the **only** place with a voice (Noel's rule: no read-aloud anywhere else). The voice uses the browser's own speech, preferring a Canadian English voice. `Manip.words` reads maths aloud the way a teacher says it ("3/4" is "3 quarters", "=" is "equals"). A step can set `speak` to say something different from its caption. The "Voice" switch is saved as `atlas:voice` (on unless switched off).
+- **Worked examples ("My turn")**: an idea can add `example` (the same shape as `watch`). It gets its own "My turn" card after the first card: one example solved step by step in "I" language ("My turn. First I..."), played like a Watch clip. It has no voice: Noel tried the device's built-in voice and found it too robotic.
 
 ## Math Plan
 
