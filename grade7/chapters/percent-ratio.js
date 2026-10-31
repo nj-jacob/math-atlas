@@ -156,6 +156,12 @@
           { say: 'As a fraction: 35 hundredths. As a decimal: 0.35. As a percent: 35%.', fig: eq(fr(35, 100) + ' = 0.35 = 35%') },
           { say: 'Shade all 100 squares and you have 100%: one whole.', fig: function () { return hgrid(100); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A hundred grid is one whole. I will show 62%.', fig: function () { return hgrid(0); } },
+          { say: 'Percent means out of 100. So I shade 62 of the 100 squares.', fig: function () { return hgrid(62); } },
+          { say: '62 out of 100 as a fraction is ' + fr(62, 100) + '. As a decimal it is 0.62.', fig: eq(fr(62, 100) + ' = 0.62') },
+          { say: 'So ' + fr(62, 100) + ' = 0.62 = <b>62%</b>.', fig: eq(fr(62, 100) + ' = 0.62 = 62%'), ms: 2400 }
+        ]),
         try: lab('hgo', [
           { do: 'Shade <b>40%</b> of the grid.', goal: function (h) { return K.v(h, 'hgr') === 40; }, yes: '40% = 0.4 = 40/100 = 2/5.' },
           { do: 'Shade <b>one quarter</b> of the grid.', goal: function (h) { return K.v(h, 'hgr') === 25; }, yes: '1/4 = 25/100 = 25%.' },
@@ -173,6 +179,12 @@
           { say: 'One tenth is 10%. One twentieth is 5%.', fig: function () { return hgrid(10); } },
           { say: 'One third does not fit evenly: about 33.3%.', fig: function () { return hgrid(33.3); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will write ' + fr(3, 4) + ' as a percent. I know ' + fr(1, 4) + ' = 25%.', fig: function () { return hgrid(25); } },
+          { say: fr(3, 4) + ' is three of those: 3 &times; 25 = 75%.', fig: function () { return hgrid(75); } },
+          { say: 'Next, ' + fr(2, 5) + '. I know ' + fr(1, 5) + ' = 20%. So ' + fr(2, 5) + ' = 2 &times; 20 = 40%.', fig: function () { return hgrid(40); } },
+          { say: 'Last, ' + fr(3, 10) + '. ' + fr(1, 10) + ' = 10%, so ' + fr(3, 10) + ' = 30%. I build the rest from the facts I know.', fig: eq(fr(3, 4) + ' = 75% &nbsp; ' + fr(2, 5) + ' = 40% &nbsp; ' + fr(3, 10) + ' = 30%'), ms: 2600 }
+        ]),
         key: '<p><b>½ = 50%, ¼ = 25%, ⅕ = 20%, ⅒ = 10%.</b> Build the rest from these.</p>',
         mistake: '<p>Thinking ⅓ = 30% or ⅕ = 5%. Link each one to the hundred grid.</p>',
         check: [K.ck('pr-facts', 1), K.ck('pr-facts', 1), K.ck('pr-facts', 2)] }
@@ -185,6 +197,12 @@
           { say: 'Divide: 3 &divide; 8 = 0.375.', fig: eq(fr(3, 8) + ' = 3 &divide; 8 = 0.375') },
           { say: 'Multiply by 100: 37.5%.', fig: eq('0.375 &times; 100 = 37.5%') },
           { say: 'The bar agrees: the shaded part reaches 37.5% of the way.', fig: function () { return pbar(3, 8); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will write ' + fr(7, 8) + ' as a percent.', fig: function () { return pbar(7, 8); } },
+          { say: 'First I divide the top by the bottom: 7 &divide; 8 = 0.875.', fig: eq(fr(7, 8) + ' = 7 &divide; 8 = 0.875') },
+          { say: 'Then I multiply by 100: 0.875 &times; 100 = <b>87.5%</b>.', fig: eq('0.875 &times; 100 = 87.5%') },
+          { say: 'I check with the bar: the shaded part reaches 87.5% of the way.', fig: function () { return pbar(7, 8); }, ms: 2400 }
         ]),
         try: lab('cvn', [
           { do: 'Change <b>7/20</b> to a percent.', goal: function (h) { return +K.v(h, 'cvn') === 7 && +K.v(h, 'cvd') === 20; }, yes: '7 ÷ 20 = 0.35 = 35%.' },
@@ -200,6 +218,12 @@
           { say: '0.375 to a percent: move the point 2 places right.', fig: eq('0.375 &rarr; 03.75 &rarr; 037.5 = <b>37.5%</b>') },
           { say: '8% to a decimal: 8 is really 8.0. Move the point 2 places left.', fig: eq('8.0% &rarr; 0.80 &rarr; <b>0.08</b>') },
           { say: 'A one-digit percent needs a zero after the point: 5% is 0.05, not 0.5.', fig: eq('5% = 0.05 &nbsp;&nbsp; 50% = 0.5'), ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will write 0.4 as a percent. I move the point 2 places right. There is only one digit, so I add a zero.', fig: eq('0.4 &rarr; 0.40 &rarr; <b>40%</b>') },
+          { say: 'Next, 0.065 as a percent. 2 places right gives 6.5%.', fig: eq('0.065 &rarr; 006.5 = <b>6.5%</b>') },
+          { say: 'Now 3% as a decimal. 3 is really 3.0. I move the point 2 places left: 0.03.', fig: eq('3.0% &rarr; 0.030 &rarr; <b>0.03</b>') },
+          { say: 'I check: 0.03 is 3 hundredths, so 3 out of 100. It is 0.03, not 0.3.', fig: eq('3% = 0.03 &nbsp;&nbsp; 30% = 0.3'), ms: 2800 }
         ]),
         ways: [
           { label: 'Think hundredths', html: '<p>8% is 8 hundredths. In a place value chart, 8 hundredths is 0.08: 0 ones, 0 tenths, 8 hundredths.</p>' },
@@ -219,6 +243,13 @@
           { say: '5% is half of 10%: 12.', fig: eq('5% = 12') },
           { say: '15% = 10% + 5% = 24 + 12 = <b>36</b>.', fig: eq('15% = 24 + 12 = 36'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will find 35% of 60.', fig: eq('35% of 60') },
+          { say: 'First I find 10%: 60 &divide; 10 = 6.', fig: eq('10% = 6') },
+          { say: '30% is three times 10%: 3 &times; 6 = 18.', fig: eq('30% = 18') },
+          { say: '5% is half of 10%: half of 6 is 3.', fig: eq('5% = 3') },
+          { say: '35% = 30% + 5% = 18 + 3 = <b>21</b>.', fig: eq('35% = 18 + 3 = 21'), ms: 2400 }
+        ]),
         key: '<p><b>Find 10% first.</b> Halve it for 5%, double it for 20%, add pieces for the rest.</p>',
         mistake: '<p>Dividing by the percent: 15% of 240 as 240 &divide; 15. Only 10% means divide by 10 (and 50% means divide by 2).</p>',
         check: [function () { var n = R.pick([40, 60, 80, 120, 160, 240, 300]); return { q: 'What is 15% of ' + n + '?', type: 'num', answer: n * 0.15, hint: '10% of ' + n + ' is ' + n / 10 + '. 5% is half of that.', explain: n / 10 + ' + ' + n / 20 + ' = ' + n * 0.15 + '.' }; }, K.ck('pr-mental', 1)] },
@@ -229,6 +260,12 @@
           { say: '25% of 80 is 80 &divide; 4 = 20.', fig: eq('25% of $80 = $20') },
           { say: 'Take it away: 80 &minus; 20 = <b>$60</b>.', fig: eq('$80 &minus; $20 = $60') },
           { say: 'Increase works the other way: 60 increased by 10% is 60 + 6 = 66.', fig: function () { return change(60, 10, true); }, ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Shoes cost $120. They are 15% off. What is the sale price?', fig: function () { return change(120, 15, false); } },
+          { say: 'First I find the percent part. 10% of 120 is 12, and 5% is 6. So 15% is 18.', fig: eq('15% of $120 = $12 + $6 = $18') },
+          { say: 'It is a decrease, so I take it away: 120 &minus; 18 = <b>$102</b>.', fig: eq('$120 &minus; $18 = $102') },
+          { say: 'For an increase, I add instead. $50 increased by 20%: 20% of 50 is 10, so 50 + 10 = $60.', fig: function () { return change(50, 20, true); }, ms: 2600 }
         ]),
         try: lab('pcn', [
           { do: 'Decrease <b>80</b> by <b>25%</b>.', goal: function (h) { return +K.v(h, 'pcn') === 80 && K.v(h, 'pcp') === 25 && K.v(h, 'pcu') === 0; }, yes: '25% of 80 is 20. 80 − 20 = 60.' },
@@ -253,6 +290,12 @@
           { say: 'Keep going. Each jump adds 2 juice and 3 water.', fig: function () { return dline(2, 3, 5, 'Juice', 'Water', 5); } },
           { say: 'For 6 cups of juice, you need <b>9 cups of water</b>.', fig: function () { return dline(2, 3, 5, 'Juice', 'Water', 3); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A paint mix uses 3 cans of blue for every 5 cans of white. I need 12 cans of blue. How much white?', fig: function () { return dline(3, 5, 1, 'Blue', 'White', 1); } },
+          { say: 'I multiply both parts by the same number. Twice the mix is 6 blue and 10 white.', fig: function () { return dline(3, 5, 2, 'Blue', 'White', 2); } },
+          { say: 'Each jump adds 3 blue and 5 white. 12 blue is 4 jumps, because 3 &times; 4 = 12.', fig: function () { return dline(3, 5, 5, 'Blue', 'White', 4); } },
+          { say: 'So I multiply 5 by 4 too: <b>20 cans of white</b>. 3 : 5 = 12 : 20.', fig: eq('3 : 5 = 12 : 20'), ms: 2400 }
+        ]),
         key: '<p><b>Equivalent ratios: multiply both parts by the same number.</b> 2 : 3 = 4 : 6 = 6 : 9.</p>',
         mistake: '<p>Adding the same amount to both parts: 2 : 3 becomes 6 : 7. The punch would taste different. Multiply, do not add.</p>',
         check: [function () { var a = R.int(1, 4), b = R.int(a + 1, 6), k = R.int(2, 5); return { q: 'A recipe uses ' + a + ' cup' + (a > 1 ? 's' : '') + ' of juice for ' + b + ' cups of water. How much water for ' + a * k + ' cups of juice?', type: 'num', answer: b * k, hint: a + ' was multiplied by ' + k + '. Do the same to ' + b + '.', explain: b + ' &times; ' + k + ' = ' + b * k + ' cups.' }; }, K.ck('pr-prop', 1)] },
@@ -263,6 +306,12 @@
           { say: 'Find the price for the same amount, 100 g. A: 4.50 &divide; 5 = $0.90.', fig: eq('A: $0.90 per 100 g') },
           { say: 'B: 6.00 &divide; 7.5 = $0.80.', fig: eq('B: $0.80 per 100 g') },
           { say: 'B costs less for the same amount. <b>B is the better buy.</b>', fig: eq('$0.80 &lt; $0.90 &rarr; B'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Juice A is 2 L for $3.60. Juice B is 3 L for $5.10. Which is the better buy?', fig: eq('A: 2 L, $3.60 &nbsp;&nbsp; B: 3 L, $5.10') },
+          { say: 'I find the price for the same amount, 1 L. A: 3.60 &divide; 2 = $1.80 per litre.', fig: eq('A: $1.80 per litre') },
+          { say: 'B: 5.10 &divide; 3 = $1.70 per litre.', fig: eq('B: $1.70 per litre') },
+          { say: 'B costs less for the same amount. <b>B is the better buy.</b>', fig: eq('$1.70 &lt; $1.80 &rarr; B'), ms: 2400 }
         ]),
         try: lab('bua', [
           { do: 'Make the two sizes <b>exactly as good</b> as each other.', goal: function (h) { var a = +K.v(h, 'bua'), pa = +K.v(h, 'bupa'), b = +K.v(h, 'bub'), pb = +K.v(h, 'bupb'); return a > 0 && b > 0 && Math.abs(pa / a - pb / b) < 1e-9; }, yes: 'Same unit price: neither is a better buy.' },
@@ -285,6 +334,12 @@
           { say: 'Taxi: $4 to start, then $1.50 per km. Its line starts at 4.', fig: function () { return graph([{ m: 2, c: 0, col: 'var(--sb)', lab: '$2/km' }, { m: 1.5, c: 4, col: 'var(--se)', lab: '$4 + $1.50/km' }], 10, 25, 'distance (km)', 'cost ($)'); } },
           { say: '5 km costs $11.50, but 10 km costs $19, not double. <b>Not proportional.</b>', fig: eq('5 km &rarr; $11.50 &nbsp;&nbsp; 10 km &rarr; $19'), ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. Swim pass A costs $5 a visit. 0 visits cost $0.', fig: function () { return graph([{ m: 5, c: 0, col: 'var(--sb)', lab: '$5/visit' }], 10, 50, 'visits', 'cost ($)'); } },
+          { say: '2 visits cost $10. 4 visits cost $20. Double the visits, double the cost, and 0 goes with 0. Proportional.', fig: eq('2 &rarr; $10 &nbsp;&nbsp; 4 &rarr; $20') },
+          { say: 'Pass B costs $20 to join, then $2 a visit. Its line starts at 20, not 0.', fig: function () { return graph([{ m: 5, c: 0, col: 'var(--sb)', lab: '$5/visit' }, { m: 2, c: 20, col: 'var(--se)', lab: '$20 + $2/visit' }], 10, 50, 'visits', 'cost ($)'); } },
+          { say: '2 visits cost $24, but 4 visits cost $28, not double. <b>Not proportional.</b>', fig: eq('2 &rarr; $24 &nbsp;&nbsp; 4 &rarr; $28'), ms: 2800 }
+        ]),
         try: lab('ppmo', [
           { do: 'Make the taxi <b>proportional</b>.', goal: function (h) { return K.v(h, 'ppc') === 0; }, yes: 'With no start fee, the line starts at 0: proportional.' },
           { do: 'Make a taxi that costs <b>$10 for 4 km</b>.', goal: function (h) { return Math.abs(K.v(h, 'ppc') + 4 * K.v(h, 'ppm') - 10) < 1e-9; }, yes: 'Start fee + 4 × cost per km = $10.' }
@@ -302,6 +357,12 @@
           { say: '3 kg of apples cost $7.50. How much do 5 kg cost?', fig: eq('3 kg &rarr; $7.50 &nbsp;&nbsp; 5 kg &rarr; ?') },
           { say: 'Unit rate: 7.50 &divide; 3 = $2.50 per kg.', fig: eq('1 kg &rarr; $2.50') },
           { say: '5 kg: 5 &times; 2.50 = <b>$12.50</b>.', fig: eq('5 kg &rarr; $12.50'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. 6 muffins cost $9. How much do 10 muffins cost?', fig: eq('6 &rarr; $9 &nbsp;&nbsp; 10 &rarr; ?') },
+          { say: 'First I find the amount for 1: 9 &divide; 6 = $1.50 a muffin.', fig: eq('1 &rarr; $1.50') },
+          { say: 'Then I multiply: 10 &times; 1.50 = <b>$15</b>.', fig: eq('10 &rarr; $15') },
+          { say: 'I check: $9 &divide; 6 and $15 &divide; 10 are both $1.50. The rate is the same.', fig: eq('$9 &divide; 6 = $1.50 &nbsp;&nbsp; $15 &divide; 10 = $1.50 &#10003;'), ms: 2400 }
         ]),
         key: '<p><b>Find the amount for 1. Then multiply.</b></p>',
         mistake: '<p>Adding instead of scaling: 3 kg is $7.50, so 5 kg is $9.50 ("2 more"). Ask: is the price per kg the same?</p>',
