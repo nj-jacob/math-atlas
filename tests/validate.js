@@ -8,7 +8,7 @@ window.__validate = function (q) {
   if (typeof q.q !== 'string' || !strip(q.q)) bad.push('no question text');
   const texts = [q.q, q.fig, q.hint, q.explain, q.answerText, q.fill].concat(q.options || [], q.items || [], q.steps || [], q.tiles || []).concat((q.pairs || []).flat()).concat(q.why ? q.why.options : []);
   texts.forEach(t => { if (t != null && /\bundefined\b|\bNaN\b|\[object Object\]/.test(strip(t))) bad.push('text shows undefined/NaN: ' + strip(t).slice(0, 60)); });
-  const uniq = a => new Set(a.map(x => strip(x))).size === a.length;
+  const uniq = a => new Set(a.map(x => /<svg|<img/.test(String(x)) ? String(x) : strip(x))).size === a.length; /* options with pictures compare by their drawing */
   switch (q.type) {
     case 'mc': if (!Array.isArray(q.options) || q.options.length < 2) bad.push('mc needs 2+ options'); else { if (!(Number.isInteger(q.answer) && q.answer >= 0 && q.answer < q.options.length)) bad.push('mc answer index out of range'); if (!uniq(q.options)) bad.push('mc options repeat'); } break;
     case 'num': if (!isNum(q.answer)) bad.push('num answer is not a number'); break;
