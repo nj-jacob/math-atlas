@@ -250,4 +250,148 @@ A.yt({ q: 'A recipe uses ' + raw(2, 3) + ' cup of flour for one batch. You make 
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  /* plain "3/4" text, for answers that are read back in reveals */
+  function T(n, d) { return TXT(n, d); }
+  function two(lv) { var p = pf(lv), q; do { q = pf(lv); } while (q[0] * p[1] === p[0] * q[1]); return [p, q]; }
+  var SHAPES = {
+    'fr-add': [
+      [1, 'fill', function (lv) {
+        var pq = two(1), p = pq[0], q = pq[1], L = lcm(p[1], q[1]), x = p[0] * L / p[1], y = q[0] * L / q[1];
+        return { q: 'Rename both fractions with denominator <b>' + L + '</b>, then add.', type: 'fill', fill: '<span class="math">' + raw(p[0], p[1]) + ' + ' + raw(q[0], q[1]) + ' = [[]]/' + L + ' + [[]]/' + L + ' = [[]]/' + L + '</span>', answers: [x, y, x + y],
+          hint: 'How many times does ' + p[1] + ' go into ' + L + '? Multiply the top by the same number.', steps: [raw(p[0], p[1]) + ' = ' + raw(x, L) + ' and ' + raw(q[0], q[1]) + ' = ' + raw(y, L) + '.', 'Add the tops: ' + x + ' + ' + y + ' = ' + (x + y) + '.'], explain: 'The sum is ' + raw(x + y, L) + (G(x + y, L) > 1 ? ', which simplifies to ' + T(x + y, L) : '') + '.', meta: { k: 'fa-fill', p: p, q: q, L: L } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), pq = two(lv), p = pq[0], q = pq[1], a = ansQ(p[0] * q[1] + q[0] * p[1], p[1] * q[1]);
+        return { q: who + ' walks ' + raw(p[0], p[1]) + ' km to school, then ' + raw(q[0], q[1]) + ' km to the rink. How far is that in all? Type a fraction like 5/6.', type: 'num', answer: a.answer, show: a.show, unit: 'km',
+          hint: 'In all means add. Find a common denominator first.', steps: ['Add ' + T(p[0], p[1]) + ' + ' + T(q[0], q[1]) + '.', 'Common denominator: ' + lcm(p[1], q[1]) + '.', 'The total is ' + a.show + ' km.'], explain: T(p[0], p[1]) + ' + ' + T(q[0], q[1]) + ' = ' + a.show + ' km.', meta: { k: 'fa-story', p: p, q: q } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), pq = two(1), p = pq[0], q = pq[1], truth = R.int(0, 1), right = T(p[0] * q[1] + q[0] * p[1], p[1] * q[1]), said = truth ? right : (p[0] + q[0]) + '/' + (p[1] + q[1]);
+        if (said === right) truth = 1;
+        return K.tf({ q: who + ' says <span class="math">' + raw(p[0], p[1]) + ' + ' + raw(q[0], q[1]) + ' = ' + said + '</span>. True or false?', truth: truth,
+          right: 'With a common denominator of ' + lcm(p[1], q[1]) + ', the sum is ' + right + '.', wrong: ['Add the tops and add the bottoms.', 'Fractions can only be added if the tops match.'],
+          hint: 'Can you add the bottoms of fractions?', meta: { k: 'fa-tf', p: p, q: q, said: said } });
+      }],
+      [2, 'match', function (lv) {
+        return K.until(function () {
+          var list = [0, 1, 2].map(function () { return two(1); }), ans = list.map(function (x) { return T(x[0][0] * x[1][1] + x[1][0] * x[0][1], x[0][1] * x[1][1]); });
+          if (ans[0] === ans[1] || ans[1] === ans[2] || ans[0] === ans[2]) return null;
+          return { q: 'Match each sum to its answer.', type: 'match', pairs: list.map(function (x, i) { return [T(x[0][0], x[0][1]) + ' + ' + T(x[1][0], x[1][1]), ans[i]]; }),
+            hint: 'Use a common denominator for each one.', steps: ['Rename, add the tops, then simplify.'], explain: list.map(function (x, i) { return T(x[0][0], x[0][1]) + ' + ' + T(x[1][0], x[1][1]) + ' = ' + ans[i]; }).join('. ') + '.', meta: { k: 'fa-match' } };
+        });
+      }]
+    ],
+    'fr-sub': [
+      [1, 'fill', function (lv) {
+        var pq = two(1), p = pq[0], q = pq[1], L = lcm(p[1], q[1]), x = p[0] * L / p[1], y = q[0] * L / q[1];
+        if (x < y) { var t = p; p = q; q = t; t = x; x = y; y = t; }
+        return { q: 'Rename both fractions with denominator <b>' + L + '</b>, then subtract.', type: 'fill', fill: '<span class="math">' + raw(p[0], p[1]) + ' &minus; ' + raw(q[0], q[1]) + ' = [[]]/' + L + ' &minus; [[]]/' + L + ' = [[]]/' + L + '</span>', answers: [x, y, x - y],
+          hint: 'Multiply the top and bottom by the same number to reach ' + L + '.', steps: [raw(p[0], p[1]) + ' = ' + raw(x, L) + ' and ' + raw(q[0], q[1]) + ' = ' + raw(y, L) + '.', 'Subtract the tops: ' + x + ' &minus; ' + y + ' = ' + (x - y) + '.'], explain: 'The difference is ' + raw(x - y, L) + '.', meta: { k: 'fs-fill', p: p, q: q, L: L } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), pq = two(lv), p = pq[0], q = pq[1];
+        if (p[0] * q[1] < q[0] * p[1]) { var t = p; p = q; q = t; }
+        var a = ansQ(p[0] * q[1] - q[0] * p[1], p[1] * q[1]);
+        return { q: who + ' has ' + raw(p[0], p[1]) + ' of a jug of maple lemonade. ' + who + ' pours out ' + raw(q[0], q[1]) + ' of a jug. How much is left? Type a fraction.', type: 'num', answer: a.answer, show: a.show,
+          hint: 'Left means subtract. Find a common denominator first.', steps: ['Work out ' + T(p[0], p[1]) + ' &minus; ' + T(q[0], q[1]) + '.', 'The answer is ' + a.show + ' of a jug.'], explain: T(p[0], p[1]) + ' &minus; ' + T(q[0], q[1]) + ' = ' + a.show + '.', meta: { k: 'fs-story', p: p, q: q } };
+      }],
+      [1, 'mistake', function (lv) {
+        return K.until(function () {
+          var who = K.name(), b = R.pick([6, 8, 10, 12]), d = R.pick([2, 3, 4]), a = R.int(2, b - 1), c = R.int(1, d - 1);
+          if (a * d <= c * b || a <= c) return null;
+          var truth = R.int(0, 1), right = T(a * d - c * b, b * d), said = truth ? right : (a - c) + '/' + (b - d);
+          if (said === right) truth = 1;
+          return K.tf({ q: who + ' says <span class="math">' + raw(a, b) + ' &minus; ' + raw(c, d) + ' = ' + said + '</span>. True or false?', truth: truth,
+            right: 'Rename with a common denominator of ' + lcm(b, d) + '. The difference is ' + right + '.', wrong: ['Subtract the tops and subtract the bottoms.', 'The bottoms must be subtracted first.'],
+            hint: 'What must match before you subtract?', meta: { k: 'fs-tf', p: [a, b], q: [c, d], said: said } });
+        });
+      }]
+    ],
+    'fr-mul': [
+      [1, 'fill', function (lv) {
+        var p = pf(1), q = pf(1);
+        return { q: 'Multiply the tops and multiply the bottoms. (Do not simplify yet.)', type: 'fill', fill: '<span class="math">' + raw(p[0], p[1]) + ' &times; ' + raw(q[0], q[1]) + ' = [[]]/[[]]</span>', answers: [p[0] * q[0], p[1] * q[1]],
+          hint: 'Top times top. Bottom times bottom.', steps: [p[0] + ' &times; ' + q[0] + ' = ' + p[0] * q[0] + '.', p[1] + ' &times; ' + q[1] + ' = ' + p[1] * q[1] + '.'], explain: raw(p[0], p[1]) + ' &times; ' + raw(q[0], q[1]) + ' = ' + raw(p[0] * q[0], p[1] * q[1]) + (G(p[0] * q[0], p[1] * q[1]) > 1 ? ' = ' + T(p[0] * q[0], p[1] * q[1]) : '') + '.', meta: { k: 'fm-fill', p: p, q: q } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), c = R.pick([[3, 4], [2, 3], [1, 2], [3, 2]]), s = R.pick([[1, 2], [1, 3], [2, 3], [3, 4]]), a = ansQ(c[0] * s[0], c[1] * s[1]);
+        return { q: 'A bannock recipe needs ' + raw(c[0], c[1]) + ' cup of flour. ' + who + ' makes ' + raw(s[0], s[1]) + ' of the recipe. How much flour is needed? Type a fraction.', type: 'num', answer: a.answer, show: a.show, unit: 'cup',
+          hint: raw(s[0], s[1]) + ' of the recipe means ' + raw(s[0], s[1]) + ' &times; ' + raw(c[0], c[1]) + '.', steps: ['Multiply: ' + T(s[0], s[1]) + ' &times; ' + T(c[0], c[1]) + ' = ' + T(c[0] * s[0], c[1] * s[1]) + '.'], explain: 'It needs ' + a.show + ' cup.', meta: { k: 'fm-story', p: c, q: s } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), w = R.int(4, 12), d = R.pick([2, 3, 4, 5]), top = R.int(0, 1) ? R.int(1, d - 1) : d + R.int(1, 3), bigger = top > d;
+        return K.tf({ q: who + ' says <span class="math">' + w + ' &times; ' + raw(top, d) + '</span> is <b>more</b> than ' + w + ', because multiplying always makes a number bigger. Is the answer more than ' + w + '?', truth: bigger,
+          right: raw(top, d) + ' is ' + (bigger ? 'more' : 'less') + ' than 1, so the answer is ' + (bigger ? 'more' : 'less') + ' than ' + w + ': ' + w + ' &times; ' + raw(top, d) + ' = ' + T(w * top, d) + '.', wrong: ['Multiplying always makes a number bigger.', 'Multiplying by a fraction always makes a number smaller.'],
+          hint: 'Is ' + raw(top, d) + ' more or less than 1?', meta: { k: 'fm-tf', w: w, f: [top, d] } });
+      }],
+      [2, 'match', function (lv) {
+        return K.until(function () {
+          var list = [0, 1, 2].map(function () { return [pf(1), pf(1)]; }), ans = list.map(function (x) { return T(x[0][0] * x[1][0], x[0][1] * x[1][1]); });
+          if (ans[0] === ans[1] || ans[1] === ans[2] || ans[0] === ans[2]) return null;
+          return { q: 'Match each product to its answer.', type: 'match', pairs: list.map(function (x, i) { return [T(x[0][0], x[0][1]) + ' &times; ' + T(x[1][0], x[1][1]), ans[i]]; }),
+            hint: 'Multiply top by top and bottom by bottom, then simplify.', steps: ['No common denominator is needed to multiply.'], explain: list.map(function (x, i) { return T(x[0][0], x[0][1]) + ' &times; ' + T(x[1][0], x[1][1]) + ' = ' + ans[i]; }).join('. ') + '.', meta: { k: 'fm-match' } };
+        });
+      }]
+    ],
+    'fr-div': [
+      [1, 'fill', function (lv) {
+        var w = R.int(2, 6), d = R.pick([2, 3, 4, 5, 6, 8]);
+        return { q: 'How many ' + raw(1, d) + 's fit into ' + w + '? Fill in the blanks.', type: 'fill', fill: '<span class="math">' + w + ' &divide; ' + raw(1, d) + ' = ' + w + ' &times; [[]] = [[]]</span>', answers: [d, w * d], fig: divPic(w, 1, 1, d),
+          hint: 'There are ' + d + ' pieces of size ' + raw(1, d) + ' in each whole.', steps: ['Dividing by ' + raw(1, d) + ' is multiplying by ' + d + '.', w + ' &times; ' + d + ' = ' + w * d + '.'], explain: w + ' &divide; ' + raw(1, d) + ' = ' + w * d + '.', meta: { k: 'fd-fill', w: w, d: d } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), w = R.int(2, 6), d = R.pick([2, 3, 4, 5, 8]);
+        return { q: who + ' has <b>' + w + ' m</b> of ribbon for a craft fair. Each bow uses ' + raw(1, d) + ' m. How many bows can ' + who + ' make?', type: 'num', answer: w * d,
+          hint: 'How many ' + raw(1, d) + ' m pieces fit into ' + w + ' m? Divide.', steps: [w + ' &divide; ' + T(1, d) + ' = ' + w + ' &times; ' + d + '.', 'That is ' + w * d + ' bows.'], explain: w + ' &divide; ' + T(1, d) + ' = ' + w * d + ' bows.', meta: { k: 'fd-story', w: w, d: d } };
+      }],
+      [1, 'mistake', function (lv) {
+        return K.until(function () {
+          var who = K.name(), p = pf(1), q = pf(1), right = T(p[0] * q[1], p[1] * q[0]), wrongT = T(p[0] * q[0], p[1] * q[1]);
+          if (right === wrongT) return null;
+          var truth = R.int(0, 1), said = truth ? right : wrongT;
+          return K.tf({ q: who + ' says <span class="math">' + raw(p[0], p[1]) + ' &divide; ' + raw(q[0], q[1]) + ' = ' + said + '</span>. True or false?', truth: truth,
+            right: 'Flip ' + T(q[0], q[1]) + ' to ' + T(q[1], q[0]) + ' and multiply: the answer is ' + right + '.', wrong: ['To divide fractions, multiply straight across.', 'Flip the first fraction, not the second.'],
+            hint: 'Keep, change, flip: which fraction gets flipped?', meta: { k: 'fd-tf', p: p, q: q, said: said } });
+        });
+      }],
+      [2, 'tap', function (lv) {
+        return K.until(function () {
+          var p = pf(2), q = pf(2), S = function (a, b) { return a + '/' + b; }, t = [S(p[0], p[1]) + ' &times; ' + S(q[1], q[0]), S(p[1], p[0]) + ' &times; ' + S(q[0], q[1]), S(p[0], p[1]) + ' &times; ' + S(q[0], q[1])];
+          var v = [[p[0] * q[1], p[1] * q[0]], [p[1] * q[0], p[0] * q[1]], [p[0] * q[0], p[1] * q[1]]], eq = function (x, y) { return x[0] * y[1] === x[1] * y[0]; };
+          if (eq(v[0], v[1]) || eq(v[0], v[2]) || eq(v[1], v[2])) return null;
+          var tiles = R.shuffle(t);
+          return { q: 'Which multiplication gives the same answer as <span class="math">' + raw(p[0], p[1]) + ' &divide; ' + raw(q[0], q[1]) + '</span>? Tap it.', type: 'tap', tiles: tiles, answer: tiles.indexOf(t[0]), answerText: t[0],
+            hint: 'Keep the first fraction. Change &divide; to &times;. Flip the second.', steps: ['Flip ' + T(q[0], q[1]) + ' to ' + T(q[1], q[0]) + '.'], explain: T(p[0], p[1]) + ' &divide; ' + T(q[0], q[1]) + ' = ' + t[0] + ' = ' + T(p[0] * q[1], p[1] * q[0]) + '.', meta: { k: 'fd-tap', p: p, q: q } };
+        });
+      }]
+    ],
+    'fr-word': [
+      [1, 'way', function (lv) {
+        var who = K.name(), s = R.pick(['batches', 'pieces', 'left', 'total']), a, b, q, right, wrong;
+        if (s === 'batches') { a = R.pick([[1, 2], [2, 3], [3, 4]]); b = R.int(2, 6); q = 'A recipe uses ' + T(a[0], a[1]) + ' cup of oats. ' + who + ' makes ' + b + ' batches.'; right = b + ' &times; ' + T(a[0], a[1]); wrong = [b + ' &divide; ' + T(a[0], a[1]), b + ' + ' + T(a[0], a[1]), T(a[0], a[1]) + ' &divide; ' + b]; }
+        else if (s === 'pieces') { a = R.pick([[1, 2], [1, 3], [1, 4]]); b = R.int(2, 6); q = 'A board is ' + b + ' m long. ' + who + ' cuts pieces ' + T(a[0], a[1]) + ' m long.'; right = b + ' &divide; ' + T(a[0], a[1]); wrong = [b + ' &times; ' + T(a[0], a[1]), b + ' &minus; ' + T(a[0], a[1]), T(a[0], a[1]) + ' &divide; ' + b]; }
+        else if (s === 'left') { a = [3, 4]; b = R.pick([[1, 3], [1, 4], [1, 2]]); q = who + ' has ' + T(a[0], a[1]) + ' of a pizza and eats ' + T(b[0], b[1]) + ' of a pizza.'; right = T(a[0], a[1]) + ' &minus; ' + T(b[0], b[1]); wrong = [T(a[0], a[1]) + ' + ' + T(b[0], b[1]), T(a[0], a[1]) + ' &times; ' + T(b[0], b[1]), T(a[0], a[1]) + ' &divide; ' + T(b[0], b[1])]; }
+        else { a = R.pick([[1, 2], [2, 3]]); b = R.pick([[1, 4], [1, 6]]); q = who + ' paddles ' + T(a[0], a[1]) + ' km, rests, then paddles ' + T(b[0], b[1]) + ' km more.'; right = T(a[0], a[1]) + ' + ' + T(b[0], b[1]); wrong = [T(a[0], a[1]) + ' &minus; ' + T(b[0], b[1]), T(a[0], a[1]) + ' &times; ' + T(b[0], b[1]), T(a[0], a[1]) + ' &divide; ' + T(b[0], b[1])]; }
+        return K.pick1({ q: q + ' Which way finds the ' + { batches: 'oats needed', pieces: 'number of pieces', left: 'amount left', total: 'total distance' }[s] + '?', right: right, wrong: wrong,
+          hint: 'Groups of a fraction: multiply. How many fit: divide. Left: subtract. In all: add.', steps: ['Decide what is happening before you work anything out.'], explain: 'Use ' + right + '.', meta: { k: 'fw-way', s: s, a: a, b: b } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), kind = R.pick(['pieces', 'of']), op = R.pick(['div', 'mul']), f = R.pick([[1, 2], [1, 4], [2, 3], [3, 4]]), N2 = f[1] * R.int(2, 6), L = R.int(2, 6), truth = kind === 'pieces' ? op === 'div' : op === 'mul';
+        var q = kind === 'pieces' ? 'To find how many ' + raw(f[0], f[1]) + ' m pieces fit in ' + L + ' m, ' + who + ' works out <span class="math">' + L + (op === 'div' ? ' &divide; ' : ' &times; ') + raw(f[0], f[1]) + '</span>.'
+          : 'To find ' + raw(f[0], f[1]) + ' of ' + N2 + ' students, ' + who + ' works out <span class="math">' + (op === 'mul' ? raw(f[0], f[1]) + ' &times; ' + N2 : N2 + ' &divide; ' + raw(f[0], f[1])) + '</span>.';
+        return K.tf({ q: q + ' Is that the right way?', truth: truth,
+          right: kind === 'pieces' ? 'How many fit is a division: ' + L + ' &divide; ' + T(f[0], f[1]) + ' = ' + T(L * f[1], f[0]) + '.' : 'A fraction of an amount is a multiplication: ' + T(f[0], f[1]) + ' &times; ' + N2 + ' = ' + N2 * f[0] / f[1] + '.',
+          wrong: ['Always divide when there is a fraction.', 'Always multiply when there is a fraction.'], hint: 'Is it "how many fit" or "a part of"?', meta: { k: 'fw-tf', kind: kind, op: op } });
+      }],
+      [1, 'fill', function (lv) {
+        var who = K.name(), f = R.pick([[1, 2], [1, 3], [2, 3], [3, 4], [2, 5], [3, 8]]), N2 = f[1] * R.int(2, 9);
+        return { q: who + '\'s hockey team sold ' + N2 + ' raffle tickets. ' + raw(f[0], f[1]) + ' of them were sold online. How many is that? Fill in the steps.', type: 'fill', fill: '<span class="math">' + N2 + ' &divide; [[]] = [[]]</span>, then <span class="math">&times; ' + f[0] + ' = [[]]</span>', answers: [f[1], N2 / f[1], N2 / f[1] * f[0]],
+          hint: 'Divide by the bottom to find one part. Multiply by the top.', steps: [N2 + ' &divide; ' + f[1] + ' = ' + N2 / f[1] + '.', N2 / f[1] + ' &times; ' + f[0] + ' = ' + N2 / f[1] * f[0] + '.'], explain: T(f[0], f[1]) + ' of ' + N2 + ' = ' + N2 / f[1] * f[0] + ' tickets.', meta: { k: 'fw-fill', f: f, n: N2 } };
+      }]
+    ]
+  };
+  K.shapes('fractions', SHAPES);
 })();

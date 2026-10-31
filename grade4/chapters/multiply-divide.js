@@ -496,4 +496,160 @@ A.yt({ gen: function () { return gen.rate(1); } }) +
       { id: 'md4-rate', name: 'Rates', code: 'B2.8', gen: gen.rate }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
+     q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
+  var why = K.why, nm = A.Q && A.Q.name;
+  var SHAPES = {
+    'md4-facts': [
+      [1, 'tap', function (lv) {
+        var a = lv === 1 ? R.int(2, 5) : R.int(3, 7), b = R.int(a + 1, 9), set = R.shuffle([[a, b], [a, b - 1], [a + 1, b]]);
+        return { q: 'Which array shows <b>' + a + ' &times; ' + b + '</b>? It has ' + a + ' rows of ' + b + '. Tap it.', type: 'tap', tiles: set.map(function (s) { return array(s[0], s[1], undefined, s[0] + ' rows of ' + s[1] + ' dots'); }),
+          answer: set.map(String).indexOf(String([a, b])), answerText: 'the array with ' + a + ' rows of ' + b,
+          hint: 'Count the rows first. Then count the dots in one row.', steps: ['You need ' + a + ' rows.', 'Each row needs ' + b + ' dots.'],
+          explain: a + ' rows of ' + b + ' make ' + a * b + ' dots: ' + a + ' &times; ' + b + ' = ' + a * b + '.', meta: { k: 'md4-facts-tap', a: a, b: b, set: set } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var a = lv === 1 ? R.pick([2, 3, 4, 5, 10]) : R.int(3, 9), b = R.int(2, 10), p = a * b; if (seen[p]) continue; seen[p] = 1; pairs.push([a + ' &times; ' + b, String(p)]); }
+        return { q: 'Match each fact to its product.', type: 'match', pairs: pairs, hint: 'Use a fact you know, then add or take away one group.',
+          steps: ['A product is the answer to a multiplication.'], explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'md4-facts-match', pairs: pairs } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.int(6, 9), b = R.int(6, 9), who = nm(), truth = !R.int(0, 2), said = truth ? a * b : a * b + R.pick([-a, a, -b, b]);
+        var right = a + ' &times; ' + b + ' = ' + a * b + '. Check: ' + '5 &times; ' + b + ' = ' + 5 * b + ', and ' + (a - 5) + ' more group' + (a - 5 === 1 ? '' : 's') + ' of ' + b + ' make ' + a * b + '.';
+        return { q: who + ' says <span class="math">' + a + ' &times; ' + b + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The product of two one-digit numbers is always less than 50.', 'You add the two numbers to multiply.', 'Turning the fact around changes the answer.']),
+          hint: 'Break it apart: 5 groups and ' + (a - 5) + ' more.', steps: [right], explain: right, meta: { k: 'md4-facts-tf', a: a, b: b, said: said } };
+      }],
+      [2, 'fill', function () {
+        var a = R.int(3, 9), b = R.int(3, 9), p = a * b;
+        return { q: 'Fill in the fact family.', type: 'fill', fill: '<span class="math">' + a + ' &times; ' + b + ' = [[]]</span><br><span class="math">[[]] &divide; ' + a + ' = ' + b + '</span><br><span class="math">' + p + ' &divide; ' + b + ' = [[]]</span>', answers: [p, p, a],
+          fig: array(a, b), hint: 'Multiplication and division use the same three numbers.', steps: [a + ' &times; ' + b + ' = ' + p + '.', 'So ' + p + ' &divide; ' + a + ' = ' + b + ' and ' + p + ' &divide; ' + b + ' = ' + a + '.'],
+          explain: 'The fact family uses ' + a + ', ' + b + ' and ' + p + '.', meta: { k: 'md4-facts-fill', a: a, b: b } };
+      }]
+    ],
+    'md4-tens': [
+      [1, 'fill', function () {
+        var m = R.int(2, 9) * (R.int(0, 2) ? 1 : 11);
+        return { q: 'Fill in the pattern.', type: 'fill', fill: '<span class="math">' + m + ' &times; 10 = [[]]</span><br><span class="math">' + m + ' &times; 100 = [[]]</span><br><span class="math">' + m + ' &times; 1000 = [[]]</span>', answers: [m * 10, m * 100, m * 1000],
+          fig: shift(m, 1, 'x'), hint: 'Each time, the digits move one more place to the left.', steps: ['&times; 10: one place left. &times; 100: two places. &times; 1000: three places.'],
+          explain: m + ' &times; 10 = ' + A.fmt(m * 10) + ', ' + m + ' &times; 100 = ' + A.fmt(m * 100) + ', ' + m + ' &times; 1000 = ' + A.fmt(m * 1000) + '.', meta: { k: 'md4-tens-fill', m: m } };
+      }],
+      [1, 'mistake', function () {
+        var m = R.int(12, 99), k = R.int(1, 3), f = Math.pow(10, k), who = nm(), truth = !R.int(0, 2), said = truth ? m * f : R.int(0, 1) ? m * f * 10 : m * f / 10;
+        if (said > 99999) said = m * f / 10;
+        var right = 'Times ' + A.fmt(f) + ' moves each digit ' + k + ' place' + (k > 1 ? 's' : '') + ' left: ' + m + ' &times; ' + A.fmt(f) + ' = ' + A.fmt(m * f) + '.';
+        return { q: who + ' says <span class="math">' + m + ' &times; ' + A.fmt(f) + ' = ' + A.fmt(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Times ' + A.fmt(f) + ' adds ' + A.fmt(f) + ' to the number.', 'You always add three zeros.', 'The digits move to the right.']),
+          hint: 'How many zeros does ' + A.fmt(f) + ' have?', steps: [right], explain: right, meta: { k: 'md4-tens-tf', m: m, f: f, said: said } };
+      }],
+      [2, 'match', function () {
+        var m = R.int(3, 9) * 10 + R.int(1, 9), pairs = [[m + ' &times; 10', A.fmt(m * 10)], [m + ' &times; 100', A.fmt(m * 100)], [m + ' &times; 1000', A.fmt(m * 1000)]];
+        return { q: 'Match each product to its answer.', type: 'match', pairs: pairs, hint: 'Count the zeros in 10, 100 and 1000.', steps: ['Times 10 adds one 0 at the end, times 100 adds two, times 1000 adds three.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'md4-tens-match', pairs: pairs } };
+      }],
+      [3, 'story', function () {
+        var c = R.pick([['crayons', 'A box holds', 100], ['sheets of paper', 'A pack has', 100], ['beads', 'A jar holds', 1000], ['loonies', 'A roll has', 10]]), n = R.int(2, 9) * (c[2] === 10 ? 11 : 1);
+        return { q: c[1] + ' ' + A.fmt(c[2]) + ' ' + c[0] + '. How many ' + c[0] + ' are in <b>' + n + '</b>?', type: 'num', answer: n * c[2],
+          hint: 'Multiply ' + n + ' by ' + A.fmt(c[2]) + '.', steps: [n + ' &times; ' + A.fmt(c[2]) + ' = ' + A.fmt(n * c[2]) + '.'],
+          explain: n + ' groups of ' + A.fmt(c[2]) + ' make ' + A.fmt(n * c[2]) + ' ' + c[0] + '.', meta: { k: 'md4-tens-story', n: n, f: c[2] } };
+      }]
+    ],
+    'md4-mult': [
+      [1, 'fill', function (lv) {
+        var a = lv === 1 ? R.int(12, 49) : R.int(23, 99), b = lv === 1 ? R.int(2, 5) : R.int(3, 9);
+        if (a % 10 === 0) a++;
+        var t = a - a % 10, o = a % 10;
+        return { q: 'Use the area model. Fill in the parts, then the total.', type: 'fill', fill: '<span class="math">' + a + ' &times; ' + b + ' = [[]] + [[]] = [[]]</span>', answers: [t * b, o * b, a * b],
+          fig: areaModel(a, b, true), hint: 'Break ' + a + ' into ' + t + ' + ' + o + '. Multiply each part by ' + b + '.', steps: [t + ' &times; ' + b + ' = ' + t * b + '.', o + ' &times; ' + b + ' = ' + o * b + '.', t * b + ' + ' + o * b + ' = ' + a * b + '.'],
+          explain: a + ' &times; ' + b + ' = ' + a * b + '.', meta: { k: 'md4-mult-fill', a: a, b: b } };
+      }],
+      [1, 'story', function (lv) {
+        var c = R.pick([['boxes', 'pencils', 'A school orders', 'Each box has'], ['buses', 'students', 'A trip uses', 'Each bus carries'], ['rows', 'chairs', 'The gym has', 'Each row has']]);
+        var n = lv === 1 ? R.int(2, 5) : R.int(3, 9), per = lv === 1 ? R.int(12, 30) : R.int(24, 99);
+        return { q: c[2] + ' <b>' + n + '</b> ' + c[0] + '. ' + c[3] + ' <b>' + per + '</b> ' + c[1] + '. How many ' + c[1] + ' in all?', type: 'num', answer: n * per,
+          hint: 'Equal groups: multiply ' + n + ' &times; ' + per + '.', steps: ['Break ' + per + ' into ' + parts(per).join(' + ') + '.', parts(per).map(function (p) { return n + ' &times; ' + p + ' = ' + n * p; }).join('. ') + '.', 'Add: ' + n * per + '.'],
+          explain: n + ' &times; ' + per + ' = ' + n * per + ' ' + c[1] + '.', meta: { k: 'md4-mult-story' } };
+      }],
+      [2, 'mistake', function () {
+        var a = R.int(23, 99), b = R.int(3, 9), who = nm(), t = a - a % 10, o = a % 10;
+        if (!o) { a++; o = 1; }
+        var truth = !R.int(0, 2), said = truth ? a * b : t * b + o;
+        var right = truth ? 'Both parts were multiplied: ' + t + ' &times; ' + b + ' + ' + o + ' &times; ' + b + ' = ' + a * b + '.' : 'The ones were not multiplied. ' + t + ' &times; ' + b + ' + ' + o + ' &times; ' + b + ' = ' + a * b + '.';
+        return { q: who + ' says <span class="math">' + a + ' &times; ' + b + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Only the tens need to be multiplied.', 'Multiply the digits and add them.', 'The answer is always ' + a + ' + ' + b + '.']),
+          hint: 'Break ' + a + ' into tens and ones. Multiply each part.', steps: [right], explain: right, meta: { k: 'md4-mult-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'md4-div': [
+      [1, 'fill', function (lv) {
+        var d = lv === 1 ? R.int(2, 5) : R.int(3, 9), q = lv === 1 ? R.int(3, 9) : R.int(11, 30), r = R.int(1, d - 1), n = d * q + r;
+        return { q: 'Divide. Fill in how many in each group and how many are left over.', type: 'fill', fill: '<span class="math">' + n + ' &divide; ' + d + ' = [[]] R [[]]</span>', answers: [q, r],
+          fig: lv === 1 ? share(n, d) : '', hint: 'Find the biggest fact of ' + d + ' that is not more than ' + n + '.', steps: [d + ' &times; ' + q + ' = ' + d * q + '.', n + ' &minus; ' + d * q + ' = ' + r + ' left over.'],
+          explain: n + ' &divide; ' + d + ' = ' + q + ' R' + r + '.', meta: { k: 'md4-div-fill', n: n, d: d } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), d = lv === 1 ? R.int(2, 5) : R.int(3, 8), q = lv === 1 ? R.int(3, 9) : R.int(11, 25), r = R.int(0, d - 1), n = d * q + r;
+        return { q: who + ' shares <b>' + n + '</b> hockey cards equally among <b>' + d + '</b> friends. How many cards does each friend get?' + (r ? ' <span class="t2">(Some are left over.)</span>' : ''), type: 'num', answer: q,
+          hint: 'Divide ' + n + ' by ' + d + '.', steps: [d + ' &times; ' + q + ' = ' + d * q + '.', r ? r + ' cards are left over.' : 'Nothing is left over.'],
+          explain: 'Each friend gets ' + q + ' cards.', meta: { k: 'md4-div-story' } };
+      }],
+      [2, 'mistake', function () {
+        var d = R.int(3, 7), q = R.int(11, 25), r = R.int(0, d - 3), n = d * q + r, who = nm(), truth = !R.int(0, 2), sq = truth ? q : q - 1, sr = truth ? r : r + d;
+        var right = truth ? d + ' &times; ' + q + ' + ' + r + ' = ' + n + ', and ' + r + ' is less than ' + d + '.' : 'The leftover, ' + sr + ', is ' + d + ' or more, so one more fits in each group. ' + n + ' &divide; ' + d + ' = ' + q + ' R' + r + '.';
+        return { q: who + ' says <span class="math">' + n + ' &divide; ' + d + ' = ' + sq + ' R' + sr + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Any leftover is fine as long as the total is right.', 'A remainder must be bigger than the divisor.', 'Division never has leftovers.']),
+          hint: 'The leftover must be less than ' + d + '.', steps: [right], explain: right, meta: { k: 'md4-div-tf', n: n, d: d, sq: sq, sr: sr } };
+      }]
+    ],
+    'md4-rem': [
+      [1, 'which', function () {
+        var d = R.pick([3, 4, 5, 6, 8]), q = R.int(2, 6), r = R.int(1, d - 1), n = d * q + r, kind = R.pick(['up', 'drop', 'share']);
+        var t = kind === 'up' ? n + ' campers go canoeing. Each canoe holds ' + d + '. How many canoes do they need?' : kind === 'drop' ? n + ' muffins go in boxes of ' + d + '. How many boxes can be filled?' : n + ' pizzas are shared by ' + d + ' teams. How much pizza does each team get?';
+        var ways = ['Round up: the leftovers need one more', 'Drop the leftovers: only full ones count', 'Cut the leftovers into equal parts'], pick = { up: 0, drop: 1, share: 2 }[kind];
+        var ans = kind === 'up' ? q + 1 + ' canoes' : kind === 'drop' ? q + ' boxes' : A.mixed(q, r, d) + ' pizzas';
+        return { q: t + ' <b>What do you do with the leftovers?</b> <span class="t2">(' + n + ' &divide; ' + d + ' = ' + q + ' R' + r + ')</span>', type: 'mc', options: ways, answer: pick,
+          hint: 'Think about the real thing. Can people be left behind? Can a box be half full? Can a pizza be cut?', steps: [ways[pick] + '.', 'The answer is ' + ans + '.'],
+          explain: ways[pick] + '. The answer is ' + ans + '.', meta: { k: 'md4-rem-which', kind: kind } };
+      }],
+      [1, 'mistake', function () {
+        var d = R.pick([4, 5, 6, 8]), q = R.int(3, 8), r = R.int(1, d - 1), n = d * q + r, who = nm(), truth = !R.int(0, 1), said = truth ? q + 1 : q;
+        var right = q + ' vans carry ' + d * q + ' students. The other ' + r + ' still need a ride, so ' + (q + 1) + ' vans are needed.';
+        return { q: n + ' students go on a trip. Each van holds ' + d + '. ' + who + ' says <b>' + said + '</b> vans are enough. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Leftover students can stay at school.', 'You always drop the remainder.', 'Each van can hold one extra student.']),
+          hint: n + ' &divide; ' + d + ' = ' + q + ' R' + r + '. Who rides with the leftover students?', steps: [right], explain: right, meta: { k: 'md4-rem-tf', n: n, d: d, said: said } };
+      }],
+      [2, 'fill', function () {
+        var d = R.pick([3, 4, 5, 6]), q = R.int(3, 9), r = R.int(1, d - 1), n = d * q + r;
+        return { q: n + ' tennis balls go in cans of ' + d + '. Every ball must go in a can. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + ' &divide; ' + d + ' = [[]] R [[]]</span><br>Cans needed: [[]]', answers: [q, r, q + 1],
+          hint: 'The leftover balls need a can too.', steps: [n + ' &divide; ' + d + ' = ' + q + ' R' + r + '.', 'The ' + r + ' extra ball' + (r > 1 ? 's need' : ' needs') + ' one more can: ' + (q + 1) + '.'],
+          explain: q + 1 + ' cans are needed.', meta: { k: 'md4-rem-fill', n: n, d: d } };
+      }]
+    ],
+    'md4-rate': [
+      [1, 'line', function (lv) {
+        var per = R.int(2, lv === 1 ? 5 : 9), n = R.int(2, 9);
+        return { q: 'A snail crawls <b>' + per + ' cm</b> each minute. Place where it is after <b>' + n + ' minutes</b>.', type: 'line', min: 0, max: per * 10, tick: per, every: per * 5, snap: per, answer: per * n, tol: 0,
+          hint: 'Each jump is ' + per + ' cm. Make ' + n + ' jumps.', steps: [n + ' &times; ' + per + ' = ' + per * n + ' cm.'],
+          explain: 'After ' + n + ' minutes the snail has gone ' + per * n + ' cm.', meta: { k: 'md4-rate-line', per: per, n: n } };
+      }],
+      [1, 'which', function () {
+        var per = R.int(3, 9), n = R.int(3, 9), mult = !R.int(0, 1), who = nm();
+        var t = mult ? who + ' earns $' + per + ' each week for chores. How much after ' + n + ' weeks?' : who + ' earns $' + per + ' each week. How many weeks to earn $' + per * n + '?';
+        var opts = ['Multiply', 'Divide'];
+        return { q: t + ' <b>Which way?</b> Pick the operation.', type: 'mc', options: opts, answer: mult ? 0 : 1,
+          hint: 'Do you know the number of weeks, or the total?', steps: [mult ? 'You know the weeks. Multiply: ' + n + ' &times; ' + per + ' = ' + n * per + '.' : 'You know the total. Divide: ' + per * n + ' &divide; ' + per + ' = ' + n + '.'],
+          explain: mult ? 'Multiply: $' + n * per + '.' : 'Divide: ' + n + ' weeks.', meta: { k: 'md4-rate-which', mult: mult } };
+      }],
+      [2, 'fill', function () {
+        var per = R.int(3, 9), c = R.pick([['packs', 'juice boxes'], ['hours', 'km'], ['bags', 'apples']]);
+        return { q: 'Each ' + c[0].replace(/s$/, '') + ' has <b>' + per + '</b> ' + c[1] + '. Fill in the rate table.', type: 'fill',
+          fill: '<div class="tbl"><table><tr><th>' + c[0] + '</th><td>1</td><td>2</td><td>4</td><td>7</td></tr><tr><th>' + c[1] + '</th><td>' + per + '</td><td>[[]]</td><td>[[]]</td><td>[[]]</td></tr></table></div>', answers: [2 * per, 4 * per, 7 * per],
+          hint: 'Multiply the top number by ' + per + '.', steps: ['2 &times; ' + per + ' = ' + 2 * per + '.', '4 &times; ' + per + ' = ' + 4 * per + '. 7 &times; ' + per + ' = ' + 7 * per + '.'],
+          explain: 'The rate is ' + per + ' ' + c[1] + ' per ' + c[0].replace(/s$/, '') + '.', meta: { k: 'md4-rate-fill', per: per } };
+      }]
+    ]
+  };
+  K.shapes('multiply-divide', SHAPES);
 })();
