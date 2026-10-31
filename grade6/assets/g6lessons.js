@@ -3,7 +3,6 @@
    G6.lab(chapter, n, doText, test, msg) -> a "Try it" that shows the chapter's widget number n; done when test(host) is true
    G6.goal(host, test, msg, done) -> calls done(msg) the first time test(host) is true after any input
    G6.g(chapter, skill, level) -> a quick-check generator that reuses a practice skill
-   G6.shapes(chapter, SHAPES) -> adds a chapter's extra question shapes to its practice skills (docs/QUESTIONS.md)
    G6.why(right, wrong) -> the "why" choices for a true-or-false question */
 (function () {
   var A = window.Atlas, M = window.Manip;
@@ -47,16 +46,6 @@
     var hit = false;
     function chk() { if (!hit && test(host)) { hit = true; done(typeof msg === 'function' ? msg(host) : msg); } }
     host.addEventListener('input', chk); host.addEventListener('change', chk); host.addEventListener('click', function () { setTimeout(chk, 0); });
-  };
-  G6.shapes = function (id, SHAPES) {
-    var ch = A.chapters[id];
-    ch.quizFresh = true;
-    ch.practice.forEach(function (sk) {
-      var plain = sk.gen, extra = SHAPES[sk.id] || [];
-      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
-      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
-    });
-    ch._shapes = SHAPES;
   };
   G6.why = function (right, wrong) { var o = A.R.mc(right, wrong); return { options: o.options, answer: o.answer }; };
   G6.g = function (ch, sk, lv) {

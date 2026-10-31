@@ -600,6 +600,6 @@ A.yt({ q: 'Which is greatest: ' + fr(2, 5) + ', 0.35 or 0.04?', type: 'mc', opti
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

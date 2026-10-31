@@ -870,6 +870,6 @@ A.yt({ q: 'Finish the prime factorization: <span class="math">90 = 2 &times; 3 &
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

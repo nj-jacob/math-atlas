@@ -53,7 +53,7 @@ Each skill keeps its first way of asking as `plain`. Don't copy this loop into a
 
 `grade3/chapters/numbers-1000.js` is the worked example.
 
-Grade 6 wraps the same loop in one helper, `G6.shapes(CH, SHAPES)` in `grade6/assets/g6lessons.js`, called at the end of each chapter file. `G6.why(right, wrong)` builds the "why" choices for a `tf` question.
+Grade kits may add small helpers for writing shapes, such as `G6.why(right, wrong)` in `grade6/assets/g6lessons.js`, which builds the "why" choices for a `tf` question.
 
 ## Answer checks (required)
 

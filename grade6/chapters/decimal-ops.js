@@ -508,6 +508,6 @@ A.yt({ q: '<span class="math">7.38 &divide; 3 = ?</span>', type: 'num', answer: 
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

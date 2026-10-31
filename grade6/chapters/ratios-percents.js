@@ -475,6 +475,6 @@ A.yt({ q: 'What is 25% of 64?', type: 'num', answer: 16,
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();

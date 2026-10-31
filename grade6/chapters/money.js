@@ -529,6 +529,6 @@ A.yt({ q: 'You let a friend use your calculator for a test, and they give it bac
         }]
       ]
     };
-    G6.shapes(CH, SHAPES);
+    Atlas.Q.shapes(CH, SHAPES);
   })();
 })();
