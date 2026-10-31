@@ -218,10 +218,8 @@
     return true;
   };
   E.title = function (r) { return 'Grade ' + r.g + ' ' + r.topic.replace(/\s+$/, '') + ' (' + r.code + ')'; };
-  E.plain = function (r) {
-    var t = r.text.replace(/,? ?(in various contexts|using a variety of tools and strategies|using appropriate tools(?: and strategies)?|using various tools(?: and drawings)?)/g, '').replace(/\s+,/g, ',').replace(/\s+/g, ' ').trim();
-    return t.charAt(0).toUpperCase() + t.slice(1);
-  };
+  /* A short, plain-language line for the expectation, from blurbs.js. The full Ministry wording is r.text. */
+  E.plain = function (r) { return window.PLB[r.id]; };
 
   /* ---------- sessions and check-ins ---------- */
   /* Warm-up: 3 quick review questions from ideas already secure, oldest first. */

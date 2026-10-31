@@ -3,7 +3,7 @@
    It fails (exit code 1) if anything below finds a problem, and the publish step on GitHub will not run.
 
    1. Repository rules: every script parses; the shared engine has exactly one copy (assets/engine);
-      every grade page loads it.
+      every grade page loads it; every Math Plan expectation has a short plain-language line (plan/blurbs.js).
    2. Questions: every practice skill at every level, every lesson "Your turn" check and every written quiz
       question is made many times and checked: the right shape for its type, no "undefined" or "NaN" on screen,
       and, for the newer question shapes, the answer worked out again by verify/*.js.
@@ -46,6 +46,16 @@ function repoRules() {
       if (!html.includes(need)) fail('grade' + g + '/index.html', 'does not load ' + need);
     }
   }
+  /* Math Plan: every expectation in ladder.js has exactly one short plain-language line in blurbs.js. */
+  const sand = { window: {} };
+  for (const f of ['ladder.js', 'blurbs.js']) vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'plan', f), 'utf8'), sand);
+  const ids = sand.window.PL.map(r => 'g' + r[0] + '.' + r[1]), blurbs = sand.window.PLB;
+  for (const id of ids) {
+    const b = blurbs[id];
+    if (!b) fail('plan/blurbs.js', 'has no line for ' + id);
+    else if (b.length > 140) fail('plan/blurbs.js', id + ' is longer than 140 characters. Keep it short.');
+  }
+  for (const id of Object.keys(blurbs)) if (!ids.includes(id)) fail('plan/blurbs.js', id + ' is not an expectation in ladder.js');
 }
 
 /* ---------- 2 to 4: in the browser ---------- */

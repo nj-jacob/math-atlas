@@ -235,11 +235,15 @@ table.vt th { background: var(--soft); }
 .dot.mastered { background: var(--ok); } .dot.learning { background: var(--ind); } .dot.review { background: #e09a2a; }
 .dot.placed { background: var(--placed); } .dot.todo { background: #c9ccd3; }
 .dot.skip { background: repeating-linear-gradient(45deg, #ddd 0 3px, #fff 3px 6px); }
+.dot.sel { transform: scale(1.35); outline: 2px solid var(--ink); outline-offset: 1px; }
 .dot.inplan { box-shadow: inset 0 0 0 2px #fff; }
 .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 14px; color: var(--ink2); margin: 10px 0; }
 .legend span { display: inline-flex; gap: 6px; align-items: center; }
 .legend .dot { cursor: default; }
 .mapwrap { overflow-x: auto; }
+.pop .blurb { font-size: 17px; line-height: 1.45; margin: 6px 0; color: var(--ink); }
+.pop details { margin: 6px 0; }
+.pop summary { cursor: pointer; font-size: 14px; color: var(--ink2); }
 .pop { margin-top: 12px; border-left: 4px solid var(--acc); background: #fbfaf7; padding: 10px 14px; border-radius: 6px; animation: rise .3s; }
 
 /* lists in the plan */
