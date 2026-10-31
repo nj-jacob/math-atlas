@@ -191,7 +191,162 @@
     return A.svg(c * u + 4, r * u + 4, s, r + ' rows of ' + c);
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'numbers-integers', g = G6.g, lab = G6.lab, play = G6.play;
+  var LESSONS = [
+    { id: 'big', title: 'Numbers up to one million', sub: 'places, periods and reading big numbers', concepts: [
+      { id: 'places', title: 'Each place is 10 times bigger', exp: ['B1.1'], skill: 'ni-value',
+        body: '<p>Move one place to the left and the value is <b>10 times</b> bigger. After hundred thousands comes a new place: <b>millions</b>.</p>',
+        watch: play([
+          ['One thousand: a 1 in the thousands place.', chart(1000, { vals: true, cols: 7 })],
+          ['Times 10: ten thousand. The 1 moves one place left.', chart(10000, { vals: true, cols: 7 })],
+          ['Times 10 again: one hundred thousand.', chart(100000, { vals: true, cols: 7 })],
+          ['Ten hundred thousands make one million.', chart(1000000, { vals: true, cols: 7 })],
+          ['A million is 100 squares of 10 000.', million(1000000)]
+        ]),
+        try: lab(CH, 0, 'Slide or type to build a number. Can you make exactly <b>500 000</b>?', function (h) { return +h.querySelector('#nmn').value === 500000 || +h.querySelector('#nmr').value === 500000; }, 'Yes: 5 hundred thousands, half of a million.'),
+        key: '<p>Find the place, then the value. A 7 in the ten thousands place is worth 70 000.</p>',
+        mistake: '<p>Writing four-digit numbers with a space (5 832). In Canada only numbers of 5 or more digits get a space: 5832, but 58 320.</p>',
+        check: [g(CH, 'ni-value', 1), g(CH, 'ni-value', 2)] },
+      { id: 'periods', title: 'Read big numbers in periods', exp: ['B1.1'], skill: 'ni-words',
+        body: '<p>Big numbers are read in groups of three digits called <b>periods</b>: millions, thousands and ones. Read each group like a small number, then say its period name.</p>',
+        watch: play([
+          ['Split 607 050 into periods of three, from the right.', periods(607050)],
+          ['Read the thousands period: six hundred seven thousand.', periods(607000)],
+          ['Then the ones period: fifty.', periods(607050), '<span class="math">six hundred seven thousand fifty</span>'],
+          ['Another one: 1 250 300.', periods(1250300), '<span class="math">one million two hundred fifty thousand three hundred</span>']
+        ]),
+        hard: true,
+        ways: [
+          { label: 'Cover and read', html: '<p>Cover the ones period with your finger. Read what is left: <b>450</b> thousand. Uncover and read the rest: <b>302</b>. So 450 302 is four hundred fifty thousand three hundred two.</p><div class="fig">' + periods(450302) + '</div>' },
+          { label: 'Zeros are silent', html: '<p>A period of zeros is not read at all. 3 000 040 is "three million forty". Nothing is said for the thousands period.</p><div class="fig">' + periods(3000040) + '</div>' }
+        ],
+        key: '<p>Read one period at a time from the left. Say the period name after each group, except the ones period.</p>',
+        mistake: '<p>Saying "and" or the word "ones" (four hundred fifty thousand <i>and</i> three hundred two <i>ones</i>). Neither is said. "And" is kept for decimals.</p>',
+        check: [g(CH, 'ni-words', 1), g(CH, 'ni-words', 2)] }
+    ] },
+    { id: 'integers', title: 'Integers', sub: 'numbers below zero, opposites, comparing', concepts: [
+      { id: 'below', title: 'Numbers below zero', exp: ['B1.2'], skill: 'ni-integers',
+        body: '<p><b>Integers</b> are the whole numbers, their opposites, and zero. Numbers below zero are <b>negative</b>: <span class="negt">&minus;5</span> is read "negative five".</p>',
+        watch: play([
+          ['It is 6 degrees outside.', thermo(6)],
+          ['The temperature drops to 0: freezing.', thermo(0)],
+          ['It keeps dropping. 8 degrees below zero is negative 8.', thermo(-8), '<span class="negt">&minus;8&deg;C</span>'],
+          ['On a number line, negatives are to the left of zero.', iline(-10, 10, [{ v: -8, lab: '−8', c: 'var(--neg)' }])]
+        ]),
+        try: lab(CH, 1, 'Slide the temperature to <b>12 degrees below zero</b>.', function (h) { return +h.querySelector('#tmr').value === -12; }, 'Yes: 12 below zero is −12°C.'),
+        key: '<p>Below zero means negative. Above zero means positive. Zero is neither.</p>',
+        check: [{ q: 'A diver is 12 m below the surface of the water. Which integer shows this?', type: 'mc', options: ['12', '−12', '0', '−1'], answer: 1, hint: 'Below zero means negative.', explain: 'Below the surface is below zero, so the diver is at &minus;12 m.' }, g(CH, 'ni-integers', 1)] },
+      { id: 'opposites', title: 'Opposites', exp: ['B1.2'], skill: 'ni-integers',
+        body: '<p><b>Opposites</b> are the same distance from zero, on opposite sides. The opposite of 4 is &minus;4.</p>',
+        watch: { tool: 'numberline', opts: { min: -10, max: 10, tick: 1, every: 2, start: 0 }, steps: [
+          { say: 'Start at zero.', act: function (t) { return t.moveTo(0); } },
+          { say: 'Jump 4 to the right: 4.', act: function (t) { return t.hop(4, '+4'); } },
+          { say: 'Back to zero, then 4 to the left: negative 4.', act: function (t) { return t.moveTo(0).then(function () { return t.hop(-4, '−4'); }); } },
+          { say: '4 and −4 are opposites: both 4 steps from zero.', act: function (t) { t.mark(4, '4'); return t.mark(-4, '−4'); }, ms: 1800 }
+        ] },
+        try: { tool: 'numberline', opts: { min: -10, max: 10, tick: 1, every: 2, start: 0 }, tasks: [
+          { do: 'Tap the opposite of <b>7</b>.', goal: function (s) { return s.at === -7; }, yes: 'Yes: −7 is 7 steps left of zero.' },
+          { do: 'Tap the opposite of <b>−3</b>.', goal: function (s) { return s.at === 3; }, yes: 'Yes: the opposite of −3 is 3.' },
+          { do: 'Tap the number that is its own opposite.', goal: function (s) { return s.at === 0; }, yes: 'Yes: zero is its own opposite.' }
+        ] },
+        key: '<p>Same distance from zero, opposite sides. Zero is its own opposite.</p>',
+        check: [g(CH, 'ni-integers', 1), g(CH, 'ni-integers', 2)] },
+      { id: 'compare', title: 'Comparing integers', exp: ['B1.3'], skill: 'ni-compare', hard: true,
+        body: '<p>On a number line, numbers get <b>greater</b> to the right and <b>less</b> to the left. Every positive number is greater than every negative number.</p>',
+        watch: play([
+          ['Which is greater, −7 or −2?', iline(-10, 5, [{ v: -7, lab: '−7', c: 'var(--neg)' }, { v: -2, lab: '−2', c: 'var(--neg)' }])],
+          ['−2 is further right, so it is greater.', iline(-10, 5, [{ v: -7, lab: '−7', c: 'var(--neg)' }, { v: -2, lab: '−2 is greater', c: 'var(--hi)' }]), '<span class="math">&minus;2 &gt; &minus;7</span>'],
+          ['To order numbers, read them from left to right.', iline(-10, 5, [{ v: -9, lab: '−9', c: 'var(--neg)' }, { v: -5, lab: '−5', c: 'var(--neg)' }, { v: 0, lab: '0', c: 'var(--card)' }, { v: 1, lab: '1', c: 'var(--pos)' }, { v: 3, lab: '3', c: 'var(--pos)' }]), '&minus;9, &minus;5, 0, 1, 3']
+        ]),
+        try: lab(CH, 2, 'Pick two negative numbers. Make the <b>first</b> one the greater one.', function (h) { var a = +h.querySelector('#ica').value, b = +h.querySelector('#icb').value; return a < 0 && b < 0 && a > b; }, 'Yes: the one closer to zero is greater.'),
+        ways: [
+          { label: 'Think temperature', html: '<p>Which is warmer, &minus;2&deg;C or &minus;7&deg;C? &minus;2&deg;C is warmer, so &minus;2 is greater.</p><div class="row2"><div class="fig">' + thermo(-7) + '</div><div class="fig">' + thermo(-2) + '</div></div>' },
+          { label: 'Think money', html: '<p>Owing $2 is better than owing $7. So &minus;2 &gt; &minus;7. The less you owe, the more you have.</p>' }
+        ],
+        key: '<p>Further right is greater. For two negatives, the one closer to zero is greater.</p>',
+        mistake: '<p>Thinking &minus;8 is bigger than &minus;3 because 8 is bigger than 3. On the number line &minus;8 is further <b>left</b>, so it is less. Ask "which is colder?"</p>',
+        check: [{ q: 'Which is colder: <span class="math">&minus;15&deg;C</span> or <span class="math">&minus;11&deg;C</span>?', type: 'mc', options: ['−15°C', '−11°C', 'They are the same'], answer: 0, hint: 'Further left is less. Which is further from zero on the cold side?', explain: '&minus;15 is further left than &minus;11, so &minus;15&deg;C is colder.' }, g(CH, 'ni-compare', 1), g(CH, 'ni-compare', 2)] }
+    ] },
+    { id: 'divis', title: 'Divisibility rules', sub: 'check without dividing', concepts: [
+      { id: 'd2510', title: 'Rules for 2, 5 and 10', exp: ['B2.2'], skill: 'ni-divis',
+        body: '<p>A number is <b>divisible</b> by another if it divides with no remainder. For 2, 5 and 10, just look at the <b>last digit</b>.</p>',
+        watch: play([
+          ['Multiples of 2 end in 0, 2, 4, 6 or 8.', hchart(2)],
+          ['Multiples of 5 end in 0 or 5.', hchart(5)],
+          ['Multiples of 10 end in 0.', hchart(10)]
+        ]),
+        try: lab(CH, 3, 'Type a number with <b>4 or more digits</b> that is divisible by 2, 5 and 10.', function (h) { var n = +h.querySelector('#dvn').value; return n >= 1000 && n % 10 === 0; }, 'Yes: it ends in 0, so it passes all three.'),
+        key: '<p>2: last digit even. 5: last digit 0 or 5. 10: last digit 0.</p>',
+        check: [g(CH, 'ni-divis', 1)] },
+      { id: 'd39', title: 'Rules for 3 and 9', exp: ['B2.2'], skill: 'ni-divis', hard: true,
+        body: '<p>For 3 and 9, <b>add the digits</b>. If the total is a multiple of 3, the number is divisible by 3. If it is a multiple of 9, it is divisible by 9.</p>',
+        watch: play([
+          ['Is 471 divisible by 3?', '<p class="g6-big">471</p>'],
+          ['Add the digits: 4 + 7 + 1 = 12.', '<p class="g6-big">4 + 7 + 1 = 12</p>'],
+          ['12 is a multiple of 3, so 471 is divisible by 3.', '<p class="g6-big">471 &divide; 3 = 157</p>'],
+          ['The multiples of 9 on a hundred chart: their digits always add to 9.', hchart(9)]
+        ]),
+        try: lab(CH, 3, 'Show multiples of <b>9</b>, then type a 4-digit number that is divisible by 9.', function (h) { var n = +h.querySelector('#dvn').value; return h.querySelector('#dvd').value === '9' && n >= 1000 && n <= 9999 && n % 9 === 0; }, 'Yes: its digits add to a multiple of 9.'),
+        ways: [
+          { label: 'Why it works', html: '<p>Each 10 is 9 + 1, each 100 is 99 + 1. So 471 = 4 &times; 99 + 7 &times; 9 + (4 + 7 + 1). The 99s and 9s already divide by 3 and 9. Only the digit sum is left to check.</p>' },
+          { label: 'Keep adding', html: '<p>For a big total, add again. 98 784: 9 + 8 + 7 + 8 + 4 = 36, and 3 + 6 = 9. So 98 784 is divisible by 9 (and by 3).</p>' }
+        ],
+        key: '<p>3 and 9: add the digits. The total tells you.</p>',
+        mistake: '<p>Using the "add the digits" rule for 4 or 8. Adding digits only works for 3 and 9.</p>',
+        check: [{ q: 'Is <span class="math">7452</span> divisible by 9?', type: 'mc', options: ['Yes', 'No'], answer: 0, hint: 'Add the digits. Is the total a multiple of 9?', explain: '7 + 4 + 5 + 2 = 18, a multiple of 9. 7452 &divide; 9 = 828.' }, g(CH, 'ni-divis', 2)] },
+      { id: 'd468', title: 'Rules for 4, 6 and 8', exp: ['B2.2'], skill: 'ni-divis',
+        body: '<p>For 4, look at the <b>last two digits</b>. For 8, the <b>last three</b>. For 6, the number must pass the rules for <b>both 2 and 3</b>.</p>',
+        watch: play([
+          ['Is 3716 divisible by 4? Look at the last two digits: 16.', '<p class="g6-big">37<b style="color:var(--strand)">16</b></p>'],
+          ['16 = 4 × 4, so yes.', '<p class="g6-big">3716 &divide; 4 = 929</p>'],
+          ['Is 354 divisible by 6? It is even, and 3 + 5 + 4 = 12.', '<p class="g6-big">354: even &#10003; &nbsp; 12 &#10003;</p>'],
+          ['Both rules pass, so 354 is divisible by 6.', '<p class="g6-big">354 &divide; 6 = 59</p>']
+        ]),
+        try: lab(CH, 3, 'Show multiples of <b>6</b> and test a number of your own.', function (h) { return h.querySelector('#dvd').value === '6'; }, 'The shaded squares are the numbers that pass for both 2 and 3.'),
+        key: '<p>4: last two digits. 8: last three digits. 6: both 2 and 3.</p>',
+        check: [g(CH, 'ni-divis', 2), g(CH, 'ni-divis', 3)] }
+    ] },
+    { id: 'factors', title: 'Factors and primes', sub: 'pairs, primes and factor trees', concepts: [
+      { id: 'pairs', title: 'Factors and multiples', exp: ['B2.6'], skill: 'ni-primes',
+        body: '<p><b>Factors</b> multiply to make a number. <b>Multiples</b> are what you get when you multiply a number. Factor pairs make rectangles.</p>',
+        watch: play([
+          ['12 squares in one row: 1 × 12.', arr(1, 12, 22)],
+          ['Two rows of 6: 2 × 6.', arr(2, 6, 22)],
+          ['Three rows of 4: 3 × 4.', arr(3, 4, 22), 'Factors of 12: 1, 2, 3, 4, 6, 12'],
+          ['Multiples of 12 go on forever.', '<p class="g6-big">12, 24, 36, 48, &hellip;</p>']
+        ]),
+        ways: [{ label: 'Factors vs multiples', html: '<div class="tbl"><table><thead><tr><th class="l"></th><th class="l">Factors of 12</th><th class="l">Multiples of 12</th></tr></thead><tbody><tr><td class="l">What</td><td class="l">divide 12 evenly</td><td class="l">12 times 1, 2, 3, &hellip;</td></tr><tr><td class="l">List</td><td class="l">1, 2, 3, 4, 6, 12</td><td class="l">12, 24, 36, &hellip;</td></tr><tr><td class="l">How many</td><td class="l">a short list</td><td class="l">forever</td></tr></tbody></table></div>' }],
+        key: '<p>Factors are small and few. Multiples are big and never end.</p>',
+        mistake: '<p>Mixing up factors and multiples. Ask: "does it go <b>into</b> 12 (factor) or does 12 go into it (multiple)?"</p>',
+        check: [g(CH, 'ni-primes', 1)] },
+      { id: 'primes', title: 'Prime or composite', exp: ['B2.6'], skill: 'ni-primes',
+        body: '<p>A <b>prime number</b> has exactly two factors: 1 and itself. A <b>composite number</b> has more. 1 is neither.</p>',
+        watch: play([
+          ['7 squares make only one rectangle: 1 by 7. 7 is prime.', arr(1, 7, 24)],
+          ['9 squares make 1 by 9 and 3 by 3. 9 is composite.', arr(3, 3, 24)],
+          ['The primes under 30.', '<p class="g6-big">2, 3, 5, 7, 11, 13, 17, 19, 23, 29</p>']
+        ]),
+        key: '<p>Only one rectangle means prime. More than one means composite.</p>',
+        mistake: '<p>Calling every odd number prime (9, 15, 21, 51 are not) or calling 1 prime. 2 is the only even prime.</p>',
+        check: [g(CH, 'ni-primes', 2), g(CH, 'ni-primes', 3)] },
+      { id: 'trees', title: 'Factor trees', exp: ['B2.6'], skill: 'ni-ftree', hard: true,
+        body: '<p>A <b>factor tree</b> breaks a number into primes. Split into any factor pair. Keep splitting until every branch ends in a prime.</p>',
+        watch: play([
+          ['Start with 60. Split it: 6 × 10.', treeSvg(60, [6, 10]).svg],
+          ['Every branch ends in a prime: 2, 3, 2, 5.', treeSvg(60, [6, 10]).svg, '60 = 2 &times; 2 &times; 3 &times; 5'],
+          ['Start a different way: 4 × 15.', treeSvg(60, [4, 15]).svg, 'Same primes: 2 &times; 2 &times; 3 &times; 5']
+        ]),
+        try: lab(CH, 4, 'Type <b>84</b> and try two different first splits. Do you get the same primes?', function (h) { return +h.querySelector('#ftn').value === 84; }, 'The primes are always 2, 2, 3 and 7.'),
+        ways: [{ label: 'Divide by small primes', html: '<p>Keep dividing by the smallest prime that works. 84 &divide; 2 = 42, 42 &divide; 2 = 21, 21 &divide; 3 = 7, and 7 is prime. So 84 = 2 &times; 2 &times; 3 &times; 7.</p>' }],
+        key: '<p>However you split it, a number always ends with the same primes: its <b>prime factorization</b>.</p>',
+        mistake: '<p>Stopping at a composite number on a branch, like leaving a 4 or a 9. Every branch must end in a prime.</p>',
+        check: [{ q: 'Finish the prime factorization: <span class="math">90 = 2 &times; 3 &times; 3 &times; ?</span>', type: 'num', answer: 5, hint: '2 &times; 3 &times; 3 = 18. What times 18 makes 90?', explain: '90 &divide; 18 = 5, and 5 is prime.' }, g(CH, 'ni-ftree', 1), g(CH, 'ni-ftree', 2)] }
+    ] }
+  ];
+
   A.register('numbers-integers', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Numbers up to one million</h2>' +
 '<p>Each place is worth <b>10 times</b> the place to its right. After hundred thousands comes a new place: <b>millions</b>. Ten hundred thousands make one million.</p>' +

@@ -67,7 +67,89 @@
     return S[p];
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'ratios-percents', g = G6.g, lab = G6.lab, play = G6.play;
+  var LESSONS = [
+    { id: 'ratios', title: 'Ratios', sub: 'comparing two amounts', concepts: [
+      { id: 'compare', title: 'What a ratio compares', exp: ['B2.12'], skill: 'rp-part',
+        body: '<p>A <b>ratio</b> compares two amounts. 3 squares and 2 circles: the ratio of squares to circles is <b>3:2</b>. The order of the words is the order of the numbers.</p>',
+        watch: play([
+          ['3 squares and 2 circles.', tiles(3, 2, 1)],
+          ['Squares to circles: 3 to 2.', tiles(3, 2, 1), '3 : 2'],
+          ['Circles to squares: 2 to 3. The order matters.', tiles(3, 2, 1), '2 : 3'],
+          ['Squares to all shapes: 3 out of 5. That is part to whole.', tiles(3, 2, 1), '3 : 5 = ' + A.fr(3, 5)]
+        ]),
+        key: '<p>Words and numbers in the same order.</p>',
+        mistake: '<p>Writing the numbers in the order they appear in the story rather than the order asked. "Boys to girls" starts with boys, whatever came first in the sentence.</p>',
+        check: [{ q: 'A class has 12 girls and 10 boys. What is the ratio of boys to girls?', type: 'mc', options: ['12:10', '10:12', '10:22', '22:10'], answer: 1, hint: 'Boys first.', explain: 'Boys to girls is 10:12.' }, g(CH, 'rp-part', 1), g(CH, 'rp-part', 2)] },
+      { id: 'equal', title: 'Equivalent ratios', exp: ['B2.12'], skill: 'rp-ratio',
+        body: '<p>Repeat the same group and the ratio stays the same: 3:2 = 6:4 = 9:6. Multiply <b>both</b> numbers by the same number.</p>',
+        watch: play([
+          ['One group: 3 squares, 2 circles.', tiles(3, 2, 1), '3 : 2'],
+          ['Two groups.', tiles(3, 2, 2), '6 : 4'],
+          ['Three groups.', tiles(3, 2, 3), '9 : 6']
+        ]),
+        try: lab(CH, 0, 'Build a ratio equal to <b>10:15</b>.', function (h) { var a = +h.querySelector('#ra').value, b = +h.querySelector('#rb').value, k = +h.querySelector('#rk').value; return a * k === 10 && b * k === 15; }, 'Yes: 5 groups of 2:3 make 10:15.'),
+        key: '<p>Multiply or divide both numbers by the same number. Adding does not work.</p>',
+        mistake: '<p>Adding the same number to both (3:2 &rarr; 5:4). That changes the ratio.</p>',
+        check: [g(CH, 'rp-ratio', 1)] },
+      { id: 'scale', title: 'Ratio tables and double number lines', exp: ['B2.12'], skill: 'rp-ratio', hard: true,
+        body: '<p>A ratio table or a double number line keeps two amounts matched as they grow.</p>',
+        watch: play([
+          ['2 cups of flour for every 3 eggs.', dnl(2, 3, 4, 'flour', 'eggs', 1)],
+          ['8 cups is 4 times as much flour.', dnl(2, 3, 4, 'flour', 'eggs', 4)],
+          ['So 4 times as many eggs: 12.', dnl(2, 3, 4, 'flour', 'eggs', 4), '2 : 3 = 8 : 12']
+        ]),
+        ways: [{ label: 'Table', html: '<div class="tbl"><table><thead><tr><th class="l">Flour</th><td>2</td><td>4</td><td>6</td><td>8</td></tr></thead><tbody><tr><th class="l">Eggs</th><td>3</td><td>6</td><td>9</td><td><b>12</b></td></tr></tbody></table></div>' }, { label: 'Find one first', html: '<p>1 cup of flour needs 3 &divide; 2 = 1.5 eggs. 8 cups need 8 &times; 1.5 = 12 eggs.</p>' }],
+        key: '<p>How many times bigger? Do the same to the other amount.</p>',
+        mistake: '<p>Adding instead of multiplying: from 2 to 8 cups is not "add 6 eggs". It is 4 times as much.</p>',
+        check: [{ q: 'Paint is mixed 1 can of blue for every 4 cans of white. How many cans of white for 6 cans of blue?', type: 'num', answer: 24, hint: 'Blue went from 1 to 6: times 6.', explain: '4 &times; 6 = 24.' }, g(CH, 'rp-ratio', 2), g(CH, 'rp-ratio', 3)] }
+    ] },
+    { id: 'rates', title: 'Rates', sub: 'unit rates and better buys', concepts: [
+      { id: 'unit', title: 'Unit rates', exp: ['B2.12'], skill: 'rp-rate',
+        body: '<p>A <b>rate</b> compares different things, like km and hours. A <b>unit rate</b> is how much for <b>one</b>: 80 km per hour, $1.25 per can.</p>',
+        watch: play([
+          ['240 km in 3 hours.', '<p class="g6-big">240 km in 3 h</p>'],
+          ['Divide to find one hour: 80 km.', dnl(80, 1, 5, 'km', 'hours', 1), '80 km/h'],
+          ['5 hours: 5 × 80 = 400 km.', dnl(80, 1, 5, 'km', 'hours', 5), '400 km']
+        ]),
+        key: '<p>Unit rate = total &divide; number of units.</p>',
+        check: [{ q: 'A 4-pack of juice costs $6.00. What is the price for one?', type: 'num', unit: '$', answer: 1.5, hint: 'Total &divide; number of units.', explain: '$6.00 &divide; 4 = $1.50.' }, g(CH, 'rp-rate', 1), g(CH, 'rp-rate', 2)] },
+      { id: 'better', title: 'The better buy', exp: ['B2.12'], skill: 'rp-better', hard: true,
+        body: '<p>Compare the price of <b>one</b> in each pack. The cheaper unit price is the better buy, even if that pack costs more in total.</p>',
+        try: lab(CH, 1, 'Make pack B cost more in total but still be the better buy.', function (h) { var ap = +h.querySelector('#bap').value, an = +h.querySelector('#ban').value, bp = +h.querySelector('#bbp').value, bn = +h.querySelector('#bbn').value; return bp > ap && bp / bn < ap / an; }, 'Yes: bigger price, cheaper per item.'),
+        ways: [{ label: 'Make the counts match', html: '<p>6 for $4.50 and 12 for $9.60: two 6-packs would cost $9.00 for 12. That beats $9.60, so the 6-pack is the better buy.</p>' }],
+        key: '<p>Compare unit prices, not totals.</p>',
+        mistake: '<p>Picking the pack with the lowest price tag. A bigger pack can cost more and still be cheaper per item.</p>',
+        check: [g(CH, 'rp-better', 1), g(CH, 'rp-better', 2)] }
+    ] },
+    { id: 'percent', title: 'Percents', sub: 'out of 100', concepts: [
+      { id: 'meaning', title: 'Percent means out of 100', exp: ['B2.12'], skill: 'rp-fdp',
+        body: '<p>35% is 35 out of 100: ' + A.fr(35, 100) + ' or 0.35. To change a fraction to a percent, make the bottom 100.</p>',
+        watch: play([
+          ['100 squares make the whole: 100%.', hgrid(100)],
+          ['Shade 35 of them: 35%.', hgrid(35), '35% = ' + A.fr(35, 100) + ' = 0.35'],
+          [A.fr(3, 5) + ' is ' + A.fr(60, 100) + ': 60%.', hgrid(60), A.fr(3, 5) + ' = 60%']
+        ]),
+        key: '<p>Make the bottom 100. The top is the percent.</p>',
+        check: [{ q: 'Write ' + A.fr(7, 20) + ' as a percent.', type: 'num', unit: '%', answer: 35, hint: '20 &times; 5 = 100.', explain: A.fr(35, 100) + ' = 35%.' }, g(CH, 'rp-fdp', 1), g(CH, 'rp-fdp', 2)] },
+      { id: 'head', title: 'Percents in your head', exp: ['B2.3'], skill: 'rp-pct', hard: true,
+        body: '<p>50% is half. 25% is half of a half. 10% is divide by 10. 1% is divide by 100. Build other percents from these.</p>',
+        watch: play([
+          ['15% of $40. Start with 10%: $4.', pbar(40, 10), '10% = $4'],
+          ['5% is half of 10%: $2.', pbar(40, 5), '5% = $2'],
+          ['15% = 10% + 5% = $6.', pbar(40, 15), '15% = $6']
+        ]),
+        try: lab(CH, 2, 'Find a number and percent where the answer is exactly <b>12</b>.', function (h) { return Math.abs(+h.querySelector('#pn').value * +h.querySelector('#pp').value / 100 - 12) < 1e-9; }, 'Yes: 12 exactly.'),
+        ways: [{ label: 'Swap them', html: '<p>8% of 50 is the same as 50% of 8, which is 4. Percent of works both ways.</p>' }],
+        key: '<p>Start from 10%, 50% or 1%, then build.</p>',
+        mistake: '<p>Thinking 5% is "divide by 5". That gives 20%. 5% is half of 10%.</p>',
+        check: [{ q: 'What is 25% of 64?', type: 'num', answer: 16, hint: '25% is half of a half.', explain: 'Half of 64 is 32, half of 32 is 16.' }, g(CH, 'rp-pct', 1), g(CH, 'rp-pct', 2)] }
+    ] }
+  ];
+
   A.register('ratios-percents', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Ratios</h2>' +
 '<p>A <b>ratio</b> compares two amounts. In this group there are 3 squares and 2 circles. The ratio of squares to circles is <b>3 to 2</b>, written 3:2. The order matters: circles to squares is 2:3.</p>' +

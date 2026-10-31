@@ -99,7 +99,111 @@
     return { x: x, o: o };
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'money', g = G6.g, lab = G6.lab, play = G6.play;
+  function card(t, sub, col, plain) {
+    var o = '<rect x="10" y="10" width="300" height="180" rx="18" style="fill:' + col + ';stroke:var(--ink)" stroke-width="2"/>' +
+      '<rect x="10" y="10" width="300" height="180" rx="18" style="fill:url(#g6sh)"/>' +
+      (plain ? '' : '<rect x="34" y="62" width="46" height="36" rx="6" style="fill:#f4d27a;stroke:#9a7a2a" stroke-width="1.5"/><path d="M34 80 H80 M57 62 V98" style="stroke:#9a7a2a" stroke-width="1.2"/>') +
+      '<text x="34" y="46" font-size="22" font-weight="800" style="fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.28);stroke-width:2px">' + t + '</text>' +
+      '<text x="34" y="168" font-size="16" style="fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.28);stroke-width:2px">' + sub + '</text>';
+    return A.svg(320, 200, '<defs><linearGradient id="g6sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>' + o, t + ': ' + sub);
+  }
+  var LESSONS = [
+    { id: 'pay', title: 'Ways to pay', sub: 'pick the right one', concepts: [
+      { id: 'methods', title: 'Ways to pay', exp: ['F1.1'], skill: 'mo-pay',
+        body: '<p>Each way to pay has <b>advantages</b> (good points) and <b>disadvantages</b> (risks or costs). Pick the one that fits the situation.</p>',
+        watch: play([
+          ['Cash: works almost everywhere in person. But it can be lost, and it does not work online.', card('Cash', 'You can see exactly what is left.', 'var(--good)', 1)],
+          ['Debit card: takes money straight from your bank account.', card('Debit card', 'Your own money, no cash to carry.', 'var(--strand)')],
+          ['Prepaid or gift card: a set amount. Good for a budget, but may only work at one store.', card('Prepaid card', 'Spend only what is loaded.', 'var(--hi)')],
+          ['E-transfer: send money to a person. Hard to undo if sent to the wrong person.', card('E-transfer', 'Check the name before you send.', 'var(--ink2)')],
+          ['Buy now, pay later: smaller payments, but late fees add up.', card('Buy now, pay later', 'Easy to owe too much.', 'var(--bad)')]
+        ]),
+        key: '<p>Ask: whose money is it, where can I use it, and what can go wrong?</p>',
+        check: [{ q: 'You want to buy a $3 snack at a shop with no card machine. How can you pay?', type: 'mc', options: ['credit card', 'cash', 'e-transfer', 'debit card'], answer: 1, hint: 'No card machine.', explain: 'Cash.' }, g(CH, 'mo-pay', 1), g(CH, 'mo-pay', 2)] },
+      { id: 'credit', title: 'Debit or credit?', exp: ['F1.1', 'F1.4'], skill: 'mo-pay', hard: true,
+        body: '<p><b>Debit</b> uses <b>your</b> money. <b>Credit</b> uses the <b>bank&rsquo;s</b> money, which you pay back later. If you pay late, you pay <b>interest</b>, often about 20% a year.</p>',
+        watch: play([
+          ['Maya buys a $200 jacket on a credit card.', intChart(200, 20, 0, true), '$200'],
+          ['She does not pay it back for a year. 20% of $200 is $40 of interest.', intChart(200, 20, 1, true), '$200 + $40'],
+          ['The jacket really cost her $240.', intChart(200, 20, 1, true), '$240']
+        ]),
+        ways: [{ label: 'Side by side', html: '<div class="tbl"><table><thead><tr><th class="l"></th><th class="l">Debit</th><th class="l">Credit</th></tr></thead><tbody><tr><td class="l">Whose money?</td><td class="l">yours</td><td class="l">the bank&rsquo;s</td></tr><tr><td class="l">Pay when?</td><td class="l">right away</td><td class="l">at the end of the month</td></tr><tr><td class="l">Pay late?</td><td class="l">not possible</td><td class="l">interest charged</td></tr></tbody></table></div>' }],
+        key: '<p>Credit is a loan. Pay the full bill on time and it costs nothing extra.</p>',
+        check: [{ q: 'Which way to pay is a loan that you must pay back?', type: 'mc', options: ['debit card', 'credit card', 'cash', 'prepaid card'], answer: 1, hint: 'Whose money is it?', explain: 'A credit card uses the bank&rsquo;s money.' }, g(CH, 'mo-pay', 3)] }
+    ] },
+    { id: 'goals', title: 'Financial goals', sub: 'plan it, track it', concepts: [
+      { id: 'kinds', title: 'Kinds of goals', exp: ['F1.2'], skill: 'mo-needs',
+        body: '<p>An <b>earning goal</b> is about making money. A <b>saving goal</b> is about keeping money for later. Goals can be <b>short-term</b> (days or weeks) or <b>long-term</b> (months or years).</p>',
+        watch: play([
+          ['Make $150 walking dogs this summer.', card('Earning goal', 'Making money.', 'var(--strand)', 1)],
+          ['Keep $300 for a bike.', card('Saving goal', 'Keeping money for later.', 'var(--good)', 1)],
+          ['$20 for a gift next week: short-term. Saving for college: long-term.', card('Short or long?', 'Weeks or years.', 'var(--hi)', 1)]
+        ]),
+        key: '<p>Name the goal, the amount and the date.</p>',
+        check: [{ q: 'Making $150 by mowing lawns this summer is&hellip;', type: 'mc', options: ['a saving goal', 'an earning goal', 'a loan', 'a trade'], answer: 1, hint: 'Making money or keeping it?', explain: 'Making money: an earning goal.' }, g(CH, 'mo-needs', 1), g(CH, 'mo-needs', 1)] },
+      { id: 'plan', title: 'Plan a saving goal', exp: ['F1.2'], skill: 'mo-goal',
+        body: '<p>Subtract what you already have. Divide what is left by what you save each week. If it does not divide evenly, round <b>up</b>.</p>',
+        watch: play([
+          ['A $360 bike. Sam has $60 and saves $25 a week.', saveChart(360, 60, 25)],
+          ['Still needed: 360 − 60 = $300.', saveChart(360, 60, 25), '$300'],
+          ['300 ÷ 25 = 12 weeks. The bars reach the goal line in week 12.', saveChart(360, 60, 25), '12 weeks']
+        ]),
+        try: lab(CH, 0, 'Set up a plan that reaches the goal in exactly <b>10 weeks</b>.', function (h) { var gl = +h.querySelector('#sg').value || 1, hv = +h.querySelector('#sh').value || 0, p = +h.querySelector('#sp').value || 1; return hv < gl && Math.ceil((gl - hv) / p - 1e-9) === 10; }, 'Yes: 10 weeks.'),
+        key: '<p>(Goal &minus; saved) &divide; each week. Round up.</p>',
+        mistake: '<p>Forgetting the money already saved. Subtract it before dividing.</p>',
+        check: [{ q: 'You want a $120 game. You save $15 a week and have nothing saved. How many weeks?', type: 'num', unit: 'weeks', answer: 8, hint: '120 &divide; 15.', explain: '8 weeks.' }, g(CH, 'mo-goal', 1), g(CH, 'mo-goal', 2)] },
+      { id: 'helps', title: 'What helps and what gets in the way', exp: ['F1.3'], skill: 'mo-needs', hard: true,
+        body: '<p>A budget, saving first and comparing prices <b>help</b>. Buying on impulse, peer pressure and unexpected costs <b>get in the way</b>. Pay for <b>needs</b> (food, shelter, warm clothes) before <b>wants</b>.</p>',
+        watch: play([
+          ['Leo saves $20 a week for a $300 tablet.', saveChart(300, 0, 20), '15 weeks'],
+          ['After 5 weeks he has $100. Then his phone screen cracks: a $60 repair.', '<p class="g6-big">$100 − $60 = $40</p>', 'Unexpected cost'],
+          ['He still needs 300 − 40 = $260. That is 13 more weeks.', saveChart(300, 40, 20), '13 more weeks']
+        ]),
+        ways: [{ label: 'Needs or wants', html: '<div class="tbl"><table><thead><tr><th class="l">Item</th><th class="l">Need or want?</th></tr></thead><tbody><tr><td class="l">winter boots</td><td class="l">need</td></tr><tr><td class="l">a second pair of brand-name boots</td><td class="l">want</td></tr><tr><td class="l">groceries</td><td class="l">need</td></tr><tr><td class="l">take-out every night</td><td class="l">want</td></tr></tbody></table></div>' },
+          { label: 'Pay yourself first', html: '<p>When you get money, put the savings aside <b>before</b> you spend anything. What is left is for spending.</p>' }],
+        key: '<p>Save first, track spending, needs before wants.</p>',
+        check: [{ q: 'Which one helps you reach a saving goal?', type: 'mc', options: ['buying on impulse', 'tracking your spending', 'ignoring your budget', 'a credit card you cannot pay off'], answer: 1, hint: 'Which gives you more control?', explain: 'Tracking your spending.' }, g(CH, 'mo-needs', 2), g(CH, 'mo-needs', 3)] }
+    ] },
+    { id: 'interest', title: 'Interest and fees', sub: 'the cost of using money', concepts: [
+      { id: 'simple', title: 'Simple interest', exp: ['F1.4'], skill: 'mo-interest',
+        body: '<p><b>Interest</b> is the cost of using someone else&rsquo;s money, given as a <b>percent per year</b>. Save, and the bank pays <b>you</b>. Borrow, and <b>you</b> pay. Simple interest is the same amount every year.</p>',
+        watch: play([
+          ['Ali saves $400 at 3% a year.', intChart(400, 3, 0, false), '$400'],
+          ['Year 1: 3% of 400 = $12.', intChart(400, 3, 1, false), '+ $12'],
+          ['Year 2: another $12. Total interest $24, so $424 in the account.', intChart(400, 3, 2, false), '$424']
+        ]),
+        try: lab(CH, 1, 'Make a <b>loan</b> where you pay exactly <b>$50</b> in interest.', function (h) { var p = Math.max(0, Math.min(10000, +h.querySelector('#ip').value || 0)); return h.querySelector('#ik').value === 'l' && Math.abs(p * +h.querySelector('#ir').value * +h.querySelector('#it').value / 100 - 50) < 1e-9; }, 'Yes: $50 of interest.'),
+        key: '<p>One year: rate &times; amount. Then times the years. Total = amount + interest.</p>',
+        mistake: '<p>Giving only the interest when the question asks for the total paid back.</p>',
+        check: [{ q: 'You borrow $200 at 10% simple interest a year for 2 years. How much do you pay back in total?', type: 'num', unit: '$', answer: 240, hint: '$20 a year.', explain: '200 + 40 = $240.' }, g(CH, 'mo-interest', 1), g(CH, 'mo-interest', 2)] },
+      { id: 'fees', title: 'Bank fees and plans', exp: ['F1.4'], skill: 'mo-fees', hard: true,
+        body: '<p><b>Fees</b> are charges for a service: a monthly fee, a fee for each transaction, an ATM fee, a late fee. Banks offer plans. The cheapest plan depends on how you use it.</p>',
+        watch: play([
+          ['Plan A: $4 a month. Plan B: 50¢ each time. Plan C: $1.50 a month, 10 free, then $1 each.', legend() + planChart(5)],
+          ['5 transactions: B costs $2.50, C costs $1.50. C is cheapest.', legend() + planChart(5), 'C wins'],
+          ['20 transactions: A is still $4. B is $10, C is $11.50.', legend() + planChart(20), 'A wins']
+        ]),
+        try: lab(CH, 2, 'Find a number of transactions where <b>Plan A</b> is the cheapest.', function (h) { return +h.querySelector('#pk').value >= 13; }, 'Yes: with lots of transactions, the flat fee wins.'),
+        key: '<p>Work out each plan for your number of transactions. Then compare.</p>',
+        check: [{ q: 'An ATM charges a $2.50 fee. You use it 6 times this month. How much do you pay in fees?', type: 'num', unit: '$', answer: 15, hint: '6 &times; $2.50.', explain: '$15.00.' }, g(CH, 'mo-fees', 1), g(CH, 'mo-fees', 2)] }
+    ] },
+    { id: 'share', title: 'Sharing resources', sub: 'trade, lend, borrow, donate', concepts: [
+      { id: 'ways', title: 'Trade, lend, borrow, donate', exp: ['F1.5'], skill: 'mo-share',
+        body: '<p><b>Trading</b>: a swap. <b>Lending</b>: let someone use what is yours and get it back. <b>Borrowing</b>: use what is someone else&rsquo;s and give it back. <b>Donating</b>: give and expect nothing back.</p>',
+        watch: play([
+          ['Your comic for a friend&rsquo;s card game.', card('Trading', 'A swap, now.', 'var(--strand)', 1)],
+          ['Jo lets Kim use $10. Jo is lending. Kim is borrowing.', card('Lending and borrowing', 'One event, two sides. The owner lends.', 'var(--hi)', 1)],
+          ['A bank lends Kim $50 at 6%. Kim pays back $53.', card('Borrowing from a bank', '$50 + $3 interest.', 'var(--ink2)', 1)],
+          ['Giving to a food bank, or volunteering your time.', card('Donating', 'Nothing comes back.', 'var(--good)', 1)]
+        ]),
+        key: '<p>Ask: whose is it, and does it come back?</p>',
+        check: [{ q: 'You let a friend use your calculator for a test, and they give it back. You are&hellip;', type: 'mc', options: ['trading', 'lending', 'borrowing', 'donating'], answer: 1, hint: 'It is yours and it comes back.', explain: 'Lending.' }, g(CH, 'mo-share', 1), g(CH, 'mo-share', 2), g(CH, 'mo-share', 3)] }
+    ] }
+  ];
   A.register('money', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Ways to pay</h2>' +
 '<p>There are many ways to pay for things. Each one has <b>advantages</b> (good points) and <b>disadvantages</b> (risks or costs). Choose the one that fits the situation.</p>' +

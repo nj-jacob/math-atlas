@@ -79,7 +79,98 @@
     return { steps: out, q: q.replace(/^0+(?=\d)/, '') };
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'decimal-ops', g = G6.g, lab = G6.lab, play = G6.play;
+  var LESSONS = [
+    { id: 'estimate', title: 'Estimate first', sub: 'friendly numbers and order of operations', concepts: [
+      { id: 'friendly', title: 'Estimate with friendly numbers', exp: ['B2.4'], skill: 'do-est',
+        body: '<p>Before you calculate, round each number to a friendly number and do the easy version. The estimate shows where the decimal point belongs.</p>',
+        watch: play([
+          ['39.7 − 18.25. Round each number.', '<p class="g6-big">39.7 &minus; 18.25</p>'],
+          ['39.7 is about 40. 18.25 is about 20.', '<p class="g6-big">40 &minus; 20 = 20</p>'],
+          ['The exact answer, 21.45, is close to 20. It makes sense.', '<p class="g6-big">21.45 &#8776; 20 &#10003;</p>']
+        ]),
+        key: '<p>Estimate, calculate, then check: is the answer close?</p>',
+        mistake: '<p>Skipping the estimate and trusting a misplaced decimal point (2.145 instead of 21.45). Ask for an estimate out loud before any calculation.</p>',
+        check: [{ q: 'Which is the best estimate for <span class="math">39.7 &minus; 18.25</span>?', type: 'mc', options: ['about 2', 'about 20', 'about 58', 'about 200'], answer: 1, hint: '39.7 is about 40. 18.25 is about 20.', explain: '40 &minus; 20 = 20.' }, g(CH, 'do-est', 1), g(CH, 'do-est', 2)] },
+      { id: 'steps', title: 'Problems with several steps', exp: ['B2.1'], skill: 'do-multi',
+        body: '<p>The <b>order of operations</b> still applies: brackets first, then &times; and &divide; left to right, then + and &minus; left to right.</p>',
+        watch: play([
+          ['3 notebooks at $2.45 and a pen at $1.60.', '<p class="g6-big">3 &times; 2.45 + 1.60</p>'],
+          ['Multiply first.', '<p class="g6-big">7.35 + 1.60</p>'],
+          ['Then add.', '<p class="g6-big">$8.95</p>', 'estimate: 3 &times; 2.5 + 1.5 = 9 &#10003;']
+        ]),
+        key: '<p>Brackets, then &times; and &divide;, then + and &minus;.</p>',
+        check: [g(CH, 'do-multi', 1), g(CH, 'do-multi', 2)] }
+    ] },
+    { id: 'addsub', title: 'Adding and subtracting', sub: 'line up the points', concepts: [
+      { id: 'lineup', title: 'Line up the decimal points', exp: ['B2.4'], skill: 'do-addsub', hard: true,
+        body: '<p>Line up the <b>decimal points</b> so tenths sit under tenths. Fill empty places with zeros. Then add or subtract like whole numbers.</p>',
+        watch: play([
+          ['14.6 + 3.275. Write 14.6 as 14.600.', columns(14600, 3275, 1, false)],
+          ['Add each column from the right. Bring the point straight down.', columns(14600, 3275, 1, true), '17.875'],
+          ['20 − 6.45: write 20 as 20.00.', columns(20000, 6450, -1, true), '13.55']
+        ]),
+        try: lab(CH, 0, 'Subtract a number with <b>3 decimal places</b> from a whole number.', function (h) { var a = h.querySelector('#asa').value, b = h.querySelector('#asb').value; return h.querySelector('#aso').value === '-1' && Number.isInteger(+a) && (b.split('.')[1] || '').length === 3; }, 'Fill the whole number with zeros: 20 = 20.000.'),
+        ways: [{ label: 'Think money', html: '<p>$20 &minus; $6.45: a twenty-dollar bill minus six dollars forty-five cents. Count up: $6.45 + $0.55 = $7, then $7 + $13 = $20. Change: $13.55.</p>' }],
+        key: '<p>Points in a line. Zeros fill the gaps.</p>',
+        mistake: '<p>Lining up the last digits instead of the decimal points. In 14.6 + 3.275, the 6 is 6 tenths and the 5 is 5 thousandths: not the same column.</p>',
+        check: [{ q: '<span class="math">20 &minus; 6.45 = ?</span>', type: 'num', answer: 13.55, hint: '20 = 20.00. Line up the points.', explain: '20.00 &minus; 6.45 = 13.55.' }, g(CH, 'do-addsub', 1), g(CH, 'do-addsub', 2)] }
+    ] },
+    { id: 'mult', title: 'Multiplying by tenths', sub: 'a whole number times 0.1 to 0.9', concepts: [
+      { id: 'tenths', title: 'Times tenths', exp: ['B2.7'], skill: 'do-mult', hard: true,
+        body: '<p>0.3 is 3 tenths. So 245 &times; 0.3 = (245 &times; 3) &divide; 10. Multiply, then divide by 10.</p>',
+        watch: play([
+          ['245 × 0.3: split 245 into 200 + 40 + 5.', area(245, 3)],
+          ['Each part times 0.3: 60 + 12 + 1.5.', area(245, 3), '60 + 12 + 1.5 = 73.5'],
+          ['Check: 245 × 3 = 735, and 735 ÷ 10 = 73.5.', '<p class="g6-big">245 &times; 0.3 = 73.5</p>']
+        ]),
+        try: lab(CH, 1, 'Make a product between <b>100 and 200</b>.', function (h) { var w = +h.querySelector('#mtw').value, s = h.querySelector('#mtt'), t = parseFloat(s.options[s.selectedIndex].text); return w * t >= 100 && w * t <= 200; }, 'Yes. Notice the answer is less than the whole number.'),
+        ways: [{ label: 'Smaller, not bigger', html: '<p>Times a number less than 1 gives <b>less</b> than you started with. 245 &times; 0.3 is about a third of 245, around 80.</p>' }, { label: 'Money', html: '<p>245 dimes is 245 &times; $0.10 = $24.50. 3 times that is 245 &times; 0.3 = $73.50.</p>' }],
+        key: '<p>Multiply by the digit, then divide by 10.</p>',
+        mistake: '<p>Forgetting the decimal point: 245 &times; 0.3 is not 735. Estimate: about a third of 240 is 80.</p>',
+        check: [{ q: '<span class="math">160 &times; 0.4 = ?</span>', type: 'num', answer: 64, hint: 'Multiply by 4, then divide by 10.', explain: '640 &divide; 10 = 64.' }, g(CH, 'do-mult', 1), g(CH, 'do-mult', 2)] }
+    ] },
+    { id: 'divt', title: 'Dividing by tenths', sub: 'how many fit?', concepts: [
+      { id: 'scale', title: 'Multiply both by 10', exp: ['B2.8'], skill: 'do-divt', hard: true,
+        body: '<p>120 &divide; 0.4 asks: how many 0.4s fit in 120? Multiply <b>both</b> numbers by 10. The answer does not change, and now you divide by a whole number.</p>',
+        watch: play([
+          ['120 ÷ 0.4', '<p class="g6-big">120 &divide; 0.4</p>'],
+          ['Multiply both by 10.', '<p class="g6-big">1200 &divide; 4</p>'],
+          ['1200 ÷ 4 = 300. Bigger than 120, because 0.4 is small.', '<p class="g6-big">= 300</p>']
+        ]),
+        try: lab(CH, 2, 'Find a division with an answer over <b>1000</b>.', function (h) { var w = +h.querySelector('#dtw').value, s = h.querySelector('#dtt'), t = parseFloat(s.options[s.selectedIndex].text); return w / t > 1000; }, 'Yes: small divisors give big answers.'),
+        ways: [{ label: 'Halves', html: '<p>150 &divide; 0.5: there are 2 halves in every 1, so 150 has 300 halves.</p>' }],
+        key: '<p>Times 10 on both sides, then divide by a whole number.</p>',
+        mistake: '<p>Expecting a smaller answer. Dividing by a number less than 1 always gives a bigger answer.</p>',
+        check: [{ q: '<span class="math">150 &divide; 0.5 = ?</span>', type: 'num', answer: 300, hint: 'Multiply both by 10: 1500 &divide; 5.', explain: '1500 &divide; 5 = 300.' }, g(CH, 'do-divt', 1), g(CH, 'do-divt', 2)] },
+      { id: 'remainder', title: 'What to do with a remainder', exp: ['B2.8'], skill: 'do-divt',
+        body: '<p>Read the question to decide: ignore the remainder (how many full pieces), round up (how many boxes are needed), or write it as a decimal.</p>',
+        watch: play([
+          ['125 m of rope cut into 0.3 m pieces.', '<p class="g6-big">125 &divide; 0.3 = 1250 &divide; 3</p>'],
+          ['1250 ÷ 3 = 416 remainder 2.', '<p class="g6-big">416 R 2</p>'],
+          ['416 whole pieces. The 2 tenths of a metre left over is 0.2 m.', '<p class="g6-big">416 pieces, 0.2 m left</p>']
+        ]),
+        key: '<p>The question decides what the remainder means.</p>',
+        check: [g(CH, 'do-divt', 3)] }
+    ] },
+    { id: 'share', title: 'Sharing a decimal', sub: 'a decimal divided by a whole number', concepts: [
+      { id: 'trade', title: 'Share, then trade the leftovers', exp: ['B2.11'], skill: 'do-divw', hard: true,
+        body: '<p>Share the biggest place first. Trade any leftover for 10 of the next smaller place. The point in the answer goes above the point in the number.</p>',
+        watch: play([
+          ['Share 4.536 into 6 equal groups.', legend() + share(4536, 6)],
+          ['Long division keeps track of each trade.', longDiv(4536, 6), '4.536 &divide; 6 = 0.756']
+        ]),
+        try: lab(CH, 3, 'Choose a decimal and a group size that shares with <b>no leftover</b>.', function (h) { var k = Math.round(+h.querySelector('#sdk').value * 1000), n = +h.querySelector('#sdn').value; return k > 0 && k % n === 0; }, 'Every group gets the same, down to the thousandths.'),
+        ways: [{ label: 'Rice', html: '<p>Four friends share 2.6 kg of rice. 2 ones cannot be shared by 4, so trade for 20 tenths: 26 tenths &divide; 4 = 6 tenths, 2 left. Trade for 20 hundredths: &divide; 4 = 5. Each gets <b>0.65 kg</b>.</p>' }],
+        key: '<p>Leftovers become 10 of the next place.</p>',
+        mistake: '<p>Stopping at a remainder. With decimals you can write zeros at the end (2.6 = 2.60) and keep going.</p>',
+        check: [{ q: '<span class="math">7.38 &divide; 3 = ?</span>', type: 'num', answer: 2.46, hint: '7 &divide; 3 = 2 R 1. Trade the 1 for tenths.', explain: '2.46.' }, g(CH, 'do-divw', 1), g(CH, 'do-divw', 2)] }
+    ] }
+  ];
+
   A.register('decimal-ops', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Estimate first</h2>' +
 '<p>Before you calculate, <b>estimate</b>. Round each number to a friendly number and do the easy version. Your estimate tells you where the decimal point belongs and catches big mistakes.</p>' +

@@ -1,0 +1,22 @@
+/* Grade 6 lesson screens: the "Watch" picture player and widget labs inside "Try it" */
+.g6-frames{display:flex;flex-direction:column;align-items:center;gap:6px;width:100%;min-height:120px}
+.g6-fr{width:100%;display:flex;justify-content:center}
+.g6-fr svg{display:block;max-width:100%;height:auto}
+.g6-fr > div,.g6-fr > table{width:100%}
+.g6-note{font-family:var(--display);font-weight:700;font-size:1.05rem;text-align:center;min-height:1.4em;color:var(--ink)}
+.g6-in{animation:g6in .5s cubic-bezier(.2,.7,.2,1)}
+@keyframes g6in{from{opacity:0;transform:translateY(6px) scale(.985)}to{opacity:1;transform:none}}
+.g6-lab .ctrl{margin-top:4px}
+.g6-lab .fig svg{max-width:100%;height:auto}
+.ls-card .fig svg{max-width:100%;height:auto}
+.ls-body .fig{margin:10px 0}
+@media (prefers-reduced-motion:reduce){.g6-in{animation:none}}
+.g6-hide .sec:not(.g6-has),.g6-hide .sec.g6-has > :not(.g6-keep),.g6-hide > :not(.sec){display:none}
+.g6-hide .sec.g6-has{all:unset;display:block}
+.g6-hide .lab.g6-keep{border:0;padding:0;margin:0;background:none;animation:none}
+.g6-hide .lab.g6-keep > .lt{display:none}
+.g6-big{font-family:var(--display);font-size:clamp(1.4rem,5vw,2.2rem);font-weight:700;text-align:center;margin:18px 0;font-variant-numeric:tabular-nums}
+
+.bar nav a{white-space:nowrap}
+@media (max-width:480px){.ls-card .lab.ls-try{padding-left:6px;padding-right:6px}.ls-card{padding-left:12px;padding-right:12px}}
+@media (max-width:520px){.bar nav{flex-wrap:wrap;gap:4px 12px;font-size:.9rem}}

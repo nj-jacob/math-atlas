@@ -62,7 +62,112 @@
     return A.svg(W, rows * u + 20, s, total + ' dots in ' + d + ' equal groups, ' + n + ' groups circled');
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'fractions', g = G6.g, lab = G6.lab, play = G6.play, f = A.fr;
+  function fv(h, id) { var s = h.querySelector(id), t = s.options[s.selectedIndex].text.split('/'); return t.length > 1 ? t[0] / t[1] : +t[0]; }
+  function ft(h, id) { var s = h.querySelector(id); return s.options[s.selectedIndex].text; }
+  var LESSONS = [
+    { id: 'same', title: 'Same size pieces', sub: 'equivalent fractions and common denominators', concepts: [
+      { id: 'equiv', title: 'Equivalent fractions', exp: ['B1.3'], skill: 'fr-equiv',
+        body: '<p>Multiply the top and the bottom by the <b>same</b> number. The pieces get smaller, but you get more of them, so the amount stays the same.</p>',
+        watch: { tool: 'fractions', opts: { wall: [2, 4, 8] }, steps: [
+          { say: 'Shade one half.', act: function (t) { return t.shade(1, 0); } },
+          { say: 'Cut each half into 2: two fourths cover the same amount.', act: function (t) { return t.shade(2, 1); } },
+          { say: 'Cut again: four eighths. Still the same amount.', act: function (t) { return t.shade(4, 2); }, ms: 1800 }
+        ] },
+        try: { tool: 'fractions', opts: { wall: [3, 6, 12] }, tasks: [
+          { do: 'Shade ' + f(1, 3) + ' on the top strip, then the same amount on the other two strips.', goal: function (s) { return s[0].n === 1 && s[1].n === 2 && s[2].n === 4; }, yes: f(1, 3) + ' = ' + f(2, 6) + ' = ' + f(4, 12) + '.' }
+        ] },
+        key: '<p>Multiply the top and bottom by the same number.</p>',
+        mistake: '<p>Multiplying only the bottom (' + f(2, 5) + ' = ' + f(2, 15) + '). That makes the pieces smaller without giving more of them, so the amount shrinks.</p>',
+        check: [{ q: 'Complete: ' + f(2, 5) + ' = ' + f('?', 15), type: 'num', answer: 6, hint: '5 &times; 3 = 15, so multiply the top by 3 too.', explain: '2 &times; 3 = 6. ' + f(2, 5) + ' = ' + f(6, 15) + '.' }, g(CH, 'fr-equiv', 1)] },
+      { id: 'common', title: 'A common denominator', exp: ['B1.3', 'B2.5'], skill: 'fr-equiv', hard: true,
+        body: '<p>To compare or add ' + f(1, 2) + ' and ' + f(1, 3) + ', cut both into the same size pieces. The smallest size that works comes from the <b>least common multiple</b> of the bottoms.</p>',
+        watch: play([
+          ['One half and one third: different size pieces.', bars([{ d: 2, parts: [[1, 0]], label: '1/2' }, { d: 3, parts: [[1, 1]], label: '1/3' }], 420)],
+          ['Multiples of 2: 2, 4, 6. Multiples of 3: 3, 6. Both reach 6.', '<p class="g6-big">2, 4, <b>6</b> &nbsp;&middot;&nbsp; 3, <b>6</b></p>'],
+          ['Cut both into sixths.', bars([{ d: 2, parts: [[1, 0]], label: '1/2' }, { d: 6, parts: [[3, 0]], label: '3/6' }, { d: 3, parts: [[1, 1]], label: '1/3' }, { d: 6, parts: [[2, 1]], label: '2/6' }], 420), f(1, 2) + ' = ' + f(3, 6) + ' &nbsp; ' + f(1, 3) + ' = ' + f(2, 6)]
+        ]),
+        try: lab(CH, 0, 'Choose ' + f(3, 4) + ' and ' + f(5, 6) + '. Which is greater?', function (h) { return [ft(h, '#eqa'), ft(h, '#eqb')].sort().join() === '3/4,5/6'; }, 'In twelfths: 9/12 and 10/12. 5/6 is greater.'),
+        ways: [{ label: 'Multiply the bottoms', html: '<p>If you cannot find the least common multiple, multiply the two bottoms. 4 &times; 6 = 24 always works. It just gives bigger numbers to simplify later.</p>' }],
+        key: '<p>Find a number both bottoms divide into. Change both fractions to that bottom.</p>',
+        check: [g(CH, 'fr-equiv', 2), g(CH, 'fr-equiv', 3)] }
+    ] },
+    { id: 'add', title: 'Adding and subtracting', sub: 'three steps every time', concepts: [
+      { id: 'adding', title: 'Adding unlike fractions', exp: ['B2.5'], skill: 'fr-add', hard: true,
+        body: '<ol><li>Find a common denominator.</li><li>Change each fraction.</li><li>Add the tops. Keep the bottom. Simplify.</li></ol>',
+        watch: play([
+          [f(1, 4) + ' + ' + f(2, 3) + ': quarters and thirds.', bars([{ d: 4, parts: [[1, 0]], label: '1/4' }, { d: 3, parts: [[2, 1]], label: '2/3' }], 420)],
+          ['Common denominator: 12.', bars([{ d: 12, parts: [[3, 0]], label: '3/12' }, { d: 12, parts: [[8, 1]], label: '8/12' }], 420), f(3, 12) + ' + ' + f(8, 12)],
+          ['Put them together: 11 twelfths.', bars([{ d: 12, parts: [[3, 0], [8, 1]], label: '11/12' }], 420), f(11, 12)]
+        ]),
+        try: lab(CH, 1, 'Add two fractions so the answer is more than 1 whole.', function (h) { return h.querySelector('#aso').value === '1' && fv(h, '#asa') + fv(h, '#asb') > 1; }, 'More than a whole: you can write it as a mixed number.'),
+        ways: [{ label: 'Estimate first', html: '<p>' + f(1, 2) + ' + ' + f(1, 3) + ' must be more than ' + f(1, 2) + '. If your answer is ' + f(2, 5) + ', it is too small: something went wrong.</p>' }],
+        key: '<p>Same size pieces, then add the tops.</p>',
+        mistake: '<p>Adding the bottoms. ' + f(1, 2) + ' + ' + f(1, 3) + ' is <b>not</b> ' + f(2, 5) + ': that is less than ' + f(1, 2) + ' on its own. The answer is ' + f(5, 6) + '.</p>',
+        check: [{ q: f(1, 2) + ' + ' + f(3, 8) + ' = ?', type: 'mc', options: [f(4, 10), f(7, 8), f(4, 8), f(5, 8)], answer: 1, hint: 'Eighths work. ' + f(1, 2) + ' = ' + f(4, 8) + '.', explain: f(4, 8) + ' + ' + f(3, 8) + ' = ' + f(7, 8) + '.' }, g(CH, 'fr-add', 1), g(CH, 'fr-add', 2)] },
+      { id: 'subtracting', title: 'Subtracting unlike fractions', exp: ['B2.5'], skill: 'fr-sub',
+        body: '<p>Same three steps: make the pieces the same size, then take away.</p>',
+        watch: play([
+          [f(5, 6) + ' − ' + f(1, 4) + ': change both to twelfths.', '<p class="g6-big">' + f(10, 12) + ' &minus; ' + f(3, 12) + '</p>'],
+          ['Take away 3 of the 10 twelfths.', bars([{ d: 12, parts: [[10, 0]], cross: 3, label: '10/12' }], 420), f(7, 12)]
+        ]),
+        try: lab(CH, 1, 'Choose subtract and find a pair whose difference is ' + f(1, 4) + '.', function (h) { return h.querySelector('#aso').value === '-1' && Math.abs(fv(h, '#asa') - fv(h, '#asb') - 0.25) < 1e-9; }, 'Yes: the difference is one quarter.'),
+        key: '<p>Check it makes sense: the answer is less than the first fraction.</p>',
+        check: [{ q: f(3, 4) + ' &minus; ' + f(1, 3) + ' = ?', type: 'mc', options: [f(2, 1), f(5, 12), f(2, 12), f(1, 12)], answer: 1, hint: 'Twelfths: ' + f(9, 12) + ' and ' + f(4, 12) + '.', explain: f(9, 12) + ' &minus; ' + f(4, 12) + ' = ' + f(5, 12) + '.' }, g(CH, 'fr-sub', 1)] },
+      { id: 'mixed', title: 'Mixed numbers', exp: ['B2.5'], skill: 'fr-sub', hard: true,
+        body: '<p>Change a mixed number to an improper fraction first. 2' + f(1, 3) + ' = ' + f(7, 3) + ': 2 wholes are 6 thirds, plus 1 more third.</p>',
+        watch: play([
+          ['2 and one third.', bars([{ d: 3, parts: [[3, 0]], label: '1' }, { d: 3, parts: [[3, 0]], label: '1' }, { d: 3, parts: [[1, 0]], label: '1/3' }], 420)],
+          ['Count the thirds: 3 + 3 + 1 = 7.', '<p class="g6-big">2' + f(1, 3) + ' = ' + f(7, 3) + '</p>'],
+          ['Now subtract one half: use sixths.', '<p class="g6-big">' + f(14, 6) + ' &minus; ' + f(3, 6) + ' = ' + f(11, 6) + ' = 1' + f(5, 6) + '</p>']
+        ]),
+        ways: [{ label: 'Wholes and parts separately', html: '<p>2' + f(3, 4) + ' &minus; 1' + f(1, 4) + ': wholes 2 &minus; 1 = 1, parts ' + f(3, 4) + ' &minus; ' + f(1, 4) + ' = ' + f(2, 4) + '. Answer 1' + f(1, 2) + '. This works when the first part is big enough.</p>' }],
+        key: '<p>Whole number &times; bottom + top gives the new top.</p>',
+        check: [g(CH, 'fr-sub', 2), g(CH, 'fr-sub', 3)] }
+    ] },
+    { id: 'mult', title: 'Multiplying', sub: 'groups of a fraction', concepts: [
+      { id: 'groups', title: 'Whole number times a fraction', exp: ['B2.9'], skill: 'fr-mult',
+        body: '<p>3 &times; ' + f(2, 5) + ' means 3 groups of ' + f(2, 5) + '. Multiply the whole number by the top. Keep the bottom.</p>',
+        watch: play([
+          ['One group of two fifths.', bars([{ d: 5, parts: [[2, 0]], label: '2/5' }], 420)],
+          ['Two groups.', bars([{ d: 5, parts: [[2, 0], [2, 1]], label: '4/5' }], 420)],
+          ['Three groups: 6 fifths, which is 1 and 1 fifth.', bars([{ d: 5, parts: [[2, 0], [2, 1], [2, 2]], label: '6/5' }], 420), '3 &times; ' + f(2, 5) + ' = ' + f(6, 5) + ' = 1' + f(1, 5)]
+        ]),
+        try: lab(CH, 2, 'Make a product that is exactly <b>2 wholes</b>.', function (h) { return Math.abs(+h.querySelector('#mwn').value * fv(h, '#mwf') - 2) < 1e-9; }, 'Yes: exactly two wholes.'),
+        key: '<p>Multiply the top by the whole number. The bottom stays the same.</p>',
+        mistake: '<p>Multiplying the bottom too. 4 &times; ' + f(1, 3) + ' is ' + f(4, 3) + ', not ' + f(4, 12) + '. Each piece is still a third.</p>',
+        check: [g(CH, 'fr-mult', 1), g(CH, 'fr-mult', 2)] },
+      { id: 'of', title: '"Of" means multiply', exp: ['B2.9'], skill: 'fr-mult',
+        body: '<p>' + f(2, 3) + ' of 12 means ' + f(2, 3) + ' &times; 12. Split 12 into 3 equal groups, then take 2 of them.</p>',
+        watch: play([
+          ['12 counters.', ofArr(0, 3, 12)],
+          ['Split into 3 equal groups of 4. Take 2 groups.', ofArr(2, 3, 12), f(2, 3) + ' of 12 = 8']
+        ]),
+        key: '<p>Divide by the bottom, multiply by the top.</p>',
+        check: [{ q: 'What is ' + f(3, 4) + ' of 20?', type: 'num', answer: 15, hint: '20 &divide; 4 = 5 in each group. Take 3 groups.', explain: '3 &times; 5 = 15.' }, g(CH, 'fr-mult', 3)] }
+    ] },
+    { id: 'div', title: 'Dividing', sub: 'how many fit?', concepts: [
+      { id: 'fit', title: 'Whole number divided by a fraction', exp: ['B2.10'], skill: 'fr-div', hard: true,
+        body: '<p>3 &divide; ' + f(1, 4) + ' asks: <b>how many quarters fit in 3?</b> The answer is bigger than 3, because the pieces are small.</p>',
+        watch: play([
+          ['How many quarters fit in 3?', jumps(3, 1, 4)],
+          ['Each whole holds 4 quarters. 3 wholes hold 12.', jumps(3, 1, 4), '3 &divide; ' + f(1, 4) + ' = 12'],
+          ['Jumps of two thirds in 2: 6 thirds make 3 jumps.', jumps(2, 2, 3), '2 &divide; ' + f(2, 3) + ' = 3']
+        ]),
+        try: lab(CH, 3, 'Find a division where exactly <b>6</b> jumps fit.', function (h) { return Math.abs(+h.querySelector('#dvw').value / fv(h, '#dvf') - 6) < 1e-9; }, 'Yes: six jumps fit exactly.'),
+        ways: [
+          { label: 'Ribbon', html: '<p>A 3 m ribbon cut into ' + f(3, 4) + ' m pieces: 3 m = ' + f(12, 4) + ' m. 12 quarters in groups of 3 quarters = <b>4 pieces</b>.</p>' },
+          { label: 'Pizza', html: '<p>2 pizzas, each cut in thirds: 6 slices. If each person gets ' + f(1, 3) + ', 6 people eat. 2 &divide; ' + f(1, 3) + ' = 6.</p>' }
+        ],
+        key: '<p>Change the whole into pieces of that size, then count the groups.</p>',
+        mistake: '<p>Expecting the answer to be smaller. Dividing by a fraction less than 1 gives a <b>bigger</b> answer, because many small pieces fit.</p>',
+        check: [{ q: '4 &divide; ' + f(1, 3) + ' = ?', type: 'num', answer: 12, hint: 'How many thirds fit in 4? Each whole has 3.', explain: '4 &times; 3 = 12 thirds.' }, g(CH, 'fr-div', 1), g(CH, 'fr-div', 2)] }
+    ] }
+  ];
+
   A.register('fractions', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Same size pieces first</h2>' +
 '<p>You can only add or compare pieces that are the <b>same size</b>. To make ' + A.fr(1, 2) + ' and ' + A.fr(1, 3) + ' the same size, cut both into sixths: ' + A.fr(1, 2) + ' = ' + A.fr(3, 6) + ' and ' + A.fr(1, 3) + ' = ' + A.fr(2, 6) + '.</p>' +

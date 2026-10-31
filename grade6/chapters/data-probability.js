@@ -77,7 +77,132 @@
   }
   var HEIGHTS = [138, 141, 143, 145, 146, 147, 148, 149, 150, 150, 151, 152, 152, 153, 154, 155, 155, 156, 157, 158, 159, 160, 161, 163, 166];
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'data-probability', g = G6.g, lab = G6.lab, play = G6.play;
+  var B5 = bin(HEIGHTS, 135, 5, 7);
+  function part(k) { return B5.map(function (c, i) { return i < k ? c : 0; }); }
+  var TEMPS = bline(['8 am', '10 am', '12 pm', '2 pm', '4 pm', '6 pm'], [12, 15, 19, 22, 20, 16], 0, 25, 5, 'Temperature on a spring day', '°C');
+  var LESSONS = [
+    { id: 'data', title: 'Kinds of data', sub: 'counted, measured or words', concepts: [
+      { id: 'kinds', title: 'Counted or measured?', exp: ['D1.1'], skill: 'dp-type',
+        body: '<p><b>Qualitative</b> data are words, like favourite sport. <b>Quantitative</b> data are numbers. If you <b>count</b> it, it is <b>discrete</b>. If you <b>measure</b> it, it is <b>continuous</b>.</p>',
+        watch: play([
+          ['Favourite sport: words, so qualitative.', '<p class="g6-big">soccer, hockey, swimming</p>', 'Qualitative'],
+          ['Number of pets: you count them. You cannot have 2.5 pets.', '<p class="g6-big">0, 1, 2, 3</p>', 'Discrete'],
+          ['Height: you measure it. It can be 152.4 cm.', '<p class="g6-big">152.4 cm</p>', 'Continuous']
+        ]),
+        key: '<p>Count it: discrete. Measure it: continuous. Words: qualitative.</p>',
+        check: [{ q: 'The time it takes each student to walk to school is&hellip;', type: 'mc', options: ['qualitative', 'discrete', 'continuous'], answer: 2, hint: 'Counted or measured?', explain: 'Time is measured, so it is continuous.' }, g(CH, 'dp-type', 1), g(CH, 'dp-type', 2)] },
+      { id: 'sample', title: 'Samples and intervals', exp: ['D1.2'], skill: 'dp-hist',
+        body: '<p>The <b>population</b> is the whole group you ask about. A <b>sample</b> is a smaller part of it. Data with many different values are grouped into <b>intervals</b>, like 140 to 145 cm.</p>',
+        watch: play([
+          ['Question: how tall are Grade 6 students in our school? That group is the population.', '<p class="g6-big">All Grade 6 students</p>', 'Population'],
+          ['We measure 25 of them: a sample.', '<p class="t2">' + HEIGHTS.join(', ') + '</p>', 'Sample of 25'],
+          ['Group them in intervals of 5 cm. 145 goes in "145 to 150", where it starts.', '<div class="tbl"><table><thead><tr><th>Interval (cm)</th><th>Count</th></tr></thead><tbody>' + B5.map(function (c, i) { return '<tr><td>' + (135 + 5 * i) + ' to ' + (140 + 5 * i) + '</td><td>' + c + '</td></tr>'; }).join('') + '</tbody></table></div>']
+        ]),
+        key: '<p>Each interval includes its start number but not its end number.</p>',
+        mistake: '<p>Putting a value that sits on a boundary in two intervals, or in the lower one. 145 cm belongs in 145 to 150.</p>',
+        check: [{ q: 'A survey asks 40 students from a school of 600. What is the sample?', type: 'mc', options: ['the 600 students', 'the 40 students asked', 'the questions'], answer: 1, hint: 'The sample is the smaller group you actually ask.', explain: 'The 40 students asked are the sample. All 600 are the population.' },
+          { q: 'Intervals are 140 to 145, 145 to 150, and so on. Which interval holds 150?', type: 'mc', options: ['145 to 150', '150 to 155', 'both'], answer: 1, hint: 'An interval starts at its first number.', explain: '150 is the start of 150 to 155.' }] }
+    ] },
+    { id: 'graphs', title: 'Graphs', sub: 'pick the right one, read it carefully', concepts: [
+      { id: 'hist', title: 'Histograms', exp: ['D1.3'], skill: 'dp-hist',
+        body: '<p>A <b>histogram</b> shows how many values fall in each interval. The bars <b>touch</b>, because the number line underneath has no gaps.</p>',
+        watch: play([
+          ['Start with the first interval: 135 to 140 cm.', hist(part(1), 135, 5, 'Heights of 25 students', 'height (cm)')],
+          ['Add the next intervals.', hist(part(3), 135, 5, 'Heights of 25 students', 'height (cm)')],
+          ['All 7 intervals. Most students are 150 to 155 cm.', hist(B5, 135, 5, 'Heights of 25 students', 'height (cm)'), 'Tallest bar: 7 students']
+        ]),
+        try: lab(CH, 0, 'Pick an interval width that makes exactly <b>4</b> bars.', function (h) { return h.querySelector('#hw').value === '10'; }, 'Yes: width 10 gives 4 intervals. Fewer bars, less detail.'),
+        key: '<p>Read the bar height on the left scale. Bars touch.</p>',
+        check: [{ q: 'In the 5 cm histogram, how many students are at least 150 cm but less than 155 cm?', type: 'num', answer: 7, fig: hist(B5, 135, 5, 'Heights of 25 students', 'height (cm)'), hint: 'Find the bar that starts at 150.', explain: 'That bar has height 7.' }, g(CH, 'dp-hist', 1), g(CH, 'dp-hist', 2)] },
+      { id: 'choose', title: 'Choosing a graph', exp: ['D1.3', 'D1.4'], skill: 'dp-graph',
+        body: '<p>Change over time: <b>broken-line graph</b>. Many numbers in intervals: <b>histogram</b>. Categories: <b>bar graph</b>. Parts of a whole: <b>circle graph</b>. Every graph needs a title, axis labels and a source.</p>',
+        watch: play([
+          ['Temperature through a day changes over time.', TEMPS],
+          ['Join the points with straight lines: a broken-line graph.', TEMPS, 'Warmest at 2 pm: 22 °C']
+        ]),
+        ways: [{ label: 'Pick by question', html: '<div class="tbl"><table><thead><tr><th class="l">Your data</th><th class="l">Graph</th></tr></thead><tbody><tr><td class="l">Favourite fruit</td><td class="l">bar graph</td></tr><tr><td class="l">Heights of 25 students</td><td class="l">histogram</td></tr><tr><td class="l">Temperature each hour</td><td class="l">broken-line graph</td></tr><tr><td class="l">How you spend a day</td><td class="l">circle graph</td></tr></tbody></table></div>' },
+          { label: 'Infographics', html: '<p>An <b>infographic</b> tells one story about a data set. It mixes a title, a few big numbers, one or two graphs and short sentences. Example: "Our class sleep": the mean hours of sleep in big type, a histogram of sleep times, and one tip.</p>' }],
+        key: '<p>Ask what the data are, then pick the graph. Title, labels, source.</p>',
+        check: [{ q: 'Which graph is best for showing park visitors each month for a year?', type: 'mc', options: ['histogram', 'broken-line graph', 'circle graph'], answer: 1, hint: 'Months are time.', explain: 'Change over time: broken-line graph.' }, g(CH, 'dp-graph', 1), g(CH, 'dp-graph', 2)] },
+      { id: 'mislead', title: 'Misleading graphs', exp: ['D1.6'], skill: 'dp-graph', hard: true,
+        body: '<p>Always read the <b>scale</b>. If the vertical axis does not start at 0, a small change can look huge.</p>',
+        watch: play([
+          ['The hydro bill went from $92 to $101. This graph makes it look like it shot up.', bline(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], [92, 94, 95, 97, 98, 101], 80, 110, 5, 'Monthly hydro bill', 'dollars'), 'Axis starts at 80'],
+          ['Start the axis at 0 and the change looks as small as it really is.', bline(['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'], [92, 94, 95, 97, 98, 101], 0, 110, 10, 'Monthly hydro bill', 'dollars'), 'Axis starts at 0']
+        ]),
+        try: lab(CH, 1, 'Make the graph honest.', function (h) { return h.querySelector('#mz').value === '0'; }, 'Yes: starting at 0 shows the true size of the change.'),
+        ways: [{ label: 'Do the math', html: '<p>$92 to $101 is a rise of $9. $9 out of $92 is about 10%. A small rise, whatever the picture looks like.</p>' }],
+        key: '<p>Check where the axis starts. Look for the zigzag break.</p>',
+        check: [{ q: 'Why might a graph be misleading?', type: 'mc', options: ['It has a title', 'The vertical axis does not start at 0', 'It uses a broken line', 'It shows 6 months'], answer: 1, hint: 'Look at the scale.', explain: 'A vertical axis that does not start at 0 makes small changes look big.' }, g(CH, 'dp-graph', 3)] }
+    ] },
+    { id: 'centre', title: 'Mean, median, mode, range', sub: 'one number to sum up the data', concepts: [
+      { id: 'mean', title: 'The mean', exp: ['D1.5'], skill: 'dp-mmm',
+        body: '<p>The <b>mean</b> is the fair share: add all the values, then divide by how many there are. On a dot plot it is the balance point.</p>',
+        watch: play([
+          ['Data: 3, 5, 5, 7, 10.', dotplot([3, 5, 5, 7, 10], 0, 12)],
+          ['Add them: 3 + 5 + 5 + 7 + 10 = 30.', dotplot([3, 5, 5, 7, 10], 0, 12), 'Total 30'],
+          ['There are 5 values. 30 &divide; 5 = 6. The triangle balances the data at 6.', dotplot([3, 5, 5, 7, 10], 0, 12), 'Mean = 6']
+        ]),
+        try: lab(CH, 2, 'Type <b>4 or more</b> values with a mean of exactly <b>10</b>.', function (h) { var d = h.querySelector('#mdd').value.split(/[,\s]+/).map(function (x) { return parseInt(x, 10); }).filter(function (x) { return !isNaN(x) && x >= 0 && x <= 30; }); return d.length >= 4 && d.reduce(function (a, b) { return a + b; }, 0) === 10 * d.length; }, 'Yes: the total is 10 times the number of values.'),
+        key: '<p>Mean = total &divide; how many.</p>',
+        check: [{ q: 'What is the mean of 12, 15, 9, 20, 14?', type: 'num', answer: 14, hint: 'Add them, then divide by 5.', explain: '70 &divide; 5 = 14.' }, g(CH, 'dp-mmm', 1), g(CH, 'dp-mmm', 2)] },
+      { id: 'median', title: 'Median, mode and range', exp: ['D1.5'], skill: 'dp-mmm', hard: true,
+        body: '<p><b>Median</b>: the middle value when the data are in order. <b>Mode</b>: the most common value. <b>Range</b>: greatest minus least, which shows the spread.</p>',
+        watch: play([
+          ['8, 3, 12, 5, 9, 6. First put them in order.', '<p class="g6-big">3, 5, 6, 8, 9, 12</p>'],
+          ['6 values, so there are two in the middle: 6 and 8.', '<p class="g6-big">3, 5, <b>6, 8</b>, 9, 12</p>'],
+          ['Median: halfway between them, 7.', dotplot([3, 5, 6, 8, 9, 12], 0, 14), 'Median = 7'],
+          ['Range: 12 &minus; 3 = 9. No value repeats, so there is no mode.', dotplot([3, 5, 6, 8, 9, 12], 0, 14), 'Range = 9']
+        ]),
+        ways: [{ label: 'Cross off the ends', html: '<p>Write the data in order. Cross off one from each end, again and again. What is left in the middle is the median (or the two to average).</p>' },
+          { label: 'One huge value', html: '<p>4, 5, 5, 6, 30: the mean is 10 but the median is 5. One very big value pulls the mean, not the median.</p>' }],
+        key: '<p>Median: order first. Mode: most often. Range: biggest minus smallest.</p>',
+        mistake: '<p>Finding the median without putting the data in order first.</p>',
+        check: [{ q: 'What is the median of 8, 3, 12, 5, 9, 6?', type: 'num', answer: 7, hint: 'Order them. Average the middle two.', explain: '(6 + 8) &divide; 2 = 7.' }, { q: 'What is the range of 34, 28, 41, 30, 37?', type: 'num', answer: 13, hint: 'Greatest minus least.', explain: '41 &minus; 28 = 13.' }, g(CH, 'dp-mmm', 3)] },
+      { id: 'compare', title: 'Comparing two data sets', exp: ['D1.5', 'D1.6'], skill: 'dp-mmm',
+        body: '<p>Use a measure of centre (mean or median) to see which set is higher, and the range to see which is more <b>consistent</b>.</p>',
+        watch: play([
+          ['Team A scored 2, 3, 3, 4, 8. Team B scored 3, 3, 4, 4, 6.', '<div class="vrow"><figure><figcaption>Team A</figcaption>' + dotplot([2, 3, 3, 4, 8], 0, 10) + '</figure><figure><figcaption>Team B</figcaption>' + dotplot([3, 3, 4, 4, 6], 0, 10) + '</figure></div>'],
+          ['Both means are 4.', '<p class="g6-big">20 &divide; 5 = 4</p>', 'Same mean'],
+          ['Range: A is 6, B is 3. Team B is more consistent.', '<p class="g6-big">A: 8 &minus; 2 = 6<br>B: 6 &minus; 3 = 3</p>', 'Smaller range = more consistent']
+        ]),
+        key: '<p>Centre tells you how high. Range tells you how spread out.</p>',
+        check: [{ q: 'Runner P: 12, 13, 12, 13 s. Runner Q: 9, 16, 11, 14 s. Both means are 12.5 s. Who is more consistent?', type: 'mc', options: ['Runner P', 'Runner Q', 'They are the same'], answer: 0, hint: 'Find each range.', explain: 'P has range 1, Q has range 7. P is more consistent.' }, g(CH, 'dp-mmm', 2)] }
+    ] },
+    { id: 'probability', title: 'Probability', sub: 'from impossible to certain', concepts: [
+      { id: 'pline', title: 'The probability line', exp: ['D2.1'], skill: 'dp-prob',
+        body: '<p>Probability runs from 0 (impossible) to 1 (certain). With equally likely outcomes: probability = favourable outcomes &divide; all outcomes. Write it as a fraction, decimal or percent.</p>',
+        watch: play([
+          ['Roll a 7 on a die: impossible.', pline(0, '7'), '0'],
+          ['Roll a 5: 1 of 6 outcomes.', pline(1 / 6, 'roll a 5'), A.fr(1, 6) + ' &#8776; 0.17 &#8776; 17%'],
+          ['Roll an even number: 3 of 6.', pline(0.5, 'even'), A.fr(1, 2) + ' = 0.5 = 50%'],
+          ['Roll less than 7: certain.', pline(1, 'less than 7'), '1']
+        ]),
+        key: '<p>Favourable &divide; all. 0 is impossible, 1 is certain.</p>',
+        check: [{ q: 'A bag has 3 red, 5 blue and 2 green marbles. What is the probability of picking blue, as a percent?', type: 'num', unit: '%', answer: 50, hint: 'Blue &divide; all marbles.', explain: '5 of 10 = 50%.' }, g(CH, 'dp-prob', 1), g(CH, 'dp-prob', 2)] },
+      { id: 'two', title: 'Two events at once', exp: ['D2.2'], skill: 'dp-two',
+        body: '<p>Two events are <b>independent</b> when one does not change the other, like a coin and a die. List every outcome in a grid.</p>',
+        watch: play([
+          ['A coin has 2 outcomes. A die has 6.', ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], null, 'coin', 'die')],
+          ['The grid has 2 &times; 6 = 12 outcomes, all equally likely.', ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], null, 'coin', 'die'), '12 outcomes'],
+          ['Heads and a 6: just 1 square.', ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], function (x, y) { return x === 'H' && y === 6; }, 'coin', 'die'), A.fr(1, 12)],
+          ['Heads and an even number: 3 squares.', ogrid(['H', 'T'], [1, 2, 3, 4, 5, 6], function (x, y) { return x === 'H' && y % 2 === 0; }, 'coin', 'die'), A.fr(3, 12) + ' = ' + A.fr(1, 4)]
+        ]),
+        key: '<p>Outcomes = first count &times; second count. Then count the ones you want.</p>',
+        check: [{ q: 'You spin a 4-part spinner (red, blue, green, yellow) and flip a coin. What is the probability of red and tails?', type: 'mc', options: ['1/4', '1/8', '1/6', '1/2'], answer: 1, hint: '4 &times; 2 outcomes.', explain: '1 of 8.' }, g(CH, 'dp-two', 1), g(CH, 'dp-two', 2)] },
+      { id: 'experiment', title: 'Theory and experiment', exp: ['D2.2'], skill: 'dp-two', hard: true,
+        body: '<p><b>Theoretical</b> probability is what should happen. <b>Experimental</b> probability is what does happen when you try it. With more tries, they usually get closer.</p>',
+        try: lab(CH, 3, 'Run the experiment at least <b>100</b> times. Watch the green dot move toward the orange one.', function (h) { return /of \d[\d\s]{2,} tries/.test(h.querySelector('#prout').textContent); }, 'See how close they are now? More tries, closer results.'),
+        ways: [{ label: 'Why small samples wobble', html: '<p>Flip a coin 4 times and you might get 3 heads (75%). Flip it 1000 times and you will get close to 50%. A few tries can be far from the theory.</p>' }],
+        key: '<p>Experiments wobble. Many tries settle near the theory.</p>',
+        mistake: '<p>Thinking a result is "due": after 5 heads in a row, believing tails is more likely. The next flip is still ' + A.fr(1, 2) + '.</p>',
+        check: [{ q: 'You flip a coin 10 times and get 7 heads. What is the experimental probability of heads?', type: 'mc', options: ['1/2', '7/10', '3/10', '7/3'], answer: 1, hint: 'What happened &divide; tries.', explain: '7 heads in 10 tries: 7/10.' }, { q: 'After 5 heads in a row, what is the probability the next flip is heads?', type: 'mc', options: ['less than 1/2', '1/2', 'more than 1/2'], answer: 1, hint: 'Does the coin remember?', explain: 'Each flip is independent: still 1/2.' }, g(CH, 'dp-two', 2)] }
+    ] }
+  ];
   A.register('data-probability', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Kinds of data</h2>' +
 '<p><b>Qualitative</b> data are words or categories: favourite sport, eye colour. <b>Quantitative</b> data are numbers. Quantitative data come in two kinds:</p>' +

@@ -114,7 +114,117 @@
   /* signed value in thousandths to text for mixed lists */
   function fr(n, d) { return A.fr(n, d); }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'decimals', g = G6.g, lab = G6.lab, play = G6.play;
+  var LESSONS = [
+    { id: 'places', title: 'Decimal places', sub: 'tenths, hundredths, thousandths', concepts: [
+      { id: 'tenths', title: 'Cutting a whole into tenths, hundredths, thousandths', exp: ['B1.4'], skill: 'dc-value',
+        body: '<p>Right of the decimal point, each place is <b>one tenth</b> of the place to its left. Cut a whole into 10 strips, a strip into 10 squares, a square into 10 slivers.</p>',
+        watch: play([
+          ['One whole.', kgrid(1000, 26)],
+          ['Cut it into 10 strips. Each strip is one tenth: 0.1.', kgrid(100, 26), '0.1'],
+          ['Cut a strip into 10 squares. Each square is one hundredth: 0.01.', kgrid(10, 26), '0.01'],
+          ['Cut a square into 10 slivers. Each sliver is one thousandth: 0.001.', kgrid(1, 26), '0.001'],
+          ['0.345 is 3 tenths, 4 hundredths and 5 thousandths.', kgrid(345, 26), '0.345']
+        ]),
+        try: lab(CH, 0, 'Slide to shade exactly <b>0.25</b>.', function (h) { return +h.querySelector('#dgr').value === 250; }, 'Yes: 0.25 is 250 thousandths, a quarter of the whole.'),
+        key: '<p>Each place to the right is one tenth of the place before it.</p>',
+        check: [g(CH, 'dc-value', 1), g(CH, 'dc-value', 2)] },
+      { id: 'read', title: 'Reading decimals', exp: ['B1.4'], skill: 'dc-value',
+        body: '<p>Read the digits after the point as one number, then say the name of the <b>last</b> place. Say "and" for the decimal point.</p>',
+        watch: play([
+          ['0.345 ends in the thousandths place.', dchart(345, { vals: true }), 'three hundred forty-five thousandths'],
+          ['2.07 ends in the hundredths place.', dchart(2070, { vals: true }), 'two and seven hundredths'],
+          ['0.052 ends in the thousandths place.', dchart(52, { vals: true }), 'fifty-two thousandths']
+        ]),
+        key: '<p>Read the number after the point, then name the last place.</p>',
+        mistake: '<p>Reading 0.052 as "fifty-two hundredths". Count the places: three digits after the point means thousandths.</p>',
+        check: [{ q: 'Which decimal is <b>fifty-two thousandths</b>?', type: 'mc', options: ['0.52', '0.052', '0.502', '52.000'], answer: 1, hint: 'Thousandths means three digits after the point.', explain: 'Thousandths needs three decimal places: 0.052.' }, g(CH, 'dc-value', 2)] }
+    ] },
+    { id: 'compare', title: 'Comparing decimals', sub: 'line up the places', concepts: [
+      { id: 'zeros', title: 'Line up and add zeros', exp: ['B1.4'], skill: 'dc-compare', hard: true,
+        body: '<p>Line up the decimal points. Write zeros at the end so every number has the same number of places. Then compare from the <b>left</b>.</p>',
+        watch: play([
+          ['Which is greater: 0.5 or 0.45?', '<div class="vrow"><figure><figcaption>0.5</figcaption>' + kgrid(500, 14) + '</figure><figure><figcaption>0.45</figcaption>' + kgrid(450, 14) + '</figure></div>'],
+          ['Write 0.5 as 0.50. Now both have two places.', '<p class="g6-big">0.5<b style="color:var(--hi)">0</b> &nbsp; and &nbsp; 0.45</p>'],
+          ['Compare the tenths: 5 is more than 4.', '<p class="g6-big">0.<b style="color:var(--strand)">5</b>0 &gt; 0.<b style="color:var(--strand)">4</b>5</p>']
+        ]),
+        try: lab(CH, 1, 'Type two decimals where the one with <b>fewer digits</b> is the greater one.', function (h) { var a = h.querySelector('#dca').value, b = h.querySelector('#dcb').value; var la = (a.split('.')[1] || '').length, lb = (b.split('.')[1] || '').length; return (la < lb && +a > +b) || (lb < la && +b > +a); }, 'Yes: more digits does not mean bigger.'),
+        ways: [
+          { label: 'Think money', html: '<p>$0.50 is fifty cents. $0.45 is forty-five cents. Fifty cents is more, so 0.5 &gt; 0.45.</p>' },
+          { label: 'Zoom in on a number line', html: '<div class="fig">' + dline(400, 600, 10, [{ k: 450, lab: '0.45' }, { k: 500, lab: '0.5' }], 'Number line from 0.4 to 0.6 with 0.45 and 0.5 marked') + '</div><p>0.5 is further right, so it is greater.</p>' }
+        ],
+        key: '<p>Same number of places, then compare from the left.</p>',
+        mistake: '<p>Thinking a decimal with more digits is bigger. 0.45 has more digits than 0.5, but it is less. Adding a zero (0.50) makes the comparison fair.</p>',
+        check: [{ q: 'Which is greater: <span class="math">0.7</span> or <span class="math">0.698</span>?', type: 'mc', options: ['0.7', '0.698', 'They are equal'], answer: 0, hint: '0.7 = 0.700. Compare from the left.', explain: '0.700 and 0.698: 7 tenths beats 6 tenths.' }, g(CH, 'dc-compare', 1), g(CH, 'dc-compare', 2)] }
+    ] },
+    { id: 'rounding', title: 'Rounding decimals', sub: 'roll to the nearest', concepts: [
+      { id: 'hill', title: 'Round to the nearest tenth or hundredth', exp: ['B1.5'], skill: 'dc-round', hard: true,
+        body: '<p>Find the two friendly numbers on either side. At or past halfway rolls <b>up</b>. Before halfway rolls back <b>down</b>.</p>',
+        watch: play([
+          ['Round 2.47 to the nearest tenth. It sits between 2.4 and 2.5.', hill(2470, 100)],
+          ['Halfway is 2.45. 2.47 is past halfway, so it rolls up to 2.5.', hill(2470, 100), '2.47 &rarr; 2.5'],
+          ['Round 2.43: before halfway, it rolls back to 2.4.', hill(2430, 100), '2.43 &rarr; 2.4']
+        ]),
+        try: lab(CH, 2, 'Find a number that rounds to <b>4.0</b> to the nearest tenth.', function (h) { var v = +h.querySelector('#drn').value; return h.querySelector('#drp').value === '100' && v >= 3.95 && v < 4.05 && v !== 4; }, 'Yes: it is within half a tenth of 4.'),
+        ways: [
+          { label: 'Look one place right', html: '<p>Look at the digit just to the <b>right</b> of the place you round to. 5 or more: round up. Less than 5: round down. 5.283 to the nearest hundredth: the next digit is 3, so 5.28.</p>' },
+          { label: 'Carrying', html: '<p>3.96 to the nearest tenth: 9 tenths plus one more tenth is a whole. The answer is <b>4.0</b>.</p>' }
+        ],
+        key: '<p>Look one place to the right: 5 or more rounds up.</p>',
+        mistake: '<p>Forgetting to carry. 3.96 rounded to the nearest tenth is <b>4.0</b>, not 3.10.</p>',
+        check: [{ q: 'Round <span class="math">5.283</span> to the nearest hundredth.', type: 'mc', options: ['5.28', '5.29', '5.3', '5.2'], answer: 0, hint: 'Look one place to the right of the hundredths.', explain: 'The thousandths digit is 3, so round down: 5.28.' }, g(CH, 'dc-round', 1), g(CH, 'dc-round', 2)] },
+      { id: 'repeat', title: 'Repeating decimals', exp: ['B1.5'], skill: 'dc-round',
+        body: '<p>Some decimals never end. 2 &divide; 3 = 0.666&hellip; with the 6 repeating forever. A bar over the digit shows it repeats: 0.<span class="rep">6</span>.</p>',
+        watch: play([
+          ['Divide 2 by 3. Each step leaves 2 again.', '<p class="g6-big">2 &divide; 3 = 0.6&hellip;</p>'],
+          ['So the 6 repeats forever.', '<p class="g6-big">0.6666666&hellip;</p>'],
+          ['We write it with a bar.', '<p class="g6-big">0.<span class="rep">6</span></p>', 'rounded to the nearest hundredth: 0.67']
+        ]),
+        key: '<p>Terminating decimals stop. Repeating decimals go on forever, with a bar over the part that repeats.</p>',
+        check: [g(CH, 'dc-round', 3)] }
+    ] },
+    { id: 'fractions', title: 'Fractions as decimals', sub: 'the same amount, two ways', concepts: [
+      { id: 'tens', title: 'Tenths, hundredths, thousandths as fractions', exp: ['B1.6'], skill: 'dc-frac',
+        body: '<p>When the bottom is 10, 100 or 1000, read the decimal straight off: ' + fr(7, 10) + ' = 0.7, ' + fr(23, 100) + ' = 0.23, ' + fr(9, 1000) + ' = 0.009.</p>',
+        watch: play([
+          ['7 tenths.', kgrid(700, 22), fr(7, 10) + ' = 0.7'],
+          ['23 hundredths.', kgrid(230, 22), fr(23, 100) + ' = 0.23'],
+          ['9 thousandths.', kgrid(9, 22), fr(9, 1000) + ' = 0.009']
+        ]),
+        key: '<p>The bottom number names the last place.</p>',
+        check: [g(CH, 'dc-frac', 1)] },
+      { id: 'divide', title: 'Any fraction as a decimal', exp: ['B1.6'], skill: 'dc-frac', hard: true,
+        body: '<p>A fraction is a division: ' + fr(3, 4) + ' means 3 &divide; 4 = 0.75. Or make an equivalent fraction with a bottom of 10, 100 or 1000.</p>',
+        watch: play([
+          ['3 out of 4 equal parts.', fbar(3, 4, 420)],
+          ['Make the bottom 100: multiply top and bottom by 25.', '<p class="g6-big">' + fr(3, 4) + ' = ' + fr(75, 100) + '</p>'],
+          ['75 hundredths is 0.75.', kgrid(750, 22), '0.75']
+        ]),
+        try: lab(CH, 3, 'Find a fraction that equals <b>0.375</b>.', function (h) { return +h.querySelector('#fdn').value / +h.querySelector('#fdd').value === 0.375; }, 'Yes: 3/8 = 0.375.'),
+        ways: [{ label: 'Divide top by bottom', html: '<p>7 &divide; 20: 20 goes into 70 three times (60), leaving 10. 20 goes into 100 five times. So ' + fr(7, 20) + ' = 0.35.</p>' }, { label: 'Use money', html: '<p>' + fr(1, 4) + ' of a dollar is a quarter, 25 cents: 0.25. ' + fr(3, 4) + ' is three quarters: 0.75.</p>' }],
+        key: '<p>A fraction and its decimal are the same amount. Divide the top by the bottom.</p>',
+        mistake: '<p>Writing ' + fr(1, 4) + ' as 0.4 (using the bottom number as the digit). ' + fr(1, 4) + ' means 1 &divide; 4 = 0.25.</p>',
+        check: [{ q: 'Write ' + fr(7, 20) + ' as a decimal.', type: 'num', answer: 0.35, hint: 'Make the bottom 100: multiply top and bottom by 5.', explain: fr(7, 20) + ' = ' + fr(35, 100) + ' = 0.35.' }, g(CH, 'dc-frac', 2)] }
+    ] },
+    { id: 'mixed', title: 'Mixed lists', sub: 'decimals, fractions and integers together', concepts: [
+      { id: 'order', title: 'Order a mixed list', exp: ['B1.3', 'B1.6'], skill: 'dc-order', hard: true,
+        body: '<p>Change every number to a decimal. Then place them all on one number line and read from left to right.</p>',
+        watch: play([
+          ['Order 0.7, 3/4, −1, 0.07 and 1/2.', '<p class="g6-big">0.7, ' + fr(3, 4) + ', &minus;1, 0.07, ' + fr(1, 2) + '</p>'],
+          ['As decimals: 0.7, 0.75, −1, 0.07, 0.5.', '<p class="g6-big">0.7, 0.75, &minus;1, 0.07, 0.5</p>'],
+          ['Place them on one line.', dline(-1000, 1000, 100, [{ k: -1000, lab: '−1', c: 'var(--neg)' }, { k: 70, lab: '0.07' }, { k: 500, lab: '1/2' }, { k: 700, lab: '0.7' }, { k: 750, lab: '3/4' }], 'Number line from minus 1 to 1'), '&minus;1, 0.07, ' + fr(1, 2) + ', 0.7, ' + fr(3, 4)]
+        ]),
+        try: lab(CH, 4, 'Make a new list, sort it in your head, then show it on the line to check.', function (h) { return h.querySelector('#mxfig').innerHTML.length > 0; }, 'Check your order against the line.'),
+        ways: [{ label: 'Negatives first', html: '<p>Any negative number is less than any positive one. Put the negatives on the left first, then sort the rest.</p>' }],
+        key: '<p>Same form first (decimals), then one number line.</p>',
+        mistake: '<p>Thinking &minus;0.5 is greater than &minus;0.2 because 5 is more than 2. &minus;0.5 is further left, so it is less.</p>',
+        check: [{ q: 'Which is greatest: ' + fr(2, 5) + ', 0.35 or 0.04?', type: 'mc', options: ['2/5', '0.35', '0.04'], answer: 0, hint: 'Change ' + fr(2, 5) + ' to a decimal first.', explain: fr(2, 5) + ' = 0.4, which beats 0.35 and 0.04.' }, g(CH, 'dc-order', 1), g(CH, 'dc-order', 2)] }
+    ] }
+  ];
+
   A.register('decimals', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Tenths, hundredths, thousandths</h2>' +
 '<p>To the right of the decimal point, each place is <b>one tenth</b> of the place to its left. Cut one whole into 10 strips: each strip is a <b class="d1t">tenth</b>. Cut a strip into 10 squares: each is a <b class="d2t">hundredth</b>. Cut a square into 10 slivers: each is a <b class="d3t">thousandth</b>.</p>' +

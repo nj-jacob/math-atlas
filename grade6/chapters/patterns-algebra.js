@@ -88,7 +88,154 @@
     return '<code class="mono">x = ' + start + '\nrepeat while x ≤ ' + limit + ':\n    if x is divisible by 2:\n        say x, "is even"\n    else:\n        say x, "is odd"\n    x = x + ' + step + '</code>';
   }
 
+  /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
+  var CH = 'patterns-algebra', g = G6.g, lab = G6.lab, play = G6.play;
+  var LESSONS = [
+    { id: 'patterns', title: 'Linear patterns', sub: 'the same change every time', concepts: [
+      { id: 'grow', title: 'Growing patterns', exp: ['C1.1', 'C1.4'], skill: 'pa-next',
+        body: '<p>In a <b>growing pattern</b> each term gets bigger. When it grows by the <b>same amount</b> every time, the pattern is <b>linear</b>.</p>',
+        watch: play([
+          ['Term 1: 2 orange tiles that stay, and 3 purple tiles.', figs(3, 2, 1), '5 tiles'],
+          ['Term 2: 3 more purple tiles.', figs(3, 2, 2), '5, 8'],
+          ['Term 3: 3 more again.', figs(3, 2, 3), '5, 8, 11'],
+          ['Term 4: still 3 more. Same change each time, so it is linear.', figs(3, 2, 4), '5, 8, 11, 14']
+        ]),
+        try: lab(CH, 0, 'Make a pattern that adds <b>4</b> each time with <b>1</b> tile that stays.', function (h) { return +h.querySelector('#gpm').value === 4 && +h.querySelector('#gpb').value === 1; }, 'Yes: 5, 9, 13, 17. The rule is 4n + 1.'),
+        key: '<p>Find the change between each pair of terms. Same change means linear.</p>',
+        check: [{ q: 'The pattern is 0.25, 0.5, 0.75, 1, &hellip; What is the next term?', type: 'num', answer: 1.25, hint: 'What is added each time?', explain: 'It adds 0.25 each time. 1 + 0.25 = 1.25.' }, g(CH, 'pa-next', 1), g(CH, 'pa-next', 2)] },
+      { id: 'linear', title: 'Linear or not?', exp: ['C1.1'], skill: 'pa-next', hard: true,
+        body: '<p>A linear pattern makes a <b>straight line</b> of points on a graph. A pattern like 1, 2, 4, 8 doubles, so the change keeps growing and the points curve up.</p>',
+        watch: play([
+          ['5, 8, 11, 14: adds 3 every time.', graph(3, 2, 4)],
+          ['Its points sit on a straight line. Linear.', graph(3, 2, 6), '+3, +3, +3']
+        ]),
+        ways: [
+          { label: 'Look at the changes', html: '<div class="tbl"><table><thead><tr><th class="l">Pattern</th><th class="l">Changes</th><th class="l">Linear?</th></tr></thead><tbody><tr><td class="l">2, 5, 8, 11</td><td class="l">+3, +3, +3</td><td class="l"><b>Yes</b></td></tr><tr><td class="l">1, 2, 4, 8</td><td class="l">+1, +2, +4</td><td class="l">No</td></tr><tr><td class="l">20, 17, 14, 11</td><td class="l">&minus;3, &minus;3, &minus;3</td><td class="l"><b>Yes</b> (shrinking)</td></tr></tbody></table></div>' },
+          { label: 'Shrinking patterns', html: '<p>A gift card starts at $50 and loses $4 a week: 50, 46, 42, 38. The change is &minus;4 every time, so it is linear too. The line just goes down.</p>' }
+        ],
+        key: '<p>Same change every time (up or down) = linear.</p>',
+        check: [{ q: 'Which pattern is linear?', type: 'mc', options: ['3, 6, 12, 24', '2, 5, 8, 11', '1, 4, 9, 16', '1, 2, 4, 7'], answer: 1, hint: 'Find the change between each pair.', explain: '2, 5, 8, 11 adds 3 every time.' },
+          { q: 'Is 40, 35, 30, 25 a linear pattern?', type: 'mc', options: ['Yes: it goes down by 5 every time', 'No: it gets smaller', 'No: linear patterns must grow'], answer: 0, hint: 'Is the change the same each time?', explain: 'It changes by &minus;5 every time, so it is linear.' }, g(CH, 'pa-next', 2)] }
+    ] },
+    { id: 'rules', title: 'Pattern rules', sub: 'jump to any term', concepts: [
+      { id: 'rule', title: 'Write the rule', exp: ['C1.2'], skill: 'pa-rule',
+        body: '<p>The <b>change</b> goes in front of n. Then fix term 1 with the part that stays. For 5, 8, 11, 14 the rule is <b>3n + 2</b>.</p>',
+        watch: play([
+          ['5, 8, 11, 14 adds 3 each time.', '<p class="g6-big">5, 8, 11, 14</p>', '+3 each time'],
+          ['So start with 3n. For term 1, 3n is 3.', '<p class="g6-big">3 &times; 1 = 3</p>'],
+          ['But term 1 is 5. We need 2 more.', '<p class="g6-big">5 &minus; 3 = 2</p>'],
+          ['The rule is 3n + 2. Check term 4: 12 + 2 = 14. It works.', figs(3, 2, 4), '3n + 2']
+        ]),
+        key: '<p>Rule = (change) &times; n + (what is left over). Always check with term 1.</p>',
+        mistake: '<p>Using only the change in the rule. 5, 8, 11, 14 is not 3n, because 3 &times; 1 = 3, not 5. Ask the student to test the rule on term 1 every time.</p>',
+        check: [{ q: 'The pattern is 7, 11, 15, 19. Which rule matches it?', type: 'mc', options: ['4n', 'n + 4', '4n + 3', '7n + 4'], answer: 2, hint: 'The change goes in front of n. Then check term 1.', explain: '4 &times; 1 = 4 and 7 &minus; 4 = 3, so 4n + 3.' }, g(CH, 'pa-rule', 1), g(CH, 'pa-rule', 2)] },
+      { id: 'predict', title: 'Predict and work backwards', exp: ['C1.3'], skill: 'pa-rule', hard: true,
+        body: '<p>With a rule you can jump straight to any term. For 3n + 2, term 20 is 3 &times; 20 + 2 = <b>62</b>. To find which term has 47, undo the rule.</p>',
+        watch: play([
+          ['Which term of 3n + 2 has 47 tiles?', '<p class="g6-big">3n + 2 = 47</p>'],
+          ['Undo the + 2: take 2 away.', '<p class="g6-big">3n = 45</p>'],
+          ['Undo the &times; 3: divide by 3.', '<p class="g6-big">n = 15</p>', 'Term 15'],
+          ['Check: 3 &times; 15 + 2 = 47.', '<p class="g6-big">45 + 2 = 47 &check;</p>']
+        ]),
+        ways: [{ label: 'Use a table', html: '<div class="tbl"><table><thead><tr><th class="l">n</th><td>1</td><td>2</td><td>3</td><td>10</td><td>20</td></tr></thead><tbody><tr><th class="l">3n + 2</th><td>5</td><td>8</td><td>11</td><td>32</td><td><b>62</b></td></tr></tbody></table></div><p>The table works for small terms. The rule is faster for big ones.</p>' },
+          { label: 'Count on in jumps', html: '<p>Term 10 is 32. Term 15 is 5 more jumps of 3: 32 + 15 = 47.</p>' }],
+        key: '<p>Forward: put n in. Backward: undo the adding, then undo the multiplying.</p>',
+        check: [{ q: 'The rule is 4n + 1. What is term 12?', type: 'num', answer: 49, hint: 'Put 12 in place of n. Multiply first.', explain: '4 &times; 12 + 1 = 49.' },
+          { q: 'The rule is 5n &minus; 2. Which term number has the value 48?', type: 'num', answer: 10, hint: 'Solve 5n &minus; 2 = 48.', explain: '5n = 50, so n = 10.' }, g(CH, 'pa-rule', 2)] }
+    ] },
+    { id: 'expressions', title: 'Expressions', sub: 'letters that stand for numbers', concepts: [
+      { id: 'evaluate', title: 'Variables and evaluating', exp: ['C2.2'], skill: 'pa-eval',
+        body: '<p>A <b>variable</b> is a letter that stands for a number. 3x means 3 &times; x. To <b>evaluate</b>, put the number in place of the letter and calculate. Multiply first.</p>',
+        watch: play([
+          ['Evaluate 3x + 2 when x = 4.', '<p class="g6-big">3x + 2</p>'],
+          ['3x means 3 times x.', '<p class="g6-big">3 &times; x + 2</p>'],
+          ['Put 4 in place of x.', '<p class="g6-big">3 &times; 4 + 2</p>'],
+          ['Multiply first, then add.', '<p class="g6-big">12 + 2 = 14</p>', 'Not 34 + 2']
+        ]),
+        key: '<p>Replace the letter, multiply, then add or subtract.</p>',
+        mistake: '<p>Reading 3x as a two-digit number. When x = 4, the student writes 34 instead of 3 &times; 4 = 12.</p>',
+        check: [{ q: 'Evaluate <span class="math">5a &minus; 3</span> when a = 2.4.', type: 'num', answer: 9, hint: 'Replace a with 2.4, multiply first, then subtract.', explain: '5 &times; 2.4 = 12. 12 &minus; 3 = 9.' }, g(CH, 'pa-eval', 1), g(CH, 'pa-eval', 2), g(CH, 'pa-eval', 3)] },
+      { id: 'like', title: 'Adding like terms', exp: ['C2.1'], skill: 'pa-combine',
+        body: '<p>Terms with the same letter can join, like apples with apples. 3x + 4x = <b>7x</b>. A plain number is a different kind of term, so it stays separate.</p>',
+        watch: { tool: 'tiles', opts: {}, steps: [
+          { say: 'Three x tiles: 3x.', act: function (t) { return t.add('x', 1).then(function () { return t.add('x', 1); }).then(function () { return t.add('x', 1); }); }, ms: 1200 },
+          { say: 'Add two more x tiles: 3x + 2x.', act: function (t) { return t.add('x', 1).then(function () { return t.add('x', 1); }); }, ms: 1200 },
+          { say: 'Add 4 unit tiles.', act: function (t) { return t.add('one', 1).then(function () { return t.add('one', 1); }).then(function () { return t.add('one', 1); }).then(function () { return t.add('one', 1); }); }, ms: 1200 },
+          { say: 'The x tiles join to make 5x. The units stay: 5x + 4.', act: function (t) { return t.wait(400); }, ms: 1600 }
+        ] },
+        try: { tool: 'tiles', opts: {}, tasks: [
+          { do: 'Show <b>2x + 3 + 4x</b> with tiles.', goal: function (s) { return s.x === 6 && s.one === 3 && s.n === 9; }, yes: 'Yes: 6 x tiles and 3 units, so 6x + 3.' },
+          { do: 'Show <b>x + 5 + 2x</b>.', goal: function (s) { return s.x === 3 && s.one === 5 && s.n === 8; }, yes: 'Yes: 3x + 5.' }
+        ] },
+        ways: [{ label: 'With a picture', html: '<div class="fig">' + atiles(6, 3) + '</div><p>4m + 3 + 2m: the long tiles join (4 + 2 = 6). The 3 small squares stay. 6m + 3.</p>', }],
+        key: '<p>Add the numbers in front of the same letter. Leave plain numbers alone.</p>',
+        mistake: '<p>Adding everything together: 4m + 3 + 2m written as 9m. The 3 is not an m term.</p>',
+        check: [{ q: 'Simplify: <span class="math">4m + 3 + 2m</span>', type: 'mc', options: ['9m', '6m + 3', '7m + 2', '6m + 3m'], answer: 1, hint: 'Add the m terms. The 3 stays.', explain: '4m + 2m = 6m, so 6m + 3.' }, g(CH, 'pa-combine', 1), g(CH, 'pa-combine', 2)] }
+    ] },
+    { id: 'equations', title: 'Equations', sub: 'keep it balanced', concepts: [
+      { id: 'balance', title: 'Solve with a balance', exp: ['C2.3'], skill: 'pa-solve',
+        body: '<p>An <b>equation</b> is like a balance: both sides are equal. Do the <b>same thing to both sides</b> and it stays balanced.</p>',
+        watch: play([
+          ['3x + 5 = 17. The sides balance.', balance(3, 5, 17)],
+          ['Take 5 units off both sides.', balance(3, 0, 12), '3x = 12'],
+          ['Split both sides into 3 equal groups.', balance(1, 0, 4), 'x = 4'],
+          ['Check: 3 &times; 4 + 5 = 17.', balance(3, 5, 17), '12 + 5 = 17 ✓']
+        ]),
+        try: lab(CH, 2, 'Set the balance to <b>4 x</b> and press "Next step" until it is solved.', function (h) { return +h.querySelector('#bqa').value === 4 && h.querySelector('#bqstep').disabled; }, 'Solved. First take away the extra units, then share into equal groups.'),
+        key: '<p>Undo in reverse order: first the adding, then the multiplying. Check your answer.</p>',
+        check: [{ q: 'Solve: <span class="math">4x + 7 = 31</span>', type: 'num', answer: 6, hint: 'Take 7 from both sides, then divide by 4.', explain: '4x = 24, so x = 6.' }, g(CH, 'pa-solve', 1), g(CH, 'pa-solve', 2)] },
+      { id: 'twox', title: 'More than one x term', exp: ['C2.3', 'C2.1'], skill: 'pa-solve', hard: true,
+        body: '<p>When an equation has two x terms, <b>join them first</b>. Then solve as usual.</p>',
+        watch: play([
+          ['2x + 3x + 4 = 29', '<p class="g6-big">2x + 3x + 4 = 29</p>'],
+          ['Join the x terms.', balance(5, 4, 29), '5x + 4 = 29'],
+          ['Take 4 from both sides.', balance(5, 0, 25), '5x = 25'],
+          ['Divide both sides by 5.', balance(1, 0, 5), 'x = 5']
+        ]),
+        ways: [{ label: 'Guess and check', html: '<p>Try x = 4: 8 + 12 + 4 = 24. Too small. Try x = 5: 10 + 15 + 4 = 29. Yes. Guessing works, but undoing is faster for big numbers.</p>' },
+          { label: 'Think backwards', html: '<p>Something plus 4 makes 29, so the something is 25. Five x make 25, so one x is 5.</p>' }],
+        key: '<p>Join like terms, undo the adding, undo the multiplying, check.</p>',
+        check: [{ q: 'Solve: <span class="math">3x + 2x + 6 = 41</span>', type: 'num', answer: 7, hint: 'Join the x terms first.', explain: '5x + 6 = 41. 5x = 35. x = 7.' }, g(CH, 'pa-solve', 2), g(CH, 'pa-solve', 3)] }
+    ] },
+    { id: 'inequalities', title: 'Inequalities', sub: 'many answers at once', concepts: [
+      { id: 'line', title: 'Inequalities on a number line', exp: ['C2.4'], skill: 'pa-ineq',
+        body: '<p>An <b>inequality</b> uses &lt;, &gt;, &le; or &ge;. It has many answers. An <b>open dot</b> means the number is not included. A <b>closed dot</b> means it is.</p>',
+        watch: play([
+          ['x &gt; 4: every number bigger than 4.', iqline('>', 4, 0, 12), 'Open dot: 4 is not included'],
+          ['x &ge; 4: 4 counts too.', iqline('≥', 4, 0, 12), 'Closed dot: 4 is included'],
+          ['x &lt; 4: every number smaller than 4.', iqline('<', 4, 0, 12), 'Arrow points left']
+        ]),
+        try: lab(CH, 3, 'Show <b>x &lt; 3</b> on the number line.', function (h) { return h.querySelector('#iqo').value === '<' && +h.querySelector('#iqv').value === 3; }, 'Yes: open dot at 3, arrow to the left.'),
+        key: '<p>&lt; and &gt;: open dot. &le; and &ge;: closed dot. The arrow points to the answers.</p>',
+        check: [{ q: 'Which inequality has a closed dot at 6 and an arrow to the left?', type: 'mc', options: ['x &lt; 6', 'x &le; 6', 'x &gt; 6', 'x &ge; 6'], answer: 1, hint: 'Closed means 6 is included. Left means smaller.', explain: 'x &le; 6.' }, { q: 'Is 5 a solution of x &gt; 5?', type: 'mc', options: ['Yes', 'No'], answer: 1, hint: 'Is 5 greater than 5?', explain: '5 is not greater than 5, so no.' }] },
+      { id: 'solveineq', title: 'Solving inequalities', exp: ['C2.4'], skill: 'pa-ineq', hard: true,
+        body: '<p>Solve an inequality like an equation: do the same thing to both sides. Then check one number.</p>',
+        watch: play([
+          ['2x &minus; 3 &ge; 11', '<p class="g6-big">2x &minus; 3 &ge; 11</p>'],
+          ['Add 3 to both sides.', '<p class="g6-big">2x &ge; 14</p>'],
+          ['Divide both sides by 2.', iqline('≥', 7, 0, 14), 'x &ge; 7'],
+          ['Check x = 7: 14 &minus; 3 = 11, and 11 &ge; 11. True.', iqline('≥', 7, 0, 14), '✓']
+        ]),
+        ways: [{ label: 'Test numbers', html: '<p>Try x = 6: 12 &minus; 3 = 9. Is 9 &ge; 11? No. Try x = 7: 11 &ge; 11. Yes. Try x = 8: 13 &ge; 11. Yes. So 7 and bigger work.</p>' }],
+        key: '<p>Same steps as an equation. Keep the sign. Check a number.</p>',
+        check: [{ q: 'Solve: <span class="math">2x &minus; 3 &ge; 11</span>', type: 'mc', options: ['x &ge; 4', 'x &ge; 7', 'x &le; 7', 'x &ge; 8'], answer: 1, hint: 'Add 3, then divide by 2.', explain: '2x &ge; 14, so x &ge; 7.' }, g(CH, 'pa-ineq', 1), g(CH, 'pa-ineq', 2)] }
+    ] },
+    { id: 'code', title: 'Code', sub: 'loops and choices', concepts: [
+      { id: 'loops', title: 'Loops and conditions', exp: ['C3.1', 'C3.2'], skill: 'pa-code',
+        body: '<p>A <b>loop</b> ("repeat while") runs the same lines again. A <b>condition</b> ("if &hellip; else") makes a choice. To predict code, write down x after every pass.</p>',
+        watch: play([
+          ['x = 10. Repeat while x &gt; 0: say x, then take 3.', '<code class="mono">x = 10\nrepeat while x &gt; 0:\n    say x\n    x = x &minus; 3</code>'],
+          ['Pass 1 says 10. Pass 2 says 7.', '<div class="tbl"><table><thead><tr><th>x</th><th>says</th></tr></thead><tbody><tr><td>10</td><td>10</td></tr><tr><td>7</td><td>7</td></tr></tbody></table></div>'],
+          ['Pass 3 says 4. Pass 4 says 1.', '<div class="tbl"><table><thead><tr><th>x</th><th>says</th></tr></thead><tbody><tr><td>10</td><td>10</td></tr><tr><td>7</td><td>7</td></tr><tr><td>4</td><td>4</td></tr><tr><td>1</td><td>1</td></tr></tbody></table></div>'],
+          ['Now x = &minus;2. That is not greater than 0, so it stops. 4 numbers.', '<div class="tbl"><table><thead><tr><th>x</th><th>says</th></tr></thead><tbody><tr><td>10</td><td>10</td></tr><tr><td>7</td><td>7</td></tr><tr><td>4</td><td>4</td></tr><tr><td>1</td><td>1</td></tr><tr><td>&minus;2</td><td>stop</td></tr></tbody></table></div>']
+        ]),
+        try: lab(CH, 4, 'Change the code so it says exactly <b>5</b> lines.', function (h) { return /Output \(5 lines\)/.test(h.querySelector('#cdout').textContent); }, 'Yes: 5 passes through the loop.'),
+        key: '<p>Make a trace table: the value of x on every pass, and when it stops.</p>',
+        check: [{ q: 'x = 10. repeat while x &gt; 0: say x, then x = x &minus; 3. How many numbers does it say?', type: 'num', answer: 4, hint: 'Trace it: 10, 7, &hellip;', explain: 'It says 10, 7, 4, 1.' }, g(CH, 'pa-code', 1), g(CH, 'pa-code', 2)] }
+    ] }
+  ];
   A.register('patterns-algebra', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Growing and shrinking patterns</h2>' +
 '<p>In a <b>growing pattern</b> the terms get bigger. In a <b>shrinking pattern</b> they get smaller. When the change is the <b>same every time</b>, the pattern is <b>linear</b>: its points sit on a straight line.</p>' +
