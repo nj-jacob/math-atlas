@@ -60,7 +60,7 @@ Newest first. One line per change, in plain English.
 - Grade 3 "3D Shapes and Directions": every skill asks in 4 or 5 ways, including tap the object, match everyday things to shapes, tap the way you face on a compass, and tap where you end on the map. Fresh chapter quiz.
 - Grade 3 "Length, Perimeter and Area": every skill asks in 5 ways, including mark millimetres on a ruler, order mixed units, tap the shape with a given area, and pick shapes with the same area. Fresh chapter quiz.
 - Grade 3 "Time, Mass and Capacity": every skill asks in 4 or 5 ways, including tap the clock, order morning times, read a balance, and tap the jug. Fresh chapter quiz.
-- Grade 3 "Money: Making Change": every skill asks in 5 ways, including tap the coins, the fewest coins, change on a number line, and "which way?" to find change. Fresh chapter quiz.
+- Grade 3 "Money: Making Change": every skill asks in 5 ways, including tap the coins, build an amount with coins, the fewest coins, change on a number line, and "which way?" to find change. Fresh chapter quiz.
 - Grade 3 answer checks now stop if two checks share a name, so one shape can never be checked by another shape's rule.
 - Mixed review now brings back skills from other chapters already practised.
 - Automatic checks (`tests/`) run on every pull request and before every publish.
