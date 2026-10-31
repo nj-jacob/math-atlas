@@ -136,6 +136,12 @@
           { say: 'That distance is the <b>radius</b>.', fig: function () { return parts(); } },
           { say: 'Two radii, end to end through the centre, make the <b>diameter</b>.', fig: eq('d = 2 &times; r &nbsp;&nbsp; r = d &divide; 2'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A circle has a diameter of 14 cm. I will find its radius.', fig: function () { return parts(); } },
+          { say: 'The diameter is two radii, end to end. So I halve it: 14 &divide; 2 = <b>7 cm</b>.', fig: eq('r = 14 &divide; 2 = 7 cm') },
+          { say: 'Next, a circle with a radius of 9 cm. The diameter is two radii: 2 &times; 9 = <b>18 cm</b>.', fig: eq('d = 2 &times; 9 = 18 cm') },
+          { say: 'Diameter = 2 radii. Radius = half the diameter.', fig: eq('d = 2 &times; r &nbsp;&nbsp; r = d &divide; 2'), ms: 2400 }
+        ]),
         key: '<p><b>Diameter = 2 radii.</b> Radius = half the diameter.</p>',
         mistake: '<p>Using the diameter where the radius is needed (or the other way round). Ask: centre to edge, or all the way across?</p>',
         check: [function () { var r = R.int(3, 40); return { q: 'A circle has a diameter of ' + 2 * r + ' cm. What is its radius?', type: 'num', answer: r, unit: 'cm', hint: 'The radius is half the diameter.', explain: 2 * r + ' &divide; 2 = ' + r + ' cm.' }; }, function () { var r = R.int(2, 25); return { q: 'A circle has a radius of ' + r + ' m. What is its diameter?', type: 'num', answer: 2 * r, unit: 'm', hint: 'Two radii make a diameter.', explain: '2 &times; ' + r + ' = ' + 2 * r + ' m.' }; }] },
@@ -146,6 +152,12 @@
           { say: 'The distance it rolls is the circumference.', fig: function () { return unroll(1.6); } },
           { say: 'It always fits a little more than 3 diameters: about 3.14 of them.', fig: eq('C &divide; d = &#960; &asymp; 3.14') },
           { say: 'So C = &#960; &times; d. A wheel 60 cm across rolls 3.14 &times; 60 = 188.4 cm in one turn.', fig: eq('3.14 &times; 60 = 188.4 cm'), ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A bicycle wheel is 50 cm across. How far does it roll in one turn?', fig: function () { return unroll(1.6); } },
+          { say: 'One turn rolls out the circumference. C = &#960; &times; d.', fig: eq('C = &#960; &times; d') },
+          { say: '3.14 &times; 50 = 157. The wheel rolls <b>157 cm</b>.', fig: eq('3.14 &times; 50 = 157 cm') },
+          { say: 'If I know the radius instead, I double it first. A radius of 3 m gives d = 6, so C = 3.14 &times; 6 = 18.84, about 18.8 m.', fig: eq('3.14 &times; 6 = 18.84 &asymp; 18.8 m'), ms: 2800 }
         ]),
         try: lab('ucro', [
           { do: 'Roll out a circle with radius <b>2</b>.', goal: function (h) { return K.v(h, 'ucr') === 2; }, yes: 'd = 4, so C = 3.14 × 4 = 12.56.' },
@@ -165,6 +177,12 @@
           { say: 'Given the diameter? Halve it to get the radius.', fig: eq('d = 8 cm &rarr; r = 4 cm') },
           { say: 'Given the circumference? Divide by &#960; for the diameter, then halve it. 25.12 &divide; 3.14 = 8, so r = 4.', fig: eq('C = 25.12 &rarr; d = 8 &rarr; r = 4'), ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I need a circle with a diameter of 12 cm. The compass width is the radius.', fig: function () { return compass(); } },
+          { say: 'So I halve the diameter: 12 &divide; 2 = 6. I open the compass to 6 cm.', fig: eq('d = 12 cm &rarr; r = 6 cm') },
+          { say: 'Next, a circle with a circumference of 31.4 cm. I divide by &#960; to get the diameter: 31.4 &divide; 3.14 = 10.', fig: eq('C = 31.4 &rarr; d = 10') },
+          { say: 'Then I halve it: the radius is 5 cm. I open the compass to 5 cm.', fig: eq('d = 10 &rarr; r = 5 cm'), ms: 2400 }
+        ]),
         key: '<p><b>The compass width is the radius.</b></p>',
         mistake: '<p>Opening the compass to the diameter, which draws a circle twice as wide.</p>',
         check: [function () { return { q: 'A circle has a circumference of 31.4 cm. What radius should you set your compass to?', type: 'num', answer: 5, unit: 'cm', hint: 'Diameter = 31.4 &divide; 3.14. Then halve it.', explain: '10 cm across, so the radius is 5 cm.' }; }, K.ck('cv-circ', 3)] }
@@ -177,6 +195,12 @@
           { say: 'With 16 slices it looks more like a parallelogram.', fig: function () { return slices(16); } },
           { say: 'With 32, almost perfect. The base is half the circumference, &#960;r. The height is the radius, r.', fig: function () { return slices(32); } },
           { say: 'Area = base &times; height = &#960;r &times; r = &#960;r&sup2;.', fig: eq('A = &#960;r<sup>2</sup>'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find the area of a circle with a radius of 5 cm. I cut it into slices and lay them top to bottom.', fig: function () { return slices(16); } },
+          { say: 'The slices make a shape close to a parallelogram. Its base is half the circumference: 3.14 &times; 5 = 15.7 cm.', fig: function () { return slices(32); } },
+          { say: 'Its height is the radius: 5 cm.', fig: eq('base 15.7 cm &nbsp;&nbsp; height 5 cm') },
+          { say: 'Area = base &times; height = 15.7 &times; 5 = <b>78.5 cm&sup2;</b>. That is &#960; &times; 5 &times; 5.', fig: eq('A = 3.14 &times; 5 &times; 5 = 78.5 cm<sup>2</sup>'), ms: 2600 }
         ]),
         try: lab('slco', [
           { do: 'Cut the circle into the <b>most</b> slices you can.', goal: function (h) { return K.v(h, 'slc') === 32; }, yes: 'The more slices, the closer to a parallelogram.' }
@@ -195,6 +219,12 @@
           { say: 'The rug covers the floor <b>inside</b>: area. Radius 1 m.', fig: eq('A = 3.14 &times; 1 &times; 1 = 3.14 m<sup>2</sup>') },
           { say: 'A pizza with radius 15 cm: 3.14 &times; 225 = 706.5 cm&sup2; of pizza.', fig: eq('A = 3.14 &times; 15 &times; 15 = 706.5 cm<sup>2</sup>'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A round garden has a radius of 3 m. I need a fence around it, and soil to cover it.', fig: eq('r = 3 m') },
+          { say: 'The fence goes <b>around</b>: that is the circumference. d = 6, so C = 3.14 &times; 6 = 18.84 m.', fig: eq('C = 3.14 &times; 6 = 18.84 m') },
+          { say: 'The soil covers the <b>inside</b>: that is the area. A = 3.14 &times; 3 &times; 3 = 28.26 m&sup2;.', fig: eq('A = 3.14 &times; 3 &times; 3 = 28.26 m<sup>2</sup>') },
+          { say: 'Around: circumference, in plain units. Inside: area, in square units.', fig: eq('fence 18.84 m &nbsp;&nbsp; soil 28.26 m<sup>2</sup>'), ms: 2400 }
+        ]),
         key: '<p><b>Around: circumference, plain units. Inside: area, square units.</b></p>',
         mistake: '<p>Answering an area question in cm, or a fence question in m&sup2;. Check what is being measured.</p>',
         check: [function () { return mc('You want to put a fence around a round garden. What do you need to find?', 'Circumference', ['Area', 'Volume'], 'A fence goes around the edge.', 'Around the edge: circumference.'); }, K.ck('cv-area', 3)] }
@@ -208,6 +238,12 @@
           { say: 'It holds exactly 1 litre.', fig: eq('1000 cm<sup>3</sup> = 1000 mL = 1 L') },
           { say: 'A fish tank 50 by 30 by 40 cm: 60 000 cm&sup3;, which is 60 L.', fig: eq('60 000 cm<sup>3</sup> &divide; 1000 = 60 L'), ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A box is 20 cm by 15 cm by 10 cm. How many litres does it hold?', fig: eq('20 &times; 15 &times; 10') },
+          { say: 'First I find the volume: 20 &times; 15 &times; 10 = 3000 cm&sup3;.', fig: eq('V = 3000 cm<sup>3</sup>') },
+          { say: '1 cm&sup3; holds 1 mL, so the box holds 3000 mL.', fig: eq('3000 cm<sup>3</sup> = 3000 mL') },
+          { say: '1000 mL is 1 L. So 3000 mL is <b>3 L</b>.', fig: eq('3000 &divide; 1000 = 3 L'), ms: 2400 }
+        ]),
         key: '<p><b>1 cm&sup3; = 1 mL. 1000 cm&sup3; = 1 L.</b></p>',
         mistake: '<p>Forgetting to divide by 1000 to get litres, or dividing by 100.</p>',
         check: [function () { return { q: 'A fish tank is 50 cm long, 30 cm wide and 40 cm high. How many litres does it hold?', type: 'num', answer: 60, unit: 'L', hint: 'Volume in cm&sup3;, then divide by 1000.', explain: '60 000 cm&sup3; = 60 L.' }; }, K.ck('cv-units', 1)] },
@@ -218,6 +254,12 @@
           { say: 'A 1 cm square is 10 mm by 10 mm: 100 mm&sup2;.', fig: eq('1 cm<sup>2</sup> = 10 &times; 10 = 100 mm<sup>2</sup>') },
           { say: 'A 1 cm cube is 10 by 10 by 10: 1000 mm&sup3;.', fig: eq('1 cm<sup>3</sup> = 10 &times; 10 &times; 10 = 1000 mm<sup>3</sup>') },
           { say: 'With metres: 1 m&sup2; = 10 000 cm&sup2;, and 1 m&sup3; = 1 000 000 cm&sup3;.', fig: eq('1 m<sup>2</sup> = 10 000 cm<sup>2</sup>'), ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will change 3 cm&sup2; to mm&sup2;. 1 cm is 10 mm.', fig: eq('1 cm = 10 mm') },
+          { say: 'For area, I square the length factor: 10 &times; 10 = 100. So 1 cm&sup2; = 100 mm&sup2;, and 3 cm&sup2; = <b>300 mm&sup2;</b>.', fig: eq('3 &times; 100 = 300 mm<sup>2</sup>') },
+          { say: 'Next, 2 m&sup3; to cm&sup3;. 1 m is 100 cm. For volume, I cube it: 100 &times; 100 &times; 100 = 1 000 000.', fig: eq('1 m<sup>3</sup> = 1 000 000 cm<sup>3</sup>') },
+          { say: 'So 2 m&sup3; = <b>2 000 000 cm&sup3;</b>. Square the factor for area. Cube it for volume.', fig: eq('2 m<sup>3</sup> = 2 000 000 cm<sup>3</sup>'), ms: 2600 }
         ]),
         ways: [
           { label: 'Draw it', html: '<p>Draw a 1 m square and split each side into 100 cm. You get a 100 by 100 grid: 10 000 small squares.</p>' },
@@ -236,6 +278,12 @@
           { say: '10 layers: 10 &times; 50.24 = 502.4 cm&sup3;.', fig: function () { return stack('cyl', 4, 0, 10); } },
           { say: 'Volume = base area &times; height. It works for every prism and cylinder.', fig: eq('V = &#960;r<sup>2</sup> &times; h'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A box has a base 6 cm by 4 cm. Its base area is 6 &times; 4 = 24 cm&sup2;.', fig: function () { return stack('rect', 6, 4, 1); } },
+          { say: 'I stack layers 1 cm thick, one for each centimetre of height.', fig: function () { return stack('rect', 6, 4, 4); } },
+          { say: 'The box is 8 cm tall, so there are 8 layers: 8 &times; 24 = <b>192 cm&sup3;</b>.', fig: function () { return stack('rect', 6, 4, 8); } },
+          { say: 'It works for a cylinder too. Radius 3 cm, height 5 cm: the base is 3.14 &times; 9 = 28.26, and 28.26 &times; 5 = 141.3 cm&sup3;.', fig: eq('V = 28.26 &times; 5 = 141.3 cm<sup>3</sup>'), ms: 2800 }
+        ]),
         try: lab('vcro', [
           { do: 'Make a can that holds about <b>1 litre</b> (1000 cm&sup3;).', goal: function (h) { var r = K.v(h, 'vcr'), hh = K.v(h, 'vch'), v = 3.14 * r * r * hh; return v > 900 && v < 1100; }, yes: 'Close to 1000 cm³: about 1 L.' },
           { do: 'Double the height. What happens to the volume?', goal: function (h) { return K.v(h, 'vch') === 20; }, yes: 'Twice as many layers: twice the volume.' }
@@ -250,6 +298,12 @@
           { say: 'Divide the volume by the base: 3600 &divide; 150.', fig: eq('h = 3600 &divide; 150') },
           { say: 'The box is <b>24 cm</b> tall.', fig: eq('h = 24 cm'), ms: 2200 }
         ]),
+        example: K.slides([
+          { say: 'My turn. A can holds 314 cm&sup3;. Its base is a circle with a radius of 5 cm. How tall is it?', fig: eq('314 = base &times; h') },
+          { say: 'First I find the base area: 3.14 &times; 5 &times; 5 = 78.5 cm&sup2;.', fig: eq('base = 78.5 cm<sup>2</sup>') },
+          { say: 'Missing height: I divide the volume by the base. 314 &divide; 78.5 = 4.', fig: eq('h = 314 &divide; 78.5 = 4') },
+          { say: 'The can is <b>4 cm</b> tall. I check: 78.5 &times; 4 = 314.', fig: eq('78.5 &times; 4 = 314 &#10003;'), ms: 2400 }
+        ]),
         key: '<p><b>Missing height: volume &divide; base. Missing base: volume &divide; height.</b></p>',
         mistake: '<p>Multiplying again instead of dividing.</p>',
         check: [K.ck('cv-miss', 1), K.ck('cv-miss', 2)] }
@@ -262,6 +316,12 @@
           { say: 'Two circles: 2 &times; 3.14 &times; 16 = 100.48 cm&sup2;.', fig: eq('2 &times; &#960;r<sup>2</sup> = 100.48') },
           { say: 'The rectangle is the circumference by the height: 25.12 &times; 10 = 251.2 cm&sup2;.', fig: eq('2&#960;r &times; h = 251.2') },
           { say: 'Total: 100.48 + 251.2 = 351.68, about <b>351.7 cm&sup2;</b>.', fig: eq('SA &asymp; 351.7 cm<sup>2</sup>'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A can has a radius of 3 cm and a height of 8 cm. I unroll it into a net.', fig: function () { return net(3, 8); } },
+          { say: 'Two circles: 2 &times; 3.14 &times; 3 &times; 3 = 56.52 cm&sup2;.', fig: eq('2 &times; &#960;r<sup>2</sup> = 56.52') },
+          { say: 'The rectangle is the circumference by the height. C = 3.14 &times; 6 = 18.84, and 18.84 &times; 8 = 150.72 cm&sup2;.', fig: eq('2&#960;r &times; h = 150.72') },
+          { say: 'Total: 56.52 + 150.72 = 207.24, about <b>207.2 cm&sup2;</b>.', fig: eq('SA &asymp; 207.2 cm<sup>2</sup>'), ms: 2600 }
         ]),
         try: lab('saro', [
           { do: 'Open a can with radius <b>4</b> and height <b>10</b>.', goal: function (h) { return K.v(h, 'sar') === 4 && K.v(h, 'sah') === 10; }, yes: 'About 351.7 cm².' },

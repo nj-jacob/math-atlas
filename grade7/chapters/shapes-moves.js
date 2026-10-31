@@ -168,6 +168,13 @@
   function tri(img, labs, extra) { var sh = [{ pts: TRI, col: 'var(--sb)', labs: ['A', 'B', 'C'], name: 'Triangle ABC' }]; if (img) sh.push({ pts: img, col: 'var(--se)', labs: labs || ["A'", "B'", "C'"], name: 'Image' }); return plane(sh, 8, extra); }
   function axis(k) { return function (X, Y) { return k === 'rx' ? '<line x1="' + X(-8) + '" y1="' + Y(0) + '" x2="' + X(8) + '" y2="' + Y(0) + '" style="stroke:var(--se)" stroke-width="4"/>' : '<line x1="' + X(0) + '" y1="' + Y(-8) + '" x2="' + X(0) + '" y2="' + Y(8) + '" style="stroke:var(--se)" stroke-width="4"/>'; }; }
   function img(k, a, b) { return TRI.map(function (p) { return MOVES[k](p, a, b); }); }
+  /* the "My turn" examples use triangle DEF and building EXBLD, so they differ from the Watch clips */
+  var DEF = [[1, 2], [3, 2], [3, 5]], EXBLD = [[2, 1, 0], [1, 1, 0], [3, 1, 1]];
+  function def(k, a, b, extra, lim) {
+    var sh = [{ pts: DEF, col: 'var(--sb)', labs: ['D', 'E', 'F'], name: 'Triangle DEF' }];
+    if (k) sh.push({ pts: DEF.map(function (p) { return MOVES[k](p, a, b); }), col: 'var(--se)', labs: ["D'", "E'", "F'"], name: 'Image' });
+    return plane(sh, lim || 8, extra);
+  }
   var BLD = [[1, 2, 3], [0, 1, 2], [1, 0, 1]];
 
   var LESSONS = [
@@ -179,6 +186,12 @@
           { say: 'Cut it anywhere parallel to the base, and you get the same triangle. Same shape all the way through.', fig: function () { return shape('tri'); } },
           { say: 'A square-based pyramid: one square base, and 4 triangles that meet at the top.', fig: function () { return shape('sqpyr'); } },
           { say: 'A cylinder: two circles and one curved surface.', fig: function () { return shape('cyl'); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will name this solid. It has two rectangle bases, joined by rectangles.', fig: function () { return shape('rect'); } },
+          { say: 'It is the same shape all the way through, so it is a prism. Its base is a rectangle: a <b>rectangular prism</b>.', fig: function () { return shape('rect'); } },
+          { say: 'Next solid: one triangle base, and 3 triangles that meet at a point.', fig: function () { return shape('tripyr'); } },
+          { say: 'It comes to a point, so it is a pyramid. Its base is a triangle: a <b>triangular pyramid</b>.', fig: function () { return shape('tripyr'); }, ms: 2400 }
         ]),
         try: lab('slk', [
           { do: 'Find the solid with <b>4 faces</b>.', goal: function (h) { return K.v(h, 'slk') === 'tripyr'; }, yes: 'The triangular pyramid: 4 triangles.' },
@@ -194,6 +207,12 @@
           { say: 'A square-based pyramid. Slice it straight down through the top point and the middle of two sides: two mirror halves.', fig: function () { return shape('sqpyr'); } },
           { say: 'It has 4 planes of symmetry: 2 through the middles of the sides, 2 through the corners.', fig: eq('4 planes of symmetry') },
           { say: 'Spin it about the line through the top point. Every quarter turn looks the same: order 4.', fig: eq('360&deg; &divide; 90&deg; = 4 &rarr; order 4'), ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will find the symmetry of a rectangular prism, like a shoebox.', fig: function () { return shape('rect'); } },
+          { say: 'I slice it through the middle, from end to end: two mirror halves. I can also slice it front to back, and top to bottom.', fig: eq('3 planes of symmetry') },
+          { say: 'Next I spin it about a line through the centres of two opposite faces. It looks the same after a half turn.', fig: eq('360&deg; &divide; 180&deg; = 2 &rarr; order 2') },
+          { say: 'So a rectangular prism has 3 planes of symmetry. Its rotational symmetry is order 2.', fig: eq('3 planes &nbsp;&nbsp; order 2'), ms: 2600 }
         ]),
         ways: [
           { label: 'Look at the base', html: '<p>For prisms and pyramids, the rotational symmetry about the central axis comes from the base. A square base gives order 4. An equilateral triangle gives order 3.</p>' },
@@ -211,6 +230,12 @@
           { say: 'The <b>front view</b>: for each column, the tallest stack, seen from the front.', fig: function () { var v = views(BLD); return iso(BLD) + '<div class="vrow"><figure><figcaption>Front view</figcaption>' + view(v.front, 'Front view') + '</figure></div>'; } },
           { say: 'The <b>right side view</b>: for each row, the tallest stack, seen from the right.', fig: function () { var v = views(BLD); return '<div class="vrow"><figure><figcaption>Front</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side</figcaption>' + view(v.side, 'Right side view') + '</figure></div>'; } },
           { say: 'The <b>top view</b>: which floor squares are covered.', fig: function () { var v = views(BLD); return '<div class="vrow"><figure><figcaption>Front</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side</figcaption>' + view(v.side, 'Right side view') + '</figure><figure><figcaption>Top</figcaption>' + topView(BLD) + '</figure></div>'; }, ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will draw the views of this cube building.', fig: function () { return iso(EXBLD); } },
+          { say: 'Front view: I look at each column from the front, and draw its tallest stack.', fig: function () { var v = views(EXBLD); return iso(EXBLD) + '<div class="vrow"><figure><figcaption>Front view</figcaption>' + view(v.front, 'Front view') + '</figure></div>'; } },
+          { say: 'Right side view: I look at each row from the right, and draw its tallest stack.', fig: function () { var v = views(EXBLD); return '<div class="vrow"><figure><figcaption>Front</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side</figcaption>' + view(v.side, 'Right side view') + '</figure></div>'; } },
+          { say: 'Top view: I look down, and shade every floor square that is covered.', fig: function () { var v = views(EXBLD); return '<div class="vrow"><figure><figcaption>Front</figcaption>' + view(v.front, 'Front view') + '</figure><figure><figcaption>Right side</figcaption>' + view(v.side, 'Right side view') + '</figure><figure><figcaption>Top</figcaption>' + topView(EXBLD) + '</figure></div>'; }, ms: 2600 }
         ]),
         try: lab('vbgrid', [
           { do: 'Make the <b>front view</b> show three columns of height <b>3</b>.', goal: function (h) { var c = h.querySelectorAll('.vcell'), m = [0, 0, 0]; c.forEach(function (b) { var k = +b.getAttribute('data-c'); m[k] = Math.max(m[k], +b.textContent); }); return m.join() === '3,3,3'; }, yes: 'Each column needs at least one stack of 3.' },
@@ -233,6 +258,12 @@
           { say: '(&minus;4, 5): 4 left, 5 up. Negative <i>x</i> means left.', fig: function () { return plane([{ pts: [[3, 2], [3, 2]], col: 'var(--sb)', labs: ['(3, 2)', ''] }, { pts: [[-4, 5], [-4, 5]], col: 'var(--se)', labs: ['(&minus;4, 5)', ''] }], 8); } },
           { say: '(3, &minus;2): 3 right, 2 down. The four regions are the four quadrants.', fig: function () { return plane([{ pts: [[3, 2], [3, 2]], col: 'var(--sb)', labs: ['(3, 2)', ''] }, { pts: [[-4, 5], [-4, 5]], col: 'var(--se)', labs: ['(&minus;4, 5)', ''] }, { pts: [[3, -2], [3, -2]], col: 'var(--sd)', labs: ['(3, &minus;2)', ''] }], 8); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will plot three points. I always start at the origin, (0, 0).', fig: function () { return plane([{ pts: [[0, 0], [0, 0]], col: 'var(--sb)', labs: ['O', ''] }], 8); } },
+          { say: '(&minus;5, &minus;3): across first, 5 left. Then 3 down.', fig: function () { return plane([{ pts: [[-5, -3], [-5, -3]], col: 'var(--sb)', labs: ['(&minus;5, &minus;3)', ''] }], 8); } },
+          { say: '(2, &minus;6): 2 right, then 6 down.', fig: function () { return plane([{ pts: [[-5, -3], [-5, -3]], col: 'var(--sb)', labs: ['(&minus;5, &minus;3)', ''] }, { pts: [[2, -6], [2, -6]], col: 'var(--se)', labs: ['(2, &minus;6)', ''] }], 8); } },
+          { say: '(&minus;1, 4): 1 left, then 4 up. Across first, then up or down.', fig: function () { return plane([{ pts: [[-5, -3], [-5, -3]], col: 'var(--sb)', labs: ['(&minus;5, &minus;3)', ''] }, { pts: [[2, -6], [2, -6]], col: 'var(--se)', labs: ['(2, &minus;6)', ''] }, { pts: [[-1, 4], [-1, 4]], col: 'var(--sd)', labs: ['(&minus;1, 4)', ''] }], 8); }, ms: 2600 }
+        ]),
         key: '<p><b>(<i>x</i>, <i>y</i>): across first, then up or down.</b></p>',
         mistake: '<p>Swapping the order: (3, &minus;2) plotted as 3 up and 2 left.</p>',
         check: [function () { return mc('Which point is 5 left and 2 up from the origin?', '(&minus;5, 2)', ['(5, &minus;2)', '(2, &minus;5)', '(&minus;2, 5)'], 'Across first: left is negative.', '(&minus;5, 2).'); }, function () { return mc('In which quadrant are both coordinates negative?', 'Bottom left', ['Top left', 'Top right', 'Bottom right'], 'Negative <i>x</i> is left, negative <i>y</i> is down.', 'Left and down: bottom left.'); }] },
@@ -243,6 +274,12 @@
           { say: 'Slide it right 3 and down 5.', fig: function () { return tri(img('tr', 3, -5)); } },
           { say: 'A(1, 1) goes to A\'(4, &minus;4). Every point moves the same way.', fig: eq('(1, 1) &rarr; (1 + 3, 1 &minus; 5) = (4, &minus;4)') },
           { say: 'Same size, same shape, facing the same way.', fig: function () { return tri(img('tr', 3, -5)); }, ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will slide triangle DEF 4 left and 3 down.', fig: function () { return def(); } },
+          { say: 'Left changes x: I subtract 4. Down changes y: I subtract 3. D(1, 2) goes to D\'(&minus;3, &minus;1).', fig: eq('(1, 2) &rarr; (1 &minus; 4, 2 &minus; 3) = (&minus;3, &minus;1)') },
+          { say: 'I do the same to every point. E(3, 2) &rarr; (&minus;1, &minus;1). F(3, 5) &rarr; (&minus;1, 2).', fig: function () { return def('tr', -4, -3); } },
+          { say: 'The image is the same size and shape, and it faces the same way.', fig: function () { return def('tr', -4, -3); }, ms: 2400 }
         ]),
         try: lab('mvk', [
           { do: 'Choose <b>translation</b> and move A to <b>(4, &minus;4)</b>.', goal: function (h) { return K.v(h, 'mvk') === 'tr' && K.v(h, 'mva') === 3 && K.v(h, 'mvb') === -5; }, yes: 'Right 3, down 5.' },
@@ -261,6 +298,12 @@
           { say: 'The rule: (x, y) &rarr; (&minus;x, y). Only the sign of <i>x</i> changes.', fig: eq('(1, 1) &rarr; (&minus;1, 1) &nbsp; (4, 1) &rarr; (&minus;4, 1)') },
           { say: 'In the <i>x</i>-axis: (x, y) &rarr; (x, &minus;y). The shape flips up and down.', fig: function () { return tri(img('rx'), null, axis('rx')); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will reflect triangle DEF in the <i>x</i>-axis.', fig: function () { return def(null, 0, 0, axis('rx')); } },
+          { say: 'Each point jumps to the other side, the same distance away. D(1, 2) is 2 above, so D\' is 2 below: (1, &minus;2).', fig: eq('(1, 2) &rarr; (1, &minus;2)') },
+          { say: 'E(3, 2) &rarr; (3, &minus;2). F(3, 5) &rarr; (3, &minus;5). Only the sign of <i>y</i> changes.', fig: function () { return def('rx', 0, 0, axis('rx')); } },
+          { say: 'In the <i>x</i>-axis: (x, y) &rarr; (x, &minus;y). The triangle flips upside down.', fig: eq('(x, y) &rarr; (x, &minus;y)'), ms: 2400 }
+        ]),
         try: lab('mvk', [
           { do: 'Reflect the triangle so it lands <b>below</b> the <i>x</i>-axis.', goal: function (h) { return K.v(h, 'mvk') === 'rx'; }, yes: 'Reflect in the x-axis: (x, y) → (x, −y).' },
           { do: 'Reflect it so it lands <b>to the left</b>.', goal: function (h) { return K.v(h, 'mvk') === 'ry'; }, yes: 'Reflect in the y-axis: (x, y) → (−x, y).' }
@@ -275,6 +318,12 @@
           { say: 'A half turn: it lands in the opposite quadrant. Both signs change.', fig: function () { return tri(img('r180')); } },
           { say: '90&deg; clockwise: a quarter turn, like a clock hand. (x, y) &rarr; (y, &minus;x).', fig: function () { return tri(img('r90cw')); } },
           { say: 'A(1, 1) &rarr; (1, &minus;1). B(4, 1) &rarr; (1, &minus;4).', fig: eq('(4, 1) &rarr; (1, &minus;4)'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will rotate triangle DEF 90&deg; counterclockwise about the origin: a quarter turn, against the clock.', fig: function () { return def(); } },
+          { say: 'The rule for 90&deg; counterclockwise is (x, y) &rarr; (&minus;y, x). I swap the numbers and change the sign of the first one.', fig: eq('(x, y) &rarr; (&minus;y, x)') },
+          { say: 'D(1, 2) &rarr; (&minus;2, 1). E(3, 2) &rarr; (&minus;2, 3). F(3, 5) &rarr; (&minus;5, 3).', fig: eq('(1, 2) &rarr; (&minus;2, 1) &nbsp; (3, 2) &rarr; (&minus;2, 3) &nbsp; (3, 5) &rarr; (&minus;5, 3)') },
+          { say: 'I check with the picture: the triangle made a quarter turn into the second quadrant.', fig: function () { return def('r90ccw'); }, ms: 2600 }
         ]),
         try: lab('mvk', [
           { do: 'Rotate the triangle into the <b>opposite quadrant</b>.', goal: function (h) { return K.v(h, 'mvk') === 'r180'; }, yes: '180°: (x, y) → (−x, −y).' },
@@ -298,6 +347,12 @@
           { say: 'Lines from the origin pass through each point and its image.', fig: function () { return plane([{ pts: [[1, 1], [3, 1], [1, 2]], col: 'var(--sb)', labs: ['A', 'B', 'C'] }, { pts: [[3, 3], [9, 3], [3, 6]], col: 'var(--se)', labs: ["A'", "B'", "C'"] }], 10, function (X, Y) { return [[3, 3], [9, 3], [3, 6]].map(function (p) { return '<line x1="' + X(0) + '" y1="' + Y(0) + '" x2="' + X(p[0]) + '" y2="' + Y(p[1]) + '" style="stroke:var(--ink2)" stroke-dasharray="4 4"/>'; }).join(''); }); } },
           { say: 'Side AB was 2 units. A\'B\' is 6 units: 3 times as long.', fig: eq('AB = 2 &nbsp; A\'B\' = 2 &times; 3 = 6'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will dilate triangle DEF by a scale factor of 2, from the origin.', fig: function () { return def(null, 0, 0, null, 10); } },
+          { say: 'I multiply every coordinate by 2. D(1, 2) &rarr; (2, 4). E(3, 2) &rarr; (6, 4). F(3, 5) &rarr; (6, 10).', fig: function () { return def('dil', 2, 0, null, 10); } },
+          { say: 'Side DE was 2 units long. D\'E\' is 4 units: twice as long.', fig: eq('DE = 2 &nbsp; D\'E\' = 2 &times; 2 = 4') },
+          { say: 'A scale factor bigger than 1 enlarges. A scale factor between 0 and 1 would shrink it.', fig: eq('&times; 2 &rarr; twice as big'), ms: 2400 }
+        ]),
         try: lab('dlk', [
           { do: 'Make the triangle <b>twice as big</b>.', goal: function (h) { return K.v(h, 'dlk') === 2; }, yes: 'Scale factor 2: every length doubles.' },
           { do: 'Make it <b>smaller</b>.', goal: function (h) { return K.v(h, 'dlk') < 1; }, yes: 'A scale factor between 0 and 1 shrinks the shape.' }
@@ -311,6 +366,12 @@
           { say: 'A 4 cm by 6 cm rectangle, scale factor 2.5.', fig: eq('4 &times; 2.5 = 10 &nbsp;&nbsp; 6 &times; 2.5 = 15') },
           { say: 'The image is 10 cm by 15 cm. Each side is 2.5 times as long.', fig: eq('10 : 4 = 15 : 6 = 2.5') },
           { say: 'The angles are still right angles. Same shape, different size: similar.', fig: eq('similar: same angles, sides in the same ratio'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A triangle has sides of 3 cm, 4 cm and 5 cm. I enlarge it with a scale factor of 1.5.', fig: eq('3 cm, 4 cm, 5 cm &nbsp; &times; 1.5') },
+          { say: 'I multiply every side by 1.5: 3 &times; 1.5 = 4.5, 4 &times; 1.5 = 6, and 5 &times; 1.5 = 7.5.', fig: eq('4.5 cm, 6 cm, 7.5 cm') },
+          { say: 'I check the ratios. 4.5 &divide; 3, 6 &divide; 4 and 7.5 &divide; 5 all equal 1.5.', fig: eq('4.5 : 3 = 6 : 4 = 7.5 : 5 = 1.5') },
+          { say: 'The angles do not change. Same angles, sides in the same ratio: the triangles are similar.', fig: eq('similar: same angles, sides in the same ratio'), ms: 2400 }
         ]),
         key: '<p><b>Similar: same angles, all sides multiplied by the same scale factor.</b></p>',
         mistake: '<p>Calling any two rectangles similar. A 2 by 3 and a 4 by 5 rectangle are not: 4 &divide; 2 = 2 but 5 &divide; 3 is not 2.</p>',

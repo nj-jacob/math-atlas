@@ -189,6 +189,12 @@
           { say: '3.47 is past halfway, so it is closer to 3.5.', fig: function () { return roundPic(3.47, 1); } },
           { say: '3.47 rounds to <b>3.5</b>.', fig: eq('3.47 &asymp; 3.5'), ms: 2200 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will round 6.82 to the nearest tenth.', fig: eq('6.82 &rarr; nearest tenth') },
+          { say: 'First, which two tenths is it between? 6.8 and 6.9. Halfway is 6.85.', fig: eq('6.8 &nbsp; &larr; 6.85 &rarr; &nbsp; 6.9') },
+          { say: '6.82 is before halfway, so it is closer to 6.8.', fig: function () { return roundPic(6.82, 1); } },
+          { say: '6.82 rounds to <b>6.8</b>.', fig: eq('6.82 &asymp; 6.8'), ms: 2200 }
+        ]),
         try: lab('rdx', [
           { do: 'Round <b>12.648</b> to the nearest <b>tenth</b>.', goal: function (h) { return parseFloat(K.v(h, 'rdx')) === 12.648 && K.v(h, 'rdp') === 1; }, yes: '12.648 is between 12.6 and 12.7. Halfway is 12.65, and 12.648 is just below it, so it rounds to <b>12.6</b>.' },
           { do: 'Type a number that rounds <b>up</b> to <b>4.0</b> at the nearest tenth.', goal: function (h) { var x = parseFloat(K.v(h, 'rdx')); return K.v(h, 'rdp') === 1 && x >= 3.95 && x < 4; }, yes: 'Anything from 3.95 up to 4 rounds to 4.0.' },
@@ -204,6 +210,12 @@
           { say: 'Look at the digit to its right: 5.', fig: eq('14.06<b style="color:var(--se)">5</b>') },
           { say: '5 or more, so round up: the 6 becomes 7.', fig: eq('14.065 &asymp; 14.07') },
           { say: 'Watch out for 9s. 5.98 to the nearest tenth: the 9 goes up and carries. It becomes <b>6.0</b>.', fig: function () { return roundPic(5.98, 1); }, ms: 2800 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will round 7.436 to the nearest hundredth. The hundredths digit is 3.', fig: eq('7.4<u>3</u>6') },
+          { say: 'I look one digit to the right: 6.', fig: eq('7.43<b style="color:var(--se)">6</b>') },
+          { say: '6 is 5 or more, so I round up. The 3 becomes 4: <b>7.44</b>.', fig: eq('7.436 &asymp; 7.44') },
+          { say: 'Next, 12.96 to the nearest tenth. The digit to the right is 6, so the 9 goes up. 9 + 1 makes 10, so I carry. It becomes <b>13.0</b>.', fig: function () { return roundPic(12.96, 1); }, ms: 2800 }
         ]),
         ways: [
           { label: 'On a number line', html: '<div class="fig">' + roundPic(14.065, 2) + '</div><p>14.065 is exactly halfway between 14.06 and 14.07, so it rounds up.</p>' },
@@ -222,6 +234,11 @@
           { say: 'The square is one whole. Three quarters is shaded in rows. One half is shaded in columns.', fig: function () { return areaFr(1, 2, 3, 4); } },
           { say: 'The overlap is 3 of the 8 small rectangles: <b>three eighths</b>.', fig: function () { return areaFr(1, 2, 3, 4) + eq(fr(1, 2) + ' &times; ' + fr(3, 4) + ' = ' + fr(3, 8)); }, ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will find one third of two fifths. "Of" means times.', fig: eq(fr(1, 3) + ' of ' + fr(2, 5)) },
+          { say: 'The square is one whole. Two fifths is shaded in rows. One third is shaded in columns.', fig: function () { return areaFr(1, 3, 2, 5); } },
+          { say: 'The overlap is 2 of the 15 small rectangles: <b>two fifteenths</b>.', fig: function () { return areaFr(1, 3, 2, 5) + eq(fr(1, 3) + ' &times; ' + fr(2, 5) + ' = ' + fr(2, 15)); }, ms: 2600 }
+        ]),
         try: lab('mfao', [
           { do: 'Show <b>2/3 &times; 3/5</b>.', goal: function (h) { return K.v(h, 'mfa') === 2 && K.v(h, 'mfb') === 3 && K.v(h, 'mfc') === 3 && K.v(h, 'mfd') === 5; }, yes: 'The overlap is 6 of 15 rectangles: 6/15 = 2/5.' },
           { do: 'Make an overlap of exactly <b>1/4</b> of the square.', goal: function (h) { var a = Math.min(K.v(h, 'mfa'), K.v(h, 'mfb')), c = Math.min(K.v(h, 'mfc'), K.v(h, 'mfd')); return 4 * a * c === K.v(h, 'mfb') * K.v(h, 'mfd'); }, yes: 'For example 1/2 &times; 1/2 = 1/4.' }
@@ -237,6 +254,13 @@
           { say: 'Bottoms: 3 times 5 is 15.', fig: eq(fr('2 &times; 4', '3 &times; 5') + ' = ' + fr(8, 15)) },
           { say: 'The area model agrees: 8 of 15 rectangles.', fig: function () { return areaFr(2, 3, 4, 5); }, ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + fr(3, 4) + ' &times; ' + fr(2, 7) + '.', fig: eq(fr(3, 4) + ' &times; ' + fr(2, 7)) },
+          { say: 'First I multiply the tops: 3 &times; 2 = 6.', fig: eq(fr('3 &times; 2', '?')) },
+          { say: 'Next I multiply the bottoms: 4 &times; 7 = 28.', fig: eq(fr('3 &times; 2', '4 &times; 7') + ' = ' + fr(6, 28)) },
+          { say: 'The area model agrees: 6 of 28 small rectangles.', fig: function () { return areaFr(3, 4, 2, 7); } },
+          { say: 'Last I simplify. 6 and 28 both divide by 2, so the answer is <b>' + fr(3, 14) + '</b>.', fig: eq(fr(6, 28) + ' = ' + fr(3, 14)), ms: 2400 }
+        ]),
         key: '<p><b>Multiply the tops. Multiply the bottoms. Simplify.</b></p>',
         mistake: '<p>Finding a common denominator first (a habit from adding), then keeping it: 2/3 &times; 4/5 = 10/15 &times; 12/15 = 120/15. Remind: common denominators are for adding and subtracting.</p>',
         check: [function () { var o = fq('Multiply: ' + fr(2, 3) + ' &times; ' + fr(9, 10) + '. Simplify your answer.', 3, 5, 'Multiply tops and bottoms, then simplify.', fr(18, 30) + ' = ' + fr(3, 5) + '.'); o.accept = A.lowest(3, 5); return o; }, K.ck('md-fxf', 2), K.ck('md-fxf', 2)] },
@@ -247,6 +271,12 @@
           { say: 'Split 12 into 3 equal groups: 4 in each.', fig: eq('12 &divide; 3 = 4') },
           { say: 'Two of the groups: 2 times 4 is 8.', fig: eq('2 &times; 4 = 8') },
           { say: 'The rule gives the same: two thirds times 12 over 1 is 24 thirds, which is 8.', fig: eq(fr(2, 3) + ' &times; ' + fr(12, 1) + ' = ' + fr(24, 3) + ' = 8'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. A bag has 20 apples. Three fifths of them are red. How many are red?', fig: eq(fr(3, 5) + ' of 20') },
+          { say: 'First I divide by the bottom: 20 &divide; 5 = 4. That is one fifth.', fig: eq('20 &divide; 5 = 4') },
+          { say: 'Then I multiply by the top: 3 &times; 4 = 12. So <b>12 apples</b> are red.', fig: eq('3 &times; 4 = 12') },
+          { say: 'I check with the rule: ' + fr(3, 5) + ' &times; ' + fr(20, 1) + ' = ' + fr(60, 5) + ', which is 12.', fig: eq(fr(3, 5) + ' &times; ' + fr(20, 1) + ' = ' + fr(60, 5) + ' = 12'), ms: 2600 }
         ]),
         key: '<p><b>Divide by the bottom, multiply by the top.</b></p>',
         mistake: '<p>Dividing by the top and multiplying by the bottom (12 &divide; 2 &times; 3 = 18). The answer must be less than 12, because 2/3 is less than 1.</p>',
@@ -260,6 +290,12 @@
           { say: 'Lay quarter pieces under it, one at a time.', fig: function () { return measure(3, 2, 1, 4); } },
           { say: 'Six quarters fit exactly. So one and a half divided by one quarter is 6.', fig: eq(fr(3, 2) + ' &divide; ' + fr(1, 4) + ' = 6') },
           { say: 'The answer is <b>bigger</b> than what we started with, because the pieces are smaller than 1.', fig: eq('6 &gt; ' + A.mixed(1, 1, 2)), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + fr(3, 4) + ' &divide; ' + fr(1, 8) + '. It asks: how many eighths fit into three quarters?', fig: eq(fr(3, 4) + ' &divide; ' + fr(1, 8)) },
+          { say: 'I lay eighth pieces under the three quarters, one at a time.', fig: function () { return measure(3, 4, 1, 8); } },
+          { say: '6 eighths fit exactly. So ' + fr(3, 4) + ' &divide; ' + fr(1, 8) + ' = <b>6</b>.', fig: eq(fr(3, 4) + ' &divide; ' + fr(1, 8) + ' = 6') },
+          { say: 'The answer is bigger than ' + fr(3, 4) + ', because each piece is smaller than 1.', fig: eq('6 &gt; ' + fr(3, 4)), ms: 2600 }
         ]),
         try: lab('dva', [
           { do: 'How many <b>1/4</b> pieces fit into <b>2</b>?', goal: function (h) { return sel(h, 'dva') === '2,1' && sel(h, 'dvb') === '1,4'; }, yes: '8 quarters fit into 2.' },
@@ -281,6 +317,12 @@
           { say: 'Multiply: 15 over 12.', fig: eq(fr(5, 6) + ' &times; ' + fr(3, 2) + ' = ' + fr(15, 12)) },
           { say: 'Simplify: 15 twelfths is <b>1 and one quarter</b>.', fig: eq(fr(15, 12) + ' = ' + A.mixed(1, 1, 4)), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + fr(4, 5) + ' &divide; ' + fr(2, 3) + '.', fig: eq(fr(4, 5) + ' &divide; ' + fr(2, 3)) },
+          { say: 'I keep the first fraction. I change &divide; to &times;. I flip the second: ' + fr(2, 3) + ' becomes ' + fr(3, 2) + '.', fig: eq(fr(4, 5) + ' &times; ' + fr(3, 2)) },
+          { say: 'I multiply: tops 4 &times; 3 = 12, bottoms 5 &times; 2 = 10.', fig: eq(fr(4, 5) + ' &times; ' + fr(3, 2) + ' = ' + fr(12, 10)) },
+          { say: 'I simplify: ' + fr(12, 10) + ' = ' + fr(6, 5) + ' = <b>' + A.mixed(1, 1, 5) + '</b>.', fig: eq(fr(12, 10) + ' = ' + fr(6, 5) + ' = ' + A.mixed(1, 1, 5)), ms: 2400 }
+        ]),
         ways: [
           { label: 'Why it works', html: '<p>Dividing by ' + fr(1, 4) + ' asks how many quarters fit. Every whole holds 4 quarters, so it is the same as multiplying by 4, which is ' + fr(4, 1) + ', the reciprocal.</p>' },
           { label: 'Common denominator', html: '<p>Another way: ' + fr(5, 6) + ' &divide; ' + fr(2, 3) + ' = ' + fr(5, 6) + ' &divide; ' + fr(4, 6) + '. How many 4-sixths fit in 5-sixths? 5 &divide; 4 = ' + A.mixed(1, 1, 4) + '. Same answer.</p>' }
@@ -295,6 +337,12 @@
           { say: 'How many quarters fit in a half? Two.', fig: function () { return measure(1, 2, 1, 4); } },
           { say: 'Times a fraction less than 1: smaller. Divide by it: bigger.', fig: eq(fr(1, 2) + ' &times; ' + fr(1, 4) + ' = ' + fr(1, 8) + ' &nbsp;&nbsp; ' + fr(1, 2) + ' &divide; ' + fr(1, 4) + ' = 2'), ms: 2600 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out ' + fr(2, 3) + ' &times; ' + fr(1, 3) + ' and ' + fr(2, 3) + ' &divide; ' + fr(1, 3) + ', then compare.', fig: eq(fr(2, 3) + ' &times; ' + fr(1, 3) + ' &nbsp;&nbsp; ' + fr(2, 3) + ' &divide; ' + fr(1, 3)) },
+          { say: 'Times: one third of two thirds. The overlap is 2 of 9 small rectangles: ' + fr(2, 9) + '. That is smaller than ' + fr(2, 3) + '.', fig: function () { return areaFr(2, 3, 1, 3); } },
+          { say: 'Divide: how many thirds fit into two thirds? 2. That is bigger than ' + fr(2, 3) + '.', fig: function () { return measure(2, 3, 1, 3); } },
+          { say: 'With a number less than 1, multiplying makes smaller and dividing makes bigger.', fig: eq(fr(2, 3) + ' &times; ' + fr(1, 3) + ' = ' + fr(2, 9) + ' &nbsp;&nbsp; ' + fr(2, 3) + ' &divide; ' + fr(1, 3) + ' = 2'), ms: 2600 }
+        ]),
         key: '<p>With a number less than 1: <b>multiplying makes smaller, dividing makes bigger.</b></p>',
         mistake: '<p>Choosing the operation by keywords alone. Ask: "a part of something?" (multiply) or "how many fit?" (divide).</p>',
         check: [function () { return mc('Which is greater?', '6 &divide; ' + fr(1, 2), ['6 &times; ' + fr(1, 2), 'They are equal'], 'How many halves fit in 6? What is half of 6?', '6 &divide; ' + fr(1, 2) + ' = 12 and 6 &times; ' + fr(1, 2) + ' = 3.'); },
@@ -306,6 +354,11 @@
         watch: K.slides([
           { say: 'A hundred grid is one whole. Shade 3 tenths across and 4 tenths down.', fig: function () { return grid(3, 4); } },
           { say: 'The overlap is 12 small squares. Each one is a hundredth: 0.12.', fig: eq('0.3 &times; 0.4 = 0.12'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will work out 0.6 &times; 0.7 on a hundred grid. The grid is one whole.', fig: eq('0.6 &times; 0.7') },
+          { say: 'I shade 6 tenths across and 7 tenths down.', fig: function () { return grid(6, 7); } },
+          { say: 'The overlap is 6 &times; 7 = 42 small squares. Each one is a hundredth, so the answer is <b>0.42</b>. Tenths times tenths gives hundredths.', fig: eq('0.6 &times; 0.7 = 0.42'), ms: 2600 }
         ]),
         try: lab('mdao', [
           { do: 'Show <b>0.6 &times; 0.7</b>.', goal: function (h) { return K.v(h, 'mda') === 6 && K.v(h, 'mdb') === 7; }, yes: '42 hundredths: 0.42.' },
@@ -323,6 +376,13 @@
           { say: 'One decimal place plus one decimal place is two.', fig: eq('2.<u>4</u> &times; 1.<u>3</u> &rarr; 2 places') },
           { say: 'Put two places in 312: <b>3.12</b>. Estimate: about 2 times 1.5 is 3. It fits.', fig: eq('2.4 &times; 1.3 = 3.12'), ms: 2800 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out 1.7 &times; 0.24.', fig: eq('1.7 &times; 0.24') },
+          { say: 'First I ignore the points: 17 &times; 24 = 408.', fig: eq('17 &times; 24 = 408') },
+          { say: 'I count the decimal places: 1 in 1.7 and 2 in 0.24. That is 3 places.', fig: eq('1.<u>7</u> &times; 0.<u>24</u> &rarr; 3 places') },
+          { say: 'I put the point back with 3 places: <b>0.408</b>.', fig: eq('1.7 &times; 0.24 = 0.408') },
+          { say: 'I check with an estimate: about 2 &times; 0.2 = 0.4. It fits.', fig: eq('0.408 &asymp; 0.4 &#10003;'), ms: 2400 }
+        ]),
         key: '<p><b>Multiply the whole numbers. Count the places. Put the point back.</b></p>',
         mistake: '<p>Lining up the decimal points as in adding. In multiplication, count places instead, and check with an estimate.</p>',
         check: [function () { return { q: 'Multiply: 3.2 &times; 0.15', type: 'num', answer: 0.48, hint: '32 &times; 15 = 480. Count the decimal places.', explain: '32 &times; 15 = 480. Three places: 0.480 = 0.48.' }; }, K.ck('md-dxd', 2), K.ck('md-dxd', 2)] },
@@ -333,6 +393,12 @@
           { say: 'Estimate: about 1.50 times 2.5 is about 3.75.', fig: eq('&asymp; 1.50 &times; 2.5 = 3.75') },
           { say: '148 times 25 is 3700. Three places: 3.700.', fig: eq('148 &times; 25 = 3700 &rarr; 3.700') },
           { say: 'The cost is <b>$3.70</b>. Close to the estimate, so it makes sense.', fig: eq('$3.70 &asymp; $3.75 &#10003;'), ms: 2600 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. Apples cost $3.89 a kilogram. How much do 2.4 kg cost?', fig: eq('3.89 &times; 2.4') },
+          { say: 'I estimate first. $3.89 is about $4, and 4 &times; 2.4 = 9.6. So about $9.60.', fig: eq('&asymp; 4 &times; 2.4 = 9.60') },
+          { say: 'Now I multiply: 389 &times; 24 = 9336. There are 3 decimal places, so it is 9.336.', fig: eq('389 &times; 24 = 9336 &rarr; 9.336') },
+          { say: 'To the nearest cent, the cost is <b>$9.34</b>. That is close to $9.60, so it makes sense.', fig: eq('$9.34 &asymp; $9.60 &#10003;'), ms: 2600 }
         ]),
         key: '<p><b>Estimate first.</b> If the answer is far from the estimate, the decimal point is probably in the wrong place.</p>',
         mistake: '<p>Accepting $37.00 or $0.37 without checking. An estimate catches a misplaced point every time.</p>',
@@ -346,6 +412,12 @@
           { say: 'Two jumps reach 0.6.', fig: function () { return jumps(0.6, 0.3); } },
           { say: 'Four jumps reach 1.2.', fig: function () { return jumps(1.2, 0.3); } },
           { say: 'So 1.2 divided by 0.3 is <b>4</b>.', fig: eq('1.2 &divide; 0.3 = 4'), ms: 2200 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. How many jumps of 0.2 reach 1.4?', fig: eq('1.4 &divide; 0.2') },
+          { say: 'I jump 0.2 at a time. 5 jumps reach 1.', fig: function () { return jumps(1, 0.2); } },
+          { say: '2 more jumps reach 1.4. That is 7 jumps.', fig: function () { return jumps(1.4, 0.2); } },
+          { say: 'So 1.4 &divide; 0.2 = <b>7</b>.', fig: eq('1.4 &divide; 0.2 = 7'), ms: 2200 }
         ]),
         try: lab('ddb', [
           { do: 'Show <b>1.5 &divide; 0.25</b>.', goal: function (h) { return K.v(h, 'ddb') === 0.25 && K.v(h, 'ddn') === 6; }, yes: '6 jumps of 0.25 reach 1.5.' },
@@ -361,6 +433,12 @@
           { say: 'Multiply both by 100. 0.15 becomes 15.', fig: eq('4.5 &times; 100 = 450 &nbsp; 0.15 &times; 100 = 15') },
           { say: 'Now it is 450 divided by 15.', fig: eq('450 &divide; 15') },
           { say: 'The answer is <b>30</b>, the same for both.', fig: eq('4.5 &divide; 0.15 = 450 &divide; 15 = 30'), ms: 2400 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I will work out 7.2 &divide; 0.06. Dividing by a decimal is hard, so I make the divisor a whole number.', fig: eq('7.2 &divide; 0.06') },
+          { say: '0.06 has 2 decimal places, so I multiply both numbers by 100.', fig: eq('7.2 &times; 100 = 720 &nbsp; 0.06 &times; 100 = 6') },
+          { say: 'Now it is 720 &divide; 6, which is 120.', fig: eq('720 &divide; 6 = 120') },
+          { say: 'So 7.2 &divide; 0.06 = <b>120</b>. I check: 120 &times; 0.06 = 7.2.', fig: eq('120 &times; 0.06 = 7.2 &#10003;'), ms: 2400 }
         ]),
         ways: [
           { label: 'Like changing units', html: '<p>How many 15¢ stickers can you buy with $4.50? Change both to cents: 450¢ &divide; 15¢ = 30. Same as 4.5 &divide; 0.15.</p>' },
@@ -380,6 +458,13 @@
           { say: 'With brackets, (6 + 4) &times; 3: brackets come first.', fig: eq('<u>(6 + 4)</u> &times; 3') },
           { say: '10 &times; 3 is <b>30</b>. Brackets changed the answer.', fig: eq('10 &times; 3 = 30'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out 5 + 2 &times; 3<sup>2</sup>. I go in BEDMAS order.', fig: eq('5 + 2 &times; 3<sup>2</sup>') },
+          { say: 'There are no brackets. E: the exponent comes first. 3<sup>2</sup> = 9.', fig: eq('5 + 2 &times; <u>3<sup>2</sup></u> = 5 + 2 &times; 9') },
+          { say: 'M: I multiply next. 2 &times; 9 = 18.', fig: eq('5 + <u>2 &times; 9</u> = 5 + 18') },
+          { say: 'A: I add last. 5 + 18 = <b>23</b>.', fig: eq('5 + 18 = 23') },
+          { say: 'With brackets, (5 + 2) &times; 3<sup>2</sup> is different: 7 &times; 9 = 63. Brackets come first.', fig: eq('<u>(5 + 2)</u> &times; 3<sup>2</sup> = 7 &times; 9 = 63'), ms: 2600 }
+        ]),
         try: lab('ooe', [
           { do: 'Step through <b>20 &minus; 2&sup3; &divide; 4</b> to the end.', goal: function (h) { var b = h.querySelector('#oonext'); return K.v(h, 'ooe') === 2 && b && b.disabled; }, yes: 'Exponent, then divide, then subtract: 18.' },
           { do: 'Step through <b>24 &divide; 6 &times; 2</b>.', goal: function (h) { var b = h.querySelector('#oonext'); return K.v(h, 'ooe') === 4 && b && b.disabled; }, yes: 'Left to right: 4 &times; 2 = 8.' }
@@ -394,6 +479,12 @@
           { say: 'Go left to right: 24 &divide; 6 first, which is 4.', fig: eq('<u>24 &divide; 6</u> &times; 2 = 4 &times; 2') },
           { say: '4 &times; 2 is <b>8</b>. Not 2!', fig: eq('= 8'), ms: 2200 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will work out 30 &minus; 12 + 5. Subtract and add are partners.', fig: eq('30 &minus; 12 + 5') },
+          { say: 'Partners go left to right. So I subtract first: 30 &minus; 12 = 18.', fig: eq('<u>30 &minus; 12</u> + 5 = 18 + 5') },
+          { say: 'Then I add: 18 + 5 = <b>23</b>.', fig: eq('= 23') },
+          { say: 'If I added first, I would get 30 &minus; 17 = 13. That is wrong. Partners go left to right.', fig: eq('23 &#10003; &nbsp;&nbsp; not 13'), ms: 2400 }
+        ]),
         ways: [
           { label: 'Turn it into one kind', html: '<p>Dividing by 6 is multiplying by ' + fr(1, 6) + '. So 24 &divide; 6 &times; 2 = 24 &times; ' + fr(1, 6) + ' &times; 2 = 8. All multiplication: any order works.</p>' },
           { label: 'Subtract and add', html: '<p>10 &minus; 3 + 2: left to right gives 7 + 2 = 9. Doing the add first gives 10 &minus; 5 = 5, which is wrong. Think of it as 10, take away 3, then add 2.</p>' }
@@ -407,6 +498,12 @@
           { say: 'You buy 3 notebooks at $2.50 each and pay with a $10 bill. What is your change?', fig: eq('10 &minus; 3 &times; 2.50') },
           { say: 'Multiply first: 3 &times; 2.50 is 7.50.', fig: eq('10 &minus; 7.50') },
           { say: 'Then subtract: your change is <b>$2.50</b>.', fig: eq('= $2.50'), ms: 2200 }
+        ]),
+        example: K.slides([
+          { say: 'My turn. I buy 4 juice boxes at $1.25 each and a sandwich for $3.50. I pay with a $10 bill. What is my change?', fig: eq('10 &minus; (4 &times; 1.25 + 3.50)') },
+          { say: 'I write the expression. Inside the brackets, I multiply first: 4 &times; 1.25 = 5.00.', fig: eq('10 &minus; (5.00 + 3.50)') },
+          { say: 'Then I add inside the brackets: 5.00 + 3.50 = 8.50.', fig: eq('10 &minus; 8.50') },
+          { say: 'Last I subtract: 10 &minus; 8.50 = 1.50. My change is <b>$1.50</b>.', fig: eq('= $1.50'), ms: 2400 }
         ]),
         key: '<p><b>Write the expression, then use BEDMAS.</b> Brackets can make the order clear.</p>',
         mistake: '<p>Subtracting first: 10 &minus; 3 = 7, then 7 &times; 2.50 = $17.50 in change from $10. Ask: does the answer make sense?</p>',
