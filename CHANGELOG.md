@@ -3,6 +3,9 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Coin "build it" questions now work in every grade, and one shared helper (`Atlas.Q.shapes`) wires question shapes into a chapter, so grades don't copy it.
+- Match cards and "why?" reasons fit on a phone screen in every grade (long words and sentences wrap instead of running off the side).
+- Checks: fresh quizzes are now answered the same way as practice, so fraction answers (like 1/2) are typed correctly.
 - Grade 8: every practice skill in all 11 chapters now asks in 4 to 6 different ways (stories, number lines, true or false with a reason, matching, ordering, fill the blanks, tap, pick all, and "which way?" choices). Each chapter quiz is fresh every time.
 - Grade 8 "Big and Small Numbers": match powers of ten, order them, spot proper scientific notation, metric prefix stairs.
 - Grade 8 "Squares, Roots and Real Numbers": place roots on a number line, tap the perfect square below, sort rational from irrational, order real numbers.
