@@ -94,10 +94,9 @@ html body .hero h1 *{background-color:transparent!important}
 
 /* ---------- 9. Header layout (same in every grade) ----------
    Computer: All grades | Grade N Math Atlas | Chapters ... | Sign in, then the display buttons.
-   Phone:    All grades ............ Sign in
-             Grade N Math Atlas
-             Chapters  Check-up  My progress  Toolbox  Fact sheet   (one row, scrolls sideways if needed)
-             Text  Grown-up view */
+   Phone:    Grade N Math Atlas ..... All grades
+             Chapters  Check-up  My progress  Toolbox  Fact sheet   (one row; wraps to two on narrow phones)
+             Text  Grown-up view .......... Sign in */
 html body .bar .wrap{display:grid!important;grid-template-columns:auto auto minmax(0,1fr) auto;
   grid-template-areas:"home brand nav acct" "tools tools tools tools";align-items:center;gap:6px 14px;min-height:0;padding-top:10px;padding-bottom:10px}
 html body .bar .athome{grid-area:home;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:99px;
@@ -119,12 +118,14 @@ html body .bar .wrap:not(:has(.athome)){grid-template-columns:auto minmax(0,1fr)
 }
 @media (max-width:640px){
   html body .bar{position:static!important}
-  html body .bar .wrap{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"home acct" "brand brand" "nav nav" "tools tools";gap:8px 10px}
-  html body .bar .athome{justify-self:start}
-  html body .bar .brand{font-size:1.2rem}
-  html body .bar nav{display:grid!important;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:6px!important;margin:2px 0 0;overflow:visible}
+  html body .bar .wrap{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"brand home" "nav nav" "tools acct";gap:8px 10px;padding-top:8px;padding-bottom:8px}
+  html body .bar .athome{min-height:36px;padding:4px 10px}
+  html body .bar .brand{font-size:1.05rem;white-space:normal;line-height:1.2;min-width:0}
+  html body .bar .tools{min-width:0}
+  html body .bar .acct{align-self:center}
+  html body .bar nav{flex-wrap:wrap!important;gap:5px!important;margin:0;overflow:visible}
   html body .bar .wrap:not(:has(.athome)){grid-template-areas:"brand acct" "nav nav" "tools tools"}
-  html body .bar nav a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:42px;padding:6px 4px!important;font-size:.88rem!important;
+  html body .bar nav a{flex:0 1 auto;display:flex;align-items:center;justify-content:center;text-align:center;min-height:40px;padding:6px 8px!important;font-size:.86rem!important;
     border:1px solid var(--line)!important;border-radius:10px;background:var(--paper)}
   html body .bar nav a:hover,html body .bar nav a[aria-current]{background:var(--at-tint)}
 }

@@ -934,7 +934,7 @@
       'It is a study aid, not a copy of the curriculum. Please check details against the Ontario Ministry of Education document.</p>' +
       '<p><b>How to help.</b> Sit with your child, read the words together, and let them tap the answers. Real objects help a lot: buttons, coins, pasta or blocks to count. Ten minutes a day is better than an hour once a week.</p>' +
       '<p><b>Not covered:</b> strand A (social-emotional learning and math processes) is woven through, not taught on its own. Mathematical modelling (C4) has no chapter of its own. Real-world tasks like collecting data from classmates or measuring with real objects are suggested, but can only be done away from the screen.</p>' +
-      '<p><b>Progress</b> is saved only in this browser. Nothing is sent anywhere.</p></div></div>';
+      '<p><b>Progress</b> is saved in this browser. With a <a href="../family.html">family account</a>, it is also kept for any device, and parents and tutors can follow along.</p></div></div>';
     app.innerHTML = h;
   }
 

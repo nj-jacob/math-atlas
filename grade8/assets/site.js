@@ -681,7 +681,7 @@
       'It is a study aid, not a copy of the curriculum. Teachers and parents should check details against the Ministry of Education document.</p>' +
       '<p><b>How each lesson works.</b> A short explanation and picture, a worked example, then a "Your turn" question. A wrong answer points you back to the step to look at again. Each chapter starts with a warm-up from earlier chapters.</p>' +
       '<p><b>Not covered:</b> strand A (social-emotional learning skills and math processes) is woven through, not taught as its own chapter. Mathematical modelling (C4) has no chapter of its own. Building an infographic (D1.4) is described but not built on the site.</p>' +
-      '<p><b>Progress</b> is saved only in this browser. Nothing is sent anywhere.</p></div></div>';
+      '<p><b>Progress</b> is saved in this browser. With a <a href="../family.html">family account</a>, it is also kept for any device, and parents and tutors can follow along.</p></div></div>';
     app.innerHTML = h;
   }
 
