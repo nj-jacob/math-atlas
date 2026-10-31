@@ -112,4 +112,32 @@
   set('fw-way', (q, m) => { const a = Array.isArray(m.a) ? fx(m.a) : m.a, b = Array.isArray(m.b) ? fx(m.b) : m.b; const want = { batches: b * a, pieces: b / a, left: a - b, total: a + b }[m.s]; return only(q, o => near(ev(o), want)); });
   set('fw-tf', (q, m) => tf(m.kind === 'pieces' ? m.op === 'div' : m.op === 'mul', q));
   set('fw-fill', (q, m) => q.answers[2] === m.n * m.f[0] / m.f[1] && q.answers[0] === m.f[1] && q.answers[1] * m.f[1] === m.n ? '' : 'part');
+  /* ---- Percent, ratio and rate ---- */
+  /* read "35%", "3/4" or "0.72" as a plain number */
+  const pv = t => { const s = H.strip(t); return s.endsWith('%') ? n(s) / 100 : fv(s); };
+  set('pc-match', q => pairsOk(q, (l, r) => near(n(l) / 100, n(r), 1e-12)));
+  set('pc-line', (q, m) => near(q.answer, m.p / 100, 1e-12) ? '' : 'placement');
+  set('pc-tf', (q, m) => tf(near(m.said, m.p / 100, 1e-12), q));
+  set('pc-order', q => ordered(q.items.map(pv)) ? '' : 'order');
+  set('po-story', (q, m) => near(q.answer * 100, m.p * m.n, 1e-9) && Number.isInteger(q.answer) ? '' : 'students');
+  set('po-fill', (q, m) => near(q.answers[0] * 10, m.n) && near(q.answers[1], m.n * m.p / 100) ? '' : 'blanks');
+  set('po-tf', (q, m) => tf((m.n * m.p / 100 > m.n) === m.more, q));
+  set('po-match', q => pairsOk(q, (l, r) => { const [p, of] = H.strip(l).split('% of '); return near(n(p) * n(of) / 100, n(r), 1e-9); }));
+  set('pg-way', (q, m) => only(q, o => near(ev(o), m.price - m.price * m.p / 100, 1e-9)));
+  set('pg-tf', (q, m) => tf(near(m.price + m.price * m.p / 100, m.said, 0.001), q));
+  set('pg-story', (q, m) => near(q.answer, Math.round(m.price * 13) / 100, 0.001) ? '' : 'tax');
+  set('pg-fill', (q, m) => near(q.answers[0] * 100, m.up ? 100 + m.p : 100 - m.p, 1e-9) ? '' : 'multiplier');
+  set('pp-fill', (q, m) => m.a * q.answers[0] === m.b * m.c ? '' : 'ratio');
+  set('pp-story', (q, m) => m.a * q.answer === m.b * m.c ? '' : 'water');
+  set('pp-tf', (q, m) => tf(m.a * m.said === m.b * m.c, q));
+  set('pp-pick', (q, m) => same(which(q, o => { const [x, y] = H.strip(o).split(' : ').map(Number); return m.a * y === m.b * x; }), q.answer) ? '' : 'picks');
+  const offer = t => { const g = H.strip(t).match(/^(\d+) for \$([\d.]+)$/); return +g[2] / +g[1]; };
+  set('pa-tap', q => { const u = q.tiles.map(offer); return u[q.answer] === Math.min(...u) ? '' : 'best buy'; });
+  set('pa-fill', (q, m) => near(q.answers[0] * m.q, m.tot, 0.006) ? '' : 'unit price');
+  set('pa-tf', (q, m) => tf(m.p2 / m.s2 < m.p1 / m.s1, q));
+  set('pa-order', q => ordered(q.items.map(t => { const g = H.strip(t).match(/^(\d+) km in (\d+) h$/); return +g[1] / +g[2]; })) ? '' : 'order');
+  set('pq-first', (q, m) => { const c = H.strip(chosen(q)), br = H.strip(m.ex).startsWith('('); return br ? (c.includes('brackets') ? '' : 'brackets first') : (c.startsWith('Multiply') ? '' : 'multiply first'); });
+  set('pq-tf', (q, m) => tf(ev(m.ex) === m.said, q));
+  set('pq-fill', (q, m) => q.answers[0] === m.b * m.c && q.answers[1] === ev(m.a + ' - ' + m.b + ' * ' + m.c) ? '' : 'steps');
+  set('pq-order', q => ordered(q.items.map(ev)) ? '' : 'order');
 })(window.__verify, window.__H);
