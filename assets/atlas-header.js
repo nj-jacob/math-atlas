@@ -1,4 +1,4 @@
-/* Math Atlas shared header: adds the "All grades" link back to the home page on every grade site.
+/* Math Atlas shared header: adds the "All grades" link back to the curriculum page on every grade site.
    Load with: <script src="../assets/atlas-header.js" defer></script> */
 (function () {
   function add() {
@@ -7,9 +7,9 @@
     var root = (document.querySelector('meta[name="atlas-root"]') || {}).content || '../';
     var a = document.createElement('a');
     a.className = 'athome';
-    a.href = root;
+    a.href = root + 'curriculum.html';
     a.innerHTML = '<span aria-hidden="true">‹</span> All grades';
-    a.setAttribute('aria-label', 'All grades: back to the Math Atlas home page');
+    a.setAttribute('aria-label', 'All grades: back to the Math Atlas curriculum');
     w.insertBefore(a, w.firstChild);
   }
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', add); else add();

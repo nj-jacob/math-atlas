@@ -6,13 +6,14 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 
 | Folder or file | What it is |
 | --- | --- |
-| `index.html`, `family.html`, `live.html` | Home page, family sign-in and parent and tutor pages, and the "Work together" page |
+| `index.html`, `curriculum.html` | Home page ("My plan", or "Plans" with one card per child for parents and tutors) and the Curriculum page (every grade and chapter). Both share the top bar and sign-in from `assets/home.js` and `home.css`. |
+| `family.html`, `live.html` | Family sign-in and parent and tutor pages, and the "Work together" page |
 | `404.html` | The "page not found" page. Firebase shows it for any address that does not exist. It uses `/` paths so it works at any depth. |
 | `plan/` | Math Plan: placement test and learning plans, Grades 1 to 8 |
 | `grade1/` … `grade8/` | One site per grade (see below) |
 | `assets/engine/` | **Shared by every grade**: lesson engine, toolbox, answer types |
 | `assets/atlas-theme.css` | The one look for every page |
-| `assets/atlas-header.js` | The shared header ("All grades" link) |
+| `assets/atlas-header.js` | The shared header on grade sites ("All grades" link to the Curriculum page) |
 | `assets/icon.svg` | The site icon shown in browser tabs and bookmarks. Every page links to it. |
 | `assets/load-note.js` | On the family and "Work together" pages: if sign-in cannot load, shows a short note instead of a blank page |
 | `assets/fb.js`, `sync.js`, `family.js`, `live.js` | Sign-in and saving progress (Firebase) |

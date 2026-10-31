@@ -25,7 +25,7 @@
   /* Where the grade sites are: next door on the family website, or the live site when this page is opened elsewhere. */
   var SITES = (document.querySelector('meta[name="plan-sites"]') || {}).content || '../';
   function siteLink(g, hash) { return SITES + 'grade' + g + '/' + (hash ? '#' + hash : ''); }
-  var all = document.getElementById('allgrades'); if (all) all.href = SITES;
+  var all = document.getElementById('allgrades'); if (all) all.href = SITES + 'curriculum.html';
 
   /* Practice already done in the grade sites (same website): a secure skill counts as a right day. */
   function skillDays(id) {

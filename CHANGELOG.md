@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Home page: the curriculum now has its own page under the "Curriculum" tab in the top bar, with each grade opening to its chapters. The home page shows only the plan (for parents and tutors: their children). Every "All grades" link goes to the Curriculum page. On a phone the top bar keeps both tabs.
 - Grade 3: every lesson idea has a "My turn" worked example (no voice). Each one solves a fresh problem step by step in "I" language, then says the key idea. The robot's code now shows one step per line, so long code fits on a phone.
 - Grade 8: every lesson idea has a "My turn" worked example: words on screen, no voice, with fresh numbers, ending on the answer and a check.
 - Lessons: new "My turn" worked examples, solved step by step (no voice). Added to every idea in Grade 1 "Counting to 50", Grade 5 "Make the bottoms match" and Grade 7 "An equation is a balance" as a sample for Noel.
