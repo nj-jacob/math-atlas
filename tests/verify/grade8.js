@@ -169,4 +169,27 @@
   set('ai-pick', (q, m) => same(which(q, o => OPS[m.op](m.a * n(H.strip(o).replace('x = ', '')) + m.b, m.c)), q.answer) ? '' : 'picks');
   set('ai-tf', (q, m) => { let agree = true; for (let x = -20; x <= 20; x += 0.5) if (OPS[m.op](m.a * x + m.b, m.c) !== OPS[m.sol](x, m.at)) agree = false; return tf(agree, q); });
   set('ai-line', (q, m) => { const ok = x => OPS[m.op](x + m.b, m.c); return ok(q.answer) && !ok(q.answer + (m.big ? -1 : 1)) ? '' : 'edge'; });
+  /* ---- Data ---- */
+  const measured = t => /mass|time|temperature|length/i.test(t) && !/number of/i.test(t);
+  const twoVar = t => /affect|link|relate|produce more/i.test(t);
+  const graphFor = t => /chose each/i.test(t) ? 'Bar graph' : /changed|each month|for the month/i.test(t) ? 'Line graph' : /in groups/i.test(t) ? 'Histogram' : /fraction|percent/i.test(t) ? 'Circle graph' : / and .* for \d+ /i.test(t) ? 'Scatter plot' : '?';
+  const KIND = { 'Bar graph': 'Categories', 'Line graph': 'Change over time', 'Scatter plot': 'Two variables', 'Histogram': 'Grouped measurements', 'Circle graph': 'Parts of a whole' };
+  const r = pts => { const k = pts.length, mx = pts.reduce((a, p) => a + p[0], 0) / k, my = pts.reduce((a, p) => a + p[1], 0) / k; let sxy = 0, sxx = 0, syy = 0; pts.forEach(p => { sxy += (p[0] - mx) * (p[1] - my); sxx += (p[0] - mx) ** 2; syy += (p[1] - my) ** 2; }); return sxy / Math.sqrt(sxx * syy); };
+  const trend = pts => { const c = r(pts); return c > 0.5 ? 1 : c < -0.5 ? -1 : Math.abs(c) < 0.35 ? 0 : NaN; };
+  const EXPECT = { 'Hours of practice and goals scored': 'Positive', 'Height and arm span': 'Positive', 'Outside temperature and the heating bill': 'Negative', 'Age of a car and its resale price': 'Negative', 'Shoe size and favourite number': 'No relationship', 'Birth month and height': 'No relationship' };
+  set('dt-pick', q => same(which(q, o => measured(H.strip(o))), q.answer) ? '' : 'picks');
+  set('dt-match', q => pairsOk(q, (l, rt) => (twoVar(H.strip(l)) ? 'Two-variable' : 'One-variable') === H.strip(rt)));
+  set('dt-tf', (q, m) => tf((measured(m.item) ? 'continuous' : 'discrete') === m.say, q));
+  set('dg-match', q => pairsOk(q, (l, rt) => graphFor(H.strip(l)) === H.strip(rt)));
+  set('dg-tf', (q, m) => tf(graphFor(m.data) === m.say, q));
+  set('dg-kind', (q, m) => H.strip(chosen(q)) === KIND[graphFor(m.data)] ? '' : 'kind');
+  set('dc-tf', (q, m) => { const t = trend(m.pts); return isNaN(t) ? 'plot is unclear' : tf(t === m.say, q); });
+  set('dc-story', (q, m) => { const t = trend(m.pts); return H.strip(chosen(q)) === { 1: 'Goes up', '-1': 'Goes down', 0: 'No clear pattern' }[t] ? '' : 'trend'; });
+  set('dc-match', q => pairsOk(q, (l, rt) => EXPECT[H.strip(l)] === H.strip(rt)));
+  set('dm-tf', (q, m) => tf(m.b > 2 * m.a, q));
+  set('dm-story', (q, m) => q.answer === m.b - m.a ? '' : 'difference');
+  set('dm-pick', q => same(which(q, o => /not start at 0|uneven|different widths/.test(H.strip(o))), q.answer) ? '' : 'picks');
+  set('dx-fill', (q, m) => { let t = 0; return m.list.every((x, i) => { t += x; return q.answers[i] === t; }) ? '' : 'trace'; });
+  set('dx-tf', (q, m) => { let c = 0; for (const x of m.list) if (x > m.lim) c++; return tf(c === m.said, q); });
+  set('dx-pick', (q, m) => same(which(q, o => (m.ge ? n(o) >= m.lim : n(o) > m.lim)), q.answer) ? '' : 'picks');
 })(window.__verify, window.__H);
