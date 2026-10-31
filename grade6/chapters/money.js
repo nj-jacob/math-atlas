@@ -103,11 +103,10 @@
   var CH = 'money', g = G6.g, lab = G6.lab, play = G6.play;
   function card(t, sub, col, plain) {
     var o = '<rect x="10" y="10" width="300" height="180" rx="18" style="fill:' + col + ';stroke:var(--ink)" stroke-width="2"/>' +
-      '<rect x="10" y="10" width="300" height="180" rx="18" style="fill:url(#g6sh)"/>' +
       (plain ? '' : '<rect x="34" y="62" width="46" height="36" rx="6" style="fill:#f4d27a;stroke:#9a7a2a" stroke-width="1.5"/><path d="M34 80 H80 M57 62 V98" style="stroke:#9a7a2a" stroke-width="1.2"/>') +
       '<text x="34" y="46" font-size="22" font-weight="800" style="fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.28);stroke-width:2px">' + t + '</text>' +
       '<text x="34" y="168" font-size="16" style="fill:#fff;paint-order:stroke;stroke:rgba(0,0,0,.28);stroke-width:2px">' + sub + '</text>';
-    return A.svg(320, 200, '<defs><linearGradient id="g6sh" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".22"/><stop offset="1" stop-color="#000" stop-opacity=".12"/></linearGradient></defs>' + o, t + ': ' + sub);
+    return A.svg(320, 200, o, t + ': ' + sub);
   }
   var LESSONS = [
     { id: 'pay', title: 'Ways to pay', sub: 'pick the right one', concepts: [

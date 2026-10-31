@@ -1141,7 +1141,7 @@
      Tap a disk to light it and count. Moves: add(p, n, ms), remove(p, n), set(counts), group(p), split(p), countAll(ms), pulseCol(p), clearLit(). */
   var PN = { 5: 'hundred thousands', 4: 'ten thousands', 3: 'thousands', 2: 'hundreds', 1: 'tens', 0: 'ones', '-1': 'tenths', '-2': 'hundredths' };
   var PS = { 5: '100 000s', 4: '10 000s', 3: '1000s', 2: '100s', 1: '10s', 0: '1s', '-1': '0.1s', '-2': '0.01s' };
-  var PC = { 5: '#0b7a8a', 4: '#7247e0', 3: '#d1356b', 2: 'var(--mh)', 1: 'var(--mt)', 0: 'var(--mo)', '-1': '#e8590c', '-2': '#9c36b5' };
+  var PC = { 5: 'var(--p6,#0b6e78)', 4: 'var(--p4,#7646bf)', 3: 'var(--p5,#c02e76)', 2: 'var(--mh)', 1: 'var(--mt)', 0: 'var(--mo)', '-1': 'var(--p3,#c25a12)', '-2': '#5b6b8a' };
   function clean(x) { return Math.round(x * 1e6) / 1e6; }
   function pv(p) { return clean(Math.pow(10, p)); }
   function plab(p) { return p >= 0 ? fmt(pv(p)) : String(pv(p)); }

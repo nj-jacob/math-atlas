@@ -342,7 +342,7 @@ th{font-weight:600}
 .fr sup,.fr sub{font-size:1em;vertical-align:baseline;line-height:1.05;padding:0 .15em}
 .fr sup{border-bottom:2px solid currentColor}
 /* tenths get their own colour, next to the ones colour */
-:root{--pm1:#e2622a}
+:root{--pm1:var(--p3)}
 .pv .h.cm1{background:var(--pm1);color:#fff}
 .pv .dot{background:var(--card);color:var(--ink);font-size:2.4rem;line-height:1;min-width:20px;max-width:20px;padding-top:30px}
 .vrow figure{max-width:100%}

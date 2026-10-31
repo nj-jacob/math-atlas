@@ -762,8 +762,8 @@
 
   /* reading supports: theme and larger text, remembered in this browser */
   function prefs() {
-    /* light unless the student picks dark: the device's dark mode is not followed */
-    var root = document.documentElement, th = store('theme') === 'dark' ? 'dark' : 'light', big = store('big') === '1';
+    /* one calm light look for every grade (shared atlas-theme.css): no dark mode */
+    var root = document.documentElement, th = 'light', big = store('big') === '1';
     function apply() {
       root.setAttribute('data-theme', th);
       root.classList.toggle('bigtext', big);
@@ -782,7 +782,7 @@
     Atlas.adult = adult;
     if (ab) ab.addEventListener('click', function () { adult(!root.classList.contains('adult')); });
     adult();
-    if (tb) tb.addEventListener('click', function () { th = th === 'light' ? 'dark' : 'light'; store('theme', th); apply(); });
+    if (tb) tb.hidden = true;
     if (bb) bb.addEventListener('click', function () { big = !big; store('big', big ? '1' : '0'); apply(); });
     apply();
   }
