@@ -475,4 +475,131 @@ A.yt({ q: 'Which is greatest: ' + fr(2, 5) + ', 0.35 or 0.04?', type: 'mc', opti
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name;
+    /* k is in thousandths with a 1-digit whole part; i is the decimal place (0 tenths, 1 hundredths, 2 thousandths) */
+    function uk(k, i) { var s = dec(k, 3), p = s.split('.'); return '<span class="math">' + p[0] + '.' + p[1].split('').map(function (c, j) { return j === i ? '<u>' + c + '</u>' : c; }).join('') + '</span>'; }
+    function k4() { return R.int(1, 9) * 1000 + R.int(1, 9) * 100 + R.int(1, 9) * 10 + R.int(1, 9); }
+    function dval(k, i) { return +dec(k, 3).split('.')[1].charAt(i) * Math.pow(10, 2 - i); }
+    function hits(opts, test) { return opts.map(function (x, j) { return test(x) ? j : -1; }).filter(function (j) { return j >= 0; }); }
+    function txt(p) { return p[1]; }
+    var SHAPES = {
+      'dc-value': [
+        [1, 'tap', function () {
+          var k = k4(), i = R.int(0, 2), s = dec(k, 3).replace('.', '');
+          return { q: 'Tap the digit in the <b>' + DP[i + 1] + '</b> place of <span class="math">' + dec(k, 3) + '</span>.', type: 'tap', tiles: s.split(''), answer: i + 1, answerText: 'the ' + s.charAt(i + 1),
+            hint: 'After the point: tenths, then hundredths, then thousandths.', steps: ['The ' + DP[i + 1] + ' place is digit ' + (i + 1) + ' after the point.'],
+            explain: 'The ' + DP[i + 1] + ' digit of ' + dec(k, 3) + ' is ' + s.charAt(i + 1) + '.', meta: { k: 'g6-dval-tap', n: k, i: i } };
+        }],
+        [1, 'story', function () {
+          var c = R.pick([['A runner finished the 100 m in', 's'], ['A puppy has a mass of', 'kg'], ['A raindrop fell', 'cm'], ['A pencil is', 'dm long']]);
+          var k = R.int(10, 19) * 1000 + R.int(1, 9) * 100 + R.int(1, 9) * 10 + R.int(1, 9), i = R.int(0, 2);
+          return { q: c[0] + ' ' + uk(k, i) + ' ' + c[1] + '. What is the underlined digit worth?', type: 'num', answer: dval(k, i) / 1000,
+            hint: 'Name the place of the underlined digit.', steps: ['It is in the ' + DP[i + 1] + ' place.'], explain: 'It is worth ' + dec(dval(k, i)) + '.', meta: { k: 'g6-dval-num', n: k, i: i } };
+        }],
+        [1, 'mistake', function () {
+          var k = k4(), i = R.int(0, 2), d = dval(k, i) / Math.pow(10, 2 - i), who = nm(), truth = !R.int(0, 2), said = truth ? dval(k, i) : (i ? dval(k, i) * 10 : dval(k, i) / 10);
+          var right = 'The ' + d + ' is in the ' + DP[i + 1] + ' place, so it is worth ' + dec(dval(k, i)) + '.';
+          return { q: who + ' says the underlined digit in ' + uk(k, i) + ' is worth <b>' + dec(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['The first digit after the point is hundredths.', 'A digit is always worth just itself.']), hint: 'Count places after the point: tenths, hundredths, thousandths.',
+            steps: [right], explain: right, meta: { k: 'g6-dval-tf', n: k, i: i, said: said } };
+        }],
+        [2, 'match', function () {
+          var items = [0, 1, 2].map(function (i) { return [k4(), i]; });
+          return { q: 'Match each underlined digit to what it is worth.', type: 'match', pairs: items.map(function (t) { return [uk(t[0], t[1]), dec(dval(t[0], t[1]))]; }),
+            hint: 'Tenths, hundredths, thousandths.', steps: ['The first place after the point is tenths.'], explain: items.map(function (t) { return dec(t[0], 3) + ': ' + dec(dval(t[0], t[1])); }).join('. ') + '.', meta: { k: 'g6-dval-match', items: items } };
+        }]
+      ],
+      'dc-compare': [
+        [1, 'order', function () {
+          var w = R.int(0, 3) * 1000, ks = [];
+          while (ks.length < 4) { var x = w + R.pick([R.int(1, 9) * 100, R.int(1, 99) * 10, R.int(1, 999)]); if (ks.indexOf(x) < 0) ks.push(x); }
+          ks.sort(function (a, b) { return a - b; });
+          return { q: 'Put these decimals in order from least to greatest.', type: 'order', items: ks.map(function (k) { return dec(k); }), first: 'least', last: 'greatest',
+            hint: 'Give each one three decimal places.', steps: ['With three places: ' + ks.map(function (k) { return dec(k, 3); }).join(', ') + '.'], explain: ks.map(function (k) { return dec(k); }).join(', ') + '.', meta: { k: 'g6-dcmp-order' } };
+        }],
+        [1, 'mistake', function () {
+          var w = R.int(0, 5) * 1000, a = w + R.int(1, 9) * 10 + R.int(1, 9), b = w + R.int(1, 9) * 100, who = nm();
+          return { q: who + ' says <span class="math">' + dec(a) + ' &gt; ' + dec(b) + '</span> because it has more digits. True or false: ' + who + ' is right.', type: 'tf', answer: a > b,
+            why: why('With three places it is ' + dec(a, 3) + ' and ' + dec(b, 3) + ', so ' + dec(Math.max(a, b)) + ' is greater.', ['More digits always means a bigger decimal.', 'Decimals cannot be compared.']),
+            hint: 'Add zeros so both have the same number of places.', steps: [dec(a, 3) + ' and ' + dec(b, 3) + '.'], explain: dec(Math.max(a, b)) + ' is greater.', meta: { k: 'g6-dcmp-tf', a: a, b: b } };
+        }],
+        [1, 'line', function () {
+          var h = R.int(1, 99); if (h % 10 === 0) h++;
+          return { q: 'Place <b>' + dec(h * 10) + '</b> on the number line.', type: 'line', min: 0, max: 1, tick: 0.1, every: 0.5, snap: 0.01, answer: h / 100, tol: 0.01,
+            hint: dec(h * 10) + ' is ' + Math.floor(h / 10) + ' tenths and ' + h % 10 + ' hundredths.', steps: ['Find ' + dec(Math.floor(h / 10) * 100, 1) + ', then go a little further.'],
+            explain: dec(h * 10) + ' is between ' + dec(Math.floor(h / 10) * 100, 1) + ' and ' + dec(Math.floor(h / 10) * 100 + 100, 1) + '.', meta: { k: 'g6-dcmp-line' } };
+        }],
+        [2, 'pick', function () {
+          var x = R.int(2, 8) * 100 + R.int(1, 9) * 10, opts, ans;
+          do { opts = []; while (opts.length < 5) { var y = R.pick([R.int(1, 9) * 100, R.int(10, 99) * 10, R.int(100, 999)]); if (opts.indexOf(y) < 0 && y !== x) opts.push(y); } ans = hits(opts, function (y) { return y > x; }); } while (!ans.length || ans.length === 5);
+          return { q: 'Pick every decimal greater than <b>' + dec(x) + '</b>.', type: 'pick', options: opts.map(function (k) { return dec(k); }), answer: ans,
+            hint: 'Give every number three places.', steps: [dec(x) + ' = ' + dec(x, 3) + '.'], explain: ans.map(function (j) { return dec(opts[j]); }).join(', ') + '.', meta: { k: 'g6-dcmp-pick', x: x, opts: opts } };
+        }]
+      ],
+      'dc-round': [
+        [1, 'story', function () {
+          var k = R.int(1000, 9999); if (k % 100 === 50) k++;
+          var c = R.pick(['A bag of apples has a mass of ' + dec(k) + ' kg. The scale shows one decimal place.', nm() + ' ran ' + dec(k) + ' km. The app shows one decimal place.', 'A jug holds ' + dec(k) + ' L. The label shows one decimal place.']);
+          return { q: c + ' What number does it show?', type: 'num', answer: roundK(k, 100) / 1000, hint: 'Round to the nearest tenth.', steps: ['Look at the hundredths digit.'],
+            explain: dec(k) + ' rounds to ' + dec(roundK(k, 100), 1) + '.', meta: { k: 'g6-round-num', n: k } };
+        }],
+        [1, 'mistake', function () {
+          var k = R.int(1000, 9999), who = nm(); if (k % 100 < 50) k += 50;
+          var truth = !R.int(0, 2), said = truth ? roundK(k, 100) : Math.floor(k / 100) * 100;
+          return { q: who + ' rounds <span class="math">' + dec(k) + '</span> to the nearest tenth and gets <b>' + dec(said, 1) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('The hundredths digit is 5 or more, so it rounds up to ' + dec(roundK(k, 100), 1) + '.', ['Rounding always means dropping the extra digits.', 'Rounding always goes down.']),
+            hint: 'Look at the hundredths digit.', steps: ['5 or more rounds up.'], explain: dec(k) + ' rounds to ' + dec(roundK(k, 100), 1) + '.', meta: { k: 'g6-round-tf', n: k, said: said } };
+        }],
+        [1, 'pick', function () {
+          var t = R.int(11, 89), opts, ans;
+          do { opts = []; while (opts.length < 5) { var y = t * 10 + R.int(-9, 9); if (opts.indexOf(y) < 0) opts.push(y); } ans = hits(opts, function (y) { return Math.round(y / 10) === t; }); } while (!ans.length || ans.length === 5);
+          return { q: 'Pick every number that rounds to <b>' + (t / 10).toFixed(1) + '</b> (nearest tenth).', type: 'pick', options: opts.map(function (y) { return (y / 100).toFixed(2); }), answer: ans,
+            hint: 'From ' + ((t * 10 - 5) / 100).toFixed(2) + ' up to ' + ((t * 10 + 4) / 100).toFixed(2) + ' rounds to ' + (t / 10).toFixed(1) + '.', steps: ['Round each one. Keep those that land on ' + (t / 10).toFixed(1) + '.'],
+            explain: ans.map(function (j) { return (opts[j] / 100).toFixed(2); }).join(', ') + ' round to ' + (t / 10).toFixed(1) + '.', meta: { k: 'g6-round-pick', t: t, opts: opts } };
+        }]
+      ],
+      'dc-frac': [
+        [1, 'match', function () {
+          var fs = R.shuffle(FRAC.filter(function (f) { return f[1] <= 100; })).slice(0, 3);
+          return { q: 'Match each fraction to its decimal.', type: 'match', pairs: fs.map(function (f) { return [fr(f[0], f[1]), dec(f[0] * 1000 / f[1])]; }),
+            hint: 'Make the bottom 10, 100 or 1000.', steps: ['For example, ' + A.fr(1, 4) + ' = ' + A.fr(25, 100) + ' = 0.25.'], explain: fs.map(function (f) { return f[0] + '/' + f[1] + ' = ' + dec(f[0] * 1000 / f[1]); }).join('. ') + '.', meta: { k: 'g6-frac-match', fs: fs } };
+        }],
+        [1, 'fill', function () {
+          var f = R.pick([[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [7, 20], [9, 25], [3, 50], [11, 20]]), h = f[0] * 100 / f[1];
+          return { q: 'Write ' + fr(f[0], f[1]) + ' in hundredths, then as a decimal.', type: 'fill', fill: '[[]] hundredths = [[]]', answers: [h, h / 100],
+            hint: 'What times ' + f[1] + ' makes 100?', steps: [f[1] + ' &times; ' + 100 / f[1] + ' = 100, so ' + f[0] + ' &times; ' + 100 / f[1] + ' = ' + h + '.'], explain: fr(f[0], f[1]) + ' = ' + h + ' hundredths = ' + dec(h * 10) + '.', meta: { k: 'g6-frac-fill', n: f[0], d: f[1] } };
+        }],
+        [1, 'mistake', function () {
+          var f = R.pick([[1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [1, 8], [3, 20]]), who = nm(), truth = !R.int(0, 2), said = truth ? f[0] * 1000 / f[1] : f[0] * 100 + (f[1] < 10 ? f[1] * 10 : f[1]);
+          return { q: who + ' says ' + fr(f[0], f[1]) + ' = <b>' + dec(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(fr(f[0], f[1]) + ' means ' + f[0] + ' &divide; ' + f[1] + ', which is ' + dec(f[0] * 1000 / f[1]) + '.', ['Write the top, a point, then the bottom.', 'Every fraction is less than 0.5.']),
+            hint: 'A fraction is a division: top &divide; bottom.', steps: [f[0] + ' &divide; ' + f[1] + ' = ' + dec(f[0] * 1000 / f[1]) + '.'], explain: fr(f[0], f[1]) + ' = ' + dec(f[0] * 1000 / f[1]) + '.', meta: { k: 'g6-frac-tf', n: f[0], d: f[1], said: said / 1000 } };
+        }]
+      ],
+      'dc-order': [
+        [1, 'order', function (lv) {
+          var pool = [[500, '1/2'], [450, '0.45'], [250, '1/4'], [300, '0.3'], [750, '3/4'], [700, '0.7'], [200, '1/5'], [600, '3/5'], [1000, '1'], [50, '0.05']];
+          if (lv > 1) pool = pool.concat([[-500, '−0.5'], [-1000, '−1'], [-250, '−1/4'], [1500, '1.5']]);
+          var pick = R.shuffle(pool).slice(0, 4).sort(function (a, b) { return a[0] - b[0]; });
+          return { q: 'Put these numbers in order from least to greatest.', type: 'order', items: pick.map(txt), first: 'least', last: 'greatest',
+            hint: 'Change each fraction to a decimal first.', steps: ['As decimals: ' + pick.map(function (p) { return p[1] + ' = ' + dec(p[0]); }).join(', ') + '.'], explain: pick.map(txt).join(', ') + '.', meta: { k: 'g6-dord-order' } };
+        }],
+        [1, 'line', function () {
+          var f = R.pick([[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [3, 10], [7, 10], [9, 10], [1, 20], [7, 20]]);
+          return { q: 'Place <b>' + f[0] + '/' + f[1] + '</b> on the number line.', type: 'line', min: 0, max: 1, tick: 0.05, every: 0.25, snap: 0.05, answer: f[0] / f[1],
+            hint: 'Change ' + f[0] + '/' + f[1] + ' to a decimal.', steps: [f[0] + '/' + f[1] + ' = ' + dec(f[0] * 1000 / f[1]) + '.'], explain: f[0] + '/' + f[1] + ' = ' + dec(f[0] * 1000 / f[1]) + '.', meta: { k: 'g6-dord-line', n: f[0], d: f[1] } };
+        }],
+        [1, 'mistake', function () {
+          var pool = [[500, '1/2'], [450, '0.45'], [250, '1/4'], [300, '0.3'], [750, '3/4'], [700, '0.7'], [200, '1/5'], [600, '3/5'], [125, '1/8'], [400, '0.4']];
+          var two = R.shuffle(pool).slice(0, 2), who = nm();
+          return { q: who + ' says <b>' + two[0][1] + '</b> is greater than <b>' + two[1][1] + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: two[0][0] > two[1][0],
+            why: why('As decimals they are ' + dec(two[0][0]) + ' and ' + dec(two[1][0]) + '.', ['A fraction is always less than a decimal.', 'The number with bigger digits is greater.']),
+            hint: 'Change both to decimals.', steps: [two[0][1] + ' = ' + dec(two[0][0]) + ', ' + two[1][1] + ' = ' + dec(two[1][0]) + '.'], explain: (two[0][0] > two[1][0] ? two[0][1] : two[1][1]) + ' is greater.', meta: { k: 'g6-dord-tf' } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

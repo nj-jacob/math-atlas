@@ -692,4 +692,184 @@ A.yt({ q: 'Finish the prime factorization: <span class="math">90 = 2 &times; 3 &
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name;
+    /* the number with digit i underlined, grouped like A.fmt (a space before each group of three when 5+ digits) */
+    function u(n, i) {
+      var s = String(n), len = s.length;
+      return '<span class="math">' + s.split('').map(function (c, j) { var gap = len >= 5 && j < len - 1 && (len - 1 - j) % 3 === 0 ? ' ' : ''; return (j === i ? '<u>' + c + '</u>' : c) + gap; }).join('') + '</span>';
+    }
+    function nz(s, hi) { var i; do { i = R.int(0, hi); } while (s.charAt(i) === '0'); return i; }
+    function worth(n, i) { var s = String(n); return +s.charAt(i) * Math.pow(10, s.length - 1 - i); }
+    function distinct(k, lo, hi, ok) { var out = []; while (out.length < k) { var x = R.int(lo, hi); if (out.indexOf(x) < 0 && (!ok || ok(x))) out.push(x); } return out; }
+    function hits(opts, test) { return opts.map(function (x, j) { return test(x) ? j : -1; }).filter(function (j) { return j >= 0; }); }
+    var SHAPES = {
+      'ni-value': [
+        [1, 'tap', function () {
+          var n = R.int(100000, 999999), s = String(n), i = nz(s, 5), val = worth(n, i);
+          return { q: 'Tap the digit worth <b>' + A.fmt(val) + '</b> in <span class="math">' + A.fmt(n) + '</span>.', type: 'tap', tiles: s.split(''), answer: i, answerText: 'the ' + s.charAt(i) + ' in the ' + A.PLACES[s.length - 1 - i] + ' place',
+            hint: 'Which place is worth ' + A.fmt(Math.pow(10, s.length - 1 - i)) + ' each?', steps: [A.fmt(val) + ' is ' + s.charAt(i) + ' ' + A.PLACES[s.length - 1 - i] + '.', 'Find that place, counting from the right.'],
+            explain: 'The ' + s.charAt(i) + ' is in the ' + A.PLACES[s.length - 1 - i] + ' place, so it is worth ' + A.fmt(val) + '.', meta: { k: 'g6-value-tap', n: n, val: val } };
+        }],
+        [1, 'story', function () {
+          var c = R.pick([['A hockey arena sold', 'tickets this season'], ['The library lent', 'books last year'], ['A town has', 'trees'], ['The food bank gave out', 'meals']]);
+          var n = R.int(100000, 999999), i = nz(String(n), 3), val = worth(n, i);
+          return { q: c[0] + ' ' + u(n, i) + ' ' + c[1] + '. What is the underlined digit worth?', type: 'num', answer: val,
+            hint: 'Name the place of the underlined digit.', steps: ['The underlined digit is in the ' + A.PLACES[5 - i] + ' place.', 'So it is worth ' + A.fmt(val) + '.'],
+            explain: 'It is worth ' + A.fmt(val) + '.', meta: { k: 'g6-value-num', n: n, i: i } };
+        }],
+        [1, 'mistake', function () {
+          var n = R.int(100000, 999999), s = String(n), i = nz(s, 4), p = 5 - i, d = +s.charAt(i), val = d * Math.pow(10, p), who = nm();
+          var truth = !R.int(0, 2), said = truth ? val : d * Math.pow(10, R.pick([p + 1, p - 1]));
+          var right = 'The ' + d + ' is in the ' + A.PLACES[p] + ' place, so it is worth ' + A.fmt(val) + '.';
+          return { q: who + ' says the underlined digit in ' + u(n, i) + ' is worth <b>' + A.fmt(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['A digit is always worth just itself.', 'The digit on the left is always worth the most.']),
+            hint: 'Find the place of the underlined digit first.', steps: [right], explain: right, meta: { k: 'g6-value-tf', n: n, i: i, said: said } };
+        }],
+        [2, 'match', function () {
+          var items = [], seen = {};
+          while (items.length < 3) { var n = R.int(100000, 999999), i = nz(String(n), 5), v = worth(n, i); if (!seen[v]) { seen[v] = 1; items.push([n, i]); } }
+          var pairs = items.map(function (t) { return [u(t[0], t[1]), A.fmt(worth(t[0], t[1]))]; });
+          return { q: 'Match each underlined digit to what it is worth.', type: 'match', pairs: pairs, hint: 'Name the place of each underlined digit.', steps: ['Ones, tens, hundreds, then thousands, ten thousands, hundred thousands.'],
+            explain: items.map(function (t) { return A.fmt(t[0]) + ': ' + A.fmt(worth(t[0], t[1])); }).join('. ') + '.', meta: { k: 'g6-value-match', items: items } };
+        }]
+      ],
+      'ni-words': [
+        [1, 'match', function () {
+          var ns = distinct(3, 100, 999, null).map(function (th) { return th * 1000 + R.int(1, 999); });
+          var pairs = ns.map(function (n) { return [A.fmt(n), words(n)]; });
+          return { q: 'Match each number to its words.', type: 'match', pairs: pairs, hint: 'Read the thousands period first.', steps: ['The first three digits are the thousands. The last three are the ones.'],
+            explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'g6-words-match' } };
+        }],
+        [1, 'fill', function () {
+          var th = R.int(100, 999), on = R.int(1, 999), n = th * 1000 + on;
+          return { q: 'Write <b>' + words(n) + '</b> in its two periods.', type: 'fill', fill: 'Thousands: [[]] &nbsp; Ones: [[]]', answers: [th, on],
+            hint: 'The words before "thousand" are the thousands period.', steps: ['Thousands: ' + th + '.', 'Ones: ' + on + '.'],
+            explain: words(n) + ' is ' + A.fmt(n) + '.', meta: { k: 'g6-words-fill', n: n } };
+        }],
+        [2, 'mistake', function () {
+          var th = R.int(100, 999), on = R.int(1, 99), n = th * 1000 + on, who = nm(), truth = !R.int(0, 2), said = truth ? n : th * 100 + on;
+          var right = 'The ones period needs three digits: ' + ('00' + on).slice(-3) + '. So it is ' + A.fmt(n) + '.';
+          return { q: who + ' writes <b>' + words(n) + '</b> as <span class="math">' + A.fmt(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Zeros never need to be written.', 'The thousands period always has two digits.']),
+            hint: 'How many digits does the ones period need?', steps: [right], explain: right, meta: { k: 'g6-words-tf', n: n, said: said } };
+        }]
+      ],
+      'ni-integers': [
+        [1, 'line', function () {
+          var v = R.pick([-1, 1, -1]) * R.int(1, 10);
+          return { q: 'Place <b>' + sgn(v) + '</b> on the number line.', type: 'line', min: -10, max: 10, tick: 1, every: 5, snap: 1, answer: v,
+            hint: (v < 0 ? 'Negative: go left' : 'Positive: go right') + ' of zero.', steps: ['Start at 0.', 'Move ' + Math.abs(v) + ' ticks to the ' + (v < 0 ? 'left' : 'right') + '.'],
+            explain: sgn(v) + ' is ' + Math.abs(v) + ' to the ' + (v < 0 ? 'left' : 'right') + ' of zero.', meta: { k: 'g6-int-line', v: v } };
+        }],
+        [1, 'story', function () {
+          var k = R.int(2, 30), c = R.pick([['It is ' + k + ' degrees below zero in Winnipeg.', -1], ['The car is parked ' + k + ' floors below the street.', -1], ['A hiker stands ' + k + ' metres above sea level.', 1], [nm() + ' has a gain of $' + k + '.', 1], [nm() + ' has a loss of $' + k + '.', -1]]);
+          return { q: c[0] + ' Write this as an integer.', type: 'num', answer: c[1] * k, hint: 'Below zero, under the street or a loss: negative.', steps: [c[1] < 0 ? 'It is below zero, so negative.' : 'It is above zero, so positive.'],
+            explain: 'The integer is ' + sgn(c[1] * k) + '.', meta: { k: 'g6-int-ctx', n: k } };
+        }],
+        [1, 'mistake', function () {
+          var v = -R.int(1, 9), who = nm(), truth = !R.int(0, 2), said = truth ? v : -v;
+          return { q: who + ' says the point is at <b>' + sgn(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            fig: iline(-10, 10, [{ v: v, c: 'var(--hi)' }], 'Number line from minus 10 to 10 with a point marked'),
+            why: why('The point is left of zero, so it is ' + sgn(v) + '.', ['Count the ticks and ignore which side of zero.', 'Points left of zero are positive.']),
+            hint: 'Is the point left or right of zero?', steps: ['Left of zero means negative.'], explain: 'The point is at ' + sgn(v) + '.', meta: { k: 'g6-int-tf', v: v, said: said } };
+        }],
+        [2, 'pick', function () {
+          var x = R.int(-6, 2), opts, ans;
+          do { opts = distinct(5, -10, 10, function (y) { return y !== x; }); ans = hits(opts, function (y) { return y < x; }); } while (!ans.length || ans.length === 5);
+          return { q: 'Pick every integer to the <b>left</b> of ' + sgn(x) + ' on a number line.', type: 'pick', options: opts.map(sgn), answer: ans,
+            hint: 'Left means less.', steps: ['Pick every number less than ' + sgn(x) + '.'], explain: 'Less than ' + sgn(x) + ': ' + ans.map(function (j) { return sgn(opts[j]); }).join(', ') + '.', meta: { k: 'g6-int-pick', x: x, opts: opts } };
+        }]
+      ],
+      'ni-compare': [
+        [1, 'order', function () {
+          var neg = distinct(2, -15, -1, null), v = neg.concat(distinct(2, -15, 12, function (x) { return neg.indexOf(x) < 0; }));
+          var s = v.slice().sort(function (a, b) { return a - b; });
+          return { q: 'Put these integers in order from least to greatest.', type: 'order', items: s.map(sgn), first: 'least', last: 'greatest',
+            hint: 'Picture a number line. The furthest left is least.', steps: ['Negatives come first. The bigger the negative number looks, the smaller it is.'], explain: s.map(sgn).join(', ') + '.', meta: { k: 'g6-cmp-order' } };
+        }],
+        [1, 'mistake', function () {
+          var ab = distinct(2, -20, -1, null), a = ab[0], b = ab[1], who = nm();
+          return { q: who + ' says <span class="math">' + sgn(a) + ' &gt; ' + sgn(b) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: a > b,
+            why: why(sgn(Math.max(a, b)) + ' is further right on the number line, so it is greater.', ['The number with more digits is always greater.', 'All negative numbers are equal.']),
+            hint: 'Further right is greater.', steps: ['Place both numbers on a number line.'], explain: sgn(Math.max(a, b)) + ' is greater.', meta: { k: 'g6-cmp-tf', a: a, b: b } };
+        }],
+        [1, 'story', function () {
+          var t = distinct(2, -25, 5, null), c = R.pick([['Iqaluit', 'Toronto'], ['Whitehorse', 'Halifax'], ['Yellowknife', 'Victoria'], ['Thunder Bay', 'Windsor']]);
+          return { q: 'At 7 am it was ' + sgn(t[0]) + ' °C in ' + c[0] + ' and ' + sgn(t[1]) + ' °C in ' + c[1] + '. Which city was colder?', type: 'mc', options: c, answer: t[0] < t[1] ? 0 : 1,
+            hint: 'Colder means the lower number.', steps: ['The lower temperature is further left on the number line.'], explain: sgn(Math.min(t[0], t[1])) + ' °C is colder.', meta: { k: 'g6-cmp-story', a: t[0], b: t[1] } };
+        }],
+        [2, 'pick', function () {
+          var x = R.int(-8, -1), opts, ans;
+          do { opts = distinct(5, -15, 10, function (y) { return y !== x; }); ans = hits(opts, function (y) { return y > x; }); } while (!ans.length || ans.length === 5);
+          return { q: 'Pick every integer greater than <b>' + sgn(x) + '</b>.', type: 'pick', options: opts.map(sgn), answer: ans,
+            hint: 'Greater means further right.', steps: ['A negative number close to zero is greater than one far from zero.'], explain: ans.map(function (j) { return sgn(opts[j]); }).join(', ') + '.', meta: { k: 'g6-cmp-pick', x: x, opts: opts } };
+        }]
+      ],
+      'ni-divis': [
+        [1, 'pick', function () {
+          var d = R.pick([2, 3, 5, 9, 10]), opts, ans;
+          do {
+            var mult = distinct(2, Math.ceil(100 / d), Math.floor(999 / d), null).map(function (x) { return x * d; });
+            opts = R.shuffle(mult.concat(distinct(3, 100, 999, function (x) { return mult.indexOf(x) < 0; })));
+            ans = hits(opts, function (x) { return x % d === 0; });
+          } while (ans.length === 5);
+          return { q: 'Pick every number divisible by <b>' + d + '</b>.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'A number is divisible by ' + d + ' when ' + RULES[d] + '.', steps: ['Test each number with the rule for ' + d + '.'], explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' divide evenly by ' + d + '.', meta: { k: 'g6-div-pick', d: d, opts: opts } };
+        }],
+        [1, 'mistake', function () {
+          var d = R.pick([3, 9]), n = R.int(100, 999), who = nm(), ok = n % d === 0, s = dsum(n);
+          return { q: who + ' says <span class="math">' + n + '</span> is divisible by <b>' + d + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: ok,
+            why: why('Its digit sum is ' + s + ', and ' + s + (ok ? ' is' : ' is not') + ' divisible by ' + d + '.', ['It ends in an odd digit.', 'It has three digits.']),
+            hint: 'Add the digits.', steps: ['Digit sum: ' + String(n).split('').join(' + ') + ' = ' + s + '.'], explain: n + (ok ? ' is' : ' is not') + ' divisible by ' + d + '.', meta: { k: 'g6-div-tf', n: n, d: d } };
+        }],
+        [1, 'story', function () {
+          var d = R.pick([2, 3, 5, 10]), n = R.int(40, 200);
+          return { q: n + ' students are going on a trip. Can they make teams of exactly <b>' + d + '</b> with nobody left out?', type: 'mc', options: ['Yes', 'No'], answer: n % d === 0 ? 0 : 1,
+            hint: 'Is ' + n + ' divisible by ' + d + '?', steps: ['Use the rule for ' + d + '.'], explain: n + (n % d === 0 ? ' is' : ' is not') + ' divisible by ' + d + '.', meta: { k: 'g6-div-story', n: n, d: d } };
+        }]
+      ],
+      'ni-primes': [
+        [1, 'pick', function () {
+          var opts, ans;
+          do { opts = distinct(5, 2, 50, null); ans = hits(opts, isPrime); } while (!ans.length || ans.length === 5);
+          return { q: 'Pick every <b>prime</b> number.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'A prime has exactly two factors: 1 and itself.', steps: ['Try dividing each number by 2, 3, 5 and 7.'], explain: 'Prime: ' + ans.map(function (j) { return opts[j]; }).join(', ') + '.', meta: { k: 'g6-prime-pick', opts: opts } };
+        }],
+        [1, 'tap', function () {
+          var n = R.pick([24, 30, 36, 40, 42, 48, 56, 60, 72]), f = R.pick(factors(n).slice(1, -1)), non = distinct(3, 2, 20, function (x) { return n % x !== 0; });
+          var tiles = R.shuffle([f].concat(non));
+          return { q: 'Tap the number that is a <b>factor</b> of ' + n + '.', type: 'tap', tiles: tiles.map(String), answer: tiles.indexOf(f), answerText: String(f),
+            hint: 'A factor divides ' + n + ' with no remainder.', steps: [n + ' &divide; ' + f + ' = ' + n / f + '.'], explain: f + ' &times; ' + n / f + ' = ' + n + '.', meta: { k: 'g6-prime-tap', n: n } };
+        }],
+        [1, 'mistake', function () {
+          var n = R.pick([1, 9, 15, 21, 27, 33, 39, 49, 51, 57, 2, 23, 29, 31, 37, 41, 43]), who = nm(), p = isPrime(n), fs = factors(n);
+          var right = n === 1 ? '1 has only one factor, so it is not prime.' : p ? 'Its only factors are 1 and ' + n + '.' : n + ' = ' + fs[1] + ' &times; ' + n / fs[1] + ', so it has more than two factors.';
+          return { q: who + ' says <b>' + n + '</b> is a prime number. True or false: ' + who + ' is right.', type: 'tf', answer: p,
+            why: why(right, ['Every odd number is prime.', 'Numbers that end in 9 are never prime.']),
+            hint: 'Does anything other than 1 and ' + n + ' divide it?', steps: [right], explain: right, meta: { k: 'g6-prime-tf', n: n } };
+        }]
+      ],
+      'ni-ftree': [
+        [1, 'fill', function () {
+          var n = R.pick([12, 18, 20, 28, 30, 42, 45, 50, 63, 70, 36, 60]), f = pf(n), h = R.int(0, f.length - 1), shown = f.map(function (x, j) { return j === h ? '[[]]' : String(x); });
+          return { q: 'Fill in the missing prime factor.', type: 'fill', fill: n + ' = ' + shown.join(' &times; '), answers: [f[h]],
+            hint: 'Multiply the primes you can see. What is left?', steps: ['Multiply the shown factors, then divide ' + n + ' by that.'], explain: n + ' = ' + times(f) + '.', meta: { k: 'g6-pf-fill', n: n } };
+        }],
+        [1, 'mistake', function () {
+          var n = R.pick([24, 36, 40, 45, 48, 54, 60, 72, 90]), f = pf(n), who = nm(), truth = !R.int(0, 2), said = truth ? f : [f[0] * f[1]].concat(f.slice(2));
+          return { q: who + ' says the prime factorization of ' + n + ' is <span class="math">' + times(said) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? 'Every factor is prime and they multiply to ' + n + '.' : said[0] + ' is not prime, so it must be split again.', ['Any factors that multiply to ' + n + ' will do.', 'A prime factorization never repeats a number.']),
+            hint: 'Check two things: they multiply to ' + n + ', and each one is prime.', steps: [n + ' = ' + times(f) + '.'], explain: n + ' = ' + times(f) + '.', meta: { k: 'g6-pf-tf', n: n, said: said } };
+        }],
+        [2, 'match', function () {
+          var ns = R.shuffle([12, 18, 20, 28, 30, 42, 45, 50, 63, 36, 48]).slice(0, 3);
+          return { q: 'Match each number to its prime factorization.', type: 'match', pairs: ns.map(function (n) { return [String(n), times(pf(n))]; }),
+            hint: 'Multiply each factorization out.', steps: ['Multiply from left to right.'], explain: ns.map(function (n) { return n + ' = ' + times(pf(n)); }).join('. ') + '.', meta: { k: 'g6-pf-match' } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();
