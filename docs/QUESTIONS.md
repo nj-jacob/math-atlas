@@ -53,6 +53,8 @@ Each skill keeps its first way of asking as `plain`. Don't copy this loop into a
 
 `grade3/chapters/numbers-1000.js` is the worked example.
 
+Grade 6 wraps the same loop in one helper, `G6.shapes(CH, SHAPES)` in `grade6/assets/g6lessons.js`, called at the end of each chapter file. `G6.why(right, wrong)` builds the "why" choices for a `tf` question.
+
 ## Answer checks (required)
 
 Every new shape sets `meta.k` and the facts behind the question, for example `meta: { k: 'round-tf', n: 349, said: 400 }`. Add a check with the same key to `tests/verify/gradeN.js`:

@@ -79,6 +79,11 @@
 
   /* ---------- lessons: one idea per screen (assets/lesson.js) ---------- */
   var CH = 'data-probability', g = G6.g, lab = G6.lab, play = G6.play;
+  /* shared by the plain questions and the practice shapes below */
+  var DATA_KINDS = [['the number of siblings each student has', 'discrete'], ['the number of cars in a parking lot', 'discrete'], ['how many goals each player scored', 'discrete'], ['the number of texts sent in a day', 'discrete'],
+    ['the height of each tree in a park', 'continuous'], ['the time each runner takes', 'continuous'], ['the temperature at noon each day', 'continuous'], ['the mass of each apple', 'continuous'], ['how much rain fell each day', 'continuous'],
+    ['each student’s favourite season', 'qualitative'], ['the colour of each car', 'qualitative'], ['the type of pet each family has', 'qualitative']];
+  var GRAPH_FITS = [['the temperature every hour for a day', 'broken-line graph'], ['the height of a plant each week', 'broken-line graph'], ['the heights of 50 students', 'histogram'], ['the times of 40 runners in a race', 'histogram'], ['the favourite sport of each student', 'bar graph'], ['the number of each colour of car in a lot', 'bar graph']];
   var B5 = bin(HEIGHTS, 135, 5, 7);
   function part(k) { return B5.map(function (c, i) { return i < k ? c : 0; }); }
   var TEMPS = bline(['8 am', '10 am', '12 pm', '2 pm', '4 pm', '6 pm'], [12, 15, 19, 22, 20, 16], 0, 25, 5, 'Temperature on a spring day', '°C');
@@ -335,9 +340,7 @@ A.yt({ q: 'A spinner has 4 equal parts: red, blue, green, yellow. You spin it an
 
     practice: [
       { id: 'dp-type', name: 'Kinds of data', code: 'D1.1', gen: function (lv) {
-        var items = [['the number of siblings each student has', 'discrete'], ['the number of cars in a parking lot', 'discrete'], ['how many goals each player scored', 'discrete'], ['the number of texts sent in a day', 'discrete'],
-          ['the height of each tree in a park', 'continuous'], ['the time each runner takes', 'continuous'], ['the temperature at noon each day', 'continuous'], ['the mass of each apple', 'continuous'], ['how much rain fell each day', 'continuous'],
-          ['each student’s favourite season', 'qualitative'], ['the colour of each car', 'qualitative'], ['the type of pet each family has', 'qualitative']];
+        var items = DATA_KINDS;
         var pool = lv === 1 ? items.filter(function (x) { return x[1] !== 'qualitative'; }) : items, it = R.pick(pool);
         var opts = lv === 1 ? ['discrete', 'continuous'] : ['qualitative', 'discrete', 'continuous'];
         return { q: 'What kind of data is <b>' + it[0] + '</b>?', type: 'mc', options: opts, answer: opts.indexOf(it[1]), v: { it: it[0], k: it[1] },
@@ -375,7 +378,7 @@ A.yt({ q: 'A spinner has 4 equal parts: red, blue, green, yellow. You spin it an
           hint: 'Add the bars that start at ' + (lo + cut * w) + ' or later.', steps: ['The bars starting at ' + (lo + cut * w) + ' or more are: ' + b.slice(cut).join(', ') + '.', 'Add them.', 'Total: ' + above + '.'], explain: b.slice(cut).join(' + ') + ' = ' + above + '.' };
       } },
       { id: 'dp-graph', name: 'Choose and read graphs', code: 'D1.6', gen: function (lv) {
-        if (lv === 1) { var c = R.pick([['the temperature every hour for a day', 'broken-line graph'], ['the height of a plant each week', 'broken-line graph'], ['the heights of 50 students', 'histogram'], ['the times of 40 runners in a race', 'histogram'], ['the favourite sport of each student', 'bar graph'], ['the number of each colour of car in a lot', 'bar graph']]);
+        if (lv === 1) { var c = R.pick(GRAPH_FITS);
           var o = ['bar graph', 'histogram', 'broken-line graph'];
           return { q: 'Which graph is best for <b>' + c[0] + '</b>?', type: 'mc', options: o, answer: o.indexOf(c[1]), v: { c: c },
             hint: 'Categories: bar graph. Many numbers in intervals: histogram. Change over time: broken-line graph.', steps: ['What kind of data is it?', c[1] === 'broken-line graph' ? 'It changes over time.' : c[1] === 'histogram' ? 'It is many measured numbers that can be grouped in intervals.' : 'It is categories.', 'Best choice: ' + c[1] + '.'], explain: 'A ' + c[1] + ' fits ' + c[0] + '.' }; }
@@ -421,4 +424,137 @@ A.yt({ q: 'A spinner has 4 equal parts: red, blue, green, yellow. You spin it an
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name, KINDS = ['qualitative', 'discrete', 'continuous'];
+    function ft(n, d) { var k = gcd(n, d) || 1; return n / k + '/' + d / k; }
+    function ofKind(k) { return DATA_KINDS.filter(function (x) { return x[1] === k; }); }
+    function distinct(n, lo, hi) { var d = []; while (d.length < n) { var v = R.int(lo, hi); if (d.indexOf(v) < 0) d.push(v); } return d; }
+    function picked(list) { var l = R.shuffle(list); return { options: l.map(function (x) { return x[0]; }), answer: l.map(function (x, j) { return x[1] ? j : -1; }).filter(function (j) { return j >= 0; }) }; }
+    var SHAPES = {
+      'dp-type': [
+        [1, 'match', function () {
+          var its = KINDS.map(function (k) { return R.pick(ofKind(k)); });
+          return { q: 'Match each set of data to its kind.', type: 'match', pairs: its.map(function (it) { return [it[0].charAt(0).toUpperCase() + it[0].slice(1), it[1]]; }),
+            hint: 'Words: qualitative. Counted: discrete. Measured: continuous.', steps: its.map(function (it) { return it[0] + ': ' + it[1] + '.'; }), explain: 'Counted is discrete. Measured is continuous. Categories are qualitative.', meta: { k: 'g6-type-match' } };
+        }],
+        [1, 'pick', function () {
+          var want = R.pick(['discrete', 'continuous']), right = R.shuffle(ofKind(want)).slice(0, 2), wrong = R.shuffle(DATA_KINDS.filter(function (x) { return x[1] !== want; })).slice(0, 3);
+          var o = picked(right.map(function (x) { return [x[0], 1]; }).concat(wrong.map(function (x) { return [x[0]]; })));
+          return { q: 'Pick every set of data that is <b>' + want + '</b>.', type: 'pick', options: o.options, answer: o.answer,
+            hint: want === 'discrete' ? 'Discrete data are counted.' : 'Continuous data are measured.', steps: right.map(function (x) { return x[0] + ' is ' + want + '.'; }), explain: want === 'discrete' ? 'You count these.' : 'You measure these.', meta: { k: 'g6-type-pick', want: want } };
+        }],
+        [1, 'mistake', function () {
+          var it = R.pick(DATA_KINDS.filter(function (x) { return x[1] !== 'qualitative'; })), who = nm(), truth = !R.int(0, 2), s = truth ? it[1] : it[1] === 'discrete' ? 'continuous' : 'discrete';
+          return { q: who + ' says <b>' + it[0] + '</b> is ' + s + ' data. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(it[1] === 'discrete' ? 'You count it, so it is discrete.' : 'You measure it, so it is continuous.', ['Any data with numbers is discrete.', 'Data that changes is always continuous.']),
+            hint: 'Do you count it or measure it?', steps: [it[0] + ' is ' + (it[1] === 'discrete' ? 'counted' : 'measured') + '.'], explain: 'It is ' + it[1] + ' data.', meta: { k: 'g6-type-tf', it: it[0], said: s } };
+        }]
+      ],
+      'dp-mmm': [
+        [1, 'tap', function () {
+          var n = R.pick([5, 7]), d = distinct(n, 1, 30), med = stats(d).median;
+          return { q: 'Tap the <b>median</b> of these values.', type: 'tap', tiles: d.map(String), answer: d.indexOf(med), answerText: String(med),
+            hint: 'Put them in order first. The median is in the middle.', steps: ['In order: ' + stats(d).sorted.join(', ') + '.', 'The middle value is ' + med + '.'], explain: 'The median is ' + med + '.', meta: { k: 'g6-mmm-tap' } };
+        }],
+        [1, 'fill', function () {
+          var d = distinct(5, 1, 20), s = stats(d);
+          return { q: 'For the data <span class="math">' + d.join(', ') + '</span>:', type: 'fill', fill: 'Range = [[]] &nbsp; Median = [[]]', answers: [s.range, s.median], fig: dotplot(d, 0, 20),
+            hint: 'Put the values in order first.', steps: ['In order: ' + s.sorted.join(', ') + '.', 'Range: ' + s.sorted[4] + ' &minus; ' + s.sorted[0] + ' = ' + s.range + '.', 'Median: ' + s.median + '.'], explain: 'Range ' + s.range + ', median ' + s.median + '.', meta: { k: 'g6-mmm-fill', d: d } };
+        }],
+        [1, 'mistake', function () {
+          var d = distinct(5, 1, 20), s = stats(d);
+          if (s.sum % 5) { d[0] += 5 - s.sum % 5; s = stats(d); }
+          var who = nm(), truth = !R.int(0, 2), said = truth ? s.mean : s.median !== s.mean ? s.median : s.mean + 1;
+          return { q: 'The data are <span class="math">' + d.join(', ') + '</span>. ' + who + ' says the <b>mean</b> is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('The mean is the total shared equally: ' + s.sum + ' &divide; 5 = ' + s.mean + '.', ['The mean is the middle value.', 'The mean is the value that appears most.']),
+            hint: 'Add them all, then divide by 5.', steps: [d.join(' + ') + ' = ' + s.sum + '.', s.sum + ' &divide; 5 = ' + s.mean + '.'], explain: 'The mean is ' + s.mean + '.', meta: { k: 'g6-mmm-tf', d: d, said: said } };
+        }],
+        [2, 'story', function () {
+          var d = [R.int(60, 95), R.int(60, 95), R.int(60, 95), R.int(60, 95)], s = stats(d), who = nm();
+          if (s.sum % 4) { d[0] += 4 - s.sum % 4; s = stats(d); }
+          return { q: who + ' scored ' + d.slice(0, 3).join(', ') + ' and ' + d[3] + ' on four tests. What is the mean score?', type: 'num', answer: s.mean,
+            hint: 'Add the four scores, then divide by 4.', steps: [d.join(' + ') + ' = ' + s.sum + '.', s.sum + ' &divide; 4 = ' + s.mean + '.'], explain: 'The mean score is ' + s.mean + '.', meta: { k: 'g6-mmm-story', d: d } };
+        }]
+      ],
+      'dp-hist': [
+        [1, 'mistake', function () {
+          var w = R.pick([5, 10]), lo = R.pick([0, 10, 20]), b = [R.int(1, 9), R.int(1, 9), R.int(1, 9), R.int(1, 9)], tot = b.reduce(function (x, y) { return x + y; }, 0), who = nm(), truth = !R.int(0, 2), said = truth ? tot : b.length;
+          return { q: who + ' says this histogram shows <b>' + said + '</b> values in all. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: hist(b, lo, w, 'Minutes spent reading', ''),
+            why: why('Each bar’s height is a count. Add them: ' + b.join(' + ') + ' = ' + tot + '.', ['Count the bars.', 'Read the tallest bar.']),
+            hint: 'Add the heights of all the bars.', steps: [b.join(' + ') + ' = ' + tot + '.'], explain: tot + ' values in all.', meta: { k: 'g6-hist-tf', b: b, said: said } };
+        }],
+        [1, 'fill', function () {
+          var w = R.pick([5, 10]), lo = R.pick([0, 10, 20]), b = [R.int(1, 9), R.int(1, 9), R.int(1, 9), R.int(1, 9), R.int(1, 9)], cut = R.int(1, 4), x = lo + cut * w;
+          var below = b.slice(0, cut).reduce(function (p, c) { return p + c; }, 0), above = b.slice(cut).reduce(function (p, c) { return p + c; }, 0);
+          return { q: 'Use the histogram.', type: 'fill', fill: 'Values below ' + x + ': [[]] &nbsp; Values ' + x + ' or more: [[]]', answers: [below, above], fig: hist(b, lo, w, 'Kilometres biked this week', ''),
+            hint: 'Split the bars at ' + x + '. Add each side.', steps: ['Below ' + x + ': ' + b.slice(0, cut).join(' + ') + ' = ' + below + '.', x + ' or more: ' + b.slice(cut).join(' + ') + ' = ' + above + '.'], explain: below + ' and ' + above + '.', meta: { k: 'g6-hist-fill', b: b, lo: lo, w: w } };
+        }],
+        [2, 'pick', function () {
+          var w = 10, lo = R.pick([0, 20, 40]), b, t = R.int(3, 6), o;
+          do { b = [R.int(1, 9), R.int(1, 9), R.int(1, 9), R.int(1, 9), R.int(1, 9)]; o = picked(b.map(function (c, i) { return [(lo + i * w) + ' to ' + (lo + (i + 1) * w), c > t]; })); } while (!o.answer.length || o.answer.length === 5);
+          return { q: 'Pick every interval with <b>more than ' + t + '</b> values.', type: 'pick', options: o.options, answer: o.answer, fig: hist(b, lo, w, 'Ages of people at a concert', ''),
+            hint: 'Find ' + t + ' on the side. Which bars go higher?', steps: ['Bars taller than ' + t + ': ' + o.answer.map(function (j) { return o.options[j]; }).join(', ') + '.'], explain: 'Those bars are taller than ' + t + '.', meta: { k: 'g6-hist-pick', b: b, lo: lo, w: w } };
+        }]
+      ],
+      'dp-graph': [
+        [1, 'match', function () {
+          var types = ['bar graph', 'histogram', 'broken-line graph'], its = types.map(function (t) { return R.pick(GRAPH_FITS.filter(function (x) { return x[1] === t; })); });
+          return { q: 'Match each set of data to the best graph.', type: 'match', pairs: its.map(function (it) { return [it[0].charAt(0).toUpperCase() + it[0].slice(1), it[1]]; }),
+            hint: 'Categories: bar graph. Many numbers in intervals: histogram. Change over time: broken-line graph.', steps: its.map(function (it) { return it[0] + ': ' + it[1] + '.'; }), explain: 'Match the graph to the kind of data.', meta: { k: 'g6-graph-match' } };
+        }],
+        [1, 'mistake', function () {
+          var it = R.pick(GRAPH_FITS), who = nm(), truth = !R.int(0, 2), others = ['bar graph', 'histogram', 'broken-line graph'].filter(function (x) { return x !== it[1]; }), s = truth ? it[1] : R.pick(others);
+          return { q: who + ' says a <b>' + s + '</b> is the best graph for ' + it[0] + '. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(it[1] === 'broken-line graph' ? 'It changes over time, so a broken-line graph is best.' : it[1] === 'histogram' ? 'It is many measured numbers grouped in intervals, so a histogram is best.' : 'It is categories, so a bar graph is best.', ['Any graph works for any data.', 'A histogram is always best.']),
+            hint: 'Is it categories, many numbers, or change over time?', steps: ['Best: ' + it[1] + '.'], explain: 'A ' + it[1] + ' fits best.', meta: { k: 'g6-graph-tf', it: it[0], said: s } };
+        }],
+        [1, 'tap', function () {
+          var xs = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'], ys = distinct(6, 4, 24), top = ys.indexOf(Math.max.apply(null, ys));
+          return { q: 'This graph shows the noon temperature. Tap the warmest day.', type: 'tap', tiles: xs, answer: top, answerText: xs[top], fig: bline(xs, ys, 0, 25, 5, 'Noon temperature', '&deg;C'),
+            hint: 'Find the highest point on the graph.', steps: ['The highest point is ' + ys[top] + '&deg;C on ' + xs[top] + '.'], explain: xs[top] + ' was warmest.', meta: { k: 'g6-graph-tap', ys: ys } };
+        }]
+      ],
+      'dp-prob': [
+        [1, 'line', function () {
+          var tot = R.pick([4, 5, 10]), r = R.int(1, tot - 1);
+          return { q: 'A bag has ' + r + ' red and ' + (tot - r) + ' blue marbles. Place the probability of picking red on the line.', type: 'line', min: 0, max: 1, tick: 0.05, every: 0.5, snap: 0.05, answer: r / tot,
+            hint: 'Red &divide; all marbles.', steps: [r + ' of ' + tot + ' marbles are red: ' + ft(r, tot) + '.'], explain: 'The probability is ' + ft(r, tot) + ' = ' + r / tot + '.', meta: { k: 'g6-prob-line', f: r, t: tot } };
+        }],
+        [1, 'mistake', function () {
+          var r = R.int(1, 6), b = R.int(1, 6), who = nm(), truth = !R.int(0, 2), said = truth ? [r, r + b] : [r, b];
+          return { q: 'A bag has ' + r + ' red and ' + b + ' blue marbles. ' + who + ' says the probability of red is <b>' + said[0] + '/' + said[1] + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Compare red with <b>all</b> the marbles: ' + r + ' out of ' + (r + b) + '.', ['Compare red with blue.', 'The probability of red is always 1/2.']),
+            hint: 'How many marbles are there in all?', steps: [r + ' + ' + b + ' = ' + (r + b) + ' marbles.', 'Probability of red: ' + r + '/' + (r + b) + '.'], explain: r + '/' + (r + b) + '.', meta: { k: 'g6-prob-tf', r: r, b: b, said: said } };
+        }],
+        [1, 'order', function () {
+          var c = distinct(3, 1, 9).sort(function (x, y) { return x - y; }), cols = R.shuffle(['red', 'blue', 'green']);
+          var cnt = {}; cols.forEach(function (k, i) { cnt[k] = c[i]; });
+          return { q: 'A bag has ' + c[0] + ' ' + cols[0] + ', ' + c[1] + ' ' + cols[1] + ' and ' + c[2] + ' ' + cols[2] + ' marbles. Put the colours in order from <b>least</b> likely to most likely.', type: 'order', items: cols.slice(), first: 'least likely', last: 'most likely',
+            hint: 'Fewer marbles means less likely.', steps: ['Least: ' + cols[0] + ' (' + c[0] + '). Most: ' + cols[2] + ' (' + c[2] + ').'], explain: cols.join(', ') + '.', meta: { k: 'g6-prob-order', cnt: cnt } };
+        }]
+      ],
+      'dp-two': [
+        [1, 'fill', function () {
+          var nb = R.pick([4, 6]);
+          return { q: 'You flip a coin and roll a number cube numbered 1 to ' + nb + '.', type: 'fill', fill: 'Outcomes in all: [[]] &nbsp; Outcomes with heads and an even number: [[]]', answers: [2 * nb, nb / 2],
+            hint: 'Multiply the outcomes of each one.', steps: ['2 &times; ' + nb + ' = ' + 2 * nb + '.', 'Heads with ' + [2, 4, 6].slice(0, nb / 2).join(', ') + ': ' + nb / 2 + '.'], explain: nb / 2 + ' of ' + 2 * nb + '.', meta: { k: 'g6-two-fill', nb: nb } };
+        }],
+        [1, 'mistake', function () {
+          var nb = R.pick([4, 6]), who = nm(), truth = !R.int(0, 2), said = truth ? [1, 2 * nb] : [1, 2 + nb];
+          return { q: 'You flip a coin and roll a number cube numbered 1 to ' + nb + '. ' + who + ' says the probability of heads and a ' + nb + ' is <b>' + said[0] + '/' + said[1] + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('There are 2 &times; ' + nb + ' = ' + 2 * nb + ' outcomes, and only one is heads and ' + nb + '.', ['Add the outcomes: 2 + ' + nb + '.', 'Each event has a probability of 1/2.']),
+            hint: 'Multiply to count all the outcomes.', steps: ['2 &times; ' + nb + ' = ' + 2 * nb + ' outcomes.', 'Probability: 1/' + 2 * nb + '.'], explain: '1/' + 2 * nb + '.', meta: { k: 'g6-two-tf', nb: nb, said: said } };
+        }],
+        [2, 'pick', function () {
+          var out = [];
+          ['H', 'T'].forEach(function (c) { [1, 2, 3, 4].forEach(function (n) { out.push([c + n, c === 'H' && n % 2 === 0]); }); });
+          var o = picked(out);
+          return { q: 'You flip a coin (H or T) and spin a spinner numbered 1 to 4. Pick every outcome that is <b>heads and an even number</b>.', type: 'pick', options: o.options, answer: o.answer,
+            hint: 'It must have H and an even number.', steps: ['H2 and H4.'], explain: 'H2 and H4: 2 of 8 outcomes.', meta: { k: 'g6-two-pick' } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

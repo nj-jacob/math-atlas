@@ -334,4 +334,147 @@ A.yt({ q: 'What is 25% of 64?', type: 'num', answer: 16,
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name, OPS = ['Add', 'Subtract', 'Multiply', 'Divide'];
+    function rt(a, b) { return a + ':' + b; }
+    function ft(n, d) { return n + '/' + d; }
+    function twoNums() { var a = R.int(2, 6), b = R.int(2, 7); while (b === a || gcd(a, b) > 1) b = R.int(2, 7); return [a, b]; }
+    function picked(list) { var l = R.shuffle(list); return { options: l.map(function (x) { return x[0]; }), answer: l.map(function (x, j) { return x[1] ? j : -1; }).filter(function (j) { return j >= 0; }) }; }
+    function how(p, n) {
+      if (p === 20) return ['20% is double 10%.', '10% is ' + A.fmt(n / 10) + ', so 20% is ' + A.fmt(n / 5) + '.'];
+      if (p === 75) return ['75% is three quarters.', 'A quarter of ' + A.fmt(n) + ' is ' + A.fmt(n / 4) + ', so 75% is ' + A.fmt(3 * n / 4) + '.'];
+      return strat(p, n);
+    }
+    var FR = [[1, 2], [1, 4], [3, 4], [1, 5], [2, 5], [3, 5], [4, 5], [1, 10], [3, 10], [7, 10], [9, 10]];
+    var SHAPES = {
+      'rp-ratio': [
+        [1, 'fill', function () {
+          var ab = twoNums(), a = ab[0], b = ab[1], k = R.int(2, 5), m = R.int(6, 9);
+          return { q: 'Complete the equal ratios.', type: 'fill', fill: rt(a, b) + ' = ' + rt(a * k, '[[]]') + ' = ' + rt('[[]]', b * m), answers: [b * k, a * m],
+            hint: 'Whatever you do to one number, do to the other.', steps: [a + ' &times; ' + k + ' = ' + a * k + ', so ' + b + ' &times; ' + k + ' = ' + b * k + '.', b + ' &times; ' + m + ' = ' + b * m + ', so ' + a + ' &times; ' + m + ' = ' + a * m + '.'],
+            explain: rt(a, b) + ' = ' + rt(a * k, b * k) + ' = ' + rt(a * m, b * m) + '.', meta: { k: 'g6-rat-fill', a: a, b: b } };
+        }],
+        [1, 'mistake', function () {
+          var ab = twoNums(), a = ab[0], b = ab[1], k = R.int(2, 4), who = nm(), truth = !R.int(0, 2), x = truth ? a * k : a + k, y = truth ? b * k : b + k;
+          return { q: 'A drink is mixed ' + a + ' cups of juice to ' + b + ' cups of water. ' + who + ' says <b>' + rt(x, y) + '</b> tastes the same. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? 'Both numbers were multiplied by ' + k + ', so the ratio is equal.' : 'Adding ' + k + ' to both does not keep the ratio. Multiply both by the same number instead.', ['Add the same amount to both numbers.', 'Any ratio with bigger numbers tastes the same.']),
+            hint: 'Equal ratios multiply both numbers by the same thing.', steps: ['Check: is ' + x + ' &divide; ' + a + ' the same as ' + y + ' &divide; ' + b + '?'], explain: truth ? rt(a, b) + ' = ' + rt(x, y) + '.' : rt(x, y) + ' is not equal to ' + rt(a, b) + '.', meta: { k: 'g6-rat-tf', a: a, b: b, x: x, y: y } };
+        }],
+        [1, 'pick', function () {
+          var ab = twoNums(), a = ab[0], b = ab[1], ks = R.shuffle([2, 3, 4, 5]).slice(0, 2);
+          var o = picked(ks.map(function (k) { return [rt(a * k, b * k), 1]; }).concat([[rt(a + 2, b + 2)], [rt(b * 2, a * 2)], [rt(a * 3, b * 3 + 1)]]));
+          return { q: 'Pick every ratio equal to <b>' + rt(a, b) + '</b>.', type: 'pick', options: o.options, answer: o.answer,
+            hint: 'Divide both numbers by the same thing. Do you get ' + rt(a, b) + '?', steps: ['Equal ratios: ' + ks.map(function (k) { return rt(a * k, b * k); }).join(' and ') + '.'], explain: 'Only ratios that multiply both numbers by the same thing are equal.', meta: { k: 'g6-rat-pick' } };
+        }]
+      ],
+      'rp-part': [
+        [1, 'match', function () {
+          var a = R.int(2, 9), b = R.int(2, 9); while (b === a) b = R.int(2, 9);
+          var names = R.pick([['cats', 'dogs'], ['apples', 'oranges'], ['red cars', 'white cars']]);
+          return { q: 'A group has ' + a + ' ' + names[0] + ' and ' + b + ' ' + names[1] + '. Match each comparison to its ratio.', type: 'match',
+            pairs: [[names[0] + ' to ' + names[1], rt(a, b)], [names[1] + ' to ' + names[0], rt(b, a)], [names[0] + ' to all', rt(a, a + b)]], fig: tiles(a, b, 1),
+            hint: 'Write the numbers in the same order as the words.', steps: ['All of them: ' + a + ' + ' + b + ' = ' + (a + b) + '.'], explain: rt(a, b) + ', ' + rt(b, a) + ' and ' + rt(a, a + b) + '.', meta: { k: 'g6-part-match', a: a, b: b } };
+        }],
+        [1, 'mistake', function () {
+          var a = R.int(2, 9), b = R.int(2, 9), who = nm(), truth = !R.int(0, 2); while (b === a) b = R.int(2, 9);
+          var said = truth ? [a, a + b] : [a, b];
+          return { q: 'A class has ' + a + ' girls and ' + b + ' boys. ' + who + ' says the ratio of girls to <b>all</b> students is <b>' + rt(said[0], said[1]) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('All students is ' + a + ' + ' + b + ' = ' + (a + b) + ', so the ratio is ' + rt(a, a + b) + '.', ['Girls to all is the same as girls to boys.', 'The whole is always 10.']),
+            hint: 'How many students are there in all?', steps: [a + ' + ' + b + ' = ' + (a + b) + ' students.'], explain: 'Girls to all: ' + rt(a, a + b) + '.', meta: { k: 'g6-part-tf', a: a, b: b, said: said } };
+        }],
+        [1, 'story', function () {
+          var a = R.int(1, 5), b = R.int(2, 6), k = R.int(2, 5); while (b === a) b = R.int(2, 6);
+          return { q: 'In a garden, the ratio of tulips to daisies is ' + rt(a, b) + '. There are ' + a * k + ' tulips. How many flowers are there in all?', type: 'num', answer: (a + b) * k, fig: tiles(a, b, 1),
+            hint: 'How many groups of ' + a + ' tulips are there?', steps: [a * k + ' &divide; ' + a + ' = ' + k + ' groups.', 'Each group has ' + a + ' + ' + b + ' = ' + (a + b) + ' flowers.', k + ' &times; ' + (a + b) + ' = ' + (a + b) * k + '.'],
+            explain: (a + b) * k + ' flowers in all.', meta: { k: 'g6-part-story', a: a, b: b, x: a * k } };
+        }]
+      ],
+      'rp-rate': [
+        [1, 'line', function () {
+          var u = R.int(2, 9) * 10, n = R.int(2, 5), who = nm();
+          return { q: who + ' cycles ' + u * n + ' km in ' + n + ' hours. Place the unit rate, in km per hour, on the line.', type: 'line', min: 0, max: 100, tick: 10, every: 50, snap: 10, answer: u,
+            hint: 'Divide ' + u * n + ' by ' + n + '.', steps: [u * n + ' &divide; ' + n + ' = ' + u + '.'], explain: u + ' km/h.', meta: { k: 'g6-rate-line', tot: u * n, n: n } };
+        }],
+        [1, 'way', function () {
+          var u = R.int(2, 9) * 10, n = R.int(2, 6), who = nm(), pick = R.int(0, 1);
+          return pick ? { q: who + ' drives ' + u * n + ' km in ' + n + ' hours. How far is that in 1 hour? Which way do you solve it?', type: 'mc', options: OPS.slice(), answer: 3, hint: 'You share the distance equally among the hours.', steps: ['Share ' + u * n + ' km among ' + n + ' hours: divide.'], explain: 'Divide: ' + u * n + ' &divide; ' + n + ' = ' + u + ' km.', meta: { k: 'g6-rate-way' } }
+            : { q: who + ' drives ' + u + ' km every hour. How far is that in ' + n + ' hours? Which way do you solve it?', type: 'mc', options: OPS.slice(), answer: 2, hint: 'The same amount happens again and again.', steps: [n + ' groups of ' + u + ' km: multiply.'], explain: 'Multiply: ' + u + ' &times; ' + n + ' = ' + u * n + ' km.', meta: { k: 'g6-rate-way' } };
+        }],
+        [1, 'mistake', function () {
+          var u = R.int(12, 45), n = R.int(2, 6), who = nm(), truth = !R.int(0, 2), said = truth ? u : u * n * n;
+          return { q: 'A printer prints ' + u * n + ' pages in ' + n + ' minutes. ' + who + ' says the unit rate is <b>' + said + '</b> pages per minute. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('The unit rate is pages in 1 minute: ' + u * n + ' &divide; ' + n + ' = ' + u + '.', ['Multiply the pages by the minutes.', 'The unit rate is always the bigger number.']),
+            hint: 'How many pages in 1 minute?', steps: [u * n + ' &divide; ' + n + ' = ' + u + '.'], explain: u + ' pages per minute.', meta: { k: 'g6-rate-tf', tot: u * n, n: n, said: said } };
+        }]
+      ],
+      'rp-better': [
+        [1, 'fill', function () {
+          var na = R.pick([2, 4, 5]), nb = na * 2, ua = R.int(60, 150), ub = ua + R.pick([-1, 1]) * R.int(5, 20);
+          return { q: 'Pack A: ' + na + ' bagels for ' + money(ua * na) + '. Pack B: ' + nb + ' bagels for ' + money(ub * nb) + '. Find the price of one bagel in each.', type: 'fill', fill: 'Pack A: $[[]] each &nbsp; Pack B: $[[]] each', answers: [ua / 100, ub / 100],
+            hint: 'Divide each price by the number in the pack.', steps: [money(ua * na) + ' &divide; ' + na + ' = ' + money(ua) + '.', money(ub * nb) + ' &divide; ' + nb + ' = ' + money(ub) + '.'], explain: 'Pack ' + (ua < ub ? 'A' : 'B') + ' is the better buy.', meta: { k: 'g6-better-fill', na: na, pa: ua * na, nb: nb, pb: ub * nb } };
+        }],
+        [1, 'mistake', function () {
+          var na = R.pick([3, 4, 5]), nb = na * 2, ua = R.int(60, 150), ub = ua + R.int(5, 20), who = nm();
+          return { q: 'Pack A: ' + na + ' pencils for ' + money(ua * na) + '. Pack B: ' + nb + ' pencils for ' + money(ub * nb) + '. ' + who + ' says the bigger pack is the better buy. True or false: ' + who + ' is right.', type: 'tf', answer: false,
+            why: why('One pencil costs ' + money(ua) + ' in pack A but ' + money(ub) + ' in pack B, so pack A is the better buy.', ['A bigger pack is always the better buy.', 'The pack with the lower total price is the better buy.']),
+            hint: 'Find the price of one pencil in each pack.', steps: [money(ua * na) + ' &divide; ' + na + ' = ' + money(ua) + '.', money(ub * nb) + ' &divide; ' + nb + ' = ' + money(ub) + '.'], explain: 'Pack A costs less for each pencil.', meta: { k: 'g6-better-tf', na: na, pa: ua * na, nb: nb, pb: ub * nb } };
+        }],
+        [2, 'order', function () {
+          var us = R.shuffle([55, 60, 65, 70, 75, 80, 90]).slice(0, 3).sort(function (x, y) { return x - y; }), ns = R.shuffle([2, 3, 4, 5, 6]).slice(0, 3);
+          return { q: 'Put these packs of juice boxes in order from the <b>lowest</b> price for one box to the highest.', type: 'order', items: us.map(function (u, j) { return ns[j] + ' for ' + money(u * ns[j]); }), first: 'lowest', last: 'highest',
+            hint: 'Divide each price by the number in the pack.', steps: us.map(function (u, j) { return money(u * ns[j]) + ' &divide; ' + ns[j] + ' = ' + money(u) + '.'; }), explain: 'Compare the price for one.', meta: { k: 'g6-better-order' } };
+        }]
+      ],
+      'rp-pct': [
+        [1, 'line', function () {
+          var n = R.pick([40, 80, 120, 200]), p = R.pick([10, 25, 50, 75]);
+          return { q: 'Place <b>' + p + '% of ' + n + '</b> on the line.', type: 'line', min: 0, max: n, tick: n / 10, every: n / 2, snap: n / 20, answer: p * n / 100, fig: pbar(n, p),
+            hint: 'The whole line is 100%. Where is ' + p + '%?', steps: [how(p, n)[0], p + '% of ' + n + ' is ' + p * n / 100 + '.'], explain: p + '% of ' + n + ' = ' + p * n / 100 + '.', meta: { k: 'g6-pct-line', p: p, n: n } };
+        }],
+        [1, 'mistake', function () {
+          var p = R.pick([1, 5, 20, 25]), n = R.int(1, 9) * 100, who = nm(), truth = !R.int(0, 2), said = truth ? p * n / 100 : n / p;
+          return { q: who + ' says ' + p + '% of ' + A.fmt(n) + ' is <b>' + A.fmt(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(p + '% means ' + p + ' out of 100, so ' + p + '% of ' + A.fmt(n) + ' is ' + A.fmt(p * n / 100) + '.', ['To find ' + p + '%, divide by ' + p + '.', 'A percent of a number is always more than 1%.']),
+            hint: 'Start from 10% or 1%.', steps: [how(p, n)[0], how(p, n)[1]], explain: p + '% of ' + A.fmt(n) + ' = ' + A.fmt(p * n / 100) + '.', meta: { k: 'g6-pct-tf', p: p, n: n, said: said } };
+        }],
+        [1, 'story', function () {
+          var n = R.pick([40, 60, 80, 120]), p = R.pick([10, 20, 25, 50]), item = R.pick(['jacket', 'pair of boots', 'backpack']);
+          return { q: 'A ' + item + ' costs $' + n + '. It is ' + p + '% off. How much money do you save?', type: 'num', unit: '$', answer: p * n / 100,
+            hint: 'Find ' + p + '% of $' + n + '.', steps: [how(p, n)[0], 'You save $' + p * n / 100 + '.'], explain: p + '% of $' + n + ' is $' + p * n / 100 + '.', meta: { k: 'g6-pct-story', p: p, n: n } };
+        }],
+        [2, 'pick', function () {
+          var t = R.pick([10, 20, 30, 40]), right = R.shuffle([[10, 10 * t], [50, 2 * t], [25, 4 * t], [20, 5 * t]]).slice(0, 2), wrong = R.shuffle([[50, t], [25, 2 * t], [10, 5 * t], [20, 10 * t]]).slice(0, 3);
+          var o = picked(right.map(function (x) { return [x[0] + '% of ' + x[1], 1]; }).concat(wrong.map(function (x) { return [x[0] + '% of ' + x[1]]; })));
+          return { q: 'Pick every one that equals <b>' + t + '</b>.', type: 'pick', options: o.options, answer: o.answer,
+            hint: '50% is half. 25% is a quarter. 10% is a tenth. 20% is a fifth.', steps: right.map(function (o) { return o[0] + '% of ' + o[1] + ' = ' + t + '.'; }), explain: 'Work out each one.', meta: { k: 'g6-pct-pick' } };
+        }]
+      ],
+      'rp-fdp': [
+        [1, 'match', function () {
+          var fs = R.shuffle(FR).slice(0, 3);
+          return { q: 'Match each fraction to its percent.', type: 'match', pairs: fs.map(function (f) { return [ft(f[0], f[1]), f[0] * 100 / f[1] + '%']; }),
+            hint: 'Make the bottom 100.', steps: fs.map(function (f) { return ft(f[0], f[1]) + ' = ' + ft(f[0] * 100 / f[1], 100) + '.'; }), explain: 'Percent means out of 100.', meta: { k: 'g6-fdp-match' } };
+        }],
+        [1, 'line', function () {
+          var f = R.pick(FR);
+          return { q: 'Place <b>' + ft(f[0], f[1]) + '</b> on the percent line.', type: 'line', min: 0, max: 100, tick: 10, every: 50, snap: 5, answer: f[0] * 100 / f[1],
+            hint: 'Make the bottom 100. The top is the percent.', steps: [ft(f[0], f[1]) + ' = ' + ft(f[0] * 100 / f[1], 100) + ' = ' + f[0] * 100 / f[1] + '%.'], explain: f[0] * 100 / f[1] + '%.', meta: { k: 'g6-fdp-line', n: f[0], d: f[1] } };
+        }],
+        [1, 'mistake', function () {
+          var f = R.pick(FR), who = nm(), truth = !R.int(0, 2), said = truth ? f[0] * 100 / f[1] : +('' + f[0] + f[1]);
+          return { q: who + ' says <b>' + ft(f[0], f[1]) + '</b> = <b>' + said + '%</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Percent means out of 100: ' + ft(f[0], f[1]) + ' = ' + ft(f[0] * 100 / f[1], 100) + ' = ' + f[0] * 100 / f[1] + '%.', ['Write the top and bottom side by side.', 'The bottom number is the percent.']),
+            hint: 'Make the bottom 100.', steps: [ft(f[0], f[1]) + ' = ' + ft(f[0] * 100 / f[1], 100) + '.'], explain: ft(f[0], f[1]) + ' = ' + f[0] * 100 / f[1] + '%.', meta: { k: 'g6-fdp-tf', n: f[0], d: f[1], said: said } };
+        }],
+        [2, 'pick', function () {
+          var f = R.pick([[1, 4], [3, 4], [2, 5], [3, 5], [1, 5], [4, 5]]), p = f[0] * 100 / f[1];
+          var o = picked([[p + '%', 1], [String(p / 100), 1], [ft(f[0] * 2, f[1] * 2), 1], [f[0] + '' + f[1] + '%'], ['0.' + f[0] + f[1]], [ft(f[1], f[0])]]);
+          return { q: 'Pick every one equal to <b>' + ft(f[0], f[1]) + '</b>.', type: 'pick', options: o.options, answer: o.answer,
+            hint: 'Turn each one into a percent.', steps: [ft(f[0], f[1]) + ' = ' + p + '% = ' + p / 100 + '.'], explain: ft(f[0], f[1]) + ' = ' + p + '% = ' + p / 100 + ' = ' + ft(f[0] * 2, f[1] * 2) + '.', meta: { k: 'g6-fdp-pick', n: f[0], d: f[1] } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

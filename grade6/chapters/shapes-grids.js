@@ -388,4 +388,139 @@ A.yt({ q: 'Point (2, 5) is reflected in the y-axis. Where does it land?', type: 
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var KIT = A.Q, why = G6.why, nm = KIT.name, LET = ['A', 'B', 'C', 'D'];
+    /* what is ALWAYS true of each shape (trapezoids are left out: their properties vary) */
+    var ALWAYS = {
+      square: { right: 1, equal: 1, par2: 1 }, rectangle: { right: 1, equal: 0, par2: 1 }, rhombus: { right: 0, equal: 1, par2: 1 },
+      parallelogram: { right: 0, equal: 0, par2: 1 }, kite: { right: 0, equal: 0, par2: 0 }
+    };
+    var PROP = { right: '4 right angles', equal: '4 equal sides', par2: '2 pairs of parallel sides' };
+    var SYM = ['square', 'rectangle', 'rhombus', 'parallelogram', 'kite'];
+    function quadrant(p) { return p[0] > 0 ? (p[1] > 0 ? 'I' : 'IV') : (p[1] > 0 ? 'II' : 'III'); }
+    function rp(lo) { var p = [R.int(lo || 1, 6) * R.pick([1, -1]), R.int(lo || 1, 6) * R.pick([1, -1])]; if (Math.abs(p[0]) === Math.abs(p[1])) p[1] = p[1] > 0 ? (p[1] % 6) + 1 : -((-p[1] % 6) + 1); return p; }
+    function key(p) { return p.join(','); }
+    function heights() { return [[R.int(0, 2), R.int(0, 3), R.int(0, 1)], [R.int(0, 3), R.int(1, 3), R.int(0, 2)], [R.int(1, 3), R.int(0, 2), R.int(1, 3)]]; }
+    var SHAPES = {
+      'sg-quad': [
+        [1, 'pick', function () {
+          var prop = R.pick(Object.keys(PROP)), names = Object.keys(ALWAYS);
+          return { q: 'Pick every shape that <b>always</b> has ' + PROP[prop] + '.', type: 'pick', options: names.slice(), answer: names.map(function (n, j) { return ALWAYS[n][prop] ? j : -1; }).filter(function (j) { return j >= 0; }),
+            hint: 'Picture each shape. Check ' + PROP[prop] + '.', steps: ['These always have ' + PROP[prop] + ': ' + names.filter(function (n) { return ALWAYS[n][prop]; }).join(', ') + '.'], explain: 'A square counts as a rectangle and a rhombus too.', meta: { k: 'g6-quad-pick', prop: prop } };
+        }],
+        [1, 'mistake', function () {
+          var name = R.pick(Object.keys(ALWAYS)), prop = R.pick(Object.keys(PROP)), who = nm(), truth = !!ALWAYS[name][prop];
+          return { q: who + ' says every <b>' + name + '</b> has ' + PROP[prop] + '. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: quad(name, {}),
+            why: why(truth ? 'Every ' + name + ' has ' + PROP[prop] + '.' : 'A ' + name + ' does not always have ' + PROP[prop] + '.', ['All quadrilaterals have ' + PROP[prop] + '.', 'Only squares have 4 sides.']),
+            hint: 'Picture a ' + name + '. Check ' + PROP[prop] + '.', steps: ['A ' + name + ': ' + Q[name].sides + '; angles ' + Q[name].ang + '; parallel sides: ' + Q[name].par + '.'], explain: truth ? 'True.' : 'False.', meta: { k: 'g6-quad-tf', name: name, prop: prop } };
+        }],
+        [1, 'match', function () {
+          var two = R.pick(['rectangle', 'rhombus']), names = R.shuffle(['square', two, 'parallelogram']);
+          return { q: 'Match each shape to its number of lines of symmetry.', type: 'match', pairs: names.map(function (n) { return [n, Q[n].lines + ' line' + (Q[n].lines === 1 ? '' : 's')]; }),
+            hint: 'Imagine folding each shape so the halves match.', steps: names.map(function (n) { return 'A ' + n + ' has ' + Q[n].lines + '.'; }), explain: 'Fold lines must match exactly.', meta: { k: 'g6-quad-match' } };
+        }]
+      ],
+      'sg-sym': [
+        [1, 'tap', function () {
+          var ask = R.pick([['rot', 4, 'rotational symmetry of order 4', 'square'], ['lines', 0, 'no lines of symmetry', 'parallelogram']]), names = R.shuffle([ask[3]].concat(R.shuffle(['rectangle', 'rhombus', 'kite']).slice(0, 2)));
+          return { q: 'Tap the shape with <b>' + ask[2] + '</b>.', type: 'tap', tiles: names.map(function (n) { return quad(n, {}); }), answer: names.indexOf(ask[3]), answerText: 'the ' + ask[3],
+            hint: ask[0] === 'rot' ? 'Which shape matches itself 4 times in a full turn?' : 'Which shape cannot be folded so the halves match?', steps: ['It is the ' + ask[3] + '.'], explain: 'The ' + ask[3] + ' has ' + ask[2] + '.', meta: { k: 'g6-sym-tap', names: names, ask: ask[0], n: ask[1] } };
+        }],
+        [1, 'fill', function () {
+          var name = R.pick(SYM);
+          return { q: 'Look at this ' + name + '.', type: 'fill', fill: 'Lines of symmetry: [[]] &nbsp; Order of rotational symmetry: [[]]', answers: [Q[name].lines, Q[name].rot], fig: quad(name, {}),
+            hint: 'Fold it to find lines. Turn it to find the order.', steps: ['Lines:<div class="fig">' + quad(name, { sym: true }) + '</div>', 'It matches itself ' + Q[name].rot + ' time' + (Q[name].rot === 1 ? '' : 's') + ' in a full turn.'], explain: Q[name].lines + ' and ' + Q[name].rot + '.', meta: { k: 'g6-sym-fill', name: name } };
+        }],
+        [1, 'mistake', function () {
+          var name = R.pick(SYM), who = nm(), truth = !R.int(0, 2), said = truth ? Q[name].lines : Q[name].lines === 4 ? 2 : Q[name].lines + 2;
+          return { q: who + ' says a ' + name + ' has <b>' + said + '</b> line' + (said === 1 ? '' : 's') + ' of symmetry. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: quad(name, {}),
+            why: why('A ' + name + ' has ' + Q[name].lines + ' line' + (Q[name].lines === 1 ? '' : 's') + ' of symmetry.', ['Every shape with 4 sides has 4 lines.', 'Diagonals are always lines of symmetry.']),
+            hint: 'Fold it in your mind. Does each half match?', steps: ['Lines that work:<div class="fig">' + quad(name, { sym: true }) + '</div>'], explain: Q[name].lines + ' line' + (Q[name].lines === 1 ? '' : 's') + '.', meta: { k: 'g6-sym-tf', name: name, said: said } };
+        }]
+      ],
+      'sg-coord': [
+        [1, 'tap', function () {
+          var p = rp(), pts = [p, [p[1], p[0]], [-p[0], p[1]], [p[0], -p[1]]], order = R.shuffle([0, 1, 2, 3]);
+          return { q: 'Tap the letter of the point at <b>' + pt(p) + '</b>.', type: 'tap', tiles: LET.slice(), answer: order.indexOf(0), answerText: 'point ' + LET[order.indexOf(0)],
+            fig: grid(6, order.map(function (i, j) { return { p: pts[i], lab: LET[j] }; }), [], [], 22),
+            hint: 'Go across first (x), then up or down (y).', steps: [(p[0] > 0 ? 'Right ' : 'Left ') + Math.abs(p[0]) + ', then ' + (p[1] > 0 ? 'up ' : 'down ') + Math.abs(p[1]) + '.'], explain: 'Point ' + LET[order.indexOf(0)] + ' is at ' + pt(p) + '.', meta: { k: 'g6-coord-tap', pts: order.map(function (i) { return pts[i]; }) } };
+        }],
+        [1, 'mistake', function () {
+          var p = rp(), who = nm(), truth = !R.int(0, 2), said = truth ? quadrant(p) : quadrant([p[1], p[0]]) !== quadrant(p) ? quadrant([p[1], p[0]]) : quadrant([-p[0], p[1]]);
+          return { q: who + ' says the point ' + pt(p) + ' is in quadrant <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: said === quadrant(p),
+            why: why('x is ' + (p[0] > 0 ? 'positive (right)' : 'negative (left)') + ' and y is ' + (p[1] > 0 ? 'positive (up)' : 'negative (down)') + ', so it is quadrant ' + quadrant(p) + '.', ['Read y first, then x.', 'Negative numbers are always in quadrant III.']),
+            hint: 'Check the sign of x, then the sign of y.', steps: ['Quadrant ' + quadrant(p) + '.<div class="fig">' + grid(6, [{ p: p }], [], [], 22) + '</div>'], explain: pt(p) + ' is in quadrant ' + quadrant(p) + '.', meta: { k: 'g6-coord-tf', p: p, said: said } };
+        }],
+        [2, 'pick', function () {
+          var want = R.pick(['I', 'II', 'III', 'IV']), ps = [], ans;
+          do { ps = [rp(), rp(), rp(), rp(), rp()]; ans = ps.map(function (p, j) { return quadrant(p) === want ? j : -1; }).filter(function (j) { return j >= 0; }); } while (!ans.length || ans.length === 5 || ps.map(key).filter(function (k, i, a) { return a.indexOf(k) !== i; }).length);
+          return { q: 'Pick every point in quadrant <b>' + want + '</b>.', type: 'pick', options: ps.map(pt), answer: ans,
+            hint: 'Quadrant I is right and up. Go around counterclockwise: II, III, IV.', steps: ['In quadrant ' + want + ': ' + ans.map(function (j) { return pt(ps[j]); }).join(', ') + '.'], explain: 'Check the signs of x and y.', meta: { k: 'g6-coord-pick', want: want } };
+        }]
+      ],
+      'sg-translate': [
+        [1, 'fill', function () {
+          var a = [R.int(-4, 4), R.int(-4, 4)], dx = R.int(-3, 3), dy = R.int(-3, 3); if (!dx) dx = 2; if (!dy) dy = -2;
+          return { q: 'Point A ' + pt(a) + ' moves <b>' + moveTxt(dx, dy) + '</b>. Where does it land?', type: 'fill', fill: '( [[]] , [[]] )', answers: [a[0] + dx, a[1] + dy], fig: grid(7, [{ p: a, lab: 'A' }], [], [], 20),
+            hint: 'Right and left change x. Up and down change y.', steps: ['x: ' + sg(a[0]) + ' &rarr; ' + sg(a[0] + dx) + '.', 'y: ' + sg(a[1]) + ' &rarr; ' + sg(a[1] + dy) + '.'], explain: 'It lands on ' + pt([a[0] + dx, a[1] + dy]) + '.', meta: { k: 'g6-tr-fill', a: a, dx: dx, dy: dy } };
+        }],
+        [1, 'mistake', function () {
+          var a = [R.int(-4, 4), R.int(-4, 4)], dx = R.int(-3, 3), dy = R.int(-3, 3), who = nm(), truth = !R.int(0, 2); if (!dx) dx = 3; if (!dy) dy = 2;
+          var b = [a[0] + dx, a[1] + dy], said = truth ? [dx, dy] : [-dx, -dy];
+          return { q: who + ' says the move from A ' + pt(a) + ' to B ' + pt(b) + ' is <b>' + moveTxt(said[0], said[1]) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: grid(7, [{ p: a, lab: 'A' }, { p: b, lab: 'B', c: 'var(--strand)' }], [], [], 20),
+            why: why('Start at A and count to B: ' + moveTxt(dx, dy) + '.', ['Count from B back to A.', 'Count up or down first, then across.']),
+            hint: 'Start at A. Count across to B, then up or down.', steps: ['From A to B: ' + moveTxt(dx, dy) + '.'], explain: 'The move is ' + moveTxt(dx, dy) + '.', meta: { k: 'g6-tr-tf', a: a, b: b, said: said } };
+        }],
+        [1, 'line', function () {
+          var x = R.int(-6, 6), d = R.pick([-5, -4, -3, -2, 2, 3, 4, 5]); while (Math.abs(x + d) > 9) d = -d;
+          return { q: 'A point at x = ' + sg(x) + ' on the x-axis moves <b>' + moveTxt(d, 0) + '</b>. Place where it lands.', type: 'line', min: -10, max: 10, tick: 1, every: 5, snap: 1, answer: x + d,
+            hint: 'Right is towards bigger numbers. Left is towards smaller ones.', steps: [sg(x) + (d > 0 ? ' + ' + d : ' &minus; ' + -d) + ' = ' + sg(x + d) + '.'], explain: 'It lands on ' + sg(x + d) + '.', meta: { k: 'g6-tr-line', x: x, d: d } };
+        }]
+      ],
+      'sg-transform': [
+        [1, 'tap', function () {
+          var keys = Object.keys(T), k = R.pick(keys), p = rp(), cands = [T[k](p)], others = keys.filter(function (kk) { return kk !== k; });
+          R.shuffle(others).forEach(function (kk) { var c = T[kk](p); if (cands.length < 4 && cands.map(key).indexOf(key(c)) < 0) cands.push(c); });
+          var order = R.shuffle([0, 1, 2, 3].slice(0, cands.length)), pts = order.map(function (i) { return cands[i]; });
+          return { q: 'Point P ' + pt(p) + ' is ' + k.replace('reflect', 'reflected').replace('rotate', 'rotated') + '. Tap the letter where it lands.', type: 'tap', tiles: LET.slice(0, pts.length), answer: order.indexOf(0), answerText: 'point ' + LET[order.indexOf(0)],
+            fig: grid(6, [{ p: p, lab: 'P', c: 'var(--strand)' }].concat(pts.map(function (q, j) { return { p: q, lab: LET[j] }; })), [], [], 22),
+            hint: 'Think about which signs change.', steps: ['The image of ' + pt(p) + ' is ' + pt(T[k](p)) + '.'], explain: 'It lands on ' + LET[order.indexOf(0)] + ' ' + pt(T[k](p)) + '.', meta: { k: 'g6-tf-tap', p: p, move: k, pts: pts } };
+        }],
+        [1, 'mistake', function () {
+          var p = rp(), axis = R.pick(['x', 'y']), k = 'reflect in the ' + axis + '-axis', who = nm(), truth = !R.int(0, 2), said = truth ? T[k](p) : T['reflect in the ' + (axis === 'x' ? 'y' : 'x') + '-axis'](p);
+          return { q: who + ' reflects ' + pt(p) + ' in the <b>' + axis + '-axis</b> and gets <b>' + pt(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: grid(6, [{ p: p, lab: 'P' }], [], [], 22),
+            why: why('Reflecting in the ' + axis + '-axis changes the sign of ' + (axis === 'x' ? 'y' : 'x') + ' only: ' + pt(T[k](p)) + '.', ['Reflecting in the ' + axis + '-axis changes the sign of ' + axis + '.', 'A reflection changes both signs.']),
+            hint: 'The point flips over the ' + axis + '-axis. Which number changes sign?', steps: ['Image: ' + pt(T[k](p)) + '.'], explain: pt(p) + ' &rarr; ' + pt(T[k](p)) + '.', meta: { k: 'g6-tf-tf', p: p, axis: axis, said: said } };
+        }],
+        [1, 'match', function () {
+          var p = rp(), keys = ['reflect in the x-axis', 'reflect in the y-axis', 'rotate 180° about (0, 0)'];
+          return { q: 'Point P is at ' + pt(p) + '. Match each move to where P lands.', type: 'match', pairs: keys.map(function (k) { return [k.charAt(0).toUpperCase() + k.slice(1), pt(T[k](p))]; }),
+            hint: 'x-axis: change y. y-axis: change x. Half turn: change both.', steps: keys.map(function (k) { return k + ': ' + pt(T[k](p)) + '.'; }), explain: 'Watch which signs change.', meta: { k: 'g6-tf-match', p: p } };
+        }]
+      ],
+      'sg-views': [
+        [1, 'tap', function () {
+          var h, fr, opts;
+          do { h = heights(); fr = fronts(h); opts = [fr, sides(h), fr.slice().reverse()]; } while (opts.map(String).filter(function (s, i, a) { return a.indexOf(s) !== i; }).length);
+          var order = R.shuffle([0, 1, 2]), list = order.map(function (i) { return opts[i]; });
+          return { q: 'Tap the <b>front</b> view of this building. The numbers show the height of each stack; the front is at the bottom.', type: 'tap', tiles: list.map(function (hs, j) { return view(hs, LET[j]); }), answer: order.indexOf(0), answerText: 'view ' + LET[order.indexOf(0)], fig: topView(h),
+            hint: 'For each column, find the tallest stack.', steps: ['Tallest in each column: ' + fr.join(', ') + '.'], explain: 'The front view is ' + fr.join(', ') + '.', meta: { k: 'g6-views-tap', h: h, opts: list } };
+        }],
+        [1, 'fill', function () {
+          var h = heights();
+          return { q: 'Give the column heights of the <b>front</b> view, left to right. The front is the bottom of the top view.', type: 'fill', fill: '[[]], [[]], [[]]', answers: fronts(h), fig: iso(h) + topView(h),
+            hint: 'For each column, find the tallest stack.', steps: ['Front view:<div class="fig">' + view(fronts(h), 'front') + '</div>'], explain: fronts(h).join(', ') + '.', meta: { k: 'g6-views-fill', h: h } };
+        }],
+        [1, 'mistake', function () {
+          var h = heights(), tot = [].concat.apply([], h).reduce(function (x, y) { return x + y; }, 0), cnt = [].concat.apply([], h).filter(Boolean).length, who = nm(), truth = !R.int(0, 2), said = truth ? tot : cnt;
+          if (!truth && cnt === tot) said = tot + 1;
+          return { q: who + ' says this building has <b>' + said + '</b> cubes. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: topView(h),
+            why: why('Each number is the height of a stack. Add them: ' + [].concat.apply([], h).filter(Boolean).join(' + ') + ' = ' + tot + '.', ['Count the squares in the top view.', 'Use the biggest number.']),
+            hint: 'Add every number in the top view.', steps: [[].concat.apply([], h).filter(Boolean).join(' + ') + ' = ' + tot + '.'], explain: tot + ' cubes.', meta: { k: 'g6-views-tf', h: h, said: said } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();

@@ -376,4 +376,148 @@ A.yt({ q: '4 &divide; ' + A.fr(1, 3) + ' = ?', type: 'num', answer: 12,
       } }
     ]
   });
+  /* ---------- practice shapes: more ways to ask each skill (docs/QUESTIONS.md). Answer checks: tests/verify/grade6.js ---------- */
+  (function () {
+    var Q = A.Q, why = G6.why, nm = Q.name;
+    function t(n, d) { return n + '/' + d; }
+    function hits(opts, test) { return opts.map(function (x, j) { return test(x) ? j : -1; }).filter(function (j) { return j >= 0; }); }
+    var BASE = [[1, 2], [1, 3], [2, 3], [1, 4], [3, 4], [2, 5], [3, 5], [5, 6], [3, 8], [4, 7]];
+    /* two fractions where the second denominator is a multiple of the first, so the answer is in the larger denominator */
+    function pairAB(sub) {
+      var d = R.pick([2, 3, 4, 5, 6]), k = R.pick([2, 3, 4]), L = d * k, a, b;
+      do { a = R.int(1, d - 1); b = R.int(1, L - 1); } while (sub && a * k <= b);
+      return { a: [a, d], b: [b, L], L: L, top: sub ? a * k - b : a * k + b };
+    }
+    var SHAPES = {
+      'fr-equiv': [
+        [1, 'match', function () {
+          var bs = R.shuffle(BASE).slice(0, 3);
+          return { q: 'Match each fraction to an equal fraction.', type: 'match', pairs: bs.map(function (b) { var m = R.int(2, 5); return [t(b[0], b[1]), t(b[0] * m, b[1] * m)]; }),
+            hint: 'Multiply the top and the bottom by the same number.', steps: ['Divide each big fraction back down to see where it came from.'], explain: 'Equal fractions come from multiplying top and bottom by the same number.', meta: { k: 'g6-eq-match' } };
+        }],
+        [1, 'fill', function () {
+          var b = R.pick(BASE), m = R.int(2, 4), k = R.int(2, 5); while (k === m) k = R.int(2, 5);
+          return { q: 'Fill in the missing numbers.', type: 'fill', fill: t(b[0], b[1]) + ' = [[]]/' + b[1] * m + ' = ' + b[0] * k + '/[[]]', answers: [b[0] * m, b[1] * k],
+            hint: 'What was the bottom multiplied by? Do the same to the top.', steps: [b[1] + ' &times; ' + m + ' = ' + b[1] * m + ', so ' + b[0] + ' &times; ' + m + ' = ' + b[0] * m + '.', b[0] + ' &times; ' + k + ' = ' + b[0] * k + ', so ' + b[1] + ' &times; ' + k + ' = ' + b[1] * k + '.'],
+            explain: t(b[0], b[1]) + ' = ' + t(b[0] * m, b[1] * m) + ' = ' + t(b[0] * k, b[1] * k) + '.', meta: { k: 'g6-eq-fill', n: b[0], d: b[1] } };
+        }],
+        [1, 'pick', function () {
+          var b = R.pick(BASE), opts = [], seen = {};
+          [R.int(2, 3), R.int(4, 6)].forEach(function (m) { var s = t(b[0] * m, b[1] * m); if (!seen[s]) { seen[s] = 1; opts.push(s); } });
+          while (opts.length < 5) { var n = R.int(1, 11), d = R.int(n + 1, 16), s2 = t(n, d); if (!seen[s2] && n * b[1] !== d * b[0]) { seen[s2] = 1; opts.push(s2); } }
+          opts = R.shuffle(opts);
+          return { q: 'Pick every fraction equal to <b>' + t(b[0], b[1]) + '</b>.', type: 'pick', options: opts, answer: hits(opts, function (s) { var p = s.split('/'); return p[0] * b[1] === p[1] * b[0]; }),
+            hint: 'Divide top and bottom by the same number. Do you get ' + t(b[0], b[1]) + '?', steps: ['Simplify each fraction.'], explain: 'Equal to ' + t(b[0], b[1]) + ': the ones that simplify to it.', meta: { k: 'g6-eq-pick' } };
+        }],
+        [2, 'mistake', function () {
+          var b = R.pick(BASE), k = R.int(1, 4), who = nm(), truth = !R.int(0, 2), said = truth ? [b[0] * (k + 1), b[1] * (k + 1)] : [b[0] + k, b[1] + k];
+          return { q: who + ' says <span class="math">' + t(b[0], b[1]) + ' = ' + t(said[0], said[1]) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? 'The top and bottom were both multiplied by ' + (k + 1) + '.' : 'Adding the same number to the top and bottom changes the size of the fraction.', ['Any two fractions with the same difference are equal.', 'Equal fractions always have the same bottom.']),
+            hint: 'Were the top and bottom multiplied by the same number?', steps: ['Check: does ' + b[0] + ' &times; ' + said[1] + ' equal ' + b[1] + ' &times; ' + said[0] + '?'], explain: truth ? 'They are equal.' : 'They are not equal.', meta: { k: 'g6-eq-tf', a: b, b: said } };
+        }]
+      ],
+      'fr-add': [
+        [1, 'fill', function () {
+          var p = pairAB(false);
+          return { q: 'Add. Write the answer in ' + p.L + 'ths.', type: 'fill', fill: t(p.a[0], p.a[1]) + ' + ' + t(p.b[0], p.b[1]) + ' = [[]]/' + p.L, answers: [p.top],
+            hint: 'Change ' + t(p.a[0], p.a[1]) + ' into ' + p.L + 'ths first.', steps: [t(p.a[0], p.a[1]) + ' = ' + t(p.a[0] * p.L / p.a[1], p.L) + '.', 'Add the tops: ' + p.a[0] * p.L / p.a[1] + ' + ' + p.b[0] + ' = ' + p.top + '.'],
+            explain: 'The sum is ' + t(p.top, p.L) + '.', meta: { k: 'g6-add-fill', a: p.a, b: p.b, L: p.L } };
+        }],
+        [1, 'story', function () {
+          var p = pairAB(false), two = Q.two(), c = R.pick(['of a pizza', 'of a cake', 'of a pan of lasagna']);
+          return { q: two[0] + ' ate ' + t(p.a[0], p.a[1]) + ' ' + c + '. ' + two[1] + ' ate ' + t(p.b[0], p.b[1]) + ' of it. How much did they eat together?', type: 'fill', fill: '[[]]/' + p.L, answers: [p.top],
+            hint: 'Write both in ' + p.L + 'ths, then add.', steps: [t(p.a[0], p.a[1]) + ' = ' + t(p.a[0] * p.L / p.a[1], p.L) + '.', 'Add: ' + t(p.top, p.L) + '.'], explain: 'Together: ' + t(p.top, p.L) + '.', meta: { k: 'g6-add-fill', a: p.a, b: p.b, L: p.L } };
+        }],
+        [1, 'mistake', function () {
+          var p = pairAB(false), who = nm(), truth = !R.int(0, 2), said = truth ? [p.top, p.L] : [p.a[0] + p.b[0], p.a[1] + p.b[1]];
+          return { q: who + ' says <span class="math">' + t(p.a[0], p.a[1]) + ' + ' + t(p.b[0], p.b[1]) + ' = ' + t(said[0], said[1]) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? 'With a common denominator of ' + p.L + ': ' + t(p.top, p.L) + '.' : 'You cannot add the bottoms. Use a common denominator: ' + t(p.top, p.L) + '.', ['Add the tops and add the bottoms.', 'Fractions with different bottoms cannot be added.']),
+            hint: 'Are the denominators the same?', steps: ['Common denominator: ' + p.L + '.'], explain: 'The sum is ' + t(p.top, p.L) + '.', meta: { k: 'g6-add-tf', a: p.a, b: p.b, said: said } };
+        }],
+        [2, 'line', function () {
+          var p = pairAB(false);
+          return { q: 'Place the sum <span class="math">' + t(p.a[0], p.a[1]) + ' + ' + t(p.b[0], p.b[1]) + '</span> on the number line.', type: 'line', min: 0, max: 2, tick: 1 / p.L, every: 1, snap: 1 / p.L, tol: 1e-6, hideValue: true, answer: p.top / p.L,
+            hint: 'Each tick is 1/' + p.L + '.', steps: ['The sum is ' + t(p.top, p.L) + ': ' + p.top + ' ticks from 0.'], explain: 'The sum is ' + t(p.top, p.L) + '.', meta: { k: 'g6-add-line', a: p.a, b: p.b } };
+        }]
+      ],
+      'fr-sub': [
+        [1, 'fill', function () {
+          var p = pairAB(true);
+          return { q: 'Subtract. Write the answer in ' + p.L + 'ths.', type: 'fill', fill: t(p.a[0], p.a[1]) + ' &minus; ' + t(p.b[0], p.b[1]) + ' = [[]]/' + p.L, answers: [p.top],
+            hint: 'Change ' + t(p.a[0], p.a[1]) + ' into ' + p.L + 'ths first.', steps: [t(p.a[0], p.a[1]) + ' = ' + t(p.a[0] * p.L / p.a[1], p.L) + '.', 'Subtract the tops: ' + p.a[0] * p.L / p.a[1] + ' &minus; ' + p.b[0] + ' = ' + p.top + '.'],
+            explain: 'The difference is ' + t(p.top, p.L) + '.', meta: { k: 'g6-sub-fill', a: p.a, b: p.b, L: p.L } };
+        }],
+        [1, 'story', function () {
+          var p = pairAB(true), who = nm(), c = R.pick([['A jug held', 'L of milk', 'drank', 'L'], ['A board was', 'm long', 'cut off', 'm'], ['A bag held', 'kg of rice', 'used', 'kg']]);
+          return { q: c[0] + ' ' + t(p.a[0], p.a[1]) + ' ' + c[1] + '. ' + who + ' ' + c[2] + ' ' + t(p.b[0], p.b[1]) + ' ' + c[3] + '. How much is left?', type: 'fill', fill: '[[]]/' + p.L + ' ' + c[3], answers: [p.top],
+            hint: 'Write both in ' + p.L + 'ths, then subtract.', steps: [t(p.a[0], p.a[1]) + ' = ' + t(p.a[0] * p.L / p.a[1], p.L) + '.', 'Subtract: ' + t(p.top, p.L) + '.'], explain: t(p.top, p.L) + ' ' + c[3] + ' is left.', meta: { k: 'g6-sub-fill', a: p.a, b: p.b, L: p.L } };
+        }],
+        [1, 'mistake', function () {
+          var p = pairAB(true), who = nm(), truth = !R.int(0, 2), said = truth ? [p.top, p.L] : [Math.abs(p.a[0] - p.b[0]) || 1, p.L - p.a[1]];
+          if (!truth && said[0] * p.L === p.top * said[1]) said = [p.top + 1, p.L];
+          return { q: who + ' says <span class="math">' + t(p.a[0], p.a[1]) + ' &minus; ' + t(p.b[0], p.b[1]) + ' = ' + t(said[0], said[1]) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? 'With a common denominator of ' + p.L + ': ' + t(p.top, p.L) + '.' : 'Subtracting tops and bottoms does not work. With ' + p.L + 'ths it is ' + t(p.top, p.L) + '.', ['Subtract the tops and subtract the bottoms.', 'The answer is always smaller than both fractions.']),
+            hint: 'Use a common denominator.', steps: ['Common denominator: ' + p.L + '.'], explain: 'The difference is ' + t(p.top, p.L) + '.', meta: { k: 'g6-sub-tf', a: p.a, b: p.b, said: said } };
+        }]
+      ],
+      'fr-mult': [
+        [1, 'fill', function () {
+          var b = R.pick(BASE), w = R.int(2, 6);
+          return { q: 'Multiply.', type: 'fill', fill: w + ' &times; ' + t(b[0], b[1]) + ' = [[]]/' + b[1], answers: [w * b[0]],
+            hint: w + ' groups of ' + t(b[0], b[1]) + '. Only the top is multiplied.', steps: [w + ' &times; ' + b[0] + ' = ' + w * b[0] + '.'], explain: w + ' &times; ' + t(b[0], b[1]) + ' = ' + t(w * b[0], b[1]) + '.', meta: { k: 'g6-mult-fill', w: w, n: b[0], d: b[1] } };
+        }],
+        [1, 'story', function () {
+          var d = R.pick([2, 3, 4, 5, 6, 8]), n = R.int(1, d - 1), tot = d * R.int(3, 8), c = R.pick([['students in the class walk to school', 'walk'], ['of the books on the shelf are about hockey', 'are about hockey'], ['of the trees in the park are maples', 'are maples']]);
+          return { q: 'There are ' + tot + ' in all. ' + t(n, d) + ' ' + c[0] + '. How many ' + c[1] + '?', type: 'num', answer: n * tot / d, fig: tot <= 40 ? ofArr(n, d, tot) : '',
+            hint: 'Find ' + t(1, d) + ' of ' + tot + ' first.', steps: [tot + ' &divide; ' + d + ' = ' + tot / d + '.', n + ' &times; ' + tot / d + ' = ' + n * tot / d + '.'], explain: t(n, d) + ' of ' + tot + ' is ' + n * tot / d + '.', meta: { k: 'g6-mult-of', n: n, d: d, tot: tot } };
+        }],
+        [1, 'mistake', function () {
+          var b = R.pick(BASE), w = R.int(2, 5), who = nm(), truth = !R.int(0, 2), said = truth ? [w * b[0], b[1]] : [w * b[0], w * b[1]];
+          return { q: who + ' says <span class="math">' + w + ' &times; ' + t(b[0], b[1]) + ' = ' + t(said[0], said[1]) + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(truth ? w + ' groups of ' + b[0] + ' ' + b[1] + 'ths make ' + w * b[0] + ' ' + b[1] + 'ths.' : 'Multiplying the top and bottom by ' + w + ' gives an equal fraction, not ' + w + ' times as much.', ['Multiply the top and the bottom by the whole number.', 'A whole number times a fraction is always less than 1.']),
+            hint: 'Think of ' + w + ' groups of ' + t(b[0], b[1]) + '.', steps: [w + ' &times; ' + t(b[0], b[1]) + ' = ' + t(w * b[0], b[1]) + '.'], explain: w + ' &times; ' + t(b[0], b[1]) + ' = ' + t(w * b[0], b[1]) + '.', meta: { k: 'g6-mult-tf', w: w, n: b[0], d: b[1], said: said } };
+        }],
+        [2, 'match', function () {
+          var items, cards;
+          do {
+            items = R.shuffle(BASE).slice(0, 3).map(function (b, j) { return [j + 2, b]; });
+            cards = items.map(function (it) { return t(it[0] * it[1][0], it[1][1]); });
+          } while (cards[0] === cards[1] || cards[0] === cards[2] || cards[1] === cards[2]);
+          return { q: 'Match each product to its answer.', type: 'match', pairs: items.map(function (it) { return [it[0] + ' &times; ' + t(it[1][0], it[1][1]), t(it[0] * it[1][0], it[1][1])]; }),
+            hint: 'Multiply the top by the whole number.', steps: ['Keep the bottom the same.'], explain: items.map(function (it) { return it[0] + ' &times; ' + t(it[1][0], it[1][1]) + ' = ' + t(it[0] * it[1][0], it[1][1]); }).join('. ') + '.', meta: { k: 'g6-mult-match' } };
+        }]
+      ],
+      'fr-div': [
+        [1, 'story', function () {
+          var w = R.int(2, 6), d = R.pick([2, 3, 4, 5, 8]), c = R.pick([['A ribbon is', 'm long. You cut pieces', 'm long. How many pieces?'], ['You have', 'L of juice. Each glass holds', 'L. How many glasses can you fill?'], ['A trail is', 'km long. There is a marker every', 'km. How many sections are there?']]);
+          return { q: c[0] + ' ' + w + ' ' + c[1] + ' ' + t(1, d) + ' ' + c[2], type: 'num', answer: w * d, fig: jumps(w, 1, d),
+            hint: 'How many ' + t(1, d) + 's are in one whole? In ' + w + '?', steps: ['One whole has ' + d + '.', w + ' &times; ' + d + ' = ' + w * d + '.'], explain: w + ' &divide; ' + t(1, d) + ' = ' + w * d + '.', meta: { k: 'g6-fdiv-num', w: w, d: d } };
+        }],
+        [1, 'mistake', function () {
+          var w = R.int(2, 6), d = R.pick([2, 3, 4, 5]), who = nm(), truth = !R.int(0, 2), said = truth ? w * d : w / d;
+          return { q: who + ' says <span class="math">' + w + ' &divide; ' + t(1, d) + '</span> = <b>' + (truth ? said : t(w, d)) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why('Each whole holds ' + d + ' pieces of size ' + t(1, d) + ', so there are ' + w * d + '.', ['Dividing always makes a number smaller.', 'Divide ' + w + ' by ' + d + '.']),
+            hint: 'How many ' + t(1, d) + 's fit into ' + w + '?', steps: [w + ' &times; ' + d + ' = ' + w * d + '.'], explain: w + ' &divide; ' + t(1, d) + ' = ' + w * d + '.', meta: { k: 'g6-fdiv-tf', w: w, d: d, said: said } };
+        }],
+        [1, 'pick', function () {
+          var target = R.pick([12, 24]), opts = [], seen = {}, wd = [];
+          for (var d = 2; d <= 8; d++) if (target % d === 0 && target / d <= 12) wd.push([target / d, d]);
+          wd = R.shuffle(wd).slice(0, 2);
+          wd.forEach(function (p) { seen[p.join()] = 1; opts.push(p[0] + ' &divide; ' + t(1, p[1])); });
+          while (opts.length < 5) { var w = R.int(2, 9), dd = R.int(2, 6); if (!seen[w + ',' + dd] && w * dd !== target) { seen[w + ',' + dd] = 1; opts.push(w + ' &divide; ' + t(1, dd)); } }
+          opts = R.shuffle(opts);
+          return { q: 'Pick every division that equals <b>' + target + '</b>.', type: 'pick', options: opts, answer: hits(opts, function (s) { var n = s.match(/\d+/g); return n[0] * n[2] === target; }),
+            hint: 'Dividing by ' + t(1, 4) + ' is the same as multiplying by 4.', steps: ['Work out each one: whole number &times; bottom number.'], explain: 'They each make ' + target + '.', meta: { k: 'g6-fdiv-pick', target: target } };
+        }],
+        [2, 'match', function () {
+          var ds = R.shuffle([2, 3, 4, 5, 6]).slice(0, 3), ws = R.shuffle([2, 3, 4, 5]).slice(0, 3), seen = {};
+          var items = ds.map(function (d, j) { return [ws[j], d]; }).filter(function (it) { if (seen[it[0] * it[1]]) return false; seen[it[0] * it[1]] = 1; return true; });
+          if (items.length < 3) items = [[2, 3], [3, 4], [5, 2]];
+          return { q: 'Match each division to its answer.', type: 'match', pairs: items.map(function (it) { return [it[0] + ' &divide; ' + t(1, it[1]), String(it[0] * it[1])]; }),
+            hint: 'How many pieces fit in each whole?', steps: ['Whole number &times; bottom number.'], explain: items.map(function (it) { return it[0] + ' &divide; ' + t(1, it[1]) + ' = ' + it[0] * it[1]; }).join('. ') + '.', meta: { k: 'g6-fdiv-match' } };
+        }]
+      ]
+    };
+    G6.shapes(CH, SHAPES);
+  })();
 })();
