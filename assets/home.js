@@ -1,5 +1,6 @@
-/* Math Atlas home page: the sign-in pop-over, the account menu, and the "My plan" panel for whoever is signed in.
-   The curriculum list is plain HTML in index.html, so it works even if this file cannot load. */
+/* Math Atlas top bar and home page, loaded by index.html and curriculum.html: the sign-in pop-over, the account menu,
+   the "My plan" panel (home page only) and the "Your grade" tag on the curriculum list (curriculum page only).
+   Both pages are plain HTML that works even if this file cannot load. */
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -68,6 +69,7 @@ function setHead(kicker, title) { $('#plan .kicker').textContent = kicker; $('#p
 async function showPlan(st, who) {
   const S = summary(st);
   markGrade(S.grade);
+  if (!body()) return;
   if (S.kind === 'none') {
     if (who && who.role === 'student') {
       setHead('My plan', 'Find your starting point');
@@ -123,7 +125,6 @@ function suggestions(kid) {
 async function showKids(F, me) {
   const word = me.role === 'tutor' ? 'students' : 'children';
   setHead('Plans', me.role === 'tutor' ? 'Your students' : 'Your children');
-  $('#nav-plan').textContent = 'Plans';
   body().innerHTML = '<p class="loading">Loading ' + word + '…</p>';
   const kids = await kidsOf(F, me);
   if (!kids.length) {
@@ -170,6 +171,7 @@ async function kidsOf(F, me) {
 /* ---------- the greeting at the top ---------- */
 function greet(me) {
   const hour = new Date().getHours(), part = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  if (!$('#hello')) return;
   const first = String(me.name || '').trim().split(/\s+/)[0];
   $('#hello').textContent = first ? part + ', ' + first : part;
   if (me.role === 'student') {
@@ -178,12 +180,33 @@ function greet(me) {
   } else {
     $('#hello-role').textContent = me.role === 'tutor' ? 'Tutor' : 'Parent';
     $('#hello-sub').textContent = (me.role === 'tutor' ? 'Your students’' : 'Your children’s') +
-      ' plans, and the whole curriculum for Grades 1 to 8, in one place.';
+      ' plans and progress, in one place.';
   }
 }
 
 /* ---------- sign-in pop-over and account menu ---------- */
 let F = null, lastFocus = null;
+document.body.insertAdjacentHTML('beforeend', `<div class="pop" id="signin" role="dialog" aria-modal="false" aria-labelledby="signin-h" hidden>
+  <div class="pophead"><h2 id="signin-h">Sign in</h2><button type="button" class="x" id="signin-close" aria-label="Close sign in">&times;</button></div>
+  <div class="seg" role="radiogroup" aria-label="Who is signing in">
+    <label><input type="radio" name="who" value="kid" checked><span>Student</span></label>
+    <label><input type="radio" name="who" value="adult"><span>Parent or tutor</span></label>
+  </div>
+  <form id="f-kid" class="sform">
+    <label>Username<input name="u" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Password<input name="p" type="password" autocomplete="current-password" required></label>
+    <button class="hbtn wide" type="submit">Sign in</button>
+    <p class="fb" aria-live="polite"></p>
+    <p class="hint">Forgot your password? Ask the grown-up who made your account.</p>
+  </form>
+  <form id="f-adult" class="sform" hidden>
+    <label>Email<input name="e" type="email" autocomplete="email" required></label>
+    <label>Password<input name="p" type="password" autocomplete="current-password" required></label>
+    <button class="hbtn wide" type="submit">Sign in</button>
+    <p class="fb" aria-live="polite"></p>
+    <p class="hint"><button type="button" class="link" id="forgot">Forgot password?</button> · <a href="family.html">Create an account</a></p>
+  </form>
+</div>`);
 const pop = $('#signin');
 function openPop() {
   lastFocus = document.activeElement;
@@ -291,10 +314,11 @@ async function start() {
       const remote = p && p.exists() && p.data().data ? parse(p.data().data.state, null) : null;
       await showPlan(remote || localPlan(), me);
       const kid = k && k.exists() ? k.data() : null, sug = suggestions(kid);
-      if (sug) body().insertAdjacentHTML('beforeend', sug);
+      if (sug && body()) body().insertAdjacentHTML('beforeend', sug);
     } else if (me.role) {
-      await showKids(F, me);
-    } else {
+      $('#nav-plan').textContent = 'Plans';
+      if (body()) await showKids(F, me);
+    } else if (body()) {
       body().insertAdjacentHTML('afterbegin', '<div class="msg"><b>One more step</b>Finish setting up your account on the <a href="family.html">family page</a>.</div>');
     }
   });
