@@ -114,6 +114,13 @@
         watch: { tool: 'g1strip', opts: strip([], { tap: false, slots: 8 }), steps: ['rc', 'bs', 'rc', 'bs', 'rc', 'bs'].map(function (k, i) {
           return { say: i < 2 ? (i ? 'Blue square.' : 'Red circle.') : i === 5 ? 'Red, blue, red, blue. It keeps <b>repeating</b>. That makes it a pattern.' : 'Again: ' + SH[k].n + '.', act: function (t) { return t.add(k); }, ms: i === 5 ? 1800 : 600 };
         }) },
+        example: { tool: 'g1strip', opts: strip([], { tap: false, slots: 8 }), steps: [
+          { say: 'My turn. I will make a pattern. First a blue square.', act: function (t) { return t.add('bs'); }, ms: 900 },
+          { say: 'Then a yellow triangle.', act: function (t) { return t.add('yt'); }, ms: 900 },
+          { say: 'Now I repeat it: square, triangle.', act: function (t) { return t.add('bs').then(function () { return t.add('yt'); }); }, ms: 900 },
+          { say: 'And again: square, triangle.', act: function (t) { return t.add('bs').then(function () { return t.add('yt'); }); }, ms: 900 },
+          { say: 'Square, triangle keeps <b>repeating</b>. So this is a pattern.', ms: 1800 }
+        ] },
         try: { tool: 'g1strip', opts: strip([], { max: 10 }), tasks: [
           { do: 'Make a pattern: <b>yellow triangle, green star</b>, again and again. Make at least 6.', goal: function (s) { return s.n >= 6 && repeats(s.seq, ['yt', 'gs']); }, yes: 'Yes. Triangle, star repeats. That is a pattern.' }
         ] },
@@ -125,6 +132,11 @@
           { say: 'Look at this pattern.', act: function (t) { return t.show(row(rep(['rc', 'rc', 'bs'], 9))); }, ms: 1400 },
           { say: 'Find where it starts again. Draw a line after each core.', act: function (t) { return t.show(row(rep(['rc', 'rc', 'bs'], 9), { core: 3 })); }, ms: 1600 },
           { say: 'The core is <b>red, red, blue</b>. It repeats 3 times.', ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. What is the core of this pattern?', act: function (t) { return t.show(row(rep(['bs', 'yt', 'yt'], 9))); }, ms: 1400 },
+          { say: 'I look for where it starts again. After square, triangle, triangle, the square comes back. I draw a line there.', act: function (t) { return t.show(row(rep(['bs', 'yt', 'yt'], 9), { core: 3 })); }, ms: 2000 },
+          { say: 'The core is <b>square, triangle, triangle</b>. It repeats 3 times.', ms: 1800 }
         ] },
         try: { tool: 'g1strip', opts: strip([], { max: 10 }), tasks: [
           { do: 'Make a pattern with the core <b>circle, circle, star</b>. Show the core 2 times.', goal: function (s) { return repeats(s.seq, ['rc', 'rc', 'gs']); }, yes: 'Circle, circle, star, circle, circle, star.' }
@@ -142,6 +154,12 @@
           { say: 'What comes next? <b>Square</b>.', act: function (t) { return t.add('bs'); }, ms: 900 },
           { say: 'Then <b>circle</b>, then <b>square</b>.', act: function (t) { return t.add('rc').then(function () { return t.add('bs'); }); }, ms: 1800 }
         ] },
+        example: { tool: 'g1strip', opts: strip(rep(['gs', 'rc'], 5), { tap: false }), steps: [
+          { say: 'My turn. I say it out loud: star, circle, star, circle, star ...', ms: 1700 },
+          { say: 'The core is star, circle. After a star comes a <b>circle</b>.', act: function (t) { return t.add('rc'); }, ms: 1000 },
+          { say: 'Then <b>star</b>, then <b>circle</b>.', act: function (t) { return t.add('gs').then(function () { return t.add('rc'); }); }, ms: 1000 },
+          { say: 'I said it, found the core and kept it going.', ms: 1700 }
+        ] },
         try: { tool: 'g1strip', opts: strip(rep(['yt', 'gs', 'gs'], 5), { max: 11 }), tasks: [
           { do: 'Add the <b>next 3</b> shapes.', goal: function (s) { return s.added.length === 3 && repeats(s.seq, ['yt', 'gs', 'gs']); }, yes: 'Star, triangle, star. The core triangle, star, star keeps going.' }
         ] },
@@ -153,6 +171,13 @@
           { say: 'Red, red, yellow, yellow, red, red ...', ms: 1600 },
           { say: 'The core has 4 parts: red, red, yellow, yellow. Next: yellow.', act: function (t) { return t.add('yt'); }, ms: 900 },
           { say: 'Then yellow again, then red, red.', act: function (t) { return t.add('yt').then(function () { return t.add('rc'); }); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1strip', opts: strip(rep(['gs', 'yt', 'yt', 'bs'], 6), { tap: false }), steps: [
+          { say: 'My turn. Star, triangle, triangle, square, star, triangle ...', ms: 1700 },
+          { say: 'I find the whole core: star, triangle, triangle, square. It has 4 parts.', ms: 1700 },
+          { say: 'The row stops after the first triangle. Next is the second triangle.', act: function (t) { return t.add('yt'); }, ms: 1100 },
+          { say: 'Then square. Then the core starts again with a star.', act: function (t) { return t.add('bs').then(function () { return t.add('gs'); }); }, ms: 1100 },
+          { say: 'I found the <b>whole core</b>, then repeated it.', ms: 1700 }
         ] },
         try: { tool: 'g1strip', opts: strip(rep(['bs', 'yt', 'gs'], 4), { max: 10 }), tasks: [
           { do: 'Add the next <b>3</b> shapes.', goal: function (s) { return s.added.length === 3 && repeats(s.seq, ['bs', 'yt', 'gs']); }, yes: 'Triangle, star, square. The core has 3 parts.' }
@@ -174,6 +199,12 @@
           { say: 'Star, square, star, <b>?</b> ... After a star comes a square.', ms: 1600 },
           { say: 'The missing shape is a <b>blue square</b>.', act: function (t) { return t.show(row(rep(['gs', 'bs'], 7))); }, ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Something is missing.', act: function (t) { return t.show(row(rep(['bs', 'gs', 'gs'], 9), { gap: 5 })); }, ms: 1400 },
+          { say: 'I say it: square, star, star, square, star, <b>?</b>', ms: 1600 },
+          { say: 'The core is square, star, star. After square, star comes another star.', ms: 1700 },
+          { say: 'The missing shape is a <b>green star</b>.', act: function (t) { return t.show(row(rep(['bs', 'gs', 'gs'], 9))); }, ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['rc', 'yt', 'gs'].map(function (k) { return { id: k, html: one(k), label: SH[k].n }; }) }, tasks: [
           { do: 'What is missing? <div class="fig">' + row(rep(['rc', 'yt', 'yt'], 8), { gap: 4 }) + '</div>', goal: function (s) { return s.picked[0] === 'yt'; }, yes: 'Red, yellow, yellow, red, yellow, yellow. A yellow triangle is missing.' }
         ] },
@@ -190,6 +221,12 @@
           { say: 'Star is A. Circle is B. So it is <b>A B B A B B</b>.', act: function (t) { return t.show(row(rep(['gs', 'rc', 'rc'], 6)) + '<p class="big">A B B A B B</p>'); }, ms: 1800 },
           { say: 'Clap, stomp, stomp has the same core. It is the same pattern.', ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Triangle, triangle, square ...', act: function (t) { return t.show(row(rep(['yt', 'yt', 'bs'], 6))); }, ms: 1400 },
+          { say: 'I give each new shape a letter. Triangle is A. Square is B.', ms: 1600 },
+          { say: 'So the pattern is <b>A A B A A B</b>.', act: function (t) { return t.show(row(rep(['yt', 'yt', 'bs'], 6)) + '<p class="big">A A B A A B</p>'); }, ms: 1700 },
+          { say: 'Stomp, stomp, clap is also A A B. Same core, same pattern.', ms: 1900 }
+        ] },
         try: { tool: 'g1strip', opts: strip([], { max: 10 }), tasks: [
           { do: 'Make an <b>A B B</b> pattern with any shapes. Show the core 2 times.', goal: function (s) { var c = s.seq.slice(0, 3); return c[0] !== c[1] && c[1] === c[2] && repeats(s.seq, c); }, yes: 'That is an A B B pattern.' }
         ] },
@@ -204,6 +241,12 @@
           { say: 'Start at 2. Add 2 each time.', act: function (t) { return t.skip(2, 2, 20, 450); }, ms: 800 },
           { say: '2, 4, 6, 8 ... The rule is <b>add 2</b>.', ms: 1800 }
         ] },
+        example: { tool: 'hundred', opts: { to: 50 }, steps: [
+          { say: 'My turn. What is the rule? 5, 10, 15, 20, 25, 30.', act: function (t) { return t.skip(5, 5, 30, 450); }, ms: 900 },
+          { say: 'I look at two numbers next to each other: 5 and 10. 10 is 5 more than 5.', ms: 1700 },
+          { say: 'I check the next two: 10 and 15. 15 is 5 more too.', ms: 1600 },
+          { say: 'The rule is <b>add 5</b>.', ms: 1700 }
+        ] },
         try: { tool: 'hundred', opts: { to: 50 }, tasks: [
           { do: 'Start at 3. Add 10 each time. Tap <b>3, 13, 23, 33, 43</b>.', goal: function (s) { return [3, 13, 23, 33, 43].every(function (v) { return s.lit.indexOf(v) >= 0; }); }, yes: 'Add 10 goes straight down the chart.' }
         ] },
@@ -212,6 +255,13 @@
       { id: 'grow', title: 'Patterns that grow', exp: ['C1.4'], skill: 'p-num',
         body: '<p>Some patterns <b>grow</b>. A tower gets 1 block taller each day: 1, 2, 3, 4.</p>',
         watch: { tool: 'g1stage', steps: [1, 2, 3, 4, 5].map(function (n) { return { say: n < 5 ? 'Day ' + n + ': ' + n + ' block' + (n > 1 ? 's' : '') + '.' : 'Each day, add 1. The rule is <b>add 1</b>.', act: function (t) { return t.show(tower([1, 2, 3, 4, 5].slice(0, Math.min(n, 4)))); }, ms: n === 5 ? 1800 : 900 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Day 1: 1 block.', act: function (t) { return t.show(tower([1])); }, ms: 1000 },
+          { say: 'Day 2: 3 blocks.', act: function (t) { return t.show(tower([1, 3])); }, ms: 1000 },
+          { say: 'Day 3: 5 blocks.', act: function (t) { return t.show(tower([1, 3, 5])); }, ms: 1000 },
+          { say: 'I look at the change: 1 to 3 is 2 more. 3 to 5 is 2 more. The rule is <b>add 2</b>.', ms: 1900 },
+          { say: 'So day 4 will have 5 + 2 = <b>7</b> blocks. It grows by the same amount each time.', act: function (t) { return t.show(tower([1, 3, 5]) + '<p class="big">1, 3, 5, 7</p>'); }, ms: 1900 }
+        ] },
         key: '<p>A growing pattern gets bigger by the <b>same amount</b> each time.</p>',
         check: [P('p-num', 3), P('p-num', 2)] }
     ] },
@@ -219,6 +269,12 @@
     { id: 'change', title: 'Changes or stays the same', sub: 'Some things change. Some do not.', concepts: [
       { id: 'change', title: 'Change or stay the same?', exp: ['C2.1'], skill: 'p-change',
         body: '<p>Some things <b>change</b>: how tall you are, the weather, your age. Some things <b>stay the same</b>: a week always has 7 days.</p>',
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Does the number of legs on a dog change?', act: function (t) { return t.show('<p class="big">Legs on a dog</p>'); }, ms: 1400 },
+          { say: 'I ask: will it be different tomorrow or next year? No. A dog has 4 legs. It <b>stays the same</b>.', ms: 2000 },
+          { say: 'Now: how long your hair is.', act: function (t) { return t.show('<p class="big">How long your hair is</p>'); }, ms: 1300 },
+          { say: 'Will it be different next year? Yes. Hair grows. It <b>changes</b>.', ms: 1900 }
+        ] },
         try: { tool: 'g1pick', opts: { cols: 2, items: [
           { id: 'c1', html: '<span>How tall you are</span>' }, { id: 's1', html: '<span>Days in a week</span>' },
           { id: 'c2', html: '<span>The weather</span>' }, { id: 's2', html: '<span>Wheels on a bicycle</span>' }] }, tasks: [

@@ -184,6 +184,12 @@
           { say: 'No. One plate has more. They are <b>not equal</b>.', ms: 1400 },
           { say: 'Now every plate has 2. These are <b>equal groups</b>.', act: function (t) { return t.show(plates(3, 2)); }, ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Are these equal groups? I count each plate: 4, 4, 3.', act: function (t) { return t.show(uneq([4, 4, 3])); }, ms: 1700 },
+          { say: 'The last plate has only 3. The groups are <b>not equal</b>.', ms: 1500 },
+          { say: 'I put 1 more cookie on that plate. Now every plate has 4.', act: function (t) { return t.show(plates(3, 4)); }, ms: 1600 },
+          { say: 'These are <b>equal groups</b>: the same number in each group.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, cols: 1, items: [{ id: 'y', html: plates(4, 3) }, { id: 'n', html: uneq([3, 1, 4, 3]) }] }, tasks: [
           { do: 'Tap the picture that shows <b>equal groups</b>.', goal: function (s) { return s.picked[0] === 'y'; }, yes: 'Yes. Every plate has 3 cookies.' }
         ] },
@@ -195,6 +201,12 @@
           { say: '5 groups of 2.', ms: 1200 },
           { say: 'Count by 2s: 2, 4, 6, 8, 10.', act: function (t) { return t.countAll(260); }, ms: 900 },
           { say: '5 groups of 2 make <b>10</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. There are 3 plates. Each plate has 5 cookies. How many cookies?', act: function (t) { return t.show(plates(3, 5)); }, ms: 1700 },
+          { say: 'The groups are equal, so I do not count by 1s. I skip count by 5s.', ms: 1600 },
+          { say: '5, 10, 15.', ms: 1300 },
+          { say: '3 groups of 5 make <b>15</b>. I counted equal groups by skip counting.', ms: 1900 }
         ] },
         try: { tool: 'counters', opts: { n: 20, arrange: 'tens', controls: ['tens'], max: 50 }, tasks: [
           { do: 'Make <b>3 groups of 10</b>. Count by 10s.', goal: function (s) { return s.n === 30 && s.mode === 'tens'; }, yes: '10, 20, 30. 3 groups of 10 make 30.' }
@@ -209,6 +221,12 @@
         watch: { tool: 'g1stage', steps: [0, 1, 2, 3, 4, 5, 6].map(function (k) {
           return { say: k ? (k < 6 ? 'One for ' + (k % 2 ? 'Mia' : 'Leo') + '.' : 'Each gets <b>3</b>. That is fair.') : 'Mia and Leo share 6 cookies.', act: function (t) { return t.show(share(k, 2, { names: ['Mia', 'Leo'] })); }, ms: k === 6 ? 1800 : 700 };
         }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Mia, Leo, Ava and Sam share 8 cookies.', act: function (t) { return t.show(share(0, 4, { names: ['Mia', 'Leo', 'Ava', 'Sam'] })); }, ms: 1500 },
+          { say: 'I give one cookie to each person.', act: function (t) { return t.show(share(4, 4, { names: ['Mia', 'Leo', 'Ava', 'Sam'] })); }, ms: 1500 },
+          { say: 'I go around again: one more for each person.', act: function (t) { return t.show(share(8, 4, { names: ['Mia', 'Leo', 'Ava', 'Sam'] })); }, ms: 1500 },
+          { say: 'None are left. Each gets <b>2</b>. The shares are equal, so it is fair.', ms: 1900 }
+        ] },
         try: dealer(9, 3, 'Fair: everyone has 3 cookies.'),
         key: '<p>Fair shares are <b>equal</b>. Give out one at a time.</p>',
         check: [P('g-share', 1), P('g-share', 1)] },
@@ -218,6 +236,12 @@
           { say: '7 cookies for Mia and Leo. Deal them out.', act: function (t) { return t.show(share(6, 2, { names: ['Mia', 'Leo'] })); }, ms: 1500 },
           { say: 'Each has 3. One is <b>left over</b>.', act: function (t) { return t.show(share(7, 2, { names: ['Mia', 'Leo'] })); }, ms: 1700 },
           { say: 'Cut it in half. Each gets 3 and one half.', act: function (t) { return t.show(share(7, 2, { names: ['Mia', 'Leo'], cut: true })); }, ms: 2000 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Mia and Leo share 5 cookies. I deal them one at a time.', act: function (t) { return t.show(share(4, 2, { names: ['Mia', 'Leo'] })); }, ms: 1600 },
+          { say: 'Each has 2. There is 1 more cookie. It is <b>left over</b>.', act: function (t) { return t.show(share(5, 2, { names: ['Mia', 'Leo'] })); }, ms: 1700 },
+          { say: 'To keep it fair, I cut the last cookie in half.', act: function (t) { return t.show(share(5, 2, { names: ['Mia', 'Leo'], cut: true })); }, ms: 1600 },
+          { say: 'Each gets 2 cookies and one half. Left over pieces can be <b>cut</b> or set aside.', ms: 1900 }
         ] },
         try: dealer(10, 3, 'Each has 3, and 1 cookie is left over.'),
         ways: [{ label: 'With counters', html: '<p>Put out 7 counters. Make 2 rows, one counter in each row at a time. The extra counter has no partner. It is left over.</p>', tool: 'counters', opts: { n: 7, arrange: 'pairs' } }],
@@ -235,6 +259,12 @@
           { say: 'Each part is <b>one half</b>.', act: function (t) { return t.shade(1); }, ms: 1400 },
           { say: 'Two halves make one whole.', act: function (t) { return t.shade(2); }, ms: 1800 }
         ] },
+        example: { tool: 'fractions', opts: { parts: 1, words: true }, steps: [
+          { say: 'My turn. This strip is a granola bar. I want to show one half.', ms: 1400 },
+          { say: 'I cut it into 2 parts. I check: the parts are the same size.', act: function (t) { return t.split(2); }, ms: 1300 },
+          { say: 'I shade one part. That is <b>one half</b>.', act: function (t) { return t.shade(1); }, ms: 1400 },
+          { say: 'One half is one of 2 equal parts.', ms: 1700 }
+        ] },
         try: { tool: 'fractions', opts: { parts: 1, choices: [1, 2, 4], words: true }, tasks: [
           { do: 'Cut the strip into <b>halves</b>. Then shade <b>one half</b>.', goal: function (s) { return s[0].d === 2 && s[0].n === 1; }, yes: 'Yes. One of 2 equal parts is one half.' }
         ] },
@@ -242,6 +272,12 @@
         check: [P('g-half', 1), P('g-half', 1)] },
       { id: 'not-half', title: 'Halves must be equal', exp: ['B1.7'], skill: 'g-half', hard: true,
         body: '<p>Any cut into 2 parts is <b>not</b> halves. The 2 parts must be the <b>same size</b>.</p><div class="vrow"><figure>' + pizza(2, 1) + '<figcaption>halves</figcaption></figure><figure>' + pizza(2, 1, { bad: true }) + '<figcaption>not halves</figcaption></figure></div>',
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Is this bar cut into halves? I look at the 2 parts.', act: function (t) { return t.show(bar(2, 1, { bad: true })); }, ms: 1600 },
+          { say: 'One part is small. One part is big. They are not equal, so they are <b>not halves</b>.', ms: 1900 },
+          { say: 'Now I cut a bar right in the middle.', act: function (t) { return t.show(bar(2, 1)); }, ms: 1300 },
+          { say: 'The 2 parts are the same size. These are <b>halves</b>. Halves are 2 equal parts.', ms: 1900 }
+        ] },
         try: { tool: 'g1pick', opts: { items: [{ id: 'a', html: pizza(2, 0) }, { id: 'b', html: pizza(2, 0, { bad: true }) }, { id: 'c', html: bar(2, 0) }, { id: 'd', html: bar(2, 0, { bad: true }) }] }, tasks: [
           { do: 'Tap <b>every</b> one that is cut into halves.', goal: function (s) { return s.n === 2 && s.picked.indexOf('a') >= 0 && s.picked.indexOf('c') >= 0; }, yes: 'Yes. Those parts are the same size.' }
         ] },
@@ -263,6 +299,13 @@
           { say: 'Each part is <b>one fourth</b>.', act: function (t) { return t.shade(1); }, ms: 1400 },
           { say: 'Four fourths make one whole.', act: function (t) { return t.shade(4); }, ms: 1800 }
         ] },
+        example: { tool: 'fractions', opts: { parts: 1, words: true }, steps: [
+          { say: 'My turn. I will cut this strip into fourths.', ms: 1200 },
+          { say: 'I cut it into 4 parts. I check: all 4 are the same size.', act: function (t) { return t.split(4); }, ms: 1300 },
+          { say: 'I shade one part. That is <b>one fourth</b>.', act: function (t) { return t.shade(1); }, ms: 1300 },
+          { say: 'I shade one more. Two parts are <b>two fourths</b>.', act: function (t) { return t.shade(2); }, ms: 1300 },
+          { say: 'One fourth is one of 4 equal parts. 4 fourths make the whole.', ms: 1800 }
+        ] },
         try: { tool: 'fractions', opts: { parts: 1, choices: [1, 2, 4], words: true }, tasks: [
           { do: 'Cut the strip into <b>fourths</b>. Shade <b>one fourth</b>.', goal: function (s) { return s[0].d === 4 && s[0].n === 1; }, yes: 'One of 4 equal parts is one fourth.' },
           { do: 'Now shade <b>three fourths</b>.', reset: false, goal: function (s) { return s[0].d === 4 && s[0].n === 3; }, yes: 'Three of the 4 equal parts: three fourths.' }
@@ -275,6 +318,12 @@
           { say: 'The top strip is in halves. The bottom strip is in fourths.', ms: 1500 },
           { say: 'Shade one half.', act: function (t) { return t.shade(1, 0); }, ms: 900 },
           { say: 'Shade two fourths. They line up: <b>one half = two fourths</b>.', act: function (t) { return t.shade(2, 1); }, ms: 2000 }
+        ] },
+        example: { tool: 'fractions', opts: { wall: [2, 4], words: true }, steps: [
+          { say: 'My turn. The top strip is in halves. The bottom strip is in fourths.', ms: 1500 },
+          { say: 'I shade two fourths on the bottom strip.', act: function (t) { return t.shade(2, 1); }, ms: 1100 },
+          { say: 'I shade one half on the top strip.', act: function (t) { return t.shade(1, 0); }, ms: 1100 },
+          { say: 'They end in the same place. <b>One half = two fourths</b>.', ms: 1900 }
         ] },
         try: { tool: 'fractions', opts: { wall: [2, 4], words: true }, tasks: [
           { do: 'Shade one half on the top strip. Then shade the same amount on the bottom strip.', goal: function (s) { return s[0].n === 1 && s[1].n === 2; }, yes: 'One half is two fourths.' }
@@ -291,6 +340,13 @@
           { say: '2 people: each gets one half.', act: function (t) { return t.shade(1, 1); }, ms: 1200 },
           { say: '4 people: each gets one fourth. Smaller.', act: function (t) { return t.shade(1, 2); }, ms: 1400 },
           { say: 'More sharers, <b>smaller pieces</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Mia shares a pizza with 1 friend. Ben shares the same size pizza with 3 friends. Who gets more?', ms: 2100 },
+          { say: 'Mia: 2 people, so the pizza is cut in 2. Mia gets <b>one half</b>.', act: function (t) { return t.show(pizza(2, 1)); }, ms: 1700 },
+          { say: 'Ben: 4 people, so the pizza is cut in 4. Ben gets <b>one fourth</b>.', act: function (t) { return t.show(pizza(4, 1)); }, ms: 1700 },
+          { say: 'I put them side by side. One half is bigger. Mia gets more.', act: function (t) { return t.show('<div class="vrow">' + pizza(2, 1) + pizza(4, 1) + '</div>'); }, ms: 1700 },
+          { say: 'More sharers, <b>smaller</b> pieces.', ms: 1700 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: 'h', html: pizza(2, 1) + '<span>shared by 2</span>' }, { id: 'f', html: pizza(4, 1) + '<span>shared by 4</span>' }] }, tasks: [
           { do: 'Which gives a <b>bigger</b> piece?', goal: function (s) { return s.picked[0] === 'h'; }, yes: 'Sharing with fewer people gives bigger pieces. One half is bigger than one fourth.' }
