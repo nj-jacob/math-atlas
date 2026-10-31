@@ -529,7 +529,7 @@
     'al-next': [
       [1, 'fill', function (lv) {
         var grow = lv === 1 || !R.int(0, 1), step = R.int(2, lv === 1 ? 5 : 12), seq = seqOf(grow ? R.int(1, 30) : R.int(80, 140), grow ? step : -step, 5);
-        return { q: 'Fill in the next two terms.', type: 'fill', fill: mth(seq.slice(0, 3).join(', ') + ', [[]], [[]]'), answers: seq.slice(3),
+        return { q: 'Fill in the next two terms.', type: 'fill', fill: seq.slice(0, 3).join(', ') + ', [[]], [[]]', answers: seq.slice(3),
           hint: 'Find the step between two terms next to each other.', steps: ['The step is ' + (grow ? '+' : '&minus;') + step + '.', seq[2] + (grow ? ' + ' : ' &minus; ') + step + ' = ' + seq[3] + '. Then ' + seq[4] + '.'],
           explain: 'The pattern ' + (grow ? 'adds ' : 'subtracts ') + step + ': ' + seq.join(', ') + '.', meta: { k: 'g5al-fill' } };
       }],
@@ -588,7 +588,7 @@
         var st = lv === 1 ? R.pick([1, 2, 5]) : R.pick([1, 2, 5, 25]), up = lv === 1 || !R.int(0, 1), unit = lv === 1 ? 10 : R.pick([10, 1]), c = R.int(1, 30) * 5;
         if (!up) c += 4 * st * unit;
         var seq = seqOf(c, (up ? 1 : -1) * st * unit, 5).map(function (v) { return A.clean(v / 100); });
-        return { q: 'Fill in the next two terms.', type: 'fill', fill: mth(seq.slice(0, 3).join(', ') + ', [[]], [[]]'), answers: seq.slice(3),
+        return { q: 'Fill in the next two terms.', type: 'fill', fill: seq.slice(0, 3).join(', ') + ', [[]], [[]]', answers: seq.slice(3),
           hint: 'Find the step. 10 hundredths make 1 tenth, and 10 tenths make 1 whole.', steps: ['The step is ' + (up ? '+' : '&minus;') + A.clean(st * unit / 100) + '.', 'Keep going: ' + seq[3] + ', ' + seq[4] + '.'],
           explain: seq.join(', ') + '.', meta: { k: 'g5al-decfill' } };
       }],

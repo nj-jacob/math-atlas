@@ -639,7 +639,7 @@ moves() +
       [2, 'fill', function (lv) {
         var a = R.int(3, 14) * 5, b = R.int(3, 14) * 5;
         while (a + b >= 170) b = R.int(3, 10) * 5;
-        return { q: 'Find the missing angle.', type: 'fill', fig: angTri(a, b, 180 - a - b, 2), fill: '<span class="math">' + a + '&deg; + ' + b + '&deg; + [[]]&deg; = 180&deg;</span>', answers: [180 - a - b],
+        return { q: 'Find the missing angle.', type: 'fill', fig: angTri(a, b, 180 - a - b, 2), fill: a + '&deg; + ' + b + '&deg; + [[]]&deg; = 180&deg;', answers: [180 - a - b],
           hint: 'The three angles of a triangle add to 180&deg;.', steps: [a + ' + ' + b + ' = ' + (a + b) + '.', '180 &minus; ' + (a + b) + ' = ' + (180 - a - b) + '.'],
           explain: 'The missing angle is ' + (180 - a - b) + '&deg;.', meta: { k: 'g5sg-trifill' } };
       }]

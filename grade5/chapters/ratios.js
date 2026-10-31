@@ -361,7 +361,7 @@
       }],
       [1, 'story', function (lv) {
         var p = pair(lv), a = p[0] + 10, b = p[1] + 10, c = R.pick([['girls', 'boys', 'in a class'], ['maple trees', 'pine trees', 'in a park'], ['red apples', 'green apples', 'in a basket']]), rev = !R.int(0, 1);
-        return { q: 'There are ' + a + ' ' + c[0] + ' and ' + b + ' ' + c[1] + ' ' + c[2] + '. Write the ratio of <b>' + (rev ? c[1] + ' to ' + c[0] : c[0] + ' to ' + c[1]) + '</b>.', type: 'fill', fill: mth('[[]] : [[]]'), answers: rev ? [b, a] : [a, b],
+        return { q: 'There are ' + a + ' ' + c[0] + ' and ' + b + ' ' + c[1] + ' ' + c[2] + '. Write the ratio of <b>' + (rev ? c[1] + ' to ' + c[0] : c[0] + ' to ' + c[1]) + '</b>.', type: 'fill', fill: ('[[]] : [[]]'), answers: rev ? [b, a] : [a, b],
           hint: 'Which comes first in the words?', steps: ['The first word is ' + (rev ? c[1] : c[0]) + ', so that number goes first.'],
           explain: 'The ratio is ' + (rev ? b + ':' + a : a + ':' + b) + '.', meta: { k: 'g5ra-story', rev: rev } };
       }],

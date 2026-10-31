@@ -557,7 +557,7 @@ benchmarks() +
     'me-conv': [
       [1, 'fill', function (lv) {
         var us = R.shuffle(Object.keys(UNITS)).slice(0, 2), xs = us.map(function () { return lv === 1 ? R.int(2, 9) : A.clean(R.int(11, 99) / 10); });
-        return { q: 'Fill in the blanks.', type: 'fill', fill: us.map(function (u, i) { return mth(xs[i] + ' ' + u + ' = [[]] ' + UNITS[u].to); }).join('<br>'), answers: us.map(function (u, i) { return A.clean(xs[i] * UNITS[u].f); }),
+        return { q: 'Fill in the blanks.', type: 'fill', fill: us.map(function (u, i) { return (xs[i] + ' ' + u + ' = [[]] ' + UNITS[u].to); }).join('<br>'), answers: us.map(function (u, i) { return A.clean(xs[i] * UNITS[u].f); }),
           hint: 'Going to a smaller unit, multiply.', steps: us.map(function (u, i) { return '1 ' + u + ' = ' + A.fmt(UNITS[u].f) + ' ' + UNITS[u].to + ', so ' + xs[i] + ' &times; ' + A.fmt(UNITS[u].f) + ' = ' + A.fmt(A.clean(xs[i] * UNITS[u].f)) + '.'; }),
           explain: us.map(function (u, i) { return xs[i] + ' ' + u + ' = ' + A.fmt(A.clean(xs[i] * UNITS[u].f)) + ' ' + UNITS[u].to; }).join('. ') + '.', meta: { k: 'g5me-convfill' } };
       }],

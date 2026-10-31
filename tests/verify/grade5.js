@@ -262,6 +262,7 @@
   set('g5mo-taxfill', q => { const p = dollars(q.fill)[0], t = Math.round(p * 13) / 100; return H.close(q.answers[0], t, 1e-6) && H.close(q.answers[1], p + t, 1e-6) ? '' : 'receipt'; });
   set('g5mo-taxstory', q => { const v = dollars(q.q); return H.close(q.answer, v[2] - v[0] - v[1], 1e-6) ? '' : 'change'; });
   set('g5mo-taxtf', (q, m) => (cash5(m.p) === m.said) === q.answer ? '' : 'truth');
+  set('g5mo-taxbuild', (q, m) => q.tool === 'coins' && Math.abs(dollars(q.q)[0] * 100 - m.p) < 1e-6 && q.answer === cash5(m.p) ? '' : 'cash');
   set('g5mo-taxwhich', q => H.strip(q.options[q.answer]).startsWith('Find 13%') ? '' : 'method');
   set('g5mo-budfill', q => { const v = nums(q.fill); return q.answers[0] === v[0] - v[1] - v[2] ? '' : 'wants'; });
   set('g5mo-budstory', q => { const v = dollars(q.q); return q.answer * v[0] === v[1] ? '' : 'weeks'; });

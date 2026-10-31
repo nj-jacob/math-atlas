@@ -417,7 +417,7 @@
       }],
       [1, 'fill', function (lv) {
         var a = R.int(3, lv === 1 ? 9 : 12), b = R.int(3, lv === 1 ? 9 : 12), p = a * b;
-        return { q: 'Fill in the fact family.', type: 'fill', fill: mth(a + ' &times; [[]] = ' + p) + '<br>' + mth(p + ' &divide; ' + a + ' = [[]]'), answers: [b, b], fig: lv === 1 ? arr(a, b) : '',
+        return { q: 'Fill in the fact family.', type: 'fill', fill: (a + ' &times; [[]] = ' + p) + '<br>' + (p + ' &divide; ' + a + ' = [[]]'), answers: [b, b], fig: lv === 1 ? arr(a, b) : '',
           hint: 'Division undoes multiplication. ' + a + ' times what is ' + p + '?', steps: [a + ' &times; ' + b + ' = ' + p + '.', 'So ' + p + ' &divide; ' + a + ' = ' + b + '.'],
           explain: a + ' &times; ' + b + ' = ' + p + ' and ' + p + ' &divide; ' + a + ' = ' + b + '.', meta: { k: 'g5md-fill' } };
       }],
@@ -433,7 +433,7 @@
       [1, 'fill', function (lv) {
         var a = R.int(12, 49), b = lv === 1 ? R.int(3, 9) : R.int(11, 29), t = Math.floor(a / 10) * 10, o = a % 10;
         if (!o) { a++; o = 1; }
-        return { q: 'Use the area model. Fill in the blanks.', type: 'fill', fill: mth(a + ' &times; ' + b + ' = ' + t + ' &times; ' + b + ' + ' + o + ' &times; ' + b) + '<br>' + mth('= [[]] + [[]] = [[]]'), answers: [t * b, o * b, a * b],
+        return { q: 'Use the area model. Fill in the blanks.', type: 'fill', fill: (a + ' &times; ' + b + ' = ' + t + ' &times; ' + b + ' + ' + o + ' &times; ' + b) + '<br>' + ('= [[]] + [[]] = [[]]'), answers: [t * b, o * b, a * b],
           fig: lv === 1 ? areaModel(a, b, null, 0) : '', hint: 'Multiply the tens part, then the ones part, then add.', steps: [t + ' &times; ' + b + ' = ' + t * b + '.', o + ' &times; ' + b + ' = ' + o * b + '.', t * b + ' + ' + o * b + ' = ' + A.fmt(a * b) + '.'],
           explain: a + ' &times; ' + b + ' = ' + A.fmt(a * b) + '.', meta: { k: 'g5md-multfill' } };
       }],
@@ -462,7 +462,7 @@
     'md-div': [
       [1, 'fill', function (lv) {
         var d = R.int(11, lv === 1 ? 15 : 25), q = lv === 1 ? R.int(2, 9) * 10 : R.int(11, Math.floor(999 / d)), n = d * q;
-        return { q: 'Fill in the blanks, then check by multiplying.', type: 'fill', fill: mth(n + ' &divide; ' + d + ' = [[]]') + '<br>' + mth('because ' + d + ' &times; [[]] = ' + n), answers: [q, q],
+        return { q: 'Fill in the blanks, then check by multiplying.', type: 'fill', fill: (n + ' &divide; ' + d + ' = [[]]') + '<br>' + ('because ' + d + ' &times; [[]] = ' + n), answers: [q, q],
           fig: lv === 1 ? divModel(n, d) : '', hint: 'How many groups of ' + d + ' make ' + n + '? Start with ' + d + ' &times; 10 = ' + d * 10 + '.', steps: ['Take out chunks of ' + d + ' until nothing is left.', d + ' &times; ' + q + ' = ' + n + '.'],
           explain: n + ' &divide; ' + d + ' = ' + q + ' because ' + d + ' &times; ' + q + ' = ' + n + '.', meta: { k: 'g5md-divfill' } };
       }],
@@ -491,7 +491,7 @@
     'md-rem': [
       [1, 'fill', function (lv) {
         var d = R.int(lv === 1 ? 4 : 12, lv === 1 ? 9 : 25), q = R.int(5, lv === 1 ? 12 : 30), r = R.int(1, d - 1), n = d * q + r;
-        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(n + ' &divide; ' + d + ' = [[]] R [[]]'), answers: [q, r],
+        return { q: 'Fill in the blanks.', type: 'fill', fill: (n + ' &divide; ' + d + ' = [[]] R [[]]'), answers: [q, r],
           fig: lv === 1 ? packs(q, r, d, 'down') : '', hint: 'How many full groups of ' + d + '? What is left?', steps: [d + ' &times; ' + q + ' = ' + d * q + '.', n + ' &minus; ' + d * q + ' = ' + r + ' left, and ' + r + ' is less than ' + d + '.'],
           explain: n + ' &divide; ' + d + ' = ' + q + ' R ' + r + '.', meta: { k: 'g5md-remfill' } };
       }],
@@ -530,7 +530,7 @@
       }],
       [1, 'fill', function (lv) {
         var a = R.int(3, 9), b = R.int(2, 9) * 10 + R.int(1, 9), t = Math.floor(b / 10) * 10, o = b % 10;
-        return { q: 'Break ' + b + ' apart to multiply. Fill in the blanks.', type: 'fill', fill: mth(a + ' &times; ' + b + ' = ' + a + ' &times; ' + t + ' + ' + a + ' &times; [[]]') + '<br>' + mth('= ' + a * t + ' + [[]] = [[]]'), answers: [o, a * o, a * b],
+        return { q: 'Break ' + b + ' apart to multiply. Fill in the blanks.', type: 'fill', fill: (a + ' &times; ' + b + ' = ' + a + ' &times; ' + t + ' + ' + a + ' &times; [[]]') + '<br>' + ('= ' + a * t + ' + [[]] = [[]]'), answers: [o, a * o, a * b],
           fig: lv === 1 ? areaModel(b, a) : '', hint: b + ' = ' + t + ' + ' + o + '.', steps: [a + ' &times; ' + o + ' = ' + a * o + '.', a * t + ' + ' + a * o + ' = ' + a * b + '.'],
           explain: a + ' &times; ' + b + ' = ' + a * t + ' + ' + a * o + ' = ' + a * b + '.', meta: { k: 'g5md-propfill' } };
       }],

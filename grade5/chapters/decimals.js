@@ -531,7 +531,7 @@
       }],
       [1, 'fill', function (lv) {
         var w = lv === 1 ? 0 : R.int(1, 9), tn = R.int(lv === 1 ? 1 : 0, 9), hu = R.int(1, 9), c = w * 100 + tn * 10 + hu;
-        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(f2(c)) + ' = ' + (w ? w + ' ones, ' : '') + '[[]] tenths and [[]] hundredths', answers: [tn, hu],
+        return { q: 'Fill in the blanks.', type: 'fill', fill: (f2(c)) + ' = ' + (w ? w + ' ones, ' : '') + '[[]] tenths and [[]] hundredths', answers: [tn, hu],
           fig: dchart(c), hint: 'The first digit after the point is tenths. The second is hundredths.', steps: ['After the point: ' + tn + ' is in the tenths place.', hu + ' is in the hundredths place.'],
           explain: f2(c) + ' has ' + tn + ' tenths and ' + hu + ' hundredths.', meta: { k: 'g5de-fill' } };
       }],
@@ -648,7 +648,7 @@
       }],
       [1, 'fill', function (lv) {
         var p = R.pick(lv === 1 ? [[1, 2], [1, 4], [3, 4], [1, 10], [3, 10], [1, 5]] : [[2, 5], [3, 5], [4, 5], [3, 20], [7, 20], [6, 25], [11, 50]]), k = 100 / p[1], h = p[0] * k;
-        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(p[0] + '/' + p[1] + ' = [[]]/100') + '<br>' + mth('= [[]]%'), answers: [h, h],
+        return { q: 'Fill in the blanks.', type: 'fill', fill: (p[0] + '/' + p[1] + ' = [[]]/100') + '<br>' + ('= [[]]%'), answers: [h, h],
           hint: 'What do you multiply ' + p[1] + ' by to get 100?', steps: [p[1] + ' &times; ' + k + ' = 100. Multiply the top by ' + k + ' too: ' + h + '.', h + '/100 = ' + h + '%.'],
           explain: p[0] + '/' + p[1] + ' = ' + h + '/100 = ' + h + '%.', meta: { k: 'g5de-fdpfill' } };
       }],
@@ -665,7 +665,7 @@
         var a = lv === 1 ? R.int(11, 89) * 10 : R.int(101, 899), b = lv === 1 ? R.int(11, 89) * 10 : R.int(11, 99) * (lv === 3 ? 10 : 1), op = lv === 1 ? '+' : R.pick(['+', '-']);
         if (op === '-' && b > a) { var x = a; a = b; b = x; }
         var r = op === '+' ? a + b : a - b;
-        return { q: 'Fill in the blank. Line up the decimal points.', type: 'fill', fill: mth(t(a) + ' ' + sym(op) + ' ' + t(b) + ' = [[]]'), answers: [A.clean(r / 100)],
+        return { q: 'Fill in the blank. Line up the decimal points.', type: 'fill', fill: (t(a) + ' ' + sym(op) + ' ' + t(b) + ' = [[]]'), answers: [A.clean(r / 100)],
           hint: 'Write both with two decimal places first.', steps: ['With two places: ' + f2(a) + ' and ' + f2(b) + '.', (op === '+' ? 'Add' : 'Subtract') + ' like whole numbers, keeping the point in line.<br>' + cols(a, b, r, op)],
           explain: t(a) + ' ' + sym(op) + ' ' + t(b) + ' = ' + t(r) + '.', meta: { k: 'g5de-addfill' } };
       }],
@@ -698,7 +698,7 @@
     'de-mental': [
       [1, 'fill', function (lv) {
         var n = lv === 1 ? R.int(2, 99) * 10 : R.int(11, 999);
-        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(n + ' &times; 0.1 = [[]]') + '<br>' + mth(n + ' &times; 0.01 = [[]]'), answers: [A.clean(n / 10), A.clean(n / 100)],
+        return { q: 'Fill in the blanks.', type: 'fill', fill: (n + ' &times; 0.1 = [[]]') + '<br>' + (n + ' &times; 0.01 = [[]]'), answers: [A.clean(n / 10), A.clean(n / 100)],
           hint: '&times; 0.1 is the same as &divide; 10. &times; 0.01 is the same as &divide; 100.', steps: [n + ' &divide; 10 = ' + A.clean(n / 10) + '.', n + ' &divide; 100 = ' + A.clean(n / 100) + '.'],
           explain: 'Each digit moves 1 place right for 0.1, and 2 places right for 0.01.', meta: { k: 'g5de-mfill', n: n } };
       }],

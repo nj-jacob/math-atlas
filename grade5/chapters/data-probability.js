@@ -626,7 +626,7 @@ thumbs() +
     'da-rel': [
       [1, 'fill', function (lv) {
         var tot = R.pick([10, 20, 25, 50]), n = R.int(1, tot - 1), k = 100 / tot;
-        return { q: n + ' of ' + tot + ' students walk to school. Fill in the blanks.', type: 'fill', fill: mth(n + '/' + tot + ' = [[]]/100') + '<br>' + mth('= [[]]%'), answers: [n * k, n * k],
+        return { q: n + ' of ' + tot + ' students walk to school. Fill in the blanks.', type: 'fill', fill: (n + '/' + tot + ' = [[]]/100') + '<br>' + ('= [[]]%'), answers: [n * k, n * k],
           fig: lv === 1 ? people(n, tot) : '', hint: 'What times ' + tot + ' makes 100?', steps: [tot + ' &times; ' + k + ' = 100.', n + ' &times; ' + k + ' = ' + n * k + ', so ' + n * k + '/100 = ' + n * k + '%.'],
           explain: n + '/' + tot + ' = ' + n * k + '%.', meta: { k: 'g5da-relfill' } };
       }],
@@ -761,7 +761,7 @@ thumbs() +
       }],
       [1, 'story', function (lv) {
         var who = nm(), n = R.pick([20, 30, 40, 50]), got = R.int(2, Math.floor(n / 3)), face = R.int(1, 6);
-        return { q: who + ' rolled a die ' + n + ' times and got a ' + face + ' on ' + got + ' of them. What is the experimental probability of rolling a ' + face + '?', type: 'fill', fill: mth('[[]]/' + n), answers: [got],
+        return { q: who + ' rolled a die ' + n + ' times and got a ' + face + ' on ' + got + ' of them. What is the experimental probability of rolling a ' + face + '?', type: 'fill', fill: ('[[]]/' + n), answers: [got],
           hint: 'Use what actually happened: times it happened over the number of rolls.', steps: ['It happened ' + got + ' times.', 'There were ' + n + ' rolls.'],
           explain: 'The experimental probability is ' + got + '/' + n + '. The theoretical probability is 1/6.', meta: { k: 'g5da-expstory' } };
       }],

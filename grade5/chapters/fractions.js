@@ -609,7 +609,7 @@
       }],
       [1, 'fill', function (lv) {
         var d = R.pick([2, 3, 4, 5]), n = R.int(1, d - 1), k2 = lv === 1 ? 3 : R.int(3, 5);
-        return { q: 'Fill in the blanks to make equal fractions.', type: 'fill', fill: mf(f(n, d) + ' = [[]]/' + d * 2 + ' = ' + n * k2 + '/[[]]'), answers: [n * 2, d * k2],
+        return { q: 'Fill in the blanks to make equal fractions.', type: 'fill', fill: (f(n, d) + ' = [[]]/' + d * 2 + ' = ' + n * k2 + '/[[]]'), answers: [n * 2, d * k2],
           fig: A.draw.bar(n, d, 300) + A.draw.bar(n * 2, d * 2, 300),
           hint: 'What was ' + d + ' multiplied by? Do the same to the top.', steps: [d + ' &times; 2 = ' + d * 2 + ', so the top is ' + n + ' &times; 2 = ' + n * 2 + '.', n + ' &times; ' + k2 + ' = ' + n * k2 + ', so the bottom is ' + d + ' &times; ' + k2 + ' = ' + d * k2 + '.'],
           explain: f(n, d) + ' = ' + f(n * 2, d * 2) + ' = ' + f(n * k2, d * k2) + '.', meta: { k: 'g5fr-equivfill' } };
@@ -641,7 +641,7 @@
       }],
       [1, 'fill', function (lv) {
         var d = R.pick(lv === 1 ? [2, 3, 4] : [3, 4, 5, 6, 8]), w = R.int(1, lv === 3 ? 6 : 3), r = R.int(1, d - 1), N = w * d + r;
-        return { q: 'Write <span class="math">' + f(N, d) + '</span> as a mixed number.', type: 'fill', fill: mf(f(N, d) + ' = [[]] and [[]]/' + d), answers: [w, r],
+        return { q: 'Write <span class="math">' + f(N, d) + '</span> as a mixed number.', type: 'fill', fill: (f(N, d) + ' = [[]] and [[]]/' + d), answers: [w, r],
           fig: lv === 1 ? A.draw.wholes(N, d) : '', hint: 'How many groups of ' + d + ' fit in ' + N + '?', steps: [N + ' &divide; ' + d + ' = ' + w + ' remainder ' + r + '.', 'So ' + f(N, d) + ' = ' + w + ' ' + f(r, d) + '.'],
           explain: f(N, d) + ' = ' + w + ' ' + f(r, d) + '.', meta: { k: 'g5fr-mixfill', N: N, d: d } };
       }],
@@ -696,7 +696,7 @@
         var d = R.pick([4, 5, 6, 8, 10]), a = R.int(1, d - 2), b = R.int(1, d - 1 - a), sub = lv > 1 && !R.int(0, 1);
         if (sub) a += b;
         var r = sub ? a - b : a + b, op = sub ? ' &minus; ' : ' + ';
-        return { q: 'Fill in the blank.', type: 'fill', fill: mf(f(a, d) + op + f(b, d) + ' = [[]]/' + d), answers: [r],
+        return { q: 'Fill in the blank.', type: 'fill', fill: (f(a, d) + op + f(b, d) + ' = [[]]/' + d), answers: [r],
           fig: lv === 1 ? A.draw.bar(a, d, 300) + A.draw.bar(b, d, 300) : '', hint: 'The pieces are the same size. ' + (sub ? 'Take away' : 'Add') + ' the tops only.',
           steps: [a + op + b + ' = ' + r + ' pieces of size 1/' + d + '.', 'The bottom stays ' + d + '.'],
           explain: f(a, d) + op + f(b, d) + ' = ' + f(r, d) + '.', meta: { k: 'g5fr-addfill', a: a, b: b, d: d, sub: sub } };
@@ -727,7 +727,7 @@
     'fr-unit': [
       [1, 'fill', function (lv) {
         var w = R.int(2, 9), d = R.pick([2, 3, 4, 5, 6, 8]);
-        return { q: 'Fill in the blank.', type: 'fill', fill: mf(w + ' &times; 1/' + d + ' = [[]]/' + d), answers: [w], fig: A.draw.wholes(w, d),
+        return { q: 'Fill in the blank.', type: 'fill', fill: (w + ' &times; 1/' + d + ' = [[]]/' + d), answers: [w], fig: A.draw.wholes(w, d),
           hint: w + ' groups of one 1/' + d + ' piece.', steps: ['Each group is one 1/' + d + ' piece.', w + ' groups make ' + w + ' pieces: ' + f(w, d) + '.'],
           explain: w + ' &times; 1/' + d + ' = ' + f(w, d) + '.', meta: { k: 'g5fr-unitfill', w: w, d: d } };
       }],

@@ -548,6 +548,12 @@ payGallery() +
           ['Cash totals always round up.', 'Cash totals round to the nearest 10 cents.', 'Cash totals always round down.'],
           { hint: 'Which is closer: the 5 cents below or the 5 cents above?', meta: { k: 'g5mo-taxtf', p: p, said: said } });
       }],
+      [2, 'build', function (lv) {
+        var p = R.int(1, 4) * 100 + R.int(1, 9) * 10 + R.pick([1, 2, 3, 4, 6, 7, 8, 9]), c = cash(p);
+        return { q: 'The total is <b>' + M(p) + '</b>. You pay with coins. Show the amount you pay in cash. Then press Check.', type: 'build', tool: 'coins', opts: { set: [5, 10, 25, 100, 200] }, answer: c,
+          hint: 'Cash rounds to the nearest 5 cents. Is ' + M(p) + ' closer to ' + M(Math.floor(p / 5) * 5) + ' or ' + M(Math.floor(p / 5) * 5 + 5) + '?', steps: [M(p) + ' rounds to ' + M(c) + '.', 'Start with the biggest coins that fit.'],
+          explain: 'You pay ' + M(c) + ' in cash.', meta: { k: 'g5mo-taxbuild', p: p } };
+      }],
       [2, 'which', function (lv) {
         var base = R.pick([2000, 4000, 5000, 8000]);
         return K.mc('An item costs ' + M(base) + ' before Ontario HST (13%). Which way finds the total?', 'Find 13% of ' + M(base) + ', then add it to ' + M(base), ['Add $13 to ' + M(base), 'Multiply ' + M(base) + ' by 13', 'Take 13% away from ' + M(base)], {
