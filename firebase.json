@@ -1,7 +1,7 @@
 {
   "hosting": {
     "public": ".",
-    "ignore": ["firebase.json", "firestore.rules", "firestore.indexes.json", "SETUP.md", "README.md", "**/.*", "**/node_modules/**", "**/*.log"],
+    "ignore": ["firebase.json", "firestore.rules", "firestore.indexes.json", "**/*.md", "tests/**", "docs/**", "language/tests/**", "language/docs/**", "language/firebase.json", "**/.*", "**/node_modules/**", "**/*.log"],
     "cleanUrls": false,
     "headers": [
       { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }

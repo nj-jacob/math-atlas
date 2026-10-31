@@ -1,4 +1,4 @@
-/* Math Atlas: saves a signed-in student's progress to their family account.
+/* Atlas: saves a signed-in student's progress to their family account, for Math and Language grade sites.
    The grade site keeps working on its own. This file only watches what it saves in the browser
    (localStorage) and copies it to Firebase, and brings it back on another device. */
 import {
@@ -9,7 +9,8 @@ import {
 const meta = (n) => (document.querySelector('meta[name="' + n + '"]') || {}).content;
 const SITE = meta('atlas-site') || 'g5';
 const PREFIX = meta('atlas-prefix') || SITE + 'atlas:';
-const ROOT = meta('atlas-root') || '../';
+/* path from this page back to the Atlas home: atlas-hub on Language pages (their atlas-root is the Language home), else atlas-root */
+const ROOT = meta('atlas-hub') || meta('atlas-root') || '../';
 const DEVICE_ONLY = { theme: 1, big: 1 };
 const TS_KEY = 'atlasSync:' + SITE + ':ts', OWNER_KEY = 'atlasSync:' + SITE + ':owner';
 

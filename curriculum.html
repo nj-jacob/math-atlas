@@ -4,8 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" href="assets/icon.svg" type="image/svg+xml">
-<title>Curriculum · Math Atlas</title>
-<meta name="description" content="Every chapter of the Ontario math curriculum (2020), Grades 1 to 8.">
+<title>Curriculum · Atlas</title>
+<meta name="description" content="Every chapter of the Ontario math (2020) and language (2023) curriculum, Grades 1 to 8.">
 <meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +15,8 @@
 <body class="home">
 <a class="skip" href="#main">Skip to content</a>
 <header class="top"><div class="hwrap">
-  <a class="brand" href="./" aria-label="Math Atlas home"><i aria-hidden="true">M</i><span>Math Atlas</span></a>
-  <nav class="jump" aria-label="Main"><a href="./" id="nav-plan">My plan</a><a href="curriculum.html" aria-current="page">Curriculum</a></nav>
+  <a class="brand" href="./" aria-label="Atlas home"><i aria-hidden="true">A</i><span>Atlas</span></a>
+  <nav class="jump" aria-label="Main"><a href="./" id="nav-plan">Home</a><a href="curriculum.html" aria-current="page">Curriculum</a></nav>
   <div class="acct" id="acct">
     <a class="hbtn" id="signin-btn" href="family.html" aria-haspopup="dialog" aria-expanded="false" aria-controls="signin">Sign in</a>
   </div>
@@ -25,15 +25,19 @@
 <main id="main" tabindex="-1">
   <section class="hero"><div class="hwrap">
     <p class="eyebrow">Curriculum</p>
-    <h1>Math, Grades&nbsp;1&nbsp;to&nbsp;8</h1>
-    <p class="lede">Every expectation in the Ontario 2020 math curriculum, one chapter at a time. Open a grade to see its chapters.</p>
+    <h1>Grades&nbsp;1&nbsp;to&nbsp;8</h1>
+    <div class="tabs" role="tablist" aria-label="Subject">
+      <button type="button" role="tab" id="t-math" data-s="math" aria-controls="math" aria-selected="true">Math</button>
+      <button type="button" role="tab" id="t-language" data-s="language" aria-controls="language" aria-selected="false" tabindex="-1">Language</button>
+    </div>
   </div></section>
 
   <div class="hwrap layout">
-    <section class="curp" aria-label="Grades 1 to 8">
+    <section class="curp" id="math" role="tabpanel" aria-labelledby="t-math">
+      <p class="psub">Every expectation in the Ontario 2020 math curriculum, one chapter at a time. Open a grade to see its chapters.</p>
       <ul class="strands" aria-label="Colour key for the strands">
-          <li data-s="B">Number</li><li data-s="C">Algebra</li><li data-s="D">Data</li><li data-s="E">Spatial sense</li><li data-s="F">Financial literacy</li>
-        </ul>
+        <li data-s="B">Number</li><li data-s="C">Algebra</li><li data-s="D">Data</li><li data-s="E">Spatial sense</li><li data-s="F">Financial literacy</li>
+      </ul>
       <div class="grades">
 <details class="grade" id="g1" data-g="1">
   <summary><span class="gn" aria-hidden="true">1</span><span class="gt"><span class="gh">Grade 1</span><span class="gf">Counting to 50, adding to 10, shapes and coins</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
@@ -93,13 +97,21 @@
 </details>
       </div>
     </section>
+    <section class="curp" id="language" role="tabpanel" aria-labelledby="t-language" hidden>
+      <p class="psub">Every expectation in the Ontario 2023 language curriculum, one chapter at a time. Open a grade to see its chapters.</p>
+      <ul class="strands" aria-label="Colour key for the strands">
+        <li data-s="LA">Literacy connections</li><li data-s="LB">Foundations of language</li><li data-s="LC">Comprehension</li><li data-s="LD">Composition</li>
+      </ul>
+      <div class="grades" id="lang-grades"><p class="loading">Loading the grades…</p></div>
+    </section>
   </div>
 </main>
 
 <footer class="foot"><div class="hwrap">
-  <p>Math Atlas is a free study aid that follows the Ontario Mathematics curriculum (2020), Grades 1 to 8. It does not replace a teacher's assessment.</p>
+  <p>Atlas is a free study aid that follows the Ontario Mathematics curriculum (2020) and Language curriculum (2023), Grades 1 to 8. It does not replace a teacher's assessment.</p>
   <p>You do not need an account. Without one, progress is saved only in this browser. <a href="family.html">Family accounts</a> keep it on any device and let parents and tutors follow along.</p>
 </div></footer>
 <script type="module" src="assets/home.js"></script>
+<script type="module" src="assets/curriculum.js"></script>
 </body>
 </html>

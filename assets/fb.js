@@ -60,7 +60,7 @@ export async function makeStudentLogin(username, password, name, sid) {
 }
 
 /* Saved practice on this device belongs to whoever is signed in. Clear it on sign-out so the next person starts fresh. */
-const PROGRESS = /^(g\d+atlas:|atlasSync:|mathplan:)/, DEVICE = /:(theme|big)$/;
+const PROGRESS = /^(g\d+atlas:|lang-g\d+:|atlasSync:|mathplan:)/, DEVICE = /:(theme|big)$/;
 export function clearDeviceProgress() {
   try {
     const drop = [];
@@ -91,7 +91,11 @@ export function today(d) {
   d = d || new Date();
   return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);
 }
-/* The grade sites on this website, each in its own folder (grade1/ ... grade8/).
-   When a grade's folder is added, change its "on" to true. */
+/* Every grade site on Atlas. Math grades are in grade1/ ... grade8/ (this repository). Language grades are in
+   language/grade1/ ... (the language-atlas repository, added to the site when it is published; see SETUP.md).
+   A student's saved progress for each one is in students/{id}/progress/{key}, for example g3 or l3. */
 export const SITES = {};
-[1, 2, 3, 4, 5, 6, 7, 8].forEach((n) => { SITES['g' + n] = { name: 'Grade ' + n, path: 'grade' + n + '/', on: true }; });
+[1, 2, 3, 4, 5, 6, 7, 8].forEach((n) => {
+  SITES['g' + n] = { name: 'Grade ' + n + ' Math', subject: 'math', path: 'grade' + n + '/' };
+  SITES['l' + n] = { name: 'Grade ' + n + ' Language', subject: 'language', path: 'language/grade' + n + '/' };
+});
