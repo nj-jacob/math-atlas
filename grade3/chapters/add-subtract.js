@@ -542,4 +542,273 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name, M = '&minus;';
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function sym(op) { return op === '+' ? '+' : M; }
+    function calc(a, b, op) { return op === '+' ? a + b : a - b; }
+    /* a pair with no carrying (gentle) or with carrying, sum at most 999 */
+    function addPair(lv) {
+      for (;;) {
+        var a = R.int(lv === 1 ? 110 : 120, 700), b = R.int(lv === 1 ? 101 : 110, 999 - a), da = dg(a), db = dg(b);
+        var c0 = da[0] + db[0] >= 10, c1 = da[1] + db[1] + (c0 ? 1 : 0) >= 10;
+        if (a + b <= 999 && (lv === 1 ? !c0 && !c1 : (c0 || c1))) return [a, b];
+      }
+    }
+    /* a pair with no trading (gentle) or with trading */
+    function subPair(lv) {
+      for (;;) {
+        var a = R.int(lv === 1 ? 200 : 300, 999), b = R.int(lv === 1 ? 101 : 110, a - 20), da = dg(a), db = dg(b);
+        var t0 = da[0] < db[0], t1 = da[1] - (t0 ? 1 : 0) < db[1];
+        if (lv === 1 ? !t0 && !t1 : (t0 || t1)) return [a, b];
+      }
+    }
+    /* the classic slip: subtract the smaller digit from the bigger one in every column */
+    function flipSub(a, b) { var da = dg(a), db = dg(b); return Math.abs(da[2] - db[2]) * 100 + Math.abs(da[1] - db[1]) * 10 + Math.abs(da[0] - db[0]); }
+    /* add without carrying: each column keeps only its ones digit */
+    function noCarry(a, b) { var da = dg(a), db = dg(b); return ((da[2] + db[2]) % 10) * 100 + ((da[1] + db[1]) % 10) * 10 + (da[0] + db[0]) % 10; }
+    function rnd(v, p) { return Math.floor((v + p / 2) / p) * p; }
+
+    var SHAPES = {
+      'as-add': [
+        [1, 'story', function (lv) {
+          var ab = addPair(lv), a = ab[0], b = ab[1], who = nm();
+          var c = R.pick([['beads', 'has', 'red beads', 'blue beads'], ['hockey cards', 'has', 'hockey cards in one album', 'in another'], ['steps', 'walked', 'steps before lunch', 'steps after lunch'], ['cans', 'collected', 'cans on Monday', 'cans on Tuesday']]);
+          return { q: who + ' ' + c[1] + ' ' + a + ' ' + c[2] + ' and ' + b + ' ' + c[3] + '. How many ' + c[0] + ' is that in all?', type: 'num', answer: a + b,
+            hint: '"In all" means put them together, so add.', steps: ['Add: ' + a + ' + ' + b + '.', 'Ones, then tens, then hundreds.', a + ' + ' + b + ' = ' + (a + b) + '.'],
+            explain: a + ' + ' + b + ' = ' + (a + b) + ' ' + c[0] + '.', meta: { k: 'add-story', a: a, b: b } };
+        }],
+        [1, 'build', function (lv) {
+          var ab = addPair(lv), a = ab[0], b = ab[1];
+          return { q: 'Work out <span class="math">' + a + ' + ' + b + '</span>. Show the answer with base-ten blocks.', type: 'build', tool: 'base10', answer: a + b,
+            hint: 'Put the flats together, then the rods, then the small cubes.', steps: [Math.floor(a / 100) + ' + ' + Math.floor(b / 100) + ' hundreds, ' + dg(a)[1] + ' + ' + dg(b)[1] + ' tens, ' + dg(a)[0] + ' + ' + dg(b)[0] + ' ones.', 'Ten ones make a ten. Ten tens make a hundred.', 'The total is ' + (a + b) + '.'],
+            explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'add-build', a: a, b: b } };
+        }],
+        [1, 'fill', function (lv) {
+          var ab = addPair(lv), a = ab[0], b = ab[1], p = R.int(0, 2), s = String(a), i = 2 - p;
+          var shown = s.slice(0, i) + '[[]]' + s.slice(i + 1);
+          return { q: 'One digit is missing. Fill it in.', type: 'fill', fill: '<span class="math">' + shown + ' + ' + b + ' = ' + (a + b) + '</span>', answers: [+s.charAt(i)],
+            hint: 'Look at the ' + PN[p] + ' column. What plus ' + dg(b)[p] + ' gives the ' + PN[p] + ' digit of the answer?', steps: ['Work one column at a time.', 'Remember any carry from the column to the right.', 'The missing digit is ' + s.charAt(i) + '.'],
+            explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'add-fill', b: b, sum: a + b } };
+        }],
+        [2, 'mistake', function (lv) {
+          var ab = addPair(2), a = ab[0], b = ab[1], who = nm(), truth = !R.int(0, 2), said = truth ? a + b : noCarry(a, b);
+          var right = 'Ten or more in a column means you carry 1 to the next place. ' + a + ' + ' + b + ' = ' + (a + b) + '.';
+          return { q: who + ' added <span class="math">' + a + ' + ' + b + '</span> and got <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['When a column makes 10 or more, write only the ones digit and forget the rest.', 'Add the hundreds first, so the carry does not matter.', 'You only carry when you subtract.']),
+            hint: 'Add the ones first. Do they make 10 or more?', steps: [right], explain: right, meta: { k: 'add-tf', a: a, b: b, said: said } };
+        }]
+      ],
+      'as-sub': [
+        [1, 'story', function (lv) {
+          var ab = subPair(lv), a = ab[0], b = ab[1], who = nm();
+          var c = R.pick([['stickers', 'had', 'gave away'], ['pages', 'has a book with', 'has read'], ['litres of water', 'had a tank with', 'used'], ['tickets', 'had', 'sold']]);
+          var t = c[0] === 'pages' ? who + ' ' + c[1] + ' ' + a + ' pages. ' + who + ' ' + c[2] + ' ' + b + ' of them. How many pages are left to read?'
+            : who + ' ' + c[1] + ' ' + a + ' ' + c[0] + '. ' + who + ' ' + c[2] + ' ' + b + '. How many ' + c[0] + ' are left?';
+          return { q: t, type: 'num', answer: a - b,
+            hint: '"Left" means take away, so subtract.', steps: ['Subtract: ' + a + ' ' + M + ' ' + b + '.', 'Start with the ones. Trade if the top digit is smaller.', 'Check: ' + (a - b) + ' + ' + b + ' = ' + a + '.'],
+            explain: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.', meta: { k: 'sub-story', a: a, b: b } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var ab = subPair(lv), r = ab[0] - ab[1];
+            if (seen[r]) continue; seen[r] = 1;
+            pairs.push([ab[0] + ' ' + M + ' ' + ab[1], String(r)]);
+          }
+          return { q: 'Match each subtraction to its answer.', type: 'match', pairs: pairs,
+            hint: 'Work out one at a time. The ones digits can help you match quickly.', steps: ['Subtract the ones first. Look for an answer with that ones digit.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'sub-match', pairs: pairs } };
+        }],
+        [1, 'check', function (lv) {
+          var ab = subPair(lv), a = ab[0], b = ab[1], who = nm(), truth = !R.int(0, 1), said = truth ? a - b : a - b + R.pick([10, -10, 100]);
+          var right = 'Check by adding: ' + said + ' + ' + b + ' = ' + (said + b) + (truth ? ', which is ' + a + '.' : ', not ' + a + '.');
+          return { q: who + ' says <span class="math">' + a + ' ' + M + ' ' + b + ' = ' + said + '</span>. Check it by adding. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['The answer looks about right, so it must be right.', 'You can only check a subtraction by doing it again.', 'Add ' + a + ' + ' + b + ' to check it.']),
+            hint: 'If ' + a + ' ' + M + ' ' + b + ' = ' + said + ', then ' + said + ' + ' + b + ' should make ' + a + '.', steps: [right], explain: right, meta: { k: 'sub-tf', a: a, b: b, said: said } };
+        }],
+        [2, 'mistake', function (lv) {
+          var ab, a, b;
+          do { ab = subPair(2); a = ab[0]; b = ab[1]; } while (flipSub(a, b) === a - b);
+          var who = nm(), truth = !R.int(0, 2), said = truth ? a - b : flipSub(a, b);
+          var right = 'When the top digit is smaller, trade 1 from the next place. ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.';
+          return { q: who + ' worked out <span class="math">' + a + ' ' + M + ' ' + b + '</span> and got <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['In each column, take the smaller digit from the bigger one.', 'The bottom number can go on top if it is easier.', 'You never need to trade when you subtract.']),
+            hint: 'Look at the ones column. Is the top digit smaller than the bottom digit?', steps: [right], explain: right, meta: { k: 'sub-tf', a: a, b: b, said: said } };
+        }]
+      ],
+      'as-mental': [
+        [1, 'line', function (lv) {
+          var unit = R.pick([10, 100]), k = R.int(1, unit === 10 ? 5 : 3), b = k * unit, op = R.pick(['+', '-']);
+          var lo = unit === 10 ? R.int(1, 7) * 100 : 0, hi = unit === 10 ? lo + 100 : 1000, a;
+          if (unit === 10) a = op === '+' ? lo + R.int(0, 10 - k) * 10 : lo + R.int(k, 10) * 10;
+          else a = op === '+' ? R.int(0, 10 - k) * 100 : R.int(k, 10) * 100;
+          var ans = calc(a, b, op);
+          return { q: 'Start at <b>' + a + '</b>. Jump ' + (op === '+' ? 'forward' : 'back') + ' <b>' + b + '</b>. Where do you land? Put the marker there.', type: 'line', min: lo, max: hi, tick: unit, every: unit === 10 ? 50 : 100, snap: unit, answer: ans,
+            hint: 'Each mark is ' + unit + '. Count ' + k + ' mark' + (k > 1 ? 's' : '') + ' ' + (op === '+' ? 'to the right.' : 'to the left.'), steps: [a + ' ' + sym(op) + ' ' + b + '.', 'Only the ' + (unit === 10 ? 'tens' : 'hundreds') + ' digit changes.', 'You land on ' + ans + '.'],
+            explain: a + ' ' + sym(op) + ' ' + b + ' = ' + ans + '.', meta: { k: 'mental-line', a: a, b: b, op: op } };
+        }],
+        [1, 'match', function (lv) {
+          var base = R.int(2, 7) * 100 + R.int(1, 8) * 10 + R.int(1, 9), list = R.shuffle([['+', 10], ['-', 10], ['+', 100], ['-', 100]]).slice(0, 3);
+          var pairs = list.map(function (x) { return [base + ' ' + sym(x[0]) + ' ' + x[1], String(calc(base, x[1], x[0]))]; });
+          return { q: 'Match each one to its answer. Use mental math.', type: 'match', pairs: pairs,
+            hint: 'Adding or taking away 10 changes the tens digit. 100 changes the hundreds digit.', steps: ['Look at which digit changes, and which way.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'mental-match', pairs: pairs } };
+        }],
+        [2, 'which', function (lv) {
+          var near = R.pick([99, 199, 299, 98, 198, 101, 201]), a = R.int(12, 50) * 10 + R.int(1, 9), fr = Math.round(near / 100) * 100, d = fr - near;
+          var right = d > 0 ? 'Add ' + fr + ', then take away ' + d : 'Add ' + fr + ', then add ' + (-d);
+          var wrong = [d > 0 ? 'Add ' + fr + ', then add ' + d : 'Add ' + fr + ', then take away ' + (-d), 'Add ' + (fr + 100) + ', then take away ' + Math.abs(d), 'Add ' + fr + ' only'];
+          var o = R.mc(right, wrong);
+          return { q: 'Which way is the quickest and still right for <span class="math">' + a + ' + ' + near + '</span>?', type: 'mc', options: o.options, answer: o.answer,
+            hint: near + ' is close to ' + fr + '. Is it a little less or a little more?', steps: [near + ' is ' + Math.abs(d) + (d > 0 ? ' less than ' : ' more than ') + fr + '.', 'So: ' + right.toLowerCase() + '.', a + ' + ' + near + ' = ' + (a + near) + '.'],
+            explain: right + '. ' + a + ' + ' + near + ' = ' + (a + near) + '.', meta: { k: 'mental-which', b: near } };
+        }],
+        [2, 'mistake', function (lv) {
+          var near = R.pick([99, 199, 299]), a = R.int(12, 50) * 10 + R.int(1, 9), fr = near + 1, who = nm(), truth = !R.int(0, 2), said = truth ? a + near : a + fr + 1;
+          var right = near + ' is 1 less than ' + fr + '. Add ' + fr + ', then take away 1: ' + (a + near) + '.';
+          return { q: who + ' says <span class="math">' + a + ' + ' + near + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, [near + ' is 1 less than ' + fr + ', so add ' + fr + ' and then add 1 more.', 'You cannot use a friendly number when you add.', 'Round both numbers and add them.']),
+            hint: 'Add ' + fr + ' first. Then fix it.', steps: [right], explain: right, meta: { k: 'mental-tf', a: a, b: near, said: said } };
+        }]
+      ],
+      'as-estimate': [
+        [1, 'match', function (lv) {
+          var p = lv === 1 ? 10 : 100, pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var a = p === 10 ? R.int(11, 89) : R.int(110, 590), b = p === 10 ? R.int(11, 89) : R.int(110, 390);
+            if (a % p === p / 2 || b % p === p / 2) continue;
+            var est = rnd(a, p) + rnd(b, p);
+            if (seen[est]) continue; seen[est] = 1;
+            pairs.push([a + ' + ' + b, String(est)]);
+          }
+          return { q: 'Round each number to the nearest ' + (p === 10 ? 'ten' : 'hundred') + '. Match each sum to its estimate.', type: 'match', pairs: pairs,
+            hint: 'Round both numbers first, then add the rounded numbers.', steps: ['Look at the ' + (p === 10 ? 'ones' : 'tens') + ' digit to round: 5 or more rounds up.'],
+            explain: pairs.map(function (x) { return x[0] + ' is about ' + x[1]; }).join('. ') + '.', meta: { k: 'est-match', p: p, pairs: pairs } };
+        }],
+        [1, 'story', function (lv) {
+          var p = lv === 1 ? 10 : 100, a, b;
+          do { a = p === 10 ? R.int(21, 89) : R.int(120, 580); b = p === 10 ? R.int(11, 89) : R.int(110, 380); } while (a % p === p / 2 || b % p === p / 2);
+          var who = nm(), est = rnd(a, p) + rnd(b, p), c = R.pick([['km', 'drove', 'kilometres on Saturday', 'kilometres on Sunday', 'kilometres'], ['', 'picked', 'apples in the morning', 'apples in the afternoon', 'apples'], ['', 'counted', 'cars on one street', 'cars on another', 'cars']]);
+          var o = R.mc(est, [est + p, est - p, a + b]);
+          return { q: who + "'s family " + c[1] + ' ' + a + ' ' + c[2] + ' and ' + b + ' ' + c[3] + '. About how many ' + c[4] + ' is that? Round to the nearest ' + (p === 10 ? 'ten' : 'hundred') + '.', type: 'mc', options: o.options, answer: o.answer,
+            hint: '"About" means estimate. Round each number first.', steps: [a + ' rounds to ' + rnd(a, p) + '.', b + ' rounds to ' + rnd(b, p) + '.', rnd(a, p) + ' + ' + rnd(b, p) + ' = ' + est + '.'],
+            explain: 'About ' + est + '. The exact answer, ' + (a + b) + ', is close.', meta: { k: 'est-mc', a: a, b: b, p: p } };
+        }],
+        [1, 'pick', function (lv) {
+          var lim = R.pick([500, 600, 700]), opts = [], pairs = [], seen = {};
+          while (opts.length < 4) {
+            var big = opts.length < 2, a = R.int(110, lim - 200), b = big ? R.int(lim - a + 120, Math.min(990 - a, lim - a + 300)) : R.int(Math.max(10, lim - a - 300), lim - a - 120);
+            if (b < 10 || seen[a + b]) continue; seen[a + b] = 1;
+            pairs.push([a, b]); opts.push(a + ' + ' + b);
+          }
+          var order = R.shuffle([0, 1, 2, 3]); opts = order.map(function (j) { return opts[j]; }); pairs = order.map(function (j) { return pairs[j]; });
+          var ans = []; pairs.forEach(function (x, j) { if (x[0] + x[1] > lim) ans.push(j); });
+          return { q: 'Estimate. Pick every sum that is <b>more than ' + lim + '</b>.', type: 'pick', options: opts, answer: ans,
+            hint: 'Round each number to the nearest hundred and add. You do not need the exact answer.', steps: ['Round, add, and compare with ' + lim + '.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' are more than ' + lim + '.', meta: { k: 'est-pick', lim: lim, pairs: pairs } };
+        }],
+        [2, 'sense', function (lv) {
+          var a = R.int(110, 590), b = R.int(110, 390), op = lv === 3 && a > b ? '-' : '+', who = nm(), ex = calc(a, b, op), truth = !R.int(0, 1), said = truth ? ex : ex + R.pick([200, -200, 300]);
+          if (said < 0) said = ex + 200;
+          var e = calc(rnd(a, 100), rnd(b, 100), op);
+          var right = 'The estimate is ' + rnd(a, 100) + ' ' + sym(op) + ' ' + rnd(b, 100) + ' = ' + e + '. ' + said + (truth ? ' is close to it.' : ' is far from it.');
+          return { q: who + ' says <span class="math">' + a + ' ' + sym(op) + ' ' + b + ' = ' + said + '</span>. Use an estimate. Does that make sense?', type: 'tf', answer: truth,
+            why: why(right, ['Big numbers always give a big answer.', 'An estimate cannot tell you if an answer is wrong.', 'Only the ones digits matter.']),
+            hint: 'Round both numbers to the nearest hundred first.', steps: [right], explain: right + ' The exact answer is ' + ex + '.', meta: { k: 'est-tf', a: a, b: b, op: op, said: said } };
+        }]
+      ],
+      'as-equal': [
+        [1, 'tf', function (lv) {
+          var a = R.int(1, 5) * 100, b = R.int(1, 4) * 100, c = R.int(1, Math.floor((a + b) / 100) - 1) * 100, truth = !R.int(0, 1), d = a + b - c + (truth ? 0 : R.pick([100, -100]));
+          if (d <= 0) { d = a + b - c; truth = true; }
+          var right = 'The left side is ' + (a + b) + '. The right side is ' + (c + d) + '. ' + (truth ? 'They are equal.' : 'They are not equal.');
+          return { q: 'True or false: <span class="math">' + a + ' + ' + b + ' = ' + c + ' + ' + d + '</span>', type: 'tf', answer: truth,
+            why: why(right, ['Both sides use two numbers, so they are equal.', 'The equal sign means "the answer comes next".', 'The sides are equal if they share a number.']),
+            hint: 'Work out each side on its own. Then compare.', steps: [right], explain: right, meta: { k: 'eq-tf', l: [a, b], r: [c, d] } };
+        }],
+        [1, 'pick', function (lv) {
+          var t = R.int(lv === 1 ? 3 : 4, 9) * 100, step = lv === 1 ? 100 : 10, opts = [], seen = {};
+          while (opts.length < 5) {
+            var good = opts.length < 2, a = R.int(1, t / step - 1) * step, b = t - a + (good ? 0 : R.pick([step, -step, 2 * step]));
+            if (b <= 0 || seen[a + '+' + b]) continue; seen[a + '+' + b] = 1;
+            opts.push(a + ' + ' + b);
+          }
+          opts = R.shuffle(opts);
+          var ans = []; opts.forEach(function (o, j) { var n = o.split(' + '); if (+n[0] + +n[1] === t) ans.push(j); });
+          return { q: 'Pick every one that is equal to <b>' + t + '</b>.', type: 'pick', options: opts, answer: ans,
+            hint: 'Add each pair. Keep the ones that make ' + t + '.', steps: ['More than one can be right.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' make ' + t + '.', meta: { k: 'eq-pick', t: t, opts: opts } };
+        }],
+        [1, 'match', function (lv) {
+          var step = lv === 1 ? 100 : 10, pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var t = R.int(lv === 1 ? 5 : 20, lv === 1 ? 9 : 90) * step;
+            if (seen[t]) continue; seen[t] = 1;
+            var a = R.int(1, t / step - 1) * step, c;
+            do { c = R.int(1, t / step - 1) * step; } while (c === a || c === t - a);
+            pairs.push([a + ' + ' + (t - a), c + ' + ' + (t - c)]);
+          }
+          return { q: 'Match the two sides that are equal.', type: 'match', pairs: pairs,
+            hint: 'Work out each side. Equal sides make the same total.', steps: ['Find the total of each card, then pair the same totals.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'eq-match', pairs: pairs } };
+        }],
+        [2, 'fill', function (lv) {
+          var a = R.int(10, 50) * 10, b = R.int(5, 40) * 10, c = R.int(5, Math.floor((a + b) / 10) - 1) * 10, m = a + b - c;
+          return { q: 'Fill in the missing number so both sides are equal.', type: 'fill', fill: '<span class="math">[[]] + ' + c + ' = ' + a + ' + ' + b + '</span>', answers: [m], fig: balance('? + ' + c, a + ' + ' + b, true),
+            hint: 'Work out the side you know first.', steps: [a + ' + ' + b + ' = ' + (a + b) + '.', '? + ' + c + ' = ' + (a + b) + '.', 'The missing number is ' + m + '.'],
+            explain: m + ' + ' + c + ' = ' + a + ' + ' + b + '. Both sides are ' + (a + b) + '.', meta: { k: 'eq-fill' } };
+        }]
+      ],
+      'as-word': [
+        [1, 'which', function (lv) {
+          var who = nm(), a = R.int(3, 6) * 100 + R.int(10, 90), b = R.int(1, 2) * 100 + R.int(10, 90), kind = R.pick(['join', 'take', 'compare', 'join']);
+          var t = { join: who + ' has ' + a + ' hockey cards. A friend gives ' + who + ' ' + b + ' more. How many cards does ' + who + ' have now?',
+            take: 'A bakery made ' + a + ' muffins. It sold ' + b + ' of them. How many muffins are left?',
+            compare: 'The red team scored ' + a + ' points. The blue team scored ' + b + ' points. How many more points did the red team score?' }[kind];
+          var opts = ['Add: ' + a + ' + ' + b, 'Subtract: ' + a + ' ' + M + ' ' + b], ans = kind === 'join' ? 0 : 1;
+          return { q: t + ' <b>Which way solves it?</b>', type: 'mc', options: opts, answer: ans,
+            hint: kind === 'join' ? 'Are things being put together?' : kind === 'take' ? 'Is something taken away?' : '"How many more" compares two amounts.',
+            steps: [kind === 'join' ? 'Putting together means add.' : kind === 'take' ? 'Taking away means subtract.' : 'Comparing means subtract the smaller from the bigger.', 'The answer is ' + calc(a, b, ans ? '-' : '+') + '.'],
+            explain: opts[ans] + ' = ' + calc(a, b, ans ? '-' : '+') + '.', meta: { k: 'word-which', kind: kind } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), a = R.int(3, 8) * 100 + R.int(0, 9) * 10, b = R.int(1, 2) * 100 + R.int(1, 9) * 10, op = R.pick(['+', '-']);
+          if (op === '+' && a + b > 999) op = '-';
+          var t = op === '+' ? who + ' cycled ' + a + ' metres to the park and ' + b + ' metres to the library. How far did ' + who + ' cycle?'
+            : 'A trail is ' + a + ' metres long. ' + who + ' has walked ' + b + ' metres. How many metres are left?';
+          return { q: t, type: 'num', answer: calc(a, b, op), unit: 'm',
+            hint: op === '+' ? 'Put the two distances together.' : 'Take the part walked away from the whole trail.', steps: ['Write it: ' + a + ' ' + sym(op) + ' ' + b + '.', a + ' ' + sym(op) + ' ' + b + ' = ' + calc(a, b, op) + '.'],
+            explain: a + ' ' + sym(op) + ' ' + b + ' = ' + calc(a, b, op) + ' metres.', meta: { k: 'word-num', a: a, b: b, op: op } };
+        }],
+        [2, 'fill', function (lv) {
+          var who = nm(), a = R.int(4, 9) * 100 + R.int(10, 99), b = R.int(1, 3) * 100 + R.int(10, 99);
+          var t = R.pick([who + ' saved ' + a + ' cents. ' + who + ' spent ' + b + ' cents on a snack.', 'A hall has ' + a + ' chairs. ' + b + ' chairs are stacked away.', 'A tree farm planted ' + a + ' trees. Wind knocked down ' + b + '.']);
+          return { q: t + ' Fill in the number sentence that tells how many are left.', type: 'fill', fill: '<span class="math">[[]] ' + M + ' [[]] = [[]]</span>', answers: [a, b, a - b],
+            hint: 'Start with the whole amount. Take away the part that went.', steps: ['The whole is ' + a + '.', 'Take away ' + b + '.', a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.'],
+            explain: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.', meta: { k: 'word-fill', a: a, b: b } };
+        }],
+        [2, 'mistake', function (lv) {
+          var who = nm(), a = R.int(5, 9) * 100 + R.int(10, 99), b = R.int(1, 3) * 100 + R.int(10, 99), truth = !R.int(0, 2), said = truth ? a - b : a + b;
+          var right = '"How many more" compares two amounts, so subtract: ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.';
+          return { q: 'A school collected ' + a + ' cans. Another school collected ' + b + '. How many more cans did the first school collect? ' + who + ' says <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['"More" always means add.', 'Add both schools, because it asks about both.', 'Subtract the bigger number from the smaller one.']),
+            hint: 'Does the question put the cans together, or compare them?', steps: [right], explain: right, meta: { k: 'word-tf', a: a, b: b, said: said } };
+        }]
+      ]
+    };
+    var ch = A.chapters['add-subtract'];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();

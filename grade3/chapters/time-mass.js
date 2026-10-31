@@ -450,4 +450,176 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name;
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function t2(h, m) { return h + ':' + pad(m); }
+    function minsFor(lv) { return lv === 1 ? R.pick([0, 30]) : lv === 2 ? R.int(0, 11) * 5 : R.int(0, 59); }
+    function small(h, m) { return clock(h, m, { label: 'A clock' }).replace('width="300"', 'width="190"'); }
+    /* three clocks with different times: the right one and near misses */
+    function clockSet(h, m) {
+      var set = [[h, m]], cand = R.shuffle([[nxt(h), m], [h, (m + 30) % 60], [(m / 5) % 12 || 12, (h % 12) * 5]]);
+      cand.forEach(function (c) { if (set.length < 3 && !set.some(function (s) { return s[0] === c[0] && s[1] === c[1]; })) set.push(c); });
+      return R.shuffle(set);
+    }
+    var ACTS = [['blink your eyes', 'seconds'], ['tie your shoes', 'seconds'], ['clap 5 times', 'seconds'], ['brush your teeth', 'minutes'], ['eat lunch', 'minutes'], ['have recess', 'minutes'], ['spend a school day', 'hours'], ['sleep at night', 'hours'], ['drive from Toronto to Montréal', 'hours']];
+    var SEC = { seconds: 1, second: 1, minutes: 60, minute: 60, hours: 3600, hour: 3600 };
+
+    var SHAPES = {
+      'tm-read': [
+        [1, 'tap', function (lv) {
+          var h = R.int(1, 12), m = minsFor(lv === 3 ? 2 : lv), set = clockSet(h, m), k = 0;
+          set.forEach(function (s, j) { if (s[0] === h && s[1] === m) k = j; });
+          return { q: 'Tap the clock that shows <b>' + t2(h, m) + '</b>.', type: 'tap', tiles: set.map(function (s) { return small(s[0], s[1]); }), answer: k, answerText: 'the clock showing ' + t2(h, m),
+            hint: 'Check the short hand for the hour first. Then the long hand for the minutes.', steps: ['At ' + t2(h, m) + ', the short hand is ' + (m ? 'just past the ' : 'on the ') + h + '.', 'The long hand points to ' + (m ? m + ' minutes' : 'the 12') + '.'],
+            explain: t2(h, m) + ' is ' + words(h, m) + '.', meta: { k: 'clock-tap', h: h, m: m } };
+        }],
+        [1, 'fill', function (lv) {
+          var h = R.int(1, 12), m = minsFor(lv);
+          return { q: 'Read the clock. Fill in the blanks.', type: 'fill', fig: clock(h, m, { fives: lv === 1 }), fill: 'The hour is [[]]. The minutes are [[]].', answers: [h, m],
+            hint: 'The short hand shows the hour. Count the long hand by 5s for the minutes.', steps: ['The short hand ' + (m ? 'has passed' : 'is on') + ' the ' + h + '.', 'The long hand shows ' + m + ' minutes.'],
+            explain: 'It is ' + t2(h, m) + '.', meta: { k: 'clock-fill' } };
+        }],
+        [1, 'tf', function (lv) {
+          var h = R.int(1, 12), m = lv === 1 ? R.pick([0, 30]) : R.int(1, 11) * 5, who = nm(), truth = !R.int(0, 1);
+          var swap = m ? [(m / 5) % 12 || 12, (h % 12) * 5] : [nxt(h), 0], said = truth ? t2(h, m) : t2(swap[0], swap[1]);
+          if (said === t2(h, m)) said = t2(nxt(h), m);
+          var right = 'The short hand shows the hour, ' + h + '. The long hand shows ' + m + ' minutes. It is ' + t2(h, m) + '.';
+          return { q: who + ' says this clock shows <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: said === t2(h, m), fig: clock(h, m),
+            why: why(right, ['The long hand shows the hour.', 'Read the number each hand is closest to, in any order.', 'The minutes are the number the long hand points to.']),
+            hint: 'Which hand is short? Which is long?', steps: [right], explain: right, meta: { k: 'clock-tf', said: said } };
+        }]
+      ],
+      'tm-words': [
+        [1, 'match', function (lv) {
+          var ms = lv === 1 ? [0, 30, 15] : R.shuffle([15, 30, 45, 10, 20, 40, 50]).slice(0, 3), hs = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11]).slice(0, 3);
+          var pairs = ms.map(function (m, i) { return [words(hs[i], m), t2(hs[i], m)]; });
+          return { q: 'Match each time in words to its digital time.', type: 'match', pairs: pairs,
+            hint: '"Past" is after the hour. "To" is before the next hour.', steps: ['Quarter past is 15 minutes. Half past is 30. Quarter to is 45 minutes past the hour before.'],
+            explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'time-match' } };
+        }],
+        [1, 'tap', function (lv) {
+          var h = R.int(1, 11), m = lv === 1 ? R.pick([0, 30]) : R.pick([15, 30, 45]), set = clockSet(h, m), k = 0;
+          set.forEach(function (s, j) { if (s[0] === h && s[1] === m) k = j; });
+          return { q: 'Tap the clock that shows <b>' + words(h, m) + '</b>.', type: 'tap', tiles: set.map(function (s) { return small(s[0], s[1]); }), answer: k, answerText: 'the clock showing ' + t2(h, m),
+            hint: m === 45 ? 'Quarter to ' + nxt(h) + ' means 15 minutes before ' + nxt(h) + ':00.' : 'Find the hour first, then the minutes.', steps: [words(h, m) + ' is ' + t2(h, m) + '.'],
+            explain: words(h, m) + ' is ' + t2(h, m) + '.', meta: { k: 'time-tap', said: words(h, m) } };
+        }],
+        [1, 'order', function (lv) {
+          var base = R.int(7, 9), list = [], seen = {};
+          while (list.length < (lv === 1 ? 3 : 4)) { var h = base + R.int(0, 2), m = R.pick(lv === 1 ? [0, 30] : [0, 15, 30, 45]), v = h * 60 + m; if (seen[v]) continue; seen[v] = 1; list.push([v, R.int(0, 1) ? words(h, m) : t2(h, m)]); }
+          list.sort(function (a, b) { return a[0] - b[0]; });
+          return { q: 'These things happen in the morning. Put the times in order from <b>earliest to latest</b>.', type: 'order', items: list.map(function (x) { return x[1]; }), first: 'earliest', last: 'latest',
+            hint: 'Change the times in words to digital times first.', steps: list.map(function (x) { return x[1] + ' = ' + t2(Math.floor(x[0] / 60), x[0] % 60) + '.'; }),
+            explain: list.map(function (x) { return x[1]; }).join(', ') + '.', meta: { k: 'time-order' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var h = R.int(1, 11), who = nm(), truth = !R.int(0, 2), said = truth ? t2(h, 45) : t2(nxt(h), 45);
+          var right = 'Quarter to ' + nxt(h) + ' is 15 minutes before ' + nxt(h) + ':00. That is ' + t2(h, 45) + '.';
+          return { q: who + ' says <b>quarter to ' + nxt(h) + '</b> is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Quarter to ' + nxt(h) + ' is after ' + nxt(h) + ':00.', 'Quarter means 25 minutes.', 'Quarter to and quarter past are the same time.']),
+            hint: '"To" means before the hour.', steps: [right], explain: right, meta: { k: 'time-tf', w: 'quarter to ' + nxt(h), said: said } };
+        }]
+      ],
+      'tm-units': [
+        [1, 'match', function (lv) {
+          var pairs = ['seconds', 'minutes', 'hours'].map(function (u) { return [R.pick(ACTS.filter(function (a) { return a[1] === u; }))[0], u]; });
+          return { q: 'Match each activity to the best unit for timing it.', type: 'match', pairs: pairs,
+            hint: 'A second is a clap. A minute is washing your hands 3 times. An hour is a long lesson.', steps: pairs.map(function (p) { return 'To ' + p[0] + ': ' + p[1] + '.'; }),
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'tunit-match' } };
+        }],
+        [1, 'pick', function (lv) {
+          var u = R.pick(['seconds', 'minutes', 'hours']), good = R.shuffle(ACTS.filter(function (a) { return a[1] === u; })).slice(0, 2), bad = R.shuffle(ACTS.filter(function (a) { return a[1] !== u; })).slice(0, 3);
+          var opts = R.shuffle(good.concat(bad)), ans = []; opts.forEach(function (a, j) { if (a[1] === u) ans.push(j); });
+          return { q: 'Pick every activity you would time in <b>' + u + '</b>.', type: 'pick', options: opts.map(function (a) { return a[0]; }), answer: ans,
+            hint: 'Picture doing each one.', steps: opts.map(function (a) { return a[0].charAt(0).toUpperCase() + a[0].slice(1) + ': ' + a[1] + '.'; }),
+            explain: ans.map(function (j) { return opts[j][0]; }).join(' and ') + ' take ' + u + '.', meta: { k: 'tunit-pick', u: u } };
+        }],
+        [1, 'tf', function (lv) {
+          var big = R.pick(['minute', 'hour']), small2 = big === 'minute' ? 'seconds' : 'minutes', a = lv === 1 ? 1 : R.int(2, 4), truth = !R.int(0, 1), said = truth ? a * 60 : a * 100;
+          var right = '1 ' + big + ' = 60 ' + small2 + ', so ' + a + ' ' + big + (a > 1 ? 's' : '') + ' = ' + a * 60 + ' ' + small2 + '.';
+          return { q: 'True or false: <b>' + a + ' ' + big + (a > 1 ? 's' : '') + ' = ' + said + ' ' + small2 + '</b>', type: 'tf', answer: truth,
+            why: why(right, ['Time works like metres: 100 in each.', '1 ' + big + ' = 10 ' + small2 + '.', 'Time units cannot be changed.']),
+            hint: 'How many ' + small2 + ' are in 1 ' + big + '?', steps: [right], explain: right, meta: { k: 'tunit-tf', a: a, big: big, small: small2, said: said } };
+        }],
+        [2, 'order', function (lv) {
+          var opts = R.shuffle([['30 seconds', 30], ['1 minute', 60], ['90 seconds', 90], ['5 minutes', 300], ['1 hour', 3600], ['2 hours', 7200], ['45 minutes', 2700]]).slice(0, 4).sort(function (a, b) { return a[1] - b[1]; });
+          return { q: 'Put these from <b>shortest to longest</b>.', type: 'order', items: opts.map(function (o) { return o[0]; }), first: 'shortest', last: 'longest',
+            hint: '60 seconds = 1 minute. 60 minutes = 1 hour.', steps: ['Change each one to seconds or minutes to compare.'],
+            explain: opts.map(function (o) { return o[0]; }).join(', ') + '.', meta: { k: 'tunit-order' } };
+        }]
+      ],
+      'tm-mass': [
+        [1, 'tf', function (lv) {
+          var ks = Object.keys(OBJ), k = R.pick(ks), c = OBJ[k] + R.pick([-4, -2, 3, 5]);
+          if (c < 1) c = OBJ[k] + 3;
+          var d = OBJ[k] - c, ask = R.pick(['heavier', 'lighter']), truth = ask === 'heavier' ? d > 0 : d < 0;
+          var right = 'The side that goes down is heavier. ' + (d > 0 ? 'The ' + THING[k][0] + ' side is down, so the ' + THING[k][0] + ' is heavier.' : 'The cube side is down, so the cubes are heavier.');
+          return { q: 'True or false: the ' + THING[k][0] + ' is <b>' + ask + '</b> than the cubes.', type: 'tf', answer: truth, fig: balance(k, c, d > 0 ? Math.min(12, 3 + d) : Math.max(-12, d - 3), 'Pan balance: a ' + THING[k][0] + ' and ' + c + ' cubes'),
+            why: why(right, ['The side that goes up is heavier.', 'A level balance means one side is heavier.', 'More cubes always means lighter.']),
+            hint: 'Which side is lower?', steps: [right], explain: right, meta: { k: 'mass-tf', obj: k, c: c, ask: ask } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), a = R.int(8, 25), b = R.int(3, a - 2), c = R.pick([['lunch bag', 'pencil case'], ['backpack', 'water bottle'], ['library book', 'notebook']]);
+          return { q: who + "'s " + c[0] + ' balances ' + a + ' cubes. ' + who + "'s " + c[1] + ' balances ' + b + ' cubes. How many cubes heavier is the ' + c[0] + '?', type: 'num', answer: a - b, unit: 'cubes',
+            hint: 'Compare the two masses. Subtract.', steps: [a + ' &minus; ' + b + ' = ' + (a - b) + '.'],
+            explain: 'The ' + c[0] + ' is ' + (a - b) + ' cubes heavier.', meta: { k: 'mass-num', a: a, b: b } };
+        }],
+        [1, 'order', function (lv) {
+          var ks = R.shuffle(Object.keys(OBJ)).slice(0, lv === 1 ? 3 : 4), sorted = ks.slice().sort(function (a, b) { return OBJ[a] - OBJ[b]; });
+          return { q: 'On a balance: ' + ks.map(function (k) { return 'the ' + THING[k][0] + ' balances ' + OBJ[k] + ' cubes'; }).join(', ') + '. Put them in order from <b>lightest to heaviest</b>.', type: 'order', items: sorted.map(function (k) { return THING[k][0]; }), first: 'lightest', last: 'heaviest',
+            hint: 'Fewer cubes means lighter.', steps: ['Compare the cube counts: ' + sorted.map(function (k) { return OBJ[k]; }).join(', ') + '.'],
+            explain: sorted.map(function (k) { return THING[k][0]; }).join(', ') + '.', meta: { k: 'mass-order' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var who = nm(), big = R.int(4, 8), rock = R.int(12, 20), sayBig = !R.int(0, 2) ? false : true;
+          var right = 'The rock balances more cubes (' + rock + ' is more than ' + big + '), so the rock is heavier. Bigger is not always heavier.';
+          return { q: 'A big box of popcorn balances ' + big + ' cubes. A small rock balances ' + rock + ' cubes. ' + who + ' says the <b>' + (sayBig ? 'popcorn' : 'rock') + '</b> is heavier. True or false: ' + who + ' is right.', type: 'tf', answer: !sayBig,
+            why: why(right, ['Bigger things are always heavier.', 'Small things have no mass.', 'You cannot compare different objects.']),
+            hint: 'Compare the cubes, not the size.', steps: [right], explain: right, meta: { k: 'mass-tf2', a: big, b: rock, said: sayBig ? 'a' : 'b' } };
+        }]
+      ],
+      'tm-cap': [
+        [1, 'tap', function (lv) {
+          var f = R.int(2, 7), set = R.shuffle([f, f === 7 ? f - 2 : f + 1, f === 2 ? f + 2 : f - 1]);
+          return { q: 'Each jug holds 8 cups. Tap the jug with <b>' + f + ' cups</b> of water.', type: 'tap', tiles: set.map(function (v) { return jug(8, v).replace('width="330"', 'width="200"'); }), answer: set.indexOf(f), answerText: 'the jug filled to ' + f,
+            hint: 'Read the marks on the side of each jug.', steps: ['Find the jug where the water reaches the ' + f + ' mark.'],
+            explain: 'That jug holds ' + f + ' cups of water.', meta: { k: 'cap-tap', f: f } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), a = R.int(5, 12), b = R.int(2, a - 1), c = R.pick([['water bottle', 'cup'], ['bucket', 'bowl'], ['watering can', 'mug']]);
+          return { q: who + ' fills a ' + c[0] + ' with ' + a + ' cups of water and a ' + c[1] + ' with ' + b + ' cups. How many more cups does the ' + c[0] + ' hold?', type: 'num', answer: a - b, unit: 'cups',
+            hint: 'Compare the cups. Subtract.', steps: [a + ' &minus; ' + b + ' = ' + (a - b) + '.'],
+            explain: 'The ' + c[0] + ' holds ' + (a - b) + ' more cups.', meta: { k: 'cap-num', a: a, b: b } };
+        }],
+        [1, 'order', function (lv) {
+          var names = R.shuffle(['vase', 'bottle', 'bowl', 'jug', 'pot']).slice(0, lv === 1 ? 3 : 4), vals = R.shuffle([2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, names.length);
+          var list = names.map(function (n, i) { return [n, vals[i]]; }), sorted = list.slice().sort(function (a, b) { return a[1] - b[1]; });
+          return { q: list.map(function (x) { return 'The ' + x[0] + ' holds ' + x[1] + ' cups.'; }).join(' ') + ' Put them in order from <b>least to most</b>.', type: 'order', items: sorted.map(function (x) { return x[0]; }), first: 'least', last: 'most',
+            hint: 'More cups means more capacity.', steps: ['Compare: ' + sorted.map(function (x) { return x[0] + ' ' + x[1]; }).join(', ') + '.'],
+            explain: sorted.map(function (x) { return x[0]; }).join(', ') + '.', meta: { k: 'cap-order' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var who = nm(), M = R.pick([['used cups that were only half full', 'too high'], ['stopped pouring before the pot was full', 'too low'], ['let water spill over the top', 'too high']]), truth = !R.int(0, 1), said = truth ? M[1] : (M[1] === 'too high' ? 'too low' : 'too high');
+          var right = M[1] === 'too high' ? 'More cups were counted than the pot really holds, so the count is too high.' : 'The pot could hold more than was counted, so the count is too low.';
+          return { q: who + ' counted how many cups fill a pot, but ' + M[0] + '. ' + who + ' says the count is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Any way of pouring gives the right count.', 'Half-full cups make the count too low.', 'Spilling makes the count too low.']),
+            hint: 'Does this need more cups or fewer than the true amount?', steps: [right], explain: right, meta: { k: 'cap-tf', how: M[0], said: said } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();

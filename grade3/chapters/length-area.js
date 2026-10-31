@@ -591,4 +591,225 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks.
+     (WAYS, not SHAPES, because this chapter already uses SHAPES for its grid shapes.) */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name, MM = { mm: 1, cm: 10, m: 1000, km: 1000000 };
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    var THINGS = [['an ant', 'mm'], ['a grain of rice', 'mm'], ['a pencil', 'cm'], ['your hand', 'cm'], ['a book', 'cm'], ['a door', 'm'], ['a classroom', 'm'], ['a school bus', 'm'], ['a bike ride to the next town', 'km'], ['the drive from Toronto to Ottawa', 'km']];
+    var SIZES = [['a pencil', 19, 'cm'], ['a door', 2, 'm'], ['a paper clip', 3, 'cm'], ['a car', 4, 'm'], ['a ladybug', 7, 'mm'], ['a walk around a big park', 2, 'km']];
+    var UNITS = ['mm', 'cm', 'm', 'km'];
+    function rowsOf(r, c) { var rows = []; for (var i = 0; i < r; i++) rows.push([0, c]); return rows; }
+    function sumArr(v) { return v.reduce(function (a, b) { return a + b; }, 0); }
+    function boxRows(r, c) { return r === 1 ? 'a row of ' + c + ' squares' : r + ' rows of ' + c + ' squares'; }
+
+    var WAYS = {
+      'la-convert': [
+        [1, 'match', function (lv) {
+          var kinds = lv === 1 ? [['cm', 'mm'], ['m', 'cm']] : [['cm', 'mm'], ['m', 'cm'], ['km', 'm']], pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var t = R.pick(kinds), a = R.int(1, 9), to = a * MM[t[0]] / MM[t[1]];
+            if (seen[a]) continue; seen[a] = 1;
+            pairs.push([a + ' ' + t[0], to + ' ' + t[1]]);
+          }
+          return { q: 'Match the lengths that are the same.', type: 'match', pairs: pairs,
+            hint: '1 cm = 10 mm. 1 m = 100 cm. 1 km = 1000 m.', steps: ['A bigger unit fits fewer times, so the number gets bigger when you change to a smaller unit.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'conv-match' } };
+        }],
+        [1, 'line', function (lv) {
+          var mm = lv === 1 ? R.int(1, 9) * 10 : R.int(2, 19) * 5, cm = mm / 10;
+          return { q: 'Put the marker at <b>' + mm + ' mm</b> on the ruler.', type: 'line', min: 0, max: 10, tick: lv === 1 ? 1 : 0.5, every: 1, snap: lv === 1 ? 1 : 0.5, answer: cm, place: mm + ' mm', hideValue: true,
+            label: function (v) { return Atlas.clean ? String(Atlas.clean(v)) : String(v); },
+            hint: '10 mm make 1 cm. How many centimetres is ' + mm + ' mm?', steps: [mm + ' mm &divide; 10 = ' + cm + ' cm.', 'Count ' + cm + ' cm from 0.'],
+            explain: mm + ' mm is ' + cm + ' cm.', meta: { k: 'conv-line', mm: mm } };
+        }],
+        [1, 'tf', function (lv) {
+          var t = R.pick(lv === 1 ? [['m', 'cm'], ['cm', 'mm']] : [['m', 'cm'], ['cm', 'mm'], ['km', 'm']]), a = R.int(2, 9), real = a * MM[t[0]] / MM[t[1]], truth = !R.int(0, 1), said = truth ? real : (t[0] === 'm' ? a * 10 : a * 100);
+          var right = '1 ' + t[0] + ' = ' + MM[t[0]] / MM[t[1]] + ' ' + t[1] + ', so ' + a + ' ' + t[0] + ' = ' + real + ' ' + t[1] + '.';
+          return { q: 'True or false: <b>' + a + ' ' + t[0] + ' = ' + said + ' ' + t[1] + '</b>', type: 'tf', answer: truth,
+            why: why(right, ['1 ' + t[0] + ' = 10 ' + t[1] + ' for every unit.', 'Changing units never changes the number.', 'A smaller unit means a smaller number.']),
+            hint: 'How many ' + t[1] + ' are in 1 ' + t[0] + '?', steps: [right], explain: right, meta: { k: 'conv-tf', a: a, from: t[0], to: t[1], said: said } };
+        }],
+        [2, 'order', function (lv) {
+          var list = [], seen = {};
+          while (list.length < 4) {
+            var u = R.pick(['mm', 'cm', 'm']), v = u === 'mm' ? R.int(2, 9) * 100 : u === 'cm' ? R.int(2, 30) * 10 : R.int(1, 4), mm = v * MM[u];
+            if (seen[mm]) continue; seen[mm] = 1; list.push([v + ' ' + u, mm]);
+          }
+          list.sort(function (a, b) { return a[1] - b[1]; });
+          return { q: 'Put these lengths in order from <b>shortest to longest</b>.', type: 'order', items: list.map(function (x) { return x[0]; }), first: 'shortest', last: 'longest',
+            hint: 'Change them all to the same unit first, like cm.', steps: list.map(function (x) { return x[0] + ' = ' + x[1] / 10 + ' cm.'; }),
+            explain: list.map(function (x) { return x[0]; }).join(', ') + '.', meta: { k: 'conv-order' } };
+        }]
+      ],
+      'la-unit': [
+        [1, 'match', function (lv) {
+          var units = lv === 1 ? ['cm', 'm', 'km'] : R.shuffle(UNITS).slice(0, 3), pairs = units.map(function (u) { return [R.pick(THINGS.filter(function (t) { return t[1] === u; }))[0], u]; });
+          return { q: 'Match each thing to the best unit for measuring it.', type: 'match', pairs: pairs,
+            hint: 'mm is a dime\'s thickness, cm is a fingernail, m is a big step, km is a 15-minute walk.', steps: pairs.map(function (p) { return 'Measure ' + p[0] + ' in ' + p[1] + '.'; }),
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'unit-match' } };
+        }],
+        [1, 'order', function (lv) {
+          var picks = (lv === 1 ? ['cm', 'm', 'km'] : UNITS).map(function (u) { return R.pick(THINGS.filter(function (t) { return t[1] === u; }))[0]; });
+          return { q: 'Put these in order from <b>shortest to longest</b>.', type: 'order', items: picks, first: 'shortest', last: 'longest',
+            hint: 'Picture each one. Which would you measure in mm, cm, m or km?', steps: ['Smallest unit first: mm, then cm, then m, then km.'],
+            explain: picks.join(', ') + '.', meta: { k: 'unit-order' } };
+        }],
+        [1, 'pick', function (lv) {
+          var u = R.pick(lv === 1 ? ['cm', 'm'] : ['mm', 'cm', 'm', 'km']), good = R.shuffle(THINGS.filter(function (t) { return t[1] === u; })).slice(0, 2), bad = R.shuffle(THINGS.filter(function (t) { return t[1] !== u; })).slice(0, 3);
+          var opts = R.shuffle(good.concat(bad)), ans = []; opts.forEach(function (t, j) { if (t[1] === u) ans.push(j); });
+          return { q: 'Pick every thing you would measure in <b>' + { mm: 'millimetres', cm: 'centimetres', m: 'metres', km: 'kilometres' }[u] + '</b>.', type: 'pick', options: opts.map(function (t) { return t[0]; }), answer: ans,
+            hint: 'Compare each one with the size of the unit.', steps: opts.map(function (t) { return t[0].charAt(0).toUpperCase() + t[0].slice(1) + ': ' + t[1] + '.'; }),
+            explain: ans.map(function (j) { return opts[j][0]; }).join(' and ') + ' are measured in ' + u + '.', meta: { k: 'unit-pick', u: u } };
+        }],
+        [2, 'mistake', function (lv) {
+          var e = R.pick(SIZES), who = nm(), truth = !R.int(0, 2), u = truth ? e[2] : R.pick(UNITS.filter(function (x) { return x !== e[2]; }));
+          var right = e[0].charAt(0).toUpperCase() + e[0].slice(1) + ' is about ' + e[1] + ' ' + e[2] + '.';
+          return { q: who + ' says ' + e[0] + ' is about <b>' + e[1] + ' ' + u + '</b> long. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Any unit works, as long as the number is ' + e[1] + '.', 'Long things are always measured in mm.', 'Small things are always measured in km.']),
+            hint: 'Picture ' + e[1] + ' ' + u + '. Does that make sense?', steps: [right], explain: right, meta: { k: 'unit-tf', thing: e[0], n: e[1], said: u } };
+        }]
+      ],
+      'la-count': [
+        [1, 'story', function (lv) {
+          var who = nm(), u = R.pick(lv === 1 ? [2, 5, 10] : [3, 4, 6, 8]), n = R.int(3, lv === 1 ? 6 : 9), L = u * n;
+          var c = R.pick([['desk', 'sticks'], ['shelf', 'crayons'], ['window', 'straws']]);
+          return { q: who + ' measures a ' + c[0] + ' that is ' + L + ' cm long, using ' + u + ' cm ' + c[1] + '. How many ' + c[1] + ' long is the ' + c[0] + '?', type: 'num', answer: n,
+            hint: 'Skip count by ' + u + ' to ' + L + '.', steps: ['Each one is ' + u + ' cm.', L + ' &divide; ' + u + ' = ' + n + '.'],
+            explain: 'The ' + c[0] + ' is ' + n + ' ' + c[1] + ' long.', meta: { k: 'count-num', L: L, u: u } };
+        }],
+        [1, 'match', function (lv) {
+          var L = R.pick([12, 24, 36]), us = R.shuffle([2, 3, 4, 6, 12].filter(function (u) { return L % u === 0 && u < L; })).slice(0, 3);
+          var pairs = us.map(function (u) { return [u + ' cm units', L / u + ' units']; });
+          return { q: 'A ribbon is <b>' + L + ' cm</b> long. Match each unit to how many fit along it.', type: 'match', pairs: pairs,
+            hint: 'Longer units fit fewer times.', steps: pairs.map(function (p) { return L + ' &divide; ' + nums0(p[0]) + ' = ' + nums0(p[1]) + '.'; }),
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'count-match', L: L } };
+        }],
+        [1, 'tf', function (lv) {
+          var u = R.pick([2, 3, 4, 5]), n = R.int(3, 8), L = u * n, truth = !R.int(0, 1), su = truth ? u : u + 1;
+          var right = n + ' &times; ' + u + ' = ' + L + ', so each stick is ' + u + ' cm.';
+          return { q: 'A ' + L + ' cm ribbon is ' + n + ' sticks long. True or false: each stick is <b>' + su + ' cm</b>.', type: 'tf', answer: truth, fig: lv === 1 ? ribbon(L, u) : '',
+            why: why(right, ['Each stick is ' + n + ' cm, the number of sticks.', 'The sticks add up to more than the ribbon.', 'Each stick is 1 cm.']),
+            hint: n + ' sticks make ' + L + ' cm. What times ' + n + ' is ' + L + '?', steps: [right], explain: right, meta: { k: 'count-tf', L: L, n: n, said: su } };
+        }],
+        [2, 'mistake', function (lv) {
+          var who = nm(), a = R.pick([2, 3]), b = a * 2, n = R.int(4, 9), L = a * n * 2, truth = !R.int(0, 2), said = truth ? L / b : L / a * 2;
+          var right = 'The ' + b + ' cm sticks are longer, so fewer fit: ' + L + ' &divide; ' + b + ' = ' + L / b + '.';
+          return { q: 'A desk is ' + L / a + ' erasers long. Each eraser is ' + a + ' cm. ' + who + ' measures it with ' + b + ' cm sticks and says it is <b>' + said + '</b> sticks long. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Longer units give a bigger count.', 'The count stays the same with any unit.', 'Double the unit means double the count.']),
+            hint: 'Will longer sticks fit more times or fewer times?', steps: [right], explain: right, meta: { k: 'count-tf2', L: L, u: b, said: said } };
+        }]
+      ],
+      'la-perim': [
+        [1, 'fill', function (lv) {
+          var l = R.int(3, 9), w = R.int(1, l - 1), p = 2 * (l + w);
+          return { q: 'Find the perimeter. Fill in the blanks.', type: 'fill', fig: rect(l, w), fill: 'Two long sides: [[]] cm<br>Two short sides: [[]] cm<br>Perimeter: [[]] cm', answers: [2 * l, 2 * w, p],
+            hint: 'There are two sides of each length.', steps: [l + ' + ' + l + ' = ' + 2 * l + '.', w + ' + ' + w + ' = ' + 2 * w + '.', 2 * l + ' + ' + 2 * w + ' = ' + p + '.'],
+            explain: 'The perimeter is ' + p + ' cm.', meta: { k: 'per-fill', l: l, w: w } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), l = R.int(3, lv === 1 ? 8 : 15), w = R.int(2, l), p = 2 * (l + w);
+          var c = R.pick([['yard', 'fence'], ['rink', 'boards'], ['playground', 'rope']]);
+          return { q: who + "'s " + c[0] + ' is a rectangle ' + l + ' m long and ' + w + ' m wide. How many metres of ' + c[1] + ' go all the way around it?', type: 'num', answer: p, unit: 'm',
+            hint: 'All the way around means add all four sides.', steps: ['The sides are ' + l + ', ' + w + ', ' + l + ' and ' + w + ' m.', l + ' + ' + w + ' + ' + l + ' + ' + w + ' = ' + p + '.'],
+            explain: 'The perimeter is ' + p + ' m.', meta: { k: 'per-num', l: l, w: w } };
+        }],
+        [1, 'pick', function (lv) {
+          var P = R.pick([12, 14, 16, 18, 20]), opts = [], seen = {};
+          while (opts.length < 4) {
+            var good = opts.length < 2, l = R.int(2, P / 2 - 1), w = good ? P / 2 - l : P / 2 - l + R.pick([1, -1, 2]);
+            if (w < 1 || seen[Math.min(l, w) + ',' + Math.max(l, w)]) continue; seen[Math.min(l, w) + ',' + Math.max(l, w)] = 1;
+            opts.push(l + ' cm by ' + w + ' cm');
+          }
+          opts = R.shuffle(opts);
+          var ans = []; opts.forEach(function (o, j) { var n = o.match(/\d+/g); if (2 * (+n[0] + +n[1]) === P) ans.push(j); });
+          return { q: 'Pick every rectangle with a perimeter of <b>' + P + ' cm</b>.', type: 'pick', options: opts, answer: ans,
+            hint: 'Perimeter = length + width + length + width.', steps: ['Half of ' + P + ' is ' + P / 2 + '. Look for a length and width that add to ' + P / 2 + '.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' have a perimeter of ' + P + ' cm.', meta: { k: 'per-pick', P: P } };
+        }],
+        [2, 'mistake', function (lv) {
+          var l = R.int(3, 9), w = R.int(2, 8), who = nm(), truth = !R.int(0, 2), said = truth ? 2 * (l + w) : l + w;
+          var right = 'Perimeter is all the way around: ' + l + ' + ' + w + ' + ' + l + ' + ' + w + ' = ' + 2 * (l + w) + ' cm.';
+          return { q: who + ' says the perimeter of this rectangle is <b>' + said + ' cm</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: rect(l, w),
+            why: why(right, ['Add the two numbers you can see.', 'Multiply the length by the width.', 'Count the squares inside.']),
+            hint: 'How many sides does a rectangle have?', steps: [right], explain: right, meta: { k: 'per-tf', l: l, w: w, said: said } };
+        }]
+      ],
+      'la-area': [
+        [1, 'tap', function (lv) {
+          var set = [], seen = {};
+          while (set.length < 3) { var r = R.int(2, 4), c = R.int(2, 5); if (seen[r * c]) continue; seen[r * c] = 1; set.push([r, c]); }
+          var k = R.int(0, 2), A2 = set[k][0] * set[k][1];
+          return { q: 'Tap the shape with an area of <b>' + A2 + ' square units</b>.', type: 'tap', tiles: set.map(function (p) { return shape(rowsOf(p[0], p[1]), { c: 28 }); }), answer: k, answerText: 'the ' + set[k][0] + ' by ' + set[k][1] + ' rectangle',
+            hint: 'Count the squares in each shape. Rows times squares in a row is quicker.', steps: ['The ' + set[k][0] + ' rows of ' + set[k][1] + ' make ' + A2 + ' squares.'],
+            explain: set[k][0] + ' &times; ' + set[k][1] + ' = ' + A2 + ' square units.', meta: { k: 'area-tap', A: A2 } };
+        }],
+        [1, 'fill', function (lv) {
+          var r = R.int(2, lv === 1 ? 4 : 6), c = R.int(2, lv === 1 ? 5 : 8);
+          return { q: 'Look at the rectangle. Fill in the blanks.', type: 'fill', fig: shape(rowsOf(r, c)), fill: '[[]] rows of [[]] squares = [[]] square units', answers: [r, c, r * c],
+            hint: 'Count the rows going down. Count the squares in one row.', steps: ['There are ' + r + ' rows.', 'Each row has ' + c + ' squares.', r + ' &times; ' + c + ' = ' + r * c + '.'],
+            explain: 'The area is ' + r * c + ' square units.', meta: { k: 'area-fill' } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), r = R.int(2, lv === 1 ? 4 : 8), c = R.int(3, lv === 1 ? 5 : 9);
+          return { q: who + ' covers a table with square tiles: ' + r + ' rows of ' + c + ' tiles, with no gaps. Each tile is 1 square unit. What is the area of the table?', type: 'num', answer: r * c, unit: 'square units',
+            hint: 'Count the tiles. Use rows times tiles in a row.', steps: [r + ' rows of ' + c + ' is ' + r + ' &times; ' + c + '.', r + ' &times; ' + c + ' = ' + r * c + '.'],
+            explain: 'The area is ' + r * c + ' square units.', meta: { k: 'area-num', r: r, c: c } };
+        }],
+        [2, 'mistake', function (lv) {
+          var r = R.int(2, 5), c = R.int(3, 6), who = nm(), truth = !R.int(0, 2), said = truth ? r * c : 2 * (r + c);
+          if (!truth && said === r * c) said += 2;
+          var right = 'Area counts the squares inside: ' + r + ' rows of ' + c + ' = ' + r * c + ' square units.';
+          return { q: who + ' says the area of this shape is <b>' + said + '</b> square units. True or false: ' + who + ' is right.', type: 'tf', answer: said === r * c, fig: shape(rowsOf(r, c)),
+            why: why(right, ['Area is the distance around the outside.', 'Count only the squares along the edges.', 'Add the number of rows and columns.']),
+            hint: 'Area is the space inside. Count the squares.', steps: [right], explain: right, meta: { k: 'area-tf', said: said } };
+        }]
+      ],
+      'la-gaps': [
+        [1, 'tap', function (lv) {
+          var modes = R.shuffle(['fit', 'gap', 'over']);
+          return { q: 'Which tiles measure the area correctly? Tap it.', type: 'tap', tiles: modes.map(function (m) { return gapFig(m).svg; }), answer: modes.indexOf('fit'), answerText: 'the tiles that fit edge to edge',
+            hint: 'Look for no gaps and no overlaps.', steps: ['Gaps leave parts uncounted.', 'Overlaps count some parts twice.', 'The right one fits edge to edge.'],
+            explain: 'The tiles fit edge to edge, with no gaps and no overlaps.', meta: { k: 'gaps-tap', modes: modes } };
+        }],
+        [1, 'tf', function (lv) {
+          var who = nm(), mode = R.pick(['gap', 'over']), truth = !R.int(0, 1), said = truth ? (mode === 'gap' ? 'too low' : 'too high') : (mode === 'gap' ? 'too high' : 'too low');
+          var right = mode === 'gap' ? 'Gaps leave parts uncounted, so the count is too low.' : 'Overlaps count some parts twice, so the count is too high.';
+          return { q: who + ' covered a rectangle like this. ' + who + ' says the count is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: gapFig(mode).svg,
+            why: why(right, ['Any way of covering gives the right count.', 'Gaps make the count too high.', 'Overlaps make the count too low.']),
+            hint: 'Is any part missed? Is any part counted twice?', steps: [right], explain: right, meta: { k: 'gaps-tf', mode: mode, said: said } };
+        }],
+        [1, 'pick', function (lv) {
+          var A2 = R.pick([12, 16, 18, 24]), good = [], bad = [];
+          for (var r = 1; r <= A2; r++) if (A2 % r === 0 && A2 / r <= 12) good.push([r, A2 / r]);
+          good = R.shuffle(good).slice(0, 2);
+          while (bad.length < 2) { var br = R.int(2, 4), bc = R.int(2, 7); if (br * bc !== A2 && !bad.some(function (b) { return b[0] * b[1] === br * bc; })) bad.push([br, bc]); }
+          var opts = R.shuffle(good.concat(bad)), ans = []; opts.forEach(function (o, j) { if (o[0] * o[1] === A2) ans.push(j); });
+          return { q: 'Pick every shape with an area of <b>' + A2 + ' squares</b>.', type: 'pick', options: opts.map(function (o) { return boxRows(o[0], o[1]); }), answer: ans,
+            hint: 'Different shapes can have the same area. Multiply rows by squares in a row.', steps: opts.map(function (o) { return boxRows(o[0], o[1]) + ' = ' + o[0] * o[1] + '.'; }),
+            explain: ans.map(function (j) { return boxRows(opts[j][0], opts[j][1]); }).join(' and ') + ' have the same area.', meta: { k: 'gaps-pick', A: A2 } };
+        }],
+        [2, 'mistake', function (lv) {
+          var n = R.int(6, 12), who = nm(), same = !R.int(0, 2);
+          var right = 'Both shapes use ' + n + ' squares, so they have the same area. Moving squares changes the shape, not the area.';
+          return { q: 'Shape A is ' + n + ' squares in a row. Shape B is the same ' + n + ' squares in an L shape. ' + who + (same ? ' says both shapes have the same area.' : ' says shape A has more area because it is longer.') + ' True or false: ' + who + ' is right.', type: 'tf', answer: same,
+            why: why(right, ['Longer shapes always have more area.', 'An L shape has less area because it has a corner.', 'Area depends on the colour of the squares.']),
+            hint: 'Count the squares in each shape.', steps: [right], explain: right, meta: { k: 'gaps-same', a: n, b: n, saysSame: same } };
+        }]
+      ]
+    };
+    function nums0(t) { return +String(t).match(/\d+/)[0]; }
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = WAYS[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = WAYS;
+  })();
 })();
