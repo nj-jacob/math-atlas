@@ -1,37 +1,20 @@
+/* Grade 7 uses the shared Math Atlas calm look (assets/atlas-theme.css, loaded last).
+   These tokens match it so the page looks right even before the theme loads. Light only. */
 :root{
-  /* Grade 7 look: Bright Studio. White pages, violet and sunny yellow, rounded cards.
-     Bold geometric headings (Outfit), a very readable body face (Atkinson Hyperlegible). */
-  --paper:#f7f5ff; --card:#ffffff; --ink:#1f1d2b; --ink2:#555170; --line:#e2ddf3; --grid:#efecfa;
-  --accent:#6a3fe0; --accent-ink:#ffffff; --hi:#ffd23f; --good:#1f9a4a; --bad:#d92d4c;
-  --plum:#6a3fe0; --rule:#6a3fe0;
-  --sb:#7a3fd6; --sc:#1f7ae0; --sd:#2e9b4a; --se:#f07a12; --sf:#e0336b;
+  --paper:#f4f6f9; --card:#ffffff; --ink:#132039; --ink2:#55627a; --line:#dfe5ee; --grid:transparent;
+  --accent:#0b6e78; --accent-ink:#ffffff; --hi:#f6d36b; --good:#17804a; --bad:#b4283f;
+  --plum:#7646bf; --rule:#dfe5ee;
+  --sb:#2f62c4; --sc:#7646bf; --sd:#1d8550; --se:#c25a12; --sf:#c02e76;
   --strand:var(--sb);
-  --display:'Outfit',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --display:'Bricolage Grotesque',system-ui,-apple-system,'Segoe UI',sans-serif;
   --body:'Atkinson Hyperlegible',system-ui,-apple-system,'Segoe UI',sans-serif;
   color-scheme:light;
-}
-@media (prefers-color-scheme: dark){
-  :root:not([data-theme="light"]){
-    --paper:#16141f; --card:#211e2e; --ink:#f1eefb; --ink2:#b6b0cc; --line:#37324c; --grid:#1c1a28;
-    --accent:#a98bff; --accent-ink:#16141f; --hi:#ffd84f; --good:#7fd18f; --bad:#ff6f86;
-    --plum:#c3a6ff; --rule:#a98bff;
-    --sb:#b89cff; --sc:#7fb6ff; --sd:#7fd18f; --se:#ffa45c; --sf:#ff7aa0;
-    color-scheme:dark;
-  }
-}
-:root[data-theme="dark"]{
-  --paper:#16141f; --card:#211e2e; --ink:#f1eefb; --ink2:#b6b0cc; --line:#37324c; --grid:#1c1a28;
-    --accent:#a98bff; --accent-ink:#16141f; --hi:#ffd84f; --good:#7fd18f; --bad:#ff6f86;
-    --plum:#c3a6ff; --rule:#a98bff;
-    --sb:#b89cff; --sc:#7fb6ff; --sd:#7fd18f; --se:#ffa45c; --sf:#ff7aa0;
-  color-scheme:dark;
 }
 *{box-sizing:border-box}
 html{-webkit-text-size-adjust:100%}
 body{
   margin:0; background-color:var(--paper);
-  background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);
-  background-size:24px 24px; color:var(--ink); font-family:var(--body); font-size:18px; line-height:1.6;
+  color:var(--ink); font-family:var(--body); font-size:18px; line-height:1.6;
 }
 a{color:var(--accent)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -77,7 +60,7 @@ p{margin:.7em 0;max-width:65ch}
 .cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin:18px 0}
 .card{display:flex;flex-direction:column;gap:6px;background:var(--card);border:1px solid var(--line);border-top:5px solid var(--strand);
   border-radius:12px;padding:16px;text-decoration:none;color:var(--ink);transition:transform .12s,box-shadow .12s}
-.card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(10,30,60,.12)}
+.card:hover{box-shadow:0 6px 18px rgba(10,30,60,.12)}
 .card .no{font-family:var(--display);font-weight:800;font-size:2.2rem;line-height:1;color:var(--strand)}
 .card h2{font-size:1.25rem}
 .card .sub{font-style:italic;color:var(--ink2);font-size:.95rem;margin:0}
@@ -274,18 +257,8 @@ input[type=range]:disabled{opacity:.4}
 
 /* ================= Grade 7 magazine layer ================= */
 body{background-image:none;background-color:var(--paper)}
-.bar{background:var(--ink);border-bottom:0;color:var(--paper)}
-.bar .brand{color:var(--paper);font-style:italic;letter-spacing:-.01em;font-weight:700}
 .brand i{background:var(--accent);border:0;border-radius:2px;width:26px;height:26px}
 .brand i::after{content:"7";color:#fff;font-style:normal;font-family:var(--display);font-size:16px}
-.bar nav a{color:color-mix(in srgb,var(--paper) 78%,transparent)}
-.bar nav a:hover{color:var(--paper)}
-.tools button{background:transparent;color:color-mix(in srgb,var(--paper) 80%,transparent);border-color:color-mix(in srgb,var(--paper) 35%,transparent)}
-.tools button:hover{color:var(--paper);border-color:var(--paper)}
-:root[data-theme="dark"] .bar,:root[data-theme="dark"] .bar .brand{color:var(--ink)}
-:root[data-theme="dark"] .bar{background:#110f19}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .bar{background:#110f19}}
-:root[data-theme="dark"] .bar nav a,:root[data-theme="dark"] .tools button{color:var(--ink2)}
 h1{font-weight:800;letter-spacing:-.02em;font-variation-settings:"SOFT" 50}
 h2{font-weight:700;letter-spacing:-.01em}
 .hero{border-bottom:3px double var(--rule);padding-bottom:14px}
@@ -313,8 +286,6 @@ h2{font-weight:700;letter-spacing:-.01em}
 .lab>.lt{color:var(--accent);letter-spacing:.12em}
 .btn{background:var(--ink);color:var(--paper);border-color:var(--ink);border-radius:4px}
 .btn.alt{background:var(--card);color:var(--ink)}
-:root[data-theme="dark"] .btn:not(.alt){background:var(--accent);color:#1b1816;border-color:var(--accent)}
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .btn:not(.alt){background:var(--accent);color:#1b1816;border-color:var(--accent)}}
 input[type=number],input[type=text],select{border-radius:4px}
 button.opt{border-radius:4px}
 .quiz{border:0;border-top:3px solid var(--accent);border-radius:0}
@@ -372,67 +343,49 @@ button.opt svg{display:block;max-width:100%;height:auto;margin:0 auto}
 @media (max-width:640px){.math{white-space:normal}}
 @media (max-width:640px){.opts:has(svg){grid-template-columns:1fr}}
 
-/* ================= Grade 7 Bright Studio layer ================= */
-.bar{background:var(--card);color:var(--ink);border-bottom:3px solid var(--accent);box-shadow:0 2px 12px rgba(60,40,140,.06)}
-.bar .brand{color:var(--ink);font-style:normal;font-weight:800}
-.brand i{background:var(--accent);border-radius:8px}
-.bar nav a{color:var(--ink2)}
-.bar nav a:hover{color:var(--accent)}
-.tools button{color:var(--ink2);border-color:var(--line)}
-.tools button:hover{color:var(--accent);border-color:var(--accent)}
-:root[data-theme="dark"] .bar{background:var(--card)}
-h1{font-weight:800;letter-spacing:-.02em}
-.hero{border-bottom:3px solid var(--accent)}
-.hero h1 em{font-style:normal;color:var(--accent);background:linear-gradient(transparent 68%,color-mix(in srgb,var(--hi) 70%,transparent) 68%)}
+/* ================= Grade 7 calm layer (shared look; no accent stripes, no hard shadows) ================= */
+.brand i{background:var(--ink);border-radius:8px}
+.hero,.chead{border-bottom:1px solid var(--line)}
+.hero h1 em{font-style:normal;color:inherit;background:none}
+.kicker,.lab>.lt,.yt>b.t,.rvtag{color:var(--ink2)}
 .cards{gap:14px;border-top:0}
-.card{border:1.5px solid var(--line);border-radius:16px;background:var(--card);padding:16px;box-shadow:0 2px 0 var(--line)}
-.card:hover{transform:translateY(-4px);box-shadow:0 12px 26px rgba(70,40,160,.14);background:var(--card)}
-.card .no{font-style:normal;font-weight:800;font-size:2.2rem}
-.sec{border:1.5px solid var(--line);border-top:5px solid var(--strand);border-radius:18px;box-shadow:0 4px 16px rgba(60,40,140,.06)}
-.sec>h2 .n{font-style:normal;font-weight:800;font-size:2.2rem}
-.chead{border-bottom:3px solid var(--accent)}
-.key{border-top:0;border-left:5px solid var(--strand);border-radius:12px}
-.mistake{border-top:0;border-left:5px solid var(--bad);border-radius:12px}
-.eg{border-left:5px solid var(--ink2);border-radius:12px}
-.lab{border:1.5px solid var(--line);border-radius:16px;background:var(--card);box-shadow:0 8px 22px rgba(106,63,224,.14)}
-.btn{background:var(--accent);color:#fff;border-color:var(--accent);border-radius:12px;box-shadow:0 3px 0 color-mix(in srgb,var(--accent) 55%,#000)}
-.btn.alt{background:var(--card);color:var(--ink);border-color:var(--line);box-shadow:0 3px 0 var(--line)}
-:root[data-theme="dark"] .btn:not(.alt){background:var(--accent);color:#16141f;border-color:var(--accent)}
+.card{border-radius:16px;padding:16px}
+.card .no{font-style:normal;font-weight:800;font-size:2rem}
+.sec>h2 .n{font-style:normal;font-weight:800;font-size:1rem;padding:4px 10px;line-height:1.2;align-self:center}
+.key,.mistake{border-top:0}
+.key b.t{color:var(--at-accent2,#0a5961)}
+.eg{border:1px solid var(--line);border-radius:12px;background:var(--paper)}
+.lab{border:1px solid var(--line);border-radius:16px;background:var(--card);box-shadow:var(--at-shadow,none)}
 input[type=number],input[type=text],select{border-radius:10px}
-button.opt{border-radius:12px}
-.quiz{border:1.5px solid var(--line);border-top:5px solid var(--accent);border-radius:18px}
+button.opt{border-radius:10px}
+.quiz{border:1px solid var(--line);border-radius:16px;background:var(--card)}
 .pill{border-radius:999px}
 .pn a,.start,.note,.jump a,.skill,.pcard,.facts>div{border-radius:12px}
-.yt{border-radius:14px;border-color:var(--accent);background:color-mix(in srgb,var(--hi) 12%,var(--card))}
-.vs{border-radius:14px;overflow:hidden;border-color:var(--line)}
+.yt{border:1px solid var(--line);border-radius:14px;background:var(--at-tint,#e8f3f4)}
+.vs{border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .vs>div+div{border-left-color:var(--line)}
+@media (max-width:520px){.vs>div+div{border-top-color:var(--line)}}
+.per,.info{border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.info .ihead{border-bottom-color:var(--line)}
+.vcell{border:1.5px solid var(--at-line2,#cdd5e1);border-radius:10px}
+.steps{border-left-color:var(--line)}
 .qn{border-radius:8px}
 .tbl table{border-radius:12px;overflow:hidden}
+th{background:var(--paper)}
+.note{background:var(--card)}
 
-/* ---------- motion: gentle, and switched off for anyone who prefers less motion ---------- */
-@keyframes g7up{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:none}}
-@keyframes g7pop{0%{transform:scale(.6);opacity:0}70%{transform:scale(1.06);opacity:1}100%{transform:scale(1)}}
-@keyframes g7bump{0%{transform:scale(1)}40%{transform:scale(1.08)}100%{transform:scale(1)}}
-@keyframes g7shake{0%,100%{transform:none}20%{transform:translateX(-6px)}40%{transform:translateX(6px)}60%{transform:translateX(-4px)}80%{transform:translateX(4px)}}
-@keyframes g7glow{0%{box-shadow:0 0 0 0 color-mix(in srgb,var(--good) 55%,transparent)}100%{box-shadow:0 0 0 14px transparent}}
-@keyframes g7bob{0%,100%{transform:none}50%{transform:translateY(-2px) rotate(-4deg)}}
+/* ---------- motion: calm fades only, switched off for anyone who prefers less motion ---------- */
+@keyframes g7up{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes g7fade{from{opacity:0}to{opacity:1}}
 @keyframes g7draw{from{stroke-dashoffset:var(--len,600)}to{stroke-dashoffset:0}}
 @media (prefers-reduced-motion: no-preference){
-  .rv{opacity:0;transform:translateY(22px)}
-  .rv.in{animation:g7up .6s cubic-bezier(.2,.8,.2,1) both}
-  svg.draw rect,svg.draw circle,svg.draw ellipse,svg.draw polygon,svg.draw text,svg.draw g{animation:g7pop .45s cubic-bezier(.2,.8,.2,1) both;animation-delay:calc(var(--i,0) * 25ms);transform-box:fill-box;transform-origin:center}
-  svg.draw line:not([stroke-dasharray]),svg.draw path:not([stroke-dasharray]),svg.draw polyline:not([stroke-dasharray]){stroke-dasharray:var(--len,600);animation:g7draw .8s ease-out both;animation-delay:calc(var(--i,0) * 25ms)}
-  .card,.btn,button.opt,.pill,.skill,.jump a,.tools button{transition:transform .15s ease,box-shadow .2s ease,background .2s,border-color .2s}
-  .btn:hover,button.opt:hover:not(:disabled),.pill:hover,.skill:hover,.jump a:hover{transform:translateY(-2px)}
-  .btn:active,button.opt:active:not(:disabled){transform:translateY(2px) scale(.97)}
-  button.opt.yes{animation:g7bump .4s,g7glow .9s}
-  button.opt.no{animation:g7shake .4s}
-  .fb.ok,.fb.bad{animation:g7up .35s both}
+  .rv{opacity:0;transform:translateY(8px)}
+  .rv.in{animation:g7up .4s ease-out both}
+  svg.draw rect,svg.draw circle,svg.draw ellipse,svg.draw polygon,svg.draw text,svg.draw g{animation:g7fade .35s ease-out both;animation-delay:calc(var(--i,0) * 20ms)}
+  svg.draw line:not([stroke-dasharray]),svg.draw path:not([stroke-dasharray]),svg.draw polyline:not([stroke-dasharray]){stroke-dasharray:var(--len,600);animation:g7draw .7s ease-out both;animation-delay:calc(var(--i,0) * 20ms)}
+  .card,.btn,button.opt,.pill,.skill,.jump a,.tools button{transition:box-shadow .15s,background .15s,border-color .15s}
+  .fb.ok,.fb.bad{animation:g7fade .3s both}
   output{display:inline-block}
-  output.bump{animation:g7bump .3s}
-  .brand i{animation:g7bob 4s ease-in-out infinite}
-  input[type=range]{transition:filter .2s}
-  input[type=range]:active{filter:drop-shadow(0 0 6px color-mix(in srgb,var(--accent) 60%,transparent))}
 }
 @media print{.rv{opacity:1!important;transform:none!important;animation:none!important}}
 
@@ -441,9 +394,9 @@ button.opt{border-radius:12px}
 .k7-slide{width:100%}
 .k7-slide .fig,.k7-slide .vrow{margin:6px 0}
 .k7-slide>svg{display:block;margin:0 auto;max-width:100%;height:auto}
-.k7-in{animation:g7up .45s cubic-bezier(.2,.8,.2,1) both}
+.k7-in{animation:g7up .35s ease-out both}
 .k7-eq{font-size:clamp(1.15rem,3.6vw,1.6rem);text-align:center;line-height:1.7;margin:14px 0;white-space:normal}
-.pill.k7-hit{background:var(--se);color:#fff;border-color:var(--se)}
+.pill.k7-hit{background:var(--at-tint,#e8f3f4)!important;color:var(--at-accent2,#0a5961)!important;border-color:var(--accent)!important}
 .k7-lab .ctrl{margin-top:0}
 @media (prefers-reduced-motion: reduce){.k7-in{animation:none}}
 @media (max-width:640px){.bar nav{display:flex;gap:14px;overflow-x:auto;flex-wrap:nowrap;scrollbar-width:none}.bar nav a{white-space:nowrap}}

@@ -720,8 +720,8 @@
 
   /* reading supports: theme and larger text, remembered in this browser */
   function prefs() {
-    /* light unless the student picks dark: the device's dark mode is not followed */
-    var root = document.documentElement, th = store('theme') === 'dark' ? 'dark' : 'light', big = store('big') === '1';
+    /* light only: all grades share one calm look (Noel, 2026-10-31) */
+    var root = document.documentElement, th = 'light', big = store('big') === '1';
     function apply() {
       root.setAttribute('data-theme', th);
       root.classList.toggle('bigtext', big);

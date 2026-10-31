@@ -71,7 +71,7 @@
   /* a bag of marbles */
   function bag(r, b, g, gone) {
     var s = '<path d="M30 40 Q20 150 90 160 Q160 150 150 40 Z" style="fill:color-mix(in srgb,var(--ink) 6%,var(--card));stroke:var(--ink)" stroke-width="2"/>', list = [];
-    for (var i = 0; i < r; i++) list.push('var(--bad)'); for (var j = 0; j < b; j++) list.push('var(--sc)'); for (var k = 0; k < (g || 0); k++) list.push('var(--sd)');
+    for (var i = 0; i < r; i++) list.push('var(--bad)'); for (var j = 0; j < b; j++) list.push('var(--sb)'); for (var k = 0; k < (g || 0); k++) list.push('var(--sd)');
     list.forEach(function (c, i) { s += '<circle cx="' + (55 + (i % 4) * 22) + '" cy="' + (140 - Math.floor(i / 4) * 22) + '" r="10" style="fill:' + c + ';stroke:var(--ink)" stroke-width="1"' + (gone === i ? ' opacity=".2"' : '') + '/>'; });
     return A.svg(180, 170, s, 'A bag with ' + r + ' red' + ', ' + b + ' blue' + (g ? ' and ' + g + ' green' : '') + ' marbles');
   }

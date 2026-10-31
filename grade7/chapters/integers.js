@@ -8,14 +8,14 @@
   function thermo(t, t2) {
     var s = '', y = function (v) { return 230 - (v + 30) * 3.5; };
     s += '<rect x="70" y="' + (y(30) - 6) + '" width="26" height="' + (y(-30) - y(30) + 12) + '" rx="13" style="fill:var(--card);stroke:var(--ink)" stroke-width="2"/>';
-    s += '<circle cx="83" cy="' + (y(-30) + 22) + '" r="20" style="fill:' + (t < 0 ? 'var(--sc)' : 'var(--bad)') + ';stroke:var(--ink)" stroke-width="2"/>';
-    s += '<rect x="76" y="' + y(t) + '" width="14" height="' + (y(-30) - y(t) + 10) + '" style="fill:' + (t < 0 ? 'var(--sc)' : 'var(--bad)') + '"/>';
+    s += '<circle cx="83" cy="' + (y(-30) + 22) + '" r="20" style="fill:' + (t < 0 ? 'var(--sb)' : 'var(--bad)') + ';stroke:var(--ink)" stroke-width="2"/>';
+    s += '<rect x="76" y="' + y(t) + '" width="14" height="' + (y(-30) - y(t) + 10) + '" style="fill:' + (t < 0 ? 'var(--sb)' : 'var(--bad)') + '"/>';
     for (var v = -30; v <= 30; v += 5) {
       s += '<line x1="96" y1="' + y(v) + '" x2="' + (v % 10 ? 104 : 110) + '" y2="' + y(v) + '" style="stroke:var(--ink)" stroke-width="' + (v ? 1.5 : 3) + '"/>';
       if (v % 10 === 0) s += '<text x="116" y="' + (y(v) + 6) + '" font-size="17"' + (v ? '' : ' font-weight="700"') + '>' + sg(v) + '</text>';
     }
     s += '<line x1="40" y1="' + y(0) + '" x2="150" y2="' + y(0) + '" style="stroke:var(--ink2)" stroke-dasharray="4 4"/><text x="152" y="' + (y(0) + 5) + '" font-size="15" class="t2">freezing</text>';
-    s += '<text x="64" y="' + (y(t) + 6) + '" text-anchor="end" font-size="20" font-weight="700" style="fill:' + (t < 0 ? 'var(--sc)' : 'var(--bad)') + '">' + sg(t) + '&deg;C</text>';
+    s += '<text x="64" y="' + (y(t) + 6) + '" text-anchor="end" font-size="20" font-weight="700" style="fill:' + (t < 0 ? 'var(--sb)' : 'var(--bad)') + '">' + sg(t) + '&deg;C</text>';
     if (t2 !== undefined) s += '<circle cx="83" cy="' + y(t2) + '" r="7" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="64" y="' + (y(t2) + 6) + '" text-anchor="end" font-size="18" font-weight="700">' + sg(t2) + '&deg;C</text>';
     return A.svg(230, 280, s, 'Thermometer showing ' + sg(t).replace('&minus;', 'minus ') + ' degrees Celsius');
   }
@@ -27,7 +27,7 @@
     for (var v = a; v <= b; v++) {
       var x = sc(v);
       s += '<line x1="' + x + '" y1="' + (top - (v ? 6 : 10)) + '" x2="' + x + '" y2="' + (top + (v ? 6 : 10)) + '" style="stroke:var(--ink)" stroke-width="' + (v ? 1.5 : 3) + '"/>';
-      if (v % every === 0) s += '<text x="' + x + '" y="' + (top + 28) + '" text-anchor="middle" font-size="' + (n <= 20 ? 16 : 15) + '"' + (v ? '' : ' font-weight="700"') + ' style="fill:' + (v < 0 ? 'var(--sc)' : v > 0 ? 'var(--bad)' : 'var(--ink)') + '">' + sg(v) + '</text>';
+      if (v % every === 0) s += '<text x="' + x + '" y="' + (top + 28) + '" text-anchor="middle" font-size="' + (n <= 20 ? 16 : 15) + '"' + (v ? '' : ' font-weight="700"') + ' style="fill:' + (v < 0 ? 'var(--sb)' : v > 0 ? 'var(--bad)' : 'var(--ink)') + '">' + sg(v) + '</text>';
     }
     (arrows || []).forEach(function (ar, i) {
       var y = top - 22 - i * 28, xa = sc(ar.from), xb = sc(ar.to);
@@ -64,7 +64,7 @@
     s += '<line x1="40" y1="' + y(0) + '" x2="' + (W - 10) + '" y2="' + y(0) + '" style="stroke:var(--ink)" stroke-width="2"/><text x="34" y="' + (y(0) + 5) + '" text-anchor="end" font-size="16" font-weight="700">0</text>';
     terms.forEach(function (t, i) {
       var x = 70 + i * 60;
-      s += '<line x1="' + x + '" y1="' + y(0) + '" x2="' + x + '" y2="' + y(t) + '" style="stroke:' + (t < 0 ? 'var(--sc)' : 'var(--bad)') + '" stroke-width="10"/>' +
+      s += '<line x1="' + x + '" y1="' + y(0) + '" x2="' + x + '" y2="' + y(t) + '" style="stroke:' + (t < 0 ? 'var(--sb)' : 'var(--bad)') + '" stroke-width="10"/>' +
         '<circle cx="' + x + '" cy="' + y(t) + '" r="6" style="fill:var(--ink)"/>' +
         '<text x="' + x + '" y="' + (t < 0 ? y(t) + 24 : y(t) - 10) + '" text-anchor="middle" font-size="17" font-weight="700">' + sg(t) + '</text>';
     });
@@ -127,7 +127,7 @@
         A.bind(root, ['sba', 'sbop', 'sbb'], function () {
           var a = +$('#sba', root).value, op = +$('#sbop', root).value, b = +$('#sbb', root).value, mv = op * b, res = a + mv;
           $('#sbao', root).innerHTML = sg(a); $('#sbbo', root).innerHTML = sg(b);
-          $('#sbfig', root).innerHTML = iline(-20, 20, [{ v: a, col: 'var(--hi)' }, { v: res, lab: sg(res), col: 'var(--se)' }], mv ? [{ from: a, to: res, col: mv > 0 ? 'var(--sd)' : 'var(--sc)', id: 'ia2', lab: (mv > 0 ? 'right ' : 'left ') + Math.abs(mv) }] : []);
+          $('#sbfig', root).innerHTML = iline(-20, 20, [{ v: a, col: 'var(--hi)' }, { v: res, lab: sg(res), col: 'var(--se)' }], mv ? [{ from: a, to: res, col: mv > 0 ? 'var(--sd)' : 'var(--sb)', id: 'ia2', lab: (mv > 0 ? 'right ' : 'left ') + Math.abs(mv) }] : []);
           $('#sbout', root).innerHTML = '<p class="big2">' + sg(a) + (op > 0 ? ' + ' : ' &minus; ') + sgp(b) + (op < 0 ? ' = ' + sg(a) + ' + ' + sgp(-b) : '') + ' = ' + sg(res) + '</p>' +
             '<p>' + (mv === 0 ? 'Adding or subtracting 0 does not move you.' : (op < 0 ? 'Subtracting ' + sg(b) + ' is the same as adding ' + sg(-b) + '. ' : '') + 'Move ' + Math.abs(mv) + ' to the ' + (mv > 0 ? 'right' : 'left') + '.') + '</p>';
         });
@@ -187,7 +187,7 @@
       { id: 'right', title: 'Further right is greater', exp: ['B1.3'], skill: 'in-compare', hard: true,
         body: '<p>On a number line, numbers get <b>bigger to the right</b>. So &minus;8 is <b>less</b> than &minus;3, even though 8 is more than 3.</p>',
         watch: K.slides([
-          { say: 'Here are &minus;8 and &minus;3 on a number line.', fig: function () { return iline(-10, 5, [{ v: -8, lab: '&minus;8', col: 'var(--sc)' }, { v: -3, lab: '&minus;3', col: 'var(--bad)' }]); } },
+          { say: 'Here are &minus;8 and &minus;3 on a number line.', fig: function () { return iline(-10, 5, [{ v: -8, lab: '&minus;8', col: 'var(--sb)' }, { v: -3, lab: '&minus;3', col: 'var(--bad)' }]); } },
           { say: '&minus;3 is further right, so &minus;3 is greater.', fig: eq('&minus;3 &gt; &minus;8') },
           { say: 'Think of temperature: &minus;8&deg;C is colder than &minus;3&deg;C.', fig: function () { return thermo(-3, -8); } },
           { say: 'For negatives, further from zero means <b>smaller</b>.', fig: '<div class="vs"><div><b class="t">Positive</b><p>8 &gt; 3</p></div><div><b class="t">Negative</b><p>&minus;8 &lt; &minus;3</p></div></div>', ms: 2600 }
@@ -206,8 +206,8 @@
       { id: 'rational', title: 'Negative fractions and decimals', exp: ['B1.2', 'B1.3'], skill: 'in-compare', hard: true,
         body: '<p>Fractions and decimals can be negative too. &minus;2.5 is halfway between &minus;3 and &minus;2. All of these are <b>rational numbers</b>.</p>',
         watch: K.slides([
-          { say: '&minus;2.5 is halfway between &minus;3 and &minus;2.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sc)' }]); } },
-          { say: '&minus;' + fr(3, 4) + ' is between &minus;1 and 0, closer to &minus;1.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sc)' }, { v: -0.75, lab: '&minus;3/4', col: 'var(--sb)' }]); } },
+          { say: '&minus;2.5 is halfway between &minus;3 and &minus;2.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sb)' }]); } },
+          { say: '&minus;' + fr(3, 4) + ' is between &minus;1 and 0, closer to &minus;1.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sb)' }, { v: -0.75, lab: '&minus;3/4', col: 'var(--sb)' }]); } },
           { say: 'Order &minus;2, &minus;1.2, &minus;' + fr(1, 2) + ' and 0.4: read them left to right.', fig: function () { return iline(-3, 1, [{ v: -2, lab: '&minus;2' }, { v: -1.2, lab: '&minus;1.2' }, { v: -0.5, lab: '&minus;1/2' }, { v: 0.4, lab: '0.4' }]); }, ms: 2800 }
         ]),
         try: lab('ordn', [
@@ -287,7 +287,7 @@
         body: '<p>Subtraction also finds the <b>difference</b> between two numbers: how far apart they are on the line. Always do <b>bigger &minus; smaller</b>.</p>',
         watch: K.slides([
           { say: 'At night it was &minus;12&deg;C. At noon it was 4&deg;C. How much did it rise?', fig: function () { return thermo(4, -12); } },
-          { say: 'From &minus;12 up to 0 is 12 degrees. From 0 up to 4 is 4 more.', fig: function () { return iline(-14, 6, [{ v: -12, lab: '&minus;12', col: 'var(--sc)' }, { v: 4, lab: '4', col: 'var(--bad)' }], [{ from: -12, to: 0, col: 'var(--sc)', id: 'idf1', lab: '12' }, { from: 0, to: 4, col: 'var(--bad)', id: 'idf2', lab: '4' }]); } },
+          { say: 'From &minus;12 up to 0 is 12 degrees. From 0 up to 4 is 4 more.', fig: function () { return iline(-14, 6, [{ v: -12, lab: '&minus;12', col: 'var(--sb)' }, { v: 4, lab: '4', col: 'var(--bad)' }], [{ from: -12, to: 0, col: 'var(--sb)', id: 'idf1', lab: '12' }, { from: 0, to: 4, col: 'var(--bad)', id: 'idf2', lab: '4' }]); } },
           { say: 'Or subtract: 4 &minus; (&minus;12) = 4 + 12 = <b>16 degrees</b>.', fig: eq('4 &minus; (&minus;12) = 16'), ms: 2600 }
         ]),
         key: '<p><b>Difference = bigger &minus; smaller.</b> Across zero, add the two distances from zero.</p>',

@@ -11,7 +11,7 @@
       var tot = c + m * n, cols = Math.max(1, Math.ceil(tot / 6)), w = cols * sz;
       for (var i = 0; i < tot; i++) {
         var col = Math.floor(i / 6), row = i % 6, isStart = i < c;
-        s += '<rect x="' + (x + col * sz) + '" y="' + (6 + (5 - row) * sz) + '" width="' + (sz - 1.5) + '" height="' + (sz - 1.5) + '" style="fill:' + (isStart ? 'var(--se)' : 'var(--sc)') + '"/>';
+        s += '<rect x="' + (x + col * sz) + '" y="' + (6 + (5 - row) * sz) + '" width="' + (sz - 1.5) + '" height="' + (sz - 1.5) + '" style="fill:' + (isStart ? 'var(--se)' : 'var(--sb)') + '"/>';
       }
       s += '<text x="' + (x + w / 2) + '" y="112" text-anchor="middle" font-size="16">term ' + n + '</text><text x="' + (x + w / 2) + '" y="132" text-anchor="middle" font-size="17" font-weight="700">' + tot + '</text>';
       x += Math.max(w, 50) + 22;
