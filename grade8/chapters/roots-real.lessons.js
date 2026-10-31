@@ -12,6 +12,12 @@
           [F.square(6), 'Side 6: 6 × 6 = 36 tiles. Not 6 × 2.'],
           [F.square(10), 'Side 10: 100 tiles. The small 2 means "use it as a factor twice".', 2400]
         ]),
+        example: K.film([
+          [F.square(8), 'My turn. I will find 8². The small 2 tells me to use 8 as a factor twice.'],
+          [T(['8² = 8 × 8']), 'First I write it as a multiplication: 8 × 8.'],
+          [T(['8 × 8 = 64']), 'Next I multiply: 8 × 8 = 64.'],
+          [F.square(8), 'I check with the picture: a square 8 wide and 8 tall holds 64 tiles. So <b>8² = 64</b>, the area of a square with side 8.', 2600]
+        ]),
         try: K.reuse(C, 0, { tasks: [
           { do: 'Build the square with an area of <b>144</b>.', goal: function (g) { return g('sqn') === 12; }, yes: '12 × 12 = 144. So 12² = 144.' },
           { do: 'Now build the square with an area of <b>225</b>.', goal: function (g) { return g('sqn') === 15; }, yes: '15 × 15 = 225.' }] }),
@@ -25,6 +31,13 @@
           [T(['3 × 3 = 9', 'two decimal places → 0.09']), '3 × 3 = 9. Each 0.3 has one decimal place, so the answer has two: 0.09.'],
           [T(['(2/5)² = (2 × 2)/(5 × 5)', '= 4/25']), 'For a fraction, square the top and the bottom.'],
           [T(['30² = 3² × 100', '= 900']), 'For 30², square 3, then add the two zeros from the two tens.', 2400]
+        ]),
+        example: K.film([
+          [T(['0.6² = ?']), 'My turn. I will square 0.6. The rule is the same: I multiply it by itself.'],
+          [T(['0.6 × 0.6']), 'First I write 0.6 × 0.6.'],
+          [T(['6 × 6 = 36']), 'Next I leave out the decimal points for a moment: 6 × 6 = 36.'],
+          [T(['one place + one place', '= two places → 0.36']), 'Then I count decimal places. Each 0.6 has one, so the answer has two: 0.36.'],
+          [T(['0.36 < 0.6 ✓']), 'I check: squaring a number less than 1 makes it smaller. 0.36 is less than 0.6, so <b>0.6² = 0.36</b>.', 2600]
         ]),
         ways: [{ label: 'Area of a small square', html: '<p>A square 0.3 m wide is smaller than a square metre. Its area must be smaller than 0.3 too: 0.09 m' + SQ + '. Squaring a number less than 1 makes it <b>smaller</b>.</p>' },
           { label: 'Count the places', html: '<p>0.3 × 0.3: one place + one place = two places. 9 becomes 0.09. 0.05 × 0.05: two + two = four places, so 25 becomes 0.0025.</p>' }],
@@ -40,6 +53,12 @@
           [F.square(7), '7 × 7 = 49, so each side is 7. We write √49 = 7.'],
           [T(['√64 = 8', 'check: 8 × 8 = 64']), 'Check any root by squaring your answer.', 2400]
         ]),
+        example: K.film([
+          [F.square(11), 'My turn. This square has an area of 121. I will find √121, the length of each side.'],
+          [T(['? × ? = 121']), 'I ask: what number times itself makes 121?'],
+          [T(['10 × 10 = 100', '11 × 11 = 121']), 'I try 10: 100 is too small. I try 11: 11 × 11 = 121.'],
+          [T(['√121 = 11', 'check: 11² = 121 ✓']), 'So <b>√121 = 11</b>. I check by squaring: 11² = 121.', 2600]
+        ]),
         try: K.reuse(C, 0, { tasks: [
           { do: 'A square has an area of <b>81</b>. Find its side.', goal: function (g) { return g('sqn') === 9; }, yes: '√81 = 9.' },
           { do: 'Now find the side of a square with area <b>169</b>.', goal: function (g) { return g('sqn') === 13; }, yes: '√169 = 13.' }] }),
@@ -52,6 +71,13 @@
           [T(['√0.49 = ?', 'think: √49 = 7']), 'Start with the whole-number fact: √49 = 7.'],
           [T(['0.7 × 0.7 = 0.49', '√0.49 = 0.7']), '0.7 × 0.7 = 0.49, so √0.49 = 0.7.'],
           [T(['√(9/16) = √9 / √16', '= 3/4']), 'For a fraction, root the top and the bottom.', 2400]
+        ]),
+        example: K.film([
+          [T(['√0.64 = ?']), 'My turn. I will find √0.64.'],
+          [T(['√64 = 8']), 'First I use the whole-number fact I know: √64 = 8.'],
+          [T(['0.64 = 64/100', '√64 / √100 = 8/10']), 'Next I write 0.64 as 64 hundredths. I take the root of the top and of the bottom: 8/10.'],
+          [T(['8/10 = 0.8']), 'So √0.64 = 0.8.'],
+          [T(['0.8 × 0.8 = 0.64 ✓']), 'Last, I check by squaring: 0.8 × 0.8 = 0.64. <b>Use the whole-number fact, then check by squaring.</b>', 2600]
         ]),
         ways: [{ label: 'Check by squaring', html: '<p>Guess, then square to check. Is ' + RT + '0.36 = 0.06? 0.06 × 0.06 = 0.0036. Too small. Try 0.6: 0.6 × 0.6 = 0.36. Yes.</p>' },
           { label: 'As a fraction', html: '<p>0.49 = 49/100. ' + RT + '49 = 7 and ' + RT + '100 = 10, so the root is 7/10 = 0.7.</p>' }],
@@ -68,6 +94,12 @@
           [F.rootLine(50), 'So √50 is between 7 and 8, and very close to 7.'],
           [F.rootLine(30), '√30: 25 < 30 < 36, so it is between 5 and 6, about 5.5.', 2400]
         ]),
+        example: K.film([
+          [T(['√75 = ?']), 'My turn. I will estimate √75.'],
+          [T(['64 &lt; 75 &lt; 81']), 'First I find the perfect squares on each side: 64 and 81.'],
+          [T(['√64 = 8', '√81 = 9']), 'Next I take their roots: 8 and 9.'],
+          [F.rootLine(75), 'So √75 is <b>between 8 and 9</b>. 75 is a little nearer 81, so the root is just past halfway: about 8.7.', 2600]
+        ]),
         try: K.reuse(C, 1, { tasks: [
           { do: 'Find a number whose root is between <b>7 and 8</b>, but not a perfect square.', goal: function (g) { var n = +g('rtn'); return n > 49 && n < 64; }, yes: 'Any number from 50 to 63 has a root between 7 and 8.' },
           { do: 'Now find the perfect square whose root is exactly <b>10</b>.', goal: function (g) { return g('rtn') === 100; }, yes: '√100 = 10.' }] }),
@@ -81,6 +113,12 @@
           [T(['6.3 × 6.3 = 39.69']), 'Try 6.3. Squared, it is 39.69: very close to 40.'],
           [T(['6.4 × 6.4 = 40.96']), '6.4 squared is 40.96: a bit further away.'],
           [T(['√40 ≈ 6.3']), 'So √40 ≈ 6.3.', 2400]
+        ]),
+        example: K.film([
+          [F.rootLine(55), 'My turn. I will find √55 to one decimal place. 49 &lt; 55 &lt; 64, so the root is between 7 and 8, nearer 7.'],
+          [T(['7.4 × 7.4 = 54.76']), 'I guess 7.4 and square it: 54.76. Just under 55.'],
+          [T(['7.5 × 7.5 = 56.25']), 'I go up one tenth: 7.5 squared is 56.25. That is over 55, and further away.'],
+          [T(['√55 ≈ 7.4']), 'So <b>√55 ≈ 7.4</b>. Guess, square, adjust.', 2400]
         ]),
         ways: [{ label: 'Guess and check', html: '<p>Guess, square, adjust. Too big? Go down a tenth. Too small? Go up. Two or three tries is enough.</p>' },
           { label: 'How far along?', html: '<p>40 is 4 of the 13 steps from 36 to 49. 4/13 is about 0.3, so ' + RT + '40 is about 6.3.</p>' }],
@@ -96,6 +134,13 @@
           [T(['1/3 = 0.333…']), '1/3 is 0.333… It goes on, but it repeats: still rational.'],
           [F.diagonal(), 'The diagonal of a 1 by 1 square is √2 = 1.414 213… It never ends and never repeats: irrational.'],
           [T(['√49 = 7', 'rational']), 'Careful: √49 = 7. Work out roots first.', 2400]
+        ]),
+        example: K.film([
+          [T(['2/9,  √7,  √36']), 'My turn. I will sort these numbers: rational or irrational?'],
+          [T(['2/9 = 0.222…']), 'First 2/9. I divide: 0.222… The 2 repeats, so it is rational.'],
+          [T(['√36 = 6']), 'Next √36. I work out the root first: 6. A whole number is rational.'],
+          [T(['√7 = 2.645 751…']), 'Then √7. 7 is not a perfect square, so its decimal never ends and never repeats: irrational.'],
+          [T(['rational: 2/9, √36', 'irrational: √7']), 'Ends or repeats: <b>rational</b>. Never ends, never repeats: <b>irrational</b>.', 2600]
         ]),
         try: K.reuse(C, 2, { tasks: [
           { do: 'Tap a number that is <b>irrational</b>.', goal: function (g) { return /irrational/i.test(g.text('#rsout')) && !/not/.test(g.text('#rsout').split('.')[0]); }, yes: 'Yes. Its decimal never ends and never repeats.' },
@@ -114,6 +159,13 @@
           [F.nested('rat'), 'Add fractions and decimals that end or repeat: rational numbers.'],
           [F.nested('irr'), 'Beside them, the irrational numbers. Together: the real numbers.', 2400]
         ]),
+        example: K.film([
+          [F.nested('nat'), 'My turn. I will find every set that 12 belongs to. 12 is a counting number, so it is natural.'],
+          [F.nested('int'), 'Natural numbers sit inside the whole numbers and the integers, so 12 is in those too.'],
+          [F.nested('rat'), 'Integers sit inside the rational numbers: 12 = 12/1. So 12 is rational, and real.'],
+          [F.nested('rat'), 'Now −2.5. It is negative and not whole, so it is not natural, whole or an integer. It is −5/2: rational.'],
+          [F.nested('irr'), 'I check: each box sits inside the next, and every number here is real. 12 is in five sets. −2.5 is in two.', 2800]
+        ]),
         key: '<p>Each box sits <b>inside</b> the next. Every number here is real.</p>',
         mistake: '<p>Thinking 0 is a natural number. Natural numbers start at 1; 0 is whole.</p>',
         check: [K.mc('&minus;3 belongs to which smallest set?', 'Integers', ['Whole numbers', 'Natural numbers', 'Irrational numbers'], 'Whole numbers are never negative.', '&minus;3 is an integer, not a whole number.'),
@@ -126,6 +178,12 @@
           [T(['√10, 3.1, π, 19/6']), 'Order these from least to greatest.'],
           [T(['√10 ≈ 3.162', '3.1 = 3.100', 'π ≈ 3.142', '19/6 ≈ 3.167']), 'Change each to a decimal with three places.'],
           [F.realLine(3, 3.3, [{ v: 3.1, t: '3.1' }, { v: Math.PI, t: 'π' }, { v: Math.sqrt(10), t: '√10' }, { v: 19 / 6, t: '19/6' }]), 'On the line: 3.1, π, √10, 19/6.', 2600]
+        ]),
+        example: K.film([
+          [T(['7/3,  2.3,  √5,  2.27']), 'My turn. I will order these from least to greatest.'],
+          [T(['7/3 ≈ 2.333', '2.3 = 2.300', '√5 ≈ 2.236', '2.27 = 2.270']), 'First I change each one to a decimal with three places.'],
+          [T(['2.236 &lt; 2.270', '&lt; 2.300 &lt; 2.333']), 'Next I compare the decimals, place by place.'],
+          [F.realLine(2, 2.5, [{ v: Math.sqrt(5), t: '√5' }, { v: 2.27, t: '2.27' }, { v: 2.3, t: '2.3' }, { v: 7 / 3, t: '7/3' }]), 'So the order is √5, 2.27, 2.3, 7/3. <b>Change everything to decimals, then compare.</b>', 2800]
         ]),
         try: K.lab({
           ctrls: [{ id: 'n', label: 'Root of', min: 2, max: 40, value: 12, fmt: function (x) { return '√' + x; } }, { id: 'd', label: 'Decimal', min: 10, max: 60, value: 30, fmt: function (x) { return (x / 10).toFixed(1); } }],
@@ -146,6 +204,12 @@
           [T(['√20 or 4.5?']), 'Which is bigger?'],
           [T(['(√20)² = 20', '4.5² = 20.25']), 'Square both. Squaring a root just removes it.'],
           [T(['20 < 20.25', 'so √20 < 4.5']), 'The bigger square comes from the bigger number.', 2400]
+        ]),
+        example: K.film([
+          [T(['√45 or 6.7?']), 'My turn. I will find which is bigger: √45 or 6.7.'],
+          [T(['(√45)² = 45']), 'First I square the root. Squaring a root just removes it: 45.'],
+          [T(['6.7² = 44.89']), 'Next I square the decimal: 6.7 × 6.7 = 44.89.'],
+          [T(['45 > 44.89', 'so √45 > 6.7']), 'Then I compare. 45 is bigger, so <b>√45 is bigger</b>. Bigger square, bigger number.', 2600]
         ]),
         ways: [{ label: 'Use the squeeze', html: '<p>16 &lt; 20 &lt; 25, so ' + RT + '20 is between 4 and 5. 20 is a little closer to 16 than to 25, so ' + RT + '20 is a bit under 4.5.</p>' }],
         key: '<p>For positive numbers: <b>bigger square, bigger number</b>.</p>',
