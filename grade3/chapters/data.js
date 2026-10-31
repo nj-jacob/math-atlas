@@ -535,4 +535,225 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
+     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name;
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    var PAIRS = [['even', 'gt15'], ['odd', 'm5'], ['lt10', 'm5'], ['even', 'gt10']];
+    function where(n, a, b) { var r = region(n, a, b); return r === 'ab' ? 'Both' : r === 'a' ? ATTR[a][0] + ' only' : r === 'b' ? ATTR[b][0] + ' only' : 'Neither'; }
+    /* four categories with different counts, so "most" and "order" questions have one answer */
+    function survey4(step, top) {
+      var names = R.pick([['Hockey', 'Soccer', 'Swim', 'Skating'], ['Apple', 'Pear', 'Plum', 'Kiwi'], ['Bus', 'Car', 'Walk', 'Bike'], ['Red', 'Blue', 'Green', 'Yellow']]);
+      var vals = R.shuffle(Array.apply(null, Array(top)).map(function (_, i) { return (i + 1) * step; })).slice(0, 4);
+      return names.map(function (n, i) { return [n, vals[i]]; });
+    }
+    function sum(v) { return v.reduce(function (a, b) { return a + b; }, 0); }
+    function meanList(n, mean) {
+      var list = []; for (var i = 0; i < n; i++) list.push(mean);
+      for (var t = 0; t < n * 2; t++) { var a = R.int(0, n - 1), b = R.int(0, n - 1), d = R.int(1, 3); if (a !== b && list[a] - d >= 1 && list[b] + d <= 15) { list[a] -= d; list[b] += d; } }
+      return list;
+    }
+    function modeList(n) {
+      var m = R.int(1, 12), list = [m, m, m].slice(0, n > 5 ? 3 : 2), others = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12].filter(function (x) { return x !== m; }));
+      for (var k = 0; list.length < n; k++) list.push(others[k]);
+      return { m: m, list: R.shuffle(list) };
+    }
+    function bag(red, blue) { return red + ' red and ' + blue + ' blue'; }
+
+    var SHAPES = {
+      'dt-venn': [
+        [1, 'pick', function (lv) {
+          var pr = R.pick(PAIRS), a = pr[0], b = pr[1], opts = [], ans = [];
+          var pool = R.shuffle(Array.apply(null, Array(30)).map(function (_, i) { return i + 1; }));
+          var both = pool.filter(function (n) { return region(n, a, b) === 'ab'; }).slice(0, 2), rest = pool.filter(function (n) { return region(n, a, b) !== 'ab'; }).slice(0, 3);
+          opts = R.shuffle(both.concat(rest));
+          opts.forEach(function (n, j) { if (region(n, a, b) === 'ab') ans.push(j); });
+          return { q: 'Pick every number that goes in the middle, where the circles overlap: <b>' + ATTR[a][0].toLowerCase() + '</b> and <b>' + ATTR[b][0].toLowerCase() + '</b>.', type: 'pick', options: opts.map(String), answer: ans, fig: lv === 1 ? venn([], a, b).svg : '',
+            hint: 'A number in the middle must fit both labels.', steps: ['Check each number twice: is it ' + ATTR[a][0].toLowerCase() + '? Is it ' + ATTR[b][0].toLowerCase() + '?', 'Pick only the ones with two yeses.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' fit both.', meta: { k: 'venn-pick', a: ATTR[a][0], b: ATTR[b][0] } };
+        }],
+        [1, 'match', function (lv) {
+          var pr = R.pick(PAIRS), a = pr[0], b = pr[1], pairs = [], seen = {}, pool = R.shuffle(Array.apply(null, Array(30)).map(function (_, i) { return i + 1; }));
+          pool.forEach(function (n) { var w = where(n, a, b); if (pairs.length < 3 && !seen[w]) { seen[w] = 1; pairs.push([String(n), w]); } });
+          return { q: 'The circles are "' + ATTR[a][0] + '" and "' + ATTR[b][0] + '". Match each number to where it goes.', type: 'match', pairs: pairs, fig: venn([], a, b).svg,
+            hint: 'Ask two questions about each number.', steps: ['Fits both labels: Both. Fits one: that one only. Fits none: Neither.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'venn-match', a: ATTR[a][0], b: ATTR[b][0] } };
+        }],
+        [1, 'tf', function (lv) {
+          var pr = R.pick(PAIRS), a = pr[0], b = pr[1], n = R.int(1, 30), real = where(n, a, b), truth = !R.int(0, 1);
+          var said = truth ? real : R.pick(['Both', ATTR[a][0] + ' only', ATTR[b][0] + ' only', 'Neither'].filter(function (x) { return x !== real; }));
+          var right = n + ' is ' + (ATTR[a][1](n) ? '' : 'not ') + ATTR[a][0].toLowerCase() + ' and ' + (ATTR[b][1](n) ? '' : 'not ') + ATTR[b][0].toLowerCase() + ', so it goes in: ' + real + '.';
+          return { q: 'The circles are "' + ATTR[a][0] + '" and "' + ATTR[b][0] + '". True or false: <b>' + n + '</b> goes in <b>' + said + '</b>.', type: 'tf', answer: truth,
+            why: why(right, ['Every number goes in the middle.', 'Numbers bigger than 10 go in Neither.', 'A number can only fit one label.']),
+            hint: 'Ask two questions about ' + n + '.', steps: [right], explain: right, meta: { k: 'venn-tf', n: n, a: ATTR[a][0], b: ATTR[b][0], said: said } };
+        }],
+        [2, 'mistake', function (lv) {
+          var pr = R.pick(PAIRS), a = pr[0], b = pr[1], pool = R.shuffle(Array.apply(null, Array(30)).map(function (_, i) { return i + 1; })).filter(function (n) { return region(n, a, b) === 'ab'; });
+          var n = pool[0], who = nm(), said = R.int(0, 2) ? ATTR[a][0] + ' only' : 'Both';
+          var right = n + ' is ' + ATTR[a][0].toLowerCase() + ' and also ' + ATTR[b][0].toLowerCase() + ', so it goes in the middle: Both.';
+          return { q: who + ' put <b>' + n + '</b> in "' + said + '". The circles are "' + ATTR[a][0] + '" and "' + ATTR[b][0] + '". True or false: ' + who + ' is right.', type: 'tf', answer: said === 'Both',
+            why: why(right, ['Once a number fits one label, you can stop checking.', 'The middle is only for numbers that fit neither label.', n + ' is too big for the middle.']),
+            hint: 'Does ' + n + ' fit the other label too?', steps: [right], explain: right, meta: { k: 'venn-tf', n: n, a: ATTR[a][0], b: ATTR[b][0], said: said } };
+        }]
+      ],
+      'dt-picto': [
+        [1, 'fill', function (lv) {
+          var key = lv === 1 ? 2 : R.pick([2, 5, 10]), data = survey4(key, 6), i = R.int(0, 2), j = R.int(i + 1, 3);
+          return { q: 'Use the key. Fill in the blanks.', type: 'fill', fig: picto('How we voted', data, key, 'Class survey'), fill: data[i][0] + ': [[]] votes<br>' + data[j][0] + ': [[]] votes', answers: [data[i][1], data[j][1]],
+            hint: 'Each picture means ' + key + '. Count by ' + key + 's.', steps: [data[i][0] + ' has ' + data[i][1] / key + ' pictures: ' + data[i][1] + '.', data[j][0] + ' has ' + data[j][1] / key + ' pictures: ' + data[j][1] + '.'],
+            explain: data[i][0] + ': ' + data[i][1] + '. ' + data[j][0] + ': ' + data[j][1] + '.', meta: { k: 'picto-fill' } };
+        }],
+        [1, 'order', function (lv) {
+          var key = lv === 1 ? 2 : R.pick([2, 5, 10]), data = survey4(key, 6), sorted = data.slice().sort(function (x, y) { return y[1] - x[1]; });
+          return { q: 'Put the choices in order from <b>most votes to fewest</b>.', type: 'order', items: sorted.map(function (d) { return d[0]; }), first: 'most', last: 'fewest', fig: picto('How we voted', data, key, 'Class survey'),
+            hint: 'More pictures means more votes.', steps: ['Count the pictures in each row.', 'Order: ' + sorted.map(function (d) { return d[0] + ' (' + d[1] + ')'; }).join(', ') + '.'],
+            explain: sorted.map(function (d) { return d[0]; }).join(', ') + '.', meta: { k: 'picto-order' } };
+        }],
+        [1, 'pick', function (lv) {
+          var key = lv === 1 ? 2 : R.pick([2, 5]), data = survey4(key, 6), vals = data.map(function (d) { return d[1]; }).sort(function (a, b) { return a - b; }), lim = vals[1] + (vals[2] - vals[1] > key ? key : 0);
+          if (lim >= vals[2]) lim = vals[1];
+          var ans = []; data.forEach(function (d, j) { if (d[1] > lim) ans.push(j); });
+          return { q: 'Pick every choice that got <b>more than ' + lim + '</b> votes.', type: 'pick', options: data.map(function (d) { return d[0]; }), answer: ans, fig: picto('How we voted', data, key, 'Class survey'),
+            hint: 'Each picture means ' + key + '. ' + lim + ' votes is ' + lim / key + ' pictures.', steps: ['Find the rows with more than ' + lim / key + ' pictures.'],
+            explain: ans.map(function (j) { return data[j][0]; }).join(' and ') + ' got more than ' + lim + '.', meta: { k: 'picto-pick', lim: lim } };
+        }],
+        [2, 'mistake', function (lv) {
+          var key = R.pick([2, 5, 10]), data = survey4(key, 6), i = R.int(0, 3), who = nm(), truth = !R.int(0, 2), said = truth ? data[i][1] : data[i][1] / key;
+          var right = 'Each picture means ' + key + '. ' + data[i][0] + ' has ' + data[i][1] / key + ' pictures, so ' + data[i][1] + ' votes.';
+          return { q: who + ' says ' + data[i][0] + ' got <b>' + said + '</b> votes. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: picto('How we voted', data, key, 'Class survey'),
+            why: why(right, ['Each picture means 1 vote.', 'Count the pictures and add ' + key + '.', 'The key only matters for the first row.']),
+            hint: 'Read the key first.', steps: [right], explain: right, meta: { k: 'picto-tf', name: data[i][0], said: said } };
+        }]
+      ],
+      'dt-bar': [
+        [1, 'order', function (lv) {
+          var step = lv === 1 ? 1 : R.pick([2, 5]), data = survey4(step, 8), sorted = data.slice().sort(function (x, y) { return y[1] - x[1]; });
+          return { q: 'Put the bars in order from <b>tallest to shortest</b>.', type: 'order', items: sorted.map(function (d) { return d[0]; }), first: 'tallest', last: 'shortest', fig: bars('Our survey', data, step, 'Class survey'),
+            hint: 'Compare the tops of the bars.', steps: ['Read each bar: ' + data.map(function (d) { return d[0] + ' ' + d[1]; }).join(', ') + '.'],
+            explain: sorted.map(function (d) { return d[0]; }).join(', ') + '.', meta: { k: 'bar-order' } };
+        }],
+        [1, 'match', function (lv) {
+          var step = lv === 1 ? 1 : R.pick([2, 5]), data = survey4(step, 8), pick3 = R.shuffle([0, 1, 2, 3]).slice(0, 3);
+          var pairs = pick3.map(function (i) { return [data[i][0], String(data[i][1])]; });
+          return { q: 'Match each bar to the number it shows.', type: 'match', pairs: pairs, fig: bars('Our survey', data, step, 'Class survey'),
+            hint: 'Look across from the top of each bar to the scale. The scale counts by ' + step + '.', steps: ['Follow each bar top across to the scale.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'bar-match' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var step = R.pick([2, 5]), data = survey4(step, 8), i = R.int(0, 3), j = (i + R.int(1, 3)) % 4, hi = data[i][1] > data[j][1] ? i : j, lo = hi === i ? j : i;
+          var diff = data[hi][1] - data[lo][1], who = nm(), truth = !R.int(0, 2), said = truth ? diff : diff / step;
+          if (said === diff && !truth) said = diff + step;
+          var right = data[hi][0] + ' shows ' + data[hi][1] + ' and ' + data[lo][0] + ' shows ' + data[lo][1] + '. ' + data[hi][1] + ' &minus; ' + data[lo][1] + ' = ' + diff + '.';
+          return { q: who + ' says ' + data[hi][0] + ' has <b>' + said + '</b> more votes than ' + data[lo][0] + '. True or false: ' + who + ' is right.', type: 'tf', answer: said === diff, fig: bars('Our survey', data, step, 'Class survey'),
+            why: why(right, ['Count the grid lines between the bars. Each line is 1.', 'Add the two bars.', 'The taller bar always has 10 more.']),
+            hint: 'Read both bars on the scale. Then subtract.', steps: [right], explain: right, meta: { k: 'bar-tf', a: data[hi][0], b: data[lo][0], said: said } };
+        }]
+      ],
+      'dt-mode': [
+        [1, 'tf', function (lv) {
+          var o = modeList(lv === 1 ? 5 : 7), truth = !R.int(0, 1), said = truth ? o.m : R.pick(o.list.filter(function (x) { return x !== o.m; }));
+          var right = o.m + ' shows up most often, so the mode is ' + o.m + '.';
+          return { q: 'True or false: the mode of <span class="math">' + o.list.join(', ') + '</span> is <b>' + said + '</b>.', type: 'tf', answer: truth,
+            why: why(right, ['The mode is the biggest number.', 'The mode is the middle number in the list.', 'The mode is the last number.']),
+            hint: 'Which number shows up most often?', steps: [right], explain: right, meta: { k: 'mode-tf', list: o.list, said: said } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), o = modeList(lv === 1 ? 5 : 7), c = R.pick(['how many pets they have', 'how many books they read this week', 'their shoe size', 'how many cousins they have']);
+          if (c === 'how many pets they have') o.list = o.list.map(function (x) { return x % 6; }), o.m = o.m % 6;
+          var counts = {}; o.list.forEach(function (x) { counts[x] = (counts[x] || 0) + 1; });
+          var best = Math.max.apply(null, Object.keys(counts).map(function (k) { return counts[k]; })), tops = Object.keys(counts).filter(function (k) { return counts[k] === best; });
+          if (tops.length > 1) return SHAPES['dt-mode'][0][2](lv);
+          return { q: who + ' asked friends ' + c + '. The answers were <span class="math">' + o.list.join(', ') + '</span>. What is the mode?', type: 'num', answer: +tops[0],
+            hint: 'Put the answers in order. Which one shows up most?', steps: ['In order: ' + o.list.slice().sort(function (a, b) { return a - b; }).join(', ') + '.', tops[0] + ' shows up ' + best + ' times.'],
+            explain: 'The mode is ' + tops[0] + '.', meta: { k: 'mode-num', list: o.list } };
+        }],
+        [1, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) { var o = modeList(5); if (seen[o.m]) continue; seen[o.m] = 1; pairs.push([o.list.join(', '), String(o.m)]); }
+          return { q: 'Match each list to its mode.', type: 'match', pairs: pairs,
+            hint: 'Find the number that shows up most in each list.', steps: ['Look for the repeated number in each list.'],
+            explain: pairs.map(function (p) { return p[0] + ': mode ' + p[1]; }).join('. ') + '.', meta: { k: 'mode-match' } };
+        }],
+        [2, 'mistake', function (lv) {
+          var o = modeList(7), who = nm(), big = Math.max.apply(null, o.list);
+          if (big === o.m) return SHAPES['dt-mode'][0][2](lv);
+          var truth = !R.int(0, 2), said = truth ? o.m : big, right = 'The mode is the value that shows up most often: ' + o.m + '.';
+          return { q: who + ' says the mode of <span class="math">' + o.list.join(', ') + '</span> is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['The mode is the biggest value.', 'The mode is how many values there are.', 'The mode is the first value.']),
+            hint: 'Count how many times each value shows up.', steps: [right], explain: right, meta: { k: 'mode-tf', list: o.list, said: said } };
+        }]
+      ],
+      'dt-mean': [
+        [1, 'fill', function (lv) {
+          var n = lv === 1 ? 2 : lv === 2 ? 3 : 4, mean = R.int(2, 9), list = meanList(n, mean), s = sum(list);
+          return { q: 'Find the mean of <span class="math">' + list.join(', ') + '</span>. Fill in the blanks.', type: 'fill', fill: 'Add them all: [[]]<br>Share equally among ' + n + ': [[]]', answers: [s, mean], fig: lv === 1 ? towerFig(list, mean) : '',
+            hint: 'Add first. Then divide by ' + n + '.', steps: [list.join(' + ') + ' = ' + s + '.', s + ' &divide; ' + n + ' = ' + mean + '.'],
+            explain: 'The mean is ' + mean + '.', meta: { k: 'mean-fill', list: list } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), n = lv === 1 ? 2 : lv === 2 ? 3 : 4, mean = R.int(2, 9), list = meanList(n, mean);
+          var c = R.pick(['goals in each game', 'books read each week', 'laps swum each day']);
+          return { q: who + ' counted ' + c + ': <span class="math">' + list.join(', ') + '</span>. What is the mean?', type: 'num', answer: mean,
+            hint: 'Add them all. Then share the total equally.', steps: [list.join(' + ') + ' = ' + sum(list) + '.', sum(list) + ' &divide; ' + n + ' = ' + mean + '.'],
+            explain: 'The mean is ' + mean + '.', meta: { k: 'mean-num', list: list } };
+        }],
+        [1, 'tf', function (lv) {
+          var n = lv === 1 ? 2 : 3, mean = R.int(2, 9), list = meanList(n, mean), truth = !R.int(0, 1), said = truth ? mean : mean + R.pick([1, -1]);
+          var right = list.join(' + ') + ' = ' + sum(list) + '. ' + sum(list) + ' &divide; ' + n + ' = ' + mean + '.';
+          return { q: 'True or false: the mean of <span class="math">' + list.join(', ') + '</span> is <b>' + said + '</b>.', type: 'tf', answer: truth,
+            why: why(right, ['The mean is the biggest value.', 'The mean is the total.', 'The mean is the value that shows up most.']),
+            hint: 'Add, then share equally.', steps: [right], explain: right, meta: { k: 'mean-tf', list: list, said: said } };
+        }],
+        [2, 'mistake', function (lv) {
+          var n = R.pick([2, 3]), mean = R.int(2, 6), list = meanList(n, mean), who = nm(), truth = !R.int(0, 2), said = truth ? mean : sum(list);
+          var right = 'Add to get ' + sum(list) + ', then share among ' + n + ': ' + sum(list) + ' &divide; ' + n + ' = ' + mean + '.';
+          return { q: who + ' says the mean of <span class="math">' + list.join(', ') + '</span> is <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['The mean is the total, so you stop after adding.', 'Divide the total by 2 every time.', 'The mean is the first value.']),
+            hint: 'Did ' + who + ' share the total equally?', steps: [right], explain: right, meta: { k: 'mean-tf', list: list, said: said } };
+        }]
+      ],
+      'dt-chance': [
+        [1, 'match', function (lv) {
+          var tot = R.int(4, 8), mid = tot % 2 ? null : tot / 2, cand = R.shuffle([[0, tot], [tot, 0], [1, tot - 1], [tot - 1, 1]].concat(mid ? [[mid, mid]] : []));
+          var pairs = [], seen = {};
+          cand.forEach(function (c) { var w = likely(c[0], tot); if (pairs.length < 3 && !seen[w]) { seen[w] = 1; pairs.push([bag(c[0], c[1]), w]); } });
+          return { q: 'A cube is picked without looking. Match each bag to how likely it is to pick <b>red</b>.', type: 'match', pairs: pairs,
+            hint: 'Compare the red cubes with all the cubes.', steps: ['No red: impossible. All red: certain. Half red: equally likely.'],
+            explain: pairs.map(function (p) { return p[0] + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'chance-match' } };
+        }],
+        [1, 'order', function (lv) {
+          var tot = R.pick([4, 6, 8]), reds = R.shuffle(Array.apply(null, Array(tot + 1)).map(function (_, i) { return i; })).slice(0, lv === 1 ? 3 : 4).sort(function (a, b) { return a - b; });
+          return { q: 'Each bag has ' + tot + ' cubes. Put the bags in order from <b>least likely to most likely</b> to pick red.', type: 'order', items: reds.map(function (r) { return bag(r, tot - r); }), first: 'least likely', last: 'most likely',
+            hint: 'More red cubes makes red more likely.', steps: ['All bags have ' + tot + ' cubes, so compare the red cubes.'],
+            explain: 'Fewest red to most red.', meta: { k: 'chance-order' } };
+        }],
+        [1, 'story', function (lv) {
+          var who = nm(), tot = R.int(4, 10), fav = lv === 1 ? R.pick([0, tot]) : R.int(0, tot), opts = ['impossible', 'unlikely', 'equally likely', 'likely', 'certain'], ans = likely(fav, tot);
+          var c = R.pick([['marbles', 'green'], ['socks', 'black'], ['crayons', 'blue']]);
+          return { q: who + ' has a drawer with ' + fav + ' ' + c[1] + ' ' + c[0] + ' and ' + (tot - fav) + ' white ' + c[0] + '. ' + who + ' takes one without looking. Getting ' + c[1] + ' is:', type: 'mc', options: opts, answer: opts.indexOf(ans),
+            hint: 'Compare the ' + c[1] + ' ' + c[0] + ' with all the ' + c[0] + '.', steps: [fav + ' of ' + tot + ' are ' + c[1] + '.', 'So getting ' + c[1] + ' is ' + ans + '.'],
+            explain: 'Getting ' + c[1] + ' is ' + ans + '.', meta: { k: 'chance-mc', fav: fav, tot: tot } };
+        }],
+        [2, 'mistake', function (lv) {
+          var h = R.int(2, 5), who = nm(), word = R.pick(['likely', 'equally likely']);
+          var right = 'Half the cubes are red, so red is equally likely.';
+          return { q: 'A bag has ' + bag(h, h) + ' cubes. ' + who + ' says picking red is <b>' + word + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: word === 'equally likely',
+            why: why(right, ['Red is always likely.', 'Red is unlikely because there are blue cubes too.', 'Red is certain because there are red cubes.']),
+            hint: 'Compare red and blue.', steps: [right], explain: right, meta: { k: 'chance-tf', red: h, blue: h, said: word } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();
