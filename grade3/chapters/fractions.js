@@ -92,16 +92,30 @@
     }
     return '<div>' + h + cap(s.say) + '</div>';
   }
+  function cutBar(ws) {
+    var x = 4, s = '';
+    ws.forEach(function (w, i) { s += '<rect x="' + x + '" y="4" width="' + w + '" height="54" style="fill:' + (i ? 'var(--card)' : 'var(--strand)') + ';stroke:var(--ink)" stroke-width="2.5"/>'; x += w; });
+    return A.svg(408, 62, s, 'A bar cut into ' + ws.length + ' parts that are not the same size');
+  }
+  function cutView(s) { return '<div>' + (s.eq ? bar(1, s.d, 400) : cutBar(s.ws)) + cap(s.say) + '</div>'; }
+  function shapeView(s) { return '<div>' + shape(s.kind, s.n, s.d) + cap(s.say) + '</div>'; }
+  function wholeView(s) { return '<div>' + groupFig(s.n, s.d) + cap(s.say) + '</div>'; }
   function eqPair(s) { return '<div>' + bar(s.n1, s.d1, 400) + '<div style="height:.4em"></div>' + bar(s.n2, s.d2, 400) + cap(s.say) + '</div>'; }
 
   var LESSONS = [
     { id: 'parts', title: 'Equal parts', sub: 'A fraction names equal parts of a whole.', concepts: [
       { id: 'equal', title: 'Parts must be equal', exp: ['B1.6'], skill: 'fr-name',
         body: '<p>To make a fraction, cut the whole into <b>equal parts</b>. Every part must be the same size.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + (s.eq ? bar(1, 2, 400) : A.svg(408, 62, '<rect x="4" y="4" width="280" height="54" style="fill:var(--strand);stroke:var(--ink)" stroke-width="2.5"/><rect x="284" y="4" width="120" height="54" style="fill:var(--card);stroke:var(--ink)" stroke-width="2.5"/>', 'A bar cut into a big part and a small part')) + cap(s.say) + '</div>'; }, { eq: false, say: 'Is this one half?' }), steps: [
+        watch: { mount: G3.view(cutView, { eq: false, d: 2, ws: [280, 120], say: 'Is this one half?' }), steps: [
           { say: 'This bar has 2 parts. Is the shaded part one half?', ms: 1800 },
           { say: 'No. The parts are not the same size. One is much bigger.', act: function (t) { return t.set({ say: 'Not equal: not halves' }, 1800); } },
           { say: 'Cut it into 2 <b>equal</b> parts. Now each part is one half.', act: function (t) { return t.set({ eq: true, say: 'Equal parts: ' + fr(1, 2) + ' is shaded' }, 2000); } }
+        ] },
+        example: { mount: G3.view(cutView, { eq: false, d: 3, ws: [100, 200, 100], say: 'Is this one third?' }), steps: [
+          { say: 'My turn. This bar has 3 parts. Is the shaded part one third?', ms: 1800 },
+          { say: 'I check the sizes. The middle part is bigger than the others. The parts are not equal.', act: function (t) { return t.set({ say: 'Not equal: not thirds' }, 2000); } },
+          { say: 'I cut the bar into 3 <b>equal</b> parts. Now the shaded part is one third.', act: function (t) { return t.set({ eq: true, say: 'Equal parts: ' + fr(1, 3) + ' is shaded' }, 2000); } },
+          { say: 'A fraction needs equal parts.', ms: 1600 }
         ] },
         try: { tool: 'fractions', opts: { parts: 1, choices: [1, 2, 3, 4, 6, 8] }, tasks: [
           { do: 'Cut the bar into <b>4 equal parts</b>. Shade one of them.', goal: function (s) { return s[0].d === 4 && s[0].n === 1; }, yes: 'One of 4 equal parts: one fourth.' },
@@ -113,10 +127,15 @@
 
       { id: 'name', title: 'Top and bottom numbers', exp: ['B1.6'], skill: 'fr-name',
         body: '<p>The <b>bottom</b> number says how many equal parts in all. The <b>top</b> number says how many parts we mean. ' + fr(3, 4) + ' is three of four equal parts.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + shape(s.kind, s.n, s.d) + cap(s.say) + '</div>'; }, { kind: 'pie', n: 0, d: 4, say: '4 equal parts' }), steps: [
+        watch: { mount: G3.view(shapeView, { kind: 'pie', n: 0, d: 4, say: '4 equal parts' }), steps: [
           { say: 'The circle is cut into 4 equal parts. 4 is the bottom number.', ms: 1700 },
           { say: 'Shade 1, 2, 3 parts. 3 is the top number.', act: function (t) { return t.seq([{ n: 1 }, { n: 2 }, { n: 3, say: fr(3, 4) + ' three fourths' }], 600); } },
           { say: 'The same idea on a bar: <b>' + fr(3, 4) + '</b>.', act: function (t) { return t.set({ kind: 'bar' }, 2000); } }
+        ] },
+        example: { mount: G3.view(shapeView, { kind: 'pie', n: 0, d: 6, say: '6 equal parts' }), steps: [
+          { say: 'My turn. The circle is cut into 6 equal parts. 6 is the bottom number.', ms: 1800 },
+          { say: 'I shade 1, 2, 3, 4, 5 parts. 5 is the top number.', act: function (t) { return t.seq([{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }, { n: 5, say: fr(5, 6) + ' five sixths' }], 500); } },
+          { say: 'The bottom tells the parts in all. The top tells the parts I mean: <b>' + fr(5, 6) + '</b>.', act: function (t) { return t.set({ kind: 'bar' }, 2200); } }
         ] },
         try: { mount: G3.play({ state: { kind: 'grid', d: 6, n: 2 }, draw: function (s) { return shape(s.kind, s.n, s.d); },
           selects: [{ key: 'kind', label: 'Shape', options: [['bar', 'bar'], ['pie', 'circle'], ['grid', 'rectangle']] }, { key: 'd', label: 'Equal parts', options: [[2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6'], [8, '8'], [10, '10']], change: function (s) { if (s.n > s.d) s.n = s.d; } }],
@@ -137,6 +156,11 @@
           { say: 'Hand them out one at a time. Each person gets 2.', act: function (t) { return t.set({ stage: 2, say: 'Each gets 2' }, 1800); } },
           { say: 'Nothing is left over. 6 shared among 3 is <b>2 each</b>.', ms: 1800 }
         ] },
+        example: { mount: G3.view(shareView, { items: 12, k: 4, stage: 0, say: '' }), steps: [
+          { say: 'My turn. I share 12 granola bars among 4 people.', ms: 1400 },
+          { say: 'I hand them out one at a time. Each person gets 3.', act: function (t) { return t.set({ stage: 2, say: 'Each gets 3' }, 1800); } },
+          { say: 'Nothing is left over. Everyone gets the same: <b>3 each</b>.', ms: 1800 }
+        ] },
         try: { mount: G3.play({ state: { items: 4, k: 2 }, draw: function (s) { return shareFig(s.items, s.k); },
           sliders: [{ key: 'items', label: 'Bars', min: 1, max: 20 }],
           selects: [{ key: 'k', label: 'People', options: [[2, '2'], [3, '3'], [4, '4'], [5, '5'], [6, '6'], [8, '8'], [10, '10']] }],
@@ -151,6 +175,11 @@
           { say: '5 bars for 2 people.', ms: 1400 },
           { say: 'Each person gets 2 whole bars. 1 bar is left.', act: function (t) { return t.set({ stage: 1, say: '2 each, 1 left over' }, 2000); } },
           { say: '2 people, so cut the last bar in half. Each gets <b>2 and ' + fr(1, 2) + '</b>.', act: function (t) { return t.set({ stage: 2, say: '2 and ' + fr(1, 2) + ' each' }, 2200); } }
+        ] },
+        example: { mount: G3.view(shareView, { items: 7, k: 3, stage: 0, say: '' }), steps: [
+          { say: 'My turn. I share 7 bars among 3 people.', ms: 1400 },
+          { say: 'I hand out whole bars first. Each person gets 2. 1 bar is left.', act: function (t) { return t.set({ stage: 1, say: '2 each, 1 left over' }, 2000); } },
+          { say: 'There are 3 people, so I cut the last bar into 3 pieces. Each gets <b>2 and ' + fr(1, 3) + '</b>.', act: function (t) { return t.set({ stage: 2, say: '2 and ' + fr(1, 3) + ' each' }, 2200); } }
         ] },
         ways: [
           { label: 'One pizza', html: '<p>1 pizza for 4 people: cut it into 4 equal slices. Each gets ' + fr(1, 4) + '.</p><div class="fig">' + pie(1, 4, 70) + '</div>' },
@@ -176,6 +205,11 @@
           { say: 'One fifth, two fifths, three fifths.', act: function (t) { return t.seq([{ n: 1, say: fr(1, 5) }, { n: 2, say: fr(1, 5) + ' + ' + fr(1, 5) + ' = ' + fr(2, 5) }, { n: 3, say: fr(1, 5) + ' + ' + fr(1, 5) + ' + ' + fr(1, 5) + ' = ' + fr(3, 5) }], 1100); } },
           { say: '3 pieces of one fifth make <b>' + fr(3, 5) + '</b>.', ms: 1800 }
         ] },
+        example: { mount: G3.view(unitView, { n: 0, d: 6, bars: true, say: 'Count sixths' }), steps: [
+          { say: 'My turn. Each jump is one sixth.', ms: 1300 },
+          { say: 'I count: one sixth, two sixths, three sixths, four sixths.', act: function (t) { return t.seq([{ n: 1, say: fr(1, 6) }, { n: 2, say: fr(2, 6) }, { n: 3, say: fr(3, 6) }, { n: 4, say: fr(4, 6) }], 900); } },
+          { say: '4 pieces of one sixth make <b>' + fr(4, 6) + '</b>. The top number counts the pieces.', ms: 2000 }
+        ] },
         try: { tool: 'fractions', opts: { parts: 6, choices: [2, 3, 4, 5, 6, 8, 10] }, tasks: [
           { do: 'Shade <b>' + fr(4, 6) + '</b>, one sixth at a time.', goal: function (s) { return s[0].d === 6 && s[0].n === 4; }, yes: 'Four sixths: ' + fr(1, 6) + ' four times.' },
           { do: 'Cut into eighths and shade <b>' + fr(3, 8) + '</b>.', goal: function (s) { return s[0].d === 8 && s[0].n === 3; }, yes: 'Three eighths.' }
@@ -190,6 +224,12 @@
           { say: 'Count fourths.', act: function (t) { return t.seq([{ n: 1, say: fr(1, 4) }, { n: 2, say: fr(2, 4) }, { n: 3, say: fr(3, 4) }], 800); } },
           { say: 'Four fourths fill the whole. ' + fr(4, 4) + ' = 1.', act: function (t) { return t.set({ n: 4, say: fr(4, 4) + ' = 1' }, 1800); } },
           { say: 'One more fourth: <b>' + fr(5, 4) + ' = 1 and ' + fr(1, 4) + '</b>.', act: function (t) { return t.set({ n: 5, say: fr(5, 4) + ' = 1 and ' + fr(1, 4) }, 2000); } }
+        ] },
+        example: { mount: G3.view(unitView, { n: 0, d: 3, bars: true, say: 'Count thirds' }), steps: [
+          { say: 'My turn. I count thirds.', act: function (t) { return t.seq([{ n: 1, say: fr(1, 3) }, { n: 2, say: fr(2, 3) }], 800); } },
+          { say: 'Three thirds fill the whole. ' + fr(3, 3) + ' = 1.', act: function (t) { return t.set({ n: 3, say: fr(3, 3) + ' = 1' }, 1800); } },
+          { say: 'One more third: <b>' + fr(4, 3) + ' = 1 and ' + fr(1, 3) + '</b>.', act: function (t) { return t.set({ n: 4, say: fr(4, 3) + ' = 1 and ' + fr(1, 3) }, 2000); } },
+          { say: 'When the top and the bottom are the same, I have one whole.', ms: 1800 }
         ] },
         ways: [
           { label: 'With pizzas', html: '<p>4 slices of a pizza cut into fourths is a whole pizza. One more slice comes from a second pizza.</p><div class="fig">' + groupFig(5, 4) + '</div>' },
@@ -216,6 +256,12 @@
           { say: 'Shade one fourth. It is smaller.', act: function (t) { return t.shade(1, 1); } },
           { say: 'Shade one eighth. Smaller again. <b>More pieces, smaller pieces.</b>', act: function (t) { return t.shade(1, 2); }, ms: 2000 }
         ] },
+        example: { tool: 'fractions', opts: { wall: [3, 6] }, steps: [
+          { say: 'My turn. Which is bigger: one third or one sixth? I use two bars the same size.', ms: 1800 },
+          { say: 'I shade one third.', act: function (t) { return t.shade(1, 0); } },
+          { say: 'I shade one sixth. It is smaller.', act: function (t) { return t.shade(1, 1); } },
+          { say: 'Sixths cut the bar into more pieces, so each piece is smaller. <b>' + fr(1, 3) + ' is bigger than ' + fr(1, 6) + '</b>. More pieces, smaller pieces.', ms: 2400 }
+        ] },
         try: { tool: 'fractions', opts: { wall: [2, 3, 6, 10] }, tasks: [
           { do: 'Shade <b>one piece in every bar</b>. Which piece is the smallest?', goal: function (s) { return s.every(function (r) { return r.n === 1; }); }, yes: 'One tenth is the smallest: the whole is cut into the most pieces.' }
         ] },
@@ -230,6 +276,12 @@
           { say: 'Cut each half into 2 pieces.', act: function (t) { return t.set({ d2: 4, n2: 0, say: 'Fourths' }, 1400); } },
           { say: 'Shade the same amount: 2 fourths.', act: function (t) { return t.seq([{ n2: 1 }, { n2: 2, say: fr(1, 2) + ' = ' + fr(2, 4) }], 700); } },
           { say: 'The shaded parts end at the same place. <b>' + fr(1, 2) + ' = ' + fr(2, 4) + '</b>.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(eqPair, { n1: 1, d1: 3, n2: 0, d2: 3, say: fr(1, 3) }), steps: [
+          { say: 'My turn. Here is one third of a bar.', ms: 1300 },
+          { say: 'I cut each third into 2 pieces. Now there are sixths.', act: function (t) { return t.set({ d2: 6, n2: 0, say: 'Sixths' }, 1400); } },
+          { say: 'I shade the same amount: 2 sixths.', act: function (t) { return t.seq([{ n2: 1 }, { n2: 2, say: fr(1, 3) + ' = ' + fr(2, 6) }], 700); } },
+          { say: 'The shaded parts end at the same place. <b>' + fr(1, 3) + ' = ' + fr(2, 6) + '</b>.', ms: 2000 }
         ] },
         ways: [
           { label: 'On a circle', html: '<div class="vrow"><figure><figcaption>' + fr(1, 3) + '</figcaption>' + pie(1, 3, 56) + '</figure><figure><figcaption>' + fr(2, 6) + '</figcaption>' + pie(2, 6, 56) + '</figure></div><p>Same amount of the circle.</p>' },
@@ -248,9 +300,14 @@
     { id: 'groups', title: 'Groups of halves, thirds and fourths', sub: 'Put small pieces together into wholes.', concepts: [
       { id: 'make', title: 'Make wholes', exp: ['B2.7'], skill: 'fr-groups',
         body: '<p>2 halves make 1 whole. 3 thirds make 1 whole. 4 fourths make 1 whole. To count wholes, <b>group the pieces by the bottom number</b>.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + groupFig(s.n, 2) + cap(s.say) + '</div>'; }, { n: 1, say: fr(1, 2) }), steps: [
+        watch: { mount: G3.view(wholeView, { d: 2, n: 1, say: fr(1, 2) }), steps: [
           { say: 'Add halves one at a time.', act: function (t) { return t.seq([{ n: 2, say: '2 halves = 1 whole' }, { n: 3, say: '3 halves' }, { n: 4, say: '4 halves = 2 wholes' }, { n: 5, say: '5 halves' }, { n: 6, say: '6 halves = 3 wholes' }], 800); } },
           { say: 'Every 2 halves make a whole. <b>6 halves = 3 wholes</b>.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(wholeView, { n: 0, d: 5, say: 'Fifths' }), steps: [
+          { say: 'My turn. I add fifths one at a time.', act: function (t) { return t.seq([{ n: 1, say: '1 fifth' }, { n: 2, say: '2 fifths' }, { n: 3, say: '3 fifths' }, { n: 4, say: '4 fifths' }, { n: 5, say: '5 fifths = 1 whole' }], 600); } },
+          { say: 'I keep going: 6, 7, 8, 9, 10 fifths.', act: function (t) { return t.seq([{ n: 6, say: '6 fifths' }, { n: 7, say: '7 fifths' }, { n: 8, say: '8 fifths' }, { n: 9, say: '9 fifths' }, { n: 10, say: '10 fifths = 2 wholes' }], 600); } },
+          { say: 'I group by the bottom number. Every 5 fifths make a whole, so <b>10 fifths = 2 wholes</b>.', ms: 2200 }
         ] },
         try: { mount: G3.play({ state: { d: 2, n: 3 }, draw: function (s) { return groupFig(s.n, s.d); },
           selects: [{ key: 'd', label: 'Piece', options: [[2, 'one half'], [3, 'one third'], [4, 'one fourth']] }],
@@ -263,10 +320,16 @@
 
       { id: 'recipe', title: 'Solve problems with pieces', exp: ['B2.7'], skill: 'fr-groups', hard: true,
         body: '<p>A recipe uses ' + fr(1, 4) + ' cup of oats for each batch. For 8 batches, you need 8 fourths. Group them by 4: <b>2 cups</b>.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + groupFig(s.n, 4) + cap(s.say) + '</div>'; }, { n: 0, say: fr(1, 4) + ' cup each batch' }), steps: [
+        watch: { mount: G3.view(wholeView, { d: 4, n: 0, say: fr(1, 4) + ' cup each batch' }), steps: [
           { say: 'Each batch uses ' + fr(1, 4) + ' cup.', ms: 1300 },
           { say: 'Add one fourth for each batch.', act: function (t) { var p = []; for (var i = 1; i <= 8; i++) p.push({ n: i, say: i + ' batch' + (i > 1 ? 'es' : '') }); return t.seq(p, 420); } },
           { say: '8 fourths in groups of 4 make <b>2 cups</b>.', act: function (t) { return t.set({ say: '8 fourths = 2 cups' }, 2000); } }
+        ] },
+        example: { mount: G3.view(wholeView, { n: 0, d: 3, say: fr(1, 3) + ' cup for each smoothie' }), steps: [
+          { say: 'My turn. Each smoothie uses ' + fr(1, 3) + ' cup of yogurt. I make 7 smoothies.', ms: 1700 },
+          { say: 'I add one third for each smoothie.', act: function (t) { var p = []; for (var i = 1; i <= 7; i++) p.push({ n: i, say: i + ' smoothie' + (i > 1 ? 's' : '') }); return t.seq(p, 450); } },
+          { say: 'I group by the bottom number. 3 thirds make 1 cup, so 6 thirds make 2 cups. 1 third is left.', act: function (t) { return t.set({ say: '7 thirds = 2 and ' + fr(1, 3) }, 2200); } },
+          { say: 'I need <b>2 and ' + fr(1, 3) + ' cups</b> of yogurt.', ms: 2000 }
         ] },
         ways: [
           { label: 'Skip count', html: '<p>4 batches use 1 cup. 8 batches use 2 cups. Count by 4s: 4, 8.</p>' },

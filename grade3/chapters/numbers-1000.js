@@ -169,6 +169,8 @@
   }
   function hillView(s) { return hill(s.n, s.p); }
   function grid1000(s) { return thousand(s.n); }
+  function chartView(s) { return chart(s.n, { hl: s.hl, vals: s.vals }); }
+  function formView(s) { return s.show ? expanded(s.n) : chart(s.n, {}); }
 
   var LESSONS = [
     { id: 'place', title: 'Hundreds, tens and ones', sub: 'Every digit has a place, and the place gives its value.', concepts: [
@@ -179,6 +181,12 @@
           { say: 'Add 3 more tens: 80, 90, 100.', act: function (t) { t.clearLit(); return t.add('t', 3, 420); } },
           { say: 'Now there are 10 tens. They slide together into <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
           { say: '1 hundred is the same amount as 10 tens, or 100 ones.', act: function (t) { return t.pulseCol('h'); }, ms: 1600 }
+        ] },
+        example: { tool: 'base10', opts: b10({ t: 6 }), steps: [
+          { say: 'My turn. I have 6 tens. I count by tens: 10, 20 ... 60.', act: function (t) { return t.countAll(240); }, ms: 500 },
+          { say: 'I add 4 more tens: 70, 80, 90, 100.', act: function (t) { t.clearLit(); return t.add('t', 4, 420); } },
+          { say: 'Now I have 10 tens. I group them into <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
+          { say: '10 ones make 1 ten. 10 tens make 1 hundred.', act: function (t) { return t.pulseCol('h'); }, ms: 1600 }
         ] },
         try: { tool: 'base10', opts: b10({ controls: true, t: 8 }), tasks: [
           { do: 'Add tens until you have 10. Then press <b>Group 10 tens</b>.', goal: function (s) { return s.h >= 1; }, yes: '10 tens became 1 hundred.' },
@@ -196,6 +204,13 @@
           { say: 'Count it all to check.', act: function (t) { return t.countAll(200); } },
           { say: '2 hundreds, 4 tens and 3 ones make <b>243</b>.', ms: 1800 }
         ] },
+        example: { tool: 'base10', opts: b10({}), steps: [
+          { say: 'My turn. I will build 527. First I put 5 hundreds: 100, 200, 300, 400, 500.', act: function (t) { return t.add('h', 5, 500); } },
+          { say: 'Next I put 2 tens: 510, 520.', act: function (t) { return t.add('t', 2, 380); } },
+          { say: 'Then I put 7 ones: 521, 522 ... 527.', act: function (t) { return t.add('o', 7, 320); } },
+          { say: 'I count it all to check.', act: function (t) { return t.countAll(200); } },
+          { say: '5 hundreds, 2 tens and 7 ones make <b>527</b>.', ms: 1800 }
+        ] },
         try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
           { do: 'Build <b>352</b>.', goal: function (s) { return s.value === 352 && s.t < 10 && s.o < 10; }, yes: '3 hundreds, 5 tens and 2 ones make 352.' },
           { do: 'Build <b>608</b>. There are no tens.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 608 && s.o < 10; }, yes: '6 hundreds, 0 tens and 8 ones make 608.' },
@@ -206,12 +221,19 @@
 
       { id: 'value', title: 'A digit\'s place gives its value', exp: ['B1.5'], skill: 'n3-value', hard: true,
         body: '<p>The same digit can be worth very different amounts. In <b>555</b>, the first 5 is worth 500, the next is worth 50, and the last is worth 5. Its <b>place</b> decides.</p>',
-        watch: { mount: G3.view(function (s) { return chart(s.n, { hl: s.hl, vals: s.vals }); }, { n: 555, hl: -1, vals: false }), steps: [
+        watch: { mount: G3.view(chartView, { n: 555, hl: -1, vals: false }), steps: [
           { say: 'Here is 555 in a place value chart.', ms: 1200 },
           { say: 'The 5 in the ones place is worth <b>5</b>.', act: function (t) { return t.set({ hl: 2, vals: true }, 1300); } },
           { say: 'The 5 in the tens place is worth <b>50</b>: 5 tens.', act: function (t) { return t.set({ hl: 1 }, 1300); } },
           { say: 'The 5 in the hundreds place is worth <b>500</b>: 5 hundreds.', act: function (t) { return t.set({ hl: 0 }, 1300); } },
           { say: 'Same digit, three different values.', act: function (t) { return t.set({ hl: -1 }, 1500); } }
+        ] },
+        example: { mount: G3.view(chartView, { n: 333, hl: -1, vals: false }), steps: [
+          { say: 'My turn. Here is 333. All three digits are 3.', ms: 1300 },
+          { say: 'I start on the right. This 3 is in the ones place. It is worth <b>3</b>.', act: function (t) { return t.set({ hl: 2, vals: true }, 1400); } },
+          { say: 'This 3 is in the tens place. It is worth 3 tens: <b>30</b>.', act: function (t) { return t.set({ hl: 1 }, 1400); } },
+          { say: 'This 3 is in the hundreds place. It is worth 3 hundreds: <b>300</b>.', act: function (t) { return t.set({ hl: 0 }, 1400); } },
+          { say: 'The place tells me what each digit is worth: 300 + 30 + 3 = 333.', act: function (t) { return t.set({ hl: -1 }, 1800); } }
         ] },
         try: { mount: G3.play({ state: { n: 352, hl: 1 }, sliders: [{ key: 'n', label: 'Number', min: 100, max: 999 }],
           selects: [{ key: 'hl', label: 'Light up the', options: [[0, 'hundreds digit'], [1, 'tens digit'], [2, 'ones digit']] }],
@@ -237,6 +259,12 @@
           { say: '600, 700, 800, 900.', act: function (t) { return t.seq([{ n: 600 }, { n: 700 }, { n: 800 }, { n: 900 }], 500); } },
           { say: 'One more hundred makes <b>1000</b>: 10 hundreds, or 100 tens.', act: function (t) { return t.set({ n: 1000 }, 1800); } }
         ] },
+        example: { mount: G3.view(grid1000, { n: 0 }), steps: [
+          { say: 'My turn. I fill 6 rows of 100: 600.', act: function (t) { return t.seq([{ n: 100 }, { n: 200 }, { n: 300 }, { n: 400 }, { n: 500 }, { n: 600 }], 350); } },
+          { say: 'How many more make 1000? I count on by hundreds: 700, 800, 900, 1000.', act: function (t) { return t.seq([{ n: 700 }, { n: 800 }, { n: 900 }, { n: 1000 }], 600); } },
+          { say: 'That is 4 more hundreds. 600 + 400 = <b>1000</b>.', ms: 1700 },
+          { say: '1000 is 10 hundreds, or 100 tens.', ms: 1700 }
+        ] },
         try: { mount: G3.play({ state: { n: 350 }, sliders: [{ key: 'n', label: 'Fill to', min: 0, max: 1000, step: 10 }], draw: grid1000,
           info: function (s) { return A.fmt(s.n) + ' is ' + (s.n / 10) + ' tens. It needs ' + A.fmt(1000 - s.n) + ' more to make 1000.'; },
           tasks: [
@@ -250,11 +278,17 @@
     { id: 'write', title: 'Writing numbers', sub: 'Standard form, expanded form and words.', concepts: [
       { id: 'expanded', title: 'Standard and expanded form', exp: ['B1.1'], skill: 'n3-forms',
         body: '<p><b>Standard form</b> is how we usually write a number: 352. <b>Expanded form</b> shows what each digit is worth: 300 + 50 + 2.</p>',
-        watch: { mount: G3.view(function (s) { return s.show ? expanded(s.n) : chart(s.n, {}); }, { n: 352, show: false }), steps: [
+        watch: { mount: G3.view(formView, { n: 352, show: false }), steps: [
           { say: '352 has 3 hundreds, 5 tens and 2 ones.', ms: 1400 },
           { say: 'Each digit drops down to show its value.', act: function (t) { return t.set({ show: true }, 1600); } },
           { say: 'So 352 = <b>300 + 50 + 2</b>.', ms: 1800 },
           { say: 'For 407, there are no tens: 407 = <b>400 + 7</b>.', act: function (t) { return t.set({ n: 407 }, 2000); } }
+        ] },
+        example: { mount: G3.view(formView, { n: 629, show: false }), steps: [
+          { say: 'My turn. 629 has 6 hundreds, 2 tens and 9 ones.', ms: 1500 },
+          { say: 'I write the value of each digit.', act: function (t) { return t.set({ show: true }, 1600); } },
+          { say: 'So 629 = <b>600 + 20 + 9</b>.', ms: 1800 },
+          { say: 'Now 850. It has 0 ones, so I leave the 0 out: 850 = <b>800 + 50</b>.', act: function (t) { return t.set({ n: 850 }, 2000); } }
         ] },
         try: { tool: 'base10', opts: b10({ controls: true, expanded: true }), tasks: [
           { do: 'Build the number that is <b>500 + 30 + 6</b>.', goal: function (s) { return s.value === 536 && s.t < 10 && s.o < 10; }, yes: '500 + 30 + 6 = 536.' },
@@ -270,6 +304,12 @@
           { say: 'Build 6 hundreds: "six hundred".', act: function (t) { return t.add('h', 6, 260); } },
           { say: 'Add 4 tens: "six hundred forty".', act: function (t) { return t.add('t', 4, 300); } },
           { say: 'Add 5 ones: "six hundred forty-five".', act: function (t) { return t.add('o', 5, 260); }, ms: 2000 }
+        ] },
+        example: { tool: 'base10', opts: b10({}), steps: [
+          { say: 'My turn. I build 4 hundreds and say "four hundred".', act: function (t) { return t.add('h', 4, 260); } },
+          { say: 'I add 7 tens and say "four hundred seventy".', act: function (t) { return t.add('t', 7, 300); } },
+          { say: 'I add 3 ones and say "four hundred seventy-three".', act: function (t) { return t.add('o', 3, 260); } },
+          { say: 'I say the hundreds, then the last two digits. 473 is <b>four hundred seventy-three</b>.', ms: 2000 }
         ] },
         try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
           { do: 'Build <b>seven hundred twelve</b>.', goal: function (s) { return s.value === 712 && s.t < 10 && s.o < 10; }, yes: 'Seven hundred twelve is 712.' },
@@ -287,6 +327,13 @@
           { say: 'Now it is 1 hundred, 14 tens and 3 ones. Still 243.', ms: 1500 },
           { say: 'Break the other hundred too.', act: function (t) { return t.split('h'); } },
           { say: '24 tens and 3 ones. The blocks moved, but the number is still <b>243</b>.', ms: 2000 }
+        ] },
+        example: { tool: 'base10', opts: b10({ h: 1, t: 6, o: 8 }), steps: [
+          { say: 'My turn. This is 168: 1 hundred, 6 tens and 8 ones.', ms: 1400 },
+          { say: 'I break the hundred into 10 tens.', act: function (t) { return t.split('h'); } },
+          { say: 'Now there are 16 tens and 8 ones. That is still 168.', ms: 1600 },
+          { say: 'Next I break a ten into 10 ones.', act: function (t) { return t.split('t'); } },
+          { say: '15 tens and 18 ones. The blocks changed, but the number is still <b>168</b>.', ms: 2000 }
         ] },
         ways: [
           { label: 'With numbers', html: '<p class="math">200 + 40 + 3 = 243</p><p class="math">100 + 140 + 3 = 243</p><p class="math">240 + 3 = 243</p><p>Every way adds to the same total.</p>' },
@@ -308,6 +355,12 @@
           { say: '100, 200, 300. Keep going.', act: function (t) { return t.jumps(100, 4, 300); } },
           { say: '400, 500, 600, 700 ... all the way to <b>1000</b>.', act: function (t) { return t.jumps(100, 3, 300); }, ms: 1600 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 150 }, steps: [
+          { say: 'My turn. I start at 150 and count by 100s.', ms: 1200 },
+          { say: 'I jump 100 three times: 250, 350, 450.', act: function (t) { return t.jumps(100, 3, 350); } },
+          { say: 'Two more jumps: 550, 650.', act: function (t) { return t.jumps(100, 2, 350); } },
+          { say: 'Only the hundreds digit changed: 1, 2, 3, 4, 5, 6. The 50 stayed the same.', ms: 2000 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 200, step: 100 }, tasks: [
           { do: 'Start at 200. Jump by 100 to land on <b>700</b>.', goal: function (s) { return s.at === 700; }, yes: '200, 300, 400, 500, 600, 700. Five jumps.' }
         ] },
@@ -322,6 +375,12 @@
           { say: '350, 400, 450, 500.', act: function (t) { return t.jumps(50, 4, 350); } },
           { say: 'The numbers end in 50, then 00, then 50, then 00.', ms: 1800 }
         ] },
+        example: { tool: 'numberline', opts: { min: 500, max: 1000, tick: 10, every: 50, start: 650 }, steps: [
+          { say: 'My turn. I start at 650 and count by 50s.', ms: 1200 },
+          { say: 'I jump 50 twice: 700, 750. Two jumps of 50 make 100.', act: function (t) { return t.jumps(50, 2, 350); } },
+          { say: 'I keep going: 800, 850, 900, 950.', act: function (t) { return t.jumps(50, 4, 350); } },
+          { say: '6 jumps of 50 took me from 650 to 950. Every two jumps made 100.', ms: 2000 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 500, tick: 10, every: 50, start: 0, step: 50 }, tasks: [
           { do: 'Jump by 50 to reach <b>350</b>.', goal: function (s) { return s.at === 350; }, yes: '7 jumps of 50 make 350.' }
         ] },
@@ -334,6 +393,12 @@
           { say: 'Start at 1000. Jump back by 200.', act: function (t) { return t.jumps(-200, 1, 300); } },
           { say: '800. Keep jumping back.', act: function (t) { return t.jumps(-200, 2, 400); } },
           { say: '600, 400. Two more: 200, 0.', act: function (t) { return t.jumps(-200, 2, 400); }, ms: 1600 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 100 }, steps: [
+          { say: 'My turn. I start at 100 and count forward by 200s.', ms: 1200 },
+          { say: 'I jump 200: 300. Then 500.', act: function (t) { return t.jumps(200, 2, 400); } },
+          { say: 'Two more jumps: 700, 900.', act: function (t) { return t.jumps(200, 2, 400); } },
+          { say: 'Each jump adds 2 hundreds: 100, 300, 500, 700, 900.', ms: 2000 }
         ] },
         try: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 0, step: 200 }, tasks: [
           { do: 'Jump by 200 from 0 to <b>1000</b>. Count your jumps.', goal: function (s) { return s.at === 1000; }, yes: '5 jumps of 200 make 1000.' }
@@ -352,6 +417,13 @@
           { say: 'Now 472 and 438. The hundreds are the same.', act: function (t) { return t.set({ a: 472, b: 438, hl: 0, sym: '' }, 1600); } },
           { say: 'So compare the tens: 7 tens and 3 tens. <b>472 is greater</b>.', act: function (t) { return t.set({ hl: 1, sym: '&gt;' }, 2000); } }
         ] },
+        example: { mount: G3.view(twoCharts, { a: 739, b: 793, hl: -1, sym: '' }), steps: [
+          { say: 'My turn. Which is greater, 739 or 793?', ms: 1300 },
+          { say: 'I look at the hundreds first: 7 and 7. They are the same.', act: function (t) { return t.set({ hl: 0 }, 1500); } },
+          { say: 'So I look at the tens: 3 tens and 9 tens. <b>793 is greater</b>.', act: function (t) { return t.set({ hl: 1, sym: '&lt;' }, 2000); } },
+          { say: 'Now 264 and 261. The hundreds and the tens are the same.', act: function (t) { return t.set({ a: 264, b: 261, hl: 1, sym: '' }, 1600); } },
+          { say: 'So the ones decide: 4 is more than 1. <b>264 is greater</b>.', act: function (t) { return t.set({ hl: 2, sym: '&gt;' }, 2000); } }
+        ] },
         try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
           { do: 'Build a number that is <b>greater than 452</b> but <b>less than 460</b>.', goal: function (s) { return s.value > 452 && s.value < 460; }, yes: function (s) { return s.value + ' is between 452 and 460.'; } },
           { do: 'Build a number <b>greater than 899</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value > 899; }, yes: function (s) { return s.value + ' has 9 hundreds or more, so it is greater than 899.'; } }
@@ -365,6 +437,12 @@
           { say: 'Compare 406 and 460.', ms: 1200 },
           { say: 'Same hundreds. The tens decide: 0 tens and 6 tens.', act: function (t) { return t.set({ hl: 1 }, 1500); } },
           { say: '406 is less than 460. The open side faces 460: <b>406 &lt; 460</b>.', act: function (t) { return t.set({ sym: '&lt;' }, 2200); } }
+        ] },
+        example: { mount: G3.view(twoCharts, { a: 582, b: 528, hl: -1, sym: '' }), steps: [
+          { say: 'My turn. I compare 582 and 528.', ms: 1200 },
+          { say: 'The hundreds are the same. The tens decide: 8 tens and 2 tens.', act: function (t) { return t.set({ hl: 1 }, 1500); } },
+          { say: '582 is greater. The open side faces 582: <b>582 &gt; 528</b>.', act: function (t) { return t.set({ sym: '&gt;' }, 2000); } },
+          { say: 'I read it left to right: "582 is greater than 528."', ms: 1800 }
         ] },
         ways: [
           { label: 'Read it left to right', html: '<p>Read the first number, then the symbol, then the second number. <b>406 &lt; 460</b> says "406 is less than 460". <b>460 &gt; 406</b> says the same thing turned around.</p>' },
@@ -389,6 +467,13 @@
           { say: 'Then 299.', act: function (t) { return t.mark(299, '299'); } },
           { say: '302 is furthest right, so it is the greatest. <b>290, 299, 302</b>.', act: function (t) { return t.mark(302, '302'); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 480, max: 520, tick: 2, every: 10, start: 480 }, steps: [
+          { say: 'My turn. I will order 515, 490 and 509 from least to greatest.', ms: 1400 },
+          { say: 'I find each one on the number line. 490 is furthest left.', act: function (t) { return t.mark(490, '490'); } },
+          { say: '509 comes next.', act: function (t) { return t.mark(509, '509'); } },
+          { say: '515 is furthest right, so it is the greatest.', act: function (t) { return t.mark(515, '515'); } },
+          { say: 'Least to greatest, left to right: <b>490, 509, 515</b>.', ms: 2000 }
+        ] },
         key: '<p>Least to greatest: left to right on a number line.</p>',
         check: [TU('s4', 2), SK('n3-compare', 3)] }
     ] },
@@ -402,6 +487,13 @@
           { say: 'It rolls back down to <b>70</b>.', ms: 1400 },
           { say: 'Now 77. It is past the top, so it rolls to <b>80</b>.', act: function (t) { return t.set({ n: 77 }, 1800); } },
           { say: 'Exactly halfway, 75, always rounds <b>up</b> to 80.', act: function (t) { return t.set({ n: 75 }, 1800); } }
+        ] },
+        example: { mount: G3.view(hillView, { n: 30, p: 10 }), steps: [
+          { say: 'My turn. I will round 36. It is between 30 and 40. The top of the hill is 35.', ms: 1700 },
+          { say: 'I put 36 on the hill. It is past the top.', act: function (t) { return t.set({ n: 36 }, 1500); } },
+          { say: 'So it rolls down to <b>40</b>. 36 rounds to 40.', ms: 1500 },
+          { say: 'Now 32. It is before the top, so it rolls back to <b>30</b>.', act: function (t) { return t.set({ n: 32 }, 1800); } },
+          { say: 'I look at the ones digit. 0 to 4 rounds down. 5 to 9 rounds up.', ms: 1800 }
         ] },
         try: { tool: 'numberline', opts: { min: 60, max: 80, tick: 1, every: 5, start: 74 }, tasks: [
           { do: 'The marker is on <b>74</b>. Tap the ten it is closest to.', goal: function (s) { return s.at === 70; }, yes: '74 is 4 away from 70 and 6 away from 80. It rounds to 70.' },
@@ -417,6 +509,12 @@
           { say: '432 is before the top. It rounds to <b>400</b>.', act: function (t) { return t.set({ n: 432 }, 1700); } },
           { say: '451 is past the top. It rounds to <b>500</b>.', act: function (t) { return t.set({ n: 451 }, 1700); } },
           { say: '450, exactly halfway, also rounds up to 500.', act: function (t) { return t.set({ n: 450 }, 1800); } }
+        ] },
+        example: { mount: G3.view(hillView, { n: 200, p: 100 }), steps: [
+          { say: 'My turn. I will round 268 to the nearest hundred. It is between 200 and 300. The top is 250.', ms: 1800 },
+          { say: 'I put 268 on the hill. It is past the top, so it rounds to <b>300</b>.', act: function (t) { return t.set({ n: 268 }, 1800); } },
+          { say: 'Now 249. It is just before the top, so it rounds to <b>200</b>.', act: function (t) { return t.set({ n: 249 }, 1800); } },
+          { say: 'I look at the tens digit, to the right of the hundreds. 5 or more rounds up.', ms: 1800 }
         ] },
         ways: [
           { label: 'Look at one digit', html: '<p>Underline the place you round to, then look at the digit just to its <b>right</b>. For the nearest hundred, look at the tens: 4<u>5</u>1. 5 or more, round up.</p>' },

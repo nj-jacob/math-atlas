@@ -103,6 +103,18 @@
     pets: { t: 'Pets at home', src: 'Class interviews', d: [['Dog', 14], ['Cat', 10], ['Fish', 4], ['None', 7]] }
   };
 
+  /* drawings for the Watch and My turn clips: each takes the clip's state */
+  function vennView(s) { return '<div>' + venn(s.nums.slice(0, s.k), s.a, s.b).svg + cap(s.say) + '</div>'; }
+  function sortView(s) { return '<div>' + (s.t === 'v' ? venn(s.nums, s.a, s.b).svg : carroll(s.nums, s.a, s.b)) + cap(s.say) + '</div>'; }
+  function kindView(s) { return '<div class="tbl"><table><thead><tr><th class="l">Question</th><th class="l">Answers</th><th class="l">Kind of data</th></tr></thead><tbody>' + s.rows.slice(0, s.k).map(function (r) { return '<tr><td class="l">' + r[0] + '</td><td class="l">' + r[1] + '</td><td class="l"><b>' + r[2] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' + cap(s.say); }
+  function tallyView(s) { return '<div>' + tally(s.n) + cap(s.say) + '</div>'; }
+  function pictoView(s) { return '<div>' + picto(s.title, [[s.row, s.v]], s.key, s.src ? s.from : '') + cap(s.say) + '</div>'; }
+  function barView(s) { return '<div>' + bars(s.title, s.d, s.c, s.src) + cap(s.say) + '</div>'; }
+  function modeView(s) { return '<div>' + (s.sorted ? dotRow(s.v, s.hi) : A.svg(s.v.length * 58 + 8, 62, s.v.map(function (x, i) { return '<rect x="' + (6 + i * 58) + '" y="6" width="50" height="50" rx="10" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/><text x="' + (31 + i * 58) + '" y="40" text-anchor="middle" font-size="24" class="tb">' + x + '</text>'; }).join(''), 'Values: ' + s.v.join(', '))) + cap(s.say) + '</div>'; }
+  function meanView(s) { return '<div>' + towerFig(s.v, s.m) + cap(s.say) + '</div>'; }
+  function chanceView(s) { return '<div>' + spinner(s.r, s.b) + cap(s.say) + '</div>'; }
+  function testView(s) { return '<div>' + spinner(s.r, s.b) + (s.c ? bars((s.c[0] + s.c[1]) + ' spins', [['Red', s.c[0]], ['Blue', s.c[1]]], 2, 'Our spins', 'Number of spins') : '') + cap(s.say) + '</div>'; }
+
   /* ---------- Lessons: one idea per screen ---------- */
   var CH = 'data';
   function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
@@ -126,11 +138,17 @@
     { id: 'sort', title: 'Sorting with diagrams', sub: 'Sort by attributes.', concepts: [
       { id: 'venn', title: 'Venn diagrams', exp: ['D1.1'], skill: 'dt-venn',
         body: '<p>A <b>Venn diagram</b> sorts things with circles. Each circle is an <b>attribute</b>, like "even". Things that fit both go in the <b>overlap</b>. Things that fit neither go outside.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + venn(SORTQ.slice(0, s.k), 'even', 'gt15').svg + cap(s.say) + '</div>'; }, { k: 0, say: '' }), steps: [
+        watch: { mount: G3.view(vennView, { nums: SORTQ, a: 'even', b: 'gt15', k: 0, say: '' }), steps: [
           { say: 'Two circles: "Even" and "Greater than 15".', ms: 1500 },
           { say: '20 is even and greater than 15. It goes in the overlap.', act: function (t) { return t.set({ k: 1, say: '20: both' }, 1800); } },
           { say: '3 is neither, so it goes outside. 12 is even only. 17 is greater than 15 only.', act: function (t) { return t.seq([{ k: 2, say: '3: neither' }, { k: 3, say: '12: even only' }, { k: 4, say: '17: greater than 15 only' }], 1100); } },
           { say: 'Ask two questions for each number: <b>Even? Greater than 15?</b>', ms: 2000 }
+        ] },
+        example: { mount: G3.view(vennView, { nums: [15, 4, 7, 22], a: 'odd', b: 'gt10', k: 0, say: '' }), steps: [
+          { say: 'My turn. Two circles: "Odd" and "Greater than 10".', ms: 1500 },
+          { say: '15 is odd and greater than 10, so it goes in the overlap.', act: function (t) { return t.set({ k: 1, say: '15: both' }, 1800); } },
+          { say: '4 is neither, so it goes outside. 7 is odd only. 22 is greater than 10 only.', act: function (t) { return t.seq([{ k: 2, say: '4: neither' }, { k: 3, say: '7: odd only' }, { k: 4, say: '22: greater than 10 only' }], 1100); } },
+          { say: 'I ask one question for each circle: <b>Odd? Greater than 10?</b>', ms: 2000 }
         ] },
         try: { mount: G3.play({ state: { i: 0, note: '' }, draw: function (s) { return venn(SORTQ.slice(0, s.i), 'even', 'gt15').svg; },
           buttons: [['a', 'Even only'], ['b', 'Greater than 15 only'], ['ab', 'Both'], ['none', 'Neither']].map(function (r) { return { label: r[1], act: function (s) { if (s.i >= SORTQ.length) return; var n = SORTQ[s.i]; if (region(n, 'even', 'gt15') === r[0]) { s.i++; s.note = ''; } else s.note = 'Not quite. Is ' + n + ' even? Is it greater than 15?'; } }; }),
@@ -142,9 +160,15 @@
 
       { id: 'carroll', title: 'Carroll and tree diagrams', exp: ['D1.1'], skill: 'dt-venn', hard: true,
         body: '<p>A <b>Carroll diagram</b> sorts with a table: one attribute for the rows, one for the columns. A <b>tree diagram</b> asks yes or no questions, one attribute at a time.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + (s.t === 'v' ? venn(NUMS, 'even', 'gt15').svg : carroll(NUMS, 'even', 'gt15')) + cap(s.say) + '</div>'; }, { t: 'v', say: 'A Venn diagram' }), steps: [
+        watch: { mount: G3.view(sortView, { nums: NUMS, a: 'even', b: 'gt15', t: 'v', say: 'A Venn diagram' }), steps: [
           { say: 'Here are 12 numbers in a Venn diagram.', ms: 1500 },
           { say: 'The same sort in a Carroll diagram. The overlap becomes the top-left box.', act: function (t) { return t.set({ t: 'c', say: 'The same sort as a table' }, 2200); } }
+        ] },
+        example: { mount: G3.view(sortView, { nums: [5, 9, 10, 14, 20, 3, 25, 8], a: 'm5', b: 'lt10', t: 'v', say: 'A Venn diagram' }), steps: [
+          { say: 'My turn. I sort 8 numbers in a Venn diagram: "Multiple of 5" and "Less than 10".', ms: 1800 },
+          { say: 'I put the same sort in a Carroll diagram. The rows ask "Multiple of 5?" The columns ask "Less than 10?"', act: function (t) { return t.set({ t: 'c', say: 'The same sort as a table' }, 2200); } },
+          { say: '5 is a multiple of 5 and less than 10. It goes in the top-left box, where the overlap was.', ms: 2000 },
+          { say: '14 is neither, so it goes in the bottom-right box.', ms: 1800 }
         ] },
         ways: [
           { label: 'Tree diagram', html: '<p>Is 22 even? <b>Yes</b>. Is it greater than 15? <b>Yes</b>. Is it a multiple of 5? <b>No</b>. Each question is one branch. Three questions sort by three attributes.</p>' },
@@ -160,20 +184,32 @@
     { id: 'collect', title: 'Collecting data', sub: 'Ask, watch or test, then keep count.', concepts: [
       { id: 'kinds', title: 'Kinds of data', exp: ['D1.2'], skill: 'dt-picto',
         body: '<p>To answer a question, collect <b>data</b>. Data in words, like "apple", is <b>qualitative</b>. Data in numbers, like "8 cm tall", is <b>quantitative</b>.</p>',
-        watch: { mount: G3.view(function (s) { var rows = [['What is your favourite fruit?', 'apple, grapes', 'words: qualitative'], ['How tall is your plant?', '8 cm, 12 cm', 'numbers: quantitative'], ['How many pets do you have?', '0, 2, 1', 'numbers: quantitative']].slice(0, s.k); return '<div class="tbl"><table><thead><tr><th class="l">Question</th><th class="l">Answers</th><th class="l">Kind of data</th></tr></thead><tbody>' + rows.map(function (r) { return '<tr><td class="l">' + r[0] + '</td><td class="l">' + r[1] + '</td><td class="l"><b>' + r[2] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' + cap(s.say); }, { k: 0, say: '' }), steps: [
+        watch: { mount: G3.view(kindView, { rows: [['What is your favourite fruit?', 'apple, grapes', 'words: qualitative'], ['How tall is your plant?', '8 cm, 12 cm', 'numbers: quantitative'], ['How many pets do you have?', '0, 2, 1', 'numbers: quantitative']], k: 0, say: '' }), steps: [
           { say: 'Ask a question. Look at the answers.', act: function (t) { return t.set({ k: 1 }, 1600); } },
           { say: 'Measure something: the answers are numbers.', act: function (t) { return t.set({ k: 2 }, 1600); } },
           { say: 'Count something: numbers again. <b>Words: qualitative. Numbers: quantitative.</b>', act: function (t) { return t.set({ k: 3 }, 2000); } }
+        ] },
+        example: { mount: G3.view(kindView, { rows: [['How many books did you read?', '3, 5, 2', 'numbers: quantitative'], ['What colour is your bike?', 'red, blue', 'words: qualitative'], ['How long is your pencil?', '14 cm, 9 cm', 'numbers: quantitative']], k: 0, say: '' }), steps: [
+          { say: 'My turn. I ask how many books each friend read. I count, so the answers are numbers.', act: function (t) { return t.set({ k: 1 }, 1800); } },
+          { say: 'I ask what colour each bike is. The answers are words.', act: function (t) { return t.set({ k: 2 }, 1700); } },
+          { say: 'I measure each pencil. The answers are numbers again.', act: function (t) { return t.set({ k: 3 }, 1700); } },
+          { say: '<b>Words: qualitative. Numbers: quantitative.</b>', ms: 1800 }
         ] },
         key: '<p>Words: <b>qualitative</b>. Numbers: <b>quantitative</b>.</p>',
         check: [TU('s2', 1), G3.turn({ q: 'You ask "What is your favourite colour?" The answers are:', options: ['qualitative data', 'quantitative data'], answer: 0, why: 'The answers are words, like "blue".' })] },
 
       { id: 'tally', title: 'Tally marks and tables', exp: ['D1.2'], skill: 'dt-picto',
         body: '<p>Keep count with <b>tally marks</b>. Every fifth mark crosses the other four, so you can count by 5s. A <b>frequency table</b> shows how many of each.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + tally(s.n) + cap(s.say) + '</div>'; }, { n: 0, say: '' }), steps: [
+        watch: { mount: G3.view(tallyView, { n: 0, say: '' }), steps: [
           { say: 'One mark for each vote.', act: function (t) { return t.seq([{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }], 450); } },
           { say: 'The fifth mark crosses the other four.', act: function (t) { return t.set({ n: 5, say: '5' }, 1300); } },
           { say: 'Keep going: 5, 10, then 11, 12, 13. <b>13 votes</b>.', act: function (t) { var p = []; for (var i = 6; i <= 13; i++) p.push({ n: i, say: i > 10 ? '10, ' + i : String(i) }); return t.seq(p, 380); } }
+        ] },
+        example: { mount: G3.view(tallyView, { n: 0, say: '' }), steps: [
+          { say: 'My turn. I make one mark for each vote: 1, 2, 3, 4.', act: function (t) { return t.seq([{ n: 1 }, { n: 2 }, { n: 3 }, { n: 4 }], 450); } },
+          { say: 'The fifth mark crosses the other four. That makes a group of 5.', act: function (t) { return t.set({ n: 5, say: '5' }, 1300); } },
+          { say: 'I keep going until there are 17 votes.', act: function (t) { var p = []; for (var i = 6; i <= 17; i++) p.push({ n: i, say: String(i) }); return t.seq(p, 300); } },
+          { say: 'I count by 5s, then by 1s: 5, 10, 15, then 16, 17. <b>17 votes</b>.', act: function (t) { return t.set({ say: '5, 10, 15, 16, 17' }, 2000); } }
         ] },
         try: { mount: G3.play({ state: { v: [0, 0, 0, 0] }, draw: function (s) { return survey(s.v); },
           buttons: SEASONS.map(function (n, i) { return { label: n, act: function (s) { if (s.v[i] < 30) s.v[i]++; } }; }).concat([{ label: 'Start over', act: function (s) { s.v = [0, 0, 0, 0]; } }]),
@@ -187,10 +223,15 @@
     { id: 'graphs', title: 'Pictographs and bar graphs', sub: 'Read the key and the scale.', concepts: [
       { id: 'picto', title: 'Read a pictograph', exp: ['D1.3', 'D1.5'], skill: 'dt-picto',
         body: '<p>In a <b>pictograph</b>, one picture can stand for more than one. The <b>key</b> tells you how many. Half a picture is half that many.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + picto('Favourite activity', [['Swim', s.v]], 2, s.src ? 'Room 12 survey' : '') + cap(s.say) + '</div>'; }, { v: 0, src: false, say: '' }), steps: [
+        watch: { mount: G3.view(pictoView, { title: 'Favourite activity', row: 'Swim', key: 2, from: 'Room 12 survey', v: 0, src: false, say: '' }), steps: [
           { say: 'The key says 1 picture = 2 votes.', ms: 1500 },
           { say: 'Count by 2s: 2, 4, 6.', act: function (t) { return t.seq([{ v: 2, say: '2' }, { v: 4, say: '4' }, { v: 6, say: '6' }], 700); } },
           { say: 'Half a picture is half of 2, which is 1. Swim has <b>7 votes</b>.', act: function (t) { return t.set({ v: 7, say: '6 + 1 = 7', src: true }, 2000); } }
+        ] },
+        example: { mount: G3.view(pictoView, { title: 'Favourite snack', row: 'Popcorn', key: 4, from: 'Room 8 survey', v: 0, src: false, say: '' }), steps: [
+          { say: 'My turn. I read the key first: 1 picture = 4 votes.', ms: 1600 },
+          { say: 'I count by 4s: 4, 8, 12.', act: function (t) { return t.seq([{ v: 4, say: '4' }, { v: 8, say: '8' }, { v: 12, say: '12' }], 700); } },
+          { say: 'Half a picture is half of 4, which is 2. Popcorn has <b>14 votes</b>.', act: function (t) { return t.set({ v: 14, say: '12 + 2 = 14', src: true }, 2000); } }
         ] },
         try: { mount: G3.play({ state: { set: 'fruit', k: 2 }, draw: function (s) { var d = SETS[s.set]; return picto(d.t, d.d, s.k, d.src); },
           selects: [{ key: 'set', label: 'Data', options: [['sport', 'Favourite sport'], ['fruit', 'Favourite fruit'], ['pets', 'Pets at home']] }, { key: 'k', label: '1 picture =', options: [[1, '1'], [2, '2'], [5, '5']] }],
@@ -201,10 +242,15 @@
 
       { id: 'bar', title: 'Read a bar graph', exp: ['D1.3', 'D1.5'], skill: 'dt-bar', hard: true,
         body: '<p>In a <b>bar graph</b>, read the <b>scale</b> on the side. It might count by 1s, 2s, 5s or 10s. A bar between two lines is between those numbers. Every graph needs a title, labels and a source.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + bars('Favourite sport', SETS.sport.d, s.c, 'Room 12 survey') + cap(s.say) + '</div>'; }, { c: 2, say: 'Scale counts by 2' }), steps: [
+        watch: { mount: G3.view(barView, { title: SETS.sport.t, d: SETS.sport.d, src: SETS.sport.src, c: 2, say: 'Scale counts by 2' }), steps: [
           { say: 'This scale counts by 2. Hockey reaches 12.', ms: 1800 },
           { say: 'Soccer stops halfway between 8 and 10. That is 9.', act: function (t) { return t.set({ say: 'Soccer: 9' }, 1800); } },
           { say: 'Change the scale to count by 5. Same data, the bars look the same, but the lines change.', act: function (t) { return t.set({ c: 5, say: 'Scale counts by 5' }, 2000); } }
+        ] },
+        example: { mount: G3.view(barView, { title: SETS.fruit.t, d: SETS.fruit.d, c: 2, src: SETS.fruit.src, say: 'Scale counts by 2' }), steps: [
+          { say: 'My turn. I read the scale first. It counts by 2. Grapes reach 10.', ms: 1800 },
+          { say: 'Banana stops halfway between 4 and 6. The middle is 5.', act: function (t) { return t.set({ say: 'Banana: 5' }, 1800); } },
+          { say: 'Orange stops halfway between 2 and 4. That is <b>3</b>.', act: function (t) { return t.set({ say: 'Orange: 3' }, 2000); } }
         ] },
         ways: [
           { label: 'Compare two bars', html: '<p>How many more chose Hockey than Swim? Read both: 12 and 6. Subtract: 12 &minus; 6 = <b>6</b>.</p>' },
@@ -221,10 +267,15 @@
     { id: 'average', title: 'Mode and mean', sub: 'Most common, and fair share.', concepts: [
       { id: 'mode', title: 'The mode', exp: ['D1.4'], skill: 'dt-mode',
         body: '<p>The <b>mode</b> is the value that shows up most often. Put the values in order to spot it. A set can have one mode, more than one, or none.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + (s.sorted ? dotRow(s.v, s.hi) : A.svg(s.v.length * 58 + 8, 62, s.v.map(function (x, i) { return '<rect x="' + (6 + i * 58) + '" y="6" width="50" height="50" rx="10" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/><text x="' + (31 + i * 58) + '" y="40" text-anchor="middle" font-size="24" class="tb">' + x + '</text>'; }).join(''), 'Values: ' + s.v.join(', '))) + cap(s.say) + '</div>'; }, { v: [4, 7, 2, 7, 4, 7], sorted: false, hi: null, say: '' }), steps: [
+        watch: { mount: G3.view(modeView, { v: [4, 7, 2, 7, 4, 7], sorted: false, hi: null, say: '' }), steps: [
           { say: '4, 7, 2, 7, 4, 7. Which shows up most?', ms: 1600 },
           { say: 'Put them in order.', act: function (t) { return t.set({ sorted: true }, 1500); } },
           { say: '7 shows up 3 times. The mode is <b>7</b>.', act: function (t) { return t.set({ hi: [7], say: 'Mode: 7' }, 2000); } }
+        ] },
+        example: { mount: G3.view(modeView, { v: [3, 5, 5, 8, 3, 5, 1], sorted: false, hi: null, say: '' }), steps: [
+          { say: 'My turn. 3, 5, 5, 8, 3, 5, 1. Which value shows up most?', ms: 1700 },
+          { say: 'I put them in order.', act: function (t) { return t.set({ sorted: true }, 1500); } },
+          { say: '5 shows up 3 times. That is the most, so the mode is <b>5</b>.', act: function (t) { return t.set({ hi: [5], say: 'Mode: 5' }, 2000); } }
         ] },
         try: { mount: G3.play({ state: { x0: 3, x1: 5, x2: 5, x3: 8, x4: 9 }, draw: function (s) { return dotRow(vals5(s), modeOf(vals5(s))); },
           sliders: [0, 1, 2, 3, 4].map(function (i) { return { key: 'x' + i, label: 'Value ' + (i + 1), min: 1, max: 9 }; }),
@@ -236,11 +287,17 @@
 
       { id: 'mean', title: 'The mean: a fair share', exp: ['D1.4'], skill: 'dt-mean', hard: true,
         body: '<p>The <b>mean</b> is a fair share. Move cubes until all the towers are the same height. That height is the mean. Or: <b>add all the values, then divide</b> by how many there are.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + towerFig(s.v, 5) + cap(s.say) + '</div>'; }, { v: [3, 7, 4, 6], say: '3, 7, 4, 6' }), steps: [
+        watch: { mount: G3.view(meanView, { m: 5, v: [3, 7, 4, 6], say: '3, 7, 4, 6' }), steps: [
           { say: 'Four towers: 3, 7, 4 and 6 cubes.', ms: 1500 },
           { say: 'Move a cube from the tallest to the shortest.', act: function (t) { return t.set({ v: [4, 6, 4, 6], say: '4, 6, 4, 6' }, 1400); } },
           { say: 'And again.', act: function (t) { return t.set({ v: [5, 5, 5, 5], say: '5, 5, 5, 5' }, 1400); } },
           { say: 'All 5. The mean is <b>5</b>. Check: 3 + 7 + 4 + 6 = 20, and 20 &divide; 4 = 5.', ms: 2200 }
+        ] },
+        example: { mount: G3.view(meanView, { v: [6, 2, 4, 4], m: 4, say: '6, 2, 4, 4' }), steps: [
+          { say: 'My turn. Four towers: 6, 2, 4 and 4 cubes.', ms: 1500 },
+          { say: 'I move a cube from the tallest to the shortest.', act: function (t) { return t.set({ v: [5, 3, 4, 4], say: '5, 3, 4, 4' }, 1400); } },
+          { say: 'And again.', act: function (t) { return t.set({ v: [4, 4, 4, 4], say: '4, 4, 4, 4' }, 1400); } },
+          { say: 'All 4. The mean is <b>4</b>. I check: 6 + 2 + 4 + 4 = 16, and 16 &divide; 4 = 4.', ms: 2200 }
         ] },
         ways: [
           { label: 'Add, then share', html: '<p>4, 6 and 8 books. 4 + 6 + 8 = 18. Share among 3: 18 &divide; 3 = <b>6</b>.</p><div class="fig">' + towerFig([4, 6, 8], 6) + '</div>' },
@@ -258,12 +315,18 @@
     { id: 'chance', title: 'How likely is it?', sub: 'From impossible to certain.', concepts: [
       { id: 'words', title: 'Words for chance', exp: ['D2.1'], skill: 'dt-chance',
         body: '<p>We say how likely something is with words: <b>impossible</b>, <b>unlikely</b>, <b>equally likely</b>, <b>likely</b>, <b>certain</b>.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + spinner(s.r, s.b) + cap(s.say) + '</div>'; }, { r: 0, b: 4, say: '' }), steps: [
+        watch: { mount: G3.view(chanceView, { r: 0, b: 4, say: '' }), steps: [
           { say: 'No red parts. Red is <b>impossible</b>.', act: function (t) { return t.set({ say: 'Red: impossible' }, 1600); } },
           { say: '1 red, 3 blue. Red is <b>unlikely</b>.', act: function (t) { return t.set({ r: 1, b: 3, say: 'Red: unlikely' }, 1600); } },
           { say: '2 red, 2 blue. <b>Equally likely</b>.', act: function (t) { return t.set({ r: 2, b: 2, say: 'Equally likely' }, 1600); } },
           { say: '3 red, 1 blue. Red is <b>likely</b>.', act: function (t) { return t.set({ r: 3, b: 1, say: 'Red: likely' }, 1600); } },
           { say: 'All red. Red is <b>certain</b>.', act: function (t) { return t.set({ r: 4, b: 0, say: 'Red: certain' }, 1800); } }
+        ] },
+        example: { mount: G3.view(chanceView, { r: 5, b: 1, say: 'Blue: unlikely' }), steps: [
+          { say: 'My turn. This spinner has 5 red parts and 1 blue part. Blue is <b>unlikely</b>.', ms: 1800 },
+          { say: 'Now 3 red and 3 blue. They have the same number of parts, so they are <b>equally likely</b>.', act: function (t) { return t.set({ r: 3, b: 3, say: 'Equally likely' }, 1800); } },
+          { say: 'Now 1 red and 5 blue. Blue is <b>likely</b>.', act: function (t) { return t.set({ r: 1, b: 5, say: 'Blue: likely' }, 1600); } },
+          { say: 'All 6 parts are blue. Blue is <b>certain</b>, and red is <b>impossible</b>.', act: function (t) { return t.set({ r: 0, b: 6, say: 'Blue: certain' }, 2000); } }
         ] },
         try: { mount: G3.play({ state: { r: 2, b: 3 }, draw: function (s) { return spinner(s.r, s.b); },
           sliders: [{ key: 'r', label: 'Red parts', min: 0, max: 8 }, { key: 'b', label: 'Blue parts', min: 0, max: 8 }],
@@ -275,10 +338,16 @@
 
       { id: 'test', title: 'Predict, then test', exp: ['D2.1', 'D2.2'], skill: 'dt-chance', hard: true,
         body: '<p>Make a <b>prediction</b>, then collect data to test it. The results change a little each time, but the more likely outcome usually wins.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + spinner(1, 3) + (s.c ? bars('20 spins', [['Red', s.c[0]], ['Blue', s.c[1]]], 2, 'Our spins', 'Number of spins') : '') + cap(s.say) + '</div>'; }, { c: null, say: 'Predict: blue is likely.' }), steps: [
+        watch: { mount: G3.view(testView, { r: 1, b: 3, c: null, say: 'Predict: blue is likely.' }), steps: [
           { say: '1 red, 3 blue. Predict: blue is likely.', ms: 1500 },
           { say: 'Spin 20 times: 6 red, 14 blue.', act: function (t) { return t.set({ c: [6, 14], say: '6 red, 14 blue' }, 1800); } },
           { say: 'Spin 20 more: 4 red, 16 blue. Different, but <b>blue wins both times</b>.', act: function (t) { return t.set({ c: [4, 16], say: '4 red, 16 blue' }, 2200); } }
+        ] },
+        example: { mount: G3.view(testView, { r: 2, b: 2, c: null, say: 'Predict: equally likely.' }), steps: [
+          { say: 'My turn. 2 red, 2 blue. I predict red and blue are equally likely.', ms: 1600 },
+          { say: 'I spin 20 times: 11 red, 9 blue. That is close to half each.', act: function (t) { return t.set({ c: [11, 9], say: '11 red, 9 blue' }, 1900); } },
+          { say: 'I spin 20 more: 8 red, 12 blue. The results change, but they stay near half each.', act: function (t) { return t.set({ c: [8, 12], say: '8 red, 12 blue' }, 2100); } },
+          { say: 'I compare with my prediction. Equally likely means about the same, not always exactly the same.', ms: 2200 }
         ] },
         ways: [
           { label: 'A bag of cubes', html: '<p>9 green and 1 yellow cube. Pick one, put it back, 10 times. You will get mostly green, but maybe a yellow or two.</p>' },
