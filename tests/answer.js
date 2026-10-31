@@ -23,7 +23,20 @@ window.__answer = function (q, root, api, bad) {
     case 'match': { const n = q.pairs.length; for (let i = 0; i < n; i++) { click(root.querySelector('[data-l="' + i + '"]')); const r = bad && i < 2 ? 1 - i : i; click(root.querySelector('[data-r="' + r + '"]')); } click($('.qk-go')); break; }
     case 'tf': { const v = bad ? !q.answer : q.answer; click(root.querySelector('[data-tf="' + (v ? 1 : 0) + '"]')); if (!bad && q.why) click(root.querySelector('[data-j="' + q.why.answer + '"]')); break; }
     case 'fill': { $$('.qk-blank').forEach((inp, i) => { inp.value = String(bad && i === 0 ? q.answers[i] + 1 : q.answers[i]); }); click($('.qk-go')); break; }
-    case 'build': { const a = bad ? q.answer + 1 : q.answer; api.tool.fast = true; return Promise.resolve(api.tool.set(Math.floor(a / 100), Math.floor(a / 10) % 10, a % 10)).then(() => new Promise(r => setTimeout(r, 400))).then(() => click($('.qk-go'))); }
+    case 'build': {
+      api.tool.fast = true;
+      let made;
+      if (q.tool === 'coins') {
+        /* biggest coins first; a wrong answer adds one more of the smallest coin */
+        const kinds = ((q.opts && q.opts.set) || [5, 10, 25, 100, 200]).slice().sort((x, y) => y - x), list = [];
+        let left = q.answer;
+        kinds.forEach(v => { while (left >= v) { list.push(v); left -= v; } });
+        if (left) throw new Error('coins build: ' + q.answer + ' cents cannot be made from ' + kinds.join(', '));
+        if (bad) list.push(kinds[kinds.length - 1]);
+        made = api.tool.set(list);
+      } else { const a = bad ? q.answer + 1 : q.answer; made = api.tool.set(Math.floor(a / 100), Math.floor(a / 10) % 10, a % 10); }
+      return Promise.resolve(made).then(() => new Promise(r => setTimeout(r, 400))).then(() => click($('.qk-go')));
+    }
     default: throw new Error('no answerer for ' + q.type);
   }
 };

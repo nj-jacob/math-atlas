@@ -30,9 +30,9 @@ html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
 .qk-slot .qk-n{background:transparent;color:var(--ink2)}
 .qk-end{font-size:.85rem;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
 .qk-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:50px}
-.qk-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qk-cols{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px}
 .qk-col{display:flex;flex-direction:column;gap:8px}
-.qk-col .qk-card{justify-content:flex-start;text-align:left;width:100%}
+.qk-col .qk-card{justify-content:flex-start;text-align:left;width:100%;min-width:0;overflow-wrap:break-word;hyphens:auto}
 .qk-col .qk-card svg{max-width:100%;height:auto}
 .qk-sel{outline:3px solid var(--accent);outline-offset:1px}
 .qk-linked{border-color:var(--accent)}
@@ -59,3 +59,5 @@ html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
 .pcard svg,.steps svg,.ls-reveal svg,.fb svg,.q svg{max-width:100%;height:auto}
 /* a long list of big numbers in a question (like a counting sequence) may wrap on a phone */
 .qtext .math.big{white-space:normal}
+/* "why?" reasons are full sentences: one per row, on every screen and every grade */
+.qk-why .opts{grid-template-columns:minmax(0,1fr)!important}

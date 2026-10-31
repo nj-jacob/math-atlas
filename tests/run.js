@@ -158,10 +158,7 @@ async function checkGrade(browser, base, g) {
     const r = await page.evaluate(async () => {
       const qs = [...document.querySelectorAll('#quiz .q')];
       for (const d of qs) {
-        const q = d._q;
-        if (q.type === 'mc') d.querySelectorAll('.opt')[q.answer].click();
-        else if (q.type === 'num') { d.querySelector('input').value = q.answer; d.querySelector('form').dispatchEvent(new Event('submit', { cancelable: true, bubbles: true })); }
-        else await window.__answer(q, d, d._qk, false);
+        await window.__answer(d._q, d, d._qk, false);
       }
       return { n: qs.length, score: document.querySelector('#quiz .qscore').textContent };
     });
