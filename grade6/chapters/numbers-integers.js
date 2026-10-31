@@ -205,6 +205,12 @@
           ['A million is 100 squares of 10 000.', million(1000000)]
         ]),
         try: lab(CH, 0, 'Slide or type to build a number. Can you make exactly <b>500 000</b>?', function (h) { return +h.querySelector('#nmn').value === 500000 || +h.querySelector('#nmr').value === 500000; }, 'Yes: 5 hundred thousands, half of a million.'),
+        example: G6.example([
+          ['My turn. I show 3000: a 3 in the thousands place.', chart(3000, { vals: true, cols: 7 })],
+          ['I multiply by 10. The 3 moves one place to the left: 30 000.', chart(30000, { vals: true, cols: 7 })],
+          ['I multiply by 10 again. The 3 moves left again: 300 000.', chart(300000, { vals: true, cols: 7 })],
+          ['I find the place, then the value. The 3 is in the hundred thousands place, so it is worth 300 000.', chart(300000, { vals: true, cols: 7, hl: 1 })]
+        ]),
         key: '<p>Find the place, then the value. A 7 in the ten thousands place is worth 70 000.</p>',
         mistake: '<p>Writing four-digit numbers with a space (5 832). In Canada only numbers of 5 or more digits get a space: 5832, but 58 320.</p>',
         check: [g(CH, 'ni-value', 1), g(CH, 'ni-value', 2)] },
@@ -221,6 +227,12 @@
           { label: 'Cover and read', html: '<p>Cover the ones period with your finger. Read what is left: <b>450</b> thousand. Uncover and read the rest: <b>302</b>. So 450 302 is four hundred fifty thousand three hundred two.</p><div class="fig">' + periods(450302) + '</div>' },
           { label: 'Zeros are silent', html: '<p>A period of zeros is not read at all. 3 000 040 is "three million forty". Nothing is said for the thousands period.</p><div class="fig">' + periods(3000040) + '</div>' }
         ],
+        example: G6.example([
+          ['My turn. I read 2 408 015. First I split it into periods of three, from the right.', periods(2408015)],
+          ['I read the millions period: two million.', periods(2408015), '<span class="math">two million</span>'],
+          ['I read the thousands period: four hundred eight thousand.', periods(2408015), '<span class="math">two million four hundred eight thousand</span>'],
+          ['I read the ones period: fifteen. I do not say a period name for the ones.', periods(2408015), '<span class="math">two million four hundred eight thousand fifteen</span>']
+        ]),
         key: '<p>Read one period at a time from the left. Say the period name after each group, except the ones period.</p>',
         mistake: '<p>Saying "and" or the word "ones" (four hundred fifty thousand <i>and</i> three hundred two <i>ones</i>). Neither is said. "And" is kept for decimals.</p>',
         check: [g(CH, 'ni-words', 1), g(CH, 'ni-words', 2)] }
@@ -235,6 +247,12 @@
           ['On a number line, negatives are to the left of zero.', iline(-10, 10, [{ v: -8, lab: '−8', c: 'var(--neg)' }])]
         ]),
         try: lab(CH, 1, 'Slide the temperature to <b>12 degrees below zero</b>.', function (h) { return +h.querySelector('#tmr').value === -12; }, 'Yes: 12 below zero is −12°C.'),
+        example: G6.example([
+          ['My turn. It is 3 degrees. The temperature drops 8 degrees.', thermo(3)],
+          ['First I count down 3 degrees. That takes me to zero.', thermo(0)],
+          ['I still need to drop 5 more. 5 degrees below zero is negative 5.', thermo(-5), '<span class="negt">&minus;5&deg;C</span>'],
+          ['I check on the number line: &minus;5 is below zero, so it is negative.', iline(-10, 10, [{ v: -5, lab: '−5', c: 'var(--neg)' }])]
+        ]),
         key: '<p>Below zero means negative. Above zero means positive. Zero is neither.</p>',
         check: [{ q: 'A diver is 12 m below the surface of the water. Which integer shows this?', type: 'mc', options: ['12', '−12', '0', '−1'], answer: 1, hint: 'Below zero means negative.', explain: 'Below the surface is below zero, so the diver is at &minus;12 m.' }, g(CH, 'ni-integers', 1)] },
       { id: 'opposites', title: 'Opposites', exp: ['B1.2'], skill: 'ni-integers',
@@ -250,6 +268,12 @@
           { do: 'Tap the opposite of <b>−3</b>.', goal: function (s) { return s.at === 3; }, yes: 'Yes: the opposite of −3 is 3.' },
           { do: 'Tap the number that is its own opposite.', goal: function (s) { return s.at === 0; }, yes: 'Yes: zero is its own opposite.' }
         ] },
+        example: G6.example([
+          ['My turn. I find the opposite of &minus;6.', iline(-10, 10, [{ v: -6, lab: '−6', c: 'var(--neg)' }])],
+          ['I count from &minus;6 to zero. That is 6 steps.', iline(-10, 10, [{ v: -6, lab: '−6', c: 'var(--neg)' }, { v: 0, lab: '0', c: 'var(--card)' }])],
+          ['I go 6 steps the other way from zero. I land on 6.', iline(-10, 10, [{ v: -6, lab: '−6', c: 'var(--neg)' }, { v: 6, lab: '6', c: 'var(--pos)' }])],
+          ['&minus;6 and 6 are opposites: the same distance from zero, on opposite sides.', iline(-10, 10, [{ v: -6, lab: '−6', c: 'var(--neg)' }, { v: 6, lab: '6', c: 'var(--pos)' }]), '<span class="math">&minus;6 and 6</span>']
+        ]),
         key: '<p>Same distance from zero, opposite sides. Zero is its own opposite.</p>',
         check: [g(CH, 'ni-integers', 1), g(CH, 'ni-integers', 2)] },
       { id: 'compare', title: 'Comparing integers', exp: ['B1.3'], skill: 'ni-compare', hard: true,
@@ -264,6 +288,12 @@
           { label: 'Think temperature', html: '<p>Which is warmer, &minus;2&deg;C or &minus;7&deg;C? &minus;2&deg;C is warmer, so &minus;2 is greater.</p><div class="row2"><div class="fig">' + thermo(-7) + '</div><div class="fig">' + thermo(-2) + '</div></div>' },
           { label: 'Think money', html: '<p>Owing $2 is better than owing $7. So &minus;2 &gt; &minus;7. The less you owe, the more you have.</p>' }
         ],
+        example: G6.example([
+          ['My turn. I order &minus;3, 2, &minus;8 and 0 from least to greatest.', '<p class="g6-big">&minus;3, 2, &minus;8, 0</p>'],
+          ['First I place each one on the number line.', iline(-10, 5, [{ v: -8, lab: '−8', c: 'var(--neg)' }, { v: -3, lab: '−3', c: 'var(--neg)' }, { v: 0, lab: '0', c: 'var(--card)' }, { v: 2, lab: '2', c: 'var(--pos)' }])],
+          ['Next I read from left to right. Further right is greater.', iline(-10, 5, [{ v: -8, lab: '−8', c: 'var(--neg)' }, { v: -3, lab: '−3', c: 'var(--neg)' }, { v: 0, lab: '0', c: 'var(--card)' }, { v: 2, lab: '2', c: 'var(--pos)' }]), '&minus;8, &minus;3, 0, 2'],
+          ['I check the two negatives: &minus;3 is closer to zero, so &minus;3 is greater than &minus;8.', '<p class="g6-big">&minus;8 &lt; &minus;3 &lt; 0 &lt; 2</p>']
+        ]),
         key: '<p>Further right is greater. For two negatives, the one closer to zero is greater.</p>',
         mistake: '<p>Thinking &minus;8 is bigger than &minus;3 because 8 is bigger than 3. On the number line &minus;8 is further <b>left</b>, so it is less. Ask "which is colder?"</p>',
         check: [{ q: 'Which is colder: <span class="math">&minus;15&deg;C</span> or <span class="math">&minus;11&deg;C</span>?', type: 'mc', options: ['−15°C', '−11°C', 'They are the same'], answer: 0, hint: 'Further left is less. Which is further from zero on the cold side?', explain: '&minus;15 is further left than &minus;11, so &minus;15&deg;C is colder.' }, g(CH, 'ni-compare', 1), g(CH, 'ni-compare', 2)] }
@@ -277,6 +307,12 @@
           ['Multiples of 10 end in 0.', hchart(10)]
         ]),
         try: lab(CH, 3, 'Type a number with <b>4 or more digits</b> that is divisible by 2, 5 and 10.', function (h) { var n = +h.querySelector('#dvn').value; return n >= 1000 && n % 10 === 0; }, 'Yes: it ends in 0, so it passes all three.'),
+        example: G6.example([
+          ['My turn. Is 4370 divisible by 2, by 5 and by 10? I look at the last digit: 0.', '<p class="g6-big">437<b style="color:var(--strand)">0</b></p>'],
+          ['0 is even, so 4370 is divisible by 2.', '<p class="g6-big">4370 &divide; 2 = 2185</p>'],
+          ['The last digit is 0 or 5, so it is divisible by 5.', '<p class="g6-big">4370 &divide; 5 = 874</p>'],
+          ['The last digit is 0, so it is divisible by 10 too.', '<p class="g6-big">4370 &divide; 10 = 437</p>']
+        ]),
         key: '<p>2: last digit even. 5: last digit 0 or 5. 10: last digit 0.</p>',
         check: [g(CH, 'ni-divis', 1)] },
       { id: 'd39', title: 'Rules for 3 and 9', exp: ['B2.2'], skill: 'ni-divis', hard: true,
@@ -292,6 +328,12 @@
           { label: 'Why it works', html: '<p>Each 10 is 9 + 1, each 100 is 99 + 1. So 471 = 4 &times; 99 + 7 &times; 9 + (4 + 7 + 1). The 99s and 9s already divide by 3 and 9. Only the digit sum is left to check.</p>' },
           { label: 'Keep adding', html: '<p>For a big total, add again. 98 784: 9 + 8 + 7 + 8 + 4 = 36, and 3 + 6 = 9. So 98 784 is divisible by 9 (and by 3).</p>' }
         ],
+        example: G6.example([
+          ['My turn. Is 5382 divisible by 3? Is it divisible by 9?', '<p class="g6-big">5382</p>'],
+          ['First I add the digits: 5 + 3 + 8 + 2 = 18.', '<p class="g6-big">5 + 3 + 8 + 2 = 18</p>'],
+          ['18 is a multiple of 3, so 5382 is divisible by 3.', '<p class="g6-big">5382 &divide; 3 = 1794</p>'],
+          ['18 is also a multiple of 9, so 5382 is divisible by 9.', '<p class="g6-big">5382 &divide; 9 = 598</p>']
+        ]),
         key: '<p>3 and 9: add the digits. The total tells you.</p>',
         mistake: '<p>Using the "add the digits" rule for 4 or 8. Adding digits only works for 3 and 9.</p>',
         check: [{ q: 'Is <span class="math">7452</span> divisible by 9?', type: 'mc', options: ['Yes', 'No'], answer: 0, hint: 'Add the digits. Is the total a multiple of 9?', explain: '7 + 4 + 5 + 2 = 18, a multiple of 9. 7452 &divide; 9 = 828.' }, g(CH, 'ni-divis', 2)] },
@@ -304,6 +346,12 @@
           ['Both rules pass, so 354 is divisible by 6.', '<p class="g6-big">354 &divide; 6 = 59</p>']
         ]),
         try: lab(CH, 3, 'Show multiples of <b>6</b> and test a number of your own.', function (h) { return h.querySelector('#dvd').value === '6'; }, 'The shaded squares are the numbers that pass for both 2 and 3.'),
+        example: G6.example([
+          ['My turn. Is 2136 divisible by 4? I look at the last two digits: 36.', '<p class="g6-big">21<b style="color:var(--strand)">36</b></p>'],
+          ['36 = 4 &times; 9, so yes.', '<p class="g6-big">2136 &divide; 4 = 534</p>'],
+          ['Is it divisible by 8? I look at the last three digits: 136 = 8 &times; 17. Yes.', '<p class="g6-big">2<b style="color:var(--strand)">136</b> &divide; 8 = 267</p>'],
+          ['Is it divisible by 6? It is even, and 2 + 1 + 3 + 6 = 12. Both rules pass.', '<p class="g6-big">2136 &divide; 6 = 356</p>']
+        ]),
         key: '<p>4: last two digits. 8: last three digits. 6: both 2 and 3.</p>',
         check: [g(CH, 'ni-divis', 2), g(CH, 'ni-divis', 3)] }
     ] },
@@ -317,6 +365,13 @@
           ['Multiples of 12 go on forever.', '<p class="g6-big">12, 24, 36, 48, &hellip;</p>']
         ]),
         ways: [{ label: 'Factors vs multiples', html: '<div class="tbl"><table><thead><tr><th class="l"></th><th class="l">Factors of 12</th><th class="l">Multiples of 12</th></tr></thead><tbody><tr><td class="l">What</td><td class="l">divide 12 evenly</td><td class="l">12 times 1, 2, 3, &hellip;</td></tr><tr><td class="l">List</td><td class="l">1, 2, 3, 4, 6, 12</td><td class="l">12, 24, 36, &hellip;</td></tr><tr><td class="l">How many</td><td class="l">a short list</td><td class="l">forever</td></tr></tbody></table></div>' }],
+        example: G6.example([
+          ['My turn. I find the factors of 18. First: 18 squares in one row, 1 &times; 18.', arr(1, 18, 18)],
+          ['Two rows of 9: 2 &times; 9.', arr(2, 9, 22)],
+          ['Three rows of 6: 3 &times; 6.', arr(3, 6, 22)],
+          ['I try 4 and 5. They leave squares over. So I am done.', arr(3, 6, 22), 'Factors of 18: 1, 2, 3, 6, 9, 18'],
+          ['I check the multiples: 18, 36, 54 and on forever. Factors are few; multiples never end.', '<p class="g6-big">18, 36, 54, 72, &hellip;</p>']
+        ]),
         key: '<p>Factors are small and few. Multiples are big and never end.</p>',
         mistake: '<p>Mixing up factors and multiples. Ask: "does it go <b>into</b> 12 (factor) or does 12 go into it (multiple)?"</p>',
         check: [g(CH, 'ni-primes', 1)] },
@@ -326,6 +381,12 @@
           ['7 squares make only one rectangle: 1 by 7. 7 is prime.', arr(1, 7, 24)],
           ['9 squares make 1 by 9 and 3 by 3. 9 is composite.', arr(3, 3, 24)],
           ['The primes under 30.', '<p class="g6-big">2, 3, 5, 7, 11, 13, 17, 19, 23, 29</p>']
+        ]),
+        example: G6.example([
+          ['My turn. Is 11 prime? I try to make rectangles with 11 squares.', arr(1, 11, 24)],
+          ['Only 1 by 11 works. One rectangle, so 11 is prime.', arr(1, 11, 24), '11 is prime'],
+          ['Is 15 prime? 15 squares make 1 by 15, and also 3 by 5.', arr(3, 5, 24)],
+          ['More than one rectangle, so 15 is composite.', arr(3, 5, 24), '15 = 3 &times; 5 is composite']
         ]),
         key: '<p>Only one rectangle means prime. More than one means composite.</p>',
         mistake: '<p>Calling every odd number prime (9, 15, 21, 51 are not) or calling 1 prime. 2 is the only even prime.</p>',
@@ -339,6 +400,12 @@
         ]),
         try: lab(CH, 4, 'Type <b>84</b> and try two different first splits. Do you get the same primes?', function (h) { return +h.querySelector('#ftn').value === 84; }, 'The primes are always 2, 2, 3 and 7.'),
         ways: [{ label: 'Divide by small primes', html: '<p>Keep dividing by the smallest prime that works. 84 &divide; 2 = 42, 42 &divide; 2 = 21, 21 &divide; 3 = 7, and 7 is prime. So 84 = 2 &times; 2 &times; 3 &times; 7.</p>' }],
+        example: G6.example([
+          ['My turn. I make a factor tree for 36. First I split it: 6 &times; 6.', '<p class="g6-big">36 = 6 &times; 6</p>'],
+          ['Each 6 is not prime, so I split it again: 2 &times; 3.', '<p class="g6-big">6 = 2 &times; 3</p>'],
+          ['Now every branch ends in a prime: 2, 3, 2, 3.', treeSvg(36, [6, 6]).svg],
+          ['I write the primes in order. That is the prime factorization.', treeSvg(36, [6, 6]).svg, '<span class="math">36 = 2 &times; 2 &times; 3 &times; 3</span>']
+        ]),
         key: '<p>However you split it, a number always ends with the same primes: its <b>prime factorization</b>.</p>',
         mistake: '<p>Stopping at a composite number on a branch, like leaving a 4 or a 9. Every branch must end in a prime.</p>',
         check: [{ q: 'Finish the prime factorization: <span class="math">90 = 2 &times; 3 &times; 3 &times; ?</span>', type: 'num', answer: 5, hint: '2 &times; 3 &times; 3 = 18. What times 18 makes 90?', explain: '90 &divide; 18 = 5, and 5 is prime.' }, g(CH, 'ni-ftree', 1), g(CH, 'ni-ftree', 2)] }

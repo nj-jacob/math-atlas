@@ -78,6 +78,12 @@
         try: { tool: 'fractions', opts: { wall: [3, 6, 12] }, tasks: [
           { do: 'Shade ' + f(1, 3) + ' on the top strip, then the same amount on the other two strips.', goal: function (s) { return s[0].n === 1 && s[1].n === 2 && s[2].n === 4; }, yes: f(1, 3) + ' = ' + f(2, 6) + ' = ' + f(4, 12) + '.' }
         ] },
+        example: G6.example([
+          ['My turn. I find fractions equal to two thirds.', bars([{ d: 3, parts: [[2, 0]], label: '2/3' }], 420)],
+          ['I multiply the top and the bottom by 2: four sixths. Same amount.', bars([{ d: 3, parts: [[2, 0]], label: '2/3' }, { d: 6, parts: [[4, 0]], label: '4/6' }], 420)],
+          ['I multiply the top and the bottom by 4: eight twelfths. Still the same amount.', bars([{ d: 3, parts: [[2, 0]], label: '2/3' }, { d: 6, parts: [[4, 0]], label: '4/6' }, { d: 12, parts: [[8, 0]], label: '8/12' }], 420)],
+          ['I check: the shading lines up in every bar.', bars([{ d: 3, parts: [[2, 0]], label: '2/3' }, { d: 6, parts: [[4, 0]], label: '4/6' }, { d: 12, parts: [[8, 0]], label: '8/12' }], 420), f(2, 3) + ' = ' + f(4, 6) + ' = ' + f(8, 12)]
+        ]),
         key: '<p>Multiply the top and bottom by the same number.</p>',
         mistake: '<p>Multiplying only the bottom (' + f(2, 5) + ' = ' + f(2, 15) + '). That makes the pieces smaller without giving more of them, so the amount shrinks.</p>',
         check: [{ q: 'Complete: ' + f(2, 5) + ' = ' + f('?', 15), type: 'num', answer: 6, hint: '5 &times; 3 = 15, so multiply the top by 3 too.', explain: '2 &times; 3 = 6. ' + f(2, 5) + ' = ' + f(6, 15) + '.' }, g(CH, 'fr-equiv', 1)] },
@@ -90,6 +96,12 @@
         ]),
         try: lab(CH, 0, 'Choose ' + f(3, 4) + ' and ' + f(5, 6) + '. Which is greater?', function (h) { return [ft(h, '#eqa'), ft(h, '#eqb')].sort().join() === '3/4,5/6'; }, 'In twelfths: 9/12 and 10/12. 5/6 is greater.'),
         ways: [{ label: 'Multiply the bottoms', html: '<p>If you cannot find the least common multiple, multiply the two bottoms. 4 &times; 6 = 24 always works. It just gives bigger numbers to simplify later.</p>' }],
+        example: G6.example([
+          ['My turn. I find a common denominator for two thirds and three quarters.', bars([{ d: 3, parts: [[2, 0]], label: '2/3' }, { d: 4, parts: [[3, 1]], label: '3/4' }], 420)],
+          ['I list multiples. Of 3: 3, 6, 9, 12. Of 4: 4, 8, 12. Both reach 12.', '<p class="g6-big">3, 6, 9, <b>12</b> &nbsp;&middot;&nbsp; 4, 8, <b>12</b></p>'],
+          ['I change both to twelfths: 2/3 = 8/12 and 3/4 = 9/12.', bars([{ d: 12, parts: [[8, 0]], label: '8/12' }, { d: 12, parts: [[9, 1]], label: '9/12' }], 420), f(2, 3) + ' = ' + f(8, 12) + ' &nbsp; ' + f(3, 4) + ' = ' + f(9, 12)],
+          ['Now the pieces are the same size, so I can compare: 9/12 is more.', '<p class="g6-big">' + f(8, 12) + ' &lt; ' + f(9, 12) + '</p>']
+        ]),
         key: '<p>Find a number both bottoms divide into. Change both fractions to that bottom.</p>',
         check: [g(CH, 'fr-equiv', 2), g(CH, 'fr-equiv', 3)] }
     ] },
@@ -103,6 +115,12 @@
         ]),
         try: lab(CH, 1, 'Add two fractions so the answer is more than 1 whole.', function (h) { return h.querySelector('#aso').value === '1' && fv(h, '#asa') + fv(h, '#asb') > 1; }, 'More than a whole: you can write it as a mixed number.'),
         ways: [{ label: 'Estimate first', html: '<p>' + f(1, 2) + ' + ' + f(1, 3) + ' must be more than ' + f(1, 2) + '. If your answer is ' + f(2, 5) + ', it is too small: something went wrong.</p>' }],
+        example: G6.example([
+          ['My turn. I add two fifths and one third.', bars([{ d: 5, parts: [[2, 0]], label: '2/5' }, { d: 3, parts: [[1, 1]], label: '1/3' }], 420)],
+          ['First I find a common denominator: 15.', '<p class="g6-big">5, 10, <b>15</b> &nbsp;&middot;&nbsp; 3, 6, 9, 12, <b>15</b></p>'],
+          ['I change both: 2/5 = 6/15 and 1/3 = 5/15.', bars([{ d: 15, parts: [[6, 0]], label: '6/15' }, { d: 15, parts: [[5, 1]], label: '5/15' }], 420)],
+          ['Same size pieces, so I add the tops: 6 + 5 = 11.', bars([{ d: 15, parts: [[6, 0], [5, 1]], label: '11/15' }], 420), f(2, 5) + ' + ' + f(1, 3) + ' = ' + f(11, 15)]
+        ]),
         key: '<p>Same size pieces, then add the tops.</p>',
         mistake: '<p>Adding the bottoms. ' + f(1, 2) + ' + ' + f(1, 3) + ' is <b>not</b> ' + f(2, 5) + ': that is less than ' + f(1, 2) + ' on its own. The answer is ' + f(5, 6) + '.</p>',
         check: [{ q: f(1, 2) + ' + ' + f(3, 8) + ' = ?', type: 'mc', options: [f(4, 10), f(7, 8), f(4, 8), f(5, 8)], answer: 1, hint: 'Eighths work. ' + f(1, 2) + ' = ' + f(4, 8) + '.', explain: f(4, 8) + ' + ' + f(3, 8) + ' = ' + f(7, 8) + '.' }, g(CH, 'fr-add', 1), g(CH, 'fr-add', 2)] },
@@ -113,6 +131,12 @@
           ['Take away 3 of the 10 twelfths.', bars([{ d: 12, parts: [[10, 0]], cross: 3, label: '10/12' }], 420), f(7, 12)]
         ]),
         try: lab(CH, 1, 'Choose subtract and find a pair whose difference is ' + f(1, 4) + '.', function (h) { return h.querySelector('#aso').value === '-1' && Math.abs(fv(h, '#asa') - fv(h, '#asb') - 0.25) < 1e-9; }, 'Yes: the difference is one quarter.'),
+        example: G6.example([
+          ['My turn. I work out four fifths take away one half.', bars([{ d: 5, parts: [[4, 0]], label: '4/5' }], 420)],
+          ['First I use tenths for both: 4/5 = 8/10 and 1/2 = 5/10.', bars([{ d: 10, parts: [[8, 0]], label: '8/10' }], 420), f(8, 10) + ' &minus; ' + f(5, 10)],
+          ['I take away 5 of the 8 tenths. 3 tenths are left.', bars([{ d: 10, parts: [[8, 0]], cross: 5, label: '8/10' }], 420), f(3, 10)],
+          ['I check: 3/10 is less than 4/5, so it makes sense.', '<p class="g6-big">' + f(4, 5) + ' &minus; ' + f(1, 2) + ' = ' + f(3, 10) + '</p>']
+        ]),
         key: '<p>Check it makes sense: the answer is less than the first fraction.</p>',
         check: [{ q: f(3, 4) + ' &minus; ' + f(1, 3) + ' = ?', type: 'mc', options: [f(2, 1), f(5, 12), f(2, 12), f(1, 12)], answer: 1, hint: 'Twelfths: ' + f(9, 12) + ' and ' + f(4, 12) + '.', explain: f(9, 12) + ' &minus; ' + f(4, 12) + ' = ' + f(5, 12) + '.' }, g(CH, 'fr-sub', 1)] },
       { id: 'mixed', title: 'Mixed numbers', exp: ['B2.5'], skill: 'fr-sub', hard: true,
@@ -123,6 +147,13 @@
           ['Now subtract one half: use sixths.', '<p class="g6-big">' + f(14, 6) + ' &minus; ' + f(3, 6) + ' = ' + f(11, 6) + ' = 1' + f(5, 6) + '</p>']
         ]),
         ways: [{ label: 'Wholes and parts separately', html: '<p>2' + f(3, 4) + ' &minus; 1' + f(1, 4) + ': wholes 2 &minus; 1 = 1, parts ' + f(3, 4) + ' &minus; ' + f(1, 4) + ' = ' + f(2, 4) + '. Answer 1' + f(1, 2) + '. This works when the first part is big enough.</p>' }],
+        example: G6.example([
+          ['My turn. I work out 3 and one half take away 1 and two thirds.', '<p class="g6-big">3' + f(1, 2) + ' &minus; 1' + f(2, 3) + '</p>'],
+          ['I make each one a fraction. 3 &times; 2 + 1 = 7, so 3 and one half is 7/2.', '<p class="g6-big">3' + f(1, 2) + ' = ' + f(7, 2) + '</p>'],
+          ['1 &times; 3 + 2 = 5, so 1 and two thirds is 5/3.', '<p class="g6-big">1' + f(2, 3) + ' = ' + f(5, 3) + '</p>'],
+          ['I use sixths: 21/6 take away 10/6 is 11/6.', '<p class="g6-big">' + f(21, 6) + ' &minus; ' + f(10, 6) + ' = ' + f(11, 6) + '</p>'],
+          ['11/6 is 1 and five sixths. I check: about 3.5 &minus; 1.7 = 1.8. Close.', '<p class="g6-big">' + f(11, 6) + ' = 1' + f(5, 6) + '</p>']
+        ]),
         key: '<p>Whole number &times; bottom + top gives the new top.</p>',
         check: [g(CH, 'fr-sub', 2), g(CH, 'fr-sub', 3)] }
     ] },
@@ -135,6 +166,12 @@
           ['Three groups: 6 fifths, which is 1 and 1 fifth.', bars([{ d: 5, parts: [[2, 0], [2, 1], [2, 2]], label: '6/5' }], 420), '3 &times; ' + f(2, 5) + ' = ' + f(6, 5) + ' = 1' + f(1, 5)]
         ]),
         try: lab(CH, 2, 'Make a product that is exactly <b>2 wholes</b>.', function (h) { return Math.abs(+h.querySelector('#mwn').value * fv(h, '#mwf') - 2) < 1e-9; }, 'Yes: exactly two wholes.'),
+        example: G6.example([
+          ['My turn. I work out 4 &times; three eighths. One group first.', bars([{ d: 8, parts: [[3, 0]], label: '3/8' }], 420)],
+          ['Two groups: 6 eighths.', bars([{ d: 8, parts: [[3, 0], [3, 1]], label: '6/8' }], 420)],
+          ['Four groups: 12 eighths. I multiply the top by 4; the bottom stays 8.', bars([{ d: 8, parts: [[3, 0], [3, 1], [3, 2], [3, 0]], label: '12/8' }], 420), '4 &times; ' + f(3, 8) + ' = ' + f(12, 8)],
+          ['12 eighths is 1 whole and 4 eighths, which is 1 and one half.', '<p class="g6-big">' + f(12, 8) + ' = 1' + f(4, 8) + ' = 1' + f(1, 2) + '</p>']
+        ]),
         key: '<p>Multiply the top by the whole number. The bottom stays the same.</p>',
         mistake: '<p>Multiplying the bottom too. 4 &times; ' + f(1, 3) + ' is ' + f(4, 3) + ', not ' + f(4, 12) + '. Each piece is still a third.</p>',
         check: [g(CH, 'fr-mult', 1), g(CH, 'fr-mult', 2)] },
@@ -143,6 +180,12 @@
         watch: play([
           ['12 counters.', ofArr(0, 3, 12)],
           ['Split into 3 equal groups of 4. Take 2 groups.', ofArr(2, 3, 12), f(2, 3) + ' of 12 = 8']
+        ]),
+        example: G6.example([
+          ['My turn. I find three fifths of 20.', ofArr(0, 5, 20)],
+          ['I divide by the bottom: 20 &divide; 5 = 4 in each group.', ofArr(0, 5, 20), '20 &divide; 5 = 4'],
+          ['I multiply by the top: I take 3 groups. 3 &times; 4 = 12.', ofArr(3, 5, 20), f(3, 5) + ' of 20 = 12'],
+          ['I check: 12 is less than 20, and a bit more than half. That fits 3/5.', '<p class="g6-big">' + f(3, 5) + ' &times; 20 = 12</p>']
         ]),
         key: '<p>Divide by the bottom, multiply by the top.</p>',
         check: [{ q: 'What is ' + f(3, 4) + ' of 20?', type: 'num', answer: 15, hint: '20 &divide; 4 = 5 in each group. Take 3 groups.', explain: '3 &times; 5 = 15.' }, g(CH, 'fr-mult', 3)] }
@@ -160,6 +203,12 @@
           { label: 'Ribbon', html: '<p>A 3 m ribbon cut into ' + f(3, 4) + ' m pieces: 3 m = ' + f(12, 4) + ' m. 12 quarters in groups of 3 quarters = <b>4 pieces</b>.</p>' },
           { label: 'Pizza', html: '<p>2 pizzas, each cut in thirds: 6 slices. If each person gets ' + f(1, 3) + ', 6 people eat. 2 &divide; ' + f(1, 3) + ' = 6.</p>' }
         ],
+        example: G6.example([
+          ['My turn. How many two fifths fit in 4?', jumps(4, 2, 5)],
+          ['I change the wholes into fifths. Each whole holds 5, so 4 wholes hold 20 fifths.', jumps(4, 2, 5), '4 = ' + f(20, 5)],
+          ['I count groups of 2 fifths: 20 &divide; 2 = 10 jumps.', jumps(4, 2, 5), '4 &divide; ' + f(2, 5) + ' = 10'],
+          ['I check: 10 &times; 2/5 = 20/5 = 4.', '<p class="g6-big">10 &times; ' + f(2, 5) + ' = ' + f(20, 5) + ' = 4</p>']
+        ]),
         key: '<p>Change the whole into pieces of that size, then count the groups.</p>',
         mistake: '<p>Expecting the answer to be smaller. Dividing by a fraction less than 1 gives a <b>bigger</b> answer, because many small pieces fit.</p>',
         check: [{ q: '4 &divide; ' + f(1, 3) + ' = ?', type: 'num', answer: 12, hint: 'How many thirds fit in 4? Each whole has 3.', explain: '4 &times; 3 = 12 thirds.' }, g(CH, 'fr-div', 1), g(CH, 'fr-div', 2)] }

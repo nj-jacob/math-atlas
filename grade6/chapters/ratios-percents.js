@@ -79,6 +79,12 @@
           ['Circles to squares: 2 to 3. The order matters.', tiles(3, 2, 1), '2 : 3'],
           ['Squares to all shapes: 3 out of 5. That is part to whole.', tiles(3, 2, 1), '3 : 5 = ' + A.fr(3, 5)]
         ]),
+        example: G6.example([
+          ['My turn. A tray has 2 squares and 5 circles.', tiles(2, 5, 1)],
+          ['Squares to circles: I write the squares first. 2 to 5.', tiles(2, 5, 1), '2 : 5'],
+          ['Circles to squares: now the circles come first. 5 to 2.', tiles(2, 5, 1), '5 : 2'],
+          ['Squares to all shapes: 2 out of 7. I keep the words and numbers in the same order.', tiles(2, 5, 1), '2 : 7 = ' + A.fr(2, 7)]
+        ]),
         key: '<p>Words and numbers in the same order.</p>',
         mistake: '<p>Writing the numbers in the order they appear in the story rather than the order asked. "Boys to girls" starts with boys, whatever came first in the sentence.</p>',
         check: [{ q: 'A class has 12 girls and 10 boys. What is the ratio of boys to girls?', type: 'mc', options: ['12:10', '10:12', '10:22', '22:10'], answer: 1, hint: 'Boys first.', explain: 'Boys to girls is 10:12.' }, g(CH, 'rp-part', 1), g(CH, 'rp-part', 2)] },
@@ -90,6 +96,12 @@
           ['Three groups.', tiles(3, 2, 3), '9 : 6']
         ]),
         try: lab(CH, 0, 'Build a ratio equal to <b>10:15</b>.', function (h) { var a = +h.querySelector('#ra').value, b = +h.querySelector('#rb').value, k = +h.querySelector('#rk').value; return a * k === 10 && b * k === 15; }, 'Yes: 5 groups of 2:3 make 10:15.'),
+        example: G6.example([
+          ['My turn. I make ratios equal to 1 : 3. One group: 1 square, 3 circles.', tiles(1, 3, 1), '1 : 3'],
+          ['I make 2 groups. I multiply both numbers by 2.', tiles(1, 3, 2), '2 : 6'],
+          ['I make 4 groups. I multiply both numbers by 4.', tiles(1, 3, 4), '4 : 12'],
+          ['I check: 4 : 12 divided by 4 is 1 : 3 again. Adding 3 to both would give 4 : 6, which is not equal.', '<p class="g6-big">1 : 3 = 2 : 6 = 4 : 12</p>']
+        ]),
         key: '<p>Multiply or divide both numbers by the same number. Adding does not work.</p>',
         mistake: '<p>Adding the same number to both (3:2 &rarr; 5:4). That changes the ratio.</p>',
         check: [g(CH, 'rp-ratio', 1)] },
@@ -101,6 +113,11 @@
           ['So 4 times as many eggs: 12.', dnl(2, 3, 4, 'flour', 'eggs', 4), '2 : 3 = 8 : 12']
         ]),
         ways: [{ label: 'Table', html: '<div class="tbl"><table><thead><tr><th class="l">Flour</th><td>2</td><td>4</td><td>6</td><td>8</td></tr></thead><tbody><tr><th class="l">Eggs</th><td>3</td><td>6</td><td>9</td><td><b>12</b></td></tr></tbody></table></div>' }, { label: 'Find one first', html: '<p>1 cup of flour needs 3 &divide; 2 = 1.5 eggs. 8 cups need 8 &times; 1.5 = 12 eggs.</p>' }],
+        example: G6.example([
+          ['My turn. A punch uses 3 cups of juice for every 5 cups of water. How much water goes with 15 cups of juice?', dnl(3, 5, 5, 'juice', 'water', 1)],
+          ['I ask: how many times bigger? 15 &divide; 3 = 5, so it is 5 times as much juice.', dnl(3, 5, 5, 'juice', 'water', 5, 'b')],
+          ['I do the same to the water: 5 &times; 5 = 25 cups.', dnl(3, 5, 5, 'juice', 'water', 5), '3 : 5 = 15 : 25']
+        ]),
         key: '<p>How many times bigger? Do the same to the other amount.</p>',
         mistake: '<p>Adding instead of multiplying: from 2 to 8 cups is not "add 6 eggs". It is 4 times as much.</p>',
         check: [{ q: 'Paint is mixed 1 can of blue for every 4 cans of white. How many cans of white for 6 cans of blue?', type: 'num', answer: 24, hint: 'Blue went from 1 to 6: times 6.', explain: '4 &times; 6 = 24.' }, g(CH, 'rp-ratio', 2), g(CH, 'rp-ratio', 3)] }
@@ -113,12 +130,23 @@
           ['Divide to find one hour: 80 km.', dnl(80, 1, 5, 'km', 'hours', 1), '80 km/h'],
           ['5 hours: 5 × 80 = 400 km.', dnl(80, 1, 5, 'km', 'hours', 5), '400 km']
         ]),
+        example: G6.example([
+          ['My turn. Kai types 360 words in 4 minutes. How many words in 1 minute?', '<p class="g6-big">360 words in 4 min</p>'],
+          ['Unit rate = total &divide; number of units: 360 &divide; 4 = 90.', dnl(90, 1, 7, 'words', 'min', 1), '90 words per minute'],
+          ['Now 7 minutes: 7 &times; 90 = 630 words.', dnl(90, 1, 7, 'words', 'min', 7), '630 words']
+        ]),
         key: '<p>Unit rate = total &divide; number of units.</p>',
         check: [{ q: 'A 4-pack of juice costs $6.00. What is the price for one?', type: 'num', unit: '$', answer: 1.5, hint: 'Total &divide; number of units.', explain: '$6.00 &divide; 4 = $1.50.' }, g(CH, 'rp-rate', 1), g(CH, 'rp-rate', 2)] },
       { id: 'better', title: 'The better buy', exp: ['B2.12'], skill: 'rp-better', hard: true,
         body: '<p>Compare the price of <b>one</b> in each pack. The cheaper unit price is the better buy, even if that pack costs more in total.</p>',
         try: lab(CH, 1, 'Make pack B cost more in total but still be the better buy.', function (h) { var ap = +h.querySelector('#bap').value, an = +h.querySelector('#ban').value, bp = +h.querySelector('#bbp').value, bn = +h.querySelector('#bbn').value; return bp > ap && bp / bn < ap / an; }, 'Yes: bigger price, cheaper per item.'),
         ways: [{ label: 'Make the counts match', html: '<p>6 for $4.50 and 12 for $9.60: two 6-packs would cost $9.00 for 12. That beats $9.60, so the 6-pack is the better buy.</p>' }],
+        example: G6.example([
+          ['My turn. Pack A: 4 granola bars for $5.00. Pack B: 6 bars for $6.90. Which is the better buy?', '<p class="g6-big">4 for $5.00 &nbsp;&middot;&nbsp; 6 for $6.90</p>'],
+          ['I find the price of one in pack A: $5.00 &divide; 4 = $1.25.', '<p class="g6-big">A: $1.25 each</p>'],
+          ['I find the price of one in pack B: $6.90 &divide; 6 = $1.15.', '<p class="g6-big">B: $1.15 each</p>'],
+          ['I compare unit prices, not totals. Pack B costs more, but each bar is cheaper. B is the better buy.', '<p class="g6-big">$1.15 &lt; $1.25</p>', 'Pack B']
+        ]),
         key: '<p>Compare unit prices, not totals.</p>',
         mistake: '<p>Picking the pack with the lowest price tag. A bigger pack can cost more and still be cheaper per item.</p>',
         check: [g(CH, 'rp-better', 1), g(CH, 'rp-better', 2)] }
@@ -131,6 +159,11 @@
           ['Shade 35 of them: 35%.', hgrid(35), '35% = ' + A.fr(35, 100) + ' = 0.35'],
           [A.fr(3, 5) + ' is ' + A.fr(60, 100) + ': 60%.', hgrid(60), A.fr(3, 5) + ' = 60%']
         ]),
+        example: G6.example([
+          ['My turn. I write 9/20 as a percent.', '<p class="g6-big">' + A.fr(9, 20) + '</p>'],
+          ['I make the bottom 100: 20 &times; 5 = 100, so I multiply the top by 5 too.', '<p class="g6-big">' + A.fr(9, 20) + ' = ' + A.fr(45, 100) + '</p>'],
+          ['The top is the percent: 45 out of 100 is 45%.', hgrid(45), A.fr(9, 20) + ' = 45%']
+        ]),
         key: '<p>Make the bottom 100. The top is the percent.</p>',
         check: [{ q: 'Write ' + A.fr(7, 20) + ' as a percent.', type: 'num', unit: '%', answer: 35, hint: '20 &times; 5 = 100.', explain: A.fr(35, 100) + ' = 35%.' }, g(CH, 'rp-fdp', 1), g(CH, 'rp-fdp', 2)] },
       { id: 'head', title: 'Percents in your head', exp: ['B2.3'], skill: 'rp-pct', hard: true,
@@ -142,6 +175,12 @@
         ]),
         try: lab(CH, 2, 'Find a number and percent where the answer is exactly <b>12</b>.', function (h) { return Math.abs(+h.querySelector('#pn').value * +h.querySelector('#pp').value / 100 - 12) < 1e-9; }, 'Yes: 12 exactly.'),
         ways: [{ label: 'Swap them', html: '<p>8% of 50 is the same as 50% of 8, which is 4. Percent of works both ways.</p>' }],
+        example: G6.example([
+          ['My turn. I find 35% of $80. I start with 10%: $80 &divide; 10 = $8.', pbar(80, 10), '10% = $8'],
+          ['30% is 3 lots of 10%: 3 &times; $8 = $24.', pbar(80, 30), '30% = $24'],
+          ['5% is half of 10%: $4.', pbar(80, 35), '5% = $4'],
+          ['35% = 30% + 5% = $24 + $4 = $28.', pbar(80, 35), '35% of $80 = $28']
+        ]),
         key: '<p>Start from 10%, 50% or 1%, then build.</p>',
         mistake: '<p>Thinking 5% is "divide by 5". That gives 20%. 5% is half of 10%.</p>',
         check: [{ q: 'What is 25% of 64?', type: 'num', answer: 16, hint: '25% is half of a half.', explain: 'Half of 64 is 32, half of 32 is 16.' }, g(CH, 'rp-pct', 1), g(CH, 'rp-pct', 2)] }
