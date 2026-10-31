@@ -86,7 +86,7 @@ p{margin:.65em 0;max-width:60ch}
 .card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:10px;background:var(--strand)}
 .card:hover{transform:translateY(-2px);box-shadow:0 7px 0 var(--shadow)}
 .card:active{transform:translateY(3px);box-shadow:0 2px 0 var(--shadow)}
-.card .no{display:inline-grid;place-items:center;width:46px;height:46px;border-radius:14px;font-family:var(--display);font-weight:700;font-size:1.5rem;line-height:1;color:#fff;background:var(--strand)}
+.card .no{display:block;font-family:var(--display);font-weight:700;font-size:1.5rem;line-height:1;color:var(--ink)}
 .card h2{font-size:1.3rem}
 .card .sub{color:var(--ink2);font-size:.95rem;margin:0}
 .card .desc{font-size:.9rem;margin:0;color:var(--ink2);line-height:1.5}
@@ -94,7 +94,7 @@ p{margin:.65em 0;max-width:60ch}
 .done{color:var(--good);font-weight:700}
 .note{background:color-mix(in srgb,var(--hi) 20%,var(--card));border:3px solid color-mix(in srgb,var(--hi) 60%,var(--line));border-radius:18px;padding:12px 18px;margin:20px 0;font-size:.95rem}
 .note p{margin:.35em 0}
-.start{background:var(--card);border:3px solid var(--line);border-radius:18px;padding:12px 18px;margin:18px 0;box-shadow:0 4px 0 var(--shadow)}
+.start{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--accent);border-radius:12px;padding:12px 18px;margin:18px 0}
 .start p{margin:.35em 0}.start ul{margin:.2em 0 .4em;padding-left:1.2em}
 
 /* chapter */
