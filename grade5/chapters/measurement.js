@@ -512,4 +512,161 @@ benchmarks() +
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  function mth(x) { return '<span class="math">' + x + '</span>'; }
+  var THINGS = [['the length of an ant', 'mm'], ['the height of a door', 'm'], ['the width of a book', 'cm'], ['the distance between two cities', 'km'],
+    ['the mass of a paper clip', 'g'], ['the mass of a dog', 'kg'], ['the water in a bathtub', 'L'], ['the medicine in a spoon', 'mL']];
+  var KINDS = { mm: 'length', cm: 'length', m: 'length', km: 'length', g: 'mass', kg: 'mass', mL: 'capacity', L: 'capacity' };
+  var SHAPES = {
+    'me-unit': [
+      [1, 'match', function (lv) {
+        var set = [], used = {};
+        R.shuffle(THINGS).forEach(function (t) { if (set.length < 3 && !used[t[1]]) { used[t[1]] = 1; set.push(t); } });
+        return { q: 'Match each thing to the best unit for measuring it.', type: 'match', pairs: set.map(function (t) { return [t[0].charAt(0).toUpperCase() + t[0].slice(1), t[1]]; }),
+          hint: 'Is it length, mass or capacity? Is it tiny, middle-sized or huge?', steps: ['Decide what kind of measure each one is.', 'Pick the unit that gives a sensible number.'],
+          explain: set.map(function (t) { return t[0] + ': ' + t[1]; }).join('. ') + '.', meta: { k: 'g5me-unitmatch' } };
+      }],
+      [1, 'pick', function (lv) {
+        var kind = R.pick(['length', 'mass', 'capacity']), units = R.shuffle(Object.keys(KINDS)).slice(0, 5);
+        if (!units.some(function (u) { return KINDS[u] === kind; })) units[0] = kind === 'mass' ? 'kg' : kind === 'capacity' ? 'L' : 'm';
+        if (units.every(function (u) { return KINDS[u] === kind; })) units[1] = 'g';
+        units = units.filter(function (u, i) { return units.indexOf(u) === i; });
+        return K.pick('Pick every unit that measures <b>' + kind + '</b>.', units, function (u) { return KINDS[u] === kind; }, String, {
+          hint: 'Length: mm, cm, m, km. Mass: g, kg. Capacity: mL, L.', steps: ['Sort the units into length, mass and capacity.', 'Pick the ' + kind + ' units.'],
+          explain: 'The ' + kind + ' units are ' + units.filter(function (u) { return KINDS[u] === kind; }).join(', ') + '.', meta: { k: 'g5me-unitpick', kind: kind } });
+      }],
+      [1, 'mistake', function (lv) {
+        var t = R.pick(THINGS), who = nm(), truth = !R.int(0, 2), others = Object.keys(KINDS).filter(function (u) { return u !== t[1] && KINDS[u] === KINDS[t[1]]; }), said = truth ? t[1] : R.pick(others);
+        var right = t[0].charAt(0).toUpperCase() + t[0].slice(1) + ' is best measured in ' + t[1] + '. That gives a number that is not too big or too small.';
+        return K.tf(who, 'the best unit for ' + t[0] + ' is <b>' + said + '</b>.', truth, right,
+          ['Always use the biggest unit.', 'Always use the smallest unit.', 'Any unit of the right kind is just as good.'],
+          { hint: 'Picture the thing. Would the number be tiny, sensible or huge?', meta: { k: 'g5me-unittf', thing: t[0], said: said } });
+      }],
+      [2, 'order', function (lv) {
+        var big = R.pick([['kg', 'g', 1000], ['m', 'cm', 100], ['L', 'mL', 1000], ['km', 'm', 1000]]), vals = [];
+        while (vals.length < 4) { var v = R.int(2, 30) * big[2] / 10; if (vals.indexOf(v) < 0) vals.push(v); }
+        vals.sort(function (a, b) { return a - b; });
+        var items = vals.map(function (v, i) { return i % 2 && v % big[2] === 0 ? A.fmt(v / big[2]) + ' ' + big[0] : i % 2 ? A.clean(v / big[2]) + ' ' + big[0] : A.fmt(v) + ' ' + big[1]; });
+        return { q: 'Put these in order from <b>least to greatest</b>.', type: 'order', items: items, first: 'least', last: 'greatest',
+          hint: 'Change them all to ' + big[1] + ' first. 1 ' + big[0] + ' = ' + A.fmt(big[2]) + ' ' + big[1] + '.', steps: ['In ' + big[1] + ': ' + vals.map(A.fmt).join(', ') + '.', 'Now order them.'],
+          explain: 'From least to greatest: ' + items.join(', ') + '.', meta: { k: 'g5me-order' } };
+      }]
+    ],
+    'me-conv': [
+      [1, 'fill', function (lv) {
+        var us = R.shuffle(Object.keys(UNITS)).slice(0, 2), xs = us.map(function () { return lv === 1 ? R.int(2, 9) : A.clean(R.int(11, 99) / 10); });
+        return { q: 'Fill in the blanks.', type: 'fill', fill: us.map(function (u, i) { return (xs[i] + ' ' + u + ' = [[]] ' + UNITS[u].to); }).join('<br>'), answers: us.map(function (u, i) { return A.clean(xs[i] * UNITS[u].f); }),
+          hint: 'Going to a smaller unit, multiply.', steps: us.map(function (u, i) { return '1 ' + u + ' = ' + A.fmt(UNITS[u].f) + ' ' + UNITS[u].to + ', so ' + xs[i] + ' &times; ' + A.fmt(UNITS[u].f) + ' = ' + A.fmt(A.clean(xs[i] * UNITS[u].f)) + '.'; }),
+          explain: us.map(function (u, i) { return xs[i] + ' ' + u + ' = ' + A.fmt(A.clean(xs[i] * UNITS[u].f)) + ' ' + UNITS[u].to; }).join('. ') + '.', meta: { k: 'g5me-convfill' } };
+      }],
+      [1, 'match', function (lv) {
+        var us = R.shuffle(Object.keys(UNITS)).slice(0, 3);
+        return { q: 'Match the amounts that are equal.', type: 'match', pairs: us.map(function (u) { var x = lv === 1 ? R.int(2, 9) : A.clean(R.int(11, 99) / 10); return [x + ' ' + u, A.fmt(A.clean(x * UNITS[u].f)) + ' ' + UNITS[u].to]; }),
+          hint: 'Change each amount to the smaller unit.', steps: ['1 km = 1000 m, 1 m = 100 cm, 1 cm = 10 mm, 1 kg = 1000 g, 1 L = 1000 mL.'],
+          explain: 'Multiply by 10, 100 or 1000 to change to the smaller unit.', meta: { k: 'g5me-convmatch' } };
+      }],
+      [1, 'line', function (lv) {
+        var big = R.pick([['kg', 'g', 1000], ['L', 'mL', 1000], ['m', 'cm', 100]]), x = R.int(1, 9) / 2;
+        return { q: 'Mark <b>' + x + ' ' + big[0] + '</b> on this scale in ' + big[1] + '.', type: 'line', min: 0, max: 5 * big[2], tick: big[2] / 2, every: big[2], snap: big[2] / 2, answer: x * big[2], tol: 0, unit: big[1],
+          hint: '1 ' + big[0] + ' = ' + A.fmt(big[2]) + ' ' + big[1] + '.', steps: [x + ' &times; ' + A.fmt(big[2]) + ' = ' + A.fmt(x * big[2]) + '.', 'Each small mark is ' + A.fmt(big[2] / 2) + ' ' + big[1] + '.'],
+          explain: x + ' ' + big[0] + ' = ' + A.fmt(x * big[2]) + ' ' + big[1] + '.', meta: { k: 'g5me-convline' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var u = R.pick(['km', 'kg', 'L']), x = R.int(2, 9), who = nm(), truth = !R.int(0, 2), said = truth ? x * 1000 : x * 100;
+        var right = '1 ' + u + ' = 1000 ' + UNITS[u].to + ', so ' + x + ' ' + u + ' = ' + A.fmt(x * 1000) + ' ' + UNITS[u].to + '.';
+        return K.tf(who, mth(x + ' ' + u + ' = ' + A.fmt(said) + ' ' + UNITS[u].to) + '.', truth, right,
+          ['1 ' + u + ' = 100 ' + UNITS[u].to + '.', 'To change to a smaller unit, divide.', 'Just add a 0.'],
+          { hint: 'How many ' + UNITS[u].to + ' are in 1 ' + u + '?', meta: { k: 'g5me-convtf', said: said } });
+      }]
+    ],
+    'me-angle': [
+      [1, 'tap', function (lv) {
+        var want = R.pick(['acute', 'right', 'obtuse']), set = R.shuffle([R.pick([30, 45, 60]), 90, R.pick([120, 135, 150])]);
+        return { q: 'Tap the <b>' + want + '</b> angle.', type: 'tap', tiles: set.map(function (t) { return protractor(t, 'An angle on a protractor'); }), answer: set.map(kind).indexOf(want), answerText: 'the ' + want + ' angle',
+          hint: 'Compare each angle with a square corner.', steps: ['Acute: less than 90&deg;. Right: exactly 90&deg;. Obtuse: between 90&deg; and 180&deg;.'],
+          explain: 'The ' + want + ' angle is ' + set[set.map(kind).indexOf(want)] + '&deg;.', meta: { k: 'g5me-angtap', set: set } };
+      }],
+      [1, 'pick', function (lv) {
+        var want = R.pick(['acute', 'obtuse']), vals = [];
+        while (vals.length < 5) { var v = R.int(2, 17) * 10; if (v !== 90 && vals.indexOf(v) < 0) vals.push(v); }
+        if (vals.every(function (v) { return kind(v) === want; }) || !vals.some(function (v) { return kind(v) === want; })) vals[0] = want === 'acute' ? 40 : 140, vals[1] = want === 'acute' ? 130 : 50;
+        vals = vals.filter(function (v, i) { return vals.indexOf(v) === i; });
+        return K.pick('Pick every <b>' + want + '</b> angle.', vals, function (v) { return kind(v) === want; }, function (v) { return v + '&deg;'; }, {
+          hint: want === 'acute' ? 'Acute angles are less than 90&deg;.' : 'Obtuse angles are between 90&deg; and 180&deg;.', steps: ['Compare each one with 90&deg;.'],
+          explain: 'The ' + want + ' angles are ' + vals.filter(function (v) { return kind(v) === want; }).join('&deg;, ') + '&deg;.', meta: { k: 'g5me-angpick', want: want } });
+      }],
+      [2, 'mistake', function (lv) {
+        var t = R.pick([20, 30, 40, 50, 60, 70, 110, 120, 130, 140, 150, 160]), who = nm(), truth = !R.int(0, 2), said = truth ? t : 180 - t;
+        var right = 'The angle is ' + (t < 90 ? 'smaller' : 'bigger') + ' than a right angle, so it is ' + t + '&deg;. Use the scale that starts at 0 on the bottom arm.';
+        return K.tf(who, 'this angle is <b>' + said + '&deg;</b>.', truth, right,
+          ['Always read the outside scale.', 'Always read the bigger number.', 'Angles cannot be more than 90&deg;.'],
+          { fig: protractor(t, 'An angle on a protractor'), hint: 'Is the angle smaller or bigger than a square corner?', meta: { k: 'g5me-angtf', t: t, said: said } });
+      }]
+    ],
+    'me-area': [
+      [1, 'fill', function (lv) {
+        var sh = lv === 1 ? 'para' : R.pick(['para', 'tri']), b = R.int(3, 14), h = R.int(2, 10);
+        if (sh === 'tri' && (b * h) % 2) b++;
+        return { q: 'Read the base and the height. Then find the area.', type: 'fill', fig: shape(sh, b, h), fill: 'base [[]] cm, height [[]] cm<br>area [[]] cm&sup2;', answers: [b, h, sh === 'tri' ? b * h / 2 : b * h],
+          hint: sh === 'tri' ? 'Area = base &times; height &divide; 2.' : 'Area = base &times; height. The height goes straight up, not along the slant.', steps: ['Base ' + b + ' cm, height ' + h + ' cm.', sh === 'tri' ? b + ' &times; ' + h + ' &divide; 2 = ' + b * h / 2 + '.' : b + ' &times; ' + h + ' = ' + b * h + '.'],
+          explain: 'Area = ' + (sh === 'tri' ? b * h / 2 : b * h) + ' cm&sup2;.', meta: { k: 'g5me-areafill', tri: sh === 'tri' } };
+      }],
+      [1, 'match', function (lv) {
+        var list = [], seen = {};
+        while (list.length < 3) { var sh = R.pick(['Parallelogram', 'Triangle', 'Rectangle']), b = R.int(3, 12), h = R.int(2, 8); if (sh === 'Triangle' && (b * h) % 2) b++; var ar = sh === 'Triangle' ? b * h / 2 : b * h; if (!seen[ar]) { seen[ar] = 1; list.push([sh, b, h, ar]); } }
+        return { q: 'Match each shape to its area.', type: 'match', pairs: list.map(function (x) { return [x[0] + ': base ' + x[1] + ' cm, height ' + x[2] + ' cm', x[3] + ' cm&sup2;']; }),
+          hint: 'Parallelograms and rectangles: base &times; height. Triangles: half of that.', steps: ['Work out each area, then match.'],
+          explain: list.map(function (x) { return x[0] + ': ' + x[3] + ' cm&sup2;'; }).join('. ') + '.', meta: { k: 'g5me-areamatch' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var b = R.int(4, 12), h = R.int(3, 8), side = h + R.int(1, 3), who = nm(), truth = !R.int(0, 2), said = truth ? b * h : b * side;
+        var right = 'Use the height, which goes straight up from the base: ' + b + ' &times; ' + h + ' = ' + b * h + ' cm&sup2;. The slanted side is not the height.';
+        return K.tf(who, 'a parallelogram with base ' + b + ' cm, height ' + h + ' cm and slanted sides of ' + side + ' cm has an area of <b>' + said + ' cm&sup2;</b>.', truth, right,
+          ['Multiply the base by the slanted side.', 'Add all the sides.', 'Base &times; height &divide; 2.'],
+          { fig: shape('para', b, h), hint: 'Which length is the height?', meta: { k: 'g5me-areatf', said: said } });
+      }],
+      [2, 'which', function (lv) {
+        var sh = R.pick(['parallelogram', 'triangle']), b = R.int(3, 12), h = R.int(2, 8);
+        if (sh === 'triangle' && (b * h) % 2) b++;
+        var right = sh === 'triangle' ? b + ' &times; ' + h + ' &divide; 2' : b + ' &times; ' + h;
+        return K.mc('A ' + sh + ' has a base of ' + b + ' cm and a height of ' + h + ' cm. Which calculation finds its area?', right, [sh === 'triangle' ? b + ' &times; ' + h : b + ' &times; ' + h + ' &divide; 2', b + ' + ' + h, '2 &times; (' + b + ' + ' + h + ')'], {
+          hint: sh === 'triangle' ? 'A triangle is half of a parallelogram.' : 'A parallelogram can be cut and moved to make a rectangle.', steps: [sh === 'triangle' ? 'Triangle: base &times; height &divide; 2.' : 'Parallelogram: base &times; height.'],
+          explain: right + ' = ' + (sh === 'triangle' ? b * h / 2 : b * h) + ' cm&sup2;.', meta: { k: 'g5me-areawhich', tri: sh === 'triangle' } });
+      }]
+    ],
+    'me-perim': [
+      [1, 'fill', function (lv) {
+        var w = R.int(2, 12), h = R.int(2, 9);
+        if (w === h) w++;
+        return { q: 'Find the perimeter and the area of this rectangle.', type: 'fill', fig: rect(w, h, Math.min(24, 300 / w)), fill: 'perimeter [[]] cm<br>area [[]] cm&sup2;', answers: [2 * (w + h), w * h],
+          hint: 'Perimeter: add all four sides. Area: count the squares, or length &times; width.', steps: [w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + 2 * (w + h) + ' cm.', w + ' &times; ' + h + ' = ' + w * h + ' cm&sup2;.'],
+          explain: 'Perimeter ' + 2 * (w + h) + ' cm, area ' + w * h + ' cm&sup2;.', meta: { k: 'g5me-perimfill', w: w, h: h } };
+      }],
+      [1, 'tap', function (lv) {
+        var w = R.int(3, 8), h = R.int(2, 5), set = [[w, h]], P = 2 * (w + h);
+        [[w + 1, h], [w, h + 1], [w + 2, h - 1 || h + 3], [w * 2, h]].forEach(function (r) { if (set.length < 3 && set.every(function (s) { return 2 * (s[0] + s[1]) !== 2 * (r[0] + r[1]); })) set.push(r); });
+        set = R.shuffle(set);
+        return { q: 'Tap the rectangle with a perimeter of <b>' + P + ' cm</b>.', type: 'tap', tiles: set.map(function (r) { return rect(r[0], r[1], 14); }), answer: set.map(String).indexOf(String([w, h])), answerText: 'the ' + w + ' cm by ' + h + ' cm rectangle',
+          hint: 'Perimeter = 2 &times; (length + width).', steps: set.map(function (r) { return r[0] + ' by ' + r[1] + ': 2 &times; (' + r[0] + ' + ' + r[1] + ') = ' + 2 * (r[0] + r[1]) + ' cm.'; }),
+          explain: 'The ' + w + ' cm by ' + h + ' cm rectangle has a perimeter of ' + P + ' cm.', meta: { k: 'g5me-perimtap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var w = R.int(3, 9), h = R.int(2, 7), who = nm(), truth = !R.int(0, 2);
+        if (w * h === 2 * (w + h)) w++;
+        var said = truth ? 2 * (w + h) : w * h, right = 'Perimeter is the distance around: ' + w + ' + ' + h + ' + ' + w + ' + ' + h + ' = ' + 2 * (w + h) + ' cm. ' + w + ' &times; ' + h + ' is the area.';
+        return K.tf(who, 'a ' + w + ' cm by ' + h + ' cm rectangle has a perimeter of <b>' + said + ' cm</b>.', truth, right,
+          ['Perimeter is length &times; width.', 'Perimeter is length + width.', 'Perimeter and area are always the same number.'],
+          { fig: rect(w, h, Math.min(22, 300 / w)), hint: 'Perimeter goes around the outside.', meta: { k: 'g5me-perimtf', w: w, h: h, said: said } });
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), w = R.int(4, 15), h = R.int(3, 10), area = !R.int(0, 1);
+        return { q: who + '\'s garden is a rectangle ' + w + ' m by ' + h + ' m. ' + (area ? 'How many square metres of soil does it cover?' : 'How many metres of fence go all the way around it?'), type: 'num', answer: area ? w * h : 2 * (w + h), unit: area ? 'm²' : 'm',
+          hint: area ? 'Covering is area: length &times; width.' : 'Going around is perimeter: add all four sides.', steps: [area ? w + ' &times; ' + h + ' = ' + w * h + ' m&sup2;.' : '2 &times; (' + w + ' + ' + h + ') = ' + 2 * (w + h) + ' m.'],
+          explain: area ? 'The garden covers ' + w * h + ' m&sup2;.' : 'The fence is ' + 2 * (w + h) + ' m long.', meta: { k: 'g5me-perimstory', area: area } };
+      }]
+    ]
+  };
+  K.shapes('measurement', SHAPES);
 })();
