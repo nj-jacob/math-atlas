@@ -131,6 +131,12 @@
           { say: 'Count them all: 1, 2, 3, then 4, 5, 6, 7.', act: function (t) { return t.show(fr(3, 4) + '<p class="big">' + eqn('3 + 4 = 7') + '</p>'); }, ms: 1200 },
           { say: '3 and 4 make <b>7</b>. We write 3 + 4 = 7.', ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. What is 4 + 2? First I put out 4 red counters.', act: function (t) { return t.show(fr(4, 0)); }, ms: 1300 },
+          { say: 'The + tells me to put more with them. I add 2 yellow counters.', act: function (t) { return t.show(fr(4, 2)); }, ms: 1300 },
+          { say: 'I count them all: 1, 2, 3, 4, then 5, 6.', ms: 1400 },
+          { say: '4 and 2 make <b>6</b>. I write 4 + 2 = 6.', act: function (t) { return t.show(fr(4, 2) + '<p class="big">' + eqn('4 + 2 = 6') + '</p>'); }, ms: 1800 }
+        ] },
         try: { tool: 'tenframe', opts: { two: true }, tasks: [
           { do: 'Show ' + eqn('2 + 5') + ': 2 red and 5 yellow. Tap a box once for red, twice for yellow.', goal: function (s) { return s.a === 2 && s.b === 5; }, yes: '2 + 5 = 7.' },
           { do: 'Show ' + eqn('6 + 3') + '.', goal: function (s) { return s.a === 6 && s.b === 3; }, yes: '6 + 3 = 9.' }
@@ -145,6 +151,13 @@
           { say: 'Count on 2: 7, 8.', act: function (t) { return t.hop(8, '2'); }, ms: 800 },
           { say: 'We land on 8. So <b>2 + 6 = 8</b>.', ms: 1800 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 6 }, steps: [
+          { say: 'My turn. What is 3 + 6? I start at the bigger number, 6.', ms: 1500 },
+          { say: 'I count on 3: 7 ...', act: function (t) { return t.hop(7, '1'); }, ms: 400 },
+          { say: '7, 8 ...', act: function (t) { return t.hop(8, '2'); }, ms: 400 },
+          { say: '7, 8, 9. That is 3 jumps.', act: function (t) { return t.hop(9, '3'); }, ms: 900 },
+          { say: 'I land on 9. So <b>3 + 6 = 9</b>. Start big, count on small.', ms: 1800 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 0, step: 1 }, tasks: [
           { do: 'Find ' + eqn('3 + 5') + '. Move the dot to 5, then jump on 3.', goal: function (s) { return s.at === 8 && s.hops >= 3; }, yes: '5 ... 6, 7, 8. So 3 + 5 = 8.' }
         ] },
@@ -157,6 +170,12 @@
           { say: '4 + ? = 7. Start with 4.', ms: 1400 },
           { say: 'Add counters until there are 7: 5, 6, 7.', act: function (t) { return t.fill(7, 600); }, ms: 700 },
           { say: 'We added <b>3</b>. So 4 + 3 = 7.', ms: 1800 }
+        ] },
+        example: { tool: 'tenframe', opts: { n: 3 }, steps: [
+          { say: 'My turn. 3 + ? = 8. I start with the 3 I know.', ms: 1500 },
+          { say: 'I add counters until there are 8: 4, 5, 6, 7, 8.', act: function (t) { return t.fill(8, 550); }, ms: 700 },
+          { say: 'I count the new ones: 1, 2, 3, 4, 5. I added <b>5</b>.', ms: 1500 },
+          { say: 'So 3 + 5 = 8. I counted on from the part I know to the whole.', ms: 1800 }
         ] },
         try: { tool: 'tenframe', opts: { n: 5 }, tasks: [
           { do: 'Solve ' + eqn('5 + <b class="blank">?</b> = 9') + '. Add counters until there are 9.', reset: false, goal: function (s) { return s.n === 9; }, yes: 'You added 4. So 5 + 4 = 9.' }
@@ -173,6 +192,12 @@
       { id: 'pairs', title: 'Pairs that make 10', exp: ['B2.2'], skill: 'a-ten',
         body: '<p>A full ten frame is 10. Red and yellow counters show two numbers that <b>make 10</b>.</p><div class="vrow">' + [1, 2, 3, 4, 5].map(function (a) { return '<figure>' + A.draw.frames(a, { b: 10 - a, c: 13 }) + '<figcaption>' + a + ' + ' + (10 - a) + '</figcaption></figure>'; }).join('') + '</div>',
         watch: { tool: 'g1stage', steps: [1, 2, 3, 4, 5, 6].map(function (a) { return { say: a + ' and ' + (10 - a) + ' make 10.', act: function (t) { return t.show(fr(a, 10 - a) + '<p class="big">' + eqn(a + ' + ' + (10 - a) + ' = 10') + '</p>'); }, ms: 1300 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. I want to make 10. I have 4 red counters.', act: function (t) { return t.show(A.draw.frames(4, { ghost: 10, c: 30, label: '4 red counters and 6 empty rings' })); }, ms: 1400 },
+          { say: 'I count the empty boxes: 1, 2, 3, 4, 5, 6. There are 6.', ms: 1500 },
+          { say: 'I fill them with 6 yellow counters. Now the frame is full.', act: function (t) { return t.show(fr(4, 6)); }, ms: 1300 },
+          { say: '4 and 6 make <b>10</b>. 4 + 6 = 10 is a pair that makes 10.', act: function (t) { return t.show(fr(4, 6) + '<p class="big">' + eqn('4 + 6 = 10') + '</p>'); }, ms: 1800 }
+        ] },
         try: { tool: 'tenframe', opts: { two: true }, tasks: [
           { do: 'Fill the frame with red and yellow to make <b>10</b>. Use 7 red.', goal: function (s) { return s.a === 7 && s.b === 3; }, yes: '7 + 3 = 10.' },
           { do: 'Make 10 another way.', goal: function (s) { return s.full && s.a !== 7 && s.a > 0 && s.b > 0; }, yes: function (s) { return s.a + ' + ' + s.b + ' = 10.'; } }
@@ -185,6 +210,12 @@
           { say: '6 counters. How many more make 10?', ms: 1400 },
           { say: 'Count the empty boxes as we fill them: 1, 2, 3, 4.', act: function (t) { return t.fill(10, 600); }, ms: 700 },
           { say: '<b>4</b> more. 6 + 4 = 10.', ms: 1800 }
+        ] },
+        example: { tool: 'tenframe', opts: { n: 3 }, steps: [
+          { say: 'My turn. There are 3 counters. How many more make 10?', ms: 1400 },
+          { say: 'I fill the empty boxes and count them: 1, 2, 3, 4, 5, 6, 7.', act: function (t) { return t.fill(10, 450); }, ms: 700 },
+          { say: 'I filled <b>7</b> boxes. So 7 more make 10.', ms: 1300 },
+          { say: 'I check: 3 + 7 = 10. The empty boxes showed how many more.', ms: 1800 }
         ] },
         try: { tool: 'tenframe', opts: { n: 2 }, tasks: [
           { do: '2 are in the frame. Fill it up. How many did you add?', reset: false, goal: function (s) { return s.full; }, yes: 'You added 8. 2 + 8 = 10.' }
@@ -203,6 +234,12 @@
           { say: '4 + 4 = 8', act: function (t) { return t.setN(8); }, ms: 900 },
           { say: '5 + 5 = 10. Each double makes two equal rows.', act: function (t) { return t.setN(10); }, ms: 1800 }
         ] },
+        example: { tool: 'counters', opts: { n: 0, arrange: 'pairs' }, steps: [
+          { say: 'My turn. What is 3 + 3? It is a double: two groups the same.', ms: 1500 },
+          { say: 'I put 3 in one row and 3 in the other row.', act: function (t) { return t.setN(6); }, ms: 1000 },
+          { say: 'I count them all: 1, 2, 3, 4, 5, 6.', act: function (t) { return t.countAll(400); }, ms: 600 },
+          { say: '<b>3 + 3 = 6</b>. A double makes two equal rows.', ms: 1800 }
+        ] },
         try: { tool: 'counters', opts: { n: 2, arrange: 'pairs', controls: ['pairs'], max: 10 }, tasks: [
           { do: 'Show the double <b>4 + 4</b>. Use + 1, then Pair them up.', goal: function (s) { return s.n === 8 && s.mode === 'pairs'; }, yes: '4 + 4 = 8. Two rows of 4.' }
         ] },
@@ -215,6 +252,12 @@
           { say: 'Turn the frame around: 5 + 2. Still 7.', act: function (t) { return t.show('<div style="transform:rotate(180deg)">' + fr(2, 5) + '</div><p class="big">' + eqn('5 + 2 = 7') + '</p>'); }, ms: 1800 },
           { say: 'Same counters, same total. Start with the bigger number to count on faster.', ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. 3 red and 4 yellow. I count: 3 + 4 = 7.', act: function (t) { return t.show(fr(3, 4) + '<p class="big">' + eqn('3 + 4 = 7') + '</p>'); }, ms: 1600 },
+          { say: 'Now I turn the frame around. The 4 comes first: 4 + 3.', act: function (t) { return t.show('<div style="transform:rotate(180deg)">' + fr(3, 4) + '</div><p class="big">' + eqn('4 + 3 = 7') + '</p>'); }, ms: 1700 },
+          { say: 'The counters did not change. Still <b>7</b>.', ms: 1400 },
+          { say: 'The order does not change the total: 3 + 4 = 4 + 3.', ms: 1800 }
+        ] },
         try: { tool: 'tenframe', opts: { two: true }, tasks: [
           { do: 'Show ' + eqn('1 + 6') + ': 1 red and 6 yellow.', goal: function (s) { return s.a === 1 && s.b === 6; }, yes: '1 + 6 = 7.' },
           { do: 'Now the turn-around: ' + eqn('6 + 1') + '. 6 red and 1 yellow.', goal: function (s) { return s.a === 6 && s.b === 1; }, yes: '6 + 1 = 7 too.' }
@@ -226,6 +269,12 @@
         watch: { tool: 'g1stage', steps: [
           { say: '6 red counters.', act: function (t) { return t.show(fr(6, 0)); }, ms: 1200 },
           { say: 'Add 0 yellow counters. Nothing new comes.', act: function (t) { return t.show(fr(6, 0) + '<p class="big">' + eqn('6 + 0 = 6') + '</p>'); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. What is 4 + 0? I start with 4 red counters.', act: function (t) { return t.show(fr(4, 0)); }, ms: 1400 },
+          { say: 'Adding 0 means I add no counters. Nothing new comes.', ms: 1500 },
+          { say: 'There are still 4. So <b>4 + 0 = 4</b>.', act: function (t) { return t.show(fr(4, 0) + '<p class="big">' + eqn('4 + 0 = 4') + '</p>'); }, ms: 1500 },
+          { say: 'Any number + 0 stays the same.', ms: 1700 }
         ] },
         key: '<p>Any number <b>+ 0</b> stays the same.</p>',
         check: [function () { var n = R.int(1, 9); return { q: eqn(n + ' + 0 = <b class="blank">?</b>'), type: 'num', answer: n, hint: 'Adding zero adds nothing.', explain: n + ' + 0 = ' + n + '.' }; }, P('a-facts', 3)] }
@@ -240,6 +289,12 @@
           { say: 'Count what is left: 1, 2, 3, 4, 5.', act: function (t) { return t.countAll(420); }, ms: 600 },
           { say: '8 take away 3 is <b>5</b>. We write 8 &minus; 3 = 5.', ms: 1800 }
         ] },
+        example: { tool: 'g1objects', opts: { kind: 'car', n: 7 }, steps: [
+          { say: 'My turn. There are 7 cars. 2 drive away. How many are left?', ms: 1600 },
+          { say: 'I take away 2 cars.', act: function (t) { return t.setN(5); }, ms: 1000 },
+          { say: 'I count what is left: 1, 2, 3, 4, 5.', act: function (t) { return t.countAll(420); }, ms: 600 },
+          { say: '7 take away 2 is <b>5</b>. I write 7 &minus; 2 = 5.', ms: 1800 }
+        ] },
         try: { tool: 'g1objects', opts: { kind: 'fish', n: 9, controls: ['less'], max: 9 }, tasks: [
           { do: 'There are 9 fish. <b>Take away 4</b> with the &minus; 1 button. How many are left?', goal: function (s) { return s.n === 5; }, yes: '9 &minus; 4 = 5.' }
         ] },
@@ -252,6 +307,13 @@
           { say: 'Count back 2: 8 ...', act: function (t) { return t.hop(8, '1'); }, ms: 500 },
           { say: 'Count back 2: 8, 7.', act: function (t) { return t.hop(7, '2'); }, ms: 800 },
           { say: 'We land on 7. <b>9 &minus; 2 = 7</b>.', ms: 1800 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 8 }, steps: [
+          { say: 'My turn. What is 8 &minus; 3? I start at the big number, 8.', ms: 1500 },
+          { say: 'I count back 3: 7 ...', act: function (t) { return t.hop(7, '1'); }, ms: 400 },
+          { say: '7, 6 ...', act: function (t) { return t.hop(6, '2'); }, ms: 400 },
+          { say: '7, 6, 5. That is 3 jumps back.', act: function (t) { return t.hop(5, '3'); }, ms: 900 },
+          { say: 'I land on 5. So <b>8 &minus; 3 = 5</b>.', ms: 1800 }
         ] },
         try: { tool: 'numberline', opts: { min: 0, max: 10, every: 1, start: 10, step: 1 }, tasks: [
           { do: 'Find ' + eqn('10 &minus; 3') + '. Start at 10 and press Jump back 3 times.', goal: function (s) { return s.at === 7 && s.hops >= 3; }, yes: '10 ... 9, 8, 7. So 10 &minus; 3 = 7.' }
@@ -270,6 +332,13 @@
           { say: 'Take away the 3 red: 8 &minus; 3 = 5.', act: function (t) { return t.show(A.draw.frames(0, { b: 5, ghost: 8, c: 30 }) + '<p class="big">' + eqn('8 &minus; 3 = 5') + '</p>'); }, ms: 1500 },
           { say: 'Take away the 5 yellow: 8 &minus; 5 = 3. Four facts, one family.', act: function (t) { return t.show(fr(3, 0) + '<p class="big">' + eqn('8 &minus; 5 = 3') + '</p>'); }, ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. 2 red and 4 yellow make 6. So 2 + 4 = 6.', act: function (t) { return t.show(fr(2, 4) + '<p class="big">' + eqn('2 + 4 = 6') + '</p>'); }, ms: 1600 },
+          { say: 'I turn it around: 4 + 2 = 6.', act: function (t) { return t.show(fr(2, 4) + '<p class="big">' + eqn('4 + 2 = 6') + '</p>'); }, ms: 1500 },
+          { say: 'I take away the 2 red. 4 are left: 6 &minus; 2 = 4.', act: function (t) { return t.show(A.draw.frames(0, { b: 4, ghost: 6, c: 30, label: '4 yellow counters and 2 empty rings' }) + '<p class="big">' + eqn('6 &minus; 2 = 4') + '</p>'); }, ms: 1600 },
+          { say: 'I take away the 4 yellow. 2 are left: 6 &minus; 4 = 2.', act: function (t) { return t.show(fr(2, 0) + '<p class="big">' + eqn('6 &minus; 4 = 2') + '</p>'); }, ms: 1600 },
+          { say: 'Three numbers, 2, 4 and 6, make <b>four facts</b>.', ms: 1800 }
+        ] },
         key: '<p>Three numbers, <b>four facts</b>.</p>',
         check: [P('a-fam', 1), P('a-fam', 2)] },
       { id: 'think-add', title: 'Think addition to subtract', exp: ['B2.1'], skill: 'a-fam', hard: true,
@@ -283,6 +352,12 @@
           { label: 'Use the family', html: '<p>If you know ' + eqn('4 + 5 = 9') + ', you also know ' + eqn('9 &minus; 4 = 5') + ' and ' + eqn('9 &minus; 5 = 4') + '.</p>' },
           { label: 'On a number line', html: '<div class="fig">' + A.draw.nl(0, 10, { mark: 4, hops: hops(4, 5) }) + '</div><p>From 4 to 9 is 5 jumps.</p>' }
         ],
+        example: { tool: 'tenframe', opts: { n: 2 }, steps: [
+          { say: 'My turn. What is 7 &minus; 2? I think: 2 + ? = 7.', ms: 1600 },
+          { say: 'I start at 2 and count on to 7: 3, 4, 5, 6, 7.', act: function (t) { return t.fill(7, 500); }, ms: 700 },
+          { say: 'I added 5 counters. So 2 + 5 = 7.', ms: 1400 },
+          { say: 'That means <b>7 &minus; 2 = 5</b>. Subtracting asks: "What do I add?"', ms: 1900 }
+        ] },
         key: '<p>Subtracting asks: <b>"What do I add?"</b></p>',
         check: [P('a-fam', 3), P('a-sub', 3)] }
     ] },
@@ -296,6 +371,12 @@
           { say: 'How many in all? Count: 1 to 7.', act: function (t) { return t.countAll(380); }, ms: 600 },
           { say: '4 + 3 = <b>7</b> balls.', ms: 1800 }
         ] },
+        example: { tool: 'g1objects', opts: { kind: 'fish', n: 5 }, steps: [
+          { say: 'My turn. Omar has 5 fish. He gets 4 more. How many fish now?', ms: 1700 },
+          { say: 'I picture it: 5 fish, then 4 more join them.', act: function (t) { return t.setN(9); }, ms: 1000 },
+          { say: 'I solve it. I count them all: 1 to 9.', act: function (t) { return t.countAll(360); }, ms: 600 },
+          { say: '5 + 4 = <b>9</b> fish. I check: the group got bigger, so adding makes sense.', ms: 1900 }
+        ] },
         try: { tool: 'g1objects', opts: { kind: 'flower', n: 5, controls: ['more'], max: 10 }, tasks: [
           { do: 'Zoe picks 5 flowers. Then she picks 2 more. Show the flowers, then tap each one to count.', goal: function (s) { return s.n === 7 && s.allCounted; }, yes: '5 + 2 = 7 flowers.' }
         ] },
@@ -307,6 +388,12 @@
           { say: 'There are 9 stickers.', ms: 1300 },
           { say: 'Sam gives 4 away.', act: function (t) { return t.setN(5); }, ms: 1000 },
           { say: 'How many are left? 9 &minus; 4 = <b>5</b>.', act: function (t) { return t.countAll(380); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1objects', opts: { kind: 'ball', n: 10 }, steps: [
+          { say: 'My turn. Priya has 10 balls. She gives 3 away. How many are left?', ms: 1700 },
+          { say: 'I picture it: 3 balls go away.', act: function (t) { return t.setN(7); }, ms: 1000 },
+          { say: 'I count what is left: 1 to 7.', act: function (t) { return t.countAll(380); }, ms: 600 },
+          { say: '10 &minus; 3 = <b>7</b> balls. The group got smaller, so I subtract.', ms: 1900 }
         ] },
         try: { tool: 'g1objects', opts: { kind: 'apple', n: 8, controls: ['less'], max: 8 }, tasks: [
           { do: 'There are 8 apples. Mei eats 2. Show what is left.', goal: function (s) { return s.n === 6; }, yes: '8 &minus; 2 = 6 apples left.' }

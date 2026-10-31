@@ -96,6 +96,12 @@
       { id: 'names', title: 'Name the coins', exp: ['F1.1'], skill: 'f-name',
         body: '<p>Canada has these coins. Look for the <b>number</b>, the <b>colour</b> and the <b>animal</b>.</p>',
         watch: { tool: 'g1stage', steps: COINS.map(function (k) { return { say: 'The <b>' + M[k].n + '</b>: worth ' + M[k].say + '. Look for the ' + M[k].animal + '.', act: function (t) { return t.show(one(k)); }, ms: 1400 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which coin is this? I look for the number and the animal.', act: function (t) { return t.show(one('nickel')); }, ms: 1500 },
+          { say: 'It shows 5 and a beaver. It is a <b>nickel</b>, worth 5 cents.', ms: 1700 },
+          { say: 'This coin is small. It shows 10 and a sailing ship.', act: function (t) { return t.show(one('dime')); }, ms: 1500 },
+          { say: 'It is a <b>dime</b>, worth 10 cents.', ms: 1600 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: ['nickel', 'dime', 'quarter', 'loonie', 'toonie'].map(function (k) { return mk(k); }) }, tasks: [
           { do: 'Tap the <b>loonie</b>.', goal: function (s) { return s.picked[0] === 'loonie'; }, yes: 'The loonie is gold and has 11 sides. It is worth 1 dollar.' },
           { do: 'Tap the <b>quarter</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'quarter'; }, yes: 'The quarter is worth 25 cents.' },
@@ -110,6 +116,11 @@
           { say: 'A loonie is worth <b>$1</b>, one dollar.', act: function (t) { return t.show(one('loonie', { cap: '$1' })); }, ms: 1400 },
           { say: 'One dollar is the same as 100 cents. Dollars are worth more.', ms: 1800 }
         ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. A quarter is worth <b>25¢</b>, twenty-five cents. ¢ means cents.', act: function (t) { return t.show(one('quarter', { cap: '25¢' })); }, ms: 1700 },
+          { say: 'A toonie is worth <b>$2</b>, two dollars. $ means dollars.', act: function (t) { return t.show(one('toonie', { cap: '$2' })); }, ms: 1700 },
+          { say: 'Dollars are worth more than cents. $2 is more than 25¢.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [{ id: '5', html: '<span class="big">5¢</span>' }, { id: '50', html: '<span class="big">50¢</span>' }, { id: '2', html: '<span class="big">$2</span>' }] }, tasks: [
           { do: 'How much is a <b>nickel</b> worth?<div class="fig">' + one('nickel') + '</div>', goal: function (s) { return s.picked[0] === '5'; }, yes: 'A nickel is worth 5 cents.' }
         ] },
@@ -121,6 +132,12 @@
       { id: 'colours', title: 'Bills and their colours', exp: ['F1.1'], skill: 'f-name',
         body: '<p>Bills are paper money. Each one has its own <b>colour</b>: $5 blue, $10 purple, $20 green, $50 red.</p>',
         watch: { tool: 'g1stage', steps: BILLS.map(function (k) { return { say: 'The <b>' + M[k].n + '</b> is ' + { b5: 'blue', b10: 'purple', b20: 'green', b50: 'red' }[k] + '.', act: function (t) { return t.show(one(k)); }, ms: 1300 }; }) },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. Which bill is this? I read the number: 10.', act: function (t) { return t.show(one('b10')); }, ms: 1500 },
+          { say: 'It is the <b>$10 bill</b>. It is purple.', ms: 1400 },
+          { say: 'This bill says 50.', act: function (t) { return t.show(one('b50')); }, ms: 1300 },
+          { say: 'It is the <b>$50 bill</b>. It is red. I read the number to know the value.', ms: 1800 }
+        ] },
         try: { tool: 'g1pick', opts: { multi: false, items: BILLS.map(function (k) { return mk(k); }) }, tasks: [
           { do: 'Tap the <b>$20 bill</b>.', goal: function (s) { return s.picked[0] === 'b20'; }, yes: 'The $20 bill is green.' },
           { do: 'Tap the bill worth the <b>most</b>.', setup: function (t) { t.clear(); }, reset: false, goal: function (s) { return s.picked[0] === 'b50'; }, yes: 'The $50 bill is worth the most.' }
@@ -136,6 +153,12 @@
           { say: 'A nickel and a dime. Which is bigger?', act: function (t) { return t.show(row(['nickel', 'dime'], function (k) { return M[k].n; })); }, ms: 1500 },
           { say: 'The nickel is bigger.', ms: 1100 },
           { say: 'Now read the numbers: 5 and 10. The <b>dime</b> is worth more.', act: function (t) { return t.show(row(['nickel', 'dime'], function (k) { return M[k].n + ': ' + price(k); })); }, ms: 2000 }
+        ] },
+        example: { tool: 'g1stage', steps: [
+          { say: 'My turn. A 50-cent coin and a loonie. Which is bigger?', act: function (t) { return t.show(row(['fifty', 'loonie'], function (k) { return M[k].n; })); }, ms: 1600 },
+          { say: 'The 50-cent coin is a little bigger.', ms: 1200 },
+          { say: 'Now I read the numbers: 50 cents and 1 dollar. 1 dollar is 100 cents.', act: function (t) { return t.show(row(['fifty', 'loonie'], function (k) { return M[k].n + ': ' + price(k); })); }, ms: 2000 },
+          { say: 'The smaller <b>loonie</b> is worth more. I read the number, not the size.', ms: 1900 }
         ] },
         try: { tool: 'g1pick', opts: { multi: false, items: [mk('dime'), mk('nickel')] }, tasks: [
           { do: 'Tap the coin worth <b>more</b>.', goal: function (s) { return s.picked[0] === 'dime'; }, yes: 'The dime, 10¢. Small, but worth more.' }
@@ -157,6 +180,13 @@
           { say: 'The dime: 10¢.', act: function (t) { return t.pick('dime'); }, ms: 800 },
           { say: 'The quarter: 25¢.', act: function (t) { return t.pick('quarter'); }, ms: 800 },
           { say: 'The loonie: $1. Least to greatest: <b>dime, quarter, loonie</b>.', act: function (t) { return t.pick('loonie'); }, ms: 1800 }
+        ] },
+        example: { tool: 'g1pick', opts: { items: ['b10', 'dime', 'loonie', 'nickel'].map(function (k) { return mk(k, price(k)); }) }, steps: [
+          { say: 'My turn. A $10 bill, a dime, a loonie and a nickel. I put the least first.', ms: 1600 },
+          { say: 'The nickel: 5¢.', act: function (t) { return t.pick('nickel'); }, ms: 800 },
+          { say: 'The dime: 10¢.', act: function (t) { return t.pick('dime'); }, ms: 800 },
+          { say: 'The loonie: $1.', act: function (t) { return t.pick('loonie'); }, ms: 800 },
+          { say: 'The $10 bill is worth more than every coin, so it goes last. Least to greatest: <b>nickel, dime, loonie, $10 bill</b>.', act: function (t) { return t.pick('b10'); }, ms: 2000 }
         ] },
         try: { tool: 'g1pick', opts: { items: ['toonie', 'nickel', 'b5', 'quarter'].map(function (k) { return mk(k); }), readout: function (s) { return s.n ? '<p>Your order: <b>' + s.picked.map(function (k) { return M[k].n; }).join(', ') + '</b></p>' : '<p class="t2">Tap from least to greatest.</p>'; } }, tasks: [
           { do: 'Tap from <b>least to greatest</b>. Tap again to undo.', goal: function (s) { return s.picked.join() === 'nickel,quarter,toonie,b5'; }, yes: 'Nickel 5¢, quarter 25¢, toonie $2, $5 bill.' }
