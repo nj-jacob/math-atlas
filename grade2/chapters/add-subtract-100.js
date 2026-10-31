@@ -369,4 +369,141 @@
     s += '<text x="' + (4 + a * u + b * u / 2) + '" y="83" text-anchor="middle" font-size="22" font-weight="800" style="fill:#2b2118">' + (hide === 'b' ? '?' : b) + '</text>';
     return '<div class="fig">' + A.svg(W, 100, s, 'Bar model. Whole ' + (hide === 'w' ? 'unknown' : a + b) + '. Parts ' + a + ' and ' + (hide === 'b' ? 'unknown' : b) + '.') + '</div>';
   }
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  function noTrade(lv) { var a = R.int(1, 5) * 10 + R.int(1, 4), b = R.int(1, 4) * 10 + R.int(1, 5); return lv === 1 ? [a, b] : [R.int(1, 6) * 10 + R.int(5, 9), 0]; }
+  function addPair(lv) { var p = noTrade(lv); if (lv > 1) p[1] = R.int(1, 2) * 10 + R.int(10 - p[0] % 10, 9); return p; }
+  K.shapes(CH, {
+    'a2-tens': [
+      [1, 'fill', function (lv) {
+        var a = lv === 1 ? R.int(1, 5) * 10 : R.int(11, 59);
+        return { q: 'Add ten each time. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + a + ', [[]], [[]], [[]]</span>', answers: [a + 10, a + 20, a + 30],
+          hint: 'Adding 10 makes the tens digit go up by 1. The ones digit stays the same.', steps: [a + ' + 10 = ' + (a + 10) + '.'],
+          explain: a + ', ' + (a + 10) + ', ' + (a + 20) + ', ' + (a + 30) + '.', meta: { k: 'a2-tens-fill', a: a } };
+      }],
+      [1, 'build', function (lv) {
+        var a = lv === 1 ? R.int(1, 5) * 10 + R.int(0, 5) : R.int(11, 59), t = R.int(1, 4) * 10;
+        return { q: 'Show <span class="math">' + a + ' + ' + t + '</span> with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', answer: a + t,
+          hint: 'Start with ' + a + '. Then add ' + t / 10 + ' more rods.', steps: [a + ' is ' + tens(a) + ' rods and ' + a % 10 + ' cubes.', 'Add ' + t / 10 + ' rods: ' + (tens(a) + t / 10) + ' rods and ' + a % 10 + ' cubes.'],
+          explain: a + ' + ' + t + ' = ' + (a + t) + '.', meta: { k: 'a2-tens-build', a: a, t: t } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(21, 59), t = R.int(2, 4) * 10, name = who(), truth = !R.int(0, 2), said = truth ? a + t : a + t / 10;
+        var right = 'Adding ' + t + ' adds ' + t / 10 + ' tens. ' + a + ' + ' + t + ' = ' + (a + t) + '. The ones digit stays ' + a % 10 + '.';
+        return { q: name + ' says <span class="math big">' + a + ' + ' + t + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Adding ' + t + ' adds ' + t / 10 + ' ones.', 'Adding tens changes the ones digit.', 'Add 1 to both digits.']),
+          hint: 'How many tens is ' + t + '?', steps: [right], explain: right, meta: { k: 'a2-tens-tf', a: a, t: t, said: said } };
+      }]
+    ],
+    'a2-add': [
+      [1, 'build', function (lv) {
+        var p = addPair(lv);
+        return { q: 'Show <span class="math">' + p[0] + ' + ' + p[1] + '</span> with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', answer: p[0] + p[1],
+          hint: 'Put the rods together, then the cubes. Ten cubes make one rod.', steps: addSteps(p[0], p[1]),
+          explain: p[0] + ' + ' + p[1] + ' = ' + (p[0] + p[1]) + '.', meta: { k: 'a2-add-build', a: p[0], b: p[1] } };
+      }],
+      [1, 'fill', function (lv) {
+        var p = addPair(lv), a = p[0], b = p[1];
+        return { q: 'Add tens, then ones. Fill in the blanks for <span class="math">' + a + ' + ' + b + '</span>.', type: 'fill', fill: 'Tens: ' + tens(a) * 10 + ' + ' + tens(b) * 10 + ' = [[]]<br>Ones: ' + a % 10 + ' + ' + b % 10 + ' = [[]]<br>Total: [[]]', answers: [(tens(a) + tens(b)) * 10, a % 10 + b % 10, a + b],
+          hint: 'Add the tens first. Then add the ones. Then put them together.', steps: addSteps(a, b),
+          explain: a + ' + ' + b + ' = ' + (a + b) + '.', meta: { k: 'a2-add-fill', a: a, b: b } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(1, 5) * 10 + R.int(5, 9), b = R.int(1, 3) * 10 + R.int(10 - a % 10, 9), name = who(), truth = !R.int(0, 2);
+        var said = truth ? a + b : (tens(a) + tens(b)) * 10 + (a + b) % 10;
+        var right = (a % 10) + ' + ' + (b % 10) + ' = ' + (a % 10 + b % 10) + ' ones. Trade 10 ones for 1 ten. ' + a + ' + ' + b + ' = ' + (a + b) + '.';
+        return { q: name + ' says <span class="math big">' + a + ' + ' + b + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Only write the ones digit. The extra ten does not count.', 'Add the tens and forget the ones.', 'Always subtract the smaller digit.']),
+          hint: 'Add the ones first. Are there 10 or more?', steps: [right], explain: right, meta: { k: 'a2-add-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'a2-sub': [
+      [1, 'line', function (lv) {
+        var a = R.int(4, 9) * 10 + R.int(0, 9), b = lv === 1 ? R.int(1, 3) * 10 : R.int(11, 29);
+        return { q: 'Start at <b>' + a + '</b>. Jump back <b>' + b + '</b>. Where do you land?', type: 'line', min: 0, max: 100, tick: 5, every: 10, snap: 1, answer: a - b, hideValue: true,
+          hint: 'Jump back ' + tens(b) * 10 + (b % 10 ? ', then ' + b % 10 + ' more' : '') + '.', steps: subSteps(a, b),
+          explain: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.', meta: { k: 'a2-sub-line', a: a, b: b } };
+      }],
+      [1, 'match', function (lv) {
+        var p = [], seen = {};
+        while (p.length < 3) {
+          var a = R.int(3, 9) * 10 + R.int(5, 9), b = R.int(1, tens(a) - 1) * 10 + (lv === 1 ? R.int(1, a % 10) : R.int(1, 9));
+          if (seen[a - b]) continue; seen[a - b] = 1; p.push([a + ' ' + M + ' ' + b, String(a - b)]);
+        }
+        return { q: 'Match each subtraction to its answer.', type: 'match', pairs: p,
+          hint: 'Take away the tens first, then the ones.', steps: ['Do one card at a time.'],
+          explain: p.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'a2-sub-match', pairs: p } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(4, 9) * 10 + R.int(1, 4), b = R.int(1, 3) * 10 + R.int(a % 10 + 1, 9), name = who(), truth = !R.int(0, 2);
+        var said = truth ? a - b : (tens(a) - tens(b)) * 10 + (b % 10 - a % 10);
+        var right = 'You cannot take ' + b % 10 + ' ones from ' + a % 10 + ' ones, so trade a ten. ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.';
+        return { q: name + ' says <span class="math big">' + a + ' ' + M + ' ' + b + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Take the smaller ones digit from the bigger one.', 'Subtract the tens and keep the ones the same.', 'Count up and add 10.']),
+          hint: 'Look at the ones. Is ' + a % 10 + ' enough to take away ' + b % 10 + '?', steps: [right], explain: right, meta: { k: 'a2-sub-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'a2-mental': [
+      [1, 'nearten', function (lv) {
+        var n = R.int(11, 89); if (n % 10 === 5 || n % 10 === 0) n += 2;
+        var lo = tens(n) * 10, hi = lo + 10;
+        return { q: 'Which ten is <b>' + n + '</b> closest to?', type: 'mc', options: [String(lo), String(hi)], answer: n % 10 < 5 ? 0 : 1, fig: D.hops({ min: lo, max: hi, tick: 1, every: 5, id: 'nt', hops: [], marks: [{ v: n, col: 'var(--hi)' }] }),
+          hint: n + ' is between ' + lo + ' and ' + hi + '. Which is fewer steps away?', steps: [n + ' is ' + (n - lo) + ' from ' + lo + ' and ' + (hi - n) + ' from ' + hi + '.'],
+          explain: n + ' is closest to ' + (n % 10 < 5 ? lo : hi) + '.', meta: { k: 'a2-near10', n: n } };
+      }],
+      [1, 'match', function (lv) {
+        var p = [], seen = {};
+        while (p.length < 3) { var n = R.int(11, 89); if (n % 10 === 5 || n % 10 === 0) continue; var r = Math.round(n / 10) * 10; if (seen[r]) continue; seen[r] = 1; p.push([String(n), String(r)]); }
+        return { q: 'Match each number to its closest ten.', type: 'match', pairs: p,
+          hint: 'Look at the ones digit. 1 to 4: go down. 6 to 9: go up.', steps: ['Do one number at a time.'],
+          explain: p.map(function (x) { return x[0] + ' is closest to ' + x[1]; }).join('. ') + '.', meta: { k: 'a2-near-match', pairs: p } };
+      }],
+      [2, 'pick', function (lv) {
+        var target = R.pick([40, 50, 60]), opts = [], seen = {}, hits = 0;
+        while (opts.length < 5) {
+          var x = R.int(11, 39), y = R.int(11, 39); if (x % 10 === 5 || y % 10 === 5) continue;
+          var on = Math.round(x / 10) * 10 + Math.round(y / 10) * 10 === target, s2 = x + ' + ' + y;
+          if (seen[s2] || (on ? hits >= 2 : opts.length - hits >= 3)) continue;
+          seen[s2] = 1; opts.push(s2); if (on) hits++;
+        }
+        opts = R.shuffle(opts);
+        var ans = opts.map(function (t, j) { var p = t.split(' + ').map(Number); return Math.round(p[0] / 10) * 10 + Math.round(p[1] / 10) * 10 === target ? j : -1; }).filter(function (j) { return j >= 0; });
+        return { q: 'Estimate. Pick every sum that is <b>about ' + target + '</b>.', type: 'pick', options: opts, answer: ans,
+          hint: 'Change each number to its closest ten. Then add the tens.', steps: ['For example, 23 + 28 is about 20 + 30 = 50.'],
+          explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' ' + (ans.length > 1 ? 'are' : 'is') + ' about ' + target + '.', meta: { k: 'a2-est-pick', opts: opts, target: target } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(21, 79), b = R.pick([9, 19]), name = who(), truth = !R.int(0, 2), said = truth ? a + b : a + b + 2;
+        var right = 'Add ' + (b + 1) + ', then take away 1: ' + a + ' + ' + (b + 1) + ' = ' + (a + b + 1) + ', and ' + (a + b + 1) + ' ' + M + ' 1 = ' + (a + b) + '.';
+        return { q: name + ' adds ' + b + ' by adding ' + (b + 1) + ' and then fixing it. ' + name + ' says <span class="math big">' + a + ' + ' + b + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Add ' + (b + 1) + ', then add 1 more.', 'Adding ' + b + ' is the same as adding ' + (b + 1) + '.', 'Take away 1 from ' + a + ' first, then add ' + (b + 1) + ' and 1.']),
+          hint: b + ' is 1 less than ' + (b + 1) + '.', steps: [right], explain: right, meta: { k: 'a2-mental-tf', a: a, b: b, said: said } };
+      }]
+    ],
+    'a2-story': [
+      [1, 'which', function (lv) {
+        var name = who(), a = R.int(12, 48), b = R.int(11, 45), w = a + b, kind = R.pick(['join', 'take', 'compare']), q;
+        if (kind === 'join') q = name + ' read ' + a + ' pages on Monday and ' + b + ' pages on Tuesday. How many pages in all?';
+        else if (kind === 'take') q = 'A bus has ' + w + ' people. ' + a + ' get off at the stop. How many are still on the bus?';
+        else q = name + ' scored ' + w + ' points. A friend scored ' + a + '. How many more points did ' + name + ' score?';
+        return { q: q + ' <b>Which way solves it?</b>', type: 'mc', options: ['Add', 'Subtract'], answer: kind === 'join' ? 0 : 1,
+          hint: kind === 'join' ? 'Are two parts going together?' : kind === 'take' ? 'Are some leaving?' : 'Are you finding the difference?',
+          steps: [kind === 'join' ? 'Two parts go together: add.' : kind === 'take' ? 'Some leave: subtract.' : '"How many more" finds the difference: subtract.'],
+          explain: kind === 'join' ? a + ' + ' + b + ' = ' + w + '.' : w + ' ' + M + ' ' + a + ' = ' + b + '.', meta: { k: 'a2-which', kind: kind } };
+      }],
+      [1, 'build', function (lv) {
+        var name = who(), p = addPair(lv);
+        return { q: name + ' has <b>' + p[0] + '</b> beads and buys <b>' + p[1] + '</b> more. Show how many beads ' + name + ' has now. Then press Check.', type: 'build', tool: 'base10', answer: p[0] + p[1],
+          hint: 'Add the two numbers. Use rods for tens and cubes for ones.', steps: addSteps(p[0], p[1]),
+          explain: p[0] + ' + ' + p[1] + ' = ' + (p[0] + p[1]) + ' beads.', meta: { k: 'a2-story-build', a: p[0], b: p[1] } };
+      }],
+      [2, 'mistake', function (lv) {
+        var name = who(), a = R.int(12, 39), b = R.int(11, 39), w = a + b, truth = !R.int(0, 2), sum = truth ? w + ' ' + M + ' ' + a : w + ' + ' + a, said = truth ? b : w + a;
+        var right = 'Children went home, so there are fewer. Subtract: ' + w + ' ' + M + ' ' + a + ' = ' + b + '.';
+        return { q: 'There are ' + w + ' children at the park. ' + a + ' go home. ' + name + ' wrote <span class="math big">' + sum + ' = ' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['"Go home" means add.', 'Add any two numbers in a story.', 'Subtract the smaller number from 100.']),
+          hint: 'At the end, are there more children or fewer?', steps: [right], explain: right, meta: { k: 'a2-story-tf', w: w, a: a, said: said } };
+      }]
+    ]
+  });
 })();

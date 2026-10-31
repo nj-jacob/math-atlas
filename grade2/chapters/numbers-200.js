@@ -828,4 +828,195 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var K = A.kit, why = K.why, who = K.who;
+  function blankPairs(n) { return pairs(n).replace(/aria-label="[^"]*"/, 'aria-label="' + n + ' blocks in pairs"').replace(/<circle[^>]*stroke-dasharray="4 3"\/>/, ''); }
+  function twoDigit(lv) { return lv === 1 ? R.int(21, 99) : R.int(101, 199); }
+  K.shapes('numbers-200', {
+    'n2-blocks': [
+      [1, 'build', function (lv) {
+        var n = twoDigit(lv), d = hto(n);
+        return { q: 'Show <b>' + n + '</b> with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', answer: n,
+          hint: 'A rod is 10. A small cube is 1.' + (d[0] ? ' A flat is 100.' : ''),
+          steps: [n + ' is ' + htoWords(n) + '.', 'Add ' + (d[0] ? d[0] + ' flat, ' : '') + d[1] + ' rods and ' + d[2] + ' small cubes.'],
+          explain: htoWords(n) + ' make ' + n + '.', meta: { k: 'n2-build', n: n } };
+      }],
+      [1, 'tap', function (lv) {
+        var n = twoDigit(lv), d = hto(n);
+        if (d[1] === d[2]) d[2] = (d[2] + 3) % 10;
+        n = d[0] * 100 + d[1] * 10 + d[2];
+        var swap = d[0] * 100 + d[2] * 10 + d[1], near = n + (d[1] < 9 ? 10 : -10), set = R.shuffle([n, swap, near].filter(function (v, i, a) { return a.indexOf(v) === i; }));
+        return { q: 'Which blocks show <b>' + n + '</b>? Tap them.', type: 'tap', tiles: set.map(function (v) { return D.num10(v, { u: 5 }); }), answer: set.indexOf(n), answerText: 'the blocks with ' + htoWords(n),
+          hint: 'Count the rods first. ' + n + ' needs ' + d[1] + ' rods.', steps: ['Look for ' + d[1] + ' rods.', 'Then check for ' + d[2] + ' small cubes.'],
+          explain: n + ' is ' + htoWords(n) + '.', meta: { k: 'n2-blocks-tap', n: n, set: set } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(101, 199), d = hto(n), name = who();
+        if (d[1] === d[2]) { d[2] = (d[2] + 4) % 10; n = 100 + d[1] * 10 + d[2]; }
+        var truth = !R.int(0, 2), said = truth ? n : 100 + d[2] * 10 + d[1];
+        var right = 'There is 1 flat, ' + pl(d[1], 'rod', 'rods') + ' and ' + pl(d[2], 'small cube', 'small cubes') + ', so the blocks show ' + n + '.';
+        return { q: name + ' says these blocks show <b>' + said + '</b>. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: D.num10(n, {}),
+          why: why(right, ['Count the small cubes before the rods.', 'Every block is worth 1, so just count the blocks.', 'Rods are worth 100 each.']),
+          hint: 'Count the flat, then the rods, then the small cubes.', steps: [right], explain: right, meta: { k: 'n2-blocks-tf', n: n, said: said } };
+      }]
+    ],
+    'n2-place': [
+      [1, 'fill', function (lv) {
+        var n = twoDigit(lv), d = hto(n);
+        if (n < 100) return { q: 'Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] tens and [[]] ones', answers: [d[1], d[2]],
+          hint: 'The left digit tells the tens. The right digit tells the ones.', steps: ['Read the digits: ' + d[1] + ' then ' + d[2] + '.'],
+          explain: n + ' = ' + pl(d[1], 'ten', 'tens') + ' and ' + pl(d[2], 'one', 'ones') + '.', meta: { k: 'n2-place-fill', n: n } };
+        return { q: 'Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] hundred, [[]] tens and [[]] ones', answers: d,
+          hint: 'Read the digits from left to right: hundreds, tens, ones.', steps: ['The digits are ' + d.join(', ') + '.'],
+          explain: n + ' = ' + htoWords(n) + '.', meta: { k: 'n2-place-fill', n: n } };
+      }],
+      [1, 'match', function (lv) {
+        var pairsL = [], seen = {};
+        while (pairsL.length < 3) {
+          var n = twoDigit(lv); if (seen[n] || seen[hto(n)[2] * 10 + hto(n)[1]]) continue; seen[n] = 1;
+          var d = hto(n);
+          pairsL.push([(d[0] ? '1 hundred, ' : '') + pl(d[1], 'ten', 'tens') + ', ' + pl(d[2], 'one', 'ones'), String(n)]);
+        }
+        return { q: 'Match each set of tens and ones to its number.', type: 'match', pairs: pairsL,
+          hint: 'The tens are the left digit of a two-digit number. The ones are the right digit.', steps: ['3 tens and 4 ones is 34. Do the same for each card.'],
+          explain: pairsL.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'n2-place-match', pairs: pairsL } };
+      }],
+      [2, 'story', function (lv) {
+        var c = R.pick([['marbles', 'bags of 10'], ['stickers', 'strips of 10'], ['crayons', 'boxes of 10'], ['hockey cards', 'packs of 10']]);
+        var n = R.int(23, 99), name = who();
+        return { q: name + ' has ' + n + ' ' + c[0] + '. They are put in ' + c[1] + ', with some left over. How many full ' + c[1].split(' ')[0] + ' are there?', type: 'num', answer: Math.floor(n / 10),
+          hint: 'Each full ' + c[1].split(' ')[0].replace(/(es|s)$/, '') + ' is one ten. How many tens are in ' + n + '?', steps: [n + ' is ' + Math.floor(n / 10) + ' tens and ' + n % 10 + ' ones.', 'The ones are left over.'],
+          explain: n + ' has ' + Math.floor(n / 10) + ' tens, so there are ' + Math.floor(n / 10) + ' full ' + c[1].split(' ')[0] + '.', meta: { k: 'n2-place-story', n: n } };
+      }]
+    ],
+    'n2-words': [
+      [1, 'match', function (lv) {
+        var list = [], seen = {};
+        while (list.length < 3) { var n = lv === 1 ? R.int(13, 99) : R.int(101, 199); if (!seen[n]) { seen[n] = 1; list.push(n); } }
+        var p = list.map(function (n) { return [words(n), String(n)]; });
+        return { q: 'Match each number word to its number.', type: 'match', pairs: p,
+          hint: 'Read the tens word first, like "forty", then the ones word.', steps: ['"Forty-six" is 4 tens and 6 ones: 46.'],
+          explain: p.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'n2-words-match', pairs: p } };
+      }],
+      [1, 'tap', function (lv) {
+        var n = lv === 1 ? R.int(13, 99) : R.int(110, 199), d = hto(n);
+        if (d[1] === d[2] || d[2] === 0) { d[2] = (d[1] + 2) % 9 + 1; n = d[0] * 100 + d[1] * 10 + d[2]; }
+        var swap = d[0] * 100 + d[2] * 10 + d[1], set = R.shuffle([n, swap, n + (n < 190 ? 10 : -10)].filter(function (v, i, a) { return a.indexOf(v) === i && v >= 10; }));
+        return { q: 'Tap the number <b>' + words(n) + '</b>.', type: 'tap', tiles: set.map(function (v) { return '<span class="math big">' + v + '</span>'; }), answer: set.indexOf(n), answerText: String(n),
+          hint: 'Which digit goes in the tens place?', steps: ['"' + words(n % 100 >= 20 ? Math.floor(n % 100 / 10) * 10 : n % 100) + '" tells the tens.'],
+          explain: '"' + words(n) + '" is ' + n + '.', meta: { k: 'n2-words-tap', set: set } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(110, 199), d = hto(n), name = who();
+        if (d[1] === d[2] || d[2] === 0) { d[2] = (d[1] + 2) % 9 + 1; n = 100 + d[1] * 10 + d[2]; }
+        var truth = !R.int(0, 2), said = truth ? n : 100 + d[2] * 10 + d[1];
+        var right = '"' + words(n) + '" is 1 hundred, ' + pl(d[1], 'ten', 'tens') + ' and ' + pl(d[2], 'one', 'ones') + ': ' + n + '.';
+        return { q: name + ' wrote <b>' + words(n) + '</b> as <span class="math big">' + said + '</span>. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The ones word comes first, so the ones digit comes first.', 'Write "one hundred" as 100, then put the rest after it.', 'Number words are read from right to left.']),
+          hint: 'Say the number word slowly. Hundreds, then tens, then ones.', steps: [right], explain: right, meta: { k: 'n2-words-tf', n: n, said: said } };
+      }]
+    ],
+    'n2-compare': [
+      [1, 'order', function (lv) {
+        var list = [], seen = {}, big = lv === 3 && R.int(0, 1) === 1;
+        while (list.length < 4) { var n = lv === 1 ? R.int(10, 99) : R.int(60, 200); if (!seen[n]) { seen[n] = 1; list.push(n); } }
+        list.sort(function (a, b) { return big ? b - a : a - b; });
+        return { q: 'Put these numbers in order from ' + (big ? 'greatest to least' : 'least to greatest') + '.', type: 'order', items: list.map(String), first: big ? 'greatest' : 'least', last: big ? 'least' : 'greatest',
+          hint: 'Compare the hundreds first, then the tens, then the ones.', steps: ['Find the ' + (big ? 'greatest' : 'least') + ' number first: ' + list[0] + '.'],
+          explain: list.join(', ') + '.', meta: { k: 'n2-order', big: big } };
+      }],
+      [1, 'line', function (lv) {
+        var n, min, max;
+        if (lv === 1) { min = 0; max = 100; n = R.int(1, 9) * 10; }
+        else { min = 100; max = 200; n = 100 + R.int(1, 19) * 5; }
+        return { q: 'Put <b>' + n + '</b> on the number line.', type: 'line', min: min, max: max, tick: lv === 1 ? 10 : 5, every: lv === 1 ? 10 : 50, snap: lv === 1 ? 10 : 5, answer: n,
+          hint: 'Find the ' + (lv === 1 ? 'tens' : 'hundreds and tens') + ' on the line. Each small mark is ' + (lv === 1 ? 10 : 5) + '.', steps: [n + ' is between ' + Math.floor(n / 10) * 10 + ' and ' + (Math.floor(n / 10) * 10 + 10) + '.'],
+          explain: n + ' sits ' + (n - min) / (lv === 1 ? 10 : 5) + ' marks after ' + min + '.', meta: { k: 'n2-line', n: n } };
+      }],
+      [2, 'story', function (lv) {
+        var two = A.Q.two(), a = R.int(60, 199), b = R.int(60, 199), less = R.int(0, 1) === 1;
+        if (a === b) b = a > 100 ? a - 12 : a + 12;
+        var c = R.pick(['hockey cards', 'stickers', 'coins', 'books', 'rocks']);
+        return { q: two[0] + ' has ' + a + ' ' + c + '. ' + two[1] + ' has ' + b + ' ' + c + '. Who has <b>' + (less ? 'fewer' : 'more') + '</b>?', type: 'mc', options: [two[0], two[1]], answer: (less ? a < b : a > b) ? 0 : 1,
+          hint: 'Compare ' + a + ' and ' + b + '. Look at the hundreds, then the tens.', steps: [a + (a > b ? ' &gt; ' : ' &lt; ') + b + '.'],
+          explain: (a > b ? two[0] : two[1]) + ' has more. ' + (a < b ? two[0] : two[1]) + ' has fewer.', meta: { k: 'n2-cmp-story', a: a, b: b, less: less } };
+      }]
+    ],
+    'n2-skip': [
+      [1, 'order', function (lv) {
+        var by = lv === 1 ? R.pick([2, 5, 10]) : R.pick([5, 10, 20, 25]), st = by * R.int(0, lv === 1 ? 5 : 3), seq = [];
+        for (var i = 0; i < 5; i++) seq.push(st + i * by);
+        return { q: 'Count by <b>' + by + 's</b>. Put the numbers in order.', type: 'order', items: seq.map(String), first: 'first', last: 'last',
+          hint: 'Start with the smallest. Add ' + by + ' each time.', steps: ['Start at ' + seq[0] + '. Then ' + seq[1] + '.'],
+          explain: seq.join(', ') + '.', meta: { k: 'n2-skip-order', by: by } };
+      }],
+      [1, 'line', function (lv) {
+        var by = lv === 1 ? 10 : lv === 2 ? 5 : R.pick([20, 25]), max = by * 10, k = R.int(3, 8);
+        return { q: 'Start at 0. Jump by <b>' + by + 's</b>, <b>' + k + '</b> jumps. Where do you land?', type: 'line', min: 0, max: max, tick: by, every: by * 2, snap: by, answer: by * k, hideValue: true,
+          hint: 'Count by ' + by + 's, one number for each jump.', steps: ['Count ' + k + ' jumps: ' + Array.apply(null, Array(k)).map(function (_, i) { return by * (i + 1); }).join(', ') + '.'],
+          explain: k + ' jumps of ' + by + ' land on ' + by * k + '.', meta: { k: 'n2-skip-line', by: by, n: k } };
+      }],
+      [2, 'fill', function (lv) {
+        var by = R.pick([5, 10, 20, 25]), st = by * R.int(1, 3), s = [];
+        for (var i = 0; i < 5; i++) s.push(st + i * by);
+        return { q: 'Count by ' + by + 's. Fill in the missing numbers.', type: 'fill', fill: s[0] + ', ' + s[1] + ', [[]], ' + s[3] + ', [[]]', answers: [s[2], s[4]],
+          hint: 'Add ' + by + ' to the number before each gap.', steps: [s[1] + ' + ' + by + ' = ' + s[2] + '.', s[3] + ' + ' + by + ' = ' + s[4] + '.'],
+          explain: s.join(', ') + '.', meta: { k: 'n2-skip-fill', by: by } };
+      }]
+    ],
+    'n2-estimate': [
+      [1, 'tap', function (lv) {
+        var counts = R.shuffle(lv === 1 ? [10, 30, 60] : [20, 60, 120]), target = R.pick(counts), sd = R.int(1, 999);
+        return { q: 'Tap the picture with <b>about ' + target + '</b> dots.', type: 'tap', tiles: counts.map(function (n, i) { return scatter(n, sd + i, false); }), answer: counts.indexOf(target), answerText: 'the picture with ' + target + ' dots',
+          hint: 'Picture a group of 10 dots. Which picture has about ' + target / 10 + ' groups like that?', steps: ['Few dots, some dots, many dots. ' + target + ' is ' + (target === Math.min.apply(null, counts) ? 'the fewest' : target === Math.max.apply(null, counts) ? 'the most' : 'in the middle') + '.'],
+          explain: 'That picture has ' + target + ' dots.', meta: { k: 'n2-est-tap', counts: counts, target: target } };
+      }],
+      [1, 'story', function (lv) {
+        var per = 10, rows = lv === 1 ? R.int(2, 5) : R.int(6, 15), name = who(), c = R.pick([['cars', 'row of the parking lot', 'rows'], ['chairs', 'row in the gym', 'rows'], ['apples', 'basket', 'baskets'], ['books', 'shelf', 'shelves']]);
+        var real = per * rows, opts = [real, real < 100 ? real + 50 : real - 50, real > 20 ? Math.round(real / 2 / 10) * 10 : real + 100].filter(function (v, i, a) { return a.indexOf(v) === i && v > 0; });
+        var o = R.mc(String(real), opts.slice(1).map(String));
+        return { q: name + ' counts about 10 ' + c[0] + ' in one ' + c[1] + '. There are ' + rows + ' ' + c[2] + ' about the same. About how many ' + c[0] + ' are there?', type: 'mc', options: o.options, answer: o.answer,
+          hint: 'Count by 10s, once for each ' + c[1].split(' ')[0] + '.', steps: ['Count by 10s ' + rows + ' times.'],
+          explain: rows + ' groups of about 10 is about ' + real + '.', meta: { k: 'n2-est-story', per: per, rows: rows } };
+      }],
+      [2, 'mistake', function (lv) {
+        var n = R.int(25, 180), choices = [20, 50, 100, 150, 200], best = choices.reduce(function (a, b) { return Math.abs(b - n) < Math.abs(a - n) ? b : a; }), name = who();
+        var truth = !R.int(0, 2), said = truth ? best : R.pick(choices.filter(function (c) { return Math.abs(c - n) > 40; }));
+        var right = 'There are ' + n + ' dots. The closest of 20, 50, 100, 150 and 200 is ' + best + '.';
+        return { q: name + ' says there are <b>about ' + said + '</b> dots. True or false: ' + said + ' is the best estimate from 20, 50, 100, 150 and 200.', type: 'tf', answer: truth, fig: scatter(n, R.int(1, 999), false),
+          why: why(right, ['Always guess 100. It is a nice round number.', 'You must count every dot to estimate.', 'Big pictures always have fewer dots.']),
+          hint: 'Picture a group of 10 dots. About how many groups?', steps: [right], explain: right, meta: { k: 'n2-est-tf', n: n, said: said } };
+      }]
+    ],
+    'n2-evenodd': [
+      [1, 'tap', function (lv) {
+        var want = R.pick(['even', 'odd']), r = want === 'even' ? 0 : 1, set = [];
+        set.push(2 * R.int(2, 8) + r);
+        while (set.length < 3) { var m = 2 * R.int(2, 8) + 1 - r; if (set.indexOf(m) < 0) set.push(m); }
+        set = R.shuffle(set);
+        var ans = set.filter(function (m) { return m % 2 === r; })[0];
+        return { q: 'Tap the group with an <b>' + want + '</b> number of blocks.', type: 'tap', tiles: set.map(blankPairs), answer: set.indexOf(ans), answerText: 'the group of ' + ans,
+          hint: want === 'even' ? 'Even: every block has a partner.' : 'Odd: one block has no partner.', steps: ['Look at the last column of each group. Is there one block on its own?'],
+          explain: ans + ' is ' + want + '.', meta: { k: 'n2-eo-tap', set: set, want: want } };
+      }],
+      [1, 'pick', function (lv) {
+        var want = R.pick(['even', 'odd']), r = want === 'even' ? 0 : 1, opts = [], hi = lv === 1 ? 30 : 199;
+        while (opts.length < 5) { var v = R.int(2, hi); if (opts.indexOf(v) < 0) opts.push(v); }
+        var ans = opts.map(function (v, j) { return v % 2 === r ? j : -1; }).filter(function (j) { return j >= 0; });
+        if (!ans.length || ans.length === 5) { opts[0] = opts[0] % 2 === r ? opts[0] + 1 : opts[0]; opts[1] = opts[1] % 2 === r ? opts[1] : opts[1] + 1; if (opts[1] === opts[0]) opts[1] += 2; ans = opts.map(function (v, j) { return v % 2 === r ? j : -1; }).filter(function (j) { return j >= 0; }); }
+        return { q: 'Pick every <b>' + want + '</b> number.', type: 'pick', options: opts.map(String), answer: ans,
+          hint: 'Look only at the ones digit. Even numbers end in 0, 2, 4, 6 or 8.', steps: ['Check the last digit of each number.'],
+          explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' ' + (ans.length > 1 ? 'are' : 'is') + ' ' + want + '.', meta: { k: 'n2-eo-pick', opts: opts, want: want } };
+      }],
+      [2, 'mistake', function (lv) {
+        var t = R.int(1, 9), o = R.int(0, 9), name = who();
+        if (t % 2 === o % 2) o = (o + 1) % 10;
+        var n = 100 + t * 10 + o, said = t % 2 ? 'odd' : 'even', truth = said === (n % 2 ? 'odd' : 'even');
+        var right = 'Only the ones digit decides. ' + n + ' ends in ' + o + ', so it is ' + (n % 2 ? 'odd' : 'even') + '.';
+        return { q: name + ' says <span class="math big">' + n + '</span> is <b>' + said + '</b> because ' + t + ' is ' + said + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['The tens digit decides if a number is even or odd.', 'Big numbers are always even.', 'Numbers over 100 are always odd.']),
+          hint: 'Which digit decides even or odd?', steps: [right], explain: right, meta: { k: 'n2-eo-tf', n: n, said: said } };
+      }]
+    ]
+  });
 })();

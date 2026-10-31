@@ -483,4 +483,139 @@
       } }
     ]
   });
+  /* ---------- more ways to ask each practice skill (answer checks: tests/verify/grade2.js) ---------- */
+  var why = K.why, who = K.who;
+  function thing(k) { return A.svg(56, 56, A.THING[k](28, 28, 18, k === 'cube' ? 'var(--sc)' : undefined), k); }
+  var PLACES = TOWN.filter(function (t) { return t[2] !== 'tree'; });
+  /* the neighbourhood map, with every place and its square written into the picture's label */
+  function townMap(extra) { return gridSvg(6, 5, TOWN, extra || '', 'The neighbourhood map: ' + PLACES.map(function (t) { return ICON[t[2]].n + ' at column ' + (t[0] + 1) + ', row ' + (t[1] + 1); }).join('; '), true); }
+  function icon(t) { return A.svg(56, 56, ICON[t[2]].d(28, 28), ICON[t[2]].n); }
+  /* "3 right and 2 down" */
+  function moveWords(dx, dy) { var w = []; if (dx) w.push(Math.abs(dx) + (dx > 0 ? ' right' : ' left')); if (dy) w.push(Math.abs(dy) + (dy > 0 ? ' down' : ' up')); return w.join(' and '); }
+  var START = '<rect x="2" y="2" width="' + C + '" height="' + C + '" style="fill:color-mix(in srgb,var(--sd) 40%,transparent)"/>';
+  function starGrid(c, r, extra) { return gridSvg(5, 5, [[c, r, 'star']], START + (extra || ''), 'A grid with a green start square in the top left corner and a star ' + c + ' right and ' + r + ' down from it'); }
+  function track(lo, hi) { return D.hops({ min: lo, max: hi, tick: 1, every: 5, id: 'trk', hops: [], marks: [] }); }
+  K.shapes(CH, {
+    'm2-position': [
+      [1, 'tap', function (lv) {
+        var order = R.shuffle(SHELF).concat(R.shuffle(SHELF)), i = R.int(1, 2), left = lv === 1 || R.int(0, 1), ans = order[left ? i - 1 : i + 1], set = R.shuffle(SHELF.filter(function (x) { return x !== order[i]; }));
+        return { q: 'On the top shelf, tap what is just to the <b>' + (left ? 'left' : 'right') + '</b> of the ' + order[i] + '.', type: 'tap', fig: shelf(order), tiles: set.map(thing), answer: set.indexOf(ans), answerText: 'the ' + ans,
+          hint: 'Find the ' + order[i] + ' on the top shelf. Then look to the ' + (left ? 'left' : 'right') + '.', steps: ['Find the ' + order[i] + '.', 'Look one place to the ' + (left ? 'left' : 'right') + ': it is the ' + ans + '.'],
+          explain: 'The ' + ans + ' is just to the ' + (left ? 'left' : 'right') + ' of the ' + order[i] + '.', meta: { k: 'm2-pos-tap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var order = R.shuffle(SHELF).concat(R.shuffle(SHELF)), i = R.int(0, 2), name = who(), truth = !R.int(0, 1), word = truth ? 'left' : 'right';
+        var right = 'The ' + order[i] + ' is to the left of the ' + order[i + 1] + '.';
+        return { q: name + ' says the ' + order[i] + ' is just to the <b>' + word + '</b> of the ' + order[i + 1] + ' on the top shelf. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: shelf(order),
+          why: why(right, ['Left and right mean the same thing.', 'Left means higher up.', 'It depends on which shelf is bigger.']),
+          hint: 'Your left hand is on the left side of the picture.', steps: [right], explain: right, meta: { k: 'm2-pos-tf' } };
+      }],
+      [2, 'order', function (lv) {
+        var order = R.shuffle(SHELF).concat(R.shuffle(SHELF)), top = R.int(0, 1);
+        var row = top ? order.slice(0, 4) : order.slice(4);
+        return { q: 'Put the things on the <b>' + (top ? 'top' : 'bottom') + ' shelf</b> in order from <b>right to left</b>.', type: 'order', fig: shelf(order), items: row.slice().reverse(), first: 'right end', last: 'left end',
+          hint: 'Start at the right end of the shelf and move left.', steps: ['Start at the right end.', 'Move one place left each time.'],
+          explain: 'From right to left: ' + row.slice().reverse().join(', ') + '.', meta: { k: 'm2-pos-order' } };
+      }]
+    ],
+    'm2-map': [
+      [1, 'tap', function (lv) {
+        var near = function (a, t) { return t !== a && (lv > 1 || t[0] === a[0] || t[1] === a[1]); };
+        var a = R.pick(PLACES.filter(function (x) { return PLACES.some(function (t) { return near(x, t); }); })), b = R.pick(PLACES.filter(function (t) { return near(a, t); }));
+        var set = R.shuffle([b].concat(R.shuffle(PLACES.filter(function (t) { return t !== a && t !== b; })).slice(0, 2)));
+        return { q: 'Start at the <b>' + ICON[a[2]].n + '</b>. Go <b>' + moveWords(b[0] - a[0], b[1] - a[1]) + '</b>. Tap the place you reach.', type: 'tap', fig: townMap(), tiles: set.map(icon), answer: set.indexOf(b), answerText: 'the ' + ICON[b[2]].n,
+          hint: 'Put your finger on the ' + ICON[a[2]].n + '. Move one square at a time.', steps: ['Start at the ' + ICON[a[2]].n + '.', 'Go ' + moveWords(b[0] - a[0], b[1] - a[1]) + '. You reach the ' + ICON[b[2]].n + '.'],
+          explain: 'You reach the ' + ICON[b[2]].n + '.', meta: { k: 'm2-map-tap' } };
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.pick(PLACES), b = R.pick(PLACES.filter(function (t) { return t !== a && t[0] !== a[0] && t[1] !== a[1]; }));
+        var dx = Math.abs(b[0] - a[0]), dy = Math.abs(b[1] - a[1]);
+        return { q: 'Go from the <b>' + ICON[a[2]].n + '</b> to the <b>' + ICON[b[2]].n + '</b>. How many squares across, and how many up or down?', type: 'fill', fig: townMap(),
+          fill: '[[]] squares across, then [[]] squares up or down', answers: [dx, dy],
+          hint: 'Count the squares across first. Then count up or down.', steps: ['Across: ' + dx + '.', 'Up or down: ' + dy + '.'],
+          explain: dx + ' squares across and ' + dy + ' up or down.', meta: { k: 'm2-map-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.pick(PLACES), b = R.pick(PLACES.filter(function (t) { return t !== a && t[0] !== a[0] && t[1] !== a[1]; })), name = who(), truth = !R.int(0, 2);
+        var dx = Math.abs(b[0] - a[0]), dy = Math.abs(b[1] - a[1]), said = truth ? dx + dy : R.pick([dx, dy, dx + dy + 1]);
+        var right = dx + ' across and ' + dy + ' up or down is ' + (dx + dy) + ' squares in all.';
+        return { q: name + ' says it is <b>' + said + '</b> squares from the ' + ICON[a[2]].n + ' to the ' + ICON[b[2]].n + ', moving only across and up or down. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: townMap(),
+          why: why(right, ['Count only the squares across.', 'Count the places you pass.', 'Count only the squares up or down.']),
+          hint: 'Count across, then up or down, then add.', steps: [right], explain: right, meta: { k: 'm2-map-tf' } };
+      }]
+    ],
+    'm2-code': [
+      [1, 'tap', function (lv) {
+        var a = R.int(1, 3), b = R.int(1, 3), code = [{ d: 'right', n: a }, { d: 'down', n: b }], ends = {}, set = [];
+        [code, [{ d: 'right', n: b === a ? (a % 3) + 1 : b }, { d: 'down', n: a }], [{ d: 'right', n: a }, { d: 'down', n: (b % 3) + 1 }], [{ d: 'down', n: a }, { d: 'right', n: b }]].forEach(function (c) {
+          var p = run([0, 0], c, 4, 4), key = p.map(String).join('|');
+          if (!ends[key] && set.length < 3) { ends[key] = 1; set.push(p); }
+        });
+        var good = set[0]; set = R.shuffle(set);
+        return { q: 'Which path does this code make? <b>' + codeText(code) + '</b>', type: 'tap', tiles: set.map(function (p) { return gridSvg(4, 4, [], START + pathSvg(p), 'A robot path on a grid'); }), answer: set.indexOf(good), answerText: 'the path that goes ' + a + ' right, then ' + b + ' down',
+          hint: 'Start on the green square. Follow the code one step at a time.', steps: ['Move right ' + a + '.', 'Then move down ' + b + '.'],
+          explain: 'The code goes right ' + a + ', then down ' + b + '.', meta: { k: 'm2-code-tap' } };
+      }],
+      [1, 'line', function (lv) {
+        var s = R.int(2, 6), a = R.int(1, 10 - s), b = R.int(1, s + a), code = [{ d: 'right', n: a }, { d: 'left', n: b }];
+        if (lv > 1) code.push({ d: 'right', n: R.int(1, 10 - (s + a - b)) });
+        var end = s; code.forEach(function (c) { end += c.d === 'right' ? c.n : -c.n; });
+        return { q: 'The robot is at <b>' + s + '</b> on the track. Code: <b>' + codeText(code) + '</b>. Show where it ends.', type: 'line', min: 0, max: 10, tick: 1, every: 5, snap: 1, answer: end, hideValue: true,
+          hint: 'Right means bigger numbers. Left means smaller numbers.', steps: ['Start at ' + s + '.'].concat(code.map(function (c) { return 'Move ' + c.d + ' ' + c.n + '.'; })),
+          explain: 'The robot ends at ' + end + '.', meta: { k: 'm2-code-line' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var s = R.int(2, 6), a = R.int(1, 10 - s), b = R.int(1, s + a), end = s + a - b, name = who(), truth = !R.int(0, 2), said = truth ? end : s + a + b <= 10 ? s + a + b : end + 1;
+        var right = 'Start at ' + s + '. Right ' + a + ' is ' + (s + a) + '. Left ' + b + ' is ' + end + '.';
+        return { q: 'The robot is at ' + s + ' on the track. Code: <b>' + codeText([{ d: 'right', n: a }, { d: 'left', n: b }]) + '</b>. ' + name + ' says it ends at ' + said + '. True or false: ' + name + ' is right.', type: 'tf', answer: truth, fig: track(0, 10),
+          why: why(right, ['Left and right both make the number bigger.', 'Only the last step counts.', 'The robot always ends where it started.']),
+          hint: 'Follow the steps in order. Left goes back.', steps: [right], explain: right, meta: { k: 'm2-code-tf' } };
+      }]
+    ],
+    'm2-debug': [
+      [1, 'mistake', function (lv) {
+        var c = R.int(1, 3), r = R.int(1, 3), truth = !R.int(0, 1), name = who();
+        var code = truth ? [{ d: 'right', n: c }, { d: 'down', n: r }] : R.pick([[{ d: 'right', n: c + 1 }, { d: 'down', n: r }], [{ d: 'right', n: c }, { d: 'down', n: r === 1 ? 2 : r - 1 }], [{ d: 'down', n: c }, { d: 'right', n: r === c ? r + 1 : r }]]);
+        var right = 'The star is ' + c + ' right and ' + r + ' down from the green square.';
+        return { q: name + '’s code is <b>' + codeText(code) + '</b>. True or false: it takes the robot from the green square to the star.', type: 'tf', answer: truth, fig: starGrid(c, r),
+          why: why(right, ['Any code with right and down reaches the star.', 'The robot stops when it sees the star.', 'Only the first step matters.']),
+          hint: 'Count the squares from the green square to the star.', steps: [right], explain: right, meta: { k: 'm2-dbg-tf' } };
+      }],
+      [1, 'fill', function (lv) {
+        var c = R.int(1, 3), r = R.int(1, 3), bad = [{ d: 'right', n: c === 3 ? 2 : c + 1 }, { d: 'down', n: r }];
+        return { q: 'This code misses the star: <b>' + codeText(bad) + '</b>. Fix the numbers.', type: 'fill', fig: starGrid(c, r, pathSvg(run([0, 0], bad, 5, 5), 'var(--bad)')),
+          fill: 'move right [[]], then move down [[]]', answers: [c, r],
+          hint: 'Count across to the star, then down.', steps: ['Across to the star: ' + c + '.', 'Down to the star: ' + r + '.'],
+          explain: 'Move right ' + c + ', then move down ' + r + '.', meta: { k: 'm2-dbg-fill' } };
+      }],
+      [2, 'pick', function (lv) {
+        var c = R.int(1, 3), r = R.int(1, 3), list = [[{ d: 'right', n: c }, { d: 'down', n: r }], [{ d: 'down', n: r }, { d: 'right', n: c }], [{ d: 'right', n: r === c ? c + 1 : r }, { d: 'down', n: c }], [{ d: 'right', n: c }, { d: 'down', n: r + 1 }], [{ d: 'left', n: c }, { d: 'down', n: r }]];
+        var opts = R.shuffle(list.slice(0, 2).concat(R.shuffle(list.slice(2)).slice(0, 2)));
+        var ok = function (code) { var p = run([0, 0], code, 5, 5), e = p[p.length - 1]; return !p.hit && e[0] === c && e[1] === r; };
+        return { q: 'Pick every code that takes the robot from the green square to the star.', type: 'pick', fig: starGrid(c, r), options: opts.map(codeText), answer: opts.map(function (o, j) { return ok(o) ? j : -1; }).filter(function (j) { return j >= 0; }),
+          hint: 'Follow each code with your finger.', steps: ['The star is ' + c + ' right and ' + r + ' down.', 'Right first or down first both work.'],
+          explain: 'Going right ' + c + ' and down ' + r + ' works in either order.', meta: { k: 'm2-dbg-pick' } };
+      }]
+    ],
+    'm2-together': [
+      [1, 'fill', function (lv) {
+        var a = R.int(1, lv === 1 ? 2 : 4);
+        return { q: 'A robot moves <b>' + a + '</b> square' + (a > 1 ? 's' : '') + ' each step. How far has it gone?', type: 'fill', fill: 'After 1 step: [[]]. After 2 steps: [[]]. After 3 steps: [[]].', answers: [a, 2 * a, 3 * a],
+          hint: 'Add ' + a + ' for each step.', steps: ['Each step adds ' + a + ' more.'], explain: a + ', ' + 2 * a + ', ' + 3 * a + '.', meta: { k: 'm2-tog-fill' } };
+      }],
+      [1, 'match', function (lv) {
+        var p = [], seen = {};
+        while (p.length < 3) { var a = R.int(1, 3), n = R.int(1, 3); if (seen[a * n] || seen[a + ',' + n]) continue; seen[a * n] = seen[a + ',' + n] = 1; p.push([a + ' each step, ' + n + ' step' + (n > 1 ? 's' : ''), a * n + ' squares']); }
+        return { q: 'Match each robot to how far it moves.', type: 'match', pairs: p,
+          hint: 'Add the squares for each step.', steps: ['2 each step, 3 steps: 2 + 2 + 2 = 6.'], explain: p.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'm2-tog-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(1, 3), b = R.int(1, 3), n = R.int(2, 3), name = who(), truth = !R.int(0, 2), said = truth ? n * (a + b) : a + b;
+        var right = 'Robot A moves ' + n * a + ' and robot B moves ' + n * b + ', so together they move ' + n * (a + b) + '.';
+        return { q: 'Robot A moves ' + a + ' each step. Robot B moves ' + b + ' each step. They start together. ' + name + ' says after ' + n + ' steps they have moved <b>' + said + '</b> squares together. True or false: ' + name + ' is right.', type: 'tf', answer: truth,
+          why: why(right, ['Count only one step.', 'Count only robot A.', 'Robots that move together share their squares.']),
+          hint: 'Find how far each robot goes, then add.', steps: [right], explain: right, meta: { k: 'm2-tog-tf' } };
+      }]
+    ]
+  });
 })();
