@@ -500,4 +500,169 @@ payGallery() +
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  var WAYS = [['Credit card', 'Borrowed money you pay back later'], ['Debit card', 'Money taken straight from your bank account'], ['Cash', 'Coins and bills you hand over'], ['E-transfer', 'Money sent from one bank account to another']];
+  var SERVICES = [['Local parks and libraries', 'Municipal'], ['Garbage pickup', 'Municipal'], ['Fire services in your town', 'Municipal'], ['Hospitals in Ontario', 'Provincial'], ['Public schools in Ontario', 'Provincial'], ['Passports', 'Federal'], ['National parks like Banff', 'Federal'], ['The Canadian Armed Forces', 'Federal']];
+  var NEEDS = ['Rent', 'Groceries', 'A winter coat', 'Bus fare to school'], WANTS = ['A video game', 'A concert ticket', 'A new phone case', 'Candy'];
+  var SHAPES = {
+    'mo-pay': [
+      [1, 'match', function (lv) {
+        var set = R.shuffle(WAYS).slice(0, lv === 1 ? 3 : 4);
+        return { q: 'Match each way to pay to what it means.', type: 'match', pairs: set,
+          hint: 'Ask: whose money is it, and where does it come from?', steps: ['Credit is borrowed. Debit and cash are your own money.'],
+          explain: set.map(function (p) { return p[0] + ': ' + p[1].toLowerCase(); }).join('. ') + '.', meta: { k: 'g5mo-paymatch' } };
+      }],
+      [1, 'pick', function (lv) {
+        var opts = R.shuffle(['Cash', 'Debit card', 'Credit card', 'E-transfer']);
+        return K.pick('Pick every way to pay that uses money <b>you already have</b>.', opts, function (o) { return o !== 'Credit card'; }, String, {
+          hint: 'Which one is borrowing?', steps: ['Cash, debit and e-transfers use money that is already yours.', 'A credit card borrows money you must pay back.'],
+          explain: 'Everything except the credit card uses your own money.', meta: { k: 'g5mo-paypick' } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = nm(), truth = !R.int(0, 2), way = truth ? 'a debit card' : 'a credit card';
+        var right = 'A debit card takes money from your own bank account. A credit card borrows money that you pay back later.';
+        return K.tf(who, 'paying with <b>' + way + '</b> takes money straight from your own bank account.', truth, right,
+          ['Credit and debit cards work the same way.', 'Cards never use real money.', 'A credit card uses your savings first.'],
+          { hint: 'Which card is borrowing?', meta: { k: 'g5mo-paytf', way: way } });
+      }]
+    ],
+    'mo-tax': [
+      [1, 'fill', function (lv) {
+        var base = R.pick([1000, 2000, 3000, 4000, 5000, 10000]), tax = hst(base);
+        return { q: 'An item costs ' + M(base) + '. Ontario HST is 13%. Fill in the receipt.', type: 'fill', fill: 'Price: ' + M(base) + '<br>HST: $[[]]<br>Total: $[[]]', answers: [A.clean(tax / 100), A.clean((base + tax) / 100)],
+          hint: '10% of ' + M(base) + ' is ' + M(base / 10) + '. 3% is ' + M(base * 3 / 100) + '.', steps: ['13% = 10% + 3% = ' + M(base / 10) + ' + ' + M(base * 3 / 100) + ' = ' + M(tax) + '.', M(base) + ' + ' + M(tax) + ' = ' + M(base + tax) + '.'],
+          explain: 'HST ' + M(tax) + ', total ' + M(base + tax) + '.', meta: { k: 'g5mo-taxfill' } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), a = R.int(2, 6) * 100 + R.pick([25, 50, 75, 99]), b = R.int(1, 4) * 100 + R.pick([0, 25, 49, 50]), bill = a + b < 1000 ? 1000 : 2000;
+        return { q: who + ' buys a book for ' + M(a) + ' and a pen for ' + M(b) + ' and pays with a ' + M(bill).replace('.00', '') + ' bill. How much change does ' + who + ' get? (Tax is included.)', type: 'num', answer: A.clean((bill - a - b) / 100), unit: '$',
+          hint: 'Add the prices first. Then count up to ' + M(bill) + '.', steps: [M(a) + ' + ' + M(b) + ' = ' + M(a + b) + '.', M(bill) + ' &minus; ' + M(a + b) + ' = ' + M(bill - a - b) + '.'],
+          explain: who + ' gets ' + M(bill - a - b) + ' in change.', meta: { k: 'g5mo-taxstory' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var p = R.int(2, 9) * 100 + R.int(1, 9) * 10 + R.pick([1, 2, 3, 4, 6, 7, 8, 9]), who = nm(), truth = !R.int(0, 2), said = truth ? cash(p) : cash(p) === Math.floor(p / 5) * 5 ? cash(p) + 5 : cash(p) - 5;
+        var right = 'Cash totals round to the nearest 5 cents. ' + M(p) + ' rounds to ' + M(cash(p)) + '.';
+        return K.tf(who, 'a total of ' + M(p) + ' paid in cash rounds to <b>' + M(said) + '</b>.', truth, right,
+          ['Cash totals always round up.', 'Cash totals round to the nearest 10 cents.', 'Cash totals always round down.'],
+          { hint: 'Which is closer: the 5 cents below or the 5 cents above?', meta: { k: 'g5mo-taxtf', p: p, said: said } });
+      }],
+      [2, 'which', function (lv) {
+        var base = R.pick([2000, 4000, 5000, 8000]);
+        return K.mc('An item costs ' + M(base) + ' before Ontario HST (13%). Which way finds the total?', 'Find 13% of ' + M(base) + ', then add it to ' + M(base), ['Add $13 to ' + M(base), 'Multiply ' + M(base) + ' by 13', 'Take 13% away from ' + M(base)], {
+          hint: 'Tax is a part of the price that is added on.', steps: ['13% of ' + M(base) + ' = ' + M(hst(base)) + '.', 'Add it: ' + M(base) + ' + ' + M(hst(base)) + ' = ' + M(base + hst(base)) + '.'],
+          explain: 'The total is ' + M(base + hst(base)) + '.', meta: { k: 'g5mo-taxwhich' } });
+      }]
+    ],
+    'mo-budget': [
+      [1, 'fill', function (lv) {
+        var inc = R.int(6, 20) * 10, need = R.int(2, 5) * 5, save = R.int(1, 4) * 5;
+        return { q: 'Make the budget balance. Fill in the blanks.', type: 'fill', fill: 'Income: $' + inc + '<br>Needs: $' + need + '<br>Savings: $' + save + '<br>Wants: $[[]]', answers: [inc - need - save],
+          fig: budgetBar(inc, [need, save, inc - need - save], 2), hint: 'A balanced budget spends and saves exactly the income.', steps: ['$' + need + ' + $' + save + ' = $' + (need + save) + '.', '$' + inc + ' &minus; $' + (need + save) + ' = $' + (inc - need - save) + '.'],
+          explain: 'Wants: $' + (inc - need - save) + '.', meta: { k: 'g5mo-budfill' } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), per = R.pick([5, 8, 10, 12, 15, 20]), weeks = R.int(3, lv === 1 ? 6 : 12);
+        return { q: who + ' earns $' + per + ' a week walking a neighbour\'s dog and saves all of it. How many weeks will it take to save $' + per * weeks + ' for a new bike helmet?', type: 'num', answer: weeks,
+          hint: 'How many groups of $' + per + ' make $' + per * weeks + '?', steps: ['$' + per * weeks + ' &divide; $' + per + ' = ' + weeks + '.'],
+          explain: 'It takes ' + weeks + ' weeks.', meta: { k: 'g5mo-budstory' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var inc = R.int(6, 20) * 10, need = R.int(2, 5) * 5, save = R.int(1, 4) * 5, want = inc - need - save + (R.int(0, 2) ? R.pick([-10, 10]) : 0), who = nm();
+        var bal = need + save + want === inc, right = 'Needs + savings + wants = $' + need + ' + $' + save + ' + $' + want + ' = $' + (need + save + want) + (bal ? ', which equals the income.' : ', but the income is $' + inc + '.');
+        return K.tf(who, 'this budget is balanced: income $' + inc + ', needs $' + need + ', savings $' + save + ', wants $' + want + '.', bal, right,
+          ['A budget is balanced if needs are paid.', 'Savings do not count in a budget.', 'Any budget with savings is balanced.'],
+          { hint: 'Add everything that is spent or saved. Does it equal the income?', meta: { k: 'g5mo-budtf' } });
+      }],
+      [2, 'pick', function (lv) {
+        var opts = R.shuffle(R.shuffle(NEEDS).slice(0, 2).concat(R.shuffle(WANTS).slice(0, 3)));
+        return K.pick('Pick every <b>need</b>.', opts, function (o) { return NEEDS.indexOf(o) >= 0; }, String, {
+          hint: 'A need is something you must have to live safely and get to school. A want is nice to have.', steps: ['Ask: could you manage without it?'],
+          explain: 'The needs are ' + opts.filter(function (o) { return NEEDS.indexOf(o) >= 0; }).join(' and ').toLowerCase() + '.', meta: { k: 'g5mo-budpick' } });
+      }]
+    ],
+    'mo-credit': [
+      [1, 'match', function (lv) {
+        var pairs = [['Debt', 'Money you owe'], ['Interest', 'Extra you pay for borrowing'], ['Savings', 'Money you put aside']];
+        if (lv > 1) pairs.push(['Credit', 'Borrowing now and paying later']);
+        return { q: 'Match each word to what it means.', type: 'match', pairs: pairs,
+          hint: 'Credit means borrowing. Debt is what you still owe.', steps: ['Interest is the cost of borrowing.'],
+          explain: pairs.map(function (p) { return p[0] + ': ' + p[1].toLowerCase(); }).join('. ') + '.', meta: { k: 'g5mo-crmatch' } };
+      }],
+      [1, 'fill', function (lv) {
+        var owe = R.pick([100, 200, 300, 400, 500]), r = R.pick([2, 3]);
+        return { q: 'You owe $' + owe + ' on a credit card. It adds ' + r + '% interest a month. Fill in the blanks.', type: 'fill', fill: '1% of $' + owe + ' = $[[]]<br>' + r + '% of $' + owe + ' = $[[]]', answers: [owe / 100, owe * r / 100],
+          hint: '1% is one hundredth. Divide by 100.', steps: ['$' + owe + ' &divide; 100 = $' + owe / 100 + '.', r + ' &times; $' + owe / 100 + ' = $' + owe * r / 100 + '.'],
+          explain: 'The interest is $' + owe * r / 100 + ' a month.', meta: { k: 'g5mo-crfill' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var owe = R.pick([100, 200, 300, 400, 500]), who = nm(), truth = !R.int(0, 2), said = truth ? owe * 2 / 100 : owe * 2 / 10;
+        var right = '1% of $' + owe + ' is $' + owe / 100 + ', so 2% is $' + owe * 2 / 100 + '.';
+        return K.tf(who, 'owing $' + owe + ' at 2% interest adds <b>$' + said + '</b> in one month.', truth, right,
+          ['2% means 2 out of 10.', '2% of any amount is $2.', 'Interest is only added if you pay on time.'],
+          { hint: 'Find 1% first.', meta: { k: 'g5mo-crtf', said: said } });
+      }],
+      [2, 'story', function (lv) {
+        var who = nm(), pay = R.pick([20, 25, 40, 50]), months = R.int(3, 10);
+        return { q: who + ' borrowed $' + pay * months + ' from a parent with no interest. ' + who + ' pays back $' + pay + ' each month. How many months until the debt is paid off?', type: 'num', answer: months,
+          hint: 'How many payments of $' + pay + ' make $' + pay * months + '?', steps: ['$' + pay * months + ' &divide; $' + pay + ' = ' + months + '.'],
+          explain: 'It takes ' + months + ' months.', meta: { k: 'g5mo-crstory' } };
+      }]
+    ],
+    'mo-unit': [
+      [1, 'fill', function (lv) {
+        var n = R.int(2, 8), each = R.int(5, 40) * 5, thing = R.pick(['granola bars', 'apples', 'pencils']);
+        return { q: n + ' ' + thing + ' cost ' + M(n * each) + '. Fill in the unit price.', type: 'fill', fill: '1 costs $[[]]', answers: [A.clean(each / 100)],
+          fig: lv === 1 ? items(n, n * each, thing.replace(/s$/, '')) : '', hint: 'Divide the total by ' + n + '.', steps: [M(n * each) + ' &divide; ' + n + ' = ' + M(each) + '.'],
+          explain: 'Each costs ' + M(each) + '.', meta: { k: 'g5mo-unitfill' } };
+      }],
+      [1, 'tap', function (lv) {
+        var unitName = R.pick([['kg of rice', 'kg'], ['L of juice', 'L']]), list = [], seen = {};
+        while (list.length < 3) { var s = R.pick([1, 2, 3, 4, 5]), u = R.int(15, 45) * 10; if (!seen[u]) { seen[u] = 1; list.push([s, s * u, u]); } }
+        var best = list.reduce(function (b, x, i) { return x[2] < list[b][2] ? i : b; }, 0);
+        return { q: 'Tap the <b>best value</b>.', type: 'tap', tiles: list.map(function (x) { return '<span style="font-size:1.1em"><b>' + x[0] + ' ' + unitName[1] + '</b><br>' + M(x[1]) + '</span>'; }), answer: best, answerText: list[best][0] + ' ' + unitName[1] + ' for ' + M(list[best][1]),
+          hint: 'Find the price of 1 ' + unitName[1] + ' for each.', steps: list.map(function (x) { return M(x[1]) + ' &divide; ' + x[0] + ' = ' + M(x[2]) + ' per ' + unitName[1] + '.'; }),
+          explain: 'The lowest price per ' + unitName[1] + ' is ' + M(list[best][2]) + '.', meta: { k: 'g5mo-unittap' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = nm(), s1 = R.pick([1, 2]), s2 = s1 * R.pick([2, 3]), u1 = R.int(20, 40) * 10, u2 = u1 + R.pick([-1, 1]) * R.int(2, 6) * 10;
+        var bigBetter = u2 < u1, right = 'Small pack: ' + M(s1 * u1) + ' &divide; ' + s1 + ' = ' + M(u1) + ' per kg. Big pack: ' + M(s2 * u2) + ' &divide; ' + s2 + ' = ' + M(u2) + ' per kg. The ' + (bigBetter ? 'big' : 'small') + ' pack costs less per kg.';
+        return K.tf(who, 'the ' + s2 + ' kg bag for ' + M(s2 * u2) + ' is better value than the ' + s1 + ' kg bag for ' + M(s1 * u1) + '.', bigBetter, right,
+          ['Bigger packs are always better value.', 'The cheaper price tag is always better value.', 'You cannot compare different sizes.'],
+          { hint: 'Find the price for 1 kg in each.', meta: { k: 'g5mo-unittf' } });
+      }],
+      [2, 'which', function (lv) {
+        var n = R.int(3, 8), tot = n * R.int(5, 40) * 5;
+        return K.mc(n + ' muffins cost ' + M(tot) + '. Which calculation finds the price of <b>one</b> muffin?', M(tot) + ' &divide; ' + n, [M(tot) + ' &times; ' + n, M(tot) + ' &minus; ' + n, n + ' &divide; ' + M(tot)], {
+          hint: 'Share the total equally among the muffins.', steps: ['One muffin is the total shared into ' + n + ' equal parts.'],
+          explain: M(tot) + ' &divide; ' + n + ' = ' + M(tot / n) + '.', meta: { k: 'g5mo-unitwhich' } });
+      }]
+    ],
+    'mo-gov': [
+      [1, 'match', function (lv) {
+        var set = ['Municipal', 'Provincial', 'Federal'].map(function (lev) { return R.pick(SERVICES.filter(function (s) { return s[1] === lev; })); });
+        return { q: 'Match each service to the level of government mainly responsible for it.', type: 'match', pairs: set,
+          hint: 'Municipal is your city or town. Provincial is Ontario. Federal is all of Canada.', steps: ['Things for your town: municipal. For Ontario: provincial. For all of Canada: federal.'],
+          explain: set.map(function (p) { return p[0] + ': ' + p[1].toLowerCase(); }).join('. ') + '.', meta: { k: 'g5mo-govmatch' } };
+      }],
+      [1, 'pick', function (lv) {
+        var lev = R.pick(['Municipal', 'Provincial', 'Federal']), opts = R.shuffle(SERVICES).slice(0, 5);
+        if (!opts.some(function (s) { return s[1] === lev; })) opts[0] = SERVICES.filter(function (s) { return s[1] === lev; })[0];
+        if (opts.every(function (s) { return s[1] === lev; })) opts[1] = SERVICES.filter(function (s) { return s[1] !== lev; })[0];
+        opts = opts.filter(function (s, i) { return opts.indexOf(s) === i; });
+        return K.pick('Pick every service run mainly by the <b>' + lev.toLowerCase() + '</b> government.', opts, function (s) { return s[1] === lev; }, function (s) { return s[0]; }, {
+          hint: 'Municipal is your city or town. Provincial is Ontario. Federal is all of Canada.', steps: ['Ask: is it for one town, for Ontario, or for all of Canada?'],
+          explain: 'The ' + lev.toLowerCase() + ' services here: ' + opts.filter(function (s) { return s[1] === lev; }).map(function (s) { return s[0].toLowerCase(); }).join(', ') + '.', meta: { k: 'g5mo-govpick', lev: lev } });
+      }],
+      [1, 'mistake', function (lv) {
+        var s = R.pick(SERVICES), who = nm(), truth = !R.int(0, 2), said = truth ? s[1] : R.pick(['Municipal', 'Provincial', 'Federal'].filter(function (l) { return l !== s[1]; }));
+        var right = s[0] + ': the ' + s[1].toLowerCase() + ' government is mainly responsible.';
+        return K.tf(who, 'the <b>' + said.toLowerCase() + '</b> government is mainly responsible for ' + s[0].charAt(0).toLowerCase() + s[0].slice(1) + '.', truth, right,
+          ['The federal government runs everything.', 'Your town runs everything in it.', 'No government pays for services.'],
+          { hint: 'Is it for one town, for Ontario, or for all of Canada?', meta: { k: 'g5mo-govtf', service: s[0], said: said } });
+      }]
+    ]
+  };
+  K.shapes('money', SHAPES);
 })();

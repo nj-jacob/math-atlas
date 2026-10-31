@@ -506,4 +506,222 @@
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  function mth(x) { return '<span class="math">' + x + '</span>'; }
+  /* k different whole numbers from make() */
+  function some(k, make) { var out = [], t = 0; while (out.length < k && t++ < 80) { var x = make(); if (out.indexOf(x) < 0) out.push(x); } return out; }
+  function sym(op) { return op === '+' ? '+' : '&minus;'; }
+  var SHAPES = {
+    'de-read': [
+      [1, 'tap', function (lv) {
+        var n = R.int(12, 89);
+        if (n % 10 === Math.floor(n / 10) || n % 10 === 0) n = 37;
+        var set = R.shuffle([n, (n % 10) * 10 + Math.floor(n / 10), n + 10 > 99 ? n - 10 : n + 10]);
+        return { q: 'Tap the grid that shows <b>' + f2(n) + '</b>.', type: 'tap', tiles: set.map(function (v) { return tgrid(v, 9); }), answer: set.indexOf(n), answerText: 'the grid with ' + n + ' squares shaded',
+          hint: f2(n) + ' is ' + Math.floor(n / 10) + ' tenths and ' + n % 10 + ' hundredths. Look for ' + Math.floor(n / 10) + ' full rows.', steps: ['Each full row is 0.1. Each single square is 0.01.', 'Find the grid with ' + Math.floor(n / 10) + ' full rows and ' + n % 10 + ' more squares.'],
+          explain: f2(n) + ' is ' + n + ' squares out of 100.', meta: { k: 'g5de-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var set = some(3, function () { return lv === 1 ? R.int(1, 9) * 10 + R.int(1, 9) : R.int(1, 99); });
+        return { q: 'Match each fraction to its decimal.', type: 'match', pairs: set.map(function (h) { return [h + '/100', f2(h)]; }),
+          hint: 'Hundredths fill two places after the point.', steps: ['The last digit goes in the hundredths place.', 'If there are fewer than 10 hundredths, the tenths place gets a 0.'],
+          explain: set.map(function (h) { return h + '/100 = ' + f2(h); }).join('. ') + '.', meta: { k: 'g5de-match' } };
+      }],
+      [1, 'fill', function (lv) {
+        var w = lv === 1 ? 0 : R.int(1, 9), tn = R.int(lv === 1 ? 1 : 0, 9), hu = R.int(1, 9), c = w * 100 + tn * 10 + hu;
+        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(f2(c)) + ' = ' + (w ? w + ' ones, ' : '') + '[[]] tenths and [[]] hundredths', answers: [tn, hu],
+          fig: dchart(c), hint: 'The first digit after the point is tenths. The second is hundredths.', steps: ['After the point: ' + tn + ' is in the tenths place.', hu + ' is in the hundredths place.'],
+          explain: f2(c) + ' has ' + tn + ' tenths and ' + hu + ' hundredths.', meta: { k: 'g5de-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var h = R.int(1, 9), who = nm(), truth = !R.int(0, 2), said = truth ? f2(h) : t(h * 10);
+        var right = h + '/100 is ' + h + ' hundredths. Hundredths are two places after the point, so it is ' + f2(h) + '.';
+        return K.tf(who, mth(h + '/100 = <b>' + said + '</b>') + '.', truth, right,
+          ['The digit always goes right after the point.', 'There are no tenths, so you can leave that place out.', 'Hundredths are bigger than tenths.'],
+          { fig: tgrid(h, 16), hint: 'How many places after the point do hundredths need?', meta: { k: 'g5de-tf' } });
+      }]
+    ],
+    'de-line': [
+      [1, 'line', function (lv) {
+        var w = lv === 1 ? 0 : R.int(1, 8), c, min, max, tick;
+        if (lv < 3) { c = w * 100 + R.int(1, 9) * 10; min = w; max = w + 1; tick = 0.1; }
+        else { var lo = w * 100 + R.int(1, 8) * 10; c = lo + R.pick([2, 3, 4, 6, 7, 8]); min = A.clean(lo / 100); max = A.clean((lo + 10) / 100); tick = 0.01; }
+        return { q: 'Put <b>' + t(c) + '</b> on the number line.', type: 'line', min: min, max: max, tick: tick, every: lv < 3 ? 0.5 : 0.05, snap: tick, answer: A.clean(c / 100), tol: 0, place: t(c), hideValue: true,
+          hint: 'Each small jump is ' + tick + '. Count jumps from ' + min + '.', steps: ['The line goes from ' + min + ' to ' + max + ' in jumps of ' + tick + '.', 'Count ' + Math.round((c / 100 - min) / tick) + ' jumps from ' + min + '.'],
+          explain: t(c) + ' is ' + Math.round((c / 100 - min) / tick) + ' jumps past ' + min + '.', meta: { k: 'g5de-line' } };
+      }],
+      [1, 'match', function (lv) {
+        var w = lv === 1 ? 0 : R.int(1, 8), set = some(3, function () { return w * 100 + R.int(1, 9) * 10; });
+        var fig = function (c) { return D.fline(1, 10, [{ v: (c - w * 100) / 100 }], 'A point on a number line from ' + w + ' to ' + (w + 1), 220).replace(/>(\d)<\/text>/g, function (m, d) { return '>' + (w + +d) + '</text>'; }); };
+        return { q: 'Match each yellow point to its decimal.', type: 'match', pairs: set.map(function (c) { return [fig(c), t(c)]; }),
+          hint: 'Each line is cut into 10 jumps of 0.1.', steps: ['Count the jumps from ' + w + ' to each point.', 'Each jump adds 0.1.'],
+          explain: 'The points are at ' + set.map(t).join(', ') + '.', meta: { k: 'g5de-linematch', vals: set.map(function (c) { return c / 100; }) } };
+      }],
+      [2, 'mistake', function (lv) {
+        var w = R.int(1, 8), c = w * 100 + R.int(2, 8) * 10, who = nm(), truth = !R.int(0, 2), said = truth ? c : c + 10;
+        var right = 'Count jumps, not marks. The point is ' + (c - w * 100) / 10 + ' jumps of 0.1 past ' + w + ', so it is at ' + t(c) + '.';
+        return K.tf(who, 'the yellow point is at <b>' + t(said) + '</b>.', truth, right,
+          ['Count every mark, including the one at ' + w + '.', 'Each jump is 1.', 'Each jump is 0.01.'],
+          { fig: D.fline(1, 10, [{ v: (c - w * 100) / 100 }], 'Number line from ' + w + ' to ' + (w + 1) + ' in tenths').replace(/>(\d)<\/text>/g, function (m, d) { return '>' + (w + +d) + '</text>'; }),
+            hint: 'Start at ' + w + ' and count the jumps.', meta: { k: 'g5de-linetf', c: c, said: said } });
+      }]
+    ],
+    'de-compare': [
+      [1, 'order', function (lv) {
+        var base = lv === 1 ? 0 : R.int(1, 5) * 100, set = some(4, function () { return base + (R.int(0, 1) ? R.int(1, 9) * 10 : R.int(11, 99)); }).sort(function (a, b) { return a - b; });
+        return { q: 'Put these decimals in order from <b>least to greatest</b>.', type: 'order', items: set.map(t), first: 'least', last: 'greatest',
+          hint: 'Write them all with two decimal places first.', steps: ['With two places: ' + set.map(f2).join(', ') + '.', 'Now compare tenths, then hundredths.'],
+          explain: 'From least to greatest: ' + set.map(t).join(', ') + '.', meta: { k: 'g5de-order' } };
+      }],
+      [1, 'pick', function (lv) {
+        var x = lv === 1 ? R.int(3, 7) * 10 : R.int(11, 89) + (lv === 3 ? 100 : 0), more = !!R.int(0, 1);
+        var set = some(5, function () { var v = x + R.pick([-1, 1]) * R.pick([1, 3, 5, 10, 15, 20]); return v > 0 && v !== x ? v : x + 2; }).filter(function (v) { return v !== x; });
+        var fits = function (v) { return more ? v > x : v < x; };
+        if (!set.some(fits)) set[0] = more ? x + 4 : x - 4;
+        if (set.every(fits)) set[1] = more ? x - 2 : x + 2;
+        set = set.filter(function (v, i) { return set.indexOf(v) === i; });
+        return K.pick('Pick every decimal ' + (more ? 'greater' : 'less') + ' than <b>' + t(x) + '</b>.', set, fits, t, {
+          hint: 'Write each one with two decimal places, then compare with ' + f2(x) + '.', steps: ['Compare the tenths first.', 'If the tenths match, compare the hundredths.'],
+          explain: (more ? 'Greater' : 'Less') + ' than ' + t(x) + ': ' + set.filter(fits).map(t).join(', ') + '.', meta: { k: 'g5de-pick', x: x / 100, more: more } });
+      }],
+      [1, 'mistake', function (lv) {
+        var tn = R.int(3, 8), b = R.int(1, tn - 1) * 10 + R.int(1, 9), a = tn * 10, who = nm();
+        var right = 'Write both with two places: ' + f2(a) + ' and ' + f2(b) + '. ' + tn + ' tenths is more than ' + Math.floor(b / 10) + ' tenths, so ' + t(a) + ' is greater.';
+        return K.tf(who, mth(t(b) + ' &gt; ' + t(a)) + ' because ' + b + ' is bigger than ' + tn + '.', false, right,
+          ['A decimal with more digits is always bigger.', 'Compare the last digits first.', 'You cannot compare decimals with different lengths.'],
+          { fig: '<div class="pies"><figure>' + tgrid(b, 11) + '<figcaption>' + t(b) + '</figcaption></figure><figure>' + tgrid(a, 11) + '<figcaption>' + t(a) + '</figcaption></figure></div>', hint: 'Look at the grids. Which has more shaded?', meta: { k: 'g5de-cmptf', a: a / 100, b: b / 100 } });
+      }],
+      [2, 'story', function (lv) {
+        var who = A.Q.two(), base = R.int(1, 3) * 100, a = base + R.int(1, 9) * 10, b = base + R.int(11, 99);
+        if (Math.floor(b / 10) === Math.floor(a / 10)) b += 10;
+        return { q: who[0] + ' jumped ' + t(a) + ' m in the long jump. ' + who[1] + ' jumped ' + t(b) + ' m. Who jumped farther?', type: 'mc', options: who, answer: a > b ? 0 : 1,
+          hint: 'Write both with two decimal places.', steps: [t(a) + ' = ' + f2(a) + '.', 'Compare ' + f2(a) + ' and ' + f2(b) + ' from the left.'],
+          explain: (a > b ? who[0] : who[1]) + ' jumped farther: ' + f2(Math.max(a, b)) + ' &gt; ' + f2(Math.min(a, b)) + '.', meta: { k: 'g5de-story', a: a / 100, b: b / 100 } };
+      }]
+    ],
+    'de-round': [
+      [1, 'line', function (lv) {
+        var c = (lv === 1 ? 0 : R.int(1, 9) * 100) + R.int(1, 8) * 10 + R.pick([1, 2, 3, 4, 6, 7, 8, 9]), lo = Math.floor(c / 10) * 10, ans = c % 10 >= 5 ? lo + 10 : lo;
+        return { q: 'Round <span class="math">' + f2(c) + '</span> to the nearest tenth. Mark your answer on the line.', type: 'line', min: A.clean((lo - 10) / 100), max: A.clean((lo + 20) / 100), tick: 0.01, every: 0.1, snap: 0.1, answer: A.clean(ans / 100), tol: 0,
+          fig: zoom(c, false), hint: 'Is ' + f2(c) + ' closer to ' + (lo / 100).toFixed(1) + ' or to ' + ((lo + 10) / 100).toFixed(1) + '?', steps: ['The tenths on either side are ' + (lo / 100).toFixed(1) + ' and ' + ((lo + 10) / 100).toFixed(1) + '.', 'The hundredths digit is ' + c % 10 + (c % 10 >= 5 ? ', so round up.' : ', so round down.')],
+          explain: f2(c) + ' rounds to ' + (ans / 100).toFixed(1) + '.', meta: { k: 'g5de-roundline', c: c / 100 } };
+      }],
+      [1, 'pick', function (lv) {
+        var T = (lv === 1 ? 0 : R.int(1, 9) * 100) + R.int(2, 8) * 10, set = some(5, function () { return T + R.int(-9, 9); });
+        var fits = function (v) { return v >= T - 5 && v < T + 5; };
+        if (!set.some(fits)) set[0] = T + 2;
+        if (set.every(fits)) set[1] = T + 7;
+        set = set.filter(function (v, i) { return set.indexOf(v) === i; });
+        return K.pick('Pick every decimal that rounds to <b>' + (T / 100).toFixed(1) + '</b>.', set, fits, f2, {
+          hint: 'It rounds to ' + (T / 100).toFixed(1) + ' if it is from ' + f2(T - 5) + ' up to just under ' + f2(T + 5) + '.', steps: ['Halfway points are ' + f2(T - 5) + ' and ' + f2(T + 5) + '.', 'Pick the numbers in between (' + f2(T - 5) + ' rounds up, so it counts).'],
+          explain: 'These round to ' + (T / 100).toFixed(1) + ': ' + set.filter(fits).map(f2).join(', ') + '.', meta: { k: 'g5de-roundpick', T: T / 100 } });
+      }],
+      [1, 'mistake', function (lv) {
+        var c = (lv === 1 ? 0 : R.int(1, 9) * 100) + R.int(1, 8) * 10 + R.int(6, 9), lo = Math.floor(c / 10) * 10, who = nm(), truth = !R.int(0, 2), said = truth ? lo + 10 : lo;
+        var right = 'The hundredths digit is ' + c % 10 + ', which is 5 or more, so ' + f2(c) + ' rounds up to ' + ((lo + 10) / 100).toFixed(1) + '.';
+        return K.tf(who, mth(f2(c)) + ' rounded to the nearest tenth is <b>' + (said / 100).toFixed(1) + '</b>.', truth, right,
+          ['To round, just drop the last digit.', 'Always round down to the tenth before.', 'Look at the tenths digit to decide.'],
+          { fig: zoom(c, false), hint: 'Look at the hundredths digit.', meta: { k: 'g5de-roundtf', c: c / 100, said: said / 100 } });
+      }],
+      [2, 'story', function (lv) {
+        var c = R.int(1, 3) * 100 + R.int(1, 8) * 10 + R.pick([1, 2, 3, 4, 6, 7, 8, 9]), ctx = R.pick([['A water bottle holds', 'L'], ['A puppy has a mass of', 'kg'], ['A ribbon is', 'm long']]);
+        return { q: ctx[0] + ' ' + f2(c) + ' ' + ctx[1] + '. Round this to the nearest tenth.', type: 'num', answer: A.clean((c % 10 >= 5 ? Math.floor(c / 10) * 10 + 10 : Math.floor(c / 10) * 10) / 100),
+          hint: 'Look at the hundredths digit. 5 or more rounds up.', steps: ['The hundredths digit is ' + c % 10 + '.', c % 10 >= 5 ? 'Round up to the next tenth.' : 'Keep the same tenth.'],
+          explain: f2(c) + ' rounds to ' + ((c % 10 >= 5 ? Math.floor(c / 10) * 10 + 10 : Math.floor(c / 10) * 10) / 100).toFixed(1) + '.', meta: { k: 'g5de-roundstory', c: c / 100 } };
+      }]
+    ],
+    'de-fdp': [
+      [1, 'match', function (lv) {
+        var pool = lv === 1 ? [[1, 2], [1, 4], [3, 4], [1, 10], [3, 10], [7, 10]] : [[1, 5], [2, 5], [3, 5], [1, 4], [3, 4], [1, 20], [3, 20], [9, 25]], pct = lv > 1 && !R.int(0, 1);
+        var set = R.shuffle(pool).slice(0, 3);
+        return { q: 'Match each fraction to its ' + (pct ? 'percent' : 'decimal') + '.', type: 'match', pairs: set.map(function (p) { var h = p[0] * 100 / p[1]; return [p[0] + '/' + p[1], pct ? h + '%' : t(h)]; }),
+          hint: 'Make each fraction out of 100 first.', steps: ['Multiply the top and bottom so the bottom is 100.', 'Out of 100 is hundredths, which is also percent.'],
+          explain: set.map(function (p) { var h = p[0] * 100 / p[1]; return p[0] + '/' + p[1] + ' = ' + h + '/100 = ' + (pct ? h + '%' : t(h)); }).join('. ') + '.', meta: { k: 'g5de-fdpmatch' } };
+      }],
+      [1, 'tap', function (lv) {
+        var h = R.pick(lv === 1 ? [10, 20, 25, 50, 75] : [15, 35, 40, 45, 60, 65, 80]), set = R.shuffle([h, h > 50 ? h - 20 : h + 20, h % 10 ? h + 5 : h + 10]);
+        return { q: 'Tap the grid that shows <b>' + h + '%</b>.', type: 'tap', tiles: set.map(function (v) { return tgrid(v, 9); }), answer: set.indexOf(h), answerText: 'the grid with ' + h + ' squares shaded',
+          hint: 'Percent means out of 100. Find ' + h + ' shaded squares.', steps: [h + '% = ' + h + ' out of 100 squares.', 'Each full row is 10 squares. Look for ' + Math.floor(h / 10) + ' rows' + (h % 10 ? ' and ' + h % 10 + ' more.' : '.')],
+          explain: h + '% is ' + h + ' of the 100 squares.', meta: { k: 'g5de-fdptap' } };
+      }],
+      [1, 'fill', function (lv) {
+        var p = R.pick(lv === 1 ? [[1, 2], [1, 4], [3, 4], [1, 10], [3, 10], [1, 5]] : [[2, 5], [3, 5], [4, 5], [3, 20], [7, 20], [6, 25], [11, 50]]), k = 100 / p[1], h = p[0] * k;
+        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(p[0] + '/' + p[1] + ' = [[]]/100 = [[]]%'), answers: [h, h],
+          hint: 'What do you multiply ' + p[1] + ' by to get 100?', steps: [p[1] + ' &times; ' + k + ' = 100. Multiply the top by ' + k + ' too: ' + h + '.', h + '/100 = ' + h + '%.'],
+          explain: p[0] + '/' + p[1] + ' = ' + h + '/100 = ' + h + '%.', meta: { k: 'g5de-fdpfill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var p = R.pick([[1, 4], [1, 5], [3, 4], [1, 2], [2, 5]]), h = p[0] * 100 / p[1], who = nm(), truth = !R.int(0, 2), said = truth ? t(h) : '0.' + p[1];
+        var right = p[0] + '/' + p[1] + ' = ' + h + '/100, which is ' + t(h) + '.';
+        return K.tf(who, mth(p[0] + '/' + p[1] + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['The bottom number becomes the decimal.', 'Put the top and bottom after the point.', 'Fractions and decimals cannot be equal.'],
+          { hint: 'Make the fraction out of 100 first.', meta: { k: 'g5de-fdptf' } });
+      }]
+    ],
+    'de-addsub': [
+      [1, 'fill', function (lv) {
+        var a = lv === 1 ? R.int(11, 89) * 10 : R.int(101, 899), b = lv === 1 ? R.int(11, 89) * 10 : R.int(11, 99) * (lv === 3 ? 10 : 1), op = lv === 1 ? '+' : R.pick(['+', '-']);
+        if (op === '-' && b > a) { var x = a; a = b; b = x; }
+        var r = op === '+' ? a + b : a - b;
+        return { q: 'Fill in the blank. Line up the decimal points.', type: 'fill', fill: mth(t(a) + ' ' + sym(op) + ' ' + t(b) + ' = [[]]'), answers: [A.clean(r / 100)],
+          hint: 'Write both with two decimal places first.', steps: ['With two places: ' + f2(a) + ' and ' + f2(b) + '.', (op === '+' ? 'Add' : 'Subtract') + ' like whole numbers, keeping the point in line.<br>' + cols(a, b, r, op)],
+          explain: t(a) + ' ' + sym(op) + ' ' + t(b) + ' = ' + t(r) + '.', meta: { k: 'g5de-addfill' } };
+      }],
+      [1, 'story', function (lv) {
+        var who = nm(), a = R.int(lv === 1 ? 2 : 5, 9) * 100 + R.int(1, 9) * (lv === 1 ? 10 : 5), b = R.int(1, Math.floor(a / 100) - 1) * 100 + R.int(1, 9) * 5, buy = !R.int(0, 1);
+        var q = buy ? who + ' has ' + A.money(a) + '. A snack costs ' + A.money(b) + '. How much money is left?' : who + ' has ' + A.money(a) + ' and earns ' + A.money(b) + ' for raking leaves. How much does ' + who + ' have now?';
+        var r = buy ? a - b : a + b;
+        return { q: q + ' Answer in dollars.', type: 'num', answer: A.clean(r / 100),
+          hint: buy ? 'Spending takes money away. Subtract.' : 'Earning adds money. Add.', steps: [(buy ? A.money(a) + ' &minus; ' + A.money(b) : A.money(a) + ' + ' + A.money(b)) + '.', 'Line up the points: ' + A.money(r) + '.'],
+          explain: who + ' has ' + A.money(r) + (buy ? ' left.' : ' now.'), meta: { k: 'g5de-addstory', a: a, b: b, buy: buy } };
+      }],
+      [1, 'which', function (lv) {
+        var who = nm(), a = R.int(20, 60) / 10, b = R.int(5, 15) / 10, sub = !R.int(0, 1);
+        var q = sub ? who + ' had ' + a + ' m of string and used ' + b + ' m. How much is left?' : who + ' ran ' + a + ' km on Monday and ' + b + ' km on Tuesday. How far in all?';
+        var right = sub ? a + ' &minus; ' + b : a + ' + ' + b;
+        return K.mc('Which way solves this? ' + q, right, [sub ? a + ' + ' + b : a + ' &minus; ' + b, a + ' &times; ' + b], {
+          hint: sub ? 'Some is used up. Which operation is that?' : 'Two amounts go together. Which operation is that?', steps: [sub ? '"Used" and "left" mean take away.' : '"In all" means put together.', 'So the number sentence is ' + right + '.'],
+          explain: right + ' = ' + A.clean(sub ? a - b : a + b) + '.', meta: { k: 'g5de-which', sub: sub } });
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(1, 9) * 10 + R.int(1, 9) * 100, b = R.int(101, 899), who = nm(), truth = !R.int(0, 2);
+        if (b % 10 === 0) b++;
+        var wrong = A.clean((a / 10 + b) / 100), said = truth ? A.clean((a + b) / 100) : wrong;
+        var right = 'Line up the points: ' + f2(a) + ' + ' + f2(b) + ' = ' + f2(a + b) + '.';
+        return K.tf(who, mth(t(a) + ' + ' + f2(b) + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['Line up the last digits on the right.', 'Add the digits after the point as whole numbers.', 'Drop the points and add.'],
+          { hint: 'Write ' + t(a) + ' with two decimal places first.', meta: { k: 'g5de-addtf', said: said } });
+      }]
+    ],
+    'de-mental': [
+      [1, 'fill', function (lv) {
+        var n = lv === 1 ? R.int(2, 99) * 10 : R.int(11, 999);
+        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(n + ' &times; 0.1 = [[]]') + '<br>' + mth(n + ' &times; 0.01 = [[]]'), answers: [A.clean(n / 10), A.clean(n / 100)],
+          hint: '&times; 0.1 is the same as &divide; 10. &times; 0.01 is the same as &divide; 100.', steps: [n + ' &divide; 10 = ' + A.clean(n / 10) + '.', n + ' &divide; 100 = ' + A.clean(n / 100) + '.'],
+          explain: 'Each digit moves 1 place right for 0.1, and 2 places right for 0.01.', meta: { k: 'g5de-mfill', n: n } };
+      }],
+      [1, 'match', function (lv) {
+        var n = R.int(11, 99) * (lv === 1 ? 10 : 1), rows = [[n + ' &times; 0.1', n / 10], [n + ' &times; 0.01', n / 100], [n + ' &times; 10', n * 10]];
+        return { q: 'Match each one to its answer.', type: 'match', pairs: rows.map(function (r) { return [r[0], String(A.clean(r[1]))]; }),
+          hint: '&times; 0.1 makes it 10 times smaller. &times; 10 makes it 10 times bigger.', steps: ['&times; 0.1: digits move 1 place right.', '&times; 0.01: digits move 2 places right.', '&times; 10: digits move 1 place left.'],
+          explain: rows.map(function (r) { return r[0] + ' = ' + A.clean(r[1]); }).join('. ') + '.', meta: { k: 'g5de-mmatch' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var n = R.int(11, 99), who = nm(), truth = !R.int(0, 2), said = truth ? A.clean(n / 10) : n * 10;
+        var right = '&times; 0.1 means one tenth of the number. One tenth of ' + n + ' is ' + A.clean(n / 10) + '.';
+        return K.tf(who, mth(n + ' &times; 0.1 = <b>' + said + '</b>') + '.', truth, right,
+          ['Multiplying always makes a number bigger.', 'Just add a 0 to the end.', '&times; 0.1 is the same as &times; 10.'],
+          { hint: 'Is 0.1 more or less than 1? So is the answer more or less than ' + n + '?', meta: { k: 'g5de-mtf', n: n, said: said } });
+      }],
+      [2, 'story', function (lv) {
+        var n = R.int(12, 95), c = R.pick([['A sticker is 0.1 m long. How long is a row of', 'stickers, in metres?', 0.1], ['A paper clip has a mass of 0.01 kg. What is the mass of', 'paper clips, in kilograms?', 0.01], ['One sheet of paper is 0.01 cm thick. How thick is a stack of', 'sheets, in centimetres?', 0.01]]);
+        return { q: c[0] + ' ' + n + ' ' + c[1], type: 'num', answer: A.clean(n * c[2]),
+          hint: '&times; ' + c[2] + ' is the same as &divide; ' + (c[2] === 0.1 ? 10 : 100) + '.', steps: [n + ' &times; ' + c[2] + ' = ' + n + ' &divide; ' + (c[2] === 0.1 ? 10 : 100) + '.', 'That is ' + A.clean(n * c[2]) + '.'],
+          explain: n + ' &times; ' + c[2] + ' = ' + A.clean(n * c[2]) + '.', meta: { k: 'g5de-mstory', n: n, k2: c[2] } };
+      }]
+    ]
+  };
+  K.shapes('decimals', SHAPES);
 })();

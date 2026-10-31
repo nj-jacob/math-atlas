@@ -340,4 +340,120 @@
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  function mth(x) { return '<span class="math">' + x + '</span>'; }
+  function pair(lv) { var a = R.int(1, lv === 1 ? 5 : 7), b; do { b = R.int(1, lv === 1 ? 5 : 7); } while (b === a); return [a, b]; }
+  var SHAPES = {
+    'ra-write': [
+      [1, 'tap', function (lv) {
+        var p = pair(lv), a = p[0], b = p[1], set = R.shuffle([[a, b], [b, a], [a, b + 1]]);
+        return { q: 'Tap the picture where the ratio of circles to squares is <b>' + a + ':' + b + '</b>.', type: 'tap', tiles: set.map(function (x) { return counters(x[0], x[1], 8); }), answer: set.map(String).indexOf(String([a, b])), answerText: a + ' circles and ' + b + ' squares',
+          hint: 'The first number is circles. The second number is squares.', steps: ['Count the circles in each picture. You need ' + a + '.', 'Then count the squares. You need ' + b + '.'],
+          explain: a + ':' + b + ' means ' + a + ' circles for ' + b + ' squares.', meta: { k: 'g5ra-tap' } };
+      }],
+      [1, 'fill', function (lv) {
+        var p = pair(lv), a = p[0], b = p[1], rev = lv > 1 && !R.int(0, 1);
+        return { q: 'Write the ratio of <b>' + (rev ? 'squares to circles' : 'circles to squares') + '</b>.', type: 'fill', fig: counters(a, b, 8), fill: (rev ? 'squares : circles' : 'circles : squares') + ' = [[]] : [[]]', answers: rev ? [b, a] : [a, b],
+          hint: 'Write the numbers in the same order as the words.', steps: ['There are ' + a + ' circles and ' + b + ' squares.', 'The words say ' + (rev ? 'squares first' : 'circles first') + '.'],
+          explain: 'The ratio is ' + (rev ? b + ':' + a : a + ':' + b) + '.', meta: { k: 'g5ra-fill', rev: rev } };
+      }],
+      [1, 'story', function (lv) {
+        var p = pair(lv), a = p[0] + 10, b = p[1] + 10, c = R.pick([['girls', 'boys', 'in a class'], ['maple trees', 'pine trees', 'in a park'], ['red apples', 'green apples', 'in a basket']]), rev = !R.int(0, 1);
+        return { q: 'There are ' + a + ' ' + c[0] + ' and ' + b + ' ' + c[1] + ' ' + c[2] + '. Write the ratio of <b>' + (rev ? c[1] + ' to ' + c[0] : c[0] + ' to ' + c[1]) + '</b>.', type: 'fill', fill: mth('[[]] : [[]]'), answers: rev ? [b, a] : [a, b],
+          hint: 'Which comes first in the words?', steps: ['The first word is ' + (rev ? c[1] : c[0]) + ', so that number goes first.'],
+          explain: 'The ratio is ' + (rev ? b + ':' + a : a + ':' + b) + '.', meta: { k: 'g5ra-story', rev: rev } };
+      }],
+      [2, 'mistake', function (lv) {
+        var p = pair(lv), a = p[0], b = p[1], who = nm(), truth = !R.int(0, 2);
+        var said = truth ? a + ':' + b : R.pick([b + ':' + a, a + ':' + (a + b)]);
+        var right = 'There are ' + a + ' circles and ' + b + ' squares. Circles come first, so circles to squares is ' + a + ':' + b + '.';
+        return K.tf(who, 'the ratio of circles to squares is <b>' + said + '</b>.', truth, right,
+          ['The bigger number always goes first.', 'The second number is all the shapes.', 'Order does not matter in a ratio.'],
+          { fig: counters(a, b), hint: 'Count each kind. Which kind does the question name first?', meta: { k: 'g5ra-tf', said: said } });
+      }]
+    ],
+    'ra-equiv': [
+      [1, 'pick', function (lv) {
+        var p = pair(lv), a = p[0], b = p[1], opts = [];
+        [2, 3, 4].forEach(function (k) { opts.push((a * k) + ':' + (b * k)); });
+        opts = R.shuffle(opts).slice(0, R.int(1, 3));
+        [(a + 2) + ':' + (b + 2), (a * 2) + ':' + (b * 3), b + ':' + a, (a + 1) + ':' + (b * 2)].forEach(function (x) { var t = x.split(':'); if (opts.length < 5 && +t[0] * b !== a * +t[1] && opts.indexOf(x) < 0) opts.push(x); });
+        opts = R.shuffle(opts);
+        return K.pick('Pick every ratio equivalent to <b>' + a + ':' + b + '</b>.', opts, function (x) { var t = x.split(':'); return +t[0] * b === a * +t[1]; }, String, {
+          hint: 'Both parts must be multiplied by the same number.', steps: ['For each one, divide the first part by ' + a + ' and the second by ' + b + '.', 'If you get the same number both times, it is equivalent.'],
+          explain: 'Equivalent ratios multiply ' + a + ' and ' + b + ' by the same number.', meta: { k: 'g5ra-pick' } });
+      }],
+      [1, 'match', function (lv) {
+        var set = [], seen = {}, k = lv === 1 ? 2 : R.int(2, 5);
+        while (set.length < 3) { var p = pair(lv); if (!seen[p[0] / p[1]]) { seen[p[0] / p[1]] = 1; set.push(p); } }
+        return { q: 'Match each ratio to an equivalent ratio.', type: 'match', pairs: set.map(function (p) { return [p[0] + ':' + p[1], (p[0] * k) + ':' + (p[1] * k)]; }),
+          hint: 'Find the number both parts were multiplied by.', steps: ['Every pair here uses the same multiplier: ' + k + '.'],
+          explain: set.map(function (p) { return p[0] + ':' + p[1] + ' = ' + p[0] * k + ':' + p[1] * k; }).join('. ') + '.', meta: { k: 'g5ra-match' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var p = pair(lv), a = p[0], b = p[1], k = R.int(2, 4), who = nm(), truth = !R.int(0, 2);
+        var said = truth ? (a * k) + ':' + (b * k) : (a + k) + ':' + (b + k);
+        var right = 'Equivalent ratios multiply both parts by the same number: ' + a + ':' + b + ' = ' + a * k + ':' + b * k + '.';
+        return K.tf(who, mth(a + ':' + b + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['Adding the same number to both parts keeps the ratio.', 'Only the first part changes.', 'A bigger ratio is never equivalent.'],
+          { hint: 'Was each part multiplied by the same number?', meta: { k: 'g5ra-tf2' } });
+      }]
+    ],
+    'ra-rate': [
+      [1, 'fill', function (lv) {
+        var v = R.pick([5, 10, 12, 15, 20, 25]), h = R.int(2, 4), h2 = h + R.int(1, 3), c = R.pick([['km', 'hour'], ['L', 'minute'], ['pages', 'day']]);
+        return { q: 'The rate is <b>' + v + ' ' + c[0] + ' per ' + c[1] + '</b>. Fill in the table.', type: 'fill', fill: '1 ' + c[1] + ': ' + v + ' ' + c[0] + '<br>' + h + ' ' + c[1] + 's: [[]] ' + c[0] + '<br>' + h2 + ' ' + c[1] + 's: [[]] ' + c[0], answers: [v * h, v * h2],
+          fig: lv === 1 ? dline(v, 1, h2, c[0], c[1] + 's', h2) : '', hint: 'Each ' + c[1] + ' adds ' + v + ' more.', steps: [h + ' &times; ' + v + ' = ' + v * h + '.', h2 + ' &times; ' + v + ' = ' + v * h2 + '.'],
+          explain: 'At ' + v + ' ' + c[0] + ' per ' + c[1] + ': ' + v * h + ' and ' + v * h2 + ' ' + c[0] + '.', meta: { k: 'g5ra-ratefill', v: v, h: h, h2: h2 } };
+      }],
+      [1, 'line', function (lv) {
+        var v = R.pick(lv === 1 ? [10, 20, 25, 50] : [12, 15, 30, 40, 60]), h = R.int(2, 6), who = nm();
+        return { q: who + ' cycles at a steady <b>' + v + ' km per hour</b>. Mark how far ' + who + ' goes in <b>' + h + ' hours</b>.', type: 'line', min: 0, max: v * 8, tick: v, every: v * 2, snap: v, answer: v * h, tol: 0, unit: 'km',
+          hint: 'Each hour adds ' + v + ' km. Jump ' + h + ' times.', steps: ['1 hour: ' + v + ' km.', h + ' hours: ' + h + ' &times; ' + v + ' = ' + v * h + ' km.'],
+          explain: h + ' &times; ' + v + ' = ' + v * h + ' km.', meta: { k: 'g5ra-rateline', v: v, h: h } };
+      }],
+      [1, 'which', function (lv) {
+        var v = R.pick([12, 15, 20, 25, 40]), h = R.int(2, 6), unit = !R.int(0, 1);
+        var q = unit ? 'A car goes ' + v * h + ' km in ' + h + ' hours. How far does it go in 1 hour?' : 'A car goes ' + v + ' km each hour. How far does it go in ' + h + ' hours?';
+        var right = unit ? (v * h) + ' &divide; ' + h : v + ' &times; ' + h;
+        return K.mc('Which way solves this? ' + q, right, unit ? [(v * h) + ' &times; ' + h, (v * h) + ' &minus; ' + h] : [v + ' &divide; ' + h, v + ' + ' + h], {
+          hint: unit ? 'Find the amount for just 1 hour: share the total.' : 'The same distance each hour, many hours: multiply.', steps: [unit ? 'Split ' + v * h + ' km into ' + h + ' equal hours.' : h + ' groups of ' + v + ' km.', 'So use ' + right + '.'],
+          explain: right + ' = ' + (unit ? v : v * h) + ' km.', meta: { k: 'g5ra-ratewhich', unit: unit } });
+      }],
+      [2, 'story', function (lv) {
+        var who = A.Q.two(), h1 = R.int(2, 3), h2 = R.int(4, 5), v1 = R.pick([10, 12, 15, 20]), v2 = v1 + R.pick([-4, -2, 2, 4]);
+        return { q: who[0] + ' runs ' + v1 * h1 + ' km in ' + h1 + ' hours. ' + who[1] + ' runs ' + v2 * h2 + ' km in ' + h2 + ' hours. Who is faster?', type: 'mc', options: who, answer: v1 > v2 ? 0 : 1,
+          hint: 'Find each rate for 1 hour.', steps: [who[0] + ': ' + v1 * h1 + ' &divide; ' + h1 + ' = ' + v1 + ' km per hour.', who[1] + ': ' + v2 * h2 + ' &divide; ' + h2 + ' = ' + v2 + ' km per hour.'],
+          explain: (v1 > v2 ? who[0] : who[1]) + ' is faster: ' + Math.max(v1, v2) + ' km per hour.', meta: { k: 'g5ra-ratestory' } };
+      }]
+    ],
+    'ra-table': [
+      [1, 'fill', function (lv) {
+        var a = R.int(2, 5), b = R.int(1, 4), k = R.int(2, 3), k2 = k + R.int(1, 2);
+        if (a === b) a++;
+        return { q: 'A recipe uses <b>' + a + ' cups of flour for every ' + b + ' eggs</b>. Fill in the ratio table.', type: 'fill', fill: 'eggs: ' + b + ', ' + b * k + ', ' + b * k2 + '<br>cups of flour: ' + a + ', [[]], [[]]', answers: [a * k, a * k2],
+          hint: 'Whatever you multiply the eggs by, multiply the flour by too.', steps: [b + ' &times; ' + k + ' = ' + b * k + ', so ' + a + ' &times; ' + k + ' = ' + a * k + '.', b + ' &times; ' + k2 + ' = ' + b * k2 + ', so ' + a + ' &times; ' + k2 + ' = ' + a * k2 + '.'],
+          explain: a + ':' + b + ' = ' + a * k + ':' + b * k + ' = ' + a * k2 + ':' + b * k2 + '.', meta: { k: 'g5ra-tablefill', a: a, b: b } };
+      }],
+      [1, 'match', function (lv) {
+        var a = R.int(2, 5), b = R.int(1, 3), ks = R.shuffle([1, 2, 3, 4, 5]).slice(0, 3);
+        if (a === b) a++;
+        return { q: 'Juice mix uses <b>' + a + ' scoops for every ' + b + ' L of water</b>. Match each amount of water to the scoops it needs.', type: 'match', pairs: ks.map(function (k) { return [b * k + ' L of water', a * k + ' scoops']; }),
+          hint: 'How many times bigger is the water? Make the scoops that many times bigger.', steps: ['For each one, divide the water by ' + b + ' to find the multiplier.', 'Multiply ' + a + ' scoops by the same number.'],
+          explain: ks.map(function (k) { return b * k + ' L needs ' + a * k + ' scoops'; }).join('. ') + '.', meta: { k: 'g5ra-tablematch', a: a, b: b } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a = R.int(2, 5), b = R.int(1, 4), k = R.int(2, 3), who = nm(), truth = !R.int(0, 2);
+        if (a === b) a++;
+        var add = b * k - b, said = truth ? a * k : a + add;
+        var right = b + ' eggs became ' + b * k + ' eggs, which is &times; ' + k + '. So the flour is ' + a + ' &times; ' + k + ' = ' + a * k + ' cups.';
+        return K.tf(who, 'a recipe with ' + a + ' cups of flour for ' + b + ' eggs needs <b>' + said + ' cups</b> for ' + b * k + ' eggs.', truth, right,
+          ['The eggs went up by ' + add + ', so add ' + add + ' cups too.', 'The flour stays the same.', 'Double the flour whatever happens.'],
+          { fig: rtab('eggs', 'cups of flour', [[b, a], [b * k, '?']], [[0, 1, '&times; ' + k]]), hint: 'Did the eggs go up by adding or by multiplying?', meta: { k: 'g5ra-tabletf', a: a, b: b, k2: k, said: said } });
+      }]
+    ]
+  };
+  K.shapes('ratios', SHAPES);
 })();

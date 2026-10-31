@@ -395,4 +395,161 @@
       } }
     ]
   });
+
+  /* ---------- more ways to ask each practice skill (docs/QUESTIONS.md); answer checks in tests/verify/grade5.js ---------- */
+  var nm = function () { return A.Q.name(); };
+  function mth(x) { return '<span class="math">' + x + '</span>'; }
+  var SHAPES = {
+    'md-facts': [
+      [1, 'tap', function (lv) {
+        var a = R.int(3, lv === 1 ? 6 : 9), b = R.int(3, lv === 1 ? 7 : 9);
+        var set = R.shuffle([[a, b], [a, b + 1], [a + 1, b]]);
+        return { q: 'Tap the array that shows <b>' + a + ' &times; ' + b + '</b>.', type: 'tap', tiles: set.map(function (x) { return arr(x[0], x[1]); }), answer: set.map(String).indexOf(String([a, b])), answerText: a + ' rows of ' + b,
+          hint: a + ' &times; ' + b + ' means ' + a + ' rows with ' + b + ' in each row.', steps: ['Count the rows in each array. You need ' + a + '.', 'Then check each row has ' + b + '.'],
+          explain: a + ' rows of ' + b + ' make ' + a * b + '.', meta: { k: 'g5md-tap' } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var a = R.int(3, lv === 1 ? 9 : 12), b = R.int(3, lv === 1 ? 9 : 12); if (!seen[a * b]) { seen[a * b] = 1; pairs.push([a + ' &times; ' + b, String(a * b)]); } }
+        return { q: 'Match each fact to its product.', type: 'match', pairs: pairs,
+          hint: 'Start with the fact you are surest of.', steps: ['Use a fact you know nearby, then add or take away one group.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'g5md-match' } };
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.int(3, lv === 1 ? 9 : 12), b = R.int(3, lv === 1 ? 9 : 12), p = a * b;
+        return { q: 'Fill in the fact family.', type: 'fill', fill: mth(a + ' &times; [[]] = ' + p) + '<br>' + mth(p + ' &divide; ' + a + ' = [[]]'), answers: [b, b], fig: lv === 1 ? arr(a, b) : '',
+          hint: 'Division undoes multiplication. ' + a + ' times what is ' + p + '?', steps: [a + ' &times; ' + b + ' = ' + p + '.', 'So ' + p + ' &divide; ' + a + ' = ' + b + '.'],
+          explain: a + ' &times; ' + b + ' = ' + p + ' and ' + p + ' &divide; ' + a + ' = ' + b + '.', meta: { k: 'g5md-fill' } };
+      }],
+      [2, 'mistake', function (lv) {
+        var a = R.int(6, 12), b = R.int(6, 12), p = a * b, who = nm(), truth = !R.int(0, 2), said = truth ? p : p + R.pick([-1, 1]) * R.pick([a, b, 2]);
+        var right = a + ' &times; ' + b + ' = ' + p + '. Check: ' + a + ' &times; ' + (b - 1) + ' = ' + a * (b - 1) + ', plus one more ' + a + ' is ' + p + '.';
+        return K.tf(who, mth(a + ' &times; ' + b + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['Two even numbers always make an odd product.', 'Just add the two numbers and double.', 'Products always end in 0.'],
+          { hint: 'Use a fact you know nearby to check.', meta: { k: 'g5md-tf' } });
+      }]
+    ],
+    'md-mult': [
+      [1, 'fill', function (lv) {
+        var a = R.int(12, 49), b = lv === 1 ? R.int(3, 9) : R.int(11, 29), t = Math.floor(a / 10) * 10, o = a % 10;
+        if (!o) { a++; o = 1; }
+        return { q: 'Use the area model. Fill in the blanks.', type: 'fill', fill: mth(a + ' &times; ' + b + ' = ' + t + ' &times; ' + b + ' + ' + o + ' &times; ' + b) + '<br>' + mth('= [[]] + [[]] = [[]]'), answers: [t * b, o * b, a * b],
+          fig: lv === 1 ? areaModel(a, b, null, 0) : '', hint: 'Multiply the tens part, then the ones part, then add.', steps: [t + ' &times; ' + b + ' = ' + t * b + '.', o + ' &times; ' + b + ' = ' + o * b + '.', t * b + ' + ' + o * b + ' = ' + A.fmt(a * b) + '.'],
+          explain: a + ' &times; ' + b + ' = ' + A.fmt(a * b) + '.', meta: { k: 'g5md-multfill' } };
+      }],
+      [1, 'build', function (lv) {
+        var a = R.int(11, lv === 1 ? 25 : 45), b = R.int(2, lv === 1 ? 4 : 9);
+        if (a * b > 999) b = Math.floor(999 / a);
+        return { q: 'Build <b>' + a + ' &times; ' + b + '</b> with base-ten blocks: make ' + b + ' groups of ' + a + '. Then press Check.', type: 'build', tool: 'base10', answer: a * b,
+          hint: 'Each group is ' + Math.floor(a / 10) + ' rods and ' + a % 10 + ' small cubes. Trade 10 small cubes for a rod when you can.', steps: [b + ' groups of ' + Math.floor(a / 10) + ' tens = ' + b * Math.floor(a / 10) + ' tens. ' + b + ' groups of ' + a % 10 + ' ones = ' + b * (a % 10) + ' ones.', 'Regroup: ' + a * b + '.'],
+          explain: a + ' &times; ' + b + ' = ' + a * b + '.', meta: { k: 'g5md-build' } };
+      }],
+      [1, 'story', function (lv) {
+        var a = R.int(12, 48), b = lv === 1 ? R.int(3, 9) : R.int(12, 36), c = R.pick([['A school orders', 'boxes of pencils. Each box has', 'pencils. How many pencils is that?'], ['A farmer plants', 'rows of corn. Each row has', 'plants. How many plants is that?'], ['A bus makes', 'trips. It carries', 'people each trip. How many people is that?']]);
+        return { q: c[0] + ' ' + b + ' ' + c[1] + ' ' + a + ' ' + c[2], type: 'num', answer: a * b,
+          hint: 'Equal groups: multiply.', steps: ['Estimate: about ' + Math.round(b / 10) * 10 + ' &times; ' + Math.round(a / 10) * 10 + '.', b + ' &times; ' + a + ' = ' + A.fmt(a * b) + '.'],
+          explain: b + ' &times; ' + a + ' = ' + A.fmt(a * b) + '.', meta: { k: 'g5md-multstory' } };
+      }],
+      [2, 'which', function (lv) {
+        var a = R.int(12, 36), b = R.int(12, 25), mul = !R.int(0, 1);
+        var q = mul ? 'A theatre has ' + b + ' rows. Each row has ' + a + ' seats. How many seats are there?' : 'There are ' + a * b + ' chairs. They are set out in ' + b + ' equal rows. How many chairs are in each row?';
+        var right = mul ? b + ' &times; ' + a : A.fmt(a * b) + ' &divide; ' + b;
+        return K.mc('Which way solves this? ' + q, right, mul ? [a + ' + ' + b, a + ' &minus; ' + b] : [A.fmt(a * b) + ' &times; ' + b, A.fmt(a * b) + ' &minus; ' + b], {
+          hint: mul ? 'Equal rows, and you want the total.' : 'You know the total and the number of rows.', steps: [mul ? 'Equal groups to a total: multiply.' : 'Sharing a total into equal rows: divide.', 'So use ' + right + '.'],
+          explain: right + ' = ' + (mul ? A.fmt(a * b) : a) + '.', meta: { k: 'g5md-which', mul: mul } });
+      }]
+    ],
+    'md-div': [
+      [1, 'fill', function (lv) {
+        var d = R.int(11, lv === 1 ? 15 : 25), q = lv === 1 ? R.int(2, 9) * 10 : R.int(11, Math.floor(999 / d)), n = d * q;
+        return { q: 'Fill in the blanks, then check by multiplying.', type: 'fill', fill: mth(n + ' &divide; ' + d + ' = [[]]') + '<br>' + mth('because ' + d + ' &times; [[]] = ' + n), answers: [q, q],
+          fig: lv === 1 ? divModel(n, d) : '', hint: 'How many groups of ' + d + ' make ' + n + '? Start with ' + d + ' &times; 10 = ' + d * 10 + '.', steps: ['Take out chunks of ' + d + ' until nothing is left.', d + ' &times; ' + q + ' = ' + n + '.'],
+          explain: n + ' &divide; ' + d + ' = ' + q + ' because ' + d + ' &times; ' + q + ' = ' + n + '.', meta: { k: 'g5md-divfill' } };
+      }],
+      [1, 'story', function (lv) {
+        var d = R.int(11, lv === 1 ? 15 : 24), q = lv === 1 ? R.int(2, 9) * 10 : R.int(11, Math.floor(999 / d)), n = d * q, c = R.pick([['stickers', 'friends', 'stickers'], ['seeds', 'garden beds', 'seeds'], ['litres of water', 'jugs', 'litres']]);
+        return { q: 'There are ' + n + ' ' + c[0] + '. They are shared equally among ' + d + ' ' + c[1] + '. How many ' + c[2] + ' does each get?', type: 'num', answer: q,
+          hint: 'Sharing equally means dividing: ' + n + ' &divide; ' + d + '.', steps: [n + ' &divide; ' + d + '.', 'Check: ' + d + ' &times; ' + q + ' = ' + n + '.'],
+          explain: 'Each gets ' + q + '.', meta: { k: 'g5md-divstory' } };
+      }],
+      [1, 'which', function (lv) {
+        var d = R.int(11, 20), q = R.int(11, 40), n = d * q, div = !R.int(0, 1);
+        var qq = div ? n + ' muffins are packed in boxes of ' + d + '. How many boxes are filled?' : 'A baker fills ' + q + ' boxes with ' + d + ' muffins each. How many muffins is that?';
+        var right = div ? n + ' &divide; ' + d : q + ' &times; ' + d;
+        return K.mc('Which way solves this? ' + qq, right, div ? [n + ' &times; ' + d, n + ' &minus; ' + d] : [q + ' &divide; ' + d, q + ' + ' + d], {
+          hint: div ? 'You know the total and the size of each box.' : 'You know the number of boxes and how many in each.', steps: [div ? 'How many groups of ' + d + ' are in ' + n + '? That is dividing.' : 'Equal groups to a total is multiplying.', 'So use ' + right + '.'],
+          explain: right + ' = ' + (div ? q : n) + '.', meta: { k: 'g5md-divwhich', div: div } });
+      }],
+      [2, 'mistake', function (lv) {
+        var d = R.int(12, 25), q = R.int(12, Math.floor(999 / d)), n = d * q, who = nm(), truth = !R.int(0, 2), said = truth ? q : q + R.pick([-1, 1, 10]);
+        var right = 'Check by multiplying: ' + d + ' &times; ' + said + ' = ' + d * said + (d * said === n ? ', which matches ' + n + '.' : ', not ' + n + '.');
+        return K.tf(who, mth(n + ' &divide; ' + d + ' = <b>' + said + '</b>') + '.', truth, right,
+          ['Check by adding ' + d + ' and ' + said + '.', 'A quotient is always smaller than the divisor.', 'You cannot check a division.'],
+          { hint: 'Multiply the answer by ' + d + '. Do you get ' + n + '?', meta: { k: 'g5md-divtf', said: said } });
+      }]
+    ],
+    'md-rem': [
+      [1, 'fill', function (lv) {
+        var d = R.int(lv === 1 ? 4 : 12, lv === 1 ? 9 : 25), q = R.int(5, lv === 1 ? 12 : 30), r = R.int(1, d - 1), n = d * q + r;
+        return { q: 'Fill in the blanks.', type: 'fill', fill: mth(n + ' &divide; ' + d + ' = [[]] R [[]]'), answers: [q, r],
+          fig: lv === 1 ? packs(q, r, d, 'down') : '', hint: 'How many full groups of ' + d + '? What is left?', steps: [d + ' &times; ' + q + ' = ' + d * q + '.', n + ' &minus; ' + d * q + ' = ' + r + ' left, and ' + r + ' is less than ' + d + '.'],
+          explain: n + ' &divide; ' + d + ' = ' + q + ' R ' + r + '.', meta: { k: 'g5md-remfill' } };
+      }],
+      [1, 'match', function (lv) {
+        var pairs = [], seen = {};
+        while (pairs.length < 3) { var d = R.int(3, lv === 1 ? 9 : 15), q = R.int(3, 12), r = R.int(1, d - 1), key = q + 'R' + r; if (!seen[key]) { seen[key] = 1; pairs.push([(d * q + r) + ' &divide; ' + d, q + ' R ' + r]); } }
+        return { q: 'Match each division to its answer.', type: 'match', pairs: pairs,
+          hint: 'Find the full groups, then the leftover.', steps: ['The remainder must be less than the divisor.'],
+          explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'g5md-remmatch' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var d = R.int(4, lv === 1 ? 9 : 20), q = R.int(5, 15), r = R.int(1, d - 1), n = d * q + r, who = nm(), up = !R.int(0, 1), truth = !R.int(0, 2);
+        var right = up ? n + ' &divide; ' + d + ' = ' + q + ' R ' + r + '. The ' + r + ' left over still need a van, so ' + (q + 1) + ' vans are needed.' : n + ' &divide; ' + d + ' = ' + q + ' R ' + r + '. The ' + r + ' left over cannot fill a carton, so ' + q + ' cartons are full.';
+        var good = up ? q + 1 : q, said = truth ? good : (up ? q : q + 1);
+        var claim = up ? 'there are ' + n + ' students and each van holds ' + d + ', so <b>' + said + '</b> vans are needed.' : 'there are ' + n + ' eggs and each carton holds ' + d + ', so <b>' + said + '</b> cartons can be filled.';
+        return K.tf(who, claim, truth, right, ['Always drop the remainder.', 'Always add one more for the remainder.', 'The remainder is the answer.'],
+          { hint: 'What happens to the leftovers in this story?', meta: { k: 'g5md-remtf', n: n, d: d, up: up, said: said } });
+      }],
+      [2, 'which', function (lv) {
+        var d = R.int(4, 8), q = R.int(3, 9), r = R.int(1, d - 1), n = d * q + r, kind = R.pick(['up', 'down', 'share']);
+        var q2 = { up: n + ' campers go canoeing. Each canoe holds ' + d + '. How many canoes are needed?', down: n + ' cookies go into bags of ' + d + '. How many full bags are there?', share: n + ' pizzas are shared equally by ' + d + ' friends. How much pizza does each friend get?' }[kind];
+        var opts = { up: 'Round up: one more for the leftovers', down: 'Drop the leftovers', share: 'Share the leftovers as a fraction' };
+        return K.mc(q2 + ' <b>What should you do with the remainder?</b>', opts[kind], [opts.up, opts.down, opts.share].filter(function (o) { return o !== opts[kind]; }), {
+          hint: n + ' &divide; ' + d + ' = ' + q + ' R ' + r + '. Can the leftovers be left out, or be cut up?', steps: [kind === 'up' ? 'Every camper needs a seat, so the leftovers need one more canoe.' : kind === 'down' ? 'A bag with fewer than ' + d + ' is not full, so drop the leftovers.' : 'Pizza can be cut, so share the leftover ' + r + ' as ' + r + '/' + d + ' each.'],
+          explain: kind === 'up' ? (q + 1) + ' canoes.' : kind === 'down' ? q + ' full bags.' : q + ' ' + r + '/' + d + ' pizzas each.', meta: { k: 'g5md-remwhich', kind: kind } });
+      }]
+    ],
+    'md-props': [
+      [1, 'match', function (lv) {
+        var a, b, c, d, e, g;
+        do { a = R.int(3, 9); b = R.int(12, 49); c = R.int(3, 9); d = R.int(2, 9) * 10 + R.int(1, 9); e = R.int(2, 9); g = R.int(2, 9); } while (new Set([a * b, c * d, e * g * 10]).size < 3 || a === c);
+        var t = Math.floor(d / 10) * 10, pairs = [[a + ' &times; ' + b, b + ' &times; ' + a], [c + ' &times; ' + t + ' + ' + c + ' &times; ' + d % 10, c + ' &times; ' + d], [e + ' &times; ' + g + ' &times; 10', e + ' &times; ' + g * 10]];
+        return { q: 'Match each one to an expression with the same value.', type: 'match', pairs: pairs,
+          hint: 'Switching the order or breaking a number apart does not change a product.', steps: ['Order: ' + a + ' &times; ' + b + ' = ' + b + ' &times; ' + a + '.', 'Break apart: ' + c + ' &times; ' + d + ' = ' + c + ' &times; ' + t + ' + ' + c + ' &times; ' + d % 10 + '.', 'Group: ' + g + ' &times; 10 = ' + g * 10 + '.'],
+          explain: 'Each pair has the same value.', meta: { k: 'g5md-propmatch' } };
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.int(3, 9), b = R.int(2, 9) * 10 + R.int(1, 9), t = Math.floor(b / 10) * 10, o = b % 10;
+        return { q: 'Break ' + b + ' apart to multiply. Fill in the blanks.', type: 'fill', fill: mth(a + ' &times; ' + b + ' = ' + a + ' &times; ' + t + ' + ' + a + ' &times; [[]]') + '<br>' + mth('= ' + a * t + ' + [[]] = [[]]'), answers: [o, a * o, a * b],
+          fig: lv === 1 ? areaModel(b, a) : '', hint: b + ' = ' + t + ' + ' + o + '.', steps: [a + ' &times; ' + o + ' = ' + a * o + '.', a * t + ' + ' + a * o + ' = ' + a * b + '.'],
+          explain: a + ' &times; ' + b + ' = ' + a * t + ' + ' + a * o + ' = ' + a * b + '.', meta: { k: 'g5md-propfill' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var a = R.int(3, 9), b = R.int(2, 9) * 10 + R.int(1, 9), t = Math.floor(b / 10) * 10, o = b % 10, who = nm(), truth = !R.int(0, 2);
+        var said = truth ? a + ' &times; ' + t + ' + ' + a + ' &times; ' + o : a + ' &times; ' + t + ' + ' + o;
+        var right = 'Both parts of ' + b + ' must be multiplied by ' + a + ': ' + a + ' &times; ' + t + ' + ' + a + ' &times; ' + o + ' = ' + a * b + '.';
+        return K.tf(who, mth(a + ' &times; ' + b + ' = ' + said) + '.', truth, right,
+          ['Only the tens need to be multiplied.', 'Breaking a number apart changes the answer.', 'Add ' + a + ' to each part.'],
+          { fig: areaModel(b, a), hint: 'Look at the area model. How many parts are there?', meta: { k: 'g5md-proptf' } });
+      }],
+      [2, 'pick', function (lv) {
+        var a = R.int(3, 9), b = R.int(2, 9) * 10 + R.int(1, 9), t = Math.floor(b / 10) * 10, o = b % 10;
+        var opts = R.shuffle([b + ' &times; ' + a, a + ' &times; ' + t + ' + ' + a + ' &times; ' + o, a + ' &times; ' + t + ' + ' + o, a + ' + ' + b, a + ' &times; ' + (b + 1)]);
+        return K.pick('Pick every expression equal to <b>' + a + ' &times; ' + b + '</b>.', opts, function (x) { return x === b + ' &times; ' + a || x === a + ' &times; ' + t + ' + ' + a + ' &times; ' + o; }, String, {
+          hint: 'Work each one out, or use the properties.', steps: ['Switching the order keeps the product.', 'Breaking apart works only if both parts are multiplied.'],
+          explain: a + ' &times; ' + b + ' = ' + a * b + '.', meta: { k: 'g5md-proppick' } });
+      }]
+    ]
+  };
+  K.shapes('multiply-divide', SHAPES);
 })();
