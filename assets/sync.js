@@ -270,6 +270,16 @@ function decorate() {
 }
 window.addEventListener('hashchange', () => setTimeout(decorate, 0));
 
+/* Grown-up view (coaching notes such as common mistakes): on for a parent or tutor, off and hidden for a student. */
+function grownUpView(who) {
+  const role = who && who.role;
+  if (role !== 'student' && role !== 'parent' && role !== 'tutor') return;
+  const on = role !== 'student';
+  try { localStorage.setItem('atlas:adult', on ? '1' : '0'); } catch (e) { /* storage blocked */ }
+  if (window.Atlas && window.Atlas.adult) window.Atlas.adult(on);
+  document.documentElement.classList.toggle('kidview', !on);
+}
+
 function rerender() { window.dispatchEvent(new HashChangeEvent('hashchange')); }
 
 if (configured) {
@@ -277,6 +287,7 @@ if (configured) {
   onAuthStateChanged(auth, async (user) => {
     try {
       me = await whoAmI(user);
+      grownUpView(me);
       if (!me && get(OWNER_KEY)) { clearDeviceProgress(); ts = {}; rerender(); }
       if (me && me.role === 'student' && me.sid) {
         const kid = await getDoc(doc(db, 'students', me.sid)).catch(() => null);

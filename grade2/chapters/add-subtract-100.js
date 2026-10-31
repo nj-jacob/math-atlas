@@ -203,7 +203,7 @@
       { id: 'a2-story', name: 'Story problems to 100', code: 'B2.4', gen: function (lv) {
         var a = R.int(12, 48), b = R.int(11, 45), w = a + b, kind = lv === 1 ? 0 : lv === 2 ? R.int(0, 1) : R.int(1, 2);
         var nm = R.pick(['Ava', 'Ben', 'Raj', 'Lin', 'Zoe', 'Tom']);
-        if (kind === 0) return { q: nm + ' has ' + a + ' blue blocks and ' + b + ' yellow blocks. How many blocks in all?', type: 'num', answer: w, fig: bar(a, b, 'w'), hint: 'You know both parts. Add.', steps: ['Both parts are known: ' + a + ' and ' + b + '.'].concat(addSteps(a, b)), explain: a + ' + ' + b + ' = ' + w + '.' };
+        if (kind === 0) return { q: nm + ' has ' + a + ' green blocks and ' + b + ' red blocks. How many blocks in all?', type: 'num', answer: w, fig: bar(a, b, 'w'), hint: 'You know both parts. Add.', steps: ['Both parts are known: ' + a + ' and ' + b + '.'].concat(addSteps(a, b)), explain: a + ' + ' + b + ' = ' + w + '.' };
         if (kind === 1) return { q: 'There are ' + w + ' children at the park. ' + a + ' go home. How many are still at the park?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: 'You know the whole (' + w + ') and one part (' + a + '). Subtract.', steps: subSteps(w, a), explain: w + ' ' + M + ' ' + a + ' = ' + b + '.' };
         return { q: nm + ' has ' + w + ' stickers. Sam has ' + a + ' stickers. How many <b>more</b> stickers does ' + nm + ' have?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: '"How many more" means find the difference. Subtract ' + w + ' ' + M + ' ' + a + ', or count up from ' + a + '.', steps: subSteps(w, a), explain: w + ' ' + M + ' ' + a + ' = ' + b + '.' };
       } }

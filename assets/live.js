@@ -213,7 +213,7 @@ export async function startViewer(sid, me, kidName, stage, status) {
         m.css.forEach((href) => { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = href; l.dataset.live = '1'; document.head.appendChild(l); });
         links = m.css.slice();
       }
-      document.documentElement.className = m.cls;
+      document.documentElement.className = m.cls + ' adult'; /* the grown-up sees coaching notes; the student's screen does not */
       if (m.theme) document.documentElement.setAttribute('data-theme', m.theme); else document.documentElement.removeAttribute('data-theme');
       stage.innerHTML = m.html;
       say('You are working with <b>' + esc(kidName) + '</b>. Click anything on their page. <span class="t2">' + esc(m.title) + '</span>');

@@ -1,8 +1,6 @@
 (function () {
   var A = Atlas, R = A.R;
   var SC = ['var(--sb)', 'var(--se)', 'var(--sd)', 'var(--sc)', 'var(--sf)'];
-  /* a bar named for a colour (or a fruit) is drawn in that colour */
-  var NAMED = { red: '#e03131', blue: '#1c7ed6', green: '#2f9e44', pink: '#e64980', yellow: '#f2b705', apple: '#e03131', banana: '#f2b705', grapes: '#7048e8', orange: '#e8590c', plum: '#862e9c', kiwi: '#74b816', pear: '#a9c934' };
   function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
@@ -136,7 +134,7 @@
     }
     g.cats.forEach(function (c, i) {
       var h = g.n[i] * H / max, x = L + i * bw + bw * 0.18;
-      s += '<rect x="' + x.toFixed(1) + '" y="' + (B - h).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" style="fill:' + (NAMED[c] || SC[i % 5]) + ';stroke:var(--ink)" stroke-width="2"/>';
+      s += '<rect x="' + x.toFixed(1) + '" y="' + (B - h).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" style="fill:' + SC[i % 5] + ';stroke:var(--ink)" stroke-width="2"/>';
       s += '<text x="' + (L + (i + 0.5) * bw).toFixed(1) + '" y="' + (B + 26) + '" text-anchor="middle" font-size="19" font-weight="700">' + esc(c) + '</text>';
     });
     s += '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + B + '" style="stroke:var(--ink)" stroke-width="2.5"/><line x1="' + L + '" y1="' + B + '" x2="' + (W - 6) + '" y2="' + B + '" style="stroke:var(--ink)" stroke-width="2.5"/>';

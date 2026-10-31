@@ -50,6 +50,7 @@ if (!configured) {
   onAuthStateChanged(auth, async (user) => {
     if (busy) return;
     try { me = await whoAmI(user); } catch (e) { me = user ? { user, role: null } : null; }
+    if (me && me.role) try { localStorage.setItem('atlas:adult', me.role === 'student' ? '0' : '1'); } catch (e) { /* storage blocked */ }
     if (me && me.role === 'student' && safeNext()) { location.replace(safeNext()); return; }
     route();
   });

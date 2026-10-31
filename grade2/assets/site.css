@@ -154,7 +154,6 @@ a.btn{display:inline-block;text-decoration:none}
 .out{margin-top:8px;font-size:1.02rem}
 .fig{overflow-x:auto;margin:10px 0}
 .fig svg{display:block;max-width:100%;height:auto;margin:0 auto}
-.out svg,td svg,th svg,.tbl svg{max-width:100%;height:auto}
 svg text{font-family:var(--body);fill:var(--ink)}
 svg .t2{fill:var(--ink2)}
 svg .tb{font-weight:700}
