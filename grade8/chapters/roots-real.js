@@ -275,4 +275,147 @@ A.yt({ q: 'Which is greater?', opts: [RT + '20', '4.5'], a: 1, back: 'Change ' +
       show();
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  function distinctInts(n, a, b) { var out = []; while (out.length < n) { var v = R.int(a, b); if (out.indexOf(v) < 0) out.push(v); } return out; }
+  function perfect(k) { return Math.round(Math.sqrt(k)) * Math.round(Math.sqrt(k)) === k; }
+  function notSq(a, b) { var k; do { k = R.int(a, b); } while (perfect(k)); return k; }
+  /* real numbers shown in different forms, with their values */
+  function realPool(a) {
+    var k = notSq(a * a + 1, (a + 1) * (a + 1) - 1), d = R.pick([3, 4, 6, 8]), t = R.int(1, 9), top = a * d + R.int(1, d - 1);
+    return [
+      { t: RT + k, v: Math.sqrt(k) },
+      { t: a + '.' + t, v: a + t / 10 },
+      { t: top + '/' + d, v: top / d },
+      { t: RT + (a + 1) * (a + 1), v: a + 1 },
+      { t: String(a), v: a }
+    ];
+  }
+  function distinctPool(pool) { return pool.filter(function (p, i) { return pool.findIndex(function (x) { return Math.abs(x.v - p.v) < 1e-9; }) === i; }); }
+  var SHAPES = {
+    'rr-square': [
+      [1, 'match', function (lv) {
+        var list = distinctInts(3, 2, lv === 1 ? 12 : 20);
+        return { q: 'Match each square to its value.', type: 'match', pairs: list.map(function (x) { return [x + SQ, F(x * x)]; }),
+          hint: 'A square is a number times itself.', steps: ['For example, ' + list[0] + SQ + ' = ' + list[0] + ' &times; ' + list[0] + ' = ' + list[0] * list[0] + '.'], explain: list.map(function (x) { return x + SQ + ' = ' + x * x; }).join(', ') + '.', meta: { k: 'rs-match', list: list } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), x = R.int(3, lv === 1 ? 12 : 20), truth = R.int(0, 1), said = truth ? x * x : 2 * x;
+        return K.tf({ q: who + ' says <span class="math">' + x + SQ + ' = ' + said + '</span>. True or false?', truth: truth,
+          right: x + SQ + ' means ' + x + ' &times; ' + x + ', which is ' + x * x + '.', wrong: [x + SQ + ' means ' + x + ' &times; 2.', x + SQ + ' means ' + x + ' + ' + x + '.'],
+          hint: 'What does the small 2 tell you to do?', meta: { k: 'rs-tf', x: x, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), s = R.int(3, lv === 1 ? 12 : 25), what = R.pick(['vegetable garden', 'patio', 'rink in the backyard', 'quilt']);
+        return { q: who + ' builds a square ' + what + ' with sides of <b>' + s + ' m</b>. What is its area?', type: 'num', answer: s * s, unit: 'm' + SQ,
+          hint: 'The area of a square is side &times; side.', steps: ['Area = ' + s + SQ + ' = ' + s + ' &times; ' + s + '.', 'Area = ' + F(s * s) + ' m' + SQ + '.'], explain: s + SQ + ' = ' + F(s * s) + ' m' + SQ + '.', meta: { k: 'rs-story', s: s } };
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var opts = distinctInts(6, 10, 200);
+          return K.pickAll({ q: 'Pick every <b>perfect square</b>.', opts: opts.map(function (v) { return [String(v), perfect(v)]; }),
+            hint: 'Perfect squares near here: 16, 25, 36, 49, 64, 81, 100, 121, 144, 169, 196.', steps: ['A perfect square is a whole number times itself.'], explain: 'The perfect squares are ' + opts.filter(perfect).map(function (v) { return v + ' = ' + Math.sqrt(v) + SQ; }).join(', ') + '.', meta: { k: 'rs-pick' } });
+        });
+      }]
+    ],
+    'rr-root': [
+      [1, 'tap', function (lv) {
+        var x = R.int(2, lv === 1 ? 12 : 20), sq = x * x, tiles = R.shuffle([x, Math.round(sq / 2), x + 1, x - 1].filter(function (v, i, a) { return a.indexOf(v) === i; }));
+        return { q: 'Tap the square root of <b>' + sq + '</b>.', type: 'tap', tiles: tiles.map(String), answer: tiles.indexOf(x), answerText: String(x),
+          hint: 'Which number times itself makes ' + sq + '?', steps: [x + ' &times; ' + x + ' = ' + sq + '.'], explain: RT + sq + ' = ' + x + '.', meta: { k: 'rt-tap', sq: sq } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), x = R.int(3, lv === 1 ? 12 : 20);
+        return { q: who + ' makes a square photo collage from <b>' + x * x + '</b> photos, in rows and columns of the same size. How many photos are in each row?', type: 'num', answer: x,
+          hint: 'Rows and columns are the same, so the answer times itself is ' + x * x + '.', steps: ['Find ' + RT + (x * x) + '.', x + ' &times; ' + x + ' = ' + x * x + ', so each row has ' + x + ' photos.'], explain: RT + (x * x) + ' = ' + x + '.', meta: { k: 'rt-story', total: x * x } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), x = R.int(3, 12) * 2, sq = x * x, truth = R.int(0, 1), said = truth ? x : sq / 2;
+        return K.tf({ q: who + ' says <span class="math">' + RT + sq + ' = ' + said + '</span>. True or false?', truth: truth,
+          right: x + ' &times; ' + x + ' = ' + sq + ', so ' + RT + sq + ' = ' + x + '.', wrong: ['A square root is half the number.', 'A square root is the number divided by 4.'],
+          hint: 'Check it: does the answer times itself make ' + sq + '?', meta: { k: 'rt-tf', sq: sq, said: said } });
+      }],
+      [2, 'fill', function (lv) {
+        var x = R.int(11, 20);
+        return { q: 'Fill in the blanks.', type: 'fill', fill: '<span class="math">[[]]' + SQ + ' = ' + x * x + '</span>, so <span class="math">' + RT + (x * x) + ' = [[]]</span>', answers: [x, x],
+          hint: 'Which number times itself makes ' + x * x + '? Try numbers ending in ' + (x % 10) + ' or ' + ((10 - x % 10) % 10) + '.', steps: [x + ' &times; ' + x + ' = ' + x * x + '.'], explain: x + SQ + ' = ' + x * x + ' and ' + RT + (x * x) + ' = ' + x + '.', meta: { k: 'rt-fill', sq: x * x } };
+      }]
+    ],
+    'rr-estimate': [
+      [1, 'line', function (lv) {
+        var k = lv === 1 ? notSq(5, 99) : notSq(101, 399), a = Math.floor(Math.sqrt(k)), lo = Math.max(0, a - 2);
+        return { q: 'Place <span class="math">' + RT + k + '</span> on the number line, as close as you can.', type: 'line', min: lo, max: lo + 5, tick: 0.5, every: 1, snap: 0.1, answer: r1(Math.sqrt(k)), tol: 0.3,
+          hint: 'Find the perfect squares on each side of ' + k + ' first.', steps: [a * a + ' &lt; ' + k + ' &lt; ' + (a + 1) * (a + 1) + ', so ' + RT + k + ' is between ' + a + ' and ' + (a + 1) + '.', 'It is about ' + r1(Math.sqrt(k)) + '.'], explain: RT + k + ' &asymp; ' + Math.sqrt(k).toFixed(2) + '. Anywhere within 0.3 counts.', meta: { k: 're-line', n: k } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), k = lv === 1 ? notSq(5, 99) : notSq(101, 399), a = Math.floor(Math.sqrt(k)), truth = R.int(0, 1), lo = truth ? a : R.pick([a - 1, a + 1]);
+        return K.tf({ q: who + ' says <span class="math">' + RT + k + '</span> is between ' + lo + ' and ' + (lo + 1) + '. True or false?', truth: truth,
+          right: a * a + ' &lt; ' + k + ' &lt; ' + (a + 1) * (a + 1) + ', so ' + RT + k + ' is between ' + a + ' and ' + (a + 1) + '.', wrong: ['Halve ' + k + ' to find its square root.', 'Every square root is between 1 and 10.'],
+          hint: 'Square both numbers. Is ' + k + ' between the squares?', meta: { k: 're-tf', n: k, lo: lo } });
+      }],
+      [1, 'tap', function (lv) {
+        var k = notSq(10, lv === 1 ? 99 : 399), a = Math.floor(Math.sqrt(k)), tiles = R.shuffle([a * a, (a + 1) * (a + 1), (a - 1) * (a - 1), (a + 2) * (a + 2)]);
+        return { q: 'To estimate <span class="math">' + RT + k + '</span>, tap the perfect square just <b>below</b> ' + k + '.', type: 'tap', tiles: tiles.map(String), answer: tiles.indexOf(a * a), answerText: String(a * a),
+          hint: 'Which of these is less than ' + k + ', but as close as possible?', steps: [a * a + ' &lt; ' + k + ' &lt; ' + (a + 1) * (a + 1) + '.', 'So ' + RT + k + ' is a little more than ' + a + '.'], explain: a * a + ' = ' + a + SQ + ' is the perfect square just below ' + k + '.', meta: { k: 're-tap', n: k } };
+      }]
+    ],
+    'rr-classify': [
+      [1, 'pick', function (lv) {
+        return K.until(function () {
+          var pool = R.shuffle([[RT + notSq(2, 30), 0], [RT + Math.pow(R.int(2, 9), 2), 1], ['&pi;', 0], [R.int(1, 7) + '/' + R.int(8, 9), 1], ['0.' + R.int(1, 9), 1], [RT + notSq(31, 99), 0], ['&minus;' + R.int(2, 15), 1]]).slice(0, 5);
+          return K.pickAll({ q: 'Pick every <b>irrational</b> number.', opts: pool.map(function (p) { return ['<span class="math">' + p[0] + '</span>', !p[1]]; }),
+            hint: 'Work out any roots first. Irrational numbers never end and never repeat.', steps: ['A root of a perfect square is a whole number, so it is rational.', '&pi; and roots of numbers that are not perfect squares are irrational.'], explain: 'Irrational: ' + pool.filter(function (p) { return !p[1]; }).map(function (p) { return p[0]; }).join(', ') + '.', meta: { k: 'rc-pick' } });
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), k = R.int(0, 1) ? Math.pow(R.int(2, 12), 2) : notSq(2, 150), irr = !perfect(k), truth = irr;
+        return K.tf({ q: who + ' says <span class="math">' + RT + k + '</span> is irrational because it has a root sign. Is ' + who + ' right that it is irrational?', truth: truth,
+          right: irr ? k + ' is not a perfect square, so ' + RT + k + ' never ends or repeats. It is irrational.' : RT + k + ' = ' + Math.sqrt(k) + ', a whole number. It is rational.',
+          wrong: ['Every number with a root sign is irrational.', 'Every number with a root sign is rational.'], hint: 'Is ' + k + ' a perfect square?', meta: { k: 'rc-tf', n: k } });
+      }],
+      [1, 'tap', function (lv) {
+        var tiles = R.shuffle([RT + notSq(2, 99), RT + Math.pow(R.int(2, 10), 2), R.int(1, 4) + '/' + R.int(5, 9), '0.' + R.int(11, 99)]), irr = tiles.filter(function (t) { return t.indexOf(RT) === 0 && !perfect(+t.slice(RT.length)); })[0];
+        return { q: 'Tap the <b>irrational</b> number.', type: 'tap', tiles: tiles.map(function (t) { return '<span class="math">' + t + '</span>'; }), answer: tiles.indexOf(irr), answerText: irr,
+          hint: 'Fractions and decimals that end are rational. Check each root: is the number under it a perfect square?', steps: [irr + ': the number under the root is not a perfect square.'], explain: irr + ' never ends or repeats, so it is irrational.', meta: { k: 'rc-tap' } };
+      }]
+    ],
+    'rr-order': [
+      [1, 'order', function (lv) {
+        return K.until(function () {
+          var pool = distinctPool(realPool(R.int(2, 8)));
+          if (pool.length < 4) return null;
+          pool = R.shuffle(pool).slice(0, lv === 1 ? 3 : 4).sort(function (x, y) { return x.v - y.v; });
+          return { q: 'Put these in order, least to greatest.', type: 'order', items: pool.map(function (p) { return '<span class="math">' + p.t + '</span>'; }), first: 'least', last: 'greatest',
+            hint: 'Change each one to a decimal first.', steps: pool.map(function (p) { return p.t + ' &asymp; ' + p.v.toFixed(3); }), explain: pool.map(function (p) { return p.t; }).join(' &lt; ') + '.', meta: { k: 'ro-order' } };
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(2, 9), k = notSq(a * a + 1, (a + 1) * (a + 1) - 1), d = a + R.int(1, 9) / 10;
+        if (Math.abs(Math.sqrt(k) - d) < 0.02) d = r1(d + 0.2);
+        var truth = Math.sqrt(k) > d;
+        return K.tf({ q: who + ' says <span class="math">' + RT + k + ' &gt; ' + d + '</span>. True or false?', truth: truth,
+          right: RT + k + ' &asymp; ' + Math.sqrt(k).toFixed(3) + ', which is ' + (truth ? 'more' : 'less') + ' than ' + d + '.', wrong: ['A root is always smaller than a decimal.', 'You can not compare a root with a decimal.'],
+          hint: 'Square ' + d + ' and compare it with ' + k + '.', meta: { k: 'ro-tf', n: k, d: d } });
+      }],
+      [1, 'tap', function (lv) {
+        return K.until(function () {
+          var pool = distinctPool(realPool(R.int(2, 8)));
+          if (pool.length < 4) return null;
+          pool = R.shuffle(pool).slice(0, 4);
+          var big = pool.slice().sort(function (x, y) { return y.v - x.v; })[0];
+          return { q: 'Tap the <b>greatest</b> number.', type: 'tap', tiles: pool.map(function (p) { return '<span class="math">' + p.t + '</span>'; }), answer: pool.indexOf(big), answerText: big.t,
+            hint: 'Change each one to a decimal first.', steps: pool.map(function (p) { return p.t + ' &asymp; ' + p.v.toFixed(3); }), explain: big.t + ' is the greatest.', meta: { k: 'ro-tap' } };
+        });
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var a = R.int(3, 8), pool = distinctPool(realPool(a).concat(realPool(a - 1)));
+          return K.pickAll({ q: 'Pick every number between <b>' + a + '</b> and <b>' + (a + 1) + '</b>.', opts: R.shuffle(pool).slice(0, 5).map(function (p) { return ['<span class="math">' + p.t + '</span>', p.v > a && p.v < a + 1]; }),
+            hint: 'Change each one to a decimal. Is it more than ' + a + ' and less than ' + (a + 1) + '?', steps: ['Roots: square ' + a + ' and ' + (a + 1) + ' to get ' + a * a + ' and ' + (a + 1) * (a + 1) + '.'], explain: 'Numbers between ' + a + ' and ' + (a + 1) + ' have decimal values ' + a + '.something.', meta: { k: 'ro-pick', a: a } });
+        });
+      }]
+    ]
+  };
+  K.shapes('roots-real', SHAPES);
 })();

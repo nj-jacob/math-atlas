@@ -1,0 +1,65 @@
+/* Answer checks for Grade 8 question shapes. Each check gets (q, q.meta, helpers) and returns
+   an error message, or '' when the answer is right. Work the answer out here independently:
+   never copy the site's own calculation. */
+(function (V, H) {
+  const set = (k, fn) => { V[k] = fn; };
+  /* read a number shown as text: handles the − sign, spaces in big numbers, $ and % */
+  const n = t => parseFloat(H.strip(t).replace(/−/g, '-').replace(/[\s,$%]/g, ''));
+  /* work out a shown expression such as "(−3) + 4 × (−2)" with ordinary arithmetic */
+  const ev = t => Function('return (' + H.strip(t).replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\[/g, '(').replace(/\]/g, ')') + ');')();
+  const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1e-9 : tol);
+  const same = (a, b) => a.slice().sort().join() === b.slice().sort().join();
+  const chosen = q => q.options[q.answer];
+  /* indexes of options for which test(optionText) is true */
+  const which = (q, test) => q.options.map((o, j) => (test(o) ? j : -1)).filter(j => j >= 0);
+  /* the one option that passes test must be the marked answer, and no other may pass */
+  const only = (q, test) => { const w = which(q, test); return w.length === 1 && w[0] === q.answer ? '' : 'right option (' + w.join() + ' vs ' + q.answer + ')'; };
+  const pairsOk = (q, f) => q.pairs.every(p => f(p[0], p[1])) ? '' : 'pairs';
+  const ordered = (vals, up) => vals.every((x, i) => !i || (up === false ? x < vals[i - 1] : x > vals[i - 1]));
+  const tf = (truth, q) => truth === q.answer ? '' : 'truth';
+
+  /* ---- Integers ---- */
+  set('ia-line', (q, m) => q.answer === m.a + m.b ? '' : 'sum');
+  set('ia-story', (q, m) => q.answer === m.t + m.c && H.strip(q.q).includes(m.c > 0 ? 'rise' : 'fall') ? '' : 'temperature');
+  set('ia-tf', (q, m) => tf(m.a + m.b === m.said, q));
+  set('ia-match', q => pairsOk(q, (l, r) => ev(l) === n(r)));
+  set('is-line', (q, m) => q.answer === m.a - m.b ? '' : 'difference');
+  set('is-tf', (q, m) => tf(m.a - m.b === m.said, q));
+  set('is-story', (q, m) => q.answer === m.hi - m.lo && m.hi > m.lo ? '' : 'warmer by');
+  set('is-fill', (q, m) => q.answers[0] === -m.b && q.answers[1] === m.a - m.b ? '' : 'blanks');
+  set('im-pick', q => same(which(q, o => ev(o) < 0), q.answer) ? '' : 'picks');
+  set('im-tf', (q, m) => tf(m.a * m.b === m.said, q));
+  set('im-story', (q, m) => q.answer === m.r * m.t && m.r < 0 ? '' : 'depth');
+  set('im-match', q => pairsOk(q, (l, r) => ev(l) === n(r)));
+  set('id-tf', (q, m) => tf(m.n / m.d === m.said, q));
+  set('id-story', (q, m) => q.answer === m.tot / m.h ? '' : 'per hour');
+  set('id-fill', (q, m) => q.answers[0] * m.d === m.n ? '' : 'quotient');
+  set('id-pick', (q, m) => same(which(q, o => ev(o) === m.v), q.answer) ? '' : 'picks');
+  set('ix-first', q => H.strip(chosen(q)).startsWith('Multiply') ? '' : 'first step');
+  set('ix-way', (q, m) => { const want = { fall: m.a - m.b, share: m.a / m.b, repeat: m.a * m.b }[m.s]; return only(q, o => ev(o) === want); });
+  set('ix-tf', (q, m) => tf(ev(m.ex) === m.said, q));
+  set('ix-order', q => ordered(q.items.map(ev)) ? '' : 'order');
+  /* ---- Square roots and real numbers ---- */
+  /* the value of a shown real number: √k, a/b, π, a decimal or an integer */
+  const rv = t => { const s = H.strip(t).replace(/−/g, '-'); if (s === 'π') return Math.PI; if (s.startsWith('√')) return Math.sqrt(n(s.slice(1))); if (s.includes('/')) { const [a, b] = s.split('/'); return n(a) / n(b); } return n(s); };
+  const isSq = k => Number.isInteger(Math.sqrt(k));
+  const irrational = t => { const s = H.strip(t); return s === 'π' || (s.startsWith('√') && !isSq(n(s.slice(1)))); };
+  set('rs-match', (q, m) => q.pairs.every((p, i) => n(p[1]) === m.list[i] * m.list[i] && H.strip(p[0]) === m.list[i] + '2') ? '' : 'pairs');
+  set('rs-tf', (q, m) => tf(m.x * m.x === m.said, q));
+  set('rs-story', (q, m) => q.answer === m.s * m.s ? '' : 'area');
+  set('rs-pick', q => same(which(q, o => isSq(n(o))), q.answer) ? '' : 'picks');
+  set('rt-tap', (q, m) => { const w = q.tiles.map((t, j) => (n(t) * n(t) === m.sq ? j : -1)).filter(j => j >= 0); return w.length === 1 && w[0] === q.answer ? '' : 'root tile'; });
+  set('rt-story', (q, m) => q.answer * q.answer === m.total ? '' : 'side');
+  set('rt-tf', (q, m) => tf(m.said * m.said === m.sq, q));
+  set('rt-fill', (q, m) => q.answers.every(a => a * a === m.sq && a > 0) ? '' : 'root');
+  set('re-line', (q, m) => near(q.answer, Math.sqrt(m.n), 0.06) && q.tol <= 0.3 && q.min <= Math.sqrt(m.n) && q.max >= Math.sqrt(m.n) ? '' : 'placement');
+  set('re-tf', (q, m) => tf(m.lo * m.lo < m.n && m.n < (m.lo + 1) * (m.lo + 1), q));
+  set('re-tap', (q, m) => { const below = q.tiles.map(n).filter(v => isSq(v) && v < m.n); return n(q.tiles[q.answer]) === Math.max(...below) && Math.sqrt(n(q.tiles[q.answer])) === Math.floor(Math.sqrt(m.n)) ? '' : 'square below'; });
+  set('rc-pick', q => same(which(q, irrational), q.answer) ? '' : 'picks');
+  set('rc-tf', (q, m) => tf(!isSq(m.n), q));
+  set('rc-tap', q => { const w = q.tiles.map((t, j) => (irrational(t) ? j : -1)).filter(j => j >= 0); return w.length === 1 && w[0] === q.answer ? '' : 'irrational tile'; });
+  set('ro-order', q => ordered(q.items.map(rv)) ? '' : 'order');
+  set('ro-tf', (q, m) => tf(Math.sqrt(m.n) > m.d, q));
+  set('ro-tap', q => { const v = q.tiles.map(rv); return v[q.answer] === Math.max(...v) && v.filter(x => x === Math.max(...v)).length === 1 ? '' : 'greatest'; });
+  set('ro-pick', (q, m) => same(which(q, o => rv(o) > m.a && rv(o) < m.a + 1), q.answer) ? '' : 'picks');
+})(window.__verify, window.__H);

@@ -242,4 +242,159 @@ A.yt({ q: 'Work out (&minus;45) &divide; (&minus;9).', a: 5, back: 'Divide the s
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  function line20(q, ans, meta, extra) {
+    var o = { q: q, type: 'line', min: -20, max: 20, tick: 1, every: 5, snap: 1, answer: ans, meta: meta };
+    Object.keys(extra || {}).forEach(function (k) { o[k] = extra[k]; });
+    return o;
+  }
+  function exprs(n, f, m) { var out = [], seen = {}; while (out.length < n) { var a = nz(-m, m), b = nz(-m, m), k = a + ',' + b; if (!seen[k]) { seen[k] = 1; out.push([a, b, f(a, b)]); } } return out; }
+  function distinctVals(list) { var s = {}; return list.every(function (x) { if (s[x[2]]) return false; s[x[2]] = 1; return true; }); }
+  var SHAPES = {
+    'int-add': [
+      [1, 'line', function (lv) {
+        var a = nz(-9, 9), b = nz(-9, 9), s = a + b;
+        return line20('Start at <b>' + N(a) + '</b>. Add <b>' + P(b) + '</b>. Place the answer on the line.', s, { k: 'ia-line', a: a, b: b },
+          { hint: 'Adding ' + (b > 0 ? 'a positive moves right.' : 'a negative moves left.'), steps: ['Start at ' + N(a) + '.', 'Move ' + Math.abs(b) + ' to the ' + (b > 0 ? 'right' : 'left') + '.', 'You land on ' + N(s) + '.'], explain: P(a) + ' + ' + P(b) + ' = ' + N(s) + '.' });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), t = R.int(-15, 5), c = nz(-12, 12), s = t + c;
+        return { q: 'In Thunder Bay it was <b>' + N(t) + '&deg;C</b> at 6 a.m. ' + who + ' saw it ' + (c > 0 ? 'rise' : 'fall') + ' by <b>' + Math.abs(c) + ' degrees</b>. What is the temperature now?', type: 'num', answer: s, show: N(s), unit: '&deg;C',
+          hint: (c > 0 ? 'A rise adds a positive.' : 'A fall adds a negative.'), steps: ['Write it as an addition: ' + P(t) + ' + ' + P(c) + '.', 'The answer is ' + N(s) + '&deg;C.'], explain: P(t) + ' + ' + P(c) + ' = ' + N(s) + '&deg;C.', meta: { k: 'ia-story', t: t, c: c } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = nz(-12, 12), b = nz(-12, 12);
+        if ((a > 0) === (b > 0)) a = -a;
+        var s = a + b, truth = R.int(0, 1), said = s;
+        if (!truth) said = R.pick([-s, (a > 0 ? 1 : -1) * (Math.abs(a) + Math.abs(b))]);
+        if (said === s) truth = 1;
+        return K.tf({ q: who + ' says <span class="math">' + P(a) + ' + ' + P(b) + ' = ' + N(said) + '</span>. True or false?', truth: truth,
+          right: truth ? 'Different signs: subtract the sizes and take the sign of the bigger size, so the sum is ' + N(s) + '.' : 'The sum is ' + N(s) + ': with different signs, subtract the sizes and take the sign of the bigger size.',
+          wrong: ['With any signs, add the sizes.', 'The answer always takes the sign of the first number.'],
+          hint: 'The signs are different. Which size is bigger?', meta: { k: 'ia-tf', a: a, b: b, said: said } });
+      }],
+      [2, 'match', function (lv) {
+        var m = lv === 2 ? 15 : 30, list;
+        do { list = exprs(3, function (a, b) { return a + b; }, m); } while (!distinctVals(list));
+        return { q: 'Match each sum to its answer.', type: 'match', pairs: list.map(function (x) { return [P(x[0]) + ' + ' + P(x[1]), N(x[2])]; }),
+          hint: 'Same signs: add the sizes. Different signs: subtract them.', steps: ['Work out each sum on its own, then match.'], explain: list.map(function (x) { return P(x[0]) + ' + ' + P(x[1]) + ' = ' + N(x[2]); }).join('. ') + '.', meta: { k: 'ia-match' } };
+      }]
+    ],
+    'int-sub': [
+      [1, 'line', function (lv) {
+        var a = nz(-9, 9), b = nz(-9, 9), d = a - b;
+        return line20('Work out <span class="math">' + N(a) + ' &minus; ' + P(b) + '</span>. Place the answer on the line.', d, { k: 'is-line', a: a, b: b },
+          { hint: 'Add the opposite: ' + N(a) + ' + ' + P(-b) + '.', steps: ['Change it to ' + N(a) + ' + ' + P(-b) + '.', 'Start at ' + N(a) + ' and move ' + Math.abs(b) + ' to the ' + (-b > 0 ? 'right' : 'left') + '.', 'You land on ' + N(d) + '.'], explain: N(a) + ' &minus; ' + P(b) + ' = ' + N(d) + '.' });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = nz(-12, 12), b = -R.int(2, 12), d = a - b, truth = R.int(0, 1), said = truth ? d : a + b;
+        return K.tf({ q: who + ' says <span class="math">' + N(a) + ' &minus; ' + P(b) + ' = ' + N(said) + '</span>. True or false?', truth: truth,
+          right: truth ? 'Subtracting ' + P(b) + ' is the same as adding ' + Math.abs(b) + ', so the answer is ' + N(d) + '.' : 'Subtracting a negative means adding its opposite: ' + N(a) + ' + ' + Math.abs(b) + ' = ' + N(d) + '.',
+          wrong: ['Subtracting always makes a number smaller.', 'Just drop the brackets and subtract the sizes.'],
+          hint: 'What is the opposite of ' + P(b) + '?', meta: { k: 'is-tf', a: a, b: b, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), hi = R.int(-6, 8), lo = hi - R.int(4, 20);
+        return { q: 'On a winter day in Whitehorse, ' + who + ' wrote down a high of <b>' + N(hi) + '&deg;C</b> and a low of <b>' + N(lo) + '&deg;C</b>. How many degrees warmer was the high?', type: 'num', answer: hi - lo, unit: '&deg;C',
+          hint: 'Warmer by = high &minus; low.', steps: ['Work out ' + P(hi) + ' &minus; ' + P(lo) + '.', 'Add the opposite: ' + P(hi) + ' + ' + P(-lo) + ' = ' + (hi - lo) + '.'], explain: 'The high was ' + (hi - lo) + ' degrees warmer.', meta: { k: 'is-story', hi: hi, lo: lo } };
+      }],
+      [2, 'fill', function (lv) {
+        var m = sizes(lv), a = nz(-m, m), b = nz(-m, m);
+        return { q: 'Rewrite the subtraction as an addition. Then finish it.', type: 'fill', fill: '<span class="math">' + N(a) + ' &minus; ' + P(b) + ' = ' + N(a) + ' + ( [[]] ) = [[]]</span>', answers: [-b, a - b],
+          hint: 'Keep the first number, change &minus; to +, and flip the sign of the second number.', steps: ['The opposite of ' + P(b) + ' is ' + N(-b) + '.', N(a) + ' + ' + P(-b) + ' = ' + N(a - b) + '.'], explain: N(a) + ' &minus; ' + P(b) + ' = ' + N(a) + ' + ' + P(-b) + ' = ' + N(a - b) + '.', meta: { k: 'is-fill', a: a, b: b } };
+      }]
+    ],
+    'int-mul': [
+      [1, 'pick', function (lv) {
+        return K.until(function () {
+          var list = exprs(5, function (a, b) { return a * b; }, 9);
+          return K.pickAll({ q: 'Pick every product that is <b>negative</b>.', opts: list.map(function (x) { return [P(x[0]) + ' &times; ' + P(x[1]), x[2] < 0]; }),
+            hint: 'Different signs give a negative product.', steps: ['Look only at the signs.', 'One negative sign: negative. Two: positive.'], explain: 'A product is negative when exactly one of the two numbers is negative.', meta: { k: 'im-pick' } });
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = -R.int(2, 9), b = nz(-9, 9), p = a * b, truth = R.int(0, 1), said = truth ? p : -p;
+        return K.tf({ q: who + ' says <span class="math">' + P(a) + ' &times; ' + P(b) + ' = ' + N(said) + '</span>. True or false?', truth: truth,
+          right: (b < 0 ? 'Two negative signs give a positive' : 'A negative times a positive is negative') + ', so the product is ' + N(p) + '.',
+          wrong: ['The answer takes the sign of the bigger number.', 'Multiplying always gives a positive answer.'],
+          hint: 'Count the negative signs.', meta: { k: 'im-tf', a: a, b: b, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), r = R.int(2, 9), t = R.int(2, 9), p = -r * t;
+        return { q: who + ' is scuba diving in Georgian Bay. ' + who + ' goes down <b>' + r + ' m</b> each minute for <b>' + t + ' minutes</b>. What is the change in depth? (Use a negative for down.)', type: 'num', answer: p, show: N(p), unit: 'm',
+          hint: 'Going down ' + r + ' m is a change of &minus;' + r + '. Do that ' + t + ' times.', steps: ['Change = (&minus;' + r + ') &times; ' + t + '.', 'Different signs: negative. The change is ' + N(p) + ' m.'], explain: '(&minus;' + r + ') &times; ' + t + ' = ' + N(p) + ' m.', meta: { k: 'im-story', r: -r, t: t } };
+      }],
+      [2, 'match', function (lv) {
+        var list;
+        do { list = exprs(3, function (a, b) { return a * b; }, 12); } while (!distinctVals(list));
+        return { q: 'Match each product to its answer.', type: 'match', pairs: list.map(function (x) { return [P(x[0]) + ' &times; ' + P(x[1]), N(x[2])]; }),
+          hint: 'Multiply the sizes, then use the sign rules.', steps: ['Same signs: positive. Different signs: negative.'], explain: list.map(function (x) { return P(x[0]) + ' &times; ' + P(x[1]) + ' = ' + N(x[2]); }).join('. ') + '.', meta: { k: 'im-match' } };
+      }]
+    ],
+    'int-div': [
+      [1, 'mistake', function (lv) {
+        var who = K.name(), q = nz(-9, 9), d = R.int(2, 9) * R.pick([1, -1]), n = q * d, truth = R.int(0, 1), said = truth ? q : -q;
+        return K.tf({ q: who + ' says <span class="math">' + P(n) + ' &divide; ' + P(d) + ' = ' + N(said) + '</span>. True or false?', truth: truth,
+          right: ((n > 0) === (d > 0) ? 'Same signs give a positive' : 'Different signs give a negative') + ', so the answer is ' + N(q) + '.',
+          wrong: ['Division answers are always negative.', 'The answer takes the sign of the second number.'],
+          hint: 'Check by multiplying: answer &times; ' + P(d) + ' should give ' + N(n) + '.', meta: { k: 'id-tf', n: n, d: d, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), h = R.int(2, 6), per = R.int(1, 5), tot = -per * h;
+        return { q: 'Overnight in Sudbury the temperature fell <b>' + Math.abs(tot) + ' degrees</b> in <b>' + h + ' hours</b>. ' + who + ' says it fell by the same amount each hour. What was the change each hour?', type: 'num', answer: -per, show: N(-per), unit: '&deg;C',
+          hint: 'The total change is ' + N(tot) + '. Share it over ' + h + ' hours.', steps: ['Change each hour = ' + P(tot) + ' &divide; ' + h + '.', 'Different signs: negative. The answer is ' + N(-per) + '&deg;C.'], explain: P(tot) + ' &divide; ' + h + ' = ' + N(-per) + '&deg;C each hour.', meta: { k: 'id-story', tot: tot, h: h } };
+      }],
+      [1, 'fill', function (lv) {
+        var q = nz(-9, 9), d = R.int(2, 9) * R.pick([1, -1]), n = q * d;
+        return { q: 'Use the multiplication to finish the division.', type: 'fill', fill: '<span class="math">' + P(q) + ' &times; ' + P(d) + ' = ' + N(n) + '</span>, so <span class="math">' + P(n) + ' &divide; ' + P(d) + ' = [[]]</span>', answers: [q],
+          hint: 'Division undoes multiplication.', steps: ['If ' + P(q) + ' &times; ' + P(d) + ' = ' + N(n) + ', then ' + P(n) + ' &divide; ' + P(d) + ' gives back ' + N(q) + '.'], explain: P(n) + ' &divide; ' + P(d) + ' = ' + N(q) + '.', meta: { k: 'id-fill', n: n, d: d } };
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var v = nz(-9, 9), opts = [];
+          for (var i = 0; i < 5; i++) { var d = R.int(2, 9) * R.pick([1, -1]), q = R.int(0, 2) ? v : -v; opts.push([P(q * d) + ' &divide; ' + P(d), q === v]); }
+          var seen = {}; if (!opts.every(function (o) { if (seen[o[0]]) return false; seen[o[0]] = 1; return true; })) return null;
+          return K.pickAll({ q: 'Pick every division that equals <b>' + N(v) + '</b>.', opts: opts, hint: 'Work out each one: divide the sizes, then use the sign rules.', steps: ['Same signs: positive. Different signs: negative.'], explain: 'The right ones all come out to ' + N(v) + '.', meta: { k: 'id-pick', v: v } });
+        });
+      }]
+    ],
+    'int-mixed': [
+      [1, 'which', function (lv) {
+        var a = nz(-9, 9), b = nz(-9, 9), c = nz(-9, 9);
+        return K.pick1({ q: 'In <span class="math">' + N(a) + ' + ' + P(b) + ' &times; ' + P(c) + '</span>, what do you do first?', right: 'Multiply ' + P(b) + ' &times; ' + P(c), wrong: ['Add ' + N(a) + ' + ' + P(b), 'Work left to right'],
+          hint: 'Multiplication comes before addition.', steps: ['Order of operations: brackets, exponents, &times; and &divide;, then + and &minus;.'], explain: 'Multiply first: ' + P(b) + ' &times; ' + P(c) + ' = ' + N(b * c) + '. Then add ' + N(a) + ' to get ' + N(a + b * c) + '.', meta: { k: 'ix-first' } });
+      }],
+      [1, 'way', function (lv) {
+        var who = K.name(), s = R.pick(['fall', 'share', 'repeat']), a, b, right, wrong, q;
+        if (s === 'fall') { a = R.int(-12, 2); b = R.int(3, 12); q = 'It is ' + N(a) + '&deg;C. The temperature falls ' + b + ' degrees.'; right = P(a) + ' &minus; ' + b; wrong = [P(a) + ' &times; ' + b, b + ' &minus; ' + P(a), P(a) + ' &divide; ' + b]; }
+        else if (s === 'share') { b = R.int(2, 6); a = -b * R.int(2, 9); q = who + '\'s team lost ' + Math.abs(a) + ' points over ' + b + ' games, the same each game. The change per game is wanted.'; right = P(a) + ' &divide; ' + b; wrong = [P(a) + ' &times; ' + b, P(a) + ' &minus; ' + b, P(a) + ' + ' + b]; }
+        else { a = -R.int(2, 9); b = R.int(3, 8); q = who + ' spends $' + Math.abs(a) + ' on lunch each day for ' + b + ' days. The change in savings is wanted.'; right = P(a) + ' &times; ' + b; wrong = [P(a) + ' + ' + b, P(a) + ' &divide; ' + b, P(a) + ' &minus; ' + b]; }
+        return K.pick1({ q: q + ' Which way works it out?', right: right, wrong: wrong, hint: 'Think about what is happening: a change once, a share, or the same change many times?',
+          steps: ['Falls once: subtract. Shared equally: divide. The same change many times: multiply.'], explain: 'Use ' + right + '.', meta: { k: 'ix-way', s: s, a: a, b: b } });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = nz(-9, 9), b = nz(-6, 6), c = nz(-6, 6), v = a + b * c, wrongV = (a + b) * c;
+        if (v === wrongV) c = c + (c > 0 ? 1 : -1), v = a + b * c, wrongV = (a + b) * c;
+        var truth = R.int(0, 1), said = truth ? v : wrongV, ex = N(a) + ' + ' + P(b) + ' &times; ' + P(c);
+        return K.tf({ q: who + ' says <span class="math">' + ex + ' = ' + N(said) + '</span>. True or false?', truth: truth,
+          right: 'Multiply first: ' + P(b) + ' &times; ' + P(c) + ' = ' + N(b * c) + ', then add ' + N(a) + '. The answer is ' + N(v) + '.',
+          wrong: ['Work from left to right, so add first.', 'Multiply all three numbers together.'], hint: 'What comes first: + or &times;?', meta: { k: 'ix-tf', ex: ex, said: said } });
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var list = [], seen = {};
+          for (var i = 0; i < 4; i++) {
+            var a = nz(-9, 9), b = nz(-6, 6), c = nz(-6, 6), t = R.int(0, 1), ex = t ? N(a) + ' + ' + P(b) + ' &times; ' + P(c) : P(a) + ' &times; (' + N(b) + ' &minus; ' + P(c) + ')', v = t ? a + b * c : a * (b - c);
+            if (seen[v]) return null; seen[v] = 1; list.push([ex, v]);
+          }
+          list.sort(function (x, y) { return x[1] - y[1]; });
+          return { q: 'Put these in order of their value, least to greatest.', type: 'order', items: list.map(function (x) { return x[0]; }), first: 'least', last: 'greatest',
+            hint: 'Work out each one with the order of operations first.', steps: list.map(function (x) { return x[0] + ' = ' + N(x[1]); }), explain: 'In order: ' + list.map(function (x) { return N(x[1]); }).join(', ') + '.', meta: { k: 'ix-order' } };
+        });
+      }]
+    ]
+  };
+  K.shapes('integers', SHAPES);
 })();
