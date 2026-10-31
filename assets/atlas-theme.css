@@ -89,3 +89,38 @@ html body .card::before{display:none!important}
 html body .card{padding-top:16px}
 html body .hero h1,html body .hero h1 *{background-image:none!important;text-shadow:none!important}
 html body .hero h1 *{background-color:transparent!important}
+
+/* ---------- 9. Header layout (same in every grade) ----------
+   Computer: All grades | Grade N Math Atlas | Chapters ... | Sign in, then the display buttons.
+   Phone:    All grades ............ Sign in
+             Grade N Math Atlas
+             Chapters  Check-up  My progress  Toolbox  Fact sheet   (one row, scrolls sideways if needed)
+             Text  Grown-up view */
+html body .bar .wrap{display:grid!important;grid-template-columns:auto auto minmax(0,1fr) auto;
+  grid-template-areas:"home brand nav acct" "tools tools tools tools";align-items:center;gap:6px 14px;min-height:0;padding-top:10px;padding-bottom:10px}
+html body .bar .athome{grid-area:home;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:99px;
+  border:1px solid var(--at-line2);background:var(--card);color:var(--ink)!important;font-weight:700;font-size:.88rem;text-decoration:none;white-space:nowrap}
+html body .bar .athome span{font-size:1.2rem;line-height:1;margin-top:-2px}
+html body .bar .athome:hover{border-color:var(--ink2);background:var(--paper)}
+html body .bar .brand{grid-area:brand;display:flex;align-items:center;gap:10px;font-size:1.1rem;white-space:nowrap;margin:0}
+html body .bar nav{grid-area:nav;display:flex!important;flex-wrap:nowrap!important;justify-content:flex-end;gap:2px!important;margin:0;min-width:0;
+  overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
+html body .bar nav::-webkit-scrollbar{display:none}
+html body .bar nav a{white-space:nowrap!important;padding:8px 10px!important;font-size:.93rem!important;border:0!important;line-height:1.2}
+html body .bar .tools{grid-area:tools;display:flex!important;flex-wrap:wrap;gap:6px;margin:0}
+html body .bar .acct{grid-area:acct;justify-self:end;margin:0;white-space:nowrap}
+html body .bar .acct a{font-weight:700;color:var(--accent)!important}
+@media (max-width:980px){
+  html body .bar .wrap{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"home brand acct" "nav nav nav" "tools tools tools"}
+  html body .bar nav{justify-content:flex-start;margin:0 -6px}
+}
+@media (max-width:640px){
+  html body .bar{position:static!important}
+  html body .bar .wrap{grid-template-columns:minmax(0,1fr) auto;grid-template-areas:"home acct" "brand brand" "nav nav" "tools tools";gap:8px 10px}
+  html body .bar .athome{justify-self:start}
+  html body .bar .brand{font-size:1.2rem}
+  html body .bar nav{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px!important;margin:2px 0 0;overflow:visible}
+  html body .bar nav a{display:flex;align-items:center;justify-content:center;text-align:center;min-height:42px;padding:6px 4px!important;font-size:.88rem!important;
+    border:1px solid var(--line)!important;border-radius:10px;background:var(--paper)}
+  html body .bar nav a:hover,html body .bar nav a[aria-current]{background:var(--at-tint)}
+}
