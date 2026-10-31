@@ -108,6 +108,12 @@
           { say: '7 more squares: 7 hundredths. Together <b>0.47</b>.', fig: gfig(47, 3) },
           { say: '0.47 is 4 tenths and 7 hundredths. It is also 47 hundredths.', fig: gfig(47), ms: 2400 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will show 0.63 on a grid. The whole is cut into 100 equal squares.', fig: gfig(0), ms: 1600 },
+          { say: 'The 6 is in the tenths place, so I shade 6 full rows: <b>0.6</b>.', fig: gfig(60, 2), ms: 1600 },
+          { say: 'The 3 is in the hundredths place, so I shade 3 more squares: <b>0.63</b>.', fig: gfig(63, 3), ms: 1600 },
+          { say: '0.63 is 6 tenths and 3 hundredths. It is also 63 hundredths.', fig: gfig(63), ms: 2400 }
+        ]),
         try: K.widget('decimals', 0, 'Nice. Try exactly 10, 50 and 100 squares and read the decimal each time.'),
         key: '<p>First place after the point: <b>tenths</b>. Second place: <b>hundredths</b>. 0.47 = 4 tenths + 7 hundredths = 47 hundredths.</p>',
         check: [P('de-read', 1), P('de-read', 2)] },
@@ -120,6 +126,13 @@
           { say: 'and 5 hundredths.', act: function (t) { return t.add(-2, 5, 260); } },
           { say: 'Add 5 more hundredths. Now there are 10.', act: function (t) { return t.add(-2, 5, 220); } },
           { say: '10 hundredths group into <b>1 tenth</b>. The total is 2.4.', act: function (t) { return t.group(-2); }, ms: 2200 }
+        ] },
+        example: { mount: disksTool([0, -1, -2]), steps: [
+          { say: 'My turn. I will build 1.86. First I put 1 one.', act: function (t) { return t.add(0, 1, 300); } },
+          { say: 'Next I put 8 tenths.', act: function (t) { return t.add(-1, 8, 220); } },
+          { say: 'Then 6 hundredths. That is 1.86.', act: function (t) { return t.add(-2, 6, 240); } },
+          { say: 'Now I add 4 more hundredths. There are 10 hundredths.', act: function (t) { return t.add(-2, 4, 240); } },
+          { say: 'I group 10 hundredths into <b>1 tenth</b>. Now there are 9 tenths, and the total is 1.9.', act: function (t) { return t.group(-2); }, ms: 2400 }
         ] },
         try: { mount: function (host, done) {
           var msg = document.createElement('p'); msg.className = 'ls-task'; msg.innerHTML = 'Build <b>1.47</b> with the fewest disks.'; host.appendChild(msg);
@@ -143,6 +156,12 @@
           { say: '3 more tenths reach 1 whole.', act: function (t) { return t.hop(1, '+0.3'); } },
           { say: '4 more tenths: <b>1.4</b>.', act: function (t) { return t.hop(1.4, '+0.4'); }, ms: 2000 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 2, tick: 0.1, every: 0.5, start: 0 }, steps: [
+          { say: 'My turn. I will find 1.7 on the line. Each small jump is one tenth.', ms: 1600 },
+          { say: 'I jump 8 tenths: 0.8.', act: function (t) { return t.hop(0.8, '8 tenths'); } },
+          { say: '2 more tenths reach 1 whole. 10 tenths make 1.', act: function (t) { return t.hop(1, '+0.2'); } },
+          { say: 'I keep counting: 7 more tenths. I land on <b>1.7</b>.', act: function (t) { return t.hop(1.7, '+0.7'); }, ms: 2200 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 2, tick: 0.1, every: 0.5, start: 0 }, tasks: [
           { do: 'Drag or tap to put the marker on <b>0.6</b>.', goal: function (s) { return s.at === 0.6; }, yes: 'Yes. 6 tenths.' },
           { do: 'Now put it on <b>1.3</b>.', reset: false, goal: function (s) { return s.at === 1.3; }, yes: 'Yes. 1 whole and 3 tenths.' },
@@ -160,6 +179,13 @@
           { say: '0.6 is 6 tenths: 6 full rows.', fig: two(60, 0, '0.6', '0.58') },
           { say: '0.58 is 5 rows and 8 squares.', fig: two(60, 58, '0.6', '0.58') },
           { say: 'Write 0.6 as 0.60. 60 hundredths is more than 58, so <b>0.6 &gt; 0.58</b>.', fig: two(60, 58, '0.60', '0.58'), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. Which is greater: 0.3 or 0.27?', fig: two(0, 0, '0.3', '0.27'), ms: 1400 },
+          { say: '0.3 is 3 tenths. I shade 3 full rows.', fig: two(30, 0, '0.3', '0.27') },
+          { say: '0.27 is 2 rows and 7 squares.', fig: two(30, 27, '0.3', '0.27') },
+          { say: 'I line up the points and write 0.3 as 0.30. 30 hundredths is more than 27.', fig: two(30, 27, '0.30', '0.27'), ms: 2000 },
+          { say: 'So <b>0.3 &gt; 0.27</b>. More digits does not mean bigger.', fig: two(30, 27, '0.30', '0.27'), ms: 2200 }
         ]),
         try: K.widget('decimals', 1, 'Good. Try 0.5 and 0.45. Which really is greater?'),
         ways: [
@@ -181,6 +207,12 @@
           { say: 'The hundredths digit is 7, past halfway.', fig: '<div class="g5-anim">' + zoom(347, false) + '</div>' },
           { say: 'So 3.47 rounds up to <b>3.5</b>.', fig: '<div class="g5-anim">' + zoom(347, true) + '</div>', ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will round 6.12 to the nearest tenth.', fig: '<div class="g5-anim">' + zoom(612, false) + '</div>', ms: 1400 },
+          { say: 'It sits between 6.1 and 6.2. Halfway is 6.15.', fig: '<div class="g5-anim">' + zoom(612, false) + '</div>', ms: 1600 },
+          { say: 'I look at the hundredths digit. It is 2, which is less than 5.', fig: '<div class="g5-anim">' + zoom(612, false) + '</div>', ms: 1600 },
+          { say: 'So I round down. 6.12 rounds to <b>6.1</b>.', fig: '<div class="g5-anim">' + zoom(612, true) + '</div>', ms: 2200 }
+        ]),
         try: K.widget('decimals', 2, 'Nice. Try a number like 3.45, exactly halfway. It rounds up.'),
         ways: [
           { label: 'With money', html: '<p>Round $3.47 to the nearest 10 cents. 47 cents is closer to 50 cents than to 40 cents, so $3.50.</p>' },
@@ -200,6 +232,12 @@
           { say: '75 hundredths is <b>0.75</b>, and 75 out of 100 is <b>75%</b>.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(3, 4, 54) + '<figcaption>3/4</figcaption></figure><figure>' + tgrid(75, 11) + '<figcaption>0.75 = 75%</figcaption></figure></div>' },
           { say: 'Learn these by heart: 1/10, 1/4, 1/2 and 3/4.', fig: '<div class="g5-anim">' + dnl([[0, 1], [1, 10], [1, 4], [1, 2], [3, 4], [1, 1]]) + '</div>', ms: 2600 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will write 1/4 as a decimal and a percent.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(1, 4, 54) + '<figcaption>1/4</figcaption></figure></div>', ms: 1400 },
+          { say: 'I make the bottom 100. 4 &times; 25 = 100, so 1/4 = 25/100. That fills 25 squares.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(1, 4, 54) + '<figcaption>1/4</figcaption></figure><figure>' + tgrid(25, 11) + '<figcaption>25/100</figcaption></figure></div>', ms: 2000 },
+          { say: '25 hundredths is the decimal <b>0.25</b>.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(1, 4, 54) + '<figcaption>1/4</figcaption></figure><figure>' + tgrid(25, 11) + '<figcaption>0.25</figcaption></figure></div>' },
+          { say: '25 out of 100 is <b>25%</b>. So 1/4 = 0.25 = 25%.', fig: '<div class="pies g5-anim"><figure>' + A.draw.pie(1, 4, 54) + '<figcaption>1/4</figcaption></figure><figure>' + tgrid(25, 11) + '<figcaption>0.25 = 25%</figcaption></figure></div>', ms: 2200 }
+        ]),
         try: K.widget('decimals', 3, 'Good. Try 1/5 and 2/5. Fifths become tenths.'),
         key: '<p>1/2 = 0.5 = 50%. 1/4 = 0.25 = 25%. 3/4 = 0.75 = 75%. 1/10 = 0.1 = 10%.</p>',
         mistake: '<p>Writing the digits of the fraction as a decimal: 1/4 = 0.14, or 3/5 = 0.35. Always make the bottom 10 or 100 first.</p>',
@@ -215,6 +253,14 @@
           { say: 'Add the 8 tenths to the tenths. There are no hundredths in 2.8.', act: function (t) { return t.add(-1, 8, 200); } },
           { say: '12 tenths: group 10 of them into 1 one.', act: function (t) { return t.group(-1); } },
           { say: '6 ones, 2 tenths, 5 hundredths: <b>6.25</b>. Close to the estimate of 6.', ms: 2400 }
+        ] },
+        example: { mount: disksTool([0, -1, -2], { 0: 4, '-1': 3 }), steps: [
+          { say: 'My turn. I will add 4.3 + 1.85. I estimate first: about 4 + 2 = 6. Here is 4.3.', ms: 2000 },
+          { say: 'I line up the points. 4.3 has no hundredths, so I think of it as 4.30. I add the 1 one.', act: function (t) { return t.add(0, 1, 260); }, ms: 1600 },
+          { say: 'Next I add the 8 tenths to the tenths.', act: function (t) { return t.add(-1, 8, 200); } },
+          { say: 'Then I add the 5 hundredths.', act: function (t) { return t.add(-2, 5, 240); } },
+          { say: 'There are 11 tenths. I group 10 of them into 1 one.', act: function (t) { return t.group(-1); } },
+          { say: '6 ones, 1 tenth, 5 hundredths: <b>6.15</b>. That is close to my estimate of 6.', ms: 2400 }
         ] },
         try: K.widget('decimals', 4, 'Nice. Try 5 − 1.25 and watch the zeros fill the empty places.'),
         ways: [
@@ -236,6 +282,13 @@
           { say: '45 &times; 0.1 = <b>4.5</b>.', ms: 1400 },
           { say: '45 &times; 0.01: 100 times smaller. Every digit moves two places.', act: function (t) { return t.set({ '-1': 4, '-2': 5 }); }, ms: 2200 },
           { say: '45 &times; 0.01 = <b>0.45</b>.', ms: 1600 }
+        ] },
+        example: { mount: disksTool([1, 0, -1, -2], { 1: 7, 0: 2 }), steps: [
+          { say: 'My turn. I will work out 72 &times; 0.1 and 72 &times; 0.01. Here is 72: 7 tens and 2 ones.', ms: 1800 },
+          { say: '&times; 0.1 makes every disk 10 times smaller. Tens become ones. Ones become tenths.', act: function (t) { return t.set({ 0: 7, '-1': 2 }); }, ms: 2200 },
+          { say: 'So 72 &times; 0.1 = <b>7.2</b>. The digits moved 1 place right.', ms: 1600 },
+          { say: '&times; 0.01 makes every disk 100 times smaller. The digits move 2 places right.', act: function (t) { return t.set({ '-1': 7, '-2': 2 }); }, ms: 2200 },
+          { say: 'So 72 &times; 0.01 = <b>0.72</b>. The number gets smaller.', ms: 1800 }
         ] },
         try: K.widget('decimals', 5, 'Good. Try a number ending in 0, like 230.'),
         key: '<p>&times; 0.1: digits move <b>1 place right</b>. &times; 0.01: <b>2 places right</b>. The number gets smaller.</p>',

@@ -99,6 +99,12 @@
           { say: '28 + 28 = <b>56</b>. So 7 &times; 8 = 56.', fig: an(arr(7, 8, 4)), ms: 2200 },
           { say: 'It also gives two division facts: 56 &divide; 7 = 8 and 56 &divide; 8 = 7.', fig: an(arr(7, 8)), ms: 2400 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will work out 6 &times; 9. That is 6 rows of 9 dots.', fig: an(arr(6, 9)), ms: 1600 },
+          { say: 'I split each row into 5 and 4.', fig: an(arr(6, 9, 5)) },
+          { say: '6 &times; 5 = 30 on the left. 6 &times; 4 = 24 on the right.', fig: an(arr(6, 9, 5)), ms: 1800 },
+          { say: '30 + 24 = <b>54</b>. So 6 &times; 9 = 54. Split a factor into easier parts, multiply each part, then add.', fig: an(arr(6, 9, 5)), ms: 2600 }
+        ]),
         try: K.widget('multiply-divide', 0, 'Nice. Try 12 × 7 and split the 12 into 10 and 2.'),
         key: '<p><b>Split a factor into easier parts, multiply each part, then add.</b></p>',
         check: [P('md-facts', 1), P('md-facts', 2)] },
@@ -109,6 +115,11 @@
           { say: '10 &times; 6 is 6 rows of 10: 60.', fig: an(arr(6, 10)) },
           { say: '9 &times; 6 has one column fewer.', fig: an(arr(6, 10, 9)) },
           { say: 'Take away that column of 6: 60 &minus; 6 = <b>54</b>.', fig: an(arr(6, 9)), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will work out 11 &times; 7. First I use a friendly ten: 10 &times; 7 is 7 rows of 10. That is 70.', fig: an(arr(7, 10)), ms: 2000 },
+          { say: '11 &times; 7 has one more column of 7.', fig: an(arr(7, 11, 10)) },
+          { say: 'I add that column: 70 + 7 = <b>77</b>. 11 &times; n = 10 &times; n + n.', fig: an(arr(7, 11, 10)), ms: 2400 }
         ]),
         ways: [
           { label: 'Double and halve', html: '<p>Double one factor and halve the other. 15 &times; 12 = 30 &times; 6 = <b>180</b>.</p>' },
@@ -131,6 +142,14 @@
           { say: '3 &times; 4 = 12.', fig: an(areaModel(23, 14, null, 4)) },
           { say: '200 + 30 + 80 + 12 = <b>322</b>.', fig: an(areaModel(23, 14)), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will work out 32 &times; 15. I estimate first: about 30 &times; 15 = 450.', fig: an(areaModel(32, 15, null, 0)), ms: 1800 },
+          { say: 'I split 32 into 30 and 2, and 15 into 10 and 5. Then 30 &times; 10 = 300.', fig: an(areaModel(32, 15, null, 1)), ms: 1800 },
+          { say: '2 &times; 10 = 20.', fig: an(areaModel(32, 15, null, 2)) },
+          { say: '30 &times; 5 = 150.', fig: an(areaModel(32, 15, null, 3)) },
+          { say: '2 &times; 5 = 10.', fig: an(areaModel(32, 15, null, 4)) },
+          { say: 'I add the parts: 300 + 20 + 150 + 10 = <b>480</b>. That is close to my estimate.', fig: an(areaModel(32, 15)), ms: 2400 }
+        ]),
         try: K.widget('multiply-divide', 1, 'Good. Estimate first, then check the model agrees.'),
         key: '<p><b>Split by place value, multiply every part by every part, add.</b> Estimate first: 23 &times; 14 is about 20 &times; 15 = 300.</p>',
         check: [P('md-mult', 1), P('md-mult', 2)] },
@@ -142,6 +161,12 @@
           { say: 'First line: 23 &times; 4 = <b>92</b>. That is the orange row: 80 + 12.', fig: algo('    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>') },
           { say: 'Second line: 23 &times; 10 = <b>230</b>. That is the blue row: 200 + 30.', fig: algo('    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>\n<b style="color:var(--strand)">   230</b>') },
           { say: 'Add the lines: 92 + 230 = <b>322</b>.', fig: algo('    23\n  &times; 14\n  ────\n<b class="cm1t">    92</b>\n<b style="color:var(--strand)">   230</b>\n  ────\n   322'), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will work out 26 &times; 13. Here it is as an area model, in two rows.', fig: an(areaModel(26, 13, ['var(--strand)', 'var(--pm1)'])), ms: 1800 },
+          { say: 'First line: times the ones. 26 &times; 3 = <b>78</b>. That is the orange row: 60 + 18.', fig: algo('    26\n  &times; 13\n  ────\n<b class="cm1t">    78</b>'), ms: 2000 },
+          { say: 'Second line: times the tens. 26 &times; 10 = <b>260</b>, so it ends in 0. That is the blue row: 200 + 60.', fig: algo('    26\n  &times; 13\n  ────\n<b class="cm1t">    78</b>\n<b style="color:var(--strand)">   260</b>'), ms: 2200 },
+          { say: 'I add the lines: 78 + 260 = <b>338</b>.', fig: algo('    26\n  &times; 13\n  ────\n<b class="cm1t">    78</b>\n<b style="color:var(--strand)">   260</b>\n  ────\n   338'), ms: 2200 }
         ]),
         try: K.widget('multiply-divide', 1, 'Nice. Now write the two lines of the algorithm and check them against the rows.'),
         ways: [
@@ -161,6 +186,12 @@
           { say: '30 groups of 12 is 360. Take that chunk out.', fig: an(divModel(372, 12, 1)) },
           { say: '372 &minus; 360 = 12 left. That is 1 more group.', fig: an(divModel(372, 12, 2)) },
           { say: '30 + 1 = <b>31</b>. Check: 12 &times; 31 = 372.', fig: an(divModel(372, 12)), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will work out 425 &divide; 17. How many groups of 17 fit in 425?', fig: an(divModel(425, 17, 0)), ms: 1600 },
+          { say: 'I take out a chunk of tens. 20 groups of 17 is 340.', fig: an(divModel(425, 17, 1)), ms: 1800 },
+          { say: '425 &minus; 340 = 85 left. Next I take out ones: 5 groups of 17 is 85.', fig: an(divModel(425, 17, 2)), ms: 2000 },
+          { say: 'I add up the chunks: 20 + 5 = <b>25</b>. I check: 17 &times; 25 = 425.', fig: an(divModel(425, 17)), ms: 2400 }
         ]),
         try: K.widget('multiply-divide', 2, 'Good. Try a total that leaves a remainder, like 250 ÷ 24.'),
         ways: [
@@ -182,6 +213,12 @@
           { say: '250 stickers, 24 per sheet: <b>10 full sheets</b>. The leftovers are dropped.', fig: an(packs(10, 10, 24, 'down', null, 6)) },
           { say: '250 cm of string in 24 equal pieces: share the rest, <b>10&nbsp;10/24 cm</b> each.', fig: an(packs(10, 10, 24, 'share', null, 6)), ms: 2600 }
         ]),
+        example: K.watch([
+          { say: 'My turn. 100 people are going on a trip. Each van holds 8. How many vans do they need?', fig: an(packs(12, 4, 8, 'down', null, 6)), ms: 2000 },
+          { say: 'I divide: 100 &divide; 8 = 12 R 4. 12 vans are full and 4 people are left.', fig: an(packs(12, 4, 8, 'down', null, 6)), ms: 2000 },
+          { say: 'I ask: what do the leftovers need? The 4 people still need a ride, so they need their own van.', fig: an(packs(12, 4, 8, 'up', 'van', 6)), ms: 2200 },
+          { say: 'So they need <b>13 vans</b>. Leftovers need their own group: round up.', fig: an(packs(12, 4, 8, 'up', 'van', 6)), ms: 2400 }
+        ]),
         ways: [
           { label: 'Ask a question', html: '<p>Do the leftovers need their own group? <b>Round up.</b> Can they be ignored? <b>Drop them.</b> Can they be cut up? <b>Share them as a fraction.</b></p>' },
           { label: 'Juice boxes', html: '<p>100 juice boxes, 12 per case. 100 &divide; 12 = 8 R 4. You can fill 8 cases, with 4 boxes left over.</p><div class="fig">' + packs(8, 4, 12, 'down') + '</div>' }
@@ -200,6 +237,13 @@
           { say: '4 &times; 37 &times; 25: do the friendly pair 4 &times; 25 = 100 first.', fig: an(arr(4, 25, null, '4 rows of 25')) },
           { say: '100 &times; 37 = <b>3700</b>.', fig: an(arr(4, 25, null, '4 rows of 25')), ms: 2200 },
           { say: 'Check a division by multiplying back: 24 &times; 10 + 10 = 250.', fig: an(packs(10, 10, 24, 'down', null, 6)), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. 3 rows of 7 is 21.', fig: an(arr(3, 7)) },
+          { say: 'I turn it: 7 rows of 3 is still 21. <b>Order does not matter.</b>', fig: an(arr(7, 3)), ms: 1800 },
+          { say: 'Now 5 &times; 19 &times; 2. I do the friendly pair first: 5 &times; 2 = 10.', fig: an(arr(2, 5, null, '2 rows of 5')), ms: 1800 },
+          { say: '10 &times; 19 = <b>190</b>. Any order, any grouping gives the same answer.', fig: an(arr(2, 5, null, '2 rows of 5')), ms: 2200 },
+          { say: 'I check with division: 190 &divide; 19 = 10. That is the 5 &times; 2 I started with.', fig: an(arr(2, 5, null, '2 rows of 5')), ms: 2400 }
         ]),
         key: '<p><b>Any order, any grouping.</b> Check division: divisor &times; quotient + remainder = total.</p>',
         mistake: '<p>Not checking a division answer. Make "multiply back" a habit: 24 &times; 10 + 10 should give the 250 you started with.</p>',
