@@ -369,7 +369,7 @@ A.yt({ q: 'Work out (&minus;45) &divide; (&minus;9).', a: 5, back: 'Divide the s
       [1, 'way', function (lv) {
         var who = K.name(), s = R.pick(['fall', 'share', 'repeat']), a, b, right, wrong, q;
         if (s === 'fall') { a = R.int(-12, 2); b = R.int(3, 12); q = 'It is ' + N(a) + '&deg;C. The temperature falls ' + b + ' degrees.'; right = P(a) + ' &minus; ' + b; wrong = [P(a) + ' &times; ' + b, b + ' &minus; ' + P(a), P(a) + ' &divide; ' + b]; }
-        else if (s === 'share') { b = R.int(2, 6); a = -b * R.int(2, 9); q = who + '\'s team lost ' + Math.abs(a) + ' points over ' + b + ' games, the same each game. The change per game is wanted.'; right = P(a) + ' &divide; ' + b; wrong = [P(a) + ' &times; ' + b, P(a) + ' &minus; ' + b, P(a) + ' + ' + b]; }
+        else if (s === 'share') { b = R.int(2, 6); a = -b * R.int(2, 9); q = who + '\'s team lost ' + Math.abs(a) + ' points over ' + b + ' games, the same each game. The change per game is wanted.'; right = P(a) + ' &divide; ' + b; wrong = [P(a) + ' &times; ' + b, P(a) + ' &minus; ' + b, b + ' &divide; ' + P(a)]; }
         else { a = -R.int(2, 9); b = R.int(3, 8); q = who + ' spends $' + Math.abs(a) + ' on lunch each day for ' + b + ' days. The change in savings is wanted.'; right = P(a) + ' &times; ' + b; wrong = [P(a) + ' + ' + b, P(a) + ' &divide; ' + b, P(a) + ' &minus; ' + b]; }
         return K.pick1({ q: q + ' Which way works it out?', right: right, wrong: wrong, hint: 'Think about what is happening: a change once, a share, or the same change many times?',
           steps: ['Falls once: subtract. Shared equally: divide. The same change many times: multiply.'], explain: 'Use ' + right + '.', meta: { k: 'ix-way', s: s, a: a, b: b } });

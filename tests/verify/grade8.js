@@ -192,4 +192,22 @@
   set('dx-fill', (q, m) => { let t = 0; return m.list.every((x, i) => { t += x; return q.answers[i] === t; }) ? '' : 'trace'; });
   set('dx-tf', (q, m) => { let c = 0; for (const x of m.list) if (x > m.lim) c++; return tf(c === m.said, q); });
   set('dx-pick', (q, m) => same(which(q, o => (m.ge ? n(o) >= m.lim : n(o) > m.lim)), q.answer) ? '' : 'picks');
+  /* ---- Probability ---- */
+  const DIE = { 'a 6': [6], 'an even number': [2, 4, 6], 'a number less than 3': [1, 2], 'a 1 or a 2': [1, 2] };
+  set('ps-line', (q, m) => near(q.answer, m.n / m.t, 0.006) && q.tol <= 0.08 ? '' : 'placement');
+  set('ps-story', (q, m) => near(q.answer, m.n / m.t) && near(fv(q.show), m.n / m.t) ? '' : 'raffle');
+  set('ps-tf', (q, m) => tf(near(fv(m.said), m.n / m.t), q));
+  set('ps-order', (q, m) => ordered(q.items.map(t => m.counts[H.strip(t).match(/P\((\w+)\)/)[1]])) ? '' : 'order');
+  set('pi-fill', (q, m) => near(q.answers[0] / q.answers[1], fx(m.pa) * fx(m.pb)) && q.answers[1] === m.pa[1] * m.pb[1] ? '' : 'product');
+  set('pi-story', (q, m) => near(q.answer, 0.5 * DIE[m.ev].length / 6) ? '' : 'coin and die');
+  set('pi-tf', (q, m) => tf(near(fv(m.said), (1 / m.a) * (1 / m.b)), q));
+  set('pd-fill', (q, m) => { const [a, b, c, d] = q.answers; return a === m.r - 1 && b === m.r + m.b - 1 && c === a && d === b ? '' : 'left in bag'; });
+  set('pd-tf', (q, m) => tf(near(fv(m.say), m.back ? m.r / m.t : (m.r - 1) / (m.t - 1)), q));
+  set('pd-kind', (q, m) => H.strip(chosen(q)) === (/not put it back|eat it|a different student/.test(m.s) ? 'Dependent' : 'Independent') ? '' : 'kind');
+  set('pv-fill', (q, m) => q.answers[0] + m.both === m.A && q.answers[1] + m.both === m.B ? '' : 'parts');
+  set('pv-tf', (q, m) => tf(m.num === m.ao + m.bo + m.both, q));
+  set('pv-match', (q, m) => { const want = { 'Swim only': m.A - m.both, 'Both': m.both, 'Skate only': m.B - m.both, 'Neither': m.tot - (m.A + m.B - m.both) }; return pairsOk(q, (l, rt) => want[H.strip(l)] === n(rt)); });
+  set('pe-tf', (q, m) => tf(m.said === m.trials * m.p, q));
+  set('pe-fill', (q, m) => q.answers[0] * m.d === m.trials ? '' : 'expected');
+  set('pe-tap', (q, m) => { const d = q.tiles.map(t => Math.abs(n(t) - m.trials / 6)); return d[q.answer] === Math.min(...d) && d.filter(x => x === Math.min(...d)).length === 1 ? '' : 'closest'; });
 })(window.__verify, window.__H);
