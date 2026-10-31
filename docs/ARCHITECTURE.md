@@ -12,6 +12,7 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | `assets/engine/` | **Shared by every grade**: lesson engine, toolbox, answer types |
 | `assets/atlas-theme.css` | The one look for every page |
 | `assets/atlas-header.js` | The shared header ("All grades" link) |
+| `assets/icon.svg` | The site icon shown in browser tabs and bookmarks. Every page links to it. |
 | `assets/fb.js`, `sync.js`, `family.js`, `live.js` | Sign-in and saving progress (Firebase) |
 | `tests/` | Automatic checks (see `CHECKS.md`) |
 | `.github/workflows/` | `checks.yml` runs the checks on pull requests. `deploy.yml` runs them again, then publishes `main`. |

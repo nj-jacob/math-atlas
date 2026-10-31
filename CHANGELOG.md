@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Polish: every page has a site icon for browser tabs and bookmarks. Grade 7 and Grade 8 menus now match the other grades ("Chapters", same order). The home page gives the same placement check time as Math Plan (about 25 minutes).
 - Grade 4: spinners, bar graphs, growing patterns, the robot path and the shape slide show real orange and green again, so the words in the questions match the pictures (the shared theme had turned them teal).
 - Grade 5 place value: the "match each underlined digit" question never shows the same number twice.
 - Tidy-up: every grade now uses the one shared `Atlas.Q.shapes` helper (the copies in Grades 1 to 8 are gone). Grade 7 power-of-ten matching goes up to 10⁹ again. The checks now catch two answer checks that share a key. Match cards give the longer side more room, and fill-the-blank sentences always wrap on a phone.
