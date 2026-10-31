@@ -69,6 +69,8 @@ html body .pill{background:var(--card)!important;border:1px solid var(--line)!im
 html body .pill::before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--strand)}
 html body .opt,html body button.opt{border-radius:10px!important;border:1.5px solid var(--at-line2)!important;background:var(--card)!important;box-shadow:none!important;color:var(--ink)}
 html body .opt:hover{border-color:var(--accent)!important}
+html body button.opt.yes{border-color:var(--good)!important;background:color-mix(in srgb,var(--good) 14%,var(--card))!important;font-weight:700}
+html body button.opt.no{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 10%,var(--card))!important}
 
 /* ---------- 6. Lesson engine (manip.css) ---------- */
 html body .ls-lesson{padding:16px 18px}
