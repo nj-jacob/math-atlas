@@ -90,11 +90,12 @@
   function balView(s) { return '<div>' + balance(s.lt, s.lv, s.rt, s.rv, s.show) + cap(s.say) + '</div>'; }
   var STAR = [4, 5];
   function withStar(svg) { var cx = 4 + STAR[0] * 40 + 20, cy = 4 + STAR[1] * 40 + 20, p = []; for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 7 : 16; p.push((cx + rr * Math.cos(a)).toFixed(1) + ',' + (cy + rr * Math.sin(a)).toFixed(1)); } return svg.replace('</svg>', '<polygon points="' + p.join(' ') + '" style="fill:var(--sd);stroke:var(--ink)" stroke-width="2" opacity=".9"/></svg>'); }
-  function progText(prog) { return prog.length ? prog.map(function (c) { return c[0] === 'move' ? 'move ' + c[1] : 'turn ' + c[0]; }).join(', ') : '(no code yet)'; }
+  /* the robot's code, one step per line */
+  function progText(prog) { return prog.length ? prog.map(function (c) { return c[0] === 'move' ? 'move ' + c[1] : 'turn ' + c[0]; }).join('\n') : '(no code yet)'; }
   function loopProg(r, m, t) { var p = []; for (var i = 0; i < r; i++) { p.push(['move', m]); p.push([t || 'right']); } return p; }
   /* two things happening at the same time: robot steps and music on a timeline */
   function concView(s) {
-    var acts = ['move 2', 'turn right', 'move 2', 'turn right'], w = 110, sv = '';
+    var acts = s.acts || ['move 2', 'turn right', 'move 2', 'turn right'], w = 110, sv = '';
     sv += '<text x="6" y="44" font-size="17" class="tb">Robot</text><text x="6" y="110" font-size="17" class="tb">Music</text>';
     acts.forEach(function (a, i) { var on = i < s.t; sv += '<rect x="' + (80 + i * w) + '" y="20" width="' + (w - 8) + '" height="40" rx="8" style="fill:' + (on ? 'var(--strand)' : 'var(--card)') + ';stroke:var(--strand)" stroke-width="2"/><text x="' + (80 + i * w + (w - 8) / 2) + '" y="46" text-anchor="middle" font-size="16"' + (on ? ' style="fill:#fff" font-weight="700"' : ' class="t2"') + '>' + a + '</text>'; });
     if (s.music && s.t) sv += '<rect x="80" y="86" width="' + (Math.max(0, s.t) * w - 8) + '" height="40" rx="8" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>' + (s.t ? '<text x="' + (80 + s.t * w / 2) + '" y="112" text-anchor="middle" font-size="16" class="tb">&#9835; playing</text>' : '');
@@ -102,14 +103,26 @@
     return '<div>' + A.svg(80 + 4 * w + 10, 142, sv, 'A timeline: the robot moves while music plays') + cap(s.say) + '</div>';
   }
 
+  function rowView(s) { return '<div>' + row(s.core, s.n, s.mark, s.box) + cap(s.say) + '</div>'; }
+  function formView(s) { var list = []; for (var i = 0; i < 6; i++) list.push(s.form === 'L' ? s.core.charAt(i % s.core.length) : ACT[s.core.charAt(i % s.core.length)]); return '<div>' + row(s.core, 6, -1, true) + (s.form ? '<p class="g3-sym" style="font-size:1.3rem;color:var(--ink)">' + list.join(', ') + '</p>' : '') + cap(s.say) + '</div>'; }
+  function ruleView(s) { var v = []; for (var i = 0; i < s.n; i++) v.push(s.a + s.d * i); return '<div>' + towers(v) + cap(v.join(', ')) + '</div>'; }
+  function machView(s) { return '<div>' + machine(s.op, s.k, s.n, s.hide) + (s.tbl ? machineTable(s.op, s.k, s.n - 2) : '') + cap(s.say) + '</div>'; }
+  function stepView(s) { var p = s.prog.slice(0, s.k); return '<div>' + withStar(robot(p).svg) + '<pre class="mono">' + progText(p) + '</pre>' + cap(s.say) + '</div>'; }
+  function loopView(s) { return '<div>' + robot(loopProg(s.k, s.m)).svg + '<pre class="mono">repeat ' + s.times + ' times\n  move ' + s.m + '\n  turn right\nend repeat</pre>' + cap(s.say) + '</div>'; }
+
   var LESSONS = [
     { id: 'repeat', title: 'Repeating patterns', sub: 'Find the part that repeats.', concepts: [
       { id: 'core', title: 'Find the core', exp: ['C1.1', 'C1.3'], skill: 'pt-repeat',
         body: '<p>A <b>repeating pattern</b> has a part that repeats over and over. That part is the <b>core</b>. Find the core and you know what comes next.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + row('ABB', s.n, -1, s.box) + cap(s.say) + '</div>'; }, { n: 3, box: false, say: '' }), steps: [
+        watch: { mount: G3.view(rowView, { core: 'ABB', mark: -1, n: 3, box: false, say: '' }), steps: [
           { say: 'Circle, square, square.', ms: 1300 },
           { say: 'Then it starts again.', act: function (t) { return t.seq([{ n: 4 }, { n: 5 }, { n: 6 }, { n: 7 }, { n: 8 }, { n: 9 }], 420); } },
           { say: 'Box each part that repeats. The core is <b>circle, square, square</b>.', act: function (t) { return t.set({ box: true, say: 'Core: circle, square, square' }, 2000); } }
+        ] },
+        example: { mount: G3.view(rowView, { core: 'AAB', n: 3, mark: -1, box: false, say: '' }), steps: [
+          { say: 'My turn. I see circle, circle, square.', ms: 1300 },
+          { say: 'Then it starts again: circle, circle, square.', act: function (t) { return t.seq([{ n: 4 }, { n: 5 }, { n: 6 }, { n: 7 }, { n: 8 }, { n: 9 }], 420); } },
+          { say: 'I box each part that repeats. The core is <b>circle, circle, square</b>.', act: function (t) { return t.set({ box: true, say: 'Core: circle, circle, square' }, 2000); } }
         ] },
         try: { mount: G3.play({ state: { core: 'AB', n: 6, box: false }, draw: function (s) { return row(s.core, s.n, -1, s.box); },
           selects: [{ key: 'core', label: 'Core', options: [['AB', 'circle, square'], ['ABB', 'circle, square, square'], ['AAB', 'circle, circle, square'], ['ABC', 'circle, square, triangle'], ['ABCD', 'circle, square, triangle, star']] }],
@@ -121,10 +134,15 @@
 
       { id: 'forms', title: 'Same pattern, new look', exp: ['C1.2'], skill: 'pt-repeat',
         body: '<p>The same pattern can be shown in different ways. Circle, square, square is the same as <b>A, B, B</b>, and the same as <b>clap, snap, snap</b>.</p>',
-        watch: { mount: G3.view(function (s) { var core = 'ABB', n = 6, list = []; for (var i = 0; i < n; i++) list.push(s.form === 'L' ? core.charAt(i % 3) : ACT[core.charAt(i % 3)]); return '<div>' + row(core, n, -1, true) + (s.form ? '<p class="g3-sym" style="font-size:1.3rem;color:var(--ink)">' + list.join(', ') + '</p>' : '') + cap(s.say) + '</div>'; }, { form: '', say: '' }), steps: [
+        watch: { mount: G3.view(formView, { core: 'ABB', form: '', say: '' }), steps: [
           { say: 'Circle, square, square.', ms: 1300 },
           { say: 'As letters: A, B, B.', act: function (t) { return t.set({ form: 'L' }, 1600); } },
           { say: 'As actions: clap, snap, snap. <b>Same pattern.</b>', act: function (t) { return t.set({ form: 'A' }, 2000); } }
+        ] },
+        example: { mount: G3.view(formView, { core: 'AAB', form: '', say: '' }), steps: [
+          { say: 'My turn. Circle, circle, square.', ms: 1300 },
+          { say: 'I write it with letters: A, A, B.', act: function (t) { return t.set({ form: 'L' }, 1600); } },
+          { say: 'I do it with actions: clap, clap, snap. The core is the same, so it is the <b>same pattern</b>.', act: function (t) { return t.set({ form: 'A' }, 2200); } }
         ] },
         key: '<p>Same core, <b>same pattern</b>, even if it looks different.</p>',
         mistake: '<p>Matching the shapes instead of the structure. A, A, B is not the same as A, B, B. Say the core out loud with letters.</p>',
@@ -132,10 +150,15 @@
 
       { id: 'ahead', title: 'Predict far ahead', exp: ['C1.3'], skill: 'pt-repeat', hard: true,
         body: '<p>To find a shape far ahead, count by the <b>length of the core</b>. With a core of 3, positions 3, 6, 9 end a core. Position 10 starts a new one.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + row('ABC', s.n, s.mark, true) + cap(s.say) + '</div>'; }, { n: 9, mark: -1, say: 'What is at position 10?' }), steps: [
+        watch: { mount: G3.view(rowView, { core: 'ABC', box: true, n: 9, mark: -1, say: 'What is at position 10?' }), steps: [
           { say: 'The core is circle, square, triangle. 3 shapes.', ms: 1500 },
           { say: 'Count by 3s: positions 3, 6, 9 end a core.', act: function (t) { return t.set({ say: '3, 6, 9' }, 1600); } },
           { say: 'Position 10 starts a new core, so it is a <b>circle</b>.', act: function (t) { return t.set({ n: 10, say: 'Position 10: circle' }, 2000); } }
+        ] },
+        example: { mount: G3.view(rowView, { core: 'ABCD', n: 12, mark: -1, box: true, say: 'What is at position 13?' }), steps: [
+          { say: 'My turn. What is at position 13? The core is circle, square, triangle, star. That is 4 shapes.', ms: 1900 },
+          { say: 'I count by 4s: positions 4, 8 and 12 end a core.', act: function (t) { return t.set({ say: '4, 8, 12' }, 1700); } },
+          { say: 'Position 13 starts a new core, so it is a <b>circle</b>.', act: function (t) { return t.set({ n: 13, say: 'Position 13: circle' }, 2000); } }
         ] },
         ways: [
           { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><th class="l">circle</th><td>1</td><td>4</td><td>7</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">10</td></tr><tr><th class="l">square</th><td>2</td><td>5</td><td>8</td><td>11</td></tr><tr><th class="l">triangle</th><td>3</td><td>6</td><td>9</td><td>12</td></tr></tbody></table></div><p>Each row counts by 3. Find 10: it is in the circle row.</p>' },
@@ -153,10 +176,15 @@
     { id: 'grow', title: 'Patterns that grow', sub: 'Repeat an operation each time.', concepts: [
       { id: 'rule', title: 'Use a pattern rule', exp: ['C1.1', 'C1.3'], skill: 'pt-grow',
         body: '<p>A <b>pattern rule</b> tells where to start and what to do each time. Start at 2, add 3: <b>2, 5, 8, 11, 14</b>.</p>',
-        watch: { mount: G3.view(function (s) { var v = []; for (var i = 0; i < s.n; i++) v.push(2 + 3 * i); return '<div>' + towers(v) + cap(v.join(', ')) + '</div>'; }, { n: 1 }), steps: [
+        watch: { mount: G3.view(ruleView, { a: 2, d: 3, n: 1 }), steps: [
           { say: 'Start at 2.', ms: 1200 },
           { say: 'Add 3 each time.', act: function (t) { return t.seq([{ n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }], 800); } },
           { say: 'The rule <b>start at 2, add 3</b> gives 2, 5, 8, 11, 14.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(ruleView, { a: 3, d: 4, n: 1 }), steps: [
+          { say: 'My turn. The rule is start at 3, add 4. I start at 3.', ms: 1400 },
+          { say: 'I add 4 each time: 7, 11, 15, 19.', act: function (t) { return t.seq([{ n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }], 800); } },
+          { say: 'The rule <b>start at 3, add 4</b> gives 3, 7, 11, 15, 19.', ms: 2000 }
         ] },
         try: { mount: G3.play({ state: { st: 1, b: 2, sg: 1 }, draw: function (s) { var v = []; for (var i = 0; i < 6; i++) { var x = s.st + s.sg * s.b * i; if (x < 0) break; v.push(x); } return towers(v) + '<p class="g3-sym" style="font-size:1.2rem;color:var(--ink)">' + v.join(', ') + '</p>'; },
           sliders: [{ key: 'st', label: 'Start at', min: 0, max: 40 }, { key: 'b', label: 'This much', min: 1, max: 10 }],
@@ -172,6 +200,11 @@
           { say: '40, 35, 30, 25. How does it change?', ms: 1500 },
           { say: 'Each jump goes back 5.', act: function (t) { return t.jumps(-5, 3, 350); } },
           { say: 'Rule: <b>start at 40, take away 5</b>. Next is 20.', act: function (t) { return t.jumps(-5, 1).then(function () { return t.mark(20, '20'); }); }, ms: 1800 }
+        ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 30, tick: 1, every: 5, start: 12, marks: [{ v: 12, t: '12' }, { v: 15, t: '15' }, { v: 18, t: '18' }, { v: 21, t: '21' }] }, steps: [
+          { say: 'My turn. 12, 15, 18, 21. I look at how it changes.', ms: 1500 },
+          { say: 'Each jump goes forward 3.', act: function (t) { return t.jumps(3, 3, 350); } },
+          { say: 'It is the same change each time. Rule: <b>start at 12, add 3</b>. Next is 24.', act: function (t) { return t.jumps(3, 1).then(function () { return t.mark(24, '24'); }); }, ms: 2000 }
         ] },
         ways: [
           { label: 'Hundreds patterns', html: '<p>125, 225, 325, 425. Only the hundreds digit changes. Rule: start at 125, <b>add 100</b>.</p>' },
@@ -193,6 +226,11 @@
           { say: 'Think: what plus 4 makes 10? Count up from 4 to 10: 6.', act: function (t) { return t.set({ say: '4 + 6 = 10' }, 1800); } },
           { say: 'Put 6 in place of n. Both sides are 10. <b>n = 6</b>.', act: function (t) { return t.set({ lt: '6 + 4', lv: 10, show: true, say: 'n = 6' }, 2000); } }
         ] },
+        example: { mount: G3.view(balView, { lt: 'n + 7', lv: 0, rt: '15', rv: 15, show: false, say: 'n + 7 = 15' }), steps: [
+          { say: 'My turn. n + 7 = 15. What number is n?', ms: 1500 },
+          { say: 'I think: what plus 7 makes 15? I count up from 7 to 15: 8.', act: function (t) { return t.set({ say: '7 + 8 = 15' }, 1800); } },
+          { say: 'I put 8 in place of n. Both sides are 15. <b>n = 8</b>.', act: function (t) { return t.set({ lt: '8 + 7', lv: 15, show: true, say: 'n = 8' }, 2000); } }
+        ] },
         try: { mount: G3.play({ state: { n: 3 }, draw: function (s) { return balance(s.n + ' + 8', s.n + 8, '15', 15, true); },
           sliders: [{ key: 'n', label: 'Try n =', min: 0, max: 15 }],
           info: function (s) { return s.n + 8 === 15 ? '<b>n = 7</b>. Both sides are 15.' : s.n + ' + 8 = ' + (s.n + 8) + (s.n + 8 > 15 ? ', too much.' : ', not enough.'); },
@@ -203,11 +241,17 @@
 
       { id: 'machine', title: 'Number machines and tables', exp: ['C2.1', 'C1.2'], skill: 'pt-table', hard: true,
         body: '<p>In a rule like <span class="math">n + 10</span>, n can be <b>any number</b> you put in. A table shows what comes out for each number.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + machine('x', 2, s.n, s.hide) + (s.tbl ? machineTable('x', 2, s.n - 2) : '') + cap(s.say) + '</div>'; }, { n: 3, hide: true, tbl: false, say: '' }), steps: [
+        watch: { mount: G3.view(machView, { op: 'x', k: 2, n: 3, hide: true, tbl: false, say: '' }), steps: [
           { say: 'The rule is 2 &times; n. Put in 3.', ms: 1500 },
           { say: '2 &times; 3 = 6 comes out.', act: function (t) { return t.set({ hide: false, tbl: true }, 1600); } },
           { say: 'Put in 4, 5, 6. Each answer goes in the table.', act: function (t) { return t.seq([{ n: 4 }, { n: 5 }, { n: 6 }], 1000); } },
           { say: 'The table shows the rule: <b>out = 2 &times; n</b>.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(machView, { op: '+', k: 5, n: 3, hide: true, tbl: false, say: '' }), steps: [
+          { say: 'My turn. The rule is n + 5. I put in 3.', ms: 1500 },
+          { say: 'I put 3 in place of n: 3 + 5 = 8 comes out.', act: function (t) { return t.set({ hide: false, tbl: true }, 1600); } },
+          { say: 'I put in 4, 5 and 6. Each answer goes in the table: 9, 10, 11.', act: function (t) { return t.seq([{ n: 4 }, { n: 5 }, { n: 6 }], 1000); } },
+          { say: 'The table shows the rule: <b>out = n + 5</b>.', ms: 2000 }
         ] },
         ways: [
           { label: 'Find the rule from a table', html: machineTable('+', 5, 5) + '<p>Each number out is 5 more than n. The rule is <b>n + 5</b>.</p>' },
@@ -230,6 +274,11 @@
           { say: 'Work out each side: 20 and 20.', act: function (t) { return t.set({ show: true, say: '20 = 20' }, 1800); } },
           { say: 'The scale balances. <b>4 &times; 5 = 2 &times; 10</b>.', ms: 2000 }
         ] },
+        example: { mount: G3.view(balView, { lt: '3 × 4', lv: 12, rt: '6 + 6', rv: 12, show: false, say: '' }), steps: [
+          { say: 'My turn. Is 3 &times; 4 equal to 6 + 6?', ms: 1500 },
+          { say: 'I work out each side. Left: 3 &times; 4 = 12. Right: 6 + 6 = 12.', act: function (t) { return t.set({ show: true, say: '12 = 12' }, 1900); } },
+          { say: 'Same value, so the scale balances. <b>3 &times; 4 = 6 + 6</b>.', ms: 2000 }
+        ] },
         try: { mount: G3.play({ state: { a: 3, b: 4 }, draw: function (s) { return balance('6 × 2', 12, s.a + ' × ' + s.b, s.a * s.b, true); },
           sliders: [{ key: 'a', label: 'Right: first number', min: 1, max: 12 }, { key: 'b', label: 'Right: second number', min: 1, max: 12 }],
           tasks: [{ do: 'Make the right side equal to <b>6 &times; 2</b>, without using 6 or 2.', goal: function (s) { return s.a * s.b === 12 && [s.a, s.b].indexOf(6) < 0 && [s.a, s.b].indexOf(2) < 0; }, yes: function (s) { return s.a + ' &times; ' + s.b + ' = 12 too.'; } }] }), do: '' },
@@ -242,6 +291,11 @@
           { say: '20 &divide; 2 and 20 &minus; 2 look alike. Are they equal?', ms: 1600 },
           { say: 'Left: 10. Right: 18.', act: function (t) { return t.set({ show: true, say: '10 and 18' }, 1800); } },
           { say: 'The scale tips. <b>20 &divide; 2 &ne; 20 &minus; 2</b>.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(balView, { lt: '5 + 3', lv: 8, rt: '5 × 3', rv: 15, show: false, say: '' }), steps: [
+          { say: 'My turn. 5 + 3 and 5 &times; 3 use the same numbers. Are they equal?', ms: 1700 },
+          { say: 'I work out each side. Left: 8. Right: 15.', act: function (t) { return t.set({ show: true, say: '8 and 15' }, 1800); } },
+          { say: 'Different values, so the scale tips. <b>5 + 3 &ne; 5 &times; 3</b>.', ms: 2000 }
         ] },
         ways: [
           { label: 'With counters', html: '<p>20 &divide; 2 is 20 counters in 2 groups: 10 in each. 20 &minus; 2 is 20 counters with 2 taken away: 18 left.</p>' },
@@ -258,11 +312,18 @@
     { id: 'code', title: 'Coding', sub: 'Steps in order, loops, and things at the same time.', concepts: [
       { id: 'steps', title: 'Steps in order', exp: ['C3.1', 'C3.2'], skill: 'pt-code',
         body: '<p><b>Code</b> is a list of steps a computer follows <b>in order</b>. Steps that come one after another are <b>sequential</b>.</p>',
-        watch: { mount: G3.view(function (s) { var p = [['move', 3], ['right'], ['move', 3]].slice(0, s.k); return '<div>' + withStar(robot(p).svg) + '<pre class="mono">' + progText(p) + '</pre>' + cap(s.say) + '</div>'; }, { k: 0, say: '' }), steps: [
+        watch: { mount: G3.view(stepView, { prog: [['move', 3], ['right'], ['move', 3]], k: 0, say: '' }), steps: [
           { say: 'Get the robot to the star.', ms: 1400 },
           { say: 'Step 1: move 3.', act: function (t) { return t.set({ k: 1 }, 1300); } },
           { say: 'Step 2: turn right.', act: function (t) { return t.set({ k: 2 }, 1300); } },
           { say: 'Step 3: move 3. It reached the star. <b>Order matters.</b>', act: function (t) { return t.set({ k: 3 }, 2000); } }
+        ] },
+        example: { mount: G3.view(stepView, { prog: [['right'], ['move', 3], ['left'], ['move', 3]], k: 0, say: '' }), steps: [
+          { say: 'My turn. I will get the robot to the star a different way.', ms: 1500 },
+          { say: 'Step 1: turn right.', act: function (t) { return t.set({ k: 1 }, 1200); } },
+          { say: 'Step 2: move 3.', act: function (t) { return t.set({ k: 2 }, 1200); } },
+          { say: 'Step 3: turn left.', act: function (t) { return t.set({ k: 3 }, 1200); } },
+          { say: 'Step 4: move 3. It reached the star. The code ran one step at a time, in order.', act: function (t) { return t.set({ k: 4 }, 2000); } }
         ] },
         try: { mount: G3.play({ state: { prog: [] }, draw: function (s) { return withStar(robot(s.prog).svg) + '<pre class="mono">' + progText(s.prog) + '</pre>'; },
           buttons: [{ label: 'Move 1', act: function (s) { var l = s.prog[s.prog.length - 1]; if (l && l[0] === 'move') l[1]++; else s.prog.push(['move', 1]); } }, { label: 'Turn right', act: function (s) { s.prog.push(['right']); } }, { label: 'Turn left', act: function (s) { s.prog.push(['left']); } }, { label: 'Undo', act: function (s) { var l = s.prog[s.prog.length - 1]; if (l && l[0] === 'move' && l[1] > 1) l[1]--; else s.prog.pop(); } }],
@@ -273,10 +334,15 @@
 
       { id: 'loop', title: 'Repeat loops', exp: ['C3.1', 'C3.2'], skill: 'pt-code', hard: true,
         body: '<p>A <b>repeat</b> (or loop) does the same steps many times, so the code is shorter. Repeat 4 times [move 3, turn right] draws a square.</p>',
-        watch: { mount: G3.view(function (s) { return '<div>' + robot(loopProg(s.k, 3)).svg + '<pre class="mono">repeat 4 times\n  move 3\n  turn right\nend repeat</pre>' + cap(s.say) + '</div>'; }, { k: 0, say: '' }), steps: [
+        watch: { mount: G3.view(loopView, { times: 4, m: 3, k: 0, say: '' }), steps: [
           { say: 'The loop runs 4 times.', ms: 1300 },
           { say: 'Each time: move 3, turn right.', act: function (t) { return t.seq([{ k: 1, say: 'Time 1' }, { k: 2, say: 'Time 2' }, { k: 3, say: 'Time 3' }, { k: 4, say: 'Time 4' }], 900); } },
           { say: 'A square. 4 &times; 3 = <b>12 steps</b>.', act: function (t) { return t.set({ say: '4 &times; 3 = 12 steps' }, 2000); } }
+        ] },
+        example: { mount: G3.view(loopView, { times: 4, m: 2, k: 0, say: '' }), steps: [
+          { say: 'My turn. My loop runs 4 times. Each time: move 2, turn right.', ms: 1600 },
+          { say: 'I follow it one time after another.', act: function (t) { return t.seq([{ k: 1, say: 'Time 1' }, { k: 2, say: 'Time 2' }, { k: 3, say: 'Time 3' }, { k: 4, say: 'Time 4' }], 900); } },
+          { say: 'A small square. 4 times &times; 2 steps = <b>8 steps</b>.', act: function (t) { return t.set({ say: '4 &times; 2 = 8 steps' }, 2000); } }
         ] },
         ways: [
           { label: 'Write it out long', html: '<pre class="mono">move 3, turn right,\nmove 3, turn right,\nmove 3, turn right,\nmove 3, turn right</pre><p>Same result, but 8 lines instead of a short loop.</p>' },
@@ -297,6 +363,11 @@
           { say: 'Two lines of code start together: the robot and the music.', ms: 1600 },
           { say: 'The robot does its steps one at a time. The music keeps playing.', act: function (t) { return t.seq([{ t: 1 }, { t: 2 }, { t: 3 }, { t: 4 }], 900); } },
           { say: 'Both happened <b>at the same time</b>. They are concurrent.', ms: 2000 }
+        ] },
+        example: { mount: G3.view(concView, { acts: ['move 3', 'turn left', 'move 3'], t: 0, music: true, say: '' }), steps: [
+          { say: 'My turn. I start two lines of code together: the robot and the music.', ms: 1600 },
+          { say: 'The robot does its steps one after another. That part is sequential.', act: function (t) { return t.seq([{ t: 1 }, { t: 2 }, { t: 3 }], 900); } },
+          { say: 'The music played the whole time the robot moved. They ran <b>at the same time</b>: concurrent.', ms: 2200 }
         ] },
         key: '<p>Sequential: <b>one after another</b>. Concurrent: <b>at the same time</b>.</p>',
         check: [G3.turn({ q: 'A robot moves while a light flashes. These events are:', options: ['concurrent', 'sequential'], answer: 0, why: 'They happen at the same time.' }), G3.turn({ q: 'Move 2, then turn, then move 3. These steps are:', options: ['sequential', 'concurrent'], answer: 0, why: 'They happen one after another, in order.' })] }
