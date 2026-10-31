@@ -95,7 +95,7 @@
     }
     if (tab === 'quiz') {
       app.innerHTML = h + '<div class="quiz" id="quiz"></div>' + nextPrev(ctx) + '</div>';
-      A.quiz($('#quiz', app), id, ch.quiz);
+      A.quiz($('#quiz', app), id, ch.quizFresh && A.freshQuiz ? function () { return A.freshQuiz(ch); } : ch.quiz);
       return '';
     }
     overview(app, id, h, ctx);
@@ -237,13 +237,16 @@
       round++;
       var uid = 'ck-' + c.slug + round;
       var h = '<p class="ytl">Your turn</p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
-      if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
+      var isQK = !!(A.Q && A.Q.has(q)), qk = null;
+      if (isQK) h += '<div class="qkbox"></div>';
+      else if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += '<form class="numrow"><label class="sr" for="' + uid + '">Your answer</label><input type="text" inputmode="' + (q.kb || 'decimal') + '" autocomplete="off" id="' + uid + '" placeholder="Type your answer">' + (q.unit === '$' ? '' : q.unit ? '<span class="unit">' + q.unit + '</span>' : '') + '<button class="btn" type="submit">Check</button></form>';
       h += '<div class="fb" aria-live="polite"></div><div class="ytn"></div>';
       box.innerHTML = h;
       box._q = q; /* exposed for automated checks */
       var fb = $('.fb', box);
       function shown(v) {
+        if (isQK) return A.Q.text(q);
         if (q.type === 'mc') return q.options[v];
         if (q.show != null) return typeof q.show === 'function' ? q.show(v) : q.show;
         if (q.unit === '$') return '$' + Number(v).toFixed(2);
@@ -259,18 +262,20 @@
           fb.className = 'fb ok';
           fb.innerHTML = '<b>' + (first ? 'Yes.' : 'Yes, you fixed it.') + '</b> <span>' + (q.explain || '') + '</span>' + (!was && s.got ? '<p class="ls-got">Got it. This idea is marked on your progress page.</p>' : '');
           $$('button.opt, input, form .btn', box).forEach(function (b) { b.disabled = true; });
+          if (qk) qk.lock();
           $('.ytn', box).innerHTML = '<button type="button" class="btn alt">Another one</button>';
           $('.ytn .btn', box).addEventListener('click', function () { show(); var f = $('.opt, input', box); if (f) f.focus(); });
           if (!was && s.got) onGot();
           return;
         }
-        if (btn) { btn.classList.add('no'); btn.disabled = true; } else M.bump($('.numrow', box), 'mp-shake');
+        if (btn) { btn.classList.add('no'); btn.disabled = true; } else if (!qk) M.bump($('.numrow', box), 'mp-shake');
         fb.className = 'fb bad';
         if (tries >= 2) {
           done = true;
           var s2 = L.cstate(c);
           mark(c, { n: (s2.n || 0) + 1 });
-          if (q.type === 'mc') $$('.opt', box)[q.answer].classList.add('yes');
+          if (qk) { qk.reveal(); qk.lock(); }
+          else if (q.type === 'mc') $$('.opt', box)[q.answer].classList.add('yes');
           $$('button.opt, input, form .btn', box).forEach(function (b) { b.disabled = true; });
           fb.innerHTML = '<b>The answer is ' + shown(q.answer) + '.</b> <span>' + (q.explain || '') + '</span>' +
             (q.steps && q.steps.length ? '<ol class="ls-reveal">' + q.steps.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>' : '') +
@@ -279,7 +284,8 @@
           $('.ytn .btn', box).addEventListener('click', function () { show(); var f = $('.opt, input', box); if (f) f.focus(); });
         } else fb.innerHTML = '<b>Not yet.</b> <span>' + (q.hint || 'Look at the example again.') + ' Try again.</span>';
       }
-      if (q.type === 'mc') $$('.opt', box).forEach(function (b) {
+      if (isQK) { qk = A.Q.mount($('.qkbox', box), q, function (ok) { if (!done) result(ok); }); box._qk = qk; }
+      else if (q.type === 'mc') $$('.opt', box).forEach(function (b) {
         b.addEventListener('click', function () { if (done) return; var j = +b.getAttribute('data-j'); if (j === q.answer) b.classList.add('yes'); result(j === q.answer, j === q.answer ? null : b); });
       });
       else $('form', box).addEventListener('submit', function (e) {

@@ -880,4 +880,394 @@
       } }
     ]
   });
+
+  /* ---------- More ways to ask (question shapes, see ../assets/qkit.js) ----------
+     Every practice skill keeps its first way of asking ("plain") and adds new shapes:
+     a picture to tap, a story, a reverse question, a mistake to find, cards to order or match.
+     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automated answer checks. */
+  var Q = A.Q;
+  if (Q) (function () {
+    var nm = Q.name;
+    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
+    function distinct3(nonzero) {
+      var d;
+      do { d = [R.int(1, 9), R.int(nonzero ? 1 : 0, 9), R.int(nonzero ? 1 : 0, 9)]; } while (d[0] === d[1] || d[1] === d[2] || d[0] === d[2]);
+      return d;
+    }
+    function num3(d) { return d[0] * 100 + d[1] * 10 + d[2]; }
+    function u(n, i) { var s = String(n); return s.slice(0, i) + '<u>' + s.charAt(i) + '</u>' + s.slice(i + 1); }
+    /* big digits in boxes; each box can be tapped */
+    function digitPic(n) {
+      var s = String(n), w = 84, h = '';
+      for (var i = 0; i < s.length; i++) {
+        var x = 4 + i * w;
+        h += '<g data-hit="' + i + '" aria-label="the ' + s.charAt(i) + ' in the ' + A.PLACES[s.length - 1 - i] + ' place"><rect x="' + x + '" y="4" width="' + (w - 10) + '" height="92" rx="14" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
+          '<text x="' + (x + (w - 10) / 2) + '" y="70" text-anchor="middle" font-size="58" font-weight="700" style="fill:var(--ink);font-family:var(--display)">' + s.charAt(i) + '</text></g>';
+      }
+      return A.svg(s.length * w, 100, h, 'The number ' + n + ' in big digits');
+    }
+    /* a short number line from lo to hi with a marker at n; the two ends can be tapped */
+    function twoEnds(n, lo, hi) {
+      var x0 = 56, x1 = 364, X = function (v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); }, s = '';
+      s += '<line x1="' + x0 + '" y1="70" x2="' + x1 + '" y2="70" style="stroke:var(--ink)" stroke-width="3"/>';
+      for (var i = 0; i <= 10; i++) { var x = x0 + (x1 - x0) * i / 10; s += '<line x1="' + x + '" y1="' + (i === 5 ? 58 : 63) + '" x2="' + x + '" y2="' + (i === 5 ? 82 : 77) + '" style="stroke:var(--ink)" stroke-width="2"/>'; }
+      s += '<circle cx="' + X(n) + '" cy="70" r="9" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="' + X(n) + '" y="46" text-anchor="middle" font-size="24" font-weight="700" style="fill:var(--ink)">' + n + '</text>';
+      [[lo, x0], [hi, x1]].forEach(function (e) {
+        s += '<g data-hit="' + e[0] + '" aria-label="' + e[0] + '"><rect x="' + (e[1] - 50) + '" y="94" width="100" height="50" rx="10" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
+          '<text x="' + e[1] + '" y="124" text-anchor="middle" font-size="26" font-weight="700" style="fill:var(--ink)">' + e[0] + '</text></g>';
+      });
+      return A.svg(420, 150, s, n + ' on a number line from ' + lo + ' to ' + hi);
+    }
+    function placeOf(p) { return A.PLACES[p]; }
+
+    var SHAPES = {
+      'n3-value': [
+        [1, 'tap', function (lv) {
+          var d = distinct3(true), n = num3(d), i = R.int(0, 2), p = 2 - i, val = d[i] * Math.pow(10, p);
+          return { q: 'Tap the digit that is worth <b>' + val + '</b>.', type: 'tap', pic: digitPic(n), answer: String(i), answerText: 'the ' + d[i] + ' in the ' + placeOf(p) + ' place',
+            hint: 'Which place is worth ' + (p === 2 ? 'hundreds' : p === 1 ? 'tens' : 'ones') + '? Count places from the right: ones, tens, hundreds.',
+            steps: [val + ' is ' + d[i] + ' ' + placeOf(p) + '.', 'The ' + placeOf(p) + ' place is ' + ['the last digit', 'the middle digit', 'the first digit'][p] + '.', 'So tap the ' + d[i] + '.'],
+            explain: 'In ' + n + ', the ' + d[i] + ' is in the ' + placeOf(p) + ' place, so it is worth ' + val + '.', meta: { k: 'value-tap', n: n, val: val } };
+        }],
+        [1, 'story', function (lv) {
+          var c = R.pick([['students', 'A school has', 'students'], ['books', 'The library has', 'books'], ['seats', 'The hockey arena has', 'seats in one section'], ['cans', 'The class collected', 'cans of food']]);
+          var d = distinct3(true), n = num3(d), i = lv === 1 ? R.int(0, 1) : R.int(0, 2), p = 2 - i, val = d[i] * Math.pow(10, p);
+          return { q: c[1] + ' ' + n + ' ' + c[2] + '. The <b>' + d[i] + '</b> in ' + n + ' stands for how many ' + c[0] + '?', type: 'num', answer: val,
+            hint: 'Which place is the ' + d[i] + ' in?', steps: ['The ' + d[i] + ' is in the ' + placeOf(p) + ' place.', d[i] + ' ' + placeOf(p) + ' = ' + val + '.'],
+            explain: 'The ' + d[i] + ' stands for ' + val + ' ' + c[0] + '.', meta: { k: 'value-num', n: n, i: i } };
+        }],
+        [1, 'mistake', function (lv) {
+          var d = distinct3(true), n = num3(d), i = R.int(0, 1), p = 2 - i, val = d[i] * Math.pow(10, p), who = nm();
+          var truth = !R.int(0, 2), said = truth ? val : R.pick([d[i], d[i] * Math.pow(10, p === 2 ? 1 : 2)]);
+          var right = 'The ' + d[i] + ' is in the ' + placeOf(p) + ' place, so it is worth ' + val + '.';
+          return { q: who + ' says the <b>' + d[i] + '</b> in <span class="math">' + u(n, i) + '</span> is worth <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['A digit is always worth just itself.', 'The ' + d[i] + ' is in the ' + placeOf(p === 2 ? 1 : 2) + ' place, so it is worth ' + d[i] * Math.pow(10, p === 2 ? 1 : 2) + '.', 'The biggest digit is always worth the most.']),
+            hint: 'Find the place of the underlined digit first.', steps: [right], explain: right, meta: { k: 'value-tf', n: n, i: i, said: said } };
+        }],
+        [2, 'pick', function (lv) {
+          var dg = R.int(1, 9), p = R.int(1, 2), opts = [], vals = {};
+          while (opts.length < 5) {
+            var pp = opts.length < 2 ? p : R.int(0, 2), dd = [R.int(1, 9), R.int(0, 9), R.int(0, 9)];
+            dd[2 - pp] = dg; for (var k = 0; k < 3; k++) if (k !== 2 - pp && dd[k] === dg) dd[k] = (dg % 9) + 1;
+            var n = num3(dd); if (!vals[n]) { vals[n] = 1; opts.push(n); }
+          }
+          opts = R.shuffle(opts);
+          var ans = [], target = dg * Math.pow(10, p);
+          opts.forEach(function (n, j) { if (Math.floor(n / Math.pow(10, p)) % 10 === dg) ans.push(j); });
+          if (ans.length === 5) return SHAPES['n3-value'][3][2](lv);
+          return { q: 'Pick every number where the <b>' + dg + '</b> is worth <b>' + target + '</b>.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: target + ' means the ' + dg + ' must be in the ' + placeOf(p) + ' place.', steps: ['The ' + placeOf(p) + ' place is ' + (p === 2 ? 'the first digit' : 'the middle digit') + '.', 'Pick each number with a ' + dg + ' there.'],
+            explain: 'The ' + dg + ' is worth ' + target + ' only when it is in the ' + placeOf(p) + ' place.', meta: { k: 'value-pick', dg: dg, p: p, opts: opts } };
+        }],
+        [3, 'match', function (lv) {
+          var pairs = [], seen = {};
+          while (pairs.length < 3) {
+            var d = distinct3(true), n = num3(d), i = R.int(0, 2), val = d[i] * Math.pow(10, 2 - i);
+            if (seen[val]) continue; seen[val] = 1;
+            pairs.push(['<span class="math">' + u(n, i) + '</span>', String(val)]);
+          }
+          return { q: 'Match each underlined digit to the value it stands for.', type: 'match', pairs: pairs,
+            hint: 'For each number, find the place of the underlined digit.', steps: ['Ones are worth 1 each, tens 10 each, hundreds 100 each.'],
+            explain: pairs.map(function (p) { return p[0].replace(/<[^>]+>/g, '') + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'value-match', pairs: pairs } };
+        }]
+      ],
+      'n3-blocks': [
+        [1, 'build', function (lv) {
+          var h = R.int(1, lv === 1 ? 4 : 9), t = R.int(lv === 1 ? 1 : 0, lv === 1 ? 6 : 9), o = R.int(lv === 1 ? 1 : 0, 9), n = h * 100 + t * 10 + o;
+          return { q: 'Show <b>' + n + '</b> with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', answer: n,
+            hint: 'A flat is 100, a rod is 10, a small cube is 1. ' + n + ' needs ' + h + ' flats.',
+            steps: [n + ' is ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + '.', 'Add ' + h + ' flats, ' + t + ' rods and ' + o + ' small cubes.'],
+            explain: plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + ' make ' + n + '.', meta: { k: 'blocks-build', n: n } };
+        }],
+        [1, 'story', function (lv) {
+          var c = R.pick([['crayons', 'boxes of 100', 'packs of 10', 'loose crayons', 'A shop has'], ['stickers', 'sheets of 100', 'strips of 10', 'single stickers', 'Mei has'], ['beads', 'bags of 100', 'strings of 10', 'loose beads', 'The art room has']]);
+          var h = R.int(1, 9), t = R.int(lv === 1 ? 1 : 0, 9), o = R.int(lv === 1 ? 1 : 0, 9), n = h * 100 + t * 10 + o;
+          return { q: c[4] + ' ' + h + ' ' + c[1] + ', ' + t + ' ' + c[2] + ' and ' + o + ' ' + c[3] + '. How many ' + c[0] + ' is that in all?', type: 'num', answer: n,
+            hint: 'Each ' + c[1].split(' ')[0].replace(/s$/, '') + ' is a hundred. Each ' + c[2].split(' ')[0].replace(/s$/, '') + ' is a ten.',
+            steps: [h + ' hundreds = ' + h * 100 + '. ' + t + ' tens = ' + t * 10 + '.', h * 100 + ' + ' + t * 10 + ' + ' + o + ' = ' + n + '.'],
+            explain: h * 100 + ' + ' + t * 10 + ' + ' + o + ' = ' + n + ' ' + c[0] + '.', meta: { k: 'blocks-story', h: h, t: t, o: o } };
+        }],
+        [1, 'tap', function (lv) {
+          var d = distinct3(lv === 1), n = num3(d), alts = [d[2] * 100 + d[1] * 10 + d[0], d[0] * 100 + d[2] * 10 + d[1], d[1] * 100 + d[0] * 10 + d[2]].filter(function (v) { return v !== n && v >= 100; });
+          var set = R.shuffle([n].concat(alts.slice(0, 2)));
+          return { q: 'Which blocks show <b>' + n + '</b>? Tap them.', type: 'tap', tiles: set.map(function (v) { return A.draw.blocks(v, 'Base-ten blocks', 260, 3); }), answer: set.indexOf(n), answerText: 'the blocks with ' + plural(d[0], 2) + ', ' + plural(d[1], 1) + ' and ' + plural(d[2], 0),
+            hint: n + ' has ' + d[0] + ' hundreds. Look for ' + d[0] + ' flats first.', steps: ['Count the flats in each picture. You need ' + d[0] + '.', 'Then check the rods (' + d[1] + ') and the small cubes (' + d[2] + ').'],
+            explain: n + ' is ' + plural(d[0], 2) + ', ' + plural(d[1], 1) + ' and ' + plural(d[2], 0) + '.', meta: { k: 'blocks-tap', n: n, set: set } };
+        }],
+        [2, 'mistake', function (lv) {
+          var h = R.int(1, 9), t = R.int(0, 9), o = R.int(1, 9), n = h * 100 + t * 10 + o, who = nm();
+          if (t === o) t = (t + 3) % 10;
+          n = h * 100 + t * 10 + o;
+          var truth = !R.int(0, 2), said = truth ? n : (t === 0 ? h * 10 + o : h * 100 + o * 10 + t);
+          var right = 'There are ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + ', so the blocks show ' + n + '.';
+          return { q: who + ' says these blocks show <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: A.draw.blocks(n, 'Base-ten blocks', 540, 5),
+            why: why(right, [t === 0 ? 'There are no rods, so you can skip the tens place.' : 'Count the small cubes before the rods.', 'Every block is worth 1, so just count them.', 'Rods are worth 100 each.']),
+            hint: 'Count flats, then rods, then small cubes.', steps: [right], explain: right, meta: { k: 'blocks-tf', n: n, said: said } };
+        }],
+        [2, 'fill', function (lv) {
+          var h = R.int(1, 9), t = R.int(0, 9), o = R.int(0, 9), n = h * 100 + t * 10 + o;
+          if (lv === 3) {
+            /* trade: show it with one less hundred */
+            var t2 = t + 10;
+            return { q: 'There are no flats left, so use rods instead. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] hundreds, [[]] tens and [[]] ones', answers: [h - 1, t2, o],
+              hint: 'Trade 1 flat for 10 rods. One less hundred, ten more tens.', steps: [n + ' is ' + plural(h, 2) + ', ' + plural(t, 1) + ', ' + plural(o, 0) + '.', 'Trade 1 hundred for 10 tens: ' + (h - 1) + ' hundreds and ' + t2 + ' tens.'],
+              explain: (h - 1) * 100 + ' + ' + t2 * 10 + ' + ' + o + ' = ' + n + '.', meta: { k: 'blocks-trade', n: n } };
+          }
+          return { q: 'Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] hundreds, [[]] tens and [[]] ones', answers: [h, t, o],
+            hint: 'The first digit is the hundreds. A place with 0 gets 0.', steps: ['Read the digits from left to right: ' + h + ', ' + t + ', ' + o + '.'],
+            explain: n + ' = ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + '.', meta: { k: 'blocks-fill', n: n } };
+        }]
+      ],
+      'n3-forms': [
+        [1, 'fill', function (lv) {
+          var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9), n = h * 100 + t * 10 + o;
+          if (lv >= 2 && R.int(0, 1)) {
+            var z = R.int(0, 1); if (z) t = 0; else o = 0; n = h * 100 + t * 10 + o;
+            return { q: 'Write <b>' + n + '</b> in expanded form. A place with 0 is left out.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] + [[]]', answers: [h * 100, t ? t * 10 : o],
+              hint: 'Write the value of each digit that is not 0.', steps: ['The ' + h + ' is worth ' + h * 100 + '.', (t ? 'The ' + t + ' is worth ' + t * 10 : 'The ' + o + ' is worth ' + o) + '. The 0 adds nothing.'],
+              explain: n + ' = ' + h * 100 + ' + ' + (t ? t * 10 : o) + '.', meta: { k: 'forms-fill', n: n, parts: 2 } };
+          }
+          return { q: 'Write <b>' + n + '</b> in expanded form.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] + [[]] + [[]]', answers: [h * 100, t * 10, o],
+            hint: 'Write the value of each digit: hundreds, then tens, then ones.', steps: ['The ' + h + ' is worth ' + h * 100 + '.', 'The ' + t + ' is worth ' + t * 10 + '. The ' + o + ' is worth ' + o + '.'],
+            explain: n + ' = ' + h * 100 + ' + ' + t * 10 + ' + ' + o + '.', meta: { k: 'forms-fill', n: n, parts: 3 } };
+        }],
+        [1, 'match', function (lv) {
+          var d = distinct3(lv === 1), base = [num3(d), d[0] * 100 + d[2] * 10 + d[1], d[1] * 100 + d[0] * 10 + d[2]].filter(function (v) { return v >= 100; });
+          while (base.length < 3) { var x = R.int(101, 999); if (base.indexOf(x) < 0) base.push(x); }
+          var pairs = base.slice(0, 3).map(function (n) { var parts = [Math.floor(n / 100) * 100, Math.floor(n / 10) % 10 * 10, n % 10].filter(function (v) { return v; }); return [parts.join(' + '), String(n)]; });
+          return { q: 'Match each expanded form to its number.', type: 'match', pairs: pairs,
+            hint: 'Look at the tens part and the ones part. They can look alike.', steps: ['Add the parts of each one: hundreds + tens + ones.'],
+            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'forms-match', pairs: pairs } };
+        }],
+        [1, 'story', function (lv) {
+          var c = R.pick([['birds', 'A farm has', 'hens', 'ducks', 'geese'], ['pieces of fruit', 'A fruit stand has', 'apples', 'pears', 'plums'], ['books', 'A school library has', 'novels', 'comics', 'atlases']]);
+          var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9), n = h * 100 + t * 10 + o;
+          var parts = [[h * 100, c[2]], [t * 10, c[3]], [o, c[4]]];
+          if (lv >= 2) parts = R.shuffle(parts);
+          return { q: c[1] + ' ' + parts[0][0] + ' ' + parts[0][1] + ', ' + parts[1][0] + ' ' + parts[1][1] + ' and ' + parts[2][0] + ' ' + parts[2][1] + '. How many ' + c[0] + ' in all?', type: 'num', answer: n,
+            hint: 'Put the hundreds, tens and ones together.', steps: ['Sort the parts: ' + h * 100 + ' + ' + t * 10 + ' + ' + o + '.', 'Write one digit for each place: ' + n + '.'],
+            explain: h * 100 + ' + ' + t * 10 + ' + ' + o + ' = ' + n + '.', meta: { k: 'forms-story', parts: [h * 100, t * 10, o] } };
+        }],
+        [2, 'mistake', function (lv) {
+          var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9), who = nm(), kind = R.int(0, 2), parts, n, said;
+          if (kind === 0) { parts = [h * 100, t * 10, o]; n = h * 100 + t * 10 + o; said = n; }
+          else if (kind === 1) { parts = [h * 100, t * 10, o]; n = h * 100 + t * 10 + o; said = +(h + '' + t + '0' + o); }
+          else { parts = [h * 100, o]; n = h * 100 + o; said = +(h + '' + o); }
+          var truth = said === n, right = parts.join(' + ') + ' is ' + n + '.' + (parts.length === 2 ? ' There are no tens, so the tens digit is 0.' : '');
+          return { q: who + ' wrote <span class="math">' + parts.join(' + ') + '</span> as <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Write down each part just as it looks.', 'You can leave out a place that has nothing in it.', 'The ones always go first.']),
+            hint: 'Each part goes in its own place: hundreds, tens, ones.', steps: [right], explain: right, meta: { k: 'forms-tf', parts: parts, said: said } };
+        }],
+        [3, 'pick', function (lv) {
+          var h = R.int(2, 9), t = R.int(0, 8), o = R.int(1, 9), n = h * 100 + t * 10 + o;
+          var good = [plural(h, 2) + ', ' + plural(t, 1) + ', ' + plural(o, 0), (h * 100) + (t ? ' + ' + t * 10 : '') + ' + ' + o, plural(h - 1, 2) + ', ' + plural(t + 10, 1) + ', ' + plural(o, 0)];
+          var bad = [plural(h, 2) + ', ' + plural(o, 1) + ', ' + plural(t, 0), (h * 10) + ' + ' + (t * 10) + ' + ' + o, plural(h + 1, 2) + ', ' + plural(t, 1) + ', ' + plural(o, 0)];
+          if (t === o) bad[0] = plural(h, 2) + ', ' + plural(t + 1, 1) + ', ' + plural(o, 0);
+          var all = R.shuffle(good.slice(0, 2 + R.int(0, 1)).map(function (g) { return [g, 1]; }).concat(bad.slice(0, 2).map(function (b) { return [b, 0]; })));
+          var ans = []; all.forEach(function (x, j) { if (x[1]) ans.push(j); });
+          return { q: 'Pick every way to show <b>' + n + '</b>.', type: 'pick', options: all.map(function (x) { return x[0]; }), answer: ans,
+            hint: 'Work out the value of each one. More than one can be right.', steps: ['Turn each one into a number by adding its parts.', 'Ten tens make one hundred, so ' + plural(h - 1, 2) + ' and ' + plural(t + 10, 1) + ' is also ' + n + '.'],
+            explain: 'The right ones all add up to ' + n + '.', meta: { k: 'forms-pick', n: n, opts: all.map(function (x) { return x[0]; }) } };
+        }]
+      ],
+      'n3-words': [
+        [1, 'tap', function (lv) {
+          var h = R.int(1, 9), t = lv === 1 ? R.int(2, 9) : R.pick([0, R.int(1, 9)]), o = R.int(1, 9), n = h * 100 + t * 10 + o;
+          var set = [n, h * 100 + o * 10 + t, h * 10 + o, h * 100 + ((t + 2) % 10) * 10 + o].filter(function (v, i, a) { return a.indexOf(v) === i && (i === 0 || v !== n); }).slice(0, 3);
+          set = R.shuffle(set);
+          return { q: 'Tap the number <b>' + words(n) + '</b>.', type: 'tap', tiles: set.map(function (v) { return '<span class="math big">' + v + '</span>'; }), answer: set.indexOf(n), answerText: String(n),
+            hint: 'Hundreds first, then tens, then ones. Use 0 for an empty place.', steps: ['"' + ones[h] + ' hundred" is ' + h * 100 + '.', 'The rest is ' + (n % 100) + ', so the number is ' + n + '.'],
+            explain: words(n) + ' is ' + n + '.', meta: { k: 'words-tap', n: n, set: set } };
+        }],
+        [1, 'match', function (lv) {
+          var h = R.int(1, 9), t = R.int(2, 9), o = R.int(1, 9);
+          if (t === o) o = (o % 9) + 1;
+          var set = [h * 100 + t * 10 + o, h * 100 + o * 10 + t, h * 100 + o];
+          if (o * 10 + t < 20) set[1] = h * 100 + t * 10;
+          if (lv >= 2) set[2] = t * 100 + h * 10 + o;
+          var uniq = []; set.forEach(function (v) { if (uniq.indexOf(v) < 0 && v >= 100 && v <= 999) uniq.push(v); });
+          while (uniq.length < 3) { var x = R.int(101, 999); if (uniq.indexOf(x) < 0) uniq.push(x); }
+          var pairs = uniq.map(function (n) { return [words(n), String(n)]; });
+          return { q: 'Match each number name to its number.', type: 'match', pairs: pairs,
+            hint: 'Read the hundreds part first. Is there a tens part?', steps: ['"' + ones[h] + ' hundred" means a ' + h + ' in the hundreds place.'],
+            explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'words-match', pairs: pairs } };
+        }],
+        [1, 'story', function (lv) {
+          var c = R.pick(['The class collected <b>W</b> cans of food.', 'The hockey arena has <b>W</b> seats in one section.', 'The walking trail is <b>W</b> metres long.', 'The school has <b>W</b> students.']);
+          var h = R.int(1, 9), t = lv === 1 ? R.int(2, 9) : R.pick([0, R.int(1, 9)]), o = R.int(1, 9), n = h * 100 + t * 10 + o;
+          var wrong = [h * 10 + o, h * 100 + o * 10 + t, h * 1000 + t * 10 + o, h * 100 + ((t + 1) % 10) * 10 + o].filter(function (w) { return w !== n; });
+          var oo = R.mc(n, wrong);
+          return { q: c.replace('W', words(n)) + ' Which number is that?', type: 'mc', options: oo.options, answer: oo.answer,
+            hint: 'Write the hundreds digit first, then the tens, then the ones. Use 0 for an empty place.', steps: ['"' + ones[h] + ' hundred" is ' + h * 100 + '.', 'The rest is ' + (n % 100) + '.', 'Together: ' + n + '.'],
+            explain: words(n) + ' is ' + n + '.', meta: { k: 'words-mc', n: n } };
+        }],
+        [2, 'mistake', function (lv) {
+          var h = R.int(1, 9), t = R.pick([0, 1, R.int(2, 9)]), o = R.int(1, 9), n = h * 100 + t * 10 + o, who = nm();
+          var truth = !R.int(0, 2), said = truth ? n : +(h + '00' + String(n % 100));
+          var right = words(n) + ' is ' + n + ': ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + '.';
+          return { q: who + ' wrote <b>' + words(n) + '</b> as <span class="math">' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
+            why: why(right, ['Write "hundred" as 00, then write the rest.', 'Write each word as its own number, side by side.', 'Numbers with "hundred" always have four digits.']),
+            hint: 'A number in the hundreds has 3 digits.', steps: [right], explain: right, meta: { k: 'words-tf', n: n, said: said } };
+        }],
+        [2, 'order', function (lv) {
+          var k = lv === 3 ? 4 : 3, nums = [], hd = R.int(1, 8);
+          while (nums.length < k) { var v = (hd + R.int(0, 1)) * 100 + R.int(0, 9) * 10 + R.int(1, 9); if (nums.indexOf(v) < 0) nums.push(v); }
+          nums.sort(function (a, b) { return a - b; });
+          return { q: 'Put these numbers in order from <b>least to greatest</b>.', type: 'order', items: nums.map(words), first: 'least', last: 'greatest',
+            hint: 'Find the hundreds in each name first. Then the tens.', steps: ['As numbers: ' + R.shuffle(nums).join(', ') + '.', 'In order: ' + nums.join(', ') + '.'],
+            explain: 'Least to greatest: ' + nums.join(', ') + '.', meta: { k: 'words-order', nums: nums } };
+        }]
+      ],
+      'n3-skip': [
+        [1, 'line', function (lv) {
+          var by = lv === 1 ? R.pick([10, 100]) : lv === 2 ? 50 : R.pick([50, 100]), max = by === 10 ? 100 : 1000, j = R.int(2, 4);
+          var start = R.int(0, (max - by * j) / by) * by, ans = start + by * j;
+          return { q: 'Start at <b>' + start + '</b>. Count on by ' + by + 's, ' + j + ' times. Where do you land? Put the marker there.', type: 'line', min: 0, max: max, tick: by, every: by === 50 ? 100 : by, snap: by, answer: ans,
+            hint: 'Each jump adds ' + by + '. Jump ' + j + ' times from ' + start + '.', steps: ['Start at ' + start + '.', 'Jumps: ' + [1, 2, 3, 4].slice(0, j).map(function (x) { return start + by * x; }).join(', ') + '.', 'You land on ' + ans + '.'],
+            explain: start + ' and ' + j + ' jumps of ' + by + ' lands on ' + ans + '.', meta: { k: 'skip-line', start: start, by: by, j: j } };
+        }],
+        [1, 'order', function (lv) {
+          var by = lv === 1 ? 10 : R.pick([50, 100, 25 * 2]), k = lv === 1 ? 4 : 5, start = R.int(1, 40) * 10, back = lv === 3 && R.int(0, 1);
+          if (start + by * (k - 1) > 1000) start = 1000 - by * (k - 1);
+          var seq = []; for (var i = 0; i < k; i++) seq.push(start + by * i);
+          if (back) seq.reverse();
+          return { q: 'Put these in counting order. Count ' + (back ? 'backward ' : '') + 'by ' + by + 's.', type: 'order', items: seq.map(String), first: 'start',
+            hint: back ? 'Start with the biggest. Each next number is ' + by + ' less.' : 'Start with the smallest. Each next number is ' + by + ' more.', steps: ['Find the ' + (back ? 'biggest' : 'smallest') + ' number: ' + seq[0] + '.', 'Then ' + (back ? 'take away ' : 'add ') + by + ' each time.'],
+            explain: seq.join(', ') + '.', meta: { k: 'skip-order', seq: seq } };
+        }],
+        [1, 'story', function (lv) {
+          var c = lv === 1 ? R.pick([[10, 'Pencils come in packs of 10.', 'packs', 'pencils'], [100, 'A roll has 100 tickets.', 'rolls', 'tickets']]) : R.pick([[50, 'A box holds 50 crayons.', 'boxes', 'crayons'], [100, 'A sheet has 100 stickers.', 'sheets', 'stickers'], [50, 'A bag holds 50 marbles.', 'bags', 'marbles']]);
+          var k = R.int(3, Math.min(9, Math.floor(1000 / c[0]))), ans = c[0] * k;
+          return { q: c[1] + ' Count by ' + c[0] + 's. How many ' + c[3] + ' are in <b>' + k + ' ' + c[2] + '</b>?', type: 'num', answer: ans,
+            hint: 'Count by ' + c[0] + 's, ' + k + ' times.', steps: ['Count: ' + [1, 2, 3, 4, 5, 6, 7, 8, 9].slice(0, k).map(function (x) { return x * c[0]; }).join(', ') + '.', 'That is ' + ans + ' ' + c[3] + '.'],
+            explain: k + ' ' + c[2] + ' of ' + c[0] + ' is ' + ans + ' ' + c[3] + '.', meta: { k: 'skip-story', by: c[0], n: k } };
+        }],
+        [2, 'tap', function (lv) {
+          var by = R.pick([10, 50, 100]), start = by === 10 ? R.int(10, 80) * 10 : R.int(0, 4) * by, seq = [], who = nm();
+          for (var i = 0; i < 5; i++) seq.push(start + by * i);
+          var bad = R.int(1, 4), wrongV = seq[bad] + R.pick([by === 10 ? 1 : 10, by === 10 ? -100 : -by / 2 > 0 ? -5 : 5, by === 10 ? 100 : 10]);
+          if (by === 10 && seq[bad] % 100 === 0) wrongV = seq[bad] - 100 + 10;
+          if (wrongV === seq[bad] || wrongV < 0) wrongV = seq[bad] + (by === 10 ? 1 : 10);
+          var shown = seq.slice(); shown[bad] = wrongV;
+          return { q: who + ' counted by ' + by + 's. One number is wrong. Tap it.', type: 'tap', tiles: shown.map(function (v) { return '<span class="math big">' + v + '</span>'; }), answer: bad, answerText: wrongV + ' (it should be ' + seq[bad] + ')',
+            hint: 'Check each jump. Is it ' + by + ' more every time?', steps: ['Start at ' + seq[0] + ' and add ' + by + ' each time: ' + seq.join(', ') + '.', wrongV + ' should be ' + seq[bad] + '.'],
+            explain: 'Counting by ' + by + 's: ' + seq.join(', ') + '. ' + wrongV + ' is wrong.', meta: { k: 'skip-tap', shown: shown, by: by } };
+        }],
+        [2, 'fill', function (lv) {
+          var by = R.pick([50, 100, 10]), start = R.int(1, 30) * 10;
+          if (start + by * 4 > 1000) start = 1000 - by * 4;
+          var seq = [0, 1, 2, 3, 4].map(function (i) { return start + by * i; });
+          var back = lv === 3 && R.int(0, 1); if (back) seq.reverse();
+          return { q: 'Fill in the missing numbers. Count ' + (back ? 'backward ' : '') + 'by ' + by + 's.', type: 'fill', fill: seq[0] + ', [[]], ' + seq[2] + ', [[]], ' + seq[4], answers: [seq[1], seq[3]],
+            hint: (back ? 'Take away ' : 'Add ') + by + ' to the number before each blank.', steps: [seq[0] + (back ? ' &minus; ' : ' + ') + by + ' = ' + seq[1] + '.', seq[2] + (back ? ' &minus; ' : ' + ') + by + ' = ' + seq[3] + '.'],
+            explain: seq.join(', ') + '.', meta: { k: 'skip-fill', seq: seq } };
+        }]
+      ],
+      'n3-compare': [
+        [1, 'order', function (lv) {
+          var k = lv === 1 ? 3 : 4, nums = [], hd = R.int(1, 8), big = lv === 3 && R.int(0, 1);
+          while (nums.length < k) { var v = lv === 1 ? R.int(1, 9) * 100 + R.int(0, 99) : (hd + R.int(0, 1)) * 100 + R.int(0, 9) * 10 + R.int(0, 9); if (nums.every(function (x) { return Math.floor(x / 100) !== Math.floor(v / 100) || lv > 1; }) && nums.indexOf(v) < 0) nums.push(v); }
+          nums.sort(function (a, b) { return big ? b - a : a - b; });
+          return { q: 'Put these numbers in order from <b>' + (big ? 'greatest to least' : 'least to greatest') + '</b>.', type: 'order', items: nums.map(String), first: big ? 'greatest' : 'least', last: big ? 'least' : 'greatest',
+            hint: 'Compare the hundreds first. If they match, compare the tens.', steps: ['Look at the hundreds digits.', 'For numbers with the same hundreds, look at the tens.'],
+            explain: nums.join(', ') + '.', meta: { k: 'cmp-order', nums: nums, big: big } };
+        }],
+        [1, 'story', function (lv) {
+          var two = Q.two(), a = R.int(100, 999), b, thing = R.pick(['bottle caps', 'hockey cards', 'stickers', 'stamps']);
+          if (lv === 1) { do { b = R.int(100, 999); } while (Math.floor(b / 100) === Math.floor(a / 100)); }
+          else { do { b = Math.floor(a / 100) * 100 + R.int(0, 99); } while (b === a); }
+          var less = lv === 3 && R.int(0, 1), win = less ? (a < b ? 0 : 1) : (a > b ? 0 : 1);
+          return { q: two[0] + ' has ' + a + ' ' + thing + '. ' + two[1] + ' has ' + b + '. Who has <b>' + (less ? 'fewer' : 'more') + '</b>?', type: 'mc', options: [two[0], two[1]], answer: win,
+            hint: 'Compare the hundreds first. If they are the same, compare the tens.', steps: ['Line up ' + a + ' and ' + b + ' by place.', 'Find the first place where the digits are different.'],
+            explain: (a > b ? a + ' is more than ' + b : a + ' is less than ' + b) + ', so ' + two[win] + ' has ' + (less ? 'fewer' : 'more') + '.', meta: { k: 'cmp-story', a: a, b: b, less: less } };
+        }],
+        [1, 'tf', function (lv) {
+          var a = R.int(100, 999), b; do { b = lv === 1 ? R.int(100, 999) : Math.floor(a / 100) * 100 + R.int(0, 99); } while (b === a);
+          var sym = R.int(0, 1) ? '&gt;' : '&lt;', truth = sym === '&gt;' ? a > b : a < b;
+          var sa = String(a), sb = String(b), d0 = 0; while (sa.charAt(d0) === sb.charAt(d0)) d0++;
+          var pn = ['hundreds', 'tens', 'ones'][d0], right = 'Compare the ' + pn + ': ' + sa.charAt(d0) + ' is ' + (+sa.charAt(d0) > +sb.charAt(d0) ? 'more' : 'less') + ' than ' + sb.charAt(d0) + ', so ' + a + ' is ' + (a > b ? 'greater' : 'less') + '.';
+          return { q: 'True or false? <span class="math">' + a + ' ' + sym + ' ' + b + '</span>', type: 'tf', answer: truth,
+            why: lv === 1 ? null : why(right, ['The number with the bigger ones digit is greater.', 'Add up the digits. The bigger total is greater.', 'They have the same hundreds, so they are equal.']),
+            hint: 'The symbol opens toward the greater number. Compare the hundreds first.', steps: [right], explain: right, meta: { k: 'cmp-tf', a: a, b: b, sym: sym } };
+        }],
+        [2, 'pick', function (lv) {
+          var x = R.int(3, 8) * 100 + R.int(1, 9) * 10, opts = [], less = R.int(0, 1);
+          while (opts.length < 5) { var v = x + R.pick([-1, 1]) * R.pick([1, 5, 9, 10, 40, 60, 90, 100]); if (v !== x && opts.indexOf(v) < 0 && v > 99 && v < 1000) opts.push(v); }
+          var ans = []; opts.forEach(function (v, j) { if (less ? v < x : v > x) ans.push(j); });
+          if (!ans.length || ans.length === 5) return SHAPES['n3-compare'][3][2](lv);
+          return { q: 'Pick every number ' + (less ? 'less' : 'greater') + ' than <b>' + x + '</b>.', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'Compare each number with ' + x + ', hundreds first.', steps: ['Look at the hundreds of each number. Then the tens.'],
+            explain: 'The numbers ' + (less ? 'less' : 'greater') + ' than ' + x + ' are ' + ans.map(function (j) { return opts[j]; }).join(', ') + '.', meta: { k: 'cmp-pick', x: x, less: less, opts: opts } };
+        }],
+        [2, 'line', function (lv) {
+          var h = R.int(1, 8) * 100, n = h + R.int(1, 9) * 10 + R.pick([0, 5]);
+          return { q: 'Put <b>' + n + '</b> on the number line.', type: 'line', min: h, max: h + 100, tick: 10, every: 50, snap: 5, answer: n, tol: lv === 3 ? 0 : 5, place: n, hideValue: true,
+            hint: 'Halfway is ' + (h + 50) + '. Is ' + n + ' before or after halfway?', steps: [n + ' is between ' + (h + Math.floor((n - h) / 10) * 10) + ' and ' + (h + Math.floor((n - h) / 10) * 10 + 10) + '.', 'Each small mark is 10 more.'],
+            explain: n + ' is ' + (n - h) + ' past ' + h + '.', meta: { k: 'cmp-line', n: n } };
+        }],
+        [3, 'mistake', function (lv) {
+          var who = nm(), h = R.int(2, 8), a = (h - 1) * 100 + R.int(8, 9) * 10 + R.int(5, 9), b = h * 100 + R.int(0, 1) * 10 + R.int(0, 4);
+          var right = 'Compare the hundreds first: ' + (h - 1) + ' hundreds is less than ' + h + ' hundreds, so ' + a + ' is less than ' + b + '.';
+          return { q: who + ' says <span class="math">' + a + '</span> is greater than <span class="math">' + b + '</span> because ' + a + ' has bigger digits. True or false: ' + who + ' is right.', type: 'tf', answer: false,
+            why: why(right, ['Big digits always make a bigger number.', 'Compare the ones first.', 'Add the digits: the bigger total wins.']),
+            hint: 'Which place do you compare first?', steps: [right], explain: right, meta: { k: 'cmp-mistake', a: a, b: b } };
+        }]
+      ],
+      'n3-round': [
+        [1, 'tap', function (lv) {
+          var p = lv === 1 ? 10 : 100, n, lo;
+          do { n = p === 10 ? R.int(11, 99) : R.int(101, 999); lo = Math.floor(n / p) * p; } while (n === lo || n - lo === p / 2);
+          var hi = lo + p, ans = n - lo > p / 2 ? hi : lo;
+          return { q: 'Is <b>' + n + '</b> closer to ' + lo + ' or ' + hi + '? Tap the closer one.', type: 'tap', pic: twoEnds(n, lo, hi), answer: String(ans), answerText: String(ans),
+            hint: 'Halfway between them is ' + (lo + p / 2) + '. Which side is ' + n + ' on?', steps: ['Halfway is ' + (lo + p / 2) + '.', n + ' is ' + (ans === hi ? 'past' : 'before') + ' halfway, so it is closer to ' + ans + '.'],
+            explain: n + ' is closer to ' + ans + '. So ' + n + ' rounds to ' + ans + '.', meta: { k: 'round-tap', n: n, lo: lo, hi: hi } };
+        }],
+        [1, 'story', function (lv) {
+          var p = lv === 1 ? 10 : R.pick([10, 100]), c = R.pick(['A jar has N marbles.', 'The school has N students.', 'N people came to the fair.', 'The trail is N metres long.']);
+          var n = p === 10 ? R.int(12, 98) * (lv === 1 ? 1 : 1) + (lv > 1 ? R.int(1, 9) * 100 : 0) : R.int(101, 999);
+          if (n % p === 0) n += 3;
+          var lo = Math.floor(n / p) * p, hi = lo + p, ans = n - lo >= p / 2 ? hi : lo;
+          var o = R.mc(ans, [ans === hi ? lo : hi, Math.round(n / (p / 10)) * (p / 10), ans + p].filter(function (v) { return v !== ans && v >= 0; }));
+          return { q: c.replace('N', n) + ' About how many is that, to the nearest <b>' + (p === 10 ? 'ten' : 'hundred') + '</b>?', type: 'mc', options: o.options, answer: o.answer,
+            hint: 'Find the ' + (p === 10 ? 'tens' : 'hundreds') + ' on each side of ' + n + '. Which is closer?', steps: [n + ' is between ' + lo + ' and ' + hi + '.', 'The digit to the right is ' + Math.floor((n % p) / (p / 10)) + '. ' + (ans === hi ? '5 or more rounds up.' : 'Less than 5 rounds down.')],
+            explain: n + ' rounds to ' + ans + '.', meta: { k: 'round-mc', n: n, p: p } };
+        }],
+        [1, 'pick', function (lv) {
+          var p = lv === 1 ? 10 : R.pick([10, 100]), target = p === 100 ? R.int(2, 8) * 100 : R.int(12, 88) * 10, opts = [];
+          while (opts.length < 5) {
+            var v = target + R.int(p === 100 ? -70 : -8, p === 100 ? 70 : 8);
+            if (opts.indexOf(v) < 0 && v !== target && v > 0) opts.push(v);
+          }
+          var ans = []; opts.forEach(function (v, j) { var lo = Math.floor(v / p) * p, r = v - lo >= p / 2 ? lo + p : lo; if (r === target) ans.push(j); });
+          if (!ans.length || ans.length === 5) return SHAPES['n3-round'][2][2](lv);
+          return { q: 'Pick every number that rounds to <b>' + target + '</b> (nearest ' + (p === 10 ? 'ten' : 'hundred') + ').', type: 'pick', options: opts.map(String), answer: ans,
+            hint: 'Numbers from ' + (target - p / 2) + ' up to ' + (target + p / 2 - 1) + ' round to ' + target + '.', steps: ['Round each number. Keep the ones that land on ' + target + '.', 'Halfway numbers, like ' + (target - p / 2) + ', round up.'],
+            explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' round to ' + target + '.', meta: { k: 'round-pick', target: target, p: p, opts: opts } };
+        }],
+        [2, 'mistake', function (lv) {
+          var who = nm(), h = R.int(1, 8), t, o, truth = R.int(0, 1), n, said, right;
+          if (truth) { t = R.int(5, 9); o = R.int(0, 9); n = h * 100 + t * 10 + o; said = (h + 1) * 100; right = 'The tens digit is ' + t + ', which is 5 or more, so ' + n + ' rounds up to ' + said + '.'; }
+          else { t = R.int(1, 4); o = R.int(6, 9); n = h * 100 + t * 10 + o; said = (h + 1) * 100; right = 'To round to the nearest hundred, look at the tens digit. It is ' + t + ', less than 5, so ' + n + ' rounds down to ' + h * 100 + '.'; }
+          return { q: who + ' rounded <span class="math">' + n + '</span> to the nearest hundred and got <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: !!truth,
+            why: why(right, ['Look at the ones digit: ' + o + ' tells you which way to round.', 'Always round up.', 'Round to the hundred that comes first.']),
+            hint: 'To round to the nearest hundred, look at the tens digit.', steps: [right], explain: right, meta: { k: 'round-tf', n: n, said: said } };
+        }],
+        [3, 'match', function (lv) {
+          var base = R.int(1, 6) * 100, pairs = [];
+          [[base + R.int(1, 4) * 10 + R.int(0, 9), base], [base + R.int(5, 9) * 10 + R.int(0, 9), base + 100], [base + 100 + R.int(5, 9) * 10 + R.int(0, 9), base + 200]].forEach(function (x) { pairs.push([String(x[0]), String(x[1])]); });
+          return { q: 'Match each number to the nearest hundred.', type: 'match', pairs: R.shuffle(pairs),
+            hint: 'Look at the tens digit of each number.', steps: ['Tens digit 5 or more: round up. Less than 5: round down.'],
+            explain: pairs.map(function (p) { return p[0] + ' rounds to ' + p[1]; }).join('. ') + '.', meta: { k: 'round-match', pairs: pairs } };
+        }]
+      ]
+    };
+    var ch = A.chapters[CH];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  })();
 })();
