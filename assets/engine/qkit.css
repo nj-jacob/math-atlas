@@ -1,0 +1,61 @@
+/* Math Atlas question kit (qkit.js): styles for the new answer types. Calm, plain, large touch targets. */
+.qk{margin:10px 0 4px}
+.qk-tip{margin:0 0 8px;color:var(--ink2);font-size:.95rem}
+.qk-act{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:12px}
+.qk-msg{color:var(--ink2);font-size:.95rem}
+/* right and wrong marks; strong rules so the shared theme cannot hide them */
+html body .qk .qk-yes,html body .qk button.qk-yes{border-color:var(--good)!important;background:color-mix(in srgb,var(--good) 14%,var(--card))!important;font-weight:700}
+html body .qk .qk-no,html body .qk button.qk-no{border-color:var(--bad)!important;background:color-mix(in srgb,var(--bad) 10%,var(--card))!important}
+html body .qk button.qk-on{border-color:var(--accent)!important;background:color-mix(in srgb,var(--accent) 14%,var(--card))!important;font-weight:700}
+html body .qk button.qk-on::before{content:"\2713\00a0";color:var(--accent)}
+/* tap on the picture */
+.qk-pic{display:flex;justify-content:center;overflow-x:auto}
+.qk-pic svg{max-width:100%;height:auto}
+.qk-pic .qk-hit{cursor:pointer}
+.qk-pic .qk-hit:focus{outline:3px solid var(--focus);outline-offset:2px}
+.qk-pic .qk-hit:hover>*:first-child{stroke:var(--accent)}
+.qk-pic .qk-hit.qk-yes>*:first-child{stroke:var(--good)!important;stroke-width:4!important;fill:color-mix(in srgb,var(--good) 18%,var(--card))!important}
+.qk-pic .qk-hit.qk-no>*:first-child{stroke:var(--bad)!important;stroke-width:4!important;fill:color-mix(in srgb,var(--bad) 14%,var(--card))!important}
+.qk-tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.qk-tile{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--at-line2,var(--line));border-radius:12px;padding:10px;cursor:pointer;min-height:56px;display:flex;align-items:center;justify-content:center}
+.qk-tile:hover:not(:disabled){border-color:var(--accent)}
+.qk-tile svg{max-width:100%;height:auto}
+/* cards for order and match */
+.qk-card{font:inherit;color:var(--ink);background:var(--card);border:1.5px solid var(--at-line2,var(--line));border-radius:12px;padding:8px 14px;min-height:48px;min-width:64px;cursor:pointer;display:inline-flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums;font-size:1.05rem}
+.qk-card:hover:not(:disabled){border-color:var(--accent)}
+.qk-n{display:inline-grid;place-items:center;min-width:24px;height:24px;border-radius:12px;background:var(--accent);color:var(--accent-ink,#fff);font-size:.8rem;font-weight:700;padding:0 4px}
+.qk-n0{background:transparent;color:var(--ink2);border:1.5px solid var(--line)}
+.qk-slots{display:flex;flex-wrap:wrap;gap:8px;align-items:center;padding:10px;border:1.5px dashed var(--line);border-radius:14px;min-height:68px;margin-bottom:10px}
+.qk-slot{display:inline-flex;align-items:center;justify-content:center;min-width:64px;min-height:48px;border-radius:12px;background:color-mix(in srgb,var(--ink) 5%,transparent)}
+.qk-slot .qk-n{background:transparent;color:var(--ink2)}
+.qk-end{font-size:.85rem;color:var(--ink2);font-weight:700;text-transform:uppercase;letter-spacing:.04em}
+.qk-pool{display:flex;flex-wrap:wrap;gap:8px;min-height:50px}
+.qk-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.qk-col{display:flex;flex-direction:column;gap:8px}
+.qk-col .qk-card{justify-content:flex-start;text-align:left;width:100%}
+.qk-col .qk-card svg{max-width:100%;height:auto}
+.qk-sel{outline:3px solid var(--accent);outline-offset:1px}
+.qk-linked{border-color:var(--accent)}
+/* number line */
+.qk-nl{color:var(--ink);border-radius:12px;touch-action:none}
+.qk-nl svg{width:100%;height:auto;display:block;cursor:pointer;user-select:none}
+.qk-nl.qk-no{outline:2px solid var(--bad);outline-offset:4px}
+.qk-mark circle{fill:var(--hi,#f5c542);stroke:var(--ink);stroke-width:2}
+.qk-mark text{fill:var(--ink)}
+.qk-true line{stroke:var(--good)}
+.qk-true text{fill:var(--good)}
+.qk-nudge{display:flex;align-items:center;justify-content:center;gap:12px;margin-top:6px}
+.qk-nudge .btn{min-width:48px;min-height:44px}
+.qk-at{min-width:9em;text-align:center;color:var(--ink2);font-variant-numeric:tabular-nums}
+/* fill the blanks */
+.qk-fill{font-size:1.25rem;line-height:2.4;font-variant-numeric:tabular-nums}
+.qk-fill input.qk-blank{font:inherit;width:4.6em!important;min-width:0!important;max-width:6em!important;height:auto!important;min-height:44px!important;display:inline-block!important;text-align:center;padding:4px 6px;border:1.5px solid var(--at-line2,var(--line));border-radius:10px;background:var(--card);color:var(--ink);margin:0 4px}
+.qk-blank:focus{outline:3px solid var(--focus);outline-offset:1px}
+/* build */
+.qk-tool{border:1.5px solid var(--line);border-radius:14px;padding:8px}
+.qk-done .qk-card,.qk-done .qk-tile{cursor:default}
+@media (max-width:480px){.qk-cols{gap:8px}.qk-card{padding:8px 10px;font-size:1rem}.qk-fill{font-size:1.1rem}.qk-fill input.qk-blank{width:3.8em!important}}
+/* drawings inside questions, steps and answers never run off a phone screen */
+.pcard svg,.steps svg,.ls-reveal svg,.fb svg,.q svg{max-width:100%;height:auto}
+/* a long list of big numbers in a question (like a counting sequence) may wrap on a phone */
+.qtext .math.big{white-space:normal}

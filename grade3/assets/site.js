@@ -208,6 +208,7 @@
   };
 
   function shown(q, v) {
+    if (Q(q)) return v === q.answer ? Atlas.Q.text(q) : String(v);
     if (q.type === 'mc') return q.options[v];
     var a = Atlas.fmt(v);
     if (q.unit === '$') return '$' + (Number(v) % 1 ? Number(v).toFixed(2) : Number(v));
@@ -216,11 +217,14 @@
   function unitHtml(q) { return q.unit && q.unit !== '$' ? '<span class="unit">' + q.unit + '</span>' : ''; }
   function parseNum(t) { return parseFloat(String(t).replace(/[^0-9.\-]/g, '')); }
   function numOk(q, v) { return Math.abs(v - q.answer) <= (q.tol || 1e-9); }
+  /* new answer types (tap, pick, order, line, match, tf, fill, build) live in ../assets/qkit.js */
+  function Q(q) { return !!(Atlas.Q && Atlas.Q.has(q)); }
 
   /* Practice questions.
      {q, type:'mc', options:[...], answer:index, explain, hint}
      {q, type:'num', answer:number, tol, unit, explain, hint} */
-  Atlas.quiz = function (box, id, qs) {
+  Atlas.quiz = function (box, id, qs0) {
+    var qs = typeof qs0 === 'function' ? qs0() : qs0;
     var st = qs.map(function () { return { tries: 0, done: false, first: false }; });
     function score() {
       var d = st.filter(function (s) { return s.done; }).length;
@@ -233,13 +237,14 @@
       } else el.textContent = d + ' of ' + qs.length + ' answered';
     }
     box.innerHTML = '<div class="qhead"><h2>Chapter quiz</h2><p class="qscore" aria-live="polite"></p></div>' +
-      '<p class="qintro">Seven questions about the whole chapter. You get a hint after a wrong answer, then a second try.</p>';
+      '<p class="qintro">' + (typeof qs0 === 'function' ? 'Seven questions about the whole chapter, new every time. ' : 'Seven questions about the whole chapter. ') + 'You get a hint after a wrong answer, then a second try.</p>';
     qs.forEach(function (q, i) {
       var d = document.createElement('div');
       d.className = 'q';
       var h = '<p class="qtext"><span class="qn">' + (i + 1) + '</span>' + q.q + '</p>';
       if (q.fig) h += '<div class="fig">' + q.fig + '</div>';
-      if (q.type === 'mc') {
+      if (Q(q)) h += '<div class="qkbox"></div>';
+      else if (q.type === 'mc') {
         h += '<div class="opts">' + q.options.map(function (o, j) {
           return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>';
         }).join('') + '</div>';
@@ -252,6 +257,7 @@
       h += '<div class="fb" aria-live="polite"></div>';
       d.innerHTML = h;
       box.appendChild(d);
+      d._q = q; /* exposed for automated checks */
       var fb = $('.fb', d), s = st[i];
       function finish(ok) {
         s.done = true;
@@ -265,7 +271,15 @@
         fb.className = 'fb bad';
         fb.innerHTML = '<b>Not quite.</b> <span>' + (q.hint || 'Have another go.') + '</span>';
       }
-      if (q.type === 'mc') {
+      if (Q(q)) {
+        var api = Atlas.Q.mount($('.qkbox', d), q, function (ok) {
+          if (s.done) return;
+          s.tries++;
+          if (ok) finish(true);
+          else if (s.tries >= 2) { api.reveal(); api.lock(); finish(false); } else wrong();
+        });
+        d._qk = api;
+      } else if (q.type === 'mc') {
         Atlas.$$('.opt', d).forEach(function (b) {
           b.addEventListener('click', function () {
             if (s.done) return;
@@ -290,7 +304,22 @@
         });
       }
     });
+    if (typeof qs0 === 'function') {
+      var again = document.createElement('p');
+      again.className = 'qagain';
+      again.innerHTML = '<button type="button" class="btn alt">New quiz</button> <span class="t2">Seven different questions on the same chapter.</span>';
+      box.appendChild(again);
+      $('button', again).addEventListener('click', function () { Atlas.quiz(box, id, qs0); box.scrollIntoView({ block: 'start' }); });
+    }
     score();
+  };
+  /* A fresh chapter quiz: one question from each of 5 different skills (level 2, any question shape)
+     plus 2 from the chapter's written quiz, mixed together. */
+  Atlas.freshQuiz = function (ch) {
+    var out = [], skills = R.shuffle(ch.practice || []).slice(0, 5);
+    skills.forEach(function (sk) { var q = make(sk, sk.quizLevel || 2); out.push(q); });
+    R.shuffle(ch.quiz || []).slice(0, 7 - out.length).forEach(function (q) { out.push(q); });
+    return R.shuffle(out);
   };
 
   /* ---------- "Your turn" quick checks inside a lesson section ----------
@@ -359,7 +388,7 @@
   }
 
   Atlas.practice = function (box, id, skills, startSkill) {
-    var mix = false, cur = null, q = null, tries = 0, done = false, session = { n: 0, first: 0 };
+    var mix = false, cur = null, q = null, qk = null, tries = 0, done = false, session = { n: 0, first: 0 };
     function pickWeakest() {
       var list = skills.map(function (sk) { return { sk: sk, s: skillState(sk.id) }; });
       list.sort(function (a, b) {
@@ -396,8 +425,13 @@
     }
     var home = null;
     function next(focus, easier) {
-      if (mix) cur = pickWeakest();
-      else {
+      var away = false;
+      if (mix) {
+        cur = pickWeakest();
+        /* mixed review: every third question comes from another chapter the student has already practised */
+        var other = Atlas.allSkills().filter(function (p) { return p.ch.id !== id && skillState(p.sk.id).n > 0; });
+        if (!easier && session.n % 3 === 2 && other.length) { var pk = R.pick(other); cur = pk.sk; away = pk.ch.title; }
+      } else {
         if (home && !easier) { cur = home; home = null; }
         var seen = skills.filter(function (sk) { return sk.id !== cur.id && skillState(sk.id).n > 0; });
         if (!easier && session.n % 4 === 3 && seen.length) { home = cur; cur = R.pick(seen); }
@@ -407,14 +441,17 @@
       q = make(cur, lv); q.lv = lv; tries = 0; done = false;
       Atlas._q = q; /* exposed for automated checks */
       refreshRow();
-      var h = '<div class="pcard"><p class="plv"><span class="pill">' + cur.code + '</span> <b>' + cur.name + '</b> &middot; Level ' + lv + ': ' + LV[lv] + (home ? ' &middot; <i>Review from earlier</i>' : '') + '</p>' +
+      var h = '<div class="pcard"><p class="plv"><span class="pill">' + cur.code + '</span> <b>' + cur.name + '</b> &middot; Level ' + lv + ': ' + LV[lv] + (home ? ' &middot; <i>Review from earlier</i>' : '') + (away ? ' &middot; <i>Review from ' + away + '</i>' : '') + '</p>' +
         '<p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
-      if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
+      if (Q(q)) h += '<div class="qkbox"></div>';
+      else if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += '<form class="numrow"><label class="sr" for="pin-' + id + '">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
         '<input type="text" inputmode="decimal" autocomplete="off" id="pin-' + id + '" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Check</button></form>';
       h += '<div class="fb"></div><div class="steps"></div><div class="pnext"></div></div>';
       pq.innerHTML = h;
-      if (q.type === 'mc') Atlas.$$('.opt', pq).forEach(function (b) {
+      qk = null;
+      if (Q(q)) { qk = Atlas.Q.mount($('.qkbox', pq), q, function (ok) { if (!done) answer(ok); }); Atlas._qk = qk; }
+      else if (q.type === 'mc') Atlas.$$('.opt', pq).forEach(function (b) {
         b.addEventListener('click', function () {
           if (done) return;
           var j = +b.getAttribute('data-j');
@@ -442,7 +479,8 @@
       }
       done = true; session.n++;
       Atlas.$$('button.opt, input, form .btn', pq).forEach(function (b) { b.disabled = true; });
-      if (q.type === 'mc') Atlas.$$('.opt', pq)[q.answer].classList.add('yes');
+      if (qk) { if (!ok) qk.reveal(); qk.lock(); }
+      else if (q.type === 'mc') Atlas.$$('.opt', pq)[q.answer].classList.add('yes');
       st.n++;
       if (ok && tries === 1) {
         session.first++; st.ok++; st.streak++; st.miss = 0;
@@ -558,13 +596,15 @@
         '<div class="sec cu"><div class="cuprog"><span>' + label + (q.lv > 1 ? ' &middot; a step harder' : '') + '</span><span>Question ' + (k + 1) + ' of ' + qs.length + (chapterScope && !stepUps ? ' (up to ' + (qs.length + Math.min(3, qs.length)) + ')' : '') + '</span></div>' +
         '<div class="bar-h"><i style="width:' + (k / qs.length * 100) + '%;background:var(--accent)"></i></div>' +
         '<p class="plv"><span class="pill">' + q.ch.title + '</span></p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
-      if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
+      if (Q(q)) h += '<div class="qkbox"></div>';
+      else if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += '<form class="numrow"><label class="sr" for="cuin">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
         '<input type="text" inputmode="numeric" autocomplete="off" id="cuin" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Save answer</button></form>';
       h += '<p><button type="button" class="btn alt" id="cuskip">I\'m not sure yet</button></p></div></div>';
       app.innerHTML = h;
       function rec(given, ok) { res.push({ given: given, ok: ok }); k++; if (k === qs.length) stepUp(); if (k < qs.length) { show(); var f = $('.opt, input', app); if (f) f.focus(); } else report(); }
-      if (q.type === 'mc') Atlas.$$('.opt', app).forEach(function (b) {
+      if (Q(q)) Atlas._qk = Atlas.Q.mount($('.qkbox', app), q, function (ok, given) { rec(given, ok); });
+      else if (q.type === 'mc') Atlas.$$('.opt', app).forEach(function (b) {
         b.addEventListener('click', function () { var j = +b.getAttribute('data-j'); rec(q.options[j], j === q.answer); });
       });
       else $('form', app).addEventListener('submit', function (e) {
@@ -691,7 +731,7 @@
     if (ch.turns) Atlas.$$('.yt', app).forEach(function (bx) { var it = ch.turns[bx.getAttribute('data-yt')]; if (it) Atlas.turn(bx, it); });
     var parts = (sub || '').split('/');
     if (ch.practice) Atlas.practice($('#practice', app), id, ch.practice, parts[0] === 'practice' ? parts[1] : null);
-    if (ch.quiz) Atlas.quiz($('#quiz', app), id, ch.quiz);
+    if (ch.quiz) Atlas.quiz($('#quiz', app), id, ch.quizFresh ? function () { return Atlas.freshQuiz(ch); } : ch.quiz);
     return parts[0];
   }
 
