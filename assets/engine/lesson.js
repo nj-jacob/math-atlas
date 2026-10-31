@@ -1,12 +1,13 @@
 /* Math Atlas lessons: a chapter is a few lessons, a lesson is a few concepts, and the student sees ONE concept per screen.
    Each concept screen is a short stack of cards, one at a time: first a short explanation with "Watch" (an animated
    demonstration the student plays) and "See it another way" (extra explanations for harder ideas), then "Try it"
-   (a manipulative with small challenges) with the key idea, then "Your turn" (quick checks). Shared by every grade; needs site.js (Atlas) and manip.js (Manip).
+   (a manipulative with small challenges) with the key idea, then "Your turn" (quick checks). An idea can add
+   example: { steps, ... } (same shape as watch): a worked example, solved step by step, on its own "My turn" card. Shared by every grade; needs site.js (Atlas) and manip.js (Manip).
 
    A chapter opts in with  lessons: [{ id, title, sub, concepts: [concept, ...] }]  in its Atlas.register call.
    concept = { id: 'zero', title, exp: ['B1.1'], skill: 'n2-blocks', hard: true,
      body: html, watch: { tool, opts, steps } or { mount(el) -> tool, steps }, try: { tool, opts, tasks: [{ do, goal(state, tool), yes }] } or { mount(el, done) },
-     ways: [{ label, html, tool, opts, watch }], key: html, mistake: html, check: function () -> question (or a list of them) }
+     example: { lead, mount or tool, opts, steps } (a worked example), ways: [{ label, html, tool, opts, watch }], key: html, mistake: html, check: function () -> question (or a list of them) }
    Progress is saved under cn:<full concept id> = { seen, n, ok, got, t }. A concept is mastered when its practice skill is secure. */
 (function () {
   'use strict';
@@ -144,6 +145,7 @@
     app.innerHTML = h;
     var card = $('.ls-card', app);
     if (c.watch) mountWatch($('.ls-watch', card), c.watch);
+    if (c.example) mountWatch($('.ls-exclip', card), c.example);
     if (c.try) mountTry($('.ls-try', card), c);
     if (c.ways) mountWays($('.ls-ways', card), c.ways);
     if (c.check) checks($('.ls-check', card), c, function () {
@@ -164,7 +166,8 @@
         c.ways.map(function (w, j) { return '<button type="button" class="btn alt" data-w="' + j + '" aria-pressed="false">' + w.label + '</button>'; }).join('') + '</div><div class="ls-wpanel"></div></div>' : '');
     var key = c.key ? '<div class="key"><b class="t">Key idea</b>' + c.key + '</div>' : '';
     var mistake = c.mistake ? '<div class="mistake"><b class="t">For grown-ups: a common mistake</b>' + c.mistake + '<p class="t2">If you see this, point back to "Watch" or "Try it" and let the child show you again.</p></div>' : '';
-    var cards = [{ name: c.watch ? 'Watch' : 'Learn', html: learn }];
+    var cards = [{ name: c.watch && !c.example ? 'Watch' : 'Learn', html: learn }];
+    if (c.example) cards.push({ name: 'My turn', html: '<div class="ls-example"><p class="ls-exlead">' + (c.example.lead || 'Watch me do one, step by step. Then it is your turn.') + '</p><div class="ls-exclip"></div></div>' });
     if (c.try) cards.push({ name: 'Try it', html: '<div class="lab ls-try"><span class="lt">Try it</span><p class="ls-task"></p><div class="ls-tool"></div><p class="ls-done" aria-live="polite"></p><div class="ls-tnext"></div></div>' + key });
     else cards[0].html += key;
     if (c.check) cards.push({ name: 'Your turn', html: '<div class="yt ls-check"></div>' });
@@ -183,7 +186,7 @@
     if (pcs.length < 2) return;
     var backText = back.innerHTML, nextText = next.innerHTML, sx = null, sy = 0;
     function show(i, dir) {
-      k = Math.max(0, Math.min(pcs.length - 1, i));
+        k = Math.max(0, Math.min(pcs.length - 1, i));
       pcs.forEach(function (p, j) { p.hidden = j !== k; p.classList.toggle('back', dir < 0); });
       $('.ls-stack', card).setAttribute('data-left', String(pcs.length - 1 - k));
       steps.forEach(function (b, j) { if (j === k) b.setAttribute('aria-current', 'step'); else b.removeAttribute('aria-current'); b.classList.toggle('done', j < k); });

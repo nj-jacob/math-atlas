@@ -181,6 +181,13 @@
           { say: 'Touch each apple one time. Say one number for each: 1, 2, 3, 4, 5, 6, 7.', act: function (t) { return t.countAll(520); }, ms: 600 },
           { say: 'The last number we said is <b>7</b>. There are 7 apples.', ms: 1800 }
         ] },
+        example: { mount: function (el) { return K.objects(el, { kind: 'car', n: 5, tap: false }); }, steps: [
+          { say: 'My turn. I will count these cars.', ms: 900 },
+          { say: 'I start at the first car. I touch it one time and say <b>1</b>.', act: function (t) { return t.lightTo(1, 300); }, ms: 900 },
+          { say: 'I touch the next car and say <b>2</b>.', act: function (t) { return t.lightTo(2, 300); }, ms: 900 },
+          { say: 'I keep going, one number for each car: 3, 4, 5.', act: function (t) { return t.lightTo(5, 600); }, ms: 900 },
+          { say: 'I touched each car one time. The last number I said is 5. There are <b>5</b> cars.', ms: 1600 }
+        ] },
         try: { tool: 'g1objects', opts: { kind: 'fish', n: 6 }, tasks: [
           { do: '<b>Tap each fish</b> to count it. Each one lights up and shows its number.', goal: function (s) { return s.allCounted; }, yes: function (s) { return 'Yes. You touched each fish once. There are ' + s.n + '.'; } }
         ] },
@@ -194,6 +201,11 @@
           { say: 'The last number is 9. So there are <b>9</b> stars.', ms: 1400 },
           { say: 'Now mix them up. Are there still 9?', act: function (t) { return t.mix(true); }, ms: 900 },
           { say: 'Count again: still 9. Moving things does not change how many.', act: function (t) { return t.countAll(380); }, ms: 1600 }
+        ] },
+        example: { mount: function (el) { return K.objects(el, { kind: 'flower', n: 6, tap: false }); }, steps: [
+          { say: 'My turn. How many flowers? I count them: 1, 2, 3, 4, 5, 6.', act: function (t) { return t.countAll(450); }, ms: 900 },
+          { say: 'The last number I said is <b>6</b>.', ms: 1000 },
+          { say: 'So there are 6 flowers. I do not count again. The last number tells how many.', ms: 1800 }
         ] },
         try: { tool: 'g1objects', opts: { kind: 'ball', n: 8, controls: ['mix'], min: 1, max: 20 }, tasks: [
           { do: 'Tap each ball to count it.', goal: function (s) { return s.allCounted; }, yes: function (s) { return 'The last number is ' + s.n + '. There are ' + s.n + ' balls.'; } },
@@ -216,6 +228,13 @@
           { say: 'Number 23 on a hockey shirt is a <b>name</b> too.', act: function (t) { return t.show(shirt(23)); }, ms: 1600 },
           { say: 'House 14 is the <b>name</b> of a house on the street.', act: function (t) { return t.show(door(14)); }, ms: 1600 }
         ] },
+        example: { mount: function (el) { return K.stage(el); }, steps: [
+          { say: 'My turn. Does this number tell how many, or is it a name?', act: function (t) { return t.show(shirt(9)); }, ms: 1200 },
+          { say: 'I ask: can I count 9 things? No. There is only one shirt.', ms: 1400 },
+          { say: 'So the 9 is a <b>name</b>. It tells whose shirt it is.', ms: 1400 },
+          { say: 'Now this one. Can I count 3 candles? Yes: 1, 2, 3.', act: function (t) { return t.show(cake(3)); }, ms: 1400 },
+          { say: 'So the 3 tells <b>how many</b>.', ms: 1600 }
+        ] },
         try: { tool: 'g1pick', opts: { cols: 2, items: [
           { id: 'cake', html: cake(4) + '<span>4 candles</span>' }, { id: 'bus', html: bus(12) + '<span>bus 12</span>' },
           { id: 'apples', html: A.draw.row('apple', 3, { s: 30 }) + '<span>3 apples</span>' }, { id: 'shirt', html: shirt(7) + '<span>shirt 7</span>' }] }, tasks: [
@@ -234,6 +253,12 @@
           { say: 'Put 3 more on the bottom row. Count on from 5: 6, 7, 8.', act: function (t) { return t.fill(8, 500); }, ms: 700 },
           { say: 'The frame shows <b>8</b>. That is 5 and 3 more.', ms: 1800 }
         ] },
+        example: { tool: 'tenframe', opts: {}, steps: [
+          { say: 'My turn. I will show 6 on a ten frame.', ms: 1000 },
+          { say: 'First I fill the top row: 1, 2, 3, 4, 5. That is <b>5</b>.', act: function (t) { return t.fill(5, 420); }, ms: 800 },
+          { say: 'I need 1 more. I put it at the start of the bottom row: 6.', act: function (t) { return t.fill(6, 400); }, ms: 900 },
+          { say: 'The frame shows <b>6</b>. That is 5 and 1 more.', ms: 1600 }
+        ] },
         try: { tool: 'tenframe', opts: {}, tasks: [
           { do: 'Tap boxes to show <b>5</b>.', goal: function (s) { return s.n === 5; }, yes: 'Yes. A full row is 5.' },
           { do: 'Now show <b>7</b>. Start with a full row of 5.', reset: false, goal: function (s) { return s.n === 7; }, yes: '7 is 5 and 2 more.' },
@@ -248,6 +273,12 @@
           { say: 'Only 1 box is empty. 10 and 1 less is <b>9</b>.', ms: 1800 },
           { say: 'So 9 and 1 more make 10.', act: function (t) { return t.fill(10); }, ms: 1600 }
         ] },
+        example: { tool: 'tenframe', opts: { n: 7 }, steps: [
+          { say: 'My turn. How many counters are in this frame?', ms: 1100 },
+          { say: 'I look at the empty boxes. I count them: 1, 2, 3. There are 3 empty boxes.', ms: 1600 },
+          { say: 'A full frame is 10. 3 less than 10 is <b>7</b>.', ms: 1500 },
+          { say: 'I check: 7 and 3 more make 10.', act: function (t) { return t.fill(10, 450); }, ms: 1600 }
+        ] },
         try: { tool: 'tenframe', opts: { n: 6 }, tasks: [
           { do: 'The frame shows 6. How many more make <b>10</b>? Fill the empty boxes to find out.', reset: false, goal: function (s) { return s.full; }, yes: 'You added 4. 6 and 4 make 10.' }
         ] },
@@ -259,6 +290,12 @@
           { say: 'Fill the first frame: that is <b>10</b>.', act: function (t) { return t.fill(10, 200); }, ms: 600 },
           { say: 'Now 4 more in the second frame. Count on: 11, 12, 13, 14.', act: function (t) { return t.fill(14, 550); }, ms: 600 },
           { say: 'The frames show <b>14</b>: ten and 4 more. We say "fourteen".', ms: 1800 }
+        ] },
+        example: { tool: 'tenframe', opts: { frames: 2 }, steps: [
+          { say: 'My turn. I will show 16.', ms: 900 },
+          { say: 'I fill the first frame. A full frame is <b>10</b>.', act: function (t) { return t.fill(10, 160); }, ms: 800 },
+          { say: 'I count on from 10 in the second frame: 11, 12, 13, 14, 15, 16.', act: function (t) { return t.fill(16, 450); }, ms: 800 },
+          { say: 'Ten and 6 more is <b>16</b>. We say "sixteen".', ms: 1600 }
         ] },
         try: { tool: 'tenframe', opts: { frames: 2 }, tasks: [
           { do: 'Show <b>12</b> with the two frames.', goal: function (s) { return s.n === 12; }, yes: '12 is 10 and 2 more.' },
@@ -275,6 +312,12 @@
           { say: 'Count it: 10, 11, 12, 13, 14.', act: function (t) { return t.countAll(420); }, ms: 900 },
           { say: '<b>Forty</b>: 4 tens and no ones.', act: function (t) { t.clearLit(); return t.set(0, 4, 0); }, ms: 1400 },
           { say: 'Count by tens: 10, 20, 30, 40. Forty is much more than fourteen.', act: function (t) { return t.countAll(500); }, ms: 1800 }
+        ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: 'My turn. Is this sixteen or sixty? I listen to the end of the word: <b>sixteen</b>.', ms: 1600 },
+          { say: '"Teen" means 1 ten and some more. So I take 1 ten.', act: function (t) { return t.set(0, 1, 0); }, ms: 1100 },
+          { say: 'Then 6 ones. Sixteen is <b>16</b>.', act: function (t) { return t.set(0, 1, 6); }, ms: 1300 },
+          { say: 'Sixty ends in "ty". That means tens: 6 tens. Sixty is <b>60</b>, much more.', act: function (t) { return t.set(0, 6, 0); }, ms: 1800 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true }, tasks: [
           { do: 'Build <b>fourteen</b>.', goal: function (s) { return s.value === 14 && s.o < 10; }, yes: 'Fourteen is 1 ten and 4 ones: 14.' },
@@ -298,6 +341,13 @@
           { say: 'Back to 12, and jump one to the left: <b>11</b>.', act: function (t) { t.clearHops(); return t.moveTo(12).then(function () { return t.hop(11, '−1'); }); }, ms: 1200 },
           { say: 'One less than 12 is 11.', ms: 1600 }
         ] },
+        example: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 7 }, steps: [
+          { say: 'My turn. What is one more than 7?', ms: 1100 },
+          { say: 'One more means one jump to the right. I jump from 7 to <b>8</b>.', act: function (t) { return t.hop(8, '+1'); }, ms: 1200 },
+          { say: 'One more than 7 is 8.', ms: 1000 },
+          { say: 'One less means one jump to the left. From 7, I jump to <b>6</b>.', act: function (t) { t.clearHops(); return t.moveTo(7).then(function () { return t.hop(6, '−1'); }); }, ms: 1200 },
+          { say: 'One less than 7 is 6.', ms: 1400 }
+        ] },
         try: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 6, step: 1 }, tasks: [
           { do: 'Move the dot to <b>one more than 9</b>. Tap or drag along the line.', goal: function (s) { return s.at === 10; }, yes: 'One more than 9 is 10.' },
           { do: 'Move the dot to <b>one less than 15</b>.', reset: false, goal: function (s) { return s.at === 14; }, yes: 'One less than 15 is 14.' }
@@ -310,6 +360,12 @@
           { say: 'Count along the chart: 21, 22, 23 ...', act: function (t) { return t.skip(1, 21, 29, 260); }, ms: 500 },
           { say: 'After 29 the row ends with <b>30</b>. Not "twenty-ten".', act: function (t) { return t.skip(1, 30, 30); }, ms: 1400 },
           { say: 'Then a new row starts: 31, 32, 33.', act: function (t) { return t.skip(1, 31, 33, 400); }, ms: 1600 }
+        ] },
+        example: { tool: 'hundred', opts: { to: 50 }, steps: [
+          { say: 'My turn. What comes after 39?', act: function (t) { return t.skip(1, 39, 39); }, ms: 1200 },
+          { say: 'The ones are at 9. The next number starts a new ten.', ms: 1400 },
+          { say: 'After 39 comes <b>40</b>. It is at the end of the row.', act: function (t) { return t.skip(1, 40, 40); }, ms: 1400 },
+          { say: 'Then a new row starts: 41, 42.', act: function (t) { return t.skip(1, 41, 42, 450); }, ms: 1600 }
         ] },
         try: { tool: 'hundred', opts: { to: 50 }, tasks: [
           { do: 'Tap the number that comes <b>after 39</b>.', goal: function (s) { return s.lit.indexOf(40) >= 0; }, yes: 'After 39 comes 40.' },
@@ -331,6 +387,14 @@
           { say: 'Count on 3: 9, 10, 11.', act: function (t) { return t.hop(11, '3'); }, ms: 800 },
           { say: 'We land on <b>11</b>.', ms: 1600 }
         ] },
+        example: { tool: 'numberline', opts: { min: 10, max: 25, every: 5, start: 12 }, steps: [
+          { say: 'My turn. I start at 12 and count on 4.', ms: 1100 },
+          { say: 'I say "twelve" in my head. I do not count from 1.', ms: 1300 },
+          { say: 'Now I count on: 13 ...', act: function (t) { return t.hop(13, '1'); }, ms: 300 },
+          { say: '13, 14 ...', act: function (t) { return t.hop(14, '2'); }, ms: 300 },
+          { say: '13, 14, 15 ...', act: function (t) { return t.hop(15, '3'); }, ms: 300 },
+          { say: '13, 14, 15, 16. That is 4 jumps. I land on <b>16</b>.', act: function (t) { return t.hop(16, '4'); }, ms: 1600 }
+        ] },
         try: { tool: 'numberline', opts: { min: 10, max: 30, every: 5, start: 14, step: 1 }, tasks: [
           { do: 'Start at 14. Use the jump button to count on <b>4</b>.', goal: function (s) { return s.at === 18 && s.hops >= 4; }, yes: '14 ... 15, 16, 17, 18. You land on 18.' }
         ] },
@@ -342,6 +406,12 @@
           { say: '"Thirty" is 3 tens.', act: function (t) { return t.add('t', 3, 400); }, ms: 900 },
           { say: '"Six" is 6 ones.', act: function (t) { return t.add('o', 6, 260); }, ms: 900 },
           { say: 'Thirty-six: we write <b>36</b>. The tens digit comes first.', ms: 1800 }
+        ] },
+        example: { tool: 'base10', opts: { cols: ['t', 'o'] }, steps: [
+          { say: 'My turn. I will build <b>forty-two</b>.', ms: 1000 },
+          { say: 'The first part is "forty". Forty is 4 tens.', act: function (t) { return t.add('t', 4, 380); }, ms: 900 },
+          { say: 'The second part is "two". Two is 2 ones.', act: function (t) { return t.add('o', 2, 300); }, ms: 900 },
+          { say: '4 tens and 2 ones. I write <b>42</b>.', ms: 1600 }
         ] },
         try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true }, tasks: [
           { do: 'Build <b>twenty-three</b>.', goal: function (s) { return s.value === 23 && s.o < 10; }, yes: 'Twenty-three is 23.' },
@@ -359,6 +429,11 @@
           { say: 'Count by 10s, one row at a time: 10, 20, 30.', act: function (t) { return t.countAll(80); }, ms: 900 },
           { say: 'There are <b>30</b> counters.', ms: 1600 }
         ] },
+        example: { tool: 'counters', opts: { n: 40, arrange: 'tens' }, steps: [
+          { say: 'My turn. Each row has 10 counters. I count by 10s.', ms: 1300 },
+          { say: 'I touch one row at a time and say: 10, 20, 30, 40.', act: function (t) { return t.countAll(60); }, ms: 900 },
+          { say: 'The last number I said is 40. There are <b>40</b> counters.', ms: 1600 }
+        ] },
         try: { tool: 'hundred', opts: { to: 50 }, tasks: [
           { do: 'Count by 10s on the chart. Tap <b>10, 20, 30, 40, 50</b>.', goal: function (s) { return [10, 20, 30, 40, 50].every(function (v) { return s.lit.indexOf(v) >= 0; }); }, yes: 'They are all at the end of a row. Counting by 10s: 10, 20, 30, 40, 50.' }
         ] },
@@ -369,6 +444,11 @@
         watch: { tool: 'hundred', opts: { to: 50 }, steps: [
           { say: 'Count by 5s on the chart.', act: function (t) { return t.skip(5, 5, 50, 520); }, ms: 600 },
           { say: 'Look: the numbers end in <b>5</b> or <b>0</b>, and make two straight columns.', ms: 2000 }
+        ] },
+        example: { mount: function (el) { return K.stage(el); }, steps: [
+          { say: 'My turn. Each hand has 5 fingers. How many fingers on 3 hands?', act: function (t) { return t.show(groupsPic(5, 3)); }, ms: 1500 },
+          { say: 'I count by 5s, one hand at a time: 5, 10, 15.', ms: 1600 },
+          { say: 'There are <b>15</b> fingers.', ms: 1500 }
         ] },
         try: { tool: 'hundred', opts: { to: 50 }, tasks: [
           { do: 'Count by 5s. Tap <b>5, 10, 15, 20, 25, 30</b>.', goal: function (s) { return [5, 10, 15, 20, 25, 30].every(function (v) { return s.lit.indexOf(v) >= 0; }); }, yes: '5, 10, 15, 20, 25, 30. Every number ends in 5 or 0.' }
@@ -381,6 +461,11 @@
           { say: 'Here are counters in pairs.', ms: 1200 },
           { say: 'Count by 2s, one pair at a time: 2, 4, 6, 8, 10.', act: function (t) { return t.countAll(300); }, ms: 900 },
           { say: 'There are <b>10</b>. Same answer as counting by 1s, just faster.', ms: 1800 }
+        ] },
+        example: { tool: 'counters', opts: { n: 8, arrange: 'pairs' }, steps: [
+          { say: 'My turn. These counters are in pairs. A pair is 2.', ms: 1300 },
+          { say: 'I count by 2s, one pair at a time: 2, 4, 6, 8.', act: function (t) { return t.countAll(320); }, ms: 900 },
+          { say: 'There are <b>8</b> counters.', ms: 1500 }
         ] },
         try: { tool: 'counters', opts: { n: 6, arrange: 'pairs', controls: ['pairs'], max: 20 }, tasks: [
           { do: 'Make <b>8</b> counters (4 pairs). Use + 1, then press Pair them up.', goal: function (s) { return s.n === 8 && s.mode === 'pairs'; }, yes: '4 pairs: 2, 4, 6, 8.' },
@@ -400,6 +485,13 @@
           { say: 'Now check. Put them in rows of 10.', act: function (t) { return t.arrange('tens'); }, ms: 1000 },
           { say: '2 tens and 3 more: <b>23</b>. My estimate was close.', ms: 2000 }
         ] },
+        example: { tool: 'counters', opts: { n: 31, arrange: 'scatter', seed: 12 }, steps: [
+          { say: 'My turn. About how many counters? I will not count them all.', ms: 1400 },
+          { say: 'I picture a group of 10. I think 3 groups like that would fit.', ms: 1600 },
+          { say: 'My estimate is <b>about 30</b>.', ms: 1100 },
+          { say: 'Now I check. I put them in rows of 10.', act: function (t) { return t.arrange('tens'); }, ms: 1000 },
+          { say: '3 tens and 1 more: 31. My estimate was close.', ms: 1600 }
+        ] },
         try: { tool: 'counters', opts: { n: 34, arrange: 'scatter', seed: 9, controls: ['tens'] }, tasks: [
           { do: 'Make an estimate in your head. Then press <b>Group in tens</b> to check.', goal: function (s) { return s.mode === 'tens'; }, yes: '3 tens and 4 more: 34. Was your estimate close to 30?' }
         ] },
@@ -411,6 +503,12 @@
           { say: 'How many leaves? My estimate: about 20.', act: function (t) { return t.show(A.draw.scatter(22, 4242, { kind: 'leaf', w: 340, h: 180, label: '22 leaves spread out' })); }, ms: 2000 },
           { say: 'Count to check: put them in ten frames.', act: function (t) { return t.show(A.draw.frames(22, { c: 22, label: '22 leaves in ten frames' })); }, ms: 1400 },
           { say: '10, 20, then 21, 22. There are <b>22</b>. My estimate was close.', ms: 2000 }
+        ] },
+        example: { mount: function (el) { return K.stage(el); }, steps: [
+          { say: 'My turn. How many stars? First I estimate: <b>about 10</b>.', act: function (t) { return t.show(A.draw.scatter(13, 777, { kind: 'star', w: 340, h: 180, label: '13 stars spread out' })); }, ms: 1600 },
+          { say: 'Then I count to check. I put them in ten frames.', act: function (t) { return t.show(A.draw.frames(13, { c: 22, label: '13 stars in ten frames' })); }, ms: 1300 },
+          { say: 'A full frame is 10, then 11, 12, 13. There are <b>13</b>.', ms: 1500 },
+          { say: 'My estimate, 10, was close. Next time I will guess a bit more.', ms: 1600 }
         ] },
         try: { do: 'Move the slider to your estimate. Then press <b>Count to check</b>.', mount: function (el, done) {
           var n = R.int(12, 38), k = R.pick(['apple', 'flower', 'star']);

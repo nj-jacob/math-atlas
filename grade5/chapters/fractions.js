@@ -167,6 +167,14 @@
           { say: '3/4 = 6/8. Now the pieces match.', fig: bars([{ n: 5, d: 8 }, { n: 6, d: 8, label: '6/8', col: 'var(--hi)' }], { mark: 0.75 }) },
           { say: '6/8 &gt; 5/8, so <b>3/4 &gt; 5/8</b>.', fig: bars([{ n: 5, d: 8 }, { n: 6, d: 8, label: '3/4', col: 'var(--hi)' }], { mark: 0.75 }), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. Which is greater: 2/3 or 5/6?', fig: bars([{ n: 2, d: 3 }, { n: 5, d: 6, col: 'var(--hi)' }]), ms: 1200 },
+          { say: 'The bottoms are different. Thirds and sixths are different sizes, so I cannot compare the tops yet.', fig: bars([{ n: 2, d: 3 }, { n: 5, d: 6, col: 'var(--hi)' }]), ms: 1600 },
+          { say: 'I rewrite 2/3 in sixths. 3 &times; 2 = 6, so I multiply the top and the bottom by 2.', fig: bars([{ n: 4, d: 6, label: '2/3' }, { n: 5, d: 6, col: 'var(--hi)' }]), ms: 1600 },
+          { say: '2 &times; 2 = 4. So 2/3 = 4/6. The shaded part did not change size.', fig: bars([{ n: 4, d: 6, label: '4/6' }, { n: 5, d: 6, col: 'var(--hi)' }]), ms: 1600 },
+          { say: 'Now the bottoms match. I compare the tops: 5 is more than 4.', fig: bars([{ n: 4, d: 6, label: '4/6' }, { n: 5, d: 6, col: 'var(--hi)' }], { mark: 5 / 6 }), ms: 1500 },
+          { say: 'So <b>5/6 &gt; 2/3</b>. Match the bottoms, then compare the tops.', fig: bars([{ n: 4, d: 6, label: '2/3' }, { n: 5, d: 6, col: 'var(--hi)' }], { mark: 5 / 6 }), ms: 2000 }
+        ]),
         try: K.widget('fractions', 3, 'Good. Try two fractions that are equal, like 2/4 and 3/6.'),
         ways: [
           { label: 'Use 1/2', html: '<p>Compare each fraction to one half. 3/8 is less than 4/8 (a half). 4/6 is more than 3/6 (a half). So 3/8 &lt; 4/6.</p>' },

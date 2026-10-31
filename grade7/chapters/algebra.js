@@ -282,6 +282,13 @@
           { say: 'Split both sides into 3 equal groups: one box weighs 5.', fig: function () { return balance(1, 0, 5, 'x = 5'); } },
           { say: 'Check: 3 &times; 5 + 4 = 19. It balances.', fig: eq('3 &times; 5 + 4 = 19 &#10003;'), ms: 2400 }
         ]),
+        example: K.slides([
+          { say: 'My turn. I will solve 2x + 7 = 15. The two sides balance.', fig: function () { return balance(2, 7, 15); }, ms: 1400 },
+          { say: 'I want x alone. First I undo the adding: I take 7 off <b>both</b> sides.', fig: function () { return balance(2, 0, 8, '2x = 8'); }, ms: 1600 },
+          { say: 'Now 2x = 8. Next I undo the multiplying: I split both sides into 2 equal groups.', fig: function () { return balance(1, 0, 4, 'x = 4'); }, ms: 1600 },
+          { say: 'So <b>x = 4</b>.', fig: function () { return balance(1, 0, 4, 'x = 4'); }, ms: 1000 },
+          { say: 'Last, I check. I put 4 in for x: 2 &times; 4 + 7 = 15. It balances.', fig: eq('2 &times; 4 + 7 = 15 &#10003;'), ms: 2000 }
+        ]),
         try: lab('eqao', [
           { do: 'Set up <b>2x + 5 = 19</b>, then press <b>Show the steps</b>.', goal: function (h) { return K.v(h, 'eqa') === 2 && K.v(h, 'eqb') === 5 && K.v(h, 'eqx') === 7 && /x = 7|x<\/i> = 7/.test(h.querySelector('#eqout').innerHTML); }, yes: 'Take 5 off: 2x = 14. Split in 2: x = 7.' },
           { do: 'Make a balance where <b>x = 12</b> and there are <b>4 boxes</b>. Solve it in your head first.', goal: function (h) { return K.v(h, 'eqa') === 4 && K.v(h, 'eqx') === 12; }, yes: 'Undo the adding, then undo the multiplying.' }

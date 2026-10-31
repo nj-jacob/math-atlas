@@ -1307,7 +1307,7 @@
   /* ================= "Watch" player =================
      A short animated demonstration, like a video clip, built from a tool's own moves.
      steps: [{say: caption, act: function (tool) { return promise }, ms: pause after}]
-     Plays once when it scrolls into view. Pause, replay, and step dots to jump to any part. */
+     The student plays it, or steps through it; it starts by itself only when "Auto-play" is on. */
   /* Auto-play is off unless the student or a grown-up switches it on. The choice is remembered in this browser for every grade. */
   function autoOn() { try { return localStorage.getItem('atlas:autoplay') === '1'; } catch (e) { return false; } }
   function setAuto(on) { try { localStorage.setItem('atlas:autoplay', on ? '1' : '0'); } catch (e) { /* storage blocked */ } }
@@ -1321,8 +1321,8 @@
       '<button type="button" class="mp-pb mp-play">Play</button>' +
       '<button type="button" class="mp-pb mp-step" aria-label="Next part">&rsaquo;</button>' +
       '<span class="mp-dots">' + steps.map(function (s, i) { return '<button type="button" class="mp-sd" data-i="' + i + '" aria-label="Part ' + (i + 1) + ' of ' + n + '"></button>'; }).join('') + '</span>' +
-      '<button type="button" class="mp-auto" aria-pressed="false"></button></div>';
-    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root), prevB = qs('.mp-prev', root), stepB = qs('.mp-step', root), autoB = qs('.mp-auto', root);
+      '<button type="button" class="mp-auto mp-ap" aria-pressed="false"></button></div>';
+    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root), prevB = qs('.mp-prev', root), stepB = qs('.mp-step', root), autoB = qs('.mp-ap', root);
     stage.appendChild(tool.root);
     /* k counts the parts already shown; the caption is the part on screen */
     function dots(i) { qsa('.mp-sd', root).forEach(function (d, j) { d.classList.toggle('on', j < k); d.classList.toggle('cur', j === i); }); }
