@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-10-31
+- Grade 4: spinners, bar graphs, growing patterns, the robot path and the shape slide show real orange and green again, so the words in the questions match the pictures (the shared theme had turned them teal).
 - Every grade now uses one shared copy of the lesson engine and toolbox (`assets/engine/`) instead of eight copies.
 - New answer types for every grade: tap the picture, pick all that apply, put in order, number line, match pairs, true or false and why, fill the blanks, build with blocks or coins.
 - Grade 3 "Numbers to 1000": every practice skill asks in 4 to 7 different ways. Fresh chapter quiz every time.

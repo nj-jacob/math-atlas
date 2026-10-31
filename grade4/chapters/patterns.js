@@ -31,7 +31,7 @@
       if (hide) s += '<rect x="' + it.x + '" y="' + (base - 5 * u) + '" width="' + Math.max(it.cols * u, 40) + '" height="' + 5 * u + '" rx="8" style="fill:none;stroke:var(--ink2)" stroke-width="2" stroke-dasharray="5 4"/><text x="' + (it.x + Math.max(it.cols * u, 40) / 2) + '" y="' + (base - 2.5 * u + 8) + '" text-anchor="middle" font-size="22" class="tb">?</text>';
       else for (var i = 0; i < it.tiles; i++) {
         var c = Math.floor(i / 5), r = i % 5, isNew = it.n > 1 && i >= start + add * (it.n - 2);
-        s += '<rect x="' + (it.x + c * u) + '" y="' + (base - (r + 1) * u) + '" width="' + (u - 1) + '" height="' + (u - 1) + '" rx="2" style="fill:' + (isNew ? 'var(--btn)' : 'var(--strand)') + ';stroke:var(--ink)" stroke-width="1"/>';
+        s += '<rect x="' + (it.x + c * u) + '" y="' + (base - (r + 1) * u) + '" width="' + (u - 1) + '" height="' + (u - 1) + '" rx="2" style="fill:' + (isNew ? 'var(--se)' : 'var(--strand)') + ';stroke:var(--ink)" stroke-width="1"/>';
       }
       s += '<text x="' + (it.x + Math.max(it.cols * u, 40) / 2) + '" y="' + (base + 24) + '" text-anchor="middle" font-size="16" class="t2">fig. ' + it.n + '</text>';
     });
@@ -119,9 +119,9 @@
     function P(p) { return (ox + (p[0] - minx + 0.5) * u).toFixed(1) + ',' + (oy + (p[1] - miny + 0.5) * u).toFixed(1); }
     s += '<polyline points="' + r.path.map(P).join(' ') + '" fill="none" style="stroke:var(--strand)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>';
     var st = P(r.path[0]).split(','), en = P(r.path[r.path.length - 1]).split(',');
-    s += '<circle cx="' + st[0] + '" cy="' + st[1] + '" r="' + (u * 0.28) + '" style="fill:var(--accent);stroke:var(--ink)" stroke-width="2"/>';
+    s += '<circle cx="' + st[0] + '" cy="' + st[1] + '" r="' + (u * 0.28) + '" style="fill:var(--sd);stroke:var(--ink)" stroke-width="2"/>';
     var ang = [0, 90, 180, 270][r.d];
-    s += '<g transform="translate(' + en[0] + ',' + en[1] + ') rotate(' + ang + ')"><polygon points="' + (u * 0.38) + ',0 ' + (-u * 0.28) + ',' + (-u * 0.3) + ' ' + (-u * 0.28) + ',' + (u * 0.3) + '" style="fill:var(--btn);stroke:var(--ink)" stroke-width="2"/></g>';
+    s += '<g transform="translate(' + en[0] + ',' + en[1] + ') rotate(' + ang + ')"><polygon points="' + (u * 0.38) + ',0 ' + (-u * 0.28) + ',' + (-u * 0.3) + ' ' + (-u * 0.28) + ',' + (u * 0.3) + '" style="fill:var(--se);stroke:var(--ink)" stroke-width="2"/></g>';
     return A.svg(Math.ceil(ox * 2 + cols * u), Math.ceil(oy * 2 + rows * u), s, label || 'The robot path. Green dot is the start. The orange arrow is where the robot ends, pointing the way it faces.');
   }
 

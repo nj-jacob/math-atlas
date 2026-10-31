@@ -1,6 +1,7 @@
 (function () {
   var A = Atlas, R = A.R;
-  var C1 = 'var(--strand)', C2 = 'var(--btn)';
+  /* the two data colours: green (C1) and orange (C2). Questions name them, so they stay fixed on every page. */
+  var C1 = 'var(--sd)', C2 = 'var(--se)';
   function sum(a) { return a.reduce(function (s, x) { return s + x; }, 0); }
   function sorted(a) { return a.slice().sort(function (x, y) { return x - y; }); }
   function median(a) { var s = sorted(a), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
