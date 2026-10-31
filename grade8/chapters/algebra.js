@@ -290,4 +290,175 @@ A.yt({ q: 'Solve 3x &minus; 2 &gt; 7.', opts: ['x &gt; 3', 'x &lt; 3', 'x &gt; 5
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  function nz(a, b) { var v = R.int(a, b); return v === 0 ? b : v; }
+  function plus(b) { return b < 0 ? ' &minus; ' + -b : ' + ' + b; }
+  var OPW = { '<': 'less than', '>': 'greater than', '<=': 'less than or equal to', '>=': 'greater than or equal to' };
+  function holds(v, op, c) { return op === '<' ? v < c : op === '>' ? v > c : op === '<=' ? v <= c : v >= c; }
+  var SHAPES = {
+    'al-pattern': [
+      [1, 'fill', function (lv) {
+        var m = R.int(2, 6), b = R.int(1, 9), terms = [1, 2, 3, 4].map(function (k) { return m * k + b; });
+        return { q: 'The pattern goes ' + terms.join(', ') + ', &hellip; for figures 1, 2, 3, 4. Write its rule.', type: 'fill', fill: '<span class="math">t = [[]]n + [[]]</span>', answers: [m, b], fig: tiles(m, b),
+          hint: 'The number in front of n is the constant rate. The number added is the initial value (figure 0).', steps: ['Rate: ' + terms[1] + ' &minus; ' + terms[0] + ' = ' + m + '.', 'Initial value: ' + terms[0] + ' &minus; ' + m + ' = ' + b + '.'], explain: 'The rule is t = ' + m + 'n + ' + b + '.', meta: { k: 'ap-fill', terms: terms } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), b = R.int(10, 60), m = R.int(5, 20), w = R.int(3, 10);
+        return { q: who + ' has <b>$' + b + '</b> saved and adds <b>$' + m + '</b> every week from a paper route. How much will ' + who + ' have after <b>' + w + ' weeks</b>?', type: 'num', unit: '$', answer: b + m * w,
+          hint: 'Start with the initial value. Add the rate once for each week.', steps: ['Rule: t = ' + m + 'n + ' + b + '.', 'For n = ' + w + ': ' + m + ' &times; ' + w + ' + ' + b + ' = ' + (m * w + b) + '.'], explain: who + ' will have $' + (b + m * w) + '.', meta: { k: 'ap-story', b: b, m: m, w: w } };
+      }],
+      [1, 'match', function (lv) {
+        var m = R.int(2, 7), b = R.int(1, 12), terms = [1, 2, 3, 4].map(function (k) { return m * k + b; });
+        if (b === m) b++;
+        terms = [1, 2, 3, 4].map(function (k) { return m * k + b; });
+        return { q: 'The pattern goes ' + terms.join(', ') + ', &hellip; for figures 1, 2, 3, 4. Match each word to its number.', type: 'match', pairs: [['Constant rate', String(m)], ['Initial value', String(b)], ['Term for figure 6', String(m * 6 + b)]],
+          hint: 'Rate: the change each step. Initial value: the term for figure 0.', steps: ['Rate: ' + m + '.', 'Initial value: ' + terms[0] + ' &minus; ' + m + ' = ' + b + '.', 'Figure 6: ' + m + ' &times; 6 + ' + b + ' = ' + (m * 6 + b) + '.'], explain: 'Rate ' + m + ', initial value ' + b + ', figure 6 term ' + (m * 6 + b) + '.', meta: { k: 'ap-match', terms: terms } };
+      }],
+      [2, 'mistake', function (lv) {
+        var who = K.name(), m = R.int(2, 8), b = R.int(1, 12), terms = [1, 2, 3, 4].map(function (k) { return m * k + b; }), truth = R.int(0, 1), said = truth ? b : terms[0];
+        return K.tf({ q: 'The pattern goes ' + terms.join(', ') + ', &hellip; for figures 1, 2, 3, 4. ' + who + ' says the initial value is <b>' + said + '</b>. True or false?', truth: truth,
+          right: 'The initial value is the term for figure 0, one step before figure 1: ' + terms[0] + ' &minus; ' + m + ' = ' + b + '.', wrong: ['The initial value is the first term you see.', 'The initial value is the constant rate.'],
+          hint: 'Which figure does the initial value belong to?', meta: { k: 'ap-tf', terms: terms, said: said } });
+      }]
+    ],
+    'al-rule': [
+      [1, 'fill', function (lv) {
+        var m = R.int(2, 9), b = R.int(1, 15), n = R.int(5, lv === 1 ? 20 : 60);
+        return { q: 'The rule is <span class="math">' + rule(m, b) + '</span>. Find the term for n = ' + n + '.', type: 'fill', fill: '<span class="math">t = ' + m + ' &times; [[]] + ' + b + ' = [[]]</span>', answers: [n, m * n + b],
+          hint: 'Put ' + n + ' in place of n. Multiply first.', steps: [m + ' &times; ' + n + ' = ' + m * n + '.', m * n + ' + ' + b + ' = ' + (m * n + b) + '.'], explain: 'Term ' + n + ' is ' + (m * n + b) + '.', meta: { k: 'ar-fill', m: m, b: b, n: n } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), m = R.pick([4, 6, 8]), b = 2, n = R.int(5, lv === 1 ? 15 : 40);
+        return { q: who + ' sets up tables in a row for a school dinner. The number of chairs is <span class="math">c = ' + m + 'n + ' + b + '</span> for n tables. How many chairs for <b>' + n + ' tables</b>?', type: 'num', answer: m * n + b, unit: 'chairs',
+          hint: 'Replace n with ' + n + '.', steps: ['c = ' + m + ' &times; ' + n + ' + ' + b + '.', 'c = ' + (m * n + b) + '.'], explain: n + ' tables need ' + (m * n + b) + ' chairs.', meta: { k: 'ar-story', m: m, b: b, n: n } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), m = R.int(2, 9), b = R.int(2, 12), n = R.int(5, 20), truth = R.int(0, 1), said = truth ? m * n + b : m * (n + b);
+        return K.tf({ q: 'The rule is <span class="math">' + rule(m, b) + '</span>. ' + who + ' says term ' + n + ' is <b>' + said + '</b>. True or false?', truth: truth,
+          right: 'Multiply first: ' + m + ' &times; ' + n + ' = ' + m * n + ', then add ' + b + ' to get ' + (m * n + b) + '.', wrong: ['Add ' + n + ' + ' + b + ' first, then multiply.', 'Multiply all the numbers together.'],
+          hint: 'Order of operations: multiply before you add.', meta: { k: 'ar-tf', m: m, b: b, n: n, said: said } });
+      }],
+      [2, 'match', function (lv) {
+        var m = nz(-6, 9), b = R.int(-8, 15), ns = [];
+        while (ns.length < 3) { var v = R.int(1, 30); if (ns.indexOf(v) < 0) ns.push(v); }
+        return { q: 'The rule is <span class="math">' + rule(m, b) + '</span>. Match each figure number to its term.', type: 'match', pairs: ns.map(function (k) { return ['n = ' + k, N(m * k + b)]; }),
+          hint: 'Put each value of n into the rule.', steps: ns.map(function (k) { return N(m) + ' &times; ' + k + plus(b) + ' = ' + N(m * k + b); }), explain: 'Each term is ' + N(m) + ' times n' + plus(b) + '.', meta: { k: 'ar-match', m: m, b: b } };
+      }]
+    ],
+    'al-like': [
+      [1, 'match', function (lv) {
+        return K.until(function () {
+          var list = [0, 1, 2].map(function () { return [R.int(1, 6), R.int(-6, 9), R.int(1, 6), R.int(-6, 9)]; }), ans = list.map(function (t) { return ex(t[0] + t[2], t[1] + t[3]); });
+          if (ans[0] === ans[1] || ans[1] === ans[2] || ans[0] === ans[2]) return null;
+          return { q: 'Match each expression to its simplest form.', type: 'match', pairs: list.map(function (t, i) { return [ex(t[0], t[1]) + ' + ' + ex(t[2], t[3]).replace(/^&minus;/, '(&minus;') , ans[i]]; }),
+            hint: 'Add the x terms. Then add the numbers.', steps: ['x terms go with x terms; numbers go with numbers.'], explain: list.map(function (t, i) { return ex(t[0], t[1]) + ' + ' + ex(t[2], t[3]) + ' = ' + ans[i]; }).join('. ') + '.', meta: { k: 'al-match' } };
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(2, 6), c = R.int(2, 6), truth = R.int(0, 1), said = truth ? (a + c) + 'x' : (a + c) + 'x²';
+        return K.tf({ q: who + ' says <span class="math">' + a + 'x + ' + c + 'x = ' + said + '</span>. True or false?', truth: truth,
+          right: a + ' x\'s plus ' + c + ' x\'s make ' + (a + c) + ' x\'s: ' + (a + c) + 'x. Adding like terms does not change the power.', wrong: ['When you add x terms, the x becomes x squared.', 'You can not add terms that both have x.'],
+          hint: 'Think of algebra tiles: ' + a + ' x-tiles and ' + c + ' more x-tiles.', meta: { k: 'al-tf', left: a + 'x + ' + c + 'x', said: said } });
+      }],
+      [1, 'fill', function (lv) {
+        var a = R.int(1, 7), b = R.int(1, 9), c = R.int(1, 6), d = R.int(1, 9);
+        return { q: 'Collect like terms.', type: 'fill', fill: '<span class="math">' + ex(a, b) + ' + ' + ex(c, d) + ' = [[]]x + [[]]</span>', answers: [a + c, b + d], fig: algTiles([{ x: a, u: b }, { gap: '+' }, { x: c, u: d }], 'Algebra tiles for the two expressions.'),
+          hint: 'Count the x-tiles, then the unit tiles.', steps: ['x terms: ' + a + ' + ' + c + ' = ' + (a + c) + '.', 'Numbers: ' + b + ' + ' + d + ' = ' + (b + d) + '.'], explain: 'The answer is ' + ex(a + c, b + d) + '.', meta: { k: 'al-fill', left: ex(a, b) + ' + ' + ex(c, d) } };
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var X = R.int(2, 8), U = nz(-9, 9), opts = [];
+          for (var i = 0; i < 5; i++) {
+            var ok = R.int(0, 1), a = R.int(1, X - 1), b = R.int(-9, 9), c = X - a, d = U - b;
+            if (!ok) d += R.pick([-2, -1, 1, 2]);
+            opts.push(['(' + ex(a, b) + ') + (' + ex(c, d) + ')', ok]);
+          }
+          var seen = {}; if (!opts.every(function (o) { if (seen[o[0]]) return false; seen[o[0]] = 1; return true; })) return null;
+          return K.pickAll({ q: 'Pick every expression that simplifies to <span class="math">' + ex(X, U) + '</span>.', opts: opts, hint: 'Simplify each one: add the x terms, then the numbers.', steps: ['Each right one has x terms adding to ' + X + ' and numbers adding to ' + N(U) + '.'], explain: 'They must simplify to ' + ex(X, U) + '.', meta: { k: 'al-pick', target: ex(X, U) } });
+        });
+      }]
+    ],
+    'al-eval': [
+      [1, 'match', function (lv) {
+        var a = R.int(2, 6), b = R.int(-9, 9), xs = [];
+        while (xs.length < 3) { var v = R.int(-6, 6); if (xs.indexOf(v) < 0) xs.push(v); }
+        return { q: 'Match each value of x to the value of <span class="math">' + ex(a, b) + '</span>.', type: 'match', pairs: xs.map(function (x) { return ['x = ' + N(x), N(a * x + b)]; }),
+          hint: 'Put each value in brackets in place of x.', steps: xs.map(function (x) { return a + '(' + N(x) + ')' + plus(b) + ' = ' + N(a * x + b); }), explain: 'Multiply first, then add or subtract.', meta: { k: 'ae-match', e: ex(a, b) } };
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), b = R.pick([3.5, 4, 4.25, 5]), a = R.pick([2, 2.5, 3]), k = R.int(2, 15), cost = cl(a * k + b);
+        return { q: 'A taxi in Halifax costs <span class="math">C = ' + a + 'k + ' + b + '</span> dollars for k km. ' + who + ' rides <b>' + k + ' km</b>. What is the cost?', type: 'num', unit: '$', answer: cost, tol: 0.005, show: '$' + cost.toFixed(2),
+          hint: 'Put ' + k + ' in place of k. Multiply first.', steps: [a + ' &times; ' + k + ' = ' + cl(a * k) + '.', cl(a * k) + ' + ' + b + ' = ' + cost + '.'], explain: 'The ride costs $' + cost.toFixed(2) + '.', meta: { k: 'ae-story', a: a, b: b, x: k } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(2, 6), b = R.int(1, 9), x = -R.int(1, 6), truth = R.int(0, 1), said = truth ? a * x + b : a * -x + b;
+        return K.tf({ q: who + ' says <span class="math">' + ex(a, b) + '</span> is <b>' + N(said) + '</b> when x = ' + N(x) + '. True or false?', truth: truth,
+          right: a + '(' + N(x) + ') = ' + N(a * x) + ', and ' + N(a * x) + ' + ' + b + ' = ' + N(a * x + b) + '.', wrong: ['The negative sign can be ignored when you substitute.', 'Add before you multiply.'],
+          hint: 'Put ' + N(x) + ' in brackets. A positive times a negative is negative.', meta: { k: 'ae-tf', e: ex(a, b), x: x, said: said } });
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var x = nz(-4, 4), list = [], seen = {};
+          for (var i = 0; i < 3; i++) { var a = nz(-5, 6), b = R.int(-9, 9), v = a * x + b; if (seen[v]) return null; seen[v] = 1; list.push([ex(a, b), v]); }
+          list.sort(function (p, q2) { return p[1] - q2[1]; });
+          return { q: 'When x = ' + N(x) + ', put these in order of value, least to greatest.', type: 'order', items: list.map(function (p) { return p[0]; }), first: 'least', last: 'greatest',
+            hint: 'Work out each one with x = ' + N(x) + '.', steps: list.map(function (p) { return p[0] + ' = ' + N(p[1]); }), explain: 'In order: ' + list.map(function (p) { return N(p[1]); }).join(', ') + '.', meta: { k: 'ae-order', x: x } };
+        });
+      }]
+    ],
+    'al-solve': [
+      [1, 'fill', function (lv) {
+        var x = R.int(1, 12), a = R.int(2, 9), b = R.int(1, 15), c = a * x + b;
+        return { q: 'Solve <span class="math">' + ex(a, b) + ' = ' + c + '</span> one step at a time.', type: 'fill', fill: '<span class="math">' + a + 'x = [[]]</span>, so <span class="math">x = [[]]</span>', answers: [c - b, x],
+          hint: 'Subtract ' + b + ' from both sides. Then divide by ' + a + '.', steps: [c + ' &minus; ' + b + ' = ' + (c - b) + '.', (c - b) + ' &divide; ' + a + ' = ' + x + '.'], explain: 'x = ' + x + '.', meta: { k: 'as-fill', a: a, b: b, c: c } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), x = R.int(2, 9), a = R.int(2, 6), b = R.int(2, 12), c = a * x + b, truth = R.int(0, 1), said = truth ? x : (c + b) / a;
+        if (said === x) truth = 1;
+        return K.tf({ q: who + ' solves <span class="math">' + ex(a, b) + ' = ' + c + '</span> and gets <b>x = ' + F2(said) + '</b>. True or false?', truth: truth,
+          right: 'Subtract ' + b + ': ' + a + 'x = ' + (c - b) + '. Divide by ' + a + ': x = ' + x + '. Check: ' + a + ' &times; ' + x + ' + ' + b + ' = ' + c + '.', wrong: ['To undo + ' + b + ', add ' + b + ' to both sides.', 'Divide only the left side by ' + a + '.'],
+          hint: 'Check it: put the answer back into the equation.', meta: { k: 'as-tf', e: ex(a, b), c: c, said: said } });
+      }],
+      [1, 'way', function (lv) {
+        var a = R.int(2, 9), b = nz(-12, 12), x = R.int(1, 9), c = a * x + b;
+        return K.pick1({ q: 'To solve <span class="math">' + ex(a, b) + ' = ' + c + '</span>, what is a good first step?', right: (b > 0 ? 'Subtract ' + b : 'Add ' + -b) + ' on both sides', wrong: [(b > 0 ? 'Add ' + b : 'Subtract ' + -b) + ' on both sides', 'Multiply both sides by ' + a, (b > 0 ? 'Subtract ' + b : 'Add ' + -b) + ' on the left side only'],
+          hint: 'Undo the ' + (b > 0 ? 'adding' : 'subtracting') + ' first, and do it to both sides.', steps: ['Do the opposite operation to both sides.', 'Then divide by ' + a + ': x = ' + x + '.'], explain: 'Then ' + a + 'x = ' + (c - b) + ', so x = ' + x + '.', meta: { k: 'as-way', b: b } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), b = R.pick([20, 25, 30, 40]), a = R.pick([5, 6, 8, 10]), x = R.int(3, 15), c = a * x + b;
+        return { q: 'A climbing gym charges <b>$' + b + '</b> to join, then <b>$' + a + '</b> a visit. ' + who + ' paid <b>$' + c + '</b> in all. How many visits was that?', type: 'num', answer: x, unit: 'visits',
+          hint: 'Write the equation ' + a + 'v + ' + b + ' = ' + c + '.', steps: [a + 'v + ' + b + ' = ' + c + '.', a + 'v = ' + (c - b) + '.', 'v = ' + x + '.'], explain: who + ' made ' + x + ' visits.', meta: { k: 'as-story', a: a, b: b, c: c } };
+      }],
+      [2, 'tap', function (lv) {
+        var x = nz(-9, 9), a = nz(-6, 6), b = R.int(-12, 12), c = a * x + b, tiles = R.shuffle([x, -x, x + 1, x - 1].filter(function (v, i, arr) { return arr.indexOf(v) === i; }));
+        return { q: 'Tap the solution of <span class="math">' + ex(a, b) + ' = ' + N(c) + '</span>.', type: 'tap', tiles: tiles.map(function (v) { return 'x = ' + N(v); }), answer: tiles.indexOf(x), answerText: 'x = ' + N(x),
+          hint: 'Try each one: put it in place of x and see which gives ' + N(c) + '.', steps: [N(a) + ' &times; ' + P(x) + plus(b) + ' = ' + N(c) + '.'], explain: 'x = ' + N(x) + ' makes both sides equal.', meta: { k: 'as-tap', e: ex(a, b), c: c } };
+      }]
+    ],
+    'al-ineq': [
+      [1, 'pick', function (lv) {
+        return K.until(function () {
+          var op = R.pick(['<', '>', '<=', '>=']), b = R.int(-8, 8), c = R.int(-5, 12), vals = [];
+          while (vals.length < 5) { var v = R.int(c - b - 3, c - b + 3); if (vals.indexOf(v) < 0) vals.push(v); }
+          return K.pickAll({ q: 'Pick every value of x that makes <span class="math">' + ex(1, b) + ' ' + SYM[op] + ' ' + N(c) + '</span> true.', opts: vals.map(function (v) { return ['x = ' + N(v), holds(v + b, op, c)]; }),
+            hint: 'Try each value: is ' + ex(1, b) + ' ' + OPW[op] + ' ' + N(c) + '?', steps: ['Or solve first: x ' + SYM[op] + ' ' + N(c - b) + '.'], explain: 'The solution is x ' + SYM[op] + ' ' + N(c - b) + '.', meta: { k: 'ai-pick', a: 1, b: b, c: c, op: op } });
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = -R.int(2, 5), k = R.int(-5, 5), b = 0, op = R.pick(['<', '>', '<=', '>=']), c = a * k, truth = R.int(0, 1), sol = truth ? FLIP[op] : op;
+        return K.tf({ q: who + ' solves <span class="math">' + ex(a, b) + ' ' + SYM[op] + ' ' + N(c) + '</span> and gets <b>x ' + SYM[sol] + ' ' + N(k) + '</b>. True or false?', truth: truth,
+          right: 'Dividing both sides by ' + N(a) + ', a negative, flips the sign: x ' + SYM[FLIP[op]] + ' ' + N(k) + '.', wrong: ['The sign never changes when you divide.', 'The sign flips whenever the answer is negative.'],
+          hint: 'You divide by a negative number. What happens to the sign?', meta: { k: 'ai-tf', a: a, b: b, c: c, op: op, sol: sol, at: k } });
+      }],
+      [1, 'line', function (lv) {
+        var op = R.pick(['<', '>', '<=', '>=']), b = R.int(-6, 6), k = R.int(-7, 7), c = k + b, ans = op === '<' ? k - 1 : op === '>' ? k + 1 : k, big = op === '>' || op === '>=';
+        return { q: 'For <span class="math">' + ex(1, b) + ' ' + SYM[op] + ' ' + N(c) + '</span>, place the <b>' + (big ? 'smallest' : 'largest') + '</b> whole number that works.', type: 'line', min: -10, max: 10, tick: 1, every: 5, snap: 1, answer: ans,
+          hint: 'Solve it first: x ' + SYM[op] + ' ' + N(k) + '.', steps: ['x ' + SYM[op] + ' ' + N(k) + '.', op.length === 2 ? N(k) + ' itself works.' : N(k) + ' itself does not work, so go one step ' + (big ? 'up' : 'down') + '.'], explain: 'The ' + (big ? 'smallest' : 'largest') + ' whole number that works is ' + N(ans) + '.', meta: { k: 'ai-line', b: b, c: c, op: op, big: big } };
+      }]
+    ]
+  };
+  function F2(v) { return N(cl(v)); }
+  K.shapes('algebra', SHAPES);
 })();

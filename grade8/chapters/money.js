@@ -268,4 +268,140 @@ A.yt({ q: 'A phone plan is $45 a month for 24 months with a free phone. Another 
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  var SHAPES = {
+    'mo-exchange': [
+      [1, 'fill', function (lv) {
+        var r = R.pick(RATES.slice(0, 3)), amt = R.int(2, 40) * 5, cad = c2(amt * r[2]);
+        return { q: 'Convert ' + amt + ' ' + r[1] + ' to Canadian dollars. 1 ' + r[1] + ' = $' + r[2] + ' CAD' + EX + '.', type: 'fill', fill: amt + ' &times; ' + r[2] + ' = $[[]] CAD', answers: [cad], tol: 0.011, fig: exFig(amt, r),
+          hint: 'Foreign to CAD: multiply by the rate.', steps: [amt + ' &times; ' + r[2] + ' = ' + m(cad) + '.'], explain: amt + ' ' + r[1] + ' is ' + m(cad) + ' CAD.', meta: { k: 'me-fill', amt: amt, rate: r[2] } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), r = R.pick(RATES.slice(0, 3)), amt = R.int(2, 20) * 10, truth = R.int(0, 1), said = truth ? c2(amt * r[2]) : c2(amt / r[2]);
+        return K.tf({ q: '1 ' + r[1] + ' = $' + r[2] + ' CAD' + EX + '. ' + who + ' says ' + amt + ' ' + r[1] + ' is <b>' + m(said) + ' CAD</b>. True or false?', truth: truth,
+          right: 'One ' + r[1] + ' is worth more than $1 CAD, so multiply: ' + amt + ' &times; ' + r[2] + ' = ' + m(amt * r[2]) + '.', wrong: ['Always divide by the rate.', 'The amount stays the same in any currency.'],
+          hint: 'Is one ' + r[1] + ' worth more or less than one Canadian dollar?', meta: { k: 'me-tf', amt: amt, rate: r[2], said: said } });
+      }],
+      [1, 'way', function (lv) {
+        var who = K.name(), r = R.pick(RATES.slice(0, 3)), c = R.int(2, 40) * 10;
+        return K.pick1({ q: who + ' trades <b>$' + c + ' CAD</b> for ' + r[0] + 's. 1 ' + r[1] + ' = $' + r[2] + ' CAD' + EX + '. Which way finds how many ' + r[1] + ' ' + who + ' gets?', right: c + ' &divide; ' + r[2], wrong: [c + ' &times; ' + r[2], c + ' &minus; ' + r[2], r[2] + ' &divide; ' + c],
+          hint: 'Each ' + r[1] + ' costs $' + r[2] + '. How many of them fit into $' + c + '?', steps: ['CAD to foreign: divide by the rate.', c + ' &divide; ' + r[2] + ' &asymp; ' + c2(c / r[2]) + ' ' + r[1] + '.'], explain: 'Divide: about ' + A.fmt(c2(c / r[2]).toFixed(2)) + ' ' + r[1] + '.', meta: { k: 'me-way', c: c, rate: r[2] } });
+      }]
+    ],
+    'mo-budget': [
+      [1, 'line', function (lv) {
+        var items = [['Phone', R.int(4, 10) * 5], ['Transit', R.int(4, 12) * 5], ['Fun', R.int(2, 8) * 5]], tot = items.reduce(function (a, it) { return a + it[1]; }, 0), inc = tot + R.int(1, 10) * 5;
+        return { q: 'Income is $' + inc + ' a month. Expenses: ' + items.map(function (it) { return it[0].toLowerCase() + ' $' + it[1]; }).join(', ') + '. Place the surplus on the line.', type: 'line', min: 0, max: 60, tick: 5, every: 10, snap: 5, answer: inc - tot, unit: 'dollars', label: function (v) { return '$' + v; },
+          hint: 'Add the expenses. Take that away from the income.', steps: ['Expenses: ' + tot + '.', inc + ' &minus; ' + tot + ' = ' + (inc - tot) + '.'], explain: 'The surplus is ' + m(inc - tot) + '.', meta: { k: 'mb-line', inc: inc, costs: items.map(function (it) { return it[1]; }) } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), items = R.shuffle(['Phone', 'Transit', 'Food', 'Fun']).slice(0, 3).map(function (nm) { return [nm, R.int(3, 20) * 5]; }), tot = items.reduce(function (a, it) { return a + it[1]; }, 0), inc = tot + R.pick([-1, 1]) * R.int(1, 8) * 5, truth = inc >= tot;
+        return K.tf({ q: 'Income is $' + inc + ' a month. Expenses: ' + items.map(function (it) { return it[0].toLowerCase() + ' $' + it[1]; }).join(', ') + '. ' + who + ' says this budget has money left over. True or false?', truth: truth,
+          right: 'Expenses add to $' + tot + '. ' + (inc >= tot ? 'Income is more, so there is a surplus of ' + m(inc - tot) + '.' : 'That is more than the income, so there is a deficit of ' + m(tot - inc) + '.'), wrong: ['A budget always has money left over.', 'Only the biggest expense matters.'],
+          hint: 'Add up the expenses first.', meta: { k: 'mb-tf', inc: inc, costs: items.map(function (it) { return it[1]; }) } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), w = R.pick([15, 20, 25, 30, 40]), goal = R.int(8, 40) * 10, what = R.pick(['a new bike', 'hockey camp', 'a tablet', 'concert tickets']), weeks = Math.ceil(goal / w);
+        return { q: who + ' earns <b>$' + w + '</b> a week babysitting and saves all of it for ' + what + ' that costs <b>$' + goal + '</b>. How many weeks until ' + who + ' has enough?', type: 'num', answer: weeks, unit: 'weeks',
+          hint: 'Divide the cost by the weekly savings. If it does not come out even, round up.', steps: [goal + ' &divide; ' + w + ' &asymp; ' + Math.round(goal / w * 100) / 100 + '.', 'Round up: ' + weeks + ' weeks.'], explain: 'After ' + weeks + ' weeks ' + who + ' has $' + weeks * w + ', which is enough.', meta: { k: 'mb-story', w: w, goal: goal } };
+      }]
+    ],
+    'mo-tax': [
+      [1, 'tap', function (lv) {
+        var p = R.pick([R.int(2, 19), R.int(21, 60)]) * 5, t = [c2(p * 0.13), p + 13, c2(p * 1.3), c2(p * 0.013)], tiles = R.shuffle(t);
+        return { q: 'How much 13% HST is charged on a $' + p + ' item? Tap it.', type: 'tap', tiles: tiles.map(m), answer: tiles.indexOf(t[0]), answerText: m(t[0]),
+          hint: '13% = 0.13. Multiply the price by 0.13.', steps: [p + ' &times; 0.13 = ' + m(p * 0.13) + '.'], explain: 'The HST is ' + m(p * 0.13) + '.', meta: { k: 'mt-tap', p: p } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), p = R.pick([R.int(4, 19), R.int(21, 60)]) * 5, truth = R.int(0, 1), said = truth ? c2(p * 1.13) : p + 13;
+        return K.tf({ q: 'An item costs $' + p + '. ' + who + ' says the total with 13% HST is <b>' + m(said) + '</b>. True or false?', truth: truth,
+          right: '13% of $' + p + ' is ' + m(p * 0.13) + ', so the total is ' + m(p * 1.13) + '.', wrong: ['13% HST means add $13.', 'HST is already in every price tag.'],
+          hint: '13% is 13 cents for every dollar, not 13 dollars.', meta: { k: 'mt-tf', p: p, said: said } });
+      }],
+      [1, 'fill', function (lv) {
+        var p = R.int(4, 60) * 5 - R.pick([0, 0.01, 0.05]), tax = c2(p * 0.13);
+        return { q: 'Find the total cost of a $' + p.toFixed(2) + ' item with 13% HST.', type: 'fill', fill: 'HST: $[[]] &nbsp; Total: $[[]]', answers: [tax, c2(p + tax)], tol: 0.011,
+          hint: 'HST = price &times; 0.13. Then add it to the price.', steps: [p.toFixed(2) + ' &times; 0.13 &asymp; ' + m(tax) + '.', p.toFixed(2) + ' + ' + tax.toFixed(2) + ' = ' + m(p + tax) + '.'], explain: 'Total: ' + m(p + tax) + '.', meta: { k: 'mt-fill', p: p } };
+      }],
+      [2, 'way', function (lv) {
+        var pre = R.pick([R.int(5, 49), R.int(51, 100)]) * 2, tot = c2(pre * 1.13);
+        return K.pick1({ q: 'A receipt total is <b>$' + tot.toFixed(2) + '</b>, including 13% HST. Which way finds the price before tax?', right: tot.toFixed(2) + ' &divide; 1.13', wrong: [tot.toFixed(2) + ' &times; 0.87', tot.toFixed(2) + ' &minus; 13', tot.toFixed(2) + ' &times; 1.13'],
+          hint: 'The total is 113% of the price. Undo multiplying by 1.13.', steps: ['Total = price &times; 1.13, so price = total &divide; 1.13.'], explain: tot.toFixed(2) + ' &divide; 1.13 = ' + m(pre) + '.', meta: { k: 'mt-way', pre: pre } });
+      }]
+    ],
+    'mo-interest': [
+      [1, 'fill', function (lv) {
+        var P = R.int(2, 50) * 100, r = R.int(2, 8), t = R.int(1, 5);
+        return { q: 'Find the simple interest on $' + A.fmt(P) + ' at ' + r + '% a year for ' + t + ' year' + (t > 1 ? 's' : '') + '.', type: 'fill', fill: 'I = ' + A.fmt(P) + ' &times; ' + r / 100 + ' &times; ' + t + ' = $[[]]', answers: [P * r * t / 100], tol: 0.011,
+          hint: 'I = P &times; r &times; t.', steps: [A.fmt(P) + ' &times; ' + r / 100 + ' = ' + P * r / 100 + ' a year.', 'Times ' + t + ' = ' + P * r * t / 100 + '.'], explain: 'The interest is ' + m(P * r * t / 100) + '.', meta: { k: 'mi-fill', P: P, r: r, t: t } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), P = R.int(2, 20) * 100, r = R.int(2, 8), t = R.pick([1, 2, 3, 5]), cmp = P * Math.pow(1 + r / 100, t), simp = P * (1 + r / 100 * t);
+        return K.tf({ q: '$' + A.fmt(P) + ' is saved at ' + r + '% a year for ' + t + ' year' + (t > 1 ? 's' : '') + '. ' + who + ' says compound interest gives <b>more</b> than simple interest here. True or false?', truth: cmp - simp > 0.005,
+          right: t === 1 ? 'In the first year both earn the same: ' + m(P * r / 100) + '. Compound interest only pulls ahead after the first year.' : 'Compound: ' + m(cmp) + '. Simple: ' + m(simp) + '. Compound earns interest on interest, so it gives more.', wrong: ['Compound interest always gives more, from day one.', 'Simple interest always gives more.'],
+          hint: 'In year 1, is there any interest yet to earn interest on?', meta: { k: 'mi-tf', P: P, r: r, t: t } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), P = R.int(2, 20) * 100, r = R.pick([2, 3, 4, 5]), t = R.int(2, 5);
+        return money({ q: who + ' puts <b>$' + A.fmt(P) + '</b> of birthday money into a GIC that pays <b>' + r + '%</b> simple interest a year. How much will it be worth after <b>' + t + ' years</b>?', answer: P * (1 + r * t / 100),
+          hint: 'Find the interest (P &times; r &times; t), then add it to what ' + who + ' put in.', steps: ['Interest: ' + A.fmt(P) + ' &times; ' + r / 100 + ' &times; ' + t + ' = ' + m(P * r * t / 100) + '.', 'Total: ' + A.fmt(P) + ' + ' + P * r * t / 100 + ' = ' + m(P * (1 + r * t / 100)) + '.'], explain: 'It will be worth ' + m(P * (1 + r * t / 100)) + '.', meta: { k: 'mi-story', P: P, r: r, t: t } });
+      }],
+      [2, 'order', function (lv) {
+        return K.until(function () {
+          var list = [0, 1, 2].map(function () { var P = R.int(5, 30) * 100, r = R.int(2, 8), t = R.int(1, 5); return [P, r, t, P * r * t / 100]; });
+          if (new Set(list.map(function (x) { return x[3]; })).size < 3) return null;
+          list.sort(function (a, b) { return a[3] - b[3]; });
+          return { q: 'Put these savings in order of the simple interest they earn, least to most.', type: 'order', items: list.map(function (x) { return '$' + A.fmt(x[0]) + ' at ' + x[1] + '% for ' + x[2] + ' yr'; }), first: 'least', last: 'most',
+            hint: 'Work out P &times; r &times; t for each.', steps: list.map(function (x) { return A.fmt(x[0]) + ' &times; ' + x[1] / 100 + ' &times; ' + x[2] + ' = ' + m(x[3]); }), explain: 'Interest: ' + list.map(function (x) { return m(x[3]); }).join(', ') + '.', meta: { k: 'mi-order' } };
+        });
+      }]
+    ],
+    'mo-value': [
+      [1, 'tap', function (lv) {
+        return K.until(function () {
+          var offers = [3, 4, 6].map(function (q) { return [q, c2(q * R.int(60, 160) / 100)]; }), unit = offers.map(function (o) { return o[1] / o[0]; }), lo = Math.min.apply(null, unit);
+          if (unit.filter(function (u) { return Math.abs(u - lo) < 0.01; }).length > 1) return null;
+          var tiles = R.shuffle(offers).map(function (o) { return o[0] + ' for $' + o[1].toFixed(2); }), best = offers[unit.indexOf(lo)];
+          return { q: 'Juice boxes come in three packs. Tap the best value.', type: 'tap', tiles: tiles, answer: tiles.indexOf(best[0] + ' for $' + best[1].toFixed(2)), answerText: best[0] + ' for $' + best[1].toFixed(2),
+            hint: 'Find the cost of one juice box in each pack.', steps: offers.map(function (o) { return '$' + o[1].toFixed(2) + ' &divide; ' + o[0] + ' &asymp; ' + m(o[1] / o[0]) + ' each.'; }), explain: 'The lowest cost for one box is the best value.', meta: { k: 'mu-tap' } };
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), P = R.int(4, 30) * 10, a = R.pick([10, 20, 25]), b = R.pick([10, 20]), truth = R.int(0, 1), said = truth ? c2(P * (1 - a / 100) * (1 - b / 100)) : c2(P * (1 - (a + b) / 100));
+        return K.tf({ q: 'A $' + P + ' coat is ' + a + '% off, and then a coupon takes another ' + b + '% off the sale price. ' + who + ' says the final price is <b>' + m(said) + '</b>. True or false?', truth: truth,
+          right: 'Two discounts in a row: ' + P + ' &times; ' + (1 - a / 100) + ' &times; ' + (1 - b / 100) + ' = ' + m(P * (1 - a / 100) * (1 - b / 100)) + '. That is not the same as ' + (a + b) + '% off.', wrong: ['Add the two percents and take that much off.', 'The second discount is taken off the original price.'],
+          hint: 'The second discount is a percent of the sale price, not the original.', meta: { k: 'mu-tf', P: P, a: a, b: b, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), P = R.int(10, 60) * 5, off = R.pick([5, 10]), pc = R.pick([10, 15, 20]), save = P * pc / 100;
+        if (save === off) P += 10, save = P * pc / 100;
+        var right = save > off ? pc + '% off' : '$' + off + ' off';
+        return K.pick1({ q: who + ' wants a $' + P + ' pair of shoes. One coupon gives <b>$' + off + ' off</b>. Another gives <b>' + pc + '% off</b>. Which saves more?', right: right, wrong: [save > off ? '$' + off + ' off' : pc + '% off'],
+          hint: 'Work out ' + pc + '% of $' + P + ' and compare it with $' + off + '.', steps: [pc + '% of ' + P + ' = ' + m(save) + '.', 'Compare with $' + off + '.'], explain: pc + '% off saves ' + m(save) + '; the other saves $' + off + '. ' + right + ' saves more.', meta: { k: 'mu-story', P: P, off: off, pc: pc } });
+      }]
+    ],
+    'mo-credit': [
+      [1, 'fill', function (lv) {
+        var mA = R.int(5, 12) * 5, up = R.int(0, 6) * 50, term = R.pick([12, 24]);
+        return { q: 'A phone contract is $' + mA + ' a month for ' + term + ' months, plus $' + up + ' up front. Find the total cost.', type: 'fill', fill: mA + ' &times; ' + term + ' = $[[]], plus ' + up + ' = $[[]]', answers: [mA * term, mA * term + up],
+          hint: 'Monthly cost times months, then add the up-front cost.', steps: [mA + ' &times; ' + term + ' = ' + mA * term + '.', mA * term + ' + ' + up + ' = ' + (mA * term + up) + '.'], explain: 'The total is ' + m(mA * term + up) + '.', meta: { k: 'mk-fill', mA: mA, term: term, up: up } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), bal = R.int(4, 40) * 50, rate = R.pick([12, 18, 24]), truth = R.int(0, 1), said = truth ? c2(bal * rate / 1200) : c2(bal * rate / 100);
+        return K.tf({ q: 'A credit card charges ' + rate + '% a year. ' + who + ' leaves $' + A.fmt(bal) + ' unpaid and says one month of interest is <b>' + m(said) + '</b>. True or false?', truth: truth,
+          right: rate + '% is the yearly rate. One month is 1/12 of that: ' + A.fmt(bal) + ' &times; ' + rate / 100 + ' &divide; 12 = ' + m(bal * rate / 1200) + '.', wrong: ['The yearly rate is charged every month.', 'There is no interest in the first month.'],
+          hint: 'Is ' + rate + '% for a month or for a year?', meta: { k: 'mk-tf', bal: bal, rate: rate, said: said } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), a = R.int(5, 9) * 5, b = a + R.int(1, 3) * 5, upA = R.int(2, 8) * 100, term = 24, totA = a * term + upA, totB = b * term;
+        if (totA === totB) upA += 50, totA = a * term + upA;
+        var right = totA < totB ? 'Plan A' : 'Plan B';
+        return K.pick1({ q: who + ' compares two 24-month phone plans. <b>Plan A:</b> $' + a + ' a month plus $' + upA + ' up front. <b>Plan B:</b> $' + b + ' a month, nothing up front. Which costs less in total?', right: right, wrong: [right === 'Plan A' ? 'Plan B' : 'Plan A'],
+          hint: 'Find the total for each plan over 24 months.', steps: ['A: ' + a + ' &times; 24 + ' + upA + ' = ' + totA + '.', 'B: ' + b + ' &times; 24 = ' + totB + '.'], explain: right + ' costs less: ' + m(Math.min(totA, totB)) + ' vs ' + m(Math.max(totA, totB)) + '.', meta: { k: 'mk-story', a: a, b: b, upA: upA } });
+      }]
+    ]
+  };
+  K.shapes('money', SHAPES);
 })();
