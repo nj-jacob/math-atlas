@@ -5,8 +5,8 @@
   const set = (k, fn) => { V[k] = fn; };
   /* read a number shown as text: handles the − sign, spaces in big numbers, $ and % */
   const n = t => parseFloat(H.strip(t).replace(/−/g, '-').replace(/[\s,$%]/g, ''));
-  /* work out a shown expression such as "(−3) + 4 × (−2)" with ordinary arithmetic */
-  const ev = t => Function('return (' + H.strip(t).replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\[/g, '(').replace(/\]/g, ')') + ');')();
+  /* work out a shown expression such as "(−3) + 4 × (−2)" or "3 ÷ 1/4" with ordinary arithmetic (a/b is one fraction) */
+  const ev = t => Function('return (' + H.strip(t).replace(/−/g, '-').replace(/×/g, '*').replace(/÷/g, '/').replace(/\[/g, '(').replace(/\]/g, ')').replace(/(\d+)\/(\d+)/g, '($1/$2)') + ');')();
   const near = (a, b, tol) => Math.abs(a - b) <= (tol == null ? 1e-9 : tol);
   const same = (a, b) => a.slice().sort().join() === b.slice().sort().join();
   const chosen = q => q.options[q.answer];
@@ -90,4 +90,26 @@
   set('bc-tap', q => { const v = q.tiles.map(sv); return v[q.answer] === Math.max(...v) ? '' : 'biggest'; });
   set('bc-order', q => ordered(q.items.map(sv)) ? '' : 'order');
   set('bc-tf', (q, m) => tf(m.a * Math.pow(10, m.e) > m.b * Math.pow(10, m.f), q));
+  /* ---- Fractions ---- */
+  /* read "3/4", "1 3/4", "−2/3" or a whole number */
+  const fv = t => { const s = H.strip(t).replace(/−/g, '-'); let m = s.match(/^(-?)(\d+) (\d+)\/(\d+)$/); if (m) return (m[1] ? -1 : 1) * (+m[2] + m[3] / m[4]); m = s.match(/^(-?\d+)\/(\d+)$/); if (m) return m[1] / m[2]; return n(s); };
+  const fx = f => f[0] / f[1];
+  set('fa-fill', (q, m) => { const [x, y, z] = q.answers; return near(x / m.L, fx(m.p)) && near(y / m.L, fx(m.q)) && near(z / m.L, fx(m.p) + fx(m.q)) ? '' : 'blanks'; });
+  set('fa-story', (q, m) => near(q.answer, fx(m.p) + fx(m.q)) && near(fv(q.show), q.answer) ? '' : 'total');
+  set('fa-tf', (q, m) => tf(near(fv(m.said), fx(m.p) + fx(m.q)), q));
+  set('fa-match', q => pairsOk(q, (l, r) => near(ev(l), fv(r))));
+  set('fs-fill', (q, m) => { const [x, y, z] = q.answers; return near(x / m.L, fx(m.p)) && near(y / m.L, fx(m.q)) && near(z / m.L, fx(m.p) - fx(m.q)) && z > 0 ? '' : 'blanks'; });
+  set('fs-story', (q, m) => near(q.answer, fx(m.p) - fx(m.q)) && q.answer > 0 && near(fv(q.show), q.answer) ? '' : 'left');
+  set('fs-tf', (q, m) => tf(near(fv(m.said), fx(m.p) - fx(m.q)), q));
+  set('fm-fill', (q, m) => q.answers[0] === m.p[0] * m.q[0] && q.answers[1] === m.p[1] * m.q[1] ? '' : 'product');
+  set('fm-story', (q, m) => near(q.answer, fx(m.p) * fx(m.q)) && near(fv(q.show), q.answer) ? '' : 'flour');
+  set('fm-tf', (q, m) => tf(m.w * fx(m.f) > m.w, q));
+  set('fm-match', q => pairsOk(q, (l, r) => near(ev(l), fv(r))));
+  set('fd-fill', (q, m) => q.answers[1] === m.w / (1 / m.d) && near(m.w * q.answers[0], q.answers[1]) ? '' : 'quotient');
+  set('fd-story', (q, m) => near(q.answer * (1 / m.d), m.w) ? '' : 'bows');
+  set('fd-tf', (q, m) => tf(near(fv(m.said), fx(m.p) / fx(m.q)), q));
+  set('fd-tap', (q, m) => { const w = q.tiles.map((t, j) => (near(ev(t), fx(m.p) / fx(m.q)) ? j : -1)).filter(j => j >= 0); return w.length === 1 && w[0] === q.answer ? '' : 'same answer'; });
+  set('fw-way', (q, m) => { const a = Array.isArray(m.a) ? fx(m.a) : m.a, b = Array.isArray(m.b) ? fx(m.b) : m.b; const want = { batches: b * a, pieces: b / a, left: a - b, total: a + b }[m.s]; return only(q, o => near(ev(o), want)); });
+  set('fw-tf', (q, m) => tf(m.kind === 'pieces' ? m.op === 'div' : m.op === 'mul', q));
+  set('fw-fill', (q, m) => q.answers[2] === m.n * m.f[0] / m.f[1] && q.answers[0] === m.f[1] && q.answers[1] * m.f[1] === m.n ? '' : 'part');
 })(window.__verify, window.__H);
