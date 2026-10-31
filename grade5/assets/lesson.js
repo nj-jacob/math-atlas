@@ -334,13 +334,13 @@
       h += '<details class="pg-ch" data-strand="' + m.strand + '"' + (cs.length ? ' open' : '') + '><summary><span>' + (i + 1) + '. ' + m.title + '</span><span class="pg-bar" aria-hidden="true">' +
         [3, 2, 1].map(function (k) { return '<i class="b' + k + '" style="width:' + (parts[k] / tot * 100) + '%"></i>'; }).join('') + '</span><span class="t2">' +
         (cs.length ? (parts[2] + parts[3]) + ' of ' + tot + ' ideas got' : parts[3] + ' of ' + sks.length + ' skills secure') + '</span></summary>';
-      if (cs.length) h += '<table><thead><tr><th>Idea</th><th>Lesson</th><th>Expectation</th><th>Status</th></tr></thead><tbody>' + cs.map(function (c) {
+      if (cs.length) h += '<div class="pg-scroll"><table><thead><tr><th>Idea</th><th>Lesson</th><th>Expectation</th><th>Status</th></tr></thead><tbody>' + cs.map(function (c) {
         var k = L.status(c);
         return '<tr><td><a href="#' + m.id + '/learn/' + c.slug + '">' + c.title + '</a></td><td>' + c.lesson.title + '</td><td>' + (c.exp || []).join(', ') + '</td><td>' + dot(k) + ' ' + ST[k] + '</td></tr>';
-      }).join('') + '</tbody></table>';
-      h += '<table><thead><tr><th>Practice skill</th><th>Expectation</th><th>Level</th></tr></thead><tbody>' + sks.map(function (s) {
+      }).join('') + '</tbody></table></div>';
+      h += '<div class="pg-scroll"><table><thead><tr><th>Practice skill</th><th>Expectation</th><th>Level</th></tr></thead><tbody>' + sks.map(function (s) {
         return '<tr><td><a href="#' + m.id + '/practice/' + s.id + '">' + s.name + '</a></td><td>' + s.code + '</td><td>' + (skLv(s.id).t || 'Not started') + '</td></tr>';
-      }).join('') + '</tbody></table>';
+      }).join('') + '</tbody></table></div>';
       h += '</details>';
     });
     h += '<div class="note"><p><b>For parents and tutors.</b> "Seen" means the idea was opened. "Got it" means ' + GOT + ' quick questions were right on the first try. "Mastered" means the matching practice skill reached the top level three times in a row. Signed-in students\' progress also shows on the family page.</p></div></div>';
@@ -350,6 +350,10 @@
   /* ---------- Toolbox: every manipulative, free to play with ---------- */
   var BOX = [
     ['base10', 'Base-ten blocks', 'Tap + to add blocks. Tap a block to light it up and count. Group 10 ones into a ten, or break a ten apart.', { controls: true, words: function (n) { return A.words ? A.words(n) : ''; } }],
+    ['disks', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] }],
+    ['clock', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 }],
+    ['areagrid', 'Area grid', 'Tap squares to cover a shape and count its area.', { cols: 10, rows: 6 }],
+    ['scale', 'Kitchen scale', 'Put 1 kg, 100 g and 10 g blocks on the scale.', {}],
     ['counters', 'Counters', 'Tap counters to count them. Pair them up to see even and odd, or group them in tens.', { n: 13, controls: true, max: 60 }],
     ['tenframe', 'Ten-frames', 'Tap a box to put in a counter. Tap again to change its colour.', { frames: 2, two: true }],
     ['hundred', 'Hundred chart', 'Tap numbers to light them up and look for patterns.', { pages: true }],
@@ -359,11 +363,13 @@
     ['geoboard', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 }],
     ['tiles', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true }]
   ];
+  /* a grade lists the tools its Toolbox shows in Atlas.tools (ids); unset shows them all */
   L.toolbox = function (app, sub) {
-    var cur = BOX.filter(function (b) { return b[0] === sub; })[0] || BOX[0];
+    var box = A.tools ? BOX.filter(function (b) { return A.tools.indexOf(b[0]) >= 0; }) : BOX;
+    var cur = box.filter(function (b) { return b[0] === sub; })[0] || box[0];
     app.innerHTML = '<div class="wrap chapter"><p class="crumb"><a href="#home">All chapters</a></p><header class="chead"><span class="num">Toolbox</span><h1>Math tools</h1>' +
       '<p class="lede">The hands-on tools from the lessons, free to play with. Good for working through a question with a tutor or parent.</p></header>' +
-      '<nav class="tb-pick" aria-label="Tools">' + BOX.map(function (b) { return '<a href="#tools/' + b[0] + '"' + (b === cur ? ' aria-current="page"' : '') + '>' + b[1] + '</a>'; }).join('') + '</nav>' +
+      '<nav class="tb-pick" aria-label="Tools">' + box.map(function (b) { return '<a href="#tools/' + b[0] + '"' + (b === cur ? ' aria-current="page"' : '') + '>' + b[1] + '</a>'; }).join('') + '</nav>' +
       '<section class="sec"><h2>' + cur[1] + '</h2><p>' + cur[2] + '</p><div id="tbtool"></div></section></div>';
     M.make(cur[0], $('#tbtool', app), cur[3]);
   };

@@ -738,7 +738,8 @@
 
   /* ================= Fraction strips =================
      options: parts (start), choices [2,3,4,6,8], wall [1,2,3,6] (a stack of strips to compare),
-     words (label parts and the readout with fraction words only, "one half", "two sixths", for Grades 1 to 3), onChange.
+     words (true: fraction words only, "one half", "two sixths", for Grades 1 and 2;
+     'both': standard notation with the word name beside it, for Grade 3 on), onChange.
      Tap a part to shade it. Moves: split(d), shade(k). */
   var NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
   M.fractions = function (root, o) {
@@ -754,7 +755,7 @@
       if (d === 1) return k + (n === 1 ? ' whole' : ' wholes');
       return k + ' ' + (n === 1 ? w : (d === 2 ? 'halves' : w + 's'));
     }
-    function label(d) { return d === 1 ? (o.words ? 'one whole' : '1') : o.words ? '<span class="mp-fw">' + name(1, d) + '</span>' : '<span class="mp-fr"><b>1</b><i>' + d + '</i></span>'; }
+    function label(d) { return d === 1 ? (o.words === true ? 'one whole' : '1') : o.words === true ? '<span class="mp-fw">' + name(1, d) + '</span>' : '<span class="mp-fr"><b>1</b><i>' + d + '</i></span>'; }
     function draw(anim) {
       wall.innerHTML = rows.map(function (d, r) {
         var h = '<div class="mp-strip' + (anim && !T.fast ? ' mp-split' : '') + '" data-r="' + r + '">';
@@ -769,7 +770,7 @@
     }
     function readout() {
       read.innerHTML = state().map(function (s) {
-        return s.n ? '<p>' + (o.words ? '<b class="mp-fwb">' + name(s.n, s.d) + '</b>' : '<span class="mp-fr big"><b>' + s.n + '</b><i>' + s.d + '</i></span> ' + name(s.n, s.d)) + ' shaded' + (s.d > 1 ? ' (' + s.n + ' of ' + s.d + ' equal parts)' : '') + '</p>' : '';
+        return s.n ? '<p>' + (o.words === true ? '<b class="mp-fwb">' + name(s.n, s.d) + '</b>' : '<span class="mp-fr big"><b>' + s.n + '</b><i>' + s.d + '</i></span> ' + name(s.n, s.d)) + ' shaded' + (s.d > 1 ? ' (' + s.n + ' of ' + s.d + ' equal parts)' : '') + '</p>' : '';
       }).join('') || '<p class="t2">Tap a part to shade it.</p>';
       if (o.onChange) o.onChange(state(), T);
     }
@@ -928,11 +929,11 @@
   };
 
   /* ================= Algebra tiles =================
-     options: x2 (offer x squared tiles), start {x2, x, one} (negative numbers make red tiles), onChange.
+     options: x2 (offer x squared tiles), ones (unit tiles only, for integers), kinds (e.g. ['x', 'one']), start {x2, x, one} (negative numbers make red tiles), onChange.
      Tap the tray to add, tap a tile to take it away, "Remove zero pairs" cancels a positive and a negative tile. */
   M.tiles = function (root, o) {
     o = o || {};
-    var T = base(root, 'tile'), kinds = o.x2 ? ['x2', 'x', 'one'] : ['x', 'one'], tiles = [];
+    var T = base(root, 'tile'), kinds = o.kinds || (o.ones ? ['one'] : o.x2 ? ['x2', 'x', 'one'] : ['x', 'one']), tiles = [];
     var LAB = { x2: 'x²', x: 'x', one: '1' };
     root.innerHTML = '<div class="mp-tray">' + kinds.map(function (k) {
       return '<div class="mp-tg"><button type="button" class="mp-tadd" data-k="' + k + '" data-s="1" aria-label="Add a positive ' + LAB[k] + ' tile"><i class="mp-tl-' + k + '">+' + LAB[k] + '</i></button>' +
@@ -983,6 +984,322 @@
     };
     T.reset();
     return T;
+  };
+
+  /* ================= Clock, area grid and kitchen scale (from Grade 4) =================
+     Manip.clock(el, { t: 540, controls: true })           analog clock with a.m./p.m. readout; t is minutes after midnight. Moves: set(t), advance(min). State {t, h, m, elapsed}.
+     Manip.areagrid(el, { cols: 10, rows: 6, unit: 'cm' }) tap squares to cover them. Moves: fill(l, w), clear(). State {count, l, w, isRect}.
+     Manip.scale(el, { g: 0, max: 5000 })                   a kitchen scale with 1 kg, 100 g and 10 g blocks. Moves: add(kind, n), remove(kind, n). State {g, kg, h, t}. */
+  function abtn(a, label) { return '<button type="button" class="mp-act" data-a="' + a + '">' + label + '</button>'; }
+  function svgBox(w, h, inner, label) { return '<svg viewBox="0 0 ' + w + ' ' + h + '" class="mp-fill" style="max-width:' + w + 'px" role="img" aria-label="' + label + '">' + inner + '</svg>'; }
+  function pulse(el) { if (el) bump(el); }
+
+  /* ================= Clock ================= */
+  function hm(t) { t = ((t % 1440) + 1440) % 1440; var h = Math.floor(t / 60), m = t % 60; return (h % 12 || 12) + ':' + (m < 10 ? '0' : '') + m + ' ' + (h < 12 ? 'a.m.' : 'p.m.'); }
+  function dur(m) { var s = m < 0 ? '&minus;' : ''; m = Math.abs(m); var h = Math.floor(m / 60), r = m % 60; return s + (h ? h + ' h ' : '') + r + ' min'; }
+  M.clock = function (root, o) {
+    o = o || {};
+    var T = base(root, 'clock'), start = o.t == null ? 540 : o.t, t = start, last = '';
+    root.innerHTML = (o.controls === false ? '' : '<div class="mp-acts">' + abtn('-60', '&minus;1 hour') + abtn('-5', '&minus;5 min') + abtn('5', '+5 min') + abtn('60', '+1 hour') + abtn('reset', 'Start again') + '</div>') +
+      '<div class="mp-clock"></div><div class="mp-read" aria-live="polite"></div>';
+    var face = qs('.mp-clock', root), read = qs('.mp-read', root);
+    function draw() {
+      var cx = 120, cy = 120, r = 104, s = '<circle cx="120" cy="120" r="' + r + '" style="fill:var(--card);stroke:var(--ink)" stroke-width="5"/>';
+      for (var i = 0; i < 60; i++) { var b = (90 - i * 6) * Math.PI / 180, r1 = i % 5 ? 97 : 90; s += '<line x1="' + (cx + r1 * Math.cos(b)).toFixed(1) + '" y1="' + (cy - r1 * Math.sin(b)).toFixed(1) + '" x2="' + (cx + 101 * Math.cos(b)).toFixed(1) + '" y2="' + (cy - 101 * Math.sin(b)).toFixed(1) + '" style="stroke:var(--ink)" stroke-width="' + (i % 5 ? 1.5 : 3) + '"/>'; }
+      for (i = 1; i <= 12; i++) { var a = (90 - i * 30) * Math.PI / 180; s += '<text x="' + (cx + 72 * Math.cos(a)).toFixed(1) + '" y="' + (cy - 72 * Math.sin(a) + 8).toFixed(1) + '" text-anchor="middle" font-size="22" font-weight="700" style="fill:var(--ink)">' + i + '</text>'; }
+      /* the minutes passed since the start, as a shaded wedge */
+      var el = t - start;
+      if (el > 0 && el < 60) {
+        var a0 = (90 - (start % 60) * 6) * Math.PI / 180, a1 = (90 - (t % 60) * 6) * Math.PI / 180;
+        s += '<path d="M120 120 L' + (cx + 86 * Math.cos(a0)).toFixed(1) + ' ' + (cy - 86 * Math.sin(a0)).toFixed(1) + ' A86 86 0 ' + (el > 30 ? 1 : 0) + ' 1 ' + (cx + 86 * Math.cos(a1)).toFixed(1) + ' ' + (cy - 86 * Math.sin(a1)).toFixed(1) + ' Z" style="fill:color-mix(in srgb,var(--accent) 22%,transparent)"/>';
+      }
+      var m = t % 60, h = (t / 60) % 12, am = (90 - m * 6) * Math.PI / 180, ah = (90 - h * 30) * Math.PI / 180;
+      s += '<line x1="120" y1="120" x2="' + (cx + 52 * Math.cos(ah)).toFixed(1) + '" y2="' + (cy - 52 * Math.sin(ah)).toFixed(1) + '" style="stroke:var(--ink)" stroke-width="8" stroke-linecap="round"/>';
+      s += '<line x1="120" y1="120" x2="' + (cx + 82 * Math.cos(am)).toFixed(1) + '" y2="' + (cy - 82 * Math.sin(am)).toFixed(1) + '" style="stroke:var(--strand,var(--accent))" stroke-width="5" stroke-linecap="round"/><circle cx="120" cy="120" r="7" style="fill:var(--ink)"/>';
+      face.innerHTML = svgBox(240, 240, s, 'Clock showing ' + hm(t).replace(/\./g, ''));
+      read.innerHTML = '<p><span class="mp-num">' + hm(t) + '</span>' + (t !== start ? ' &nbsp;<span class="t2">' + dur(t - start) + ' since ' + hm(start) + '</span>' : '') + '</p>';
+    }
+    function change() { draw(); if (o.onChange) o.onChange(T.state(), T); }
+    T.state = function () { return { t: t, h: Math.floor(((t % 1440) + 1440) % 1440 / 60), m: ((t % 60) + 60) % 60, elapsed: t - start, last: last }; };
+    T.set = function (v) { t = v; last = 'set'; change(); return T.wait(300); };
+    /* move the hands minute by minute, so the clock visibly runs */
+    T.advance = function (mins) {
+      var ep = T.ep, dir = mins < 0 ? -1 : 1, left = Math.abs(mins), stepM = left > 120 ? 5 : 1;
+      last = 'advance';
+      if (T.fast) { t += mins; change(); return Promise.resolve(); }
+      function one() {
+        if (!T.alive(ep) || left <= 0) return Promise.resolve();
+        var k = Math.min(stepM, left); t += dir * k; left -= k; change();
+        return T.wait(Math.max(8, 700 / Math.abs(mins) * k)).then(one);
+      }
+      return one();
+    };
+    T.reset = function () { T.ep++; t = start; last = ''; change(); };
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-a]'); if (!b || !root.contains(b)) return;
+      var a = b.getAttribute('data-a');
+      if (a === 'reset') T.reset(); else { T.ep++; t += +a; last = 'step'; change(); pulse(read.firstChild); }
+    });
+    draw();
+    return T;
+  };
+
+  /* ================= Area grid ================= */
+  M.areagrid = function (root, o) {
+    o = o || {};
+    var T = base(root, 'area'), C = o.cols || 10, Rw = o.rows || 6, unit = o.unit || 'cm', on = {}, last = '';
+    root.innerHTML = '<div class="mp-acts">' + abtn('clear', 'Clear') + '</div><div class="mp-agrid" style="grid-template-columns:repeat(' + C + ',minmax(0,1fr));gap:2px;max-width:' + (C * 46) + 'px"></div><div class="mp-read" aria-live="polite"></div>';
+    var g = qs('.mp-agrid', root), read = qs('.mp-read', root), h = '';
+    for (var r = 0; r < Rw; r++) for (var c = 0; c < C; c++) h += '<button type="button" class="mp-asq" data-r="' + r + '" data-c="' + c + '" aria-pressed="false" aria-label="Square ' + (r + 1) + ', ' + (c + 1) + '"></button>';
+    g.innerHTML = h;
+    function cell(r, c) { return qs('[data-r="' + r + '"][data-c="' + c + '"]', g); }
+    function shape() {
+      var k = Object.keys(on); if (!k.length) return { l: 0, w: 0, rect: false };
+      var rs = k.map(function (x) { return +x.split(',')[0]; }), cs = k.map(function (x) { return +x.split(',')[1]; });
+      var l = Math.max.apply(null, cs) - Math.min.apply(null, cs) + 1, w = Math.max.apply(null, rs) - Math.min.apply(null, rs) + 1;
+      return { l: l, w: w, rect: l * w === k.length };
+    }
+    function paint(r, c) { var b = cell(r, c), v = !!on[r + ',' + c]; b.classList.toggle('on', v); b.setAttribute('aria-pressed', String(v)); }
+    function readout() {
+      var n = Object.keys(on).length, sh = shape();
+      read.innerHTML = '<p><span class="mp-num">' + n + ' ' + unit + '<sup>2</sup></span>' + (sh.rect && n ? ' &nbsp;<span class="t2">a rectangle ' + sh.l + ' by ' + sh.w + ': ' + sh.l + ' &times; ' + sh.w + ' = ' + n + '</span>' : '') + '</p>';
+    }
+    function change() { readout(); if (o.onChange) o.onChange(T.state(), T); }
+    T.state = function () { var sh = shape(); return { count: Object.keys(on).length, l: sh.l, w: sh.w, isRect: sh.rect, last: last }; };
+    T.clear = function () { on = {}; for (var r = 0; r < Rw; r++) for (var c = 0; c < C; c++) paint(r, c); last = 'clear'; change(); return T.wait(200); };
+    /* cover an l by w rectangle row by row, so the rows can be counted */
+    T.fill = function (l, w) {
+      var ep = T.ep, r = 0; last = 'fill';
+      function row() {
+        if (!T.alive(ep) || r >= Math.min(w, Rw)) return Promise.resolve();
+        for (var c = 0; c < Math.min(l, C); c++) { on[r + ',' + c] = 1; paint(r, c); }
+        pulse(cell(r, 0)); r++; change();
+        return T.wait(350).then(row);
+      }
+      return row();
+    };
+    T.reset = function () { T.ep++; on = {}; for (var r = 0; r < Rw; r++) for (var c = 0; c < C; c++) paint(r, c); last = ''; if (o.l && o.w) { for (r = 0; r < o.w; r++) for (c = 0; c < o.l; c++) { on[r + ',' + c] = 1; paint(r, c); } } change(); };
+    g.addEventListener('click', function (e) {
+      var b = e.target.closest('.mp-asq'); if (!b) return;
+      var k = b.getAttribute('data-r') + ',' + b.getAttribute('data-c');
+      if (on[k]) delete on[k]; else on[k] = 1;
+      paint(+b.getAttribute('data-r'), +b.getAttribute('data-c')); if (on[k]) pulse(b); last = 'tap'; change();
+    });
+    qs('[data-a="clear"]', root).addEventListener('click', function () { T.ep++; T.clear(); });
+    T.reset();
+    return T;
+  };
+
+  /* ================= Kitchen scale with mass blocks ================= */
+  var MB = { kg: 1000, h: 100, t: 10 }, MBL = { kg: '1 kg', h: '100 g', t: '10 g' };
+  M.scale = function (root, o) {
+    o = o || {};
+    var T = base(root, 'scale'), max = o.max || 5000, n = { kg: 0, h: 0, t: 0 }, last = '';
+    root.innerHTML = '<div class="mp-acts">' + ['kg', 'h', 't'].map(function (k) { return abtn('+' + k, '+ ' + MBL[k]) + abtn('-' + k, '&minus; ' + MBL[k]); }).join('') + '</div><div class="mp-pan"></div><div class="mp-read" aria-live="polite"></div>';
+    var pan = qs('.mp-pan', root), read = qs('.mp-read', root);
+    function g() { return n.kg * 1000 + n.h * 100 + n.t * 10; }
+    function draw() {
+      var s = '', x = 20, y = 150, W = 460, gv = g();
+      /* blocks sit on the pan, biggest first */
+      [['kg', 70, 'var(--strand,var(--accent))'], ['h', 40, 'var(--hi,var(--accent))'], ['t', 24, 'var(--accent)']].forEach(function (b) {
+        for (var i = 0; i < n[b[0]]; i++) {
+          if (x + b[1] > W - 20) { x = 20; y -= 74; }
+          s += '<rect x="' + x + '" y="' + (y - b[1]) + '" width="' + b[1] + '" height="' + b[1] + '" rx="6" style="fill:color-mix(in srgb,' + b[2] + ' 45%,var(--card));stroke:var(--ink)" stroke-width="2"/>';
+          if (b[0] !== 't') s += '<text x="' + (x + b[1] / 2) + '" y="' + (y - b[1] / 2 + 6) + '" text-anchor="middle" font-size="' + (b[0] === 'kg' ? 18 : 12) + '" font-weight="700" style="fill:var(--ink)">' + MBL[b[0]] + '</text>';
+          x += b[1] + 6;
+        }
+      });
+      s += '<rect x="6" y="152" width="' + (W - 12) + '" height="12" rx="6" style="fill:var(--ink)"/><rect x="' + (W / 2 - 90) + '" y="164" width="180" height="56" rx="10" style="fill:var(--card);stroke:var(--ink)" stroke-width="3"/>';
+      s += '<text x="' + W / 2 + '" y="202" text-anchor="middle" font-size="28" font-weight="700" style="fill:var(--ink)">' + fmt(gv) + ' g</text>';
+      pan.innerHTML = svgBox(W, 226, s, 'A scale showing ' + gv + ' grams');
+      var kg = Math.floor(gv / 1000), rest = gv % 1000;
+      read.innerHTML = '<p><span class="mp-num">' + gv + ' g</span>' + (kg ? ' &nbsp;<span class="t2">= ' + kg + ' kg' + (rest ? ' ' + rest + ' g' : '') + '</span>' : '') + '</p>';
+      qsa('[data-a]', root).forEach(function (b) { var a = b.getAttribute('data-a'), k = a.slice(1); b.disabled = a.charAt(0) === '+' ? gv + MB[k] > max : !n[k]; });
+    }
+    function change() { draw(); if (o.onChange) o.onChange(T.state(), T); }
+    T.state = function () { return { g: g(), kg: n.kg, h: n.h, t: n.t, last: last }; };
+    T.add = function (k, c) {
+      var ep = T.ep, i = 0; c = c || 1; last = 'add';
+      function one() { if (!T.alive(ep) || i >= c || g() + MB[k] > max) return Promise.resolve(); i++; n[k]++; change(); return T.wait(220).then(one); }
+      return one();
+    };
+    T.remove = function (k, c) { n[k] = Math.max(0, n[k] - (c || 1)); last = 'remove'; change(); return T.wait(250); };
+    T.reset = function () { T.ep++; var v = o.g || 0; n = { kg: Math.floor(v / 1000), h: Math.floor(v % 1000 / 100), t: Math.floor(v % 100 / 10) }; last = ''; change(); };
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-a]'); if (!b || !root.contains(b)) return;
+      var a = b.getAttribute('data-a'), k = a.slice(1);
+      T.ep++; if (a.charAt(0) === '+') { n[k]++; last = 'add'; } else { n[k] = Math.max(0, n[k] - 1); last = 'remove'; }
+      change(); pulse(read.firstChild);
+    });
+    T.reset();
+    return T;
+  };
+
+  /* ================= Place value disks (from Grade 5) =================
+     options: places (high to low: 5 = hundred thousands ... 0 = ones, -1 tenths, -2 hundredths; default [4,3,2,1,0]),
+     start {place: count}, controls, max per column (default 19), onChange(state, tool).
+     Tap a disk to light it and count. Moves: add(p, n, ms), remove(p, n), set(counts), group(p), split(p), countAll(ms), pulseCol(p), clearLit(). */
+  var PN = { 5: 'hundred thousands', 4: 'ten thousands', 3: 'thousands', 2: 'hundreds', 1: 'tens', 0: 'ones', '-1': 'tenths', '-2': 'hundredths' };
+  var PS = { 5: '100 000s', 4: '10 000s', 3: '1000s', 2: '100s', 1: '10s', 0: '1s', '-1': '0.1s', '-2': '0.01s' };
+  var PC = { 5: '#0b7a8a', 4: '#7247e0', 3: '#d1356b', 2: 'var(--mh)', 1: 'var(--mt)', 0: 'var(--mo)', '-1': '#e8590c', '-2': '#9c36b5' };
+  function clean(x) { return Math.round(x * 1e6) / 1e6; }
+  function pv(p) { return clean(Math.pow(10, p)); }
+  function plab(p) { return p >= 0 ? fmt(pv(p)) : String(pv(p)); }
+  /* a grade can recolour a place with --mp-d5 ... --mp-d0, --mp-dm1, --mp-dm2 */
+  function pcol(p) { return 'var(--mp-d' + (p < 0 ? 'm' + -p : p) + ',' + PC[p] + ')'; }
+  M.disks = function (root, o) {
+    o = o || {};
+    var T = base(root, 'disks'), places = o.places || [4, 3, 2, 1, 0], cnt = {}, lit = [], last = '', max = o.max || 19, mode = '';
+    root.innerHTML = (o.controls ? '<div class="mp-tray">' + places.map(function (p) {
+      return '<div class="mp-tg"><button type="button" class="mp-add" data-p="' + p + '" aria-label="Add a ' + plab(p) + ' disk"><i class="mp-dk sm" style="--c:' + pcol(p) + '"></i><span>+ ' + plab(p) + '</span></button>' +
+        '<button type="button" class="mp-sub" data-p="' + p + '" aria-label="Take away a ' + plab(p) + ' disk">&minus;</button></div>';
+    }).join('') + '</div><div class="mp-acts"><button type="button" class="mp-act" data-a="group">Group 10 into 1</button><button type="button" class="mp-act" data-a="split" aria-pressed="false">Break 1 into 10</button>' +
+      '<button type="button" class="mp-act" data-a="count">Count them</button><button type="button" class="mp-act" data-a="clear">Clear</button></div>' : '') +
+      '<div class="mp-dmat" style="--n:' + places.length + '">' + places.map(function (p) {
+        return '<div class="mp-dcol" data-p="' + p + '"><span class="mp-dh" style="--c:' + pcol(p) + '"><span class="lg">' + PN[p] + '</span><span class="sm">' + PS[p] + '</span></span><div class="mp-dstack"></div><span class="mp-dn"></span></div>';
+      }).join('') + '</div><div class="mp-read" aria-live="polite"></div>';
+    var read = qs('.mp-read', root);
+    function total() { var t = 0; places.forEach(function (p) { t += cnt[p]; }); return t; }
+    function value() { var v = 0; places.forEach(function (p) { v += cnt[p] * pv(p); }); return clean(v); }
+    function state() { return { value: value(), counts: Object.assign({}, cnt), last: last, lit: lit.length, allLit: lit.length > 0 && lit.length === total() }; }
+    function fire() { if (o.onChange) o.onChange(state(), T); }
+    function stack(p) { return qs('.mp-dcol[data-p="' + p + '"] .mp-dstack', root); }
+    function draw(p, fresh) {
+      var st = stack(p), have = st.children.length;
+      while (have > cnt[p]) { st.lastChild.remove(); have--; }
+      while (have < cnt[p]) {
+        var d = button('mp-dk' + (fresh && !T.fast ? ' mp-drop' : ''), '<b>' + plab(p) + '</b>', plab(p) + ' disk');
+        d.style.setProperty('--c', pcol(p));
+        d.setAttribute('data-p', p); d.setAttribute('data-l', String(plab(p).replace(/\s/g, '').length));
+        st.appendChild(d); have++;
+      }
+      qs('.mp-dcol[data-p="' + p + '"] .mp-dn', root).textContent = cnt[p];
+    }
+    function line(html) { var l = qs('.mp-litline', read); if (l) l.innerHTML = html; }
+    function readout() {
+      var parts = places.filter(function (p) { return cnt[p]; }).map(function (p) { return '<b style="color:' + pcol(p) + '">' + fmt(clean(cnt[p] * pv(p))) + '</b>'; });
+      var over = places.filter(function (p) { return cnt[p] > 9; });
+      read.innerHTML = (o.readout === false ? '' : '<p><span class="mp-num">' + fmt(value()) + '</span></p>') + '<p class="mp-litline">' + (parts.join(' + ') || '0') + '</p>' +
+        (over.length ? '<p class="mp-tip">' + over.map(function (p) { return cnt[p] + ' ' + PN[p]; }).join(', ') + ': ten of them can be grouped.</p>' : '');
+    }
+    function all(fresh) { places.forEach(function (p) { draw(p, fresh); }); readout(); }
+    T.clearLit = function () { lit = []; qsa('.mp-dk.on', root).forEach(function (d) { d.classList.remove('on'); }); };
+    T.set = function (c) { places.forEach(function (p) { cnt[p] = c[p] || 0; }); last = 'set'; T.clearLit(); qsa('.mp-dstack', root).forEach(function (x) { x.innerHTML = ''; }); all(true); fire(); return T.wait(500); };
+    T.add = function (p, n, ms) {
+      n = n || 1;
+      var ep = T.ep, k = 0;
+      function one() {
+        if (!T.alive(ep) || k >= n || cnt[p] >= max) { fire(); return Promise.resolve(); }
+        cnt[p]++; k++; last = 'add'; T.clearLit(); draw(p, true); readout();
+        return T.wait(ms || 260).then(one);
+      }
+      return one();
+    };
+    T.remove = function (p, n) { cnt[p] = Math.max(0, cnt[p] - (n || 1)); last = 'remove'; T.clearLit(); draw(p); readout(); fire(); return T.wait(300); };
+    T.pulseCol = function (p) { var c = qs('.mp-dcol[data-p="' + p + '"]', root); if (!T.fast) bump(c, 'mp-glow'); return T.wait(1200); };
+    /* 10 disks of a place slide together into 1 disk of the next place to the left */
+    T.group = function (p) {
+      var up = p + 1;
+      if (places.indexOf(up) < 0 || cnt[p] < 10) return Promise.resolve(false);
+      var ep = T.ep;
+      qsa('.mp-dk', stack(p)).slice(-10).forEach(function (d) { d.classList.add('on', 'mp-go'); });
+      return T.wait(650).then(function () {
+        if (!T.alive(ep)) return false;
+        cnt[p] -= 10; cnt[up]++; last = 'group-' + p; T.clearLit(); draw(p); draw(up, true); readout();
+        var nd = stack(up).lastChild;
+        if (nd && !T.fast) { nd.classList.add('on'); bump(nd); }
+        fire();
+        return T.wait(700).then(function () { return true; });
+      });
+    };
+    /* 1 disk breaks into 10 disks of the next place to the right */
+    T.split = function (p) {
+      var dn = p - 1;
+      if (places.indexOf(dn) < 0 || cnt[p] < 1 || cnt[dn] > max - 10) return Promise.resolve(false);
+      var ep = T.ep, d = stack(p).lastChild;
+      if (d) d.classList.add('on', 'mp-go');
+      return T.wait(500).then(function () {
+        if (!T.alive(ep)) return false;
+        cnt[p]--; cnt[dn] += 10; last = 'split-' + p; T.clearLit(); draw(p); draw(dn, true); readout(); fire();
+        return T.wait(800).then(function () { return true; });
+      });
+    };
+    /* light every disk, biggest place first, with the running total */
+    T.countAll = function (ms) {
+      var ep = T.ep, ds = [], run = 0, i = 0;
+      T.clearLit();
+      places.forEach(function (p) { qsa('.mp-dk', stack(p)).forEach(function (d) { ds.push(d); }); });
+      function step() {
+        if (!T.alive(ep) || i >= ds.length) { last = 'count'; fire(); return Promise.resolve(); }
+        var d = ds[i++];
+        run = clean(run + pv(+d.getAttribute('data-p'))); d.classList.add('on'); lit.push(d);
+        if (!T.fast) { bump(d); floatText(root, d.offsetLeft + d.offsetWidth / 2, d.offsetTop, fmt(run)); }
+        line('Counted so far: <b>' + fmt(run) + '</b>');
+        return T.wait(ms || 220).then(step);
+      }
+      return step();
+    };
+    T.state = state;
+    T.reset = function () { T.ep++; places.forEach(function (p) { cnt[p] = (o.start && o.start[p]) || 0; }); last = ''; lit = []; mode = ''; qsa('.mp-dstack', root).forEach(function (x) { x.innerHTML = ''; }); all(false); };
+    root.addEventListener('click', function (e) {
+      var h = e.target.closest('.mp-dh');
+      if (h && mode === 'split') {
+        mode = '';
+        var sb = qs('[data-a="split"]', root); if (sb) sb.setAttribute('aria-pressed', 'false');
+        T.split(+h.parentNode.getAttribute('data-p')).then(function (ok) { if (ok === false) line('<span class="mp-tip">There is nothing to break there.</span>'); });
+        return;
+      }
+      var b = e.target.closest('button');
+      if (!b || o.tap === false) return;
+      if (b.classList.contains('mp-dk')) {
+        if (b.classList.contains('on')) return;
+        b.classList.add('on'); lit.push(b); bump(b);
+        var run = 0; lit.forEach(function (x) { run = clean(run + pv(+x.getAttribute('data-p'))); });
+        floatText(root, b.offsetLeft + b.offsetWidth / 2, b.offsetTop, fmt(run));
+        line('Counted so far: <b>' + fmt(run) + '</b>');
+        last = 'tap'; fire(); return;
+      }
+      var p = b.hasAttribute('data-p') ? +b.getAttribute('data-p') : null, a = b.getAttribute('data-a');
+      if (b.classList.contains('mp-add')) T.add(p, 1, 1);
+      else if (b.classList.contains('mp-sub')) T.remove(p, 1);
+      else if (a === 'count') T.countAll(180);
+      else if (a === 'clear') T.set({});
+      else if (a === 'group') {
+        var g = places.slice().reverse().filter(function (q) { return cnt[q] >= 10 && places.indexOf(q + 1) >= 0; })[0];
+        if (g == null) line('<span class="mp-tip">You need 10 disks in one column to group them.</span>'); else T.group(g);
+      } else if (a === 'split') { mode = 'split'; b.setAttribute('aria-pressed', 'true'); line('Now tap the <b>column heading</b> of the disk you want to break.'); }
+    });
+    T.reset();
+    return T;
+  };
+
+  /* ================= Frames: a Watch clip from drawings (from Grade 5) =================
+     Manip.frames([{ say, fig, ms }, ...]) or ([[say, fig, ms], ...]) returns a watch spec: { mount, steps }.
+     Each frame swaps in a new picture (usually one svg); the parts that are new pop in, the parts that stay still do not move. */
+  M.frames = function (frames) {
+    frames = frames.map(function (f) { return Array.isArray(f) ? { say: f[0], fig: f[1], ms: f[2] } : f; });
+    return {
+      mount: function (stage) {
+        var T = { root: stage, fast: false, prev: {} };
+        stage.classList.add('mp-scene');
+        T.show = function (html) {
+          var seen = T.prev, now = {}, first = !Object.keys(seen).length;
+          stage.innerHTML = html;
+          qsa('svg > *, .mp-anim > *', stage).forEach(function (n, i) {
+            var key = n.outerHTML;
+            now[key] = 1;
+            if (!seen[key] && !T.fast && !first) { n.classList.add('mp-new'); n.style.animationDelay = Math.min(i * 18, 500) + 'ms'; }
+          });
+          if (first && !T.fast) bump(stage, 'mp-fade');
+          T.prev = now;
+          return T.fast ? Promise.resolve() : new Promise(function (r) { setTimeout(r, 450); });
+        };
+        T.reset = function () { T.prev = {}; stage.innerHTML = frames[0].fig || ''; };
+        T.reset();
+        return T;
+      },
+      steps: frames.map(function (f) { return { say: f.say, ms: f.ms == null ? 1500 : f.ms, act: function (t) { return t.show(f.fig); } }; })
+    };
   };
 
   /* ================= "Watch" player =================
@@ -1054,5 +1371,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['base10', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();
