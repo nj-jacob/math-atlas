@@ -240,4 +240,115 @@ A.yt({ q: 'If the line changes to <code>if t &gt;= 3:</code>, what does the prog
       });
     }
   });
+
+  /* ---------- question shapes (more ways to ask each skill; checks in tests/verify/grade8.js) ---------- */
+  var K = window.K8;
+  var REL = [['Hours of practice and goals scored', 'Positive'], ['Height and arm span', 'Positive'], ['Outside temperature and the heating bill', 'Negative'], ['Age of a car and its resale price', 'Negative'], ['Shoe size and favourite number', 'No relationship'], ['Birth month and height', 'No relationship']];
+  var KINDS = [['The number of students who chose each lunch option', 'Categories'], ['How the price of a stock changed each month this year', 'Change over time'], ['Hours of study and test scores for 30 students', 'Two variables'], ['What fraction of the school budget goes to each area', 'Parts of a whole'], ['The heights of 120 students, in groups like 150 to 155 cm', 'Grouped measurements']];
+  var MISLEAD = [['The vertical axis does not start at 0', true], ['The gaps on an axis are uneven', true], ['Pictures are used with different widths', true], ['The graph has a clear title', false], ['Both axes are labelled', false], ['The bars all have the same width', false]];
+  var SHAPES = {
+    'da-type': [
+      [1, 'pick', function (lv) {
+        return K.until(function () {
+          var items = R.shuffle(CT).slice(0, 5);
+          return K.pickAll({ q: 'Pick every kind of data that is <b>continuous</b> (measured).', opts: items.map(function (c) { return [c[0].charAt(0).toUpperCase() + c[0].slice(1), !!c[1]]; }),
+            hint: 'Measured things can take any value, like 3.47. Counted things are whole numbers.', steps: ['"The number of" means counting: discrete.', 'Mass, time, temperature and length are measured: continuous.'], explain: 'The measured ones are continuous.', meta: { k: 'dt-pick' } });
+        });
+      }],
+      [1, 'match', function (lv) {
+        var one = R.pick(Q1.filter(function (x) { return !x[1]; })), two = R.pick(Q1.filter(function (x) { return x[1]; }));
+        return { q: 'Match each question to the data it needs.', type: 'match', pairs: [[one[0], 'One-variable'], [two[0], 'Two-variable']],
+          hint: 'Does the question ask about one thing, or whether two things are related?', steps: ['A question about a link or an effect needs two variables.'], explain: '"' + two[0] + '" compares two things, so it needs two-variable data.', meta: { k: 'dt-match' } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), c = R.pick(CT), say = R.int(0, 1);
+        return K.tf({ q: who + ' says <b>' + c[0] + '</b> is <b>' + (say ? 'continuous' : 'discrete') + '</b> data. True or false?', truth: say === c[1],
+          right: c[0].charAt(0).toUpperCase() + c[0].slice(1) + ' is ' + (c[1] ? 'measured, so it is continuous.' : 'counted in whole numbers, so it is discrete.'), wrong: ['Big numbers are always continuous.', 'Anything with a unit is discrete.'],
+          hint: 'Is it measured or counted?', meta: { k: 'dt-tf', item: c[0], say: say ? 'continuous' : 'discrete' } });
+      }]
+    ],
+    'da-graph': [
+      [1, 'match', function (lv) {
+        return K.until(function () {
+          var list = R.shuffle(GR).slice(0, 3), seen = {};
+          if (!list.every(function (g) { if (seen[g[1]]) return false; seen[g[1]] = 1; return true; })) return null;
+          return { q: 'Match each set of data to the best graph.', type: 'match', pairs: list.map(function (g) { return [g[0], g[1]]; }),
+            hint: 'Categories: bar. Over time: line. Two variables: scatter. Groups: histogram. Parts of a whole: circle.', steps: ['Decide what kind of data each one is first.'], explain: list.map(function (g) { return g[1] + ' for "' + g[0].toLowerCase() + '"'; }).join('; ') + '.', meta: { k: 'dg-match' } };
+        });
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), g = R.pick(GR), say = R.int(0, 1) ? g[1] : R.pick(GRS.filter(function (x) { return x !== g[1]; }));
+        return K.tf({ q: 'Data: ' + g[0].charAt(0).toLowerCase() + g[0].slice(1) + '. ' + who + ' says a <b>' + say.toLowerCase() + '</b> shows it best. True or false?', truth: say === g[1],
+          right: 'A ' + g[1].toLowerCase() + ' suits this data best.', wrong: ['Any graph works for any data.', 'A circle graph is always best because it is easy to read.'],
+          hint: 'What kind of data is it: categories, change over time, two variables, groups or parts of a whole?', meta: { k: 'dg-tf', data: g[0], say: say } });
+      }],
+      [1, 'which', function (lv) {
+        var k = R.pick(KINDS);
+        return K.pick1({ q: 'What kind of data is this? <b>' + k[0] + '</b>', right: k[1], wrong: R.shuffle(KINDS.filter(function (x) { return x !== k; }).map(function (x) { return x[1]; })),
+          hint: 'Is it sorted into groups, tracked over time, two things for each case, or parts of one total?', steps: ['Name the kind of data first. Then the graph follows.'], explain: 'It is ' + k[1].toLowerCase() + '.', meta: { k: 'dg-kind', data: k[0] } });
+      }]
+    ],
+    'da-corr': [
+      [1, 'mistake', function (lv) {
+        var who = K.name(), dir = R.pick([1, -1, 0]), pts = makePts(dir, 'strong', R.int(1, 1e6), 18, false), words = { 1: 'positive', '-1': 'negative', 0: 'no' }, say = R.pick([1, -1, 0]);
+        return K.tf({ q: who + ' says this scatter plot shows <b>' + (say === 0 ? 'no relationship' : 'a ' + words[say] + ' relationship') + '</b>. True or false?', truth: say === dir, fig: scatter({ pts: pts, nums: false, xl: 'variable 1', yl: 'variable 2', hl: -1, desc: '' }),
+          right: dir === 0 ? 'The points have no clear up or down trend: no relationship.' : 'The points go ' + (dir > 0 ? 'up' : 'down') + ' from left to right: a ' + words[dir] + ' relationship.', wrong: ['Any scatter plot with many points is positive.', 'You can only tell from the numbers, not the picture.'],
+          hint: 'Read from left to right. Do the points go up, down or neither?', meta: { k: 'dc-tf', pts: pts, say: say } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), c = R.pick([['Hours of practice', 'Free throws made', 1], ['Minutes on a phone game', 'Battery left (%)', -1], ['Height (cm)', 'Day of birth', 0]]), pts = makePts(c[2], 'strong', R.int(1, 1e6), 18, false);
+        var right = c[2] > 0 ? 'Goes up' : c[2] < 0 ? 'Goes down' : 'No clear pattern';
+        return K.pick1({ q: who + ' collected data on ' + c[0].toLowerCase() + ' and ' + c[1].toLowerCase() + '. As ' + c[0].toLowerCase() + ' goes up, what does ' + c[1].toLowerCase() + ' tend to do?', right: right, wrong: ['Goes up', 'Goes down', 'No clear pattern'].filter(function (x) { return x !== right; }),
+          fig: scatter({ pts: pts, nums: false, xl: c[0], yl: c[1], hl: -1, desc: '' }), hint: 'Follow the points from left to right.', steps: ['Left to right, the points ' + (c[2] > 0 ? 'rise' : c[2] < 0 ? 'fall' : 'stay scattered') + '.'], explain: right + ': ' + (c[2] === 0 ? 'no relationship.' : 'a ' + (c[2] > 0 ? 'positive' : 'negative') + ' relationship.'), meta: { k: 'dc-story', pts: pts } });
+      }],
+      [1, 'match', function (lv) {
+        var pick = [R.pick(REL.filter(function (r) { return r[1] === 'Positive'; })), R.pick(REL.filter(function (r) { return r[1] === 'Negative'; })), R.pick(REL.filter(function (r) { return r[1] === 'No relationship'; }))];
+        return { q: 'Match each pair of variables to the relationship you would expect.', type: 'match', pairs: pick.map(function (r) { return [r[0], r[1]]; }),
+          hint: 'Ask: when the first goes up, does the second go up, go down, or not change in any pattern?', steps: ['Up with up: positive. Up with down: negative. No pattern: no relationship.'], explain: pick.map(function (r) { return r[0] + ': ' + r[1].toLowerCase(); }).join('. ') + '.', meta: { k: 'dc-match' } };
+      }]
+    ],
+    'da-mislead': [
+      [1, 'mistake', function (lv) {
+        var who = K.name(), a = R.int(4, 9) * 10, pc = R.pick([10, 20, 25, 30, 120, 150]), b = a * (100 + pc) / 100, from = pc > 100 ? 0 : Math.floor(a / 10) * 10 - 10;
+        return K.tf({ q: who + ' looks at this graph and says B is <b>more than double</b> A. True or false?', truth: b > 2 * a, fig: bars([a, b], ['A', 'B'], from, 'Sales this year'),
+          right: 'Read the values, not the bar heights: A = ' + a + ' and B = ' + b + '. ' + (b > 2 * a ? b + ' is more than 2 &times; ' + a + ' = ' + 2 * a + '.' : b + ' is less than 2 &times; ' + a + ' = ' + 2 * a + '.'), wrong: ['The taller bar is always double the shorter one.', 'You can tell just by the heights of the bars.'],
+          hint: 'Where does the vertical axis start? Use the numbers on the bars.', meta: { k: 'dm-tf', a: a, b: b } });
+      }],
+      [1, 'story', function (lv) {
+        var who = K.name(), a = R.int(40, 90), b = a + R.int(2, 9), from = Math.floor(a / 10) * 10;
+        return { q: who + '\'s team made this graph of cans collected for the food bank. How many <b>more</b> cans did class B collect than class A?', type: 'num', answer: b - a, unit: 'cans', fig: bars([a, b], ['A', 'B'], from, 'Cans collected'),
+          hint: 'Use the numbers on the bars, not their heights.', steps: ['B &minus; A = ' + b + ' &minus; ' + a + ' = ' + (b - a) + '.', 'The bars make the gap look much bigger than it is.'], explain: 'Class B collected ' + (b - a) + ' more cans.', meta: { k: 'dm-story', a: a, b: b } };
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          return K.pickAll({ q: 'Pick every feature that can make a graph <b>misleading</b>.', opts: R.shuffle(MISLEAD).slice(0, 5), hint: 'Which ones change how big a difference looks?', steps: ['Axes that do not start at 0, uneven scales, and pictures of different sizes all distort the picture.'], explain: 'A clear title, labelled axes and equal bars all help a graph. The others can mislead.', meta: { k: 'dm-pick' } });
+        });
+      }]
+    ],
+    'da-code': [
+      [1, 'fill', function (lv) {
+        var list = [R.int(-5, 9), R.int(-5, 9), R.int(-5, 9)];
+        return { q: 'Trace the program. What is <code>total</code> after each pass of the loop?<code class="mono">data = [' + list.join(', ') + ']\ntotal = 0\nfor x in data:\n    total = total + x</code>', type: 'fill', fill: 'After 1st: [[]] &nbsp; After 2nd: [[]] &nbsp; After 3rd: [[]]', answers: [list[0], list[0] + list[1], list[0] + list[1] + list[2]],
+          hint: 'Each pass adds the next value to total.', steps: ['Start: total = 0.', 'Add ' + list.map(A.neg).join(', then ') + '.'], explain: 'total goes ' + [list[0], list[0] + list[1], list[0] + list[1] + list[2]].map(A.neg).join(', ') + '.', meta: { k: 'dx-fill', list: list } };
+      }],
+      [1, 'mistake', function (lv) {
+        var who = K.name(), list = [], lim = R.int(0, 6);
+        for (var i = 0; i < 5; i++) list.push(R.int(-3, 10));
+        list[R.int(0, 4)] = lim;
+        var right = list.filter(function (t) { return t > lim; }).length, wrongN = list.filter(function (t) { return t >= lim; }).length, truth = R.int(0, 1), said = truth ? right : wrongN;
+        return K.tf({ q: who + ' says this program prints <b>' + said + '</b>. True or false?<code class="mono">data = [' + list.join(', ') + ']\ncount = 0\nfor x in data:\n    if x &gt; ' + lim + ':\n        count = count + 1\nprint(count)</code>', truth: truth,
+          right: 'Only values greater than ' + lim + ' count. ' + lim + ' itself does not pass x &gt; ' + lim + '. It prints ' + right + '.', wrong: ['Values equal to ' + lim + ' pass the test too.', 'The program counts every value in the list.'],
+          hint: 'Is ' + lim + ' &gt; ' + lim + '?', meta: { k: 'dx-tf', list: list, lim: lim, said: said } });
+      }],
+      [2, 'pick', function (lv) {
+        return K.until(function () {
+          var lim = R.int(0, 6), ge = R.int(0, 1), vals = [];
+          while (vals.length < 5) { var v = R.int(lim - 4, lim + 5); if (vals.indexOf(v) < 0) vals.push(v); }
+          return K.pickAll({ q: 'The program checks <code>if x ' + (ge ? '&gt;=' : '&gt;') + ' ' + lim + ':</code> Pick every value of x that passes.', opts: vals.map(function (v) { return [A.neg(v), ge ? v >= lim : v > lim]; }),
+            hint: ge ? '&gt;= means greater than or equal to.' : '&gt; means strictly greater than.', steps: ['Compare each value with ' + lim + '.'], explain: 'Values that pass: ' + vals.filter(function (v) { return ge ? v >= lim : v > lim; }).map(A.neg).join(', ') + '.', meta: { k: 'dx-pick', lim: lim, ge: !!ge } });
+        });
+      }]
+    ]
+  };
+  K.shapes('data', SHAPES);
 })();
