@@ -284,7 +284,7 @@ html.bigtext .opts{grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
   .skills{grid-template-columns:1fr 1fr}
   .skill .sn{font-size:.88rem}
   .opts{grid-template-columns:repeat(2,1fr)}
-  .opts.wide{grid-template-columns:1fr}
+  .opts.wide,.qk-why .opts{grid-template-columns:1fr}
   .tools button{font-size:.75rem;padding:3px 9px}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
