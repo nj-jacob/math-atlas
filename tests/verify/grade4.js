@@ -179,8 +179,8 @@
   set('da4-mmm-line', (q, m) => q.answer === med(m.d) ? '' : 'median');
   set('da4-mmm-match', (q, m) => { const c = counts(m.d), top = Math.max(...Object.values(c)), mo = Object.keys(c).filter(k => c[k] === top).map(Number); const want = { Mode: mo.length === 1 ? mo[0] : NaN, Median: med(m.d), Range: Math.max(...m.d) - Math.min(...m.d) }; return q.pairs.every(p => want[p[0]] === +p[1]) ? '' : 'pairs'; });
   set('da4-mmm-tf', (q, m) => (med(m.d) === m.said) === q.answer ? '' : 'truth');
-  /* orange sections are drawn with the button colour */
-  set('da4-prob-order', (q, m) => rising(q.items.map(it => (it.match(/fill:var\(--btn\)/g) || []).length)) && q.items.every(it => (it.match(/<path/g) || []).length === m.n) ? '' : 'order');
+  /* orange sections are drawn in the theme orange (--se) */
+  set('da4-prob-order', (q, m) => rising(q.items.map(it => (it.match(/fill:var\(--se\)/g) || []).length)) && q.items.every(it => (it.match(/<path/g) || []).length === m.n) ? '' : 'order');
   set('da4-prob-match', (q, m) => q.pairs.every((p, i) => p[1] === likely(m.ks[i], m.n)) ? '' : 'pairs');
   set('da4-prob-tf', (q, m) => (likely(m.k2, m.n) === m.said) === q.answer ? '' : 'truth');
   set('da4-pop-tf', (q, m) => ((mean(m.d.concat([m.add])) > mean(m.d)) === m.saysUp) === q.answer ? '' : 'truth');
