@@ -203,6 +203,12 @@
         ]),
         try: K.tap({ render: surveyFig, label: function (st) { return '<p>' + st.order.length + ' chosen</p>'; },
           tasks: [{ do: 'Tap every question whose answers are <b>numbers</b>.', goal: function (st) { return SURVEY.every(function (q, i) { return !!st.lit[i] === !!q[1]; }); }, yes: 'Siblings, minutes and height are counts or measures: quantitative.' }] }),
+        example: K.watch([
+          ['My turn. I will sort this survey question: "How tall is your bean plant, in centimetres?" First I picture the answers.', '<p class="big">"How tall is your bean plant?"</p>', 2400],
+          ['The answers are measures, like 12, 15 and 9. They are numbers.', '<p class="big">12 cm, 15 cm, 9 cm</p>', 2000],
+          ['Numbers you count or measure are <b>quantitative</b> data.', '<p class="big">12 cm, 15 cm, 9 cm</p>', 2000],
+          ['"What is your favourite breakfast?" gives words, like <i>toast</i>. Words or categories are <b>qualitative</b>.', '<p class="big">"Toast", "Cereal", "Eggs"</p>', 2600]
+        ]),
         key: '<p>Words or categories: <b>qualitative</b>. Counts or measures: <b>quantitative</b>.</p>',
         check: [T('kind', 1), T('kind', 2)] },
 
@@ -218,6 +224,12 @@
           { label: 'Like a bar graph on its side', html: '<p>Turn your head: each row of leaves is a bar. The longest row shows where most of the values are.</p>' + stemLeaf([12, 15, 21, 23, 24, 27, 29, 33, 36]) },
           { label: 'Read it back', html: '<p>Put each stem in front of each of its leaves. Stem 2 with leaves 1, 3, 4 is <b>21, 23, 24</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will make a stem-and-leaf plot of jumps in centimetres: 42, 56, 38, 51, 47.', '<p class="math big">42, 56, 38, 51, 47</p>', 2000],
+          ['I split each number. The tens are the stem and the ones are the leaf. 38: stem 3, leaf 8.', '<div>' + stemLeaf([38]) + '</div>', 2200],
+          ['42 and 47 go on stem 4. I write the leaves in order: 2, 7.', '<div>' + stemLeaf([38, 42, 47]) + '</div>', 2000],
+          ['51 and 56 go on stem 5. Least: 38. Greatest: 56.', '<div>' + stemLeaf([38, 42, 47, 51, 56], [38, 56]) + '</div>', 2400]
+        ]),
         key: '<p><b>Stem = tens, leaf = ones.</b> Leaves go in order.</p>',
         mistake: '<p>Reading only the leaves (a leaf 5 on stem 3 read as 5, not 35), or forgetting rows with no leaves. Have your child read a value back aloud.</p>',
         check: [T('stem', 1), T('stem', 2), T('stem', 3)] }
@@ -236,6 +248,11 @@
             { do: 'Make Grade 5 choose Dance exactly <b>3 more</b> than Grade 4.', goal: function (s) { return s.b[3] === G4[3] + 3; }, yes: 'Grade 4: 3. Grade 5: 6.' },
             { do: 'Make <b>Hockey</b> the most popular when you add both classes.', goal: function (s) { var t = s.b.map(function (v, i) { return v + G4[i]; }); return t[1] > t[0] && t[1] > t[2] && t[1] > t[3]; }, yes: 'Hockey has the biggest total.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will read this double bar graph. First I check the legend: green is Class A, orange is Class B.', dbar(['Mon', 'Tue', 'Wed', 'Thu'], [5, 7, 4, 6], [8, 3, 4, 7], 'Class A', 'Class B', 'Library books returned'), 2400],
+          ['Monday: I read each bar across to the scale. Class A: 5. Class B: 8. Class B returned 3 more.', dbar(['Mon', 'Tue', 'Wed', 'Thu'], [5, 7, 4, 6], [8, 3, 4, 7], 'Class A', 'Class B', 'Library books returned'), 2600],
+          ['Wednesday: Class A: 4. Class B: 4. The bars are the same height, so the classes tie.', dbar(['Mon', 'Tue', 'Wed', 'Thu'], [5, 7, 4, 6], [8, 3, 4, 7], 'Class A', 'Class B', 'Library books returned'), 2400]
+        ]),
         key: '<p>Check the <b>legend</b>, then read each bar across to the scale.</p>',
         check: [T('graph', 1), T('graph', 2), T('graph', 3)] }
     ] },
@@ -254,6 +271,12 @@
             { do: 'Make the <b>median 6</b>.', goal: function (s) { return s.med === 6; }, yes: '6 is in the middle when sorted.' },
             { do: 'Make the <b>mode 8</b>, the only mode.', goal: function (s) { return s.mo.length === 1 && s.mo[0] === 8; }, yes: '8 appears most often.' }
           ] }),
+        example: K.watch([
+          ['My turn. Points in 5 games: 6, 2, 8, 2, 5. I will find the median and the mode.', towers([6, 2, 8, 2, 5]), 1800],
+          ['First I put them in order: 2, 2, 5, 6, 8.', towers([2, 2, 5, 6, 8]), 1800],
+          ['The middle value is <b>5</b>. That is the median.', '<div>' + towers([2, 2, 5, 6, 8]) + '<p class="math big">2, 2, <b>5</b>, 6, 8</p></div>', 2000],
+          ['2 appears twice, more often than any other value. The mode is <b>2</b>.', '<div>' + towers([2, 2, 5, 6, 8]) + '<p class="math big"><b>2, 2</b>, 5, 6, 8</p></div>', 2400]
+        ]),
         key: '<p><b>Median: middle in order. Mode: most often.</b></p>',
         mistake: '<p>Finding the middle without sorting first. Ask: "Are they in order yet?"</p>',
         check: [T('mmm', 1), T('mmm', 1)] },
@@ -275,6 +298,12 @@
           { label: 'Move cubes', html: '<p>Take cubes from tall towers and give them to short ones until all are the same. That height is the mean. 2, 6, 4, 8, 5: move 3 from the 8 to the 2, 1 from the 6 to the 4. All 5.</p>' },
           { label: 'Fair share', html: '<p>Five friends have $2, $6, $4, $8 and $5. Put it all in one pile: $25. Share it fairly: $5 each. That is the mean.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find the mean of 4, 9, 3, 8 and 6.', towers([4, 9, 3, 8, 6]), 1600],
+          ['I add all the values: 4 + 9 + 3 + 8 + 6 = 30. There are 5 towers.', towers([4, 9, 3, 8, 6]), 2200],
+          ['I share the cubes out equally: 30 &divide; 5 = 6. Every tower is 6.', towers([6, 6, 6, 6, 6]), 2200],
+          ['The mean is <b>6</b>. Mean = total &divide; how many.', towers([6, 6, 6, 6, 6]), 2000]
+        ]),
         key: '<p><b>Mean = total &divide; how many.</b></p>',
         mistake: '<p>Dividing by the wrong number (by the biggest value, or forgetting to divide). Ask: "How many towers are sharing?"</p>',
         check: [T('mmm', 2), T('mmm', 3)] }
@@ -294,6 +323,11 @@
             { do: 'Make orange <b>unlikely</b> but not impossible.', goal: function (s) { return s.w === 'unlikely'; }, yes: 'Fewer than half the sections.' },
             { do: 'Make orange <b>equally likely</b>, then spin 20 times.', goal: function (s) { return s.w === 'equally likely' && s.res !== null; }, yes: function (s) { return 'Orange came up ' + s.res + ' times: close to 10, but chance rarely gives exactly half.'; } }
           ] }),
+        example: K.watch([
+          ['My turn. How likely is the spinner to land on orange? I count: 2 of the 6 equal sections are orange.', '<div style="display:flex;justify-content:center">' + spinner(2, 6, 200) + '</div>', 2200],
+          ['Half of 6 is 3. 2 is fewer than half.', '<div style="display:flex;justify-content:center">' + spinner(2, 6, 200) + '</div>', 1800],
+          ['So orange is <b>unlikely</b>.', '<div><div style="display:flex;justify-content:center">' + spinner(2, 6, 200) + '</div>' + probLine(2 / 6) + '</div>', 2200]
+        ]),
         key: '<p>Compare the orange sections with <b>half</b>: fewer is unlikely, more is likely.</p>',
         check: [T('prob', 1), T('prob', 2), T('prob', 3)] },
 
@@ -302,6 +336,12 @@
         watch: K.watch([
           ['Mean of 4, 6, 5, 3, 7 is 5.', towers([4, 6, 5, 3, 7], true), 1800],
           ['Add a 17. The total jumps to 42; 6 values share it. Mean 7.', towers([4, 6, 5, 3, 7, 17], true), 2400]
+        ]),
+        example: K.watch([
+          ['My turn. The mean of 6, 8, 7, 5 and 9 is 35 &divide; 5 = 7.', towers([6, 8, 7, 5, 9], true), 2000],
+          ['A new value of 1 joins. I predict: 1 is far below 7, so it will pull the mean down.', towers([6, 8, 7, 5, 9, 1]), 2400],
+          ['I check. The total is 35 + 1 = 36, and 6 values share it. 36 &divide; 6 = 6.', towers([6, 8, 7, 5, 9, 1], true), 2400],
+          ['The mean went down from 7 to <b>6</b>. A value below the mean pulls it down.', towers([6, 8, 7, 5, 9, 1], true), 2200]
         ]),
         key: '<p>A value <b>above</b> the mean pulls it up; <b>below</b> pulls it down.</p>',
         mistake: '<p>Expecting two different groups (Grade 1 and Grade 8 heights) to give the same results. Ask: "What do you know about these groups?"</p>',

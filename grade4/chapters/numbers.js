@@ -314,6 +314,13 @@
           { do: 'Add tens until you have 10 tens. Then press <b>Group 10 tens</b>.', goal: function (s) { return s.h >= 1; }, yes: 'Yes. 10 tens became 1 hundred.' },
           { do: 'Press <b>Break a hundred</b>. How many tens do you get?', reset: false, goal: function (s) { return s.last === 'split-h'; }, yes: '10 tens. Still 100.' }
         ] },
+        example: { tool: 'base10', opts: { h: 1, t: 0, o: 0 }, steps: [
+          { say: 'My turn. I will show that 1 hundred is the same as 10 tens. Here is 1 hundred flat.', ms: 1400 },
+          { say: 'I break the hundred apart. It becomes ten rods.', act: function (t) { return t.split('h'); } },
+          { say: 'I count the rods: 10, 20, 30 ... 100. That is <b>10 tens</b>.', act: function (t) { return t.lightKind('t'); } },
+          { say: 'I slide the 10 tens back together. They make <b>1 hundred</b> again.', act: function (t) { return t.group('t'); } },
+          { say: '10 tens make 1 hundred. <b>10 of a place make 1 of the next place to the left.</b>', ms: 2400 }
+        ] },
         key: '<p><b>10 of a place make 1 of the next place to the left.</b></p>',
         check: [function () {
           var p = R.int(1, 3), o = R.mc(A.fmt(Math.pow(10, p)), [A.fmt(Math.pow(10, p - 1)), A.fmt(Math.pow(10, p + 1)), String(10 + Math.pow(10, p - 1))]);
@@ -341,6 +348,14 @@
             { do: 'Build <b>8016</b>.', goal: function (s) { return s.n === 8016; }, yes: '8016: no hundreds, so the hundreds place shows 0.' },
             { do: 'Build the greatest number you can.', goal: function (s) { return s.n === 9999; }, yes: '9999. One more would be 10 000, which needs a new place.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will build 7516. I start with an empty chart.', chart(0, { cols: 4, vals: true }), 1400],
+          ['First I look at the thousands digit: 7. I put in 7 thousands. They are worth 7000.', chart(7000, { cols: 4, vals: true })],
+          ['The hundreds digit is 5. I put in 5 hundreds. They are worth 500.', chart(7500, { cols: 4, vals: true })],
+          ['The tens digit is 1. I put in 1 ten. It is worth 10.', chart(7510, { cols: 4, vals: true })],
+          ['The ones digit is 6. I put in 6 ones. They are worth 6.', chart(7516, { cols: 4, vals: true })],
+          ['The chart shows <b>7516</b>. The place of a digit decides its value: the 7 is worth 7000.', chart(7516, { cols: 4, vals: true }), 2400]
+        ]),
         key: '<p>The <b>place</b> of a digit decides its value. In 3245, the 3 is worth <b>3000</b>.</p>',
         check: [T('value', 1), T('value', 2)] },
 
@@ -358,6 +373,12 @@
           { label: 'Say it in parts', html: '<div class="tbl"><table><thead><tr><th>We say</th><th>Th</th><th>H</th><th>T</th><th>O</th><th>We write</th></tr></thead><tbody>' +
             [[4107, 'four thousand one hundred seven'], [6030, 'six thousand thirty'], [9005, 'nine thousand five']].map(function (r) { var d = ('000' + r[0]).slice(-4); return '<tr><td>' + r[1] + '</td><td class="c3t"><b>' + d[0] + '</b></td><td class="c2t"><b>' + d[1] + '</b></td><td class="c1t"><b>' + d[2] + '</b></td><td class="c0t"><b>' + d[3] + '</b></td><td><b>' + r[0] + '</b></td></tr>'; }).join('') + '</tbody></table></div>' }
         ],
+        example: K.watch([
+          ['My turn. I will write five thousand sixty-two. First the thousands: 5.', chart(5000, { cols: 4, vals: true }), 1600],
+          ['Next the hundreds. I did not hear any hundreds. The place is empty, so I write <b>0</b> there.', chart(5000, { cols: 4, vals: true, hl: 1 }), 1800],
+          ['Sixty-two is 6 tens and 2 ones. I put them in.', chart(5062, { cols: 4, vals: true })],
+          ['I write <b>5062</b>, not 562. An empty place gets a 0, because every place needs a digit.', chart(5062, { cols: 4, vals: true }), 2400]
+        ]),
         key: '<p>An empty place gets a <b>0</b>. Every place needs a digit.</p>',
         mistake: '<p>Leaving out the zero: writing "four thousand one hundred seven" as <b>417</b>, or adding extra zeros: <b>4000107</b>. Ask: how many digits should a number in the thousands have?</p>',
         check: [T('words', 2), T('forms', 2)] }
@@ -376,6 +397,12 @@
             { do: 'Find a number whose expanded form has exactly <b>2 parts</b>.', goal: function (s) { return String(s.n).replace(/0/g, '').length === 2; }, yes: function (s) { return A.fmt(s.n) + ' has two zeros, so only 2 parts.'; } },
             { do: 'Find a number with <b>6000 + 50</b> in it.', goal: function (s) { return Math.floor(s.n / 1000) === 6 && Math.floor(s.n / 10) % 10 === 5; }, yes: 'Yes: 6 thousands and 5 tens.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will write 8405 in expanded form. I look at each digit.', chart(8405, { cols: 4, vals: true }), 1400],
+          ['The 8 is worth 8000. The 4 is worth 400. The 5 is worth 5.', chart(8405, { cols: 4, vals: true }), 1800],
+          ['The tens digit is 0. A zero adds nothing, so I skip it.', chart(8405, { cols: 4, vals: true, hl: 2 }), 1800],
+          ['I add up the values: <b>8405 = 8000 + 400 + 5</b>.', expanded(8405), 2400]
+        ]),
         key: '<p>Expanded form adds up the <b>value of each digit</b>. Skip the zeros.</p>',
         check: [T('forms', 1), T('forms', 3)] },
 
@@ -392,6 +419,12 @@
             { do: 'Find <b>four thousand twelve</b>.', goal: function (s) { return s.n === 4012; }, yes: '4012. The hundreds place is 0.' },
             { do: 'Find <b>seven thousand seven hundred</b>.', goal: function (s) { return s.n === 7700; }, yes: '7700.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will write 6307 in words. First I read the thousands: "six thousand".', chart(6000, { cols: 4 }), 1600],
+          ['Next the hundreds: 3. "Six thousand three hundred".', chart(6300, { cols: 4 })],
+          ['The tens digit is 0, so I say nothing for it. The ones digit is 7.', chart(6307, { cols: 4 })],
+          ['I do not say "and". The answer is <b>six thousand three hundred seven</b>.', chart(6307, { cols: 4 }), 2400]
+        ]),
         key: '<p>Read the thousands, then the hundreds, tens and ones. Do not say "and".</p>',
         mistake: '<p>Saying "and" inside a whole number ("three thousand and forty-five"). In math, "and" is saved for the decimal point.</p>',
         check: [T('words', 1), T('words', 3)] },
@@ -421,6 +454,12 @@
           { label: 'With money', html: '<p>$1362 could be one $1000 pile, three $100 bills, six $10 bills and two loonies. Or <b>136 ten-dollar bills and a toonie</b>. Same money.</p>' },
           { label: 'With numbers', html: '<p class="math">1000 + 300 + 60 + 2 = 1362</p><p class="math">1300 + 60 + 2 = 1362</p><p class="math">1300 + 50 + 12 = 1362</p>' }
         ],
+        example: K.watch([
+          ['My turn. Here is 2415: 2 thousands, 4 hundreds, 1 ten and 5 ones.', disksFig([5, 1, 4, 2]), 1600],
+          ['I break 1 hundred into 10 tens. Now there are 3 hundreds and 11 tens.', disksFig([5, 11, 3, 2]), 1800],
+          ['I check the value: 2000 + 300 + 110 + 5 = 2415.', disksFig([5, 11, 3, 2]), 1800],
+          ['The parts changed, but the number did not. It is still <b>2415</b>.', disksFig([5, 11, 3, 2]), 2200]
+        ]),
         key: '<p>Trading 1 of a place for 10 of the next smaller place <b>does not change the number</b>.</p>',
         mistake: '<p>Thinking 13 hundreds is "13 hundred-dollar mistake" and not a real way to write 1300. Encourage trading with real or paper money.</p>',
         check: [T('blocks', 2), T('value', 3)] }
@@ -441,6 +480,12 @@
             { do: 'Make two numbers that first differ in the <b>ones</b> place.', goal: function (s) { return s.d === 4; }, yes: 'Only the ones differ, so the ones decide.' },
             { do: 'Make the first number greater, even though its <b>ones digit is smaller</b>.', goal: function (s) { return s.a > s.b && s.a % 10 < s.b % 10; }, yes: 'Yes. A bigger place on the left matters more than the ones.' }
           ] }),
+        example: K.watch([
+          ['My turn. Which is greater, 8572 or 8275? I line them up by place.', cmpCharts(8572, 8275, -1), 1400],
+          ['I start at the left. Thousands: 8 and 8. The same, so I move right.', cmpCharts(8572, 8275, 1)],
+          ['Hundreds: 5 and 2. They are different. 5 hundreds is more than 2 hundreds.', cmpCharts(8572, 8275, 2), 1800],
+          ['So <b>8572 &gt; 8275</b>. I stop here. The first different digit decides.', cmpCharts(8572, 8275, 2), 2400]
+        ]),
         key: '<p>Compare from the <b>left</b>. The first different digit decides.</p>',
         mistake: '<p>Comparing the last digits first: thinking 3999 &gt; 4001 because 9 &gt; 1. Have the child point to the leftmost place first.</p>',
         check: [T('compare', 1), T('compare', 2)] },
@@ -457,6 +502,12 @@
             { do: 'Make the sentence use <b>&gt;</b>.', goal: function (s) { return s.a > s.b; }, yes: 'The first number is further right, so it is greater.' },
             { do: 'Make the two numbers <b>equal</b>.', goal: function (s) { return s.a === s.b; }, yes: 'Same spot on the line: they are equal.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will compare 6200 and 4900. I find both on the number line.', cmpLine(6200, 4900), 1400],
+          ['6200 is further right, so 6200 is the greater number.', cmpLine(6200, 4900)],
+          ['The symbol opens toward the greater number. I write <b>6200 &gt; 4900</b>.', cmpLine(6200, 4900), 1800],
+          ['I can also write it the other way: <b>4900 &lt; 6200</b>. It still opens toward 6200.', cmpLine(6200, 4900), 2400]
+        ]),
         key: '<p>The symbol <b>opens toward the greater number</b>.</p>',
         check: [T('compare', 1), T('compare', 2)] },
 
@@ -466,6 +517,12 @@
           ['Order 5280, 3890, 5208 and 4730. Look at the thousands: 5, 3, 5, 4.', orderLine([5280, 3890, 5208, 4730], 0)],
           ['3890 is least, then 4730.', orderLine([5280, 3890, 5208, 4730], 2)],
           ['5280 and 5208 tie on thousands and hundreds. Tens: 0 &lt; 8, so 5208 comes first.', orderLine([5280, 3890, 5208, 4730], 4), 2600]
+        ]),
+        example: K.watch([
+          ['My turn. I will order 4620, 3550, 5480 and 3505 from least to greatest. First I look at the thousands: 4, 3, 5, 3.', orderLine([4620, 3550, 5480, 3505], 0), 2000],
+          ['Two numbers have 3 thousands: 3550 and 3505. The hundreds tie too: 5 and 5. I look at the tens: 0 is less than 5, so 3505 comes first, then 3550.', orderLine([4620, 3550, 5480, 3505], 2), 2600],
+          ['4620 has 4 thousands, so it comes next.', orderLine([4620, 3550, 5480, 3505], 3)],
+          ['5480 has the most thousands, so it is greatest. The order is <b>3505, 3550, 4620, 5480</b>.', orderLine([4620, 3550, 5480, 3505], 4), 2400]
         ]),
         key: '<p>Order by comparing <b>from the left</b>, one place at a time.</p>',
         check: [T('compare', 3), T('compare', 3)] }
@@ -486,6 +543,12 @@
             { do: 'Find a number that rounds <b>up</b> to 4000.', goal: function (s) { return s.r === 4000 && s.n < 4000; }, yes: 'It is past the top, so it rolls up.' },
             { do: 'Find the <b>smallest</b> number on this hill that rounds up.', goal: function (s) { return s.n === 3500; }, yes: '3500, exactly halfway, rounds up.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will round 6800 to the nearest thousand. It sits between 6000 and 7000.', hill(6800, 1000, 'nmx1'), 1600],
+          ['The top of the hill is halfway: 6500.', hill(6800, 1000, 'nmx1')],
+          ['6800 is past the top, so it rolls up.', hill(6800, 1000, 'nmx1')],
+          ['6800 rounds to <b>7000</b>. Halfway or past: round up.', hill(6800, 1000, 'nmx1'), 2200]
+        ]),
         key: '<p>Halfway or past: round <b>up</b>. Before halfway: round <b>down</b>.</p>',
         check: [T('round', 1), T('round', 1)] },
 
@@ -502,6 +565,12 @@
             { do: 'Round <b>4271</b> to the nearest hundred.', goal: function (s) { return s.n === 4271 && s.p === '100'; }, yes: '7 is 5 or more, so 4271 rounds up to 4300.' },
             { do: 'Find a number that rounds to <b>6000</b> to the nearest thousand.', goal: function (s) { return s.p === '1000' && s.r === 6000; }, yes: function (s) { return A.fmt(s.n) + ' rounds to 6000.'; } }
           ] }),
+        example: K.watch([
+          ['My turn. I will round 5382 to the nearest hundred. The hundreds digit is 3.', hill(5382, 100, 'nmx2'), 1600],
+          ['I look at the digit just to its right: 8.', hill(5382, 100, 'nmx2')],
+          ['8 is 5 or more, so I round up. 3 hundreds become 4 hundreds.', hill(5382, 100, 'nmx2'), 1800],
+          ['The places after it become zeros: <b>5400</b>. 5 or more, round up.', hill(5382, 100, 'nmx2'), 2200]
+        ]),
         key: '<p><b>5 or more, round up. Less than 5, round down.</b></p>',
         check: [T('round', 2), T('round', 2)] },
 
@@ -515,6 +584,12 @@
           { label: 'Count by hundreds', html: '<p>Count up by hundreds from 2900: <b>2900, 3000</b>. The next hundred after 2900 is 3000, not 2100 or 21000.</p>' },
           { label: 'With disks', html: '<div class="fig">' + disksFig([0, 7, 9, 2]) + '</div><p>Rounding up adds 1 hundred to the 9 hundreds: 10 hundreds, which group into 1 more thousand. So 2 thousands become 3 thousands: <b>3000</b>.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will round 4960 to the nearest hundred. It is between 4900 and 5000.', hill(4960, 100, 'nmx3'), 1600],
+          ['The digit right of the hundreds is 6. That is 5 or more, so I round up.', hill(4960, 100, 'nmx3'), 1800],
+          ['The hundreds digit is 9. One more hundred makes 10 hundreds, so I group them into 1 more thousand.', hill(4960, 100, 'nmx3'), 2200],
+          ['4 thousands become 5 thousands. 4960 rounds to <b>5000</b>.', hill(4960, 100, 'nmx3'), 2200]
+        ]),
         key: '<p>If rounding up makes 10 in a place, <b>group it</b> into the next place.</p>',
         mistake: '<p>Writing 2970 &#8776; "21000" or "2100". Ask what the hundred after 2900 is.</p>',
         check: [T('round', 3), T('round', 3)] }
@@ -535,6 +610,12 @@
             { do: 'Show <b>half</b> of 10 000.', goal: function (s) { return s.n === 5000; }, yes: '5000 fills 50 squares: half.' },
             { do: 'There are 1440 minutes in a day. Show about that many.', goal: function (s) { return Math.abs(s.n - 1440) <= 60; }, yes: 'About 14 squares. A day is less than a sixth of 10 000 minutes.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will show 2500. Each square is 100.', grid10k(0), 1400],
+          ['Each row of 10 squares is 1000. 2000 is 2 rows.', grid10k(2000)],
+          ['500 more is 5 more squares.', grid10k(2500)],
+          ['2500 fills 25 squares, so 2500 is 25 hundreds. All 100 squares make <b>10 000</b>.', grid10k(2500), 2400]
+        ]),
         key: '<p><b>10 000 = 10 thousands = 100 hundreds.</b></p>',
         check: [function () { var t = R.int(1, 9); return { q: 'How many squares of 100 does ' + A.fmt(t * 1000) + ' fill?', type: 'num', answer: t * 10, fig: grid10k(t * 1000), hint: 'Each square is 100. Each row of 10 is 1000.', explain: A.fmt(t * 1000) + ' is ' + t * 10 + ' hundreds.', steps: ['Each row is 1000.', t + ' rows = ' + t * 10 + ' squares.'] }; }, T('value', 3)] }
     ] }

@@ -307,6 +307,14 @@
           { do: '156 is on the mat. <b>Add 248</b>, then group until every place has fewer than 10.', goal: function (s) { return s.value === 404 && s.o < 10 && s.t < 10; }, yes: '156 + 248 = 404. The tens traded away to leave 0 tens.' },
           { do: 'Now 375 is on the mat. <b>Add 125</b> and group.', setup: function (t) { t.set(3, 7, 5); }, goal: function (s) { return s.value === 500 && s.o < 10 && s.t < 10; }, yes: '375 + 125 = 500. Two trades in a row.' }
         ] },
+        example: { tool: 'base10', opts: { h: 2, t: 3, o: 8 }, steps: [
+          { say: 'My turn. I will add 238 + 145. 238 is on the mat.', ms: 1400 },
+          { say: 'I add the same places. First, 1 hundred.', act: function (t) { return t.add('h', 1); } },
+          { say: 'Next, 4 tens.', act: function (t) { return t.add('t', 4, 120); } },
+          { say: 'Then 5 ones. Now there are <b>13 ones</b>. That is too many for one place.', act: function (t) { return t.add('o', 5, 120); }, ms: 1800 },
+          { say: 'I trade 10 ones for 1 ten. Now there are 3 ones and 8 tens.', act: function (t) { return t.group('o'); }, ms: 1800 },
+          { say: 'I read the mat: 3 hundreds, 8 tens, 3 ones. <b>238 + 145 = 383</b>.', ms: 2400 }
+        ] },
         key: '<p>Add the same places. <b>10 of a place trade for 1 of the next place.</b></p>',
         check: [T('add', 1), T('add', 1)] },
 
@@ -322,6 +330,13 @@
           { label: 'With money', html: '<p>$587 + $646. Loonies: 7 + 6 = 13, so trade 10 loonies for a $10 bill and keep 3. Tens: 8 + 4 + 1 = 13 bills, so trade 10 for a $100 bill and keep 3. Hundreds: 5 + 6 + 1 = 12, so trade 10 for $1000 and keep 2.</p><p class="big">$1233</p>' },
           { label: 'Why carry 1?', html: '<p>A column can only hold one digit. 13 ones is really <b>1 ten and 3 ones</b>. The 3 stays; the 1 ten moves to the tens column. The small 1 on top is that ten.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will add 3476 + 2185. I line up the places and start with the ones.', addCols(3476, 2185, 0), 1600],
+          ['Ones: 6 + 5 = 11. That is 10 or more, so I write 1 and carry 1 to the tens.', addCols(3476, 2185, 1), 2400],
+          ['Tens: 7 + 8 + the carried 1 = 16. I write 6 and carry 1 to the hundreds.', addCols(3476, 2185, 2), 2400],
+          ['Hundreds: 4 + 1 + the carried 1 = 6. That is less than 10, so I just write 6.', addCols(3476, 2185, 3), 2400],
+          ['Thousands: 3 + 2 = 5. <b>3476 + 2185 = 5661</b>.', addCols(3476, 2185, 4), 2400]
+        ]),
         key: '<p>Start with the ones. <b>10 or more? Write the ones digit and carry 1.</b></p>',
         mistake: '<p>Writing 13 in one column (an answer like 51 213), or forgetting to add the carried 1. Ask: "Does each column have only one digit? Did you add the small 1?"</p>',
         check: [T('add', 2), T('add', 3)] }
@@ -341,6 +356,13 @@
           { do: '432 is on the mat. <b>Take away 156.</b> Break blocks when you need to.', goal: function (s) { return s.value === 276; }, yes: '432 &minus; 156 = 276. You broke a ten and a hundred.' },
           { do: 'Now 500 is on the mat. <b>Take away 3.</b>', setup: function (t) { t.set(5, 0, 0); }, goal: function (s) { return s.value === 497; }, yes: '497. You broke a hundred into tens, then a ten into ones.' }
         ] },
+        example: { tool: 'base10', opts: { h: 4, t: 5, o: 3 }, steps: [
+          { say: 'My turn. I will take 217 away from 453. I start with the ones: there are 3, but I need to take away 7.', act: function (t) { return t.lightKind('o'); }, ms: 2200 },
+          { say: 'Not enough ones. I break 1 ten into 10 ones. Now there are <b>13 ones</b>. It is still 453.', act: function (t) { t.clearLit(); return t.split('t'); }, ms: 2000 },
+          { say: 'I take away 7 ones. 6 ones are left.', act: function (t) { return t.remove('o', 7); } },
+          { say: 'I take away 1 ten. 3 tens are left.', act: function (t) { return t.remove('t', 1); } },
+          { say: 'I take away 2 hundreds. <b>453 &minus; 217 = 236</b>.', act: function (t) { return t.remove('h', 2); }, ms: 2400 }
+        ] },
         key: '<p>Not enough to take away? <b>Break 1 of the next place into 10.</b></p>',
         check: [T('sub', 1), T('sub', 1)] },
 
@@ -355,6 +377,13 @@
           { label: 'Top minus bottom, always', html: '<p>Read each column from the <b>top</b> down. In 52 &minus; 18 the ones say "2 take away 8". You cannot, so trade a ten: 12 &minus; 8 = 4. Never flip it to 8 &minus; 2.</p><div class="fig">' + subCols(52, 18) + '</div>' },
           { label: 'Count up instead', html: '<p>Find the distance from 2817 up to 6352.</p><div class="fig">' + jumps(2817, hopList(2817, 6352), 'Counting up from 2817 to 6352') + '</div><p>83 + 100 + 3000 + 300 + 52 = <b>3535</b></p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 7425 &minus; 3168. I line up the places and start with the ones.', subCols(7425, 3168, 0), 1600],
+          ['Ones: 5 take away 8. The top digit is smaller, so I trade 1 ten for 10 ones. 15 &minus; 8 = 7.', subCols(7425, 3168, 1), 2600],
+          ['Tens: now 1 take away 6. Smaller again, so I trade 1 hundred for 10 tens. 11 &minus; 6 = 5.', subCols(7425, 3168, 2), 2600],
+          ['Hundreds: now 3 take away 1 is 2.', subCols(7425, 3168, 3), 1800],
+          ['Thousands: 7 take away 3 is 4. <b>7425 &minus; 3168 = 4257</b>.', subCols(7425, 3168, 4), 2400]
+        ]),
         key: '<p>Start with the ones. <b>Top digit smaller? Trade 1 from the left for 10.</b></p>',
         mistake: '<p>Taking the smaller digit from the bigger one in every column, so 52 &minus; 18 becomes 46. Ask: "Which number is on top in this column? Can you take the bottom one away from it?"</p>',
         check: [T('sub', 2), T('sub', 2)] },
@@ -371,6 +400,14 @@
           { label: 'Count up', html: '<div class="fig">' + jumps(1758, hopList(1758, 5003), 'Counting up from 1758 to 5003') + '</div><p>42 + 200 + 3000 + 3 = <b>3245</b></p>' },
           { label: 'Think of 500 tens', html: '<p>5003 is <b>500 tens</b> and 3 ones. Trade 1 of those tens: 499 tens and 13 ones. That is why the zeros become 9 and 9.</p><div class="fig">' + subCols(5003, 1758) + '</div>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 6004 &minus; 2387. Ones: 4 take away 7. I need to trade.', subCols(6004, 2387, 0), 1800],
+          ['The tens and the hundreds are 0. There is nothing to trade there, so I go left to the 6 thousands.', subCols(6004, 2387, 0), 2200],
+          ['I trade down one place at a time. The 6 becomes 5, each 0 becomes 9, and the ones become 14. 14 &minus; 7 = 7.', subCols(6004, 2387, 1), 3000],
+          ['Tens: 9 &minus; 8 = 1.', subCols(6004, 2387, 2), 1400],
+          ['Hundreds: 9 &minus; 3 = 6.', subCols(6004, 2387, 3), 1400],
+          ['Thousands: 5 &minus; 2 = 3. <b>6004 &minus; 2387 = 3617</b>.', subCols(6004, 2387, 4), 2400]
+        ]),
         key: '<p>Next place is 0? <b>Go left to the first digit and trade down one place at a time.</b> The zeros become 9s.</p>',
         mistake: '<p>Changing a zero into 10 and leaving it there, or forgetting to take 1 from the thousands. In 5003 &minus; 1758 the top should read 4, 9, 9, 13. Have your child say each trade out loud.</p>',
         check: [T('sub', 3), T('sub', 3)] }
@@ -395,6 +432,11 @@
             { do: 'Start at 2997. Make the sum exactly <b>3500</b>.', setup: function (api) { api.set('a', '2997'); }, goal: function (s) { return s.a === '2997' && s.sum === 3500; }, yes: '2997 + 503: move 3 to make 3000, then 3000 + 500.' },
             { do: 'Start at 4995. Make the sum exactly <b>5400</b>.', setup: function (api) { api.set('a', '4995'); }, goal: function (s) { return s.a === '4995' && s.sum === 5400; }, yes: '4995 + 405 = 5000 + 400.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will add 3997 + 286. 3997 is just 3 away from 4000.', jumps(3997, [3], '3997 to 4000'), 1800],
+          ['I move 3 from 286 to make 4000. 283 is left.', jumps(3997, [3, 283], '3997, jump 3, then 283'), 2200],
+          ['4000 + 283 = <b>4283</b>. So 3997 + 286 = 4283.', jumps(3997, [3, 283], '3997 plus 286 is 4283'), 2200]
+        ]),
         key: '<p>Close to a thousand? <b>Move a little to make the thousand, then add the rest.</b></p>',
         check: [T('mental', 1), T('mental', 2)] },
 
@@ -423,6 +465,13 @@
           { label: 'Like making change', html: '<p>A cashier counts up. Something costs $26.50 and you pay $40. "$26.50 ... $27 is 50¢, $30 is $3, $40 is $10." Change: <b>$13.50</b>. Counting up to subtract works the same way.</p>' },
           { label: 'Take away instead', html: '<p>4000 &minus; 2650 by taking away: 4000 &minus; 2000 = 2000, then 2000 &minus; 600 = 1400, then 1400 &minus; 50 = <b>1350</b>. Same answer, the other direction.</p>' }
         ],
+        example: K.watch([
+          ['My turn. I will find 5000 &minus; 3720 by counting up. I start at 3720.', jumps(3720, [], 'Start at 3720'), 1600],
+          ['First I jump 80 to the next hundred, 3800.', jumps(3720, [80], 'Jump 80'), 1600],
+          ['Then I jump 200 to the next thousand, 4000.', jumps(3720, [80, 200], 'Jump 200'), 1600],
+          ['Then I jump 1000 to 5000.', jumps(3720, [80, 200, 1000], 'Jump 1000'), 1600],
+          ['I add the jumps: 80 + 200 + 1000 = <b>1280</b>. So 5000 &minus; 3720 = 1280.', jumps(3720, [80, 200, 1000], 'Jumps of 80, 200 and 1000 make 1280'), 2400]
+        ]),
         key: '<p>The difference is the distance. <b>Jump up to friendly numbers and add the jumps.</b></p>',
         mistake: '<p>Counting the number of jumps (3) instead of adding their sizes, or forgetting the small first jump. Point to each arch and say its size out loud.</p>',
         check: [T('mental', 3), T('mental', 3)] }
@@ -447,6 +496,12 @@
             { do: 'Make the estimate exactly <b>9000</b>.', goal: function (s) { return s.est === 9000; }, yes: 'Yes. Both numbers rounded, then added.' },
             { do: 'Make the exact sum <b>more than 700 away</b> from the estimate.', goal: function (s) { return Math.abs(s.ex - s.est) > 700; }, yes: 'Both numbers rounded the same way, so the gaps added up. An estimate is only a guide.' }
           ] }),
+        example: K.watch([
+          ['My turn. I will estimate 3289 + 5704. I round 3289 to the nearest thousand: 3000.', '<p class="math big">3289 &rarr; <b class="c3t">3000</b></p>', 1800],
+          ['I round 5704 to the nearest thousand: 6000.', '<p class="math big">3289 &rarr; <b class="c3t">3000</b><br>5704 &rarr; <b class="c3t">6000</b></p>', 1600],
+          ['I add the rounded numbers: 3000 + 6000 = 9000. My estimate is <b>9000</b>.', '<p class="math big">3000 + 6000 = <b class="c3t">9000</b></p>', 1800],
+          ['The exact answer is 8993. It lands close to 9000, so it makes sense.', estFig(9000, 8993), 2400]
+        ]),
         key: '<p><b>Round each number, then add or subtract.</b> The answer should land close to the estimate.</p>',
         mistake: '<p>Rounding only one of the numbers, or rounding the exact answer after working it out. The estimate comes first, before the exact work.</p>',
         check: [T('estimate', 1), T('estimate', 2)] },
@@ -470,6 +525,11 @@
             { do: 'Try answers for <b>6250 &minus; 3875</b>. Use the check to find the right one.', goal: function (s) { return s.a === 6250 && s.g === 2375; }, yes: '2375 + 3875 = 6250, so 2375 is right.' },
             { do: 'Now find <b>5004 &minus; 2768</b> the same way.', setup: function (api) { api.set('p', '5004-2768'); }, goal: function (s) { return s.a === 5004 && s.g === 2236; }, yes: '2236 + 2768 = 5004.' }
           ] }),
+        example: K.watch([
+          ['My turn. I worked out 7120 &minus; 2865 = 4255. I will check it.', barModel(7120, 2865, 4255, 'took away', 'answer'), 1800],
+          ['I add back: the answer plus the amount I took away. 4255 + 2865.', barModel(7120, 2865, 4255, 'took away', 'answer', 'w'), 2000],
+          ['4255 + 2865 = <b>7120</b>. That is the start number, so my answer is right.', barModel(7120, 2865, 4255, 'took away', 'answer'), 2400]
+        ]),
         key: '<p><b>Answer + amount taken away = start number.</b></p>',
         mistake: '<p>Checking by doing the same subtraction again. If the same slip happens twice, it looks right twice. Adding back is a different path, so it catches slips.</p>',
         check: [T('inverse', 1), T('inverse', 1)] },
@@ -480,6 +540,12 @@
           ['&#9633; + 2468 = 7000. The whole is 7000. One part is 2468.', barModel(7000, 4532, 2468, 'missing', 'known', 'a'), 2200],
           ['Missing part = whole &minus; known part: 7000 &minus; 2468.', barModel(7000, 4532, 2468, 'missing', 'known', 'a'), 2000],
           ['7000 &minus; 2468 = <b>4532</b>.', barModel(7000, 4532, 2468, 'missing', 'known'), 2000]
+        ]),
+        example: K.watch([
+          ['My turn. I will solve &#9633; + 3750 = 8000. I draw a bar. The whole is 8000. One part is 3750.', barModel(8000, 4250, 3750, 'missing', 'known', 'a'), 2200],
+          ['A part is missing, so I take the part I know away from the whole: 8000 &minus; 3750.', barModel(8000, 4250, 3750, 'missing', 'known', 'a'), 2200],
+          ['8000 &minus; 3750 = <b>4250</b>.', barModel(8000, 4250, 3750, 'missing', 'known'), 1600],
+          ['I check: 4250 + 3750 = 8000. It works.', barModel(8000, 4250, 3750, 'missing', 'known'), 2000]
         ]),
         key: '<p>Missing a part? <b>Whole &minus; the part you know.</b> Missing the whole? <b>Add the parts.</b></p>',
         check: [T('inverse', 2), T('inverse', 3)] }
@@ -510,6 +576,12 @@
           { label: 'Act it out small', html: '<p>Swap in tiny numbers: "A theatre has 6 seats. 4 are sold. How many are not sold?" You would take away: 6 &minus; 4 = 2. So the big problem is a subtraction too.</p>' },
           { label: 'Draw the bar', html: '<p>Draw one long bar for the whole and split it into parts. Put a <b>?</b> where the unknown goes. A ? on top means add. A ? in a part means subtract.</p><div class="fig">' + barModel(4120, 2675, 1445, 'walked', 'left', 'b') + '</div>' }
         ],
+        example: K.watch([
+          ['My turn. A farm grew 3240 kg of carrots. It sold 1785 kg. How many kilograms are left?', barModel(3240, 1785, 1455, 'sold', 'left', 'b'), 2200],
+          ['I ask: what is unknown? I know the whole, 3240 kg. The part that is left is unknown.', barModel(3240, 1785, 1455, 'sold', 'left', 'b'), 2200],
+          ['A part is unknown, so I subtract: 3240 &minus; 1785.', barModel(3240, 1785, 1455, 'sold', 'left', 'b'), 1800],
+          ['3240 &minus; 1785 = <b>1455 kg</b> left. Part unknown: subtract.', barModel(3240, 1785, 1455, 'sold', 'left'), 2400]
+        ]),
         key: '<p>Whole unknown: <b>add</b>. Part unknown: <b>subtract</b>.</p>',
         mistake: '<p>Choosing the operation from a key word ("left" means subtract, "more" means add). Key words can mislead: "Sam had some cards, then got 30 more and now has 90" is a subtraction. Ask: "Which bar has the question mark?"</p>',
         check: [T('words', 1), T('words', 2)] },
@@ -519,6 +591,13 @@
         watch: K.watch([
           ['A library had 5000 books. It bought 1250 more. Step 1: 5000 + 1250 = 6250.', barModel(6250, 5000, 1250, 'had', 'bought', 'w'), 2400],
           ['Then it gave away 1875. Step 2: 6250 &minus; 1875 = <b>4375</b>.', barModel(6250, 1875, 4375, 'gave away', 'now', 'b'), 2600]
+        ]),
+        example: K.watch([
+          ['My turn. A school had 2400 stickers. It bought 1650 more, then gave away 1925. How many does it have now?', barModel(4050, 2400, 1650, 'had', 'bought', 'w'), 2400],
+          ['Step 1: I find how many after buying. 2400 + 1650 = 4050.', barModel(4050, 2400, 1650, 'had', 'bought'), 2000],
+          ['Step 2: I use that answer. 4050 &minus; 1925.', barModel(4050, 1925, 2125, 'gave away', 'now', 'b'), 1800],
+          ['4050 &minus; 1925 = <b>2125</b> stickers.', barModel(4050, 1925, 2125, 'gave away', 'now'), 1800],
+          ['I check with an estimate: 2000 + 2000 &minus; 2000 = 2000. 2125 is close, so it makes sense.', barModel(4050, 1925, 2125, 'gave away', 'now'), 2400]
         ]),
         key: '<p><b>Step 1, then use that answer in step 2.</b> Estimate to check the final answer.</p>',
         check: [T('words', 3), T('words', 3)] }
