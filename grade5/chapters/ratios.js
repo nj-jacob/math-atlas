@@ -95,6 +95,12 @@
           { say: 'Circles to squares is <b>3:5</b>. Circles come first because they were named first.', fig: an(tape(3, 5, 'circles', 'squares')) },
           { say: 'Squares to circles is <b>5:3</b>. Same bag, different order.', fig: an(tape(3, 5, 'circles', 'squares')), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. A bag has 4 circles.', fig: an(counters(4, 0)) },
+          { say: 'It also has 7 squares.', fig: an(counters(4, 7)) },
+          { say: 'I want circles to squares. Circles are named first, so they go first: <b>4:7</b>.', fig: an(tape(4, 7, 'circles', 'squares')), ms: 2000 },
+          { say: 'Squares to circles is <b>7:4</b>. I write the numbers in the same order as the words.', fig: an(tape(4, 7, 'circles', 'squares')), ms: 2400 }
+        ]),
         try: K.widget('ratios', 0, 'Nice. Try making the ratio 1:2, then 2:4. Do they look alike?'),
         key: '<p><b>a:b</b> means "a for every b". Write the numbers in the same order as the words.</p>',
         check: [P('ra-write', 1), P('ra-write', 2)] },
@@ -106,6 +112,12 @@
           { say: 'Apples to oranges is part to part: <b>4:6</b>.', fig: an(tape(4, 6, 'apples', 'oranges')) },
           { say: 'All the fruit is 4 + 6 = 10.', fig: an(tape(4, 6, 'apples', 'oranges')) },
           { say: 'Oranges to all the fruit is part to whole: <b>6:10</b>.', fig: an(tape(4, 6, 'apples', 'oranges')), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. A bowl has 5 apples and 2 oranges.', fig: an(fruit(5, 2)) },
+          { say: 'Apples to oranges is part to part: <b>5:2</b>.', fig: an(tape(5, 2, 'apples', 'oranges')) },
+          { say: 'To find the whole, I add both parts: 5 + 2 = 7 pieces of fruit.', fig: an(tape(5, 2, 'apples', 'oranges')), ms: 1800 },
+          { say: 'Apples to all the fruit is part to whole: <b>5:7</b>.', fig: an(tape(5, 2, 'apples', 'oranges')), ms: 2200 }
         ]),
         ways: [
           { label: 'Ask "of what?"', html: '<p>"Oranges to apples": compare with apples (6:4). "Oranges to all fruit": compare with everything (6:10).</p>' },
@@ -124,6 +136,12 @@
           { say: 'Two groups: 4 circles and 6 squares. <b>4:6</b>.', fig: an(groups(2, 3, 2)) },
           { say: 'Three groups: 6 circles and 9 squares. <b>6:9</b>.', fig: an(groups(2, 3, 3)) },
           { say: 'Every column is the same mix: 2:3 = 4:6 = 6:9.', fig: an(rtab('circles', 'squares', [[2, 3], [4, 6], [6, 9]], [[0, 1, '&times; 2']])), ms: 2600 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. One group has 1 circle and 4 squares. That is 1:4.', fig: an(groups(1, 4, 1)), ms: 1600 },
+          { say: 'Two groups: I multiply both parts by 2. 2 circles and 8 squares: <b>2:8</b>.', fig: an(groups(1, 4, 2)), ms: 1800 },
+          { say: 'Three groups: I multiply both parts by 3. 3 circles and 12 squares: <b>3:12</b>.', fig: an(groups(1, 4, 3)), ms: 1800 },
+          { say: 'Every column is the same mix: 1:4 = 2:8 = 3:12. Multiply both parts by the same number.', fig: an(rtab('circles', 'squares', [[1, 4], [2, 8], [3, 12]], [[0, 2, '&times; 3']])), ms: 2600 }
         ]),
         try: K.widget('ratios', 1, 'Good. Every column of the table is the same mix.'),
         ways: [
@@ -145,6 +163,12 @@
           { say: 'After 2 hours: 160 km.', fig: an(dline(80, 1, 4, 'km', 'hours', 2)) },
           { say: 'After 3 hours: <b>240 km</b>. Each hour adds another 80.', fig: an(dline(80, 1, 4, 'km', 'hours', 3)), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. A tap fills a tub at 12 litres per minute.', fig: an(dline(12, 1, 4, 'litres', 'min', 0)), ms: 1600 },
+          { say: 'After 1 minute: 12 L.', fig: an(dline(12, 1, 4, 'litres', 'min', 1)) },
+          { say: 'After 2 minutes, I add another 12: 24 L.', fig: an(dline(12, 1, 4, 'litres', 'min', 2)) },
+          { say: 'After 3 minutes: <b>36 L</b>. Per means for each 1: 12 L in 1 minute.', fig: an(dline(12, 1, 4, 'litres', 'min', 3)), ms: 2400 }
+        ]),
         try: K.widget('ratios', 2, 'Nice. Try a faster speed and watch the distance grow.'),
         key: '<p><b>Per</b> means "for each 1". 80 km/h = 80 km in 1 hour.</p>',
         mistake: '<p>Mixing up the units: reading 80 km/h as 1 km in 80 hours. Ask "how far in <b>one</b> hour?"</p>',
@@ -156,6 +180,11 @@
           { say: 'Mia cycles 45 km in 3 hours.', fig: an(dline(15, 1, 3, 'km', 'hours', 3)) },
           { say: 'Split the 3 hours into 3 equal jumps.', fig: an(dline(15, 1, 3, 'km', 'hours', 2)) },
           { say: '45 &divide; 3 = 15. In 1 hour she rides <b>15 km</b>.', fig: an(dline(15, 1, 3, 'km', 'hours', 1)), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. Sam reads 60 pages in 4 days. How many pages in 1 day?', fig: an(dline(15, 1, 4, 'pages', 'days', 4)), ms: 1800 },
+          { say: 'I split the 4 days into 4 equal jumps. I divide both parts by 4.', fig: an(dline(15, 1, 4, 'pages', 'days', 4)), ms: 1800 },
+          { say: '60 &divide; 4 = 15 and 4 &divide; 4 = 1. Sam reads <b>15 pages</b> in 1 day.', fig: an(dline(15, 1, 4, 'pages', 'days', 1)), ms: 2400 }
         ]),
         ways: [
           { label: 'Ratio table', html: '<div class="fig">' + rtab('km', 'hours', [[45, 3], [15, 1]], [[0, 1, '&divide; 3']]) + '</div>' },
@@ -173,6 +202,11 @@
           { say: 'A recipe uses 3 cups of flour for every 2 eggs. How much flour for 8 eggs?', fig: an(rtab('eggs', 'cups of flour', [[2, 3]], [])) },
           { say: 'Double the eggs: 4. Double the flour too: 6.', fig: an(rtab('eggs', 'cups of flour', [[2, 3], [4, 6]], [[0, 1, '&times; 2']])) },
           { say: 'Double again: 8 eggs and <b>12 cups</b>.', fig: an(rtab('eggs', 'cups of flour', [[2, 3], [4, 6], [8, 12]], [[0, 1, '&times; 2'], [1, 2, '&times; 2']])), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. A juice mix uses 3 cans of water for every 1 can of juice. How much water for 4 cans of juice?', fig: an(rtab('cans of juice', 'cans of water', [[1, 3]], [])), ms: 2200 },
+          { say: 'I find the step from what I know to what I want. 1 can to 4 cans is &times; 4.', fig: an(rtab('cans of juice', 'cans of water', [[1, 3], [4, '?']], [[0, 1, '&times; 4']])), ms: 2000 },
+          { say: 'I do the same step to the other row: 3 &times; 4 = <b>12 cans of water</b>.', fig: an(rtab('cans of juice', 'cans of water', [[1, 3], [4, 12]], [[0, 1, '&times; 4']])), ms: 2400 }
         ]),
         ways: [
           { label: 'One big step', html: '<p>2 eggs to 8 eggs is &times; 4. So 3 cups &times; 4 = 12 cups.</p><div class="fig">' + rtab('eggs', 'cups of flour', [[2, 3], [8, 12]], [[0, 1, '&times; 4']]) + '</div>' },

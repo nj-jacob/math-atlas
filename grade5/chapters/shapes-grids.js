@@ -186,6 +186,12 @@
           { say: 'Isosceles: 2 sides are equal.', fig: wrap(triPic([[0, 0], [2, 0], [1, 2.6]], [1, 2], null, null, 220, 180)) },
           { say: 'Scalene: no sides are equal.', fig: wrap(triPic([[0, 0], [3, 0], [0.8, 1.6]], [], null, null, 220, 180)), ms: 2000 }
         ]),
+        example: KIT.watch([
+          { say: 'My turn. I will name this triangle by its sides.', fig: wrap(sideTri(8, 5, 5)), ms: 1400 },
+          { say: 'I compare the side lengths: 5 cm, 5 cm and 8 cm.', fig: wrap(sideTri(8, 5, 5)), ms: 1600 },
+          { say: 'Two sides are equal. The third side is different.', fig: wrap(sideTri(8, 5, 5)), ms: 1600 },
+          { say: '2 equal sides: it is <b>isosceles</b>.', fig: wrap(sideTri(8, 5, 5)), ms: 2200 }
+        ]),
         try: { tool: 'geoboard', opts: {}, tasks: [
           { do: 'Tap pegs to make an <b>isosceles</b> triangle. Tap the first peg again to close it.', goal: function (s) { var t = tri(s); return t && t.iso; }, yes: 'Yes. Two sides are the same length.' },
           { do: 'Now make a <b>scalene</b> triangle: no two sides the same.', goal: function (s) { var t = tri(s); return t && !t.iso; }, yes: 'Yes. Every side is a different length.' }
@@ -200,6 +206,12 @@
           { say: 'An obtuse triangle has one wide corner, more than 90&deg;.', act: function (t) { return t.shape([[0, 2], [1, 4], [4, 4]], 300); } },
           { say: 'An acute triangle has three sharp corners, all less than 90&deg;.', act: function (t) { return t.shape([[2, 0], [0, 3], [4, 4]], 300); }, ms: 2000 }
         ] },
+        example: KIT.watch([
+          { say: 'My turn. I will name this triangle by its angles.', fig: wrap(triPic([[0, 0], [4, 0], [-1, 1.5]], [], null, null, 220, 180)), ms: 1400 },
+          { say: 'I find the biggest angle. It is the red corner.', fig: wrap(triPic([[0, 0], [4, 0], [-1, 1.5]], [], 0, 'arc', 220, 180)), ms: 1600 },
+          { say: 'I compare it to a square corner. It opens wider than 90&deg;.', fig: wrap(triPic([[0, 0], [4, 0], [-1, 1.5]], [], 0, 'arc', 220, 180)), ms: 1800 },
+          { say: 'More than 90&deg;: it is an <b>obtuse</b> triangle.', fig: wrap(triPic([[0, 0], [4, 0], [-1, 1.5]], [], 0, 'arc', 220, 180)), ms: 2200 }
+        ]),
         try: { tool: 'geoboard', opts: {}, tasks: [
           { do: 'Make a <b>right</b> triangle.', goal: function (s) { var t = tri(s); return t && t.right; }, yes: 'Yes. It has a square corner.' },
           { do: 'Make an <b>obtuse</b> triangle.', goal: function (s) { var t = tri(s); return t && t.obtuse; }, yes: 'Yes. One corner is wider than a square corner.' }
@@ -215,6 +227,12 @@
           { say: 'Change the shape: 40&deg; + 70&deg; + 70&deg; = 180&deg;.', fig: wrap(angTri(40, 70, 70)) },
           { say: 'Two angles are 90&deg; and 35&deg;. What is the third?', fig: wrap(angTri(90, 35, 55, 2)) },
           { say: '180 &minus; 90 &minus; 35 = <b>55&deg;</b>.', fig: wrap(angTri(90, 35, 55)), ms: 2200 }
+        ]),
+        example: KIT.watch([
+          { say: 'My turn. Two angles are 30&deg; and 65&deg;. I will find the third.', fig: wrap(angTri(30, 65, 85, 2)), ms: 1600 },
+          { say: 'Angles in a triangle add to 180&deg;. I add the two I know: 30 + 65 = 95.', fig: wrap(angTri(30, 65, 85, 2)), ms: 2000 },
+          { say: 'I take that from 180: 180 &minus; 95 = <b>85&deg;</b>.', fig: wrap(angTri(30, 65, 85)), ms: 1800 },
+          { say: 'I check: 30 + 65 + 85 = 180. It works.', fig: wrap(angTri(30, 65, 85)), ms: 2200 }
         ]),
         try: KIT.widget('shapes-grids', 0, 'Nice. Try two big angles, like 100° and 90°. What goes wrong?'),
         ways: [
@@ -232,6 +250,12 @@
           { say: 'They meet: a triangle.', fig: wrap(sideTri(7, 4, 5)) },
           { say: 'Sticks of 2 cm, 3 cm and 8 cm. 2 + 3 = 5, shorter than 8.', fig: wrap(sticks(8, 2, 3)) },
           { say: 'The ends cannot meet. <b>No triangle</b>.', fig: wrap(sticks(8, 2, 3)), ms: 2200 }
+        ]),
+        example: KIT.watch([
+          { say: 'My turn. Can sticks of 3 cm, 6 cm and 10 cm make a triangle?', fig: wrap(sticks(10, 3, 6)), ms: 1600 },
+          { say: 'I find the long stick: 10 cm. I add the two short ones: 3 + 6 = 9.', fig: wrap(sticks(10, 3, 6)), ms: 1800 },
+          { say: '9 is shorter than 10, so the ends cannot meet.', fig: wrap(sticks(10, 3, 6)), ms: 1600 },
+          { say: '<b>No triangle</b>. Short + short must be more than long.', fig: wrap(sticks(10, 3, 6)), ms: 2200 }
         ]),
         try: KIT.widget('shapes-grids', 1, 'Good. Find three lengths where the two short sides add up to exactly the long one.'),
         ways: [
@@ -254,6 +278,12 @@
           { say: 'Turn it a quarter turn: 3 by 5. Same size and shape, so <b>congruent</b>.', fig: wrap(grid(1, [], [{ pts: [[1, 2], [6, 2], [6, 5], [1, 5]], fill: FILL }, { pts: [[7, 1], [10, 1], [10, 6], [7, 6]], fill: FILL2 }], 26)) },
           { say: 'Stretch it to 5 by 4. Different size: <b>not congruent</b>.', fig: wrap(grid(1, [], [{ pts: [[1, 2], [6, 2], [6, 5], [1, 5]], fill: FILL }, { pts: [[4, 6], [9, 6], [9, 10], [4, 10]], fill: 'color-mix(in srgb,var(--bad) 30%,var(--card))' }], 26)), ms: 2200 }
         ]),
+        example: KIT.watch([
+          { say: 'My turn. Here is a triangle: 3 across and 2 up.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 3]], fill: FILL }], 26)), ms: 1400 },
+          { say: 'I flip it. It is still 3 across and 2 up. Same size and shape, so it is <b>congruent</b>.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 3]], fill: FILL }, { pts: [[9, 1], [6, 1], [9, 3]], fill: FILL2 }], 26)), ms: 2200 },
+          { say: 'I make it bigger: 6 across and 4 up. The size changed, so it is <b>not congruent</b>.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 3]], fill: FILL }, { pts: [[1, 5], [7, 5], [1, 9]], fill: 'color-mix(in srgb,var(--bad) 30%,var(--card))' }], 26)), ms: 2200 },
+          { say: 'Slide, turn or flip: congruent. Stretch or shrink: not congruent.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 3]], fill: FILL }, { pts: [[9, 1], [6, 1], [9, 3]], fill: FILL2 }], 26)), ms: 2200 }
+        ]),
         try: KIT.widget('shapes-grids', 2, 'Nice. Only "made bigger" and "squashed" break congruence.'),
         key: '<p>Slide, turn or flip: <b>congruent</b>. Stretch or shrink: <b>not congruent</b>.</p>',
         mistake: '<p>Deciding a turned shape is different because it "points another way". Trace one shape on paper and lay it over the other.</p>',
@@ -268,6 +298,12 @@
           { say: 'From the top, you see where the stacks stand. The numbers say how tall.', fig: wrap(top(BUILD.steps, true)) },
           { say: 'From the front, each column shows its tallest stack.', fig: wrap(view(front(BUILD.steps), 'Front view')) },
           { say: 'From the right side, the same idea going back to front.', fig: wrap(view(side(BUILD.steps), 'Side view')), ms: 2200 }
+        ]),
+        example: KIT.watch([
+          { say: 'My turn. I will draw the views of this L-shaped building.', fig: wrap(iso(BUILD.ell)), ms: 1400 },
+          { say: 'From the top, I see where the stacks stand. The numbers say how tall each one is.', fig: wrap(top(BUILD.ell, true)), ms: 1800 },
+          { say: 'From the front, I see 3 columns: 2 cubes tall, then 1, then 1. Each column shows its tallest stack.', fig: wrap(view(front(BUILD.ell), 'Front view')), ms: 2200 },
+          { say: 'From the right side, every column is 2 cubes tall. Views are flat.', fig: wrap(view(side(BUILD.ell), 'Side view')), ms: 2200 }
         ]),
         try: KIT.widget('shapes-grids', 3, 'Good. Try the tower. Which views look the same?'),
         ways: [
@@ -288,6 +324,12 @@
           { say: 'Then 6 up.', fig: wrap(grid(1, [{ x: 4, y: 6, label: '(4, 6)' }], [{ pts: [[0, 0], [4, 0], [4, 0]], fill: 'none', stroke: 'var(--accent)' }, { pts: [[4, 0], [4, 6], [4, 6]], fill: 'none', stroke: 'var(--pm1)' }], 26)) },
           { say: '(6, 4) is a different point. Order matters.', fig: wrap(grid(1, [{ x: 4, y: 6, label: '(4, 6)' }, { x: 6, y: 4, label: '(6, 4)', c: 'var(--strand)' }], [], 26)), ms: 2200 }
         ]),
+        example: KIT.watch([
+          { say: 'My turn. I will plot (7, 3). I start at the origin, (0, 0).', fig: wrap(grid(1, [{ x: 0, y: 0, label: '(0, 0)', c: 'var(--strand)' }], [], 26)), ms: 1600 },
+          { say: 'The first number says across. I go 7 across.', fig: wrap(grid(1, [{ x: 7, y: 0, c: 'var(--strand)' }], [{ pts: [[0, 0], [7, 0], [7, 0]], fill: 'none', stroke: 'var(--accent)' }], 26)) },
+          { say: 'The second number says up. I go 3 up.', fig: wrap(grid(1, [{ x: 7, y: 3, label: '(7, 3)' }], [{ pts: [[0, 0], [7, 0], [7, 0]], fill: 'none', stroke: 'var(--accent)' }, { pts: [[7, 0], [7, 3], [7, 3]], fill: 'none', stroke: 'var(--pm1)' }], 26)) },
+          { say: '(3, 7) is a different point. Across first, then up.', fig: wrap(grid(1, [{ x: 7, y: 3, label: '(7, 3)' }, { x: 3, y: 7, label: '(3, 7)', c: 'var(--strand)' }], [], 26)), ms: 2200 }
+        ]),
         try: KIT.widget('shapes-grids', 4, 'Nice. Change the scale to count by 5. The point moves to bigger numbers.'),
         key: '<p><b>Across first, then up.</b> "Walk to the ladder, then climb it."</p>',
         mistake: '<p>Mixing up the order, so (2, 5) is plotted at (5, 2). Say "across, then up" every time, and trace with a finger.</p>',
@@ -302,6 +344,12 @@
           { say: '<b>Translation</b>: slide 4 right and 3 up. Every point moves the same way.', fig: wrap(grid(1, [], [{ pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }, { pts: [[5, 4], [8, 4], [5, 7]], fill: FILL2 }], 26)) },
           { say: '<b>Reflection</b> in the line x = 5: each point lands the same distance on the other side.', fig: wrap(grid(1, [], [{ pts: [[5, 0], [5, 10], [5, 10]], fill: 'none', stroke: 'var(--bad)', dash: 1 }, { pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }, { pts: [[9, 1], [6, 1], [9, 4]], fill: FILL2 }], 26)) },
           { say: '<b>Rotation</b> a half turn about (5, 5).', fig: wrap(grid(1, [{ x: 5, y: 5, c: 'var(--bad)' }], [{ pts: [[1, 1], [4, 1], [1, 4]], fill: FILL }, { pts: [[9, 9], [6, 9], [9, 6]], fill: FILL2 }], 26)), ms: 2200 }
+        ]),
+        example: KIT.watch([
+          { say: 'My turn. I will translate this triangle 3 right and 2 down.', fig: wrap(grid(1, [], [{ pts: [[2, 6], [5, 6], [2, 8]], fill: FILL }], 26)), ms: 1600 },
+          { say: 'I move each corner the same way. (2, 6) goes 3 right and 2 down to (5, 4).', fig: wrap(grid(1, [{ x: 2, y: 6, c: 'var(--strand)' }, { x: 5, y: 4, label: '(5, 4)' }], [{ pts: [[2, 6], [5, 6], [2, 8]], fill: FILL }], 26)), ms: 2000 },
+          { say: 'The other corners move the same way: (5, 6) to (8, 4), and (2, 8) to (5, 6).', fig: wrap(grid(1, [], [{ pts: [[2, 6], [5, 6], [2, 8]], fill: FILL }, { pts: [[5, 4], [8, 4], [5, 6]], fill: FILL2 }], 26)), ms: 2200 },
+          { say: 'The triangle moved, but its size and shape did not change.', fig: wrap(grid(1, [], [{ pts: [[2, 6], [5, 6], [2, 8]], fill: FILL }, { pts: [[5, 4], [8, 4], [5, 6]], fill: FILL2 }], 26)), ms: 2200 }
         ]),
         try: KIT.widget('shapes-grids', 5, 'Good. Try each kind and check that the shape never changes size.'),
         ways: [

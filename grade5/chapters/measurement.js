@@ -185,6 +185,12 @@
           { say: 'Mass is how heavy. A paper clip is about 1 g. A litre of water is about 1 kg.', fig: icons([['g', 'Gram', 'a paper clip'], ['kg', 'Kilogram', 'a litre of water']]) },
           { say: 'Capacity is how much a container holds: millilitres and litres.', fig: icons([['mL', 'Millilitre', 'about 20 drops'], ['L', 'Litre', 'a big water bottle']]), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will pick a unit for each thing. First, the length of a soccer field. It is many big steps long, so I use <b>metres</b>.', fig: icons([['m', 'Metre', 'one big step']]), ms: 2400 },
+          { say: 'Next, the mass of an apple. It is light, but much heavier than a paper clip. I use <b>grams</b>.', fig: icons([['g', 'Gram', 'a paper clip']]), ms: 2200 },
+          { say: 'Then, how much juice a glass holds. That is a small amount of capacity, so I use <b>millilitres</b>.', fig: icons([['mL', 'Millilitre', 'about 20 drops']]), ms: 2200 },
+          { say: 'Last, the trip from Toronto to Ottawa. That is a long trip, so I use <b>kilometres</b>.', fig: icons([['km', 'Kilometre', '12 minutes walking']]), ms: 2200 }
+        ]),
         try: K.widget('measurement', 0, 'Nice. Estimate first, then check how close you were.'),
         key: '<p>Small things: mm or cm. People and rooms: m. Trips: km. Heavy: g or kg. Holds: mL or L.</p>',
         mistake: '<p>Mixing up mass and capacity (measuring juice in grams). Ask "are we asking how heavy, or how much it holds?"</p>',
@@ -199,6 +205,12 @@
           { say: '3 metre sticks: 3 &times; 100 = <b>300 cm</b>.', fig: an(msticks(3, function () { return '100 cm'; })) },
           { say: 'The unit staircase shows the step for each pair of units.', fig: an(stair('length')) },
           { say: 'km to cm: two steps down. 3.6 &times; 1000 = 3600 m, then &times; 100 = 360 000 cm.', fig: an(stair('length', 'km', 'cm')), ms: 2600 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will change 5 m to centimetres.', fig: an(msticks(5, function () { return '100 cm'; })), ms: 1400 },
+          { say: 'A metre is the bigger unit. Bigger unit to smaller unit: I multiply.', fig: an(stair('length', 'm', 'cm')), ms: 1800 },
+          { say: 'm to cm is one step down: &times; 100.', fig: an(stair('length', 'm', 'cm')), ms: 1600 },
+          { say: '5 &times; 100 = <b>500 cm</b>. I check: centimetres are smaller, so I need more of them.', fig: an(msticks(5, function () { return '100 cm'; })), ms: 2400 }
         ]),
         try: K.widget('measurement', 1, 'Good. Try a decimal amount, like 2.5 L.'),
         ways: [
@@ -220,6 +232,12 @@
           { say: '135&deg; is a square corner and a half.', fig: an(angPic(135)) },
           { say: '180&deg; is a straight line.', fig: an(angPic(180)), ms: 2000 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will estimate the size of this angle.', fig: an(angPic(60)), ms: 1400 },
+          { say: 'I compare it to a square corner. It is smaller than 90&deg;.', fig: an(angPic(60, true)), ms: 1800 },
+          { say: 'It is more than half a square corner, so it is more than 45&deg;.', fig: an(angPic(60, true)), ms: 1800 },
+          { say: 'My estimate is about <b>60&deg;</b>. It is less than 90&deg;, so it is <b>acute</b>.', fig: an(angPic(60)), ms: 2200 }
+        ]),
         try: K.widget('measurement', 2, 'Nice. Before you move the slider, say whether the angle is less or more than 90°.'),
         key: '<p>Less than 90&deg;: <b>acute</b>. Exactly 90&deg;: <b>right</b>. Between 90&deg; and 180&deg;: <b>obtuse</b>.</p>',
         check: [P('me-angle', 1), P('me-angle', 1)] },
@@ -231,6 +249,12 @@
           { say: 'The other arm opens to here.', fig: an(protractor(120, null, false, true)) },
           { say: 'Count up from the 0 you started at: <b>120&deg;</b>, not 60&deg;.', fig: an(protractor(120, null, true, true)) },
           { say: 'Check: it is wider than a square corner, so it must be more than 90&deg;.', fig: an(angPic(120, true)), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will measure this angle. I centre the protractor on the vertex and put 0 on one arm.', fig: an(protractor(0, null, false, true)), ms: 2000 },
+          { say: 'The other arm opens to here. It crosses two numbers: 40 and 140.', fig: an(protractor(40, null, false, true)), ms: 1800 },
+          { say: 'I read the scale that starts at the 0 on my arm: <b>40&deg;</b>, not 140&deg;.', fig: an(protractor(40, null, true, true)), ms: 2000 },
+          { say: 'I check with my estimate: it is smaller than a square corner, so it must be less than 90&deg;.', fig: an(angPic(40, true)), ms: 2200 }
         ]),
         try: K.widget('measurement', 2, 'Good. Read the scale that starts at 0 on the flat arm.'),
         ways: [
@@ -251,6 +275,12 @@
           { say: 'Cut along the height and slide the triangle across.', fig: an(cutPara()) },
           { say: 'It becomes the rectangle: <b>9 &times; 4 = 36 cm&sup2;</b>.', fig: an(shape('rect', 9, 4)), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will find the area of a parallelogram with base 7 cm and height 5 cm.', fig: an(shape('para', 7, 5)), ms: 1800 },
+          { say: 'I cut along the height and slide the triangle across.', fig: an(cutPara()), ms: 1800 },
+          { say: 'It becomes a rectangle 7 cm by 5 cm.', fig: an(shape('rect', 7, 5)) },
+          { say: 'A = base &times; height = 7 &times; 5 = <b>35 cm&sup2;</b>.', fig: an(shape('rect', 7, 5)), ms: 2200 }
+        ]),
         try: K.widget('measurement', 3, 'Nice. Switch between rectangle and parallelogram. The area stays the same.'),
         ways: [
           { label: 'Count squares', html: '<p>Draw it on grid paper. The part sticking out on one side fills the gap on the other side. The squares match the rectangle.</p>' },
@@ -267,6 +297,11 @@
           { say: 'A copy turned upside down fits on top. Together they make a parallelogram.', fig: an(halfPara()) },
           { say: 'The parallelogram is 9 &times; 4 = 36 cm&sup2;. The triangle is half: <b>18 cm&sup2;</b>.', fig: an(shape('tri', 9, 4)), ms: 2400 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will find the area of a triangle with base 10 cm and height 6 cm.', fig: an(shape('tri', 10, 6)), ms: 1800 },
+          { say: 'Two copies of the triangle make a parallelogram. Its area is 10 &times; 6 = 60 cm&sup2;.', fig: an(halfPara()), ms: 2000 },
+          { say: 'The triangle is half of that. A = base &times; height &divide; 2 = 60 &divide; 2 = <b>30 cm&sup2;</b>.', fig: an(shape('tri', 10, 6)), ms: 2400 }
+        ]),
         try: K.widget('measurement', 3, 'Good. Choose triangle and compare it to the parallelogram with the same base and height.'),
         key: '<p><b>Triangle: A = base &times; height &divide; 2.</b></p>',
         mistake: '<p>Forgetting to halve. Ask "what shape do two of these make?"</p>',
@@ -279,6 +314,11 @@
         watch: K.watch([
           { say: 'A 4 by 3 rectangle. Count the squares inside: 12 cm&sup2;.', fig: an(areaVsPerim(4, 3)) },
           { say: 'Walk around the edge and count: 14 cm.', fig: an(areaVsPerim(4, 3)), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will find the area and the perimeter of a 5 by 2 rectangle.', fig: an(areaVsPerim(5, 2)), ms: 1600 },
+          { say: 'Area: I count the squares inside. 5 &times; 2 = <b>10 cm&sup2;</b>.', fig: an(areaVsPerim(5, 2)), ms: 1800 },
+          { say: 'Perimeter: I walk around the edge. 5 + 2 + 5 + 2 = <b>14 cm</b>.', fig: an(areaVsPerim(5, 2)), ms: 2200 }
         ]),
         try: { tool: 'geoboard', opts: {}, tasks: [
           { do: 'Make a rectangle with an area of <b>4 squares</b>. Tap pegs, then tap the first peg again.', goal: function (s) { return s.closed && s.area === 4 && s.perimeter != null; }, yes: 'Yes. Now look at its perimeter.' },
@@ -295,6 +335,12 @@
           { say: '12 by 2 has perimeter 28. 8 by 3 has 22.', fig: rects([[12, 2], [8, 3]]) },
           { say: '6 by 4 has the smallest: 20 cm. It is closest to a square.', fig: rects([[12, 2], [8, 3], [6, 4]]) },
           { say: 'A 36 m&sup2; garden: a 6 by 6 square needs only 24 m of fence.', fig: an(gardens()), ms: 2400 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will compare rectangles that each have an area of 18 cm&sup2;. First, 18 by 1. Its perimeter is 18 + 1 + 18 + 1 = 38 cm.', fig: rects([[18, 1]]), ms: 2400 },
+          { say: 'Next, 9 by 2. Its perimeter is 22 cm.', fig: rects([[18, 1], [9, 2]]) },
+          { say: 'Then 6 by 3. Its perimeter is 18 cm.', fig: rects([[18, 1], [9, 2], [6, 3]]) },
+          { say: 'Same area, different perimeters. 6 by 3 is closest to a square, so it has the smallest perimeter.', fig: rects([[18, 1], [9, 2], [6, 3]]), ms: 2400 }
         ]),
         try: K.widget('measurement', 4, 'Nice. Which rectangle uses the least fence?'),
         ways: [

@@ -54,6 +54,12 @@
           { say: 'Shade 3 parts.', act: shadeT(3) },
           { say: '3 of 8 equal parts: <b>3/8</b>. The 8 tells the size of each part. The 3 tells how many.', ms: 2400 }
         ] },
+        example: { tool: 'fractions', opts: { parts: 1, choices: [] }, steps: [
+          { say: 'My turn. I will show 2/5. Here is one whole strip.', ms: 1400 },
+          { say: 'The bottom number is 5, so I cut the strip into <b>5 equal parts</b>.', act: function (t) { return t.split(5); } },
+          { say: 'The top number is 2, so I shade 2 parts.', act: shadeT(2) },
+          { say: '2 of 5 equal parts: <b>2/5</b>. Bottom: how many equal parts. Top: how many I have.', ms: 2400 }
+        ] },
         try: { tool: 'fractions', opts: { parts: 1, choices: [2, 3, 4, 5, 6, 8, 10] }, tasks: [
           { do: 'Show <b>3/4</b>. Pick the number of parts, then tap parts to shade them.', goal: function (s) { return s[0].d === 4 && s[0].n === 3; }, yes: 'Yes. 3 of 4 equal parts.' },
           { do: 'Show <b>5/6</b>.', goal: function (s) { return s[0].d === 6 && s[0].n === 5; }, yes: 'Yes. 5 sixths.' },
@@ -70,6 +76,12 @@
           { say: 'Cut the same strip into 100 parts. 1/4 covers 25 of them.', fig: bars([{ n: 1, d: 4, label: '1/4' }, { n: 25, d: 100, label: '25/100' }], { mark: 0.25 }) },
           { say: '25 out of 100 is the decimal <b>0.25</b>.', fig: bars([{ n: 1, d: 4, label: '1/4' }, { n: 25, d: 100, label: '0.25' }], { mark: 0.25 }) },
           { say: '25 out of 100 is also <b>25%</b>. Three names, one amount.', fig: bars([{ n: 1, d: 4, label: '1/4' }, { n: 25, d: 100, label: '25%' }], { mark: 0.25 }), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will write 2/5 as a decimal and a percent.', fig: bars([{ n: 2, d: 5, label: '2/5' }]), ms: 1400 },
+          { say: 'Percent means out of 100, so I cut the same strip into 100 parts. 2/5 covers 40 of them.', fig: bars([{ n: 2, d: 5, label: '2/5' }, { n: 40, d: 100, label: '40/100' }], { mark: 0.4 }), ms: 2000 },
+          { say: '40 out of 100 is the decimal <b>0.40</b>, which is the same as 0.4.', fig: bars([{ n: 2, d: 5, label: '2/5' }, { n: 40, d: 100, label: '0.4' }], { mark: 0.4 }), ms: 1800 },
+          { say: '40 out of 100 is also <b>40%</b>. So 2/5 = 0.4 = 40%.', fig: bars([{ n: 2, d: 5, label: '2/5' }, { n: 40, d: 100, label: '40%' }], { mark: 0.4 }), ms: 2200 }
         ]),
         try: K.widget('fractions', 0, 'Nice. Try 10 parts and 100 parts. Those turn into decimals easily.'),
         ways: [
@@ -95,6 +107,12 @@
           { say: 'Shade the same length: 6 eighths.', act: shadeT(6, 1) },
           { say: 'Same length, so <b>3/4 = 6/8</b>. Top and bottom were both multiplied by 2.', ms: 2400 }
         ] },
+        example: { tool: 'fractions', opts: { wall: [5, 5] }, steps: [
+          { say: 'My turn. I will find a fraction equal to 2/5. First I shade 2/5 of the top strip.', act: shadeT(2, 0) },
+          { say: 'The bottom strip is the same size. I cut each fifth in two, so it has 10 parts.', act: function (t) { return t.split(10, 1); } },
+          { say: 'I shade the same length on the bottom: 4 tenths.', act: shadeT(4, 1) },
+          { say: 'Same length, so <b>2/5 = 4/10</b>. I multiplied the top and the bottom by the same number, 2.', ms: 2400 }
+        ] },
         try: { tool: 'fractions', opts: { wall: [3, 6, 12] }, tasks: [
           { do: 'The top strip shows <b>2/3</b>. Shade the same length on the sixths strip.', setup: function (t) { t.fast = true; t.shade(2, 0).then(function () { t.fast = false; }); },
             goal: function (s) { return s[1].n === 4; }, yes: 'Yes. 2/3 = 4/6.' },
@@ -110,6 +128,12 @@
           { say: '6 and 8 can both be divided by 2.', fig: bars([{ n: 6, d: 8, label: '6/8' }, { n: 3, d: 4, label: '?' }], { mark: 0.75 }) },
           { say: 'Join pairs of eighths into quarters: <b>6/8 = 3/4</b>.', fig: bars([{ n: 6, d: 8, label: '6/8' }, { n: 3, d: 4, label: '3/4' }], { mark: 0.75 }) },
           { say: '3 and 4 share no factor except 1, so 3/4 is in <b>simplest form</b>.', fig: bars([{ n: 3, d: 4, label: '3/4' }], { mark: 0.75 }), ms: 2200 }
+        ]),
+        example: K.watch([
+          { say: 'My turn. I will write 8/12 in simplest form.', fig: bars([{ n: 8, d: 12, label: '8/12' }], { mark: 2 / 3 }), ms: 1400 },
+          { say: '8 and 12 can both be divided by 2. 8 &divide; 2 = 4 and 12 &divide; 2 = 6, so 8/12 = 4/6.', fig: bars([{ n: 8, d: 12, label: '8/12' }, { n: 4, d: 6, label: '4/6' }], { mark: 2 / 3 }), ms: 2000 },
+          { say: '4 and 6 can both be divided by 2 again. So 4/6 = 2/3.', fig: bars([{ n: 4, d: 6, label: '4/6' }, { n: 2, d: 3, label: '2/3' }], { mark: 2 / 3 }), ms: 1800 },
+          { say: 'I check: 2 and 3 share no factor except 1. So <b>8/12 = 2/3</b> in simplest form.', fig: bars([{ n: 8, d: 12, label: '8/12' }, { n: 2, d: 3, label: '2/3' }], { mark: 2 / 3 }), ms: 2200 }
         ]),
         try: K.widget('fractions', 1, 'Good. Try multiplying by 1: the fraction stays exactly the same.'),
         ways: [
@@ -131,6 +155,12 @@
           { say: '3 more quarters. That is 11.', act: shadeT(3, 2) },
           { say: '2 wholes and 3 quarters: <b>11/4 = 2&nbsp;3/4</b>.', ms: 2400 }
         ] },
+        example: { tool: 'fractions', opts: { wall: [3, 3, 3] }, steps: [
+          { say: 'My turn. I will write 7/3 as a mixed number. I count 7 thirds. First I fill one whole: 3 thirds.', act: shadeT(3, 0) },
+          { say: 'Next I fill a second whole with 3 more thirds. That is 6.', act: shadeT(3, 1) },
+          { say: 'I need 1 more third. That makes 7.', act: shadeT(1, 2) },
+          { say: '2 wholes and 1 third: <b>7/3 = 2&nbsp;1/3</b>. I can also divide: 7 &divide; 3 = 2 R 1.', ms: 2400 }
+        ] },
         try: K.widget('fractions', 2, 'Nice. Watch the mixed number change each time a new whole fills up.'),
         ways: [
           { label: 'Divide', html: '<p>11 &divide; 4 = 2 remainder 3. The 2 is the wholes. The 3 is the quarters left: 2&nbsp;3/4.</p>' },
@@ -150,6 +180,13 @@
           { say: '5 pieces is more than 3, so <b>5/8 &gt; 3/8</b>.', ms: 1800 },
           { say: 'Now 1/3 and 1/5.', act: function (t) { var f = t.fast; t.fast = true; t.split(3, 0); t.split(5, 1); t.fast = f; return t.shade(1, 0).then(function () { return t.shade(1, 1); }); } },
           { say: 'One piece each, but thirds are bigger pieces. <b>1/3 &gt; 1/5</b>.', ms: 2200 }
+        ] },
+        example: { tool: 'fractions', opts: { wall: [3, 6] }, steps: [
+          { say: 'My turn. Which is greater: 2/3 or 2/6?', ms: 1400 },
+          { say: 'I shade 2 thirds on the top strip.', act: shadeT(2, 0) },
+          { say: 'I shade 2 sixths on the bottom strip.', act: shadeT(2, 1) },
+          { say: 'The tops are the same: 2 pieces each. But thirds are bigger pieces than sixths.', ms: 1800 },
+          { say: 'So <b>2/3 &gt; 2/6</b>. Same top: smaller bottom is bigger.', ms: 2200 }
         ] },
         try: { tool: 'fractions', opts: { wall: [4, 8] }, tasks: [
           { do: 'Shade <b>1/4</b> on top and <b>1/8</b> below. Which is bigger?', goal: function (s) { return s[0].n === 1 && s[1].n === 1; }, yes: 'Yes. A quarter is twice as big as an eighth, so 1/4 > 1/8.' },
@@ -194,6 +231,12 @@
           { say: 'Add 4 more eighths.', act: function (t) { return t.shade(7, 0, 260); } },
           { say: '7 pieces, and each is still an eighth: <b>3/8 + 4/8 = 7/8</b>.', ms: 2400 }
         ] },
+        example: { tool: 'fractions', opts: { parts: 5, choices: [] }, steps: [
+          { say: 'My turn. I will add 1/5 + 3/5. First I shade 1 fifth.', act: shadeT(1) },
+          { say: 'Next I add 3 more fifths.', act: function (t) { return t.shade(4, 0, 260); } },
+          { say: 'I count 4 pieces. Each piece is still a fifth.', ms: 1600 },
+          { say: 'So <b>1/5 + 3/5 = 4/5</b>. Add the tops. Keep the bottom.', ms: 2400 }
+        ] },
         try: { tool: 'fractions', opts: { parts: 6, choices: [] }, tasks: [
           { do: 'Shade <b>2/6</b>, then add <b>3/6</b>. What do you get?', goal: function (s) { return s[0].n === 5; }, yes: 'Yes. 2/6 + 3/6 = 5/6.' },
           { do: 'Start at <b>5/6</b> and take away <b>4/6</b>.', reset: false, goal: function (s) { return s[0].n === 1; }, yes: 'Yes. 5/6 − 4/6 = 1/6.' }
@@ -216,6 +259,12 @@
           { say: 'Three thirds fill one whole.', fig: bars([{ n: 3, d: 3, label: '3 &times; 1/3' }], { unit: 180, lw: 90, w: 520 }) },
           { say: 'Five thirds: <b>5/3 = 1&nbsp;2/3</b>.', fig: bars([{ n: 5, d: 3, label: '5 &times; 1/3' }], { unit: 180, lw: 90, w: 520 }), ms: 2200 }
         ]),
+        example: K.watch([
+          { say: 'My turn. I will work out 7 &times; 1/4. That means 7 pieces that are each one quarter.', fig: bars([{ n: 1, d: 4, label: '1/4' }], { unit: 180, lw: 90, w: 520 }), ms: 1800 },
+          { say: 'I put pieces together. 4 quarters fill one whole.', fig: bars([{ n: 4, d: 4, label: '4 &times; 1/4' }], { unit: 180, lw: 90, w: 520 }) },
+          { say: 'I add 3 more quarters. That is 7 quarters.', fig: bars([{ n: 7, d: 4, label: '7 &times; 1/4' }], { unit: 180, lw: 90, w: 520 }) },
+          { say: '<b>7 &times; 1/4 = 7/4 = 1&nbsp;3/4</b>. The whole number becomes the top.', fig: bars([{ n: 7, d: 4, label: '7 &times; 1/4' }], { unit: 180, lw: 90, w: 520 }), ms: 2200 }
+        ]),
         try: K.widget('fractions', 5, 'Nice. Keep the operation on "groups of" and change the whole number.'),
         key: '<p><b>5 &times; 1/3 = 5/3.</b> The whole number becomes the top.</p>',
         check: [P('fr-unit', 1), P('fr-unit', 1)] },
@@ -227,6 +276,12 @@
           { say: 'Cut each whole into quarters.', act: function (t) { return t.split(4, 0).then(function () { return t.split(4, 1); }).then(function () { return t.split(4, 2); }); } },
           { say: 'Count the quarters: 4, 8, 12.', act: function (t) { return t.shade(4, 0, 150).then(function () { return t.shade(4, 1, 150); }).then(function () { return t.shade(4, 2, 150); }); } },
           { say: '12 quarters fit in 3 wholes: <b>3 &divide; 1/4 = 12</b>.', ms: 2400 }
+        ] },
+        example: { tool: 'fractions', opts: { wall: [1, 1] }, steps: [
+          { say: 'My turn. I will work out 2 &divide; 1/5. That asks: how many fifths fit in 2 wholes?', ms: 1800 },
+          { say: 'I cut each whole into fifths.', act: function (t) { return t.split(5, 0).then(function () { return t.split(5, 1); }); } },
+          { say: 'I count the fifths: 5, then 10.', act: function (t) { return t.shade(5, 0, 150).then(function () { return t.shade(5, 1, 150); }); } },
+          { say: '10 fifths fit in 2 wholes: <b>2 &divide; 1/5 = 10</b>. That is 2 &times; 5. Dividing by a unit fraction gives a bigger number.', ms: 2600 }
         ] },
         try: { tool: 'fractions', opts: { wall: [3, 3] }, tasks: [
           { do: 'How many thirds fit in 2 wholes? Shade every third.', goal: function (s) { return s[0].n + s[1].n === 6; }, yes: 'Yes. 2 ÷ 1/3 = 6.' }
