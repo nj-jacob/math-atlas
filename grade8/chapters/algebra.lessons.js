@@ -11,6 +11,12 @@
           [F.tiles(3, 2), 'Go back one step from figure 1: 5 − 3 = 2. The 2 orange tiles are the initial value.'],
           [T(['t = 3n + 2']), 'Rate times figure number, plus the initial value.', 2400]
         ]),
+        example: K.film([
+          [F.tiles(4, 1), 'My turn. I will find the rule for this tile pattern. First I look at what changes: each figure adds 4 purple tiles. The rate is 4.'],
+          [F.tiles(4, 1), 'Next I go back one step from figure 1: 5 − 4 = 1. The 1 orange tile is the initial value.'],
+          [T(['t = 4n + 1']), 'So the rule is t = 4n + 1: rate times figure number, plus the initial value.'],
+          [T(['figure 3: 4 × 3 + 1 = 13 ✓']), 'I check with figure 3: 4 × 3 + 1 = 13 tiles, which matches. <b>Rate = change each step. Initial value = figure 0.</b>', 2800]
+        ]),
         try: K.reuse(C, 0, { tasks: [
           { do: 'Build the pattern <b>t = 2n + 5</b>.', goal: function (g) { return g('pm') === 2 && g('pb') === 5; }, yes: 'Starts at 5, up 2 each figure.' },
           { do: 'Make a <b>shrinking</b> pattern that starts at <b>20</b> and drops <b>4</b> each figure.', goal: function (g) { return g('pm') === -4 && g('pb') === 20; }, yes: 't = −4n + 20. The line slopes down.' }] }),
@@ -23,6 +29,12 @@
           [F.graph([{ m: 2, b: 1 }]), 't = 2n + 1: starts at 1, up 2 each step.'],
           [F.graph([{ m: 2, b: 1 }, { m: 4, b: 1 }]), 't = 4n + 1: same start, steeper.'],
           [F.graph([{ m: 3, b: 2 }, { m: -4, b: 30 }]), 't = −4n + 30 starts high and slopes down. Where they cross, the terms are equal.', 2800]
+        ]),
+        example: K.film([
+          [F.graph([{ m: 2, b: 11 }]), 'My turn. I will graph t = 2n + 11. It starts at 11 and goes up 2 each step.'],
+          [F.graph([{ m: 2, b: 11 }, { m: 5, b: 2 }]), 'Next I add t = 5n + 2. It starts lower, at 2, but it is steeper: up 5 each step.'],
+          [T(['n = 3:', '5 × 3 + 2 = 17', '2 × 3 + 11 = 17']), 'Then I look for where they cross. I try n = 3: both patterns give 17.'],
+          [F.graph([{ m: 2, b: 11 }, { m: 5, b: 2 }]), 'After figure 3 the steeper pattern is ahead. <b>Rate is the steepness. Initial value is where it starts.</b>', 2800]
         ]),
         ways: [{ label: 'Read the table', html: '<p>In the table, the rate is the jump between neighbouring terms. On the graph, it is how far each point rises per step right.</p>' }],
         key: '<p>Rate → <b>steepness</b>. Initial value → <b>where it starts</b>.</p>',
@@ -37,6 +49,12 @@
           [T(['t = 3 × 50 + 2']), 'Replace n with 50.'],
           [T(['= 150 + 2 = 152']), 'Multiply first, then add: 152 tiles.', 2400]
         ]),
+        example: K.film([
+          [T(['t = 5n − 3', 'term 40?']), 'My turn. I will find term 40 of t = 5n − 3.'],
+          [T(['t = 5 × 40 − 3']), 'First I replace n with 40.'],
+          [T(['= 200 − 3 = 197']), 'Next I multiply, then subtract: 200 − 3 = 197.'],
+          [T(['term 40 = 197']), 'So term 40 is <b>197</b>. Replace n, multiply, then add or subtract.', 2400]
+        ]),
         key: '<p>Replace <b>n</b>, multiply, then add.</p>',
         mistake: '<p>Adding before multiplying: 3 × (50 + 2). Follow BEDMAS.</p>',
         check: [K.chk(C, 'al-rule', 1), K.num('For t = 4n + 3, what is term 25?', 103, 'Replace n with 25.', '4 × 25 + 3 = 103.')] },
@@ -46,6 +64,13 @@
           [T(['3n + 2 = 62']), 'Which figure has 62 tiles?'],
           [T(['3n = 60']), 'Take 2 from both sides.'],
           [T(['n = 20']), 'Divide by 3. Figure 20.', 2400]
+        ]),
+        example: K.film([
+          [T(['t = 4n + 7', 'which figure has 75?']), 'My turn. For t = 4n + 7, I will find which figure has 75 tiles.'],
+          [T(['4n + 7 = 75']), 'First I set the rule equal to 75.'],
+          [T(['4n = 68']), 'Next I undo the adding: I take 7 from both sides. 4n = 68.'],
+          [T(['n = 17']), 'Then I undo the multiplying: I divide both sides by 4. n = 17.'],
+          [T(['4 × 17 + 7 = 75 ✓']), 'I check: 4 × 17 + 7 = 75. It is <b>figure 17</b>. Set rule = number, then solve.', 2600]
         ]),
         ways: [{ label: 'Undo the steps', html: '<p>The rule says: times 3, then add 2. To go backwards: subtract 2, then divide by 3. (62 − 2) ÷ 3 = 20.</p>' }],
         key: '<p>Set rule = number, then <b>solve</b>.</p>',
@@ -60,6 +85,12 @@
           { say: 'Add 2x − 7: two more x tiles and seven negative units.', act: function (t) { return addN(t, 'x', 1, 2).then(function () { return addN(t, 'one', -1, 7); }); }, ms: 900 },
           { say: 'Cancel the zero pairs. 5x and two negative units are left: 5x − 2.', act: function (t) { return t.zeroPairs(); }, ms: 1800 }
         ] },
+        example: K.film([
+          [F.algTiles([{ x: 2, u: -3 }, { gap: '+' }, { x: 1, u: 5 }], 'Algebra tiles for 2x minus 3, plus x plus 5.'), 'My turn. I will simplify (2x − 3) + (x + 5). I build both with tiles.'],
+          [F.algTiles([{ x: 3 }, { gap: '+' }, { u: 5 }, { u: -3 }], 'Three x tiles, then 5 positive and 3 negative unit tiles.'), 'First I group like terms: the x tiles together, and the unit tiles together.'],
+          [F.algTiles([{ x: 3 }, { gap: '+' }, { u: 2 }], 'Three x tiles and 2 positive unit tiles.'), 'Next I cancel the zero pairs. 3 positive and 3 negative units make 0, so 2 positive units are left.'],
+          [T(['(2x − 3) + (x + 5)', '= 3x + 2']), 'So the answer is <b>3x + 2</b>. Combine only like terms: x with x, numbers with numbers.', 2600]
+        ]),
         try: { tool: 'tiles', opts: {}, tasks: [
           { do: 'Build <b>(3x + 5) + (2x − 7)</b> with the tiles.', goal: function (s) { return s.x === 5 && s.one === -2 && s.n === 17; }, yes: '5 x tiles, 5 positive and 7 negative units.' },
           { do: 'Now tap <b>Remove zero pairs</b>. What is left?', reset: false, goal: function (s) { return s.x === 5 && s.one === -2 && s.n === 7; }, yes: '5x − 2.' }] },
@@ -73,6 +104,13 @@
           [T(['4x + x = 5x']), 'x terms: 4x + 1x = 5x.'],
           [T(['−6 + 2 = −4']), 'Numbers: −6 + 2 = −4.'],
           [T(['5x − 4']), 'Put them together: 5x − 4.', 2400]
+        ]),
+        example: K.film([
+          [T(['3x − 8 − 5x + 1']), 'My turn. I will simplify 3x − 8 − 5x + 1.'],
+          [T(['x terms: +3x, −5x', 'numbers: −8, +1']), 'First I sort the terms. Each one keeps the sign in front of it.'],
+          [T(['3x − 5x = −2x']), 'Next the x terms: 3x − 5x = −2x.'],
+          [T(['−8 + 1 = −7']), 'Then the numbers: −8 + 1 = −7.'],
+          [T(['−2x − 7']), 'Together that makes <b>−2x − 7</b>. Each term keeps the sign in front of it.', 2400]
         ]),
         ways: [{ label: 'Tiles', html: '<p>Build it with tiles, then remove zero pairs.</p>', tool: 'tiles', opts: { start: { x: 5, one: -4 } } },
           { label: 'Sort into columns', html: '<p>Make two columns: x terms and numbers. Copy each term with its sign into its column, then add each column.</p>' }],
@@ -88,6 +126,12 @@
           [T(['2.5(−2) − 4']), 'Put −2 in brackets where x was.'],
           [T(['−5 − 4 = −9']), 'Multiply, then subtract: −9.', 2400]
         ]),
+        example: K.film([
+          [T(['4 − 1.5x, when x = −6']), 'My turn. I will evaluate 4 − 1.5x when x = −6.'],
+          [T(['4 − 1.5(−6)']), 'First I put −6 in brackets where x was.'],
+          [T(['1.5(−6) = −9', '4 − (−9)']), 'Next I multiply: 1.5 × (−6) = −9.'],
+          [T(['4 + 9 = 13']), 'Then I subtract: 4 − (−9) = 4 + 9 = <b>13</b>. Value in brackets, then BEDMAS.', 2600]
+        ]),
         key: '<p>Value in <b>brackets</b>, then BEDMAS.</p>',
         mistake: '<p>Writing 2.5−2 (subtracting) instead of 2.5 × (−2). Brackets show it is a product.</p>',
         check: [K.chk(C, 'al-eval', 1), K.chk(C, 'al-eval', 2)] },
@@ -98,6 +142,13 @@
           [T(['3(−2)² − 2(1.5)']), 'Substitute with brackets.'],
           [T(['(−2)² = 4', '3 × 4 − 3']), 'Exponent first: (−2)² = 4.'],
           [T(['12 − 3 = 9']), 'Answer: 9.', 2400]
+        ]),
+        example: K.film([
+          [T(['2m² + 3n', 'm = −3, n = −2']), 'My turn. I will evaluate 2m² + 3n when m = −3 and n = −2.'],
+          [T(['2(−3)² + 3(−2)']), 'First I substitute, with brackets around each value.'],
+          [T(['(−3)² = 9', '2 × 9 + 3(−2)']), 'Exponent first: (−3)² = (−3) × (−3) = 9. A negative squared is positive.'],
+          [T(['18 + (−6) = 12']), 'Next I multiply: 2 × 9 = 18 and 3 × (−2) = −6. Then I add: 12.'],
+          [T(['2m² + 3n = 12']), 'So the value is <b>12</b>. Remember: (−a)² is positive.', 2400]
         ]),
         ways: [{ label: 'Write it out', html: '<p>(−2)² means (−2) × (−2). Two negatives make a positive: 4.</p>' }],
         key: '<p>(−a)² is <b>positive</b>.</p>',
@@ -111,6 +162,12 @@
           [F.balance('3x + 4', '19'), '3x + 4 = 19. Both sides balance.'],
           [F.balance('3x', '15'), 'Take 4 from both sides: 3x = 15.'],
           [F.balance('x', '5'), 'Divide both sides by 3: x = 5. Check: 3 × 5 + 4 = 19.', 2600]
+        ]),
+        example: K.film([
+          [F.balance('5x − 6', '24'), 'My turn. I will solve 5x − 6 = 24. Both sides balance.'],
+          [F.balance('5x', '30'), 'First I undo the subtracting: I add 6 to both sides. 5x = 30.'],
+          [F.balance('x', '6'), 'Next I undo the multiplying: I divide both sides by 5. x = 6.'],
+          [T(['5 × 6 − 6 = 24 ✓']), 'I check: 5 × 6 − 6 = 24. It balances. <b>Same to both sides, and undo in reverse order.</b>', 2600]
         ]),
         try: K.reuse(C, 1, { tasks: [
           { do: 'Step through <b>3x + 4 = 19</b> to the end.', goal: function (g) { return g('eqs') === 0 && /Step 3 of 3/.test(g.text('#eqout')); }, yes: 'x = 5.' },
@@ -126,6 +183,13 @@
           [F.balance('3x', '12'), 'Add 3 to both sides.'],
           [F.balance('x', '4'), 'Divide by 3: x = 4. Check: 17 = 17.', 2600]
         ]),
+        example: K.film([
+          [F.balance('6x + 5', '2x + 25'), 'My turn. I will solve 6x + 5 = 2x + 25. There is x on both sides.'],
+          [F.balance('4x + 5', '25'), 'First I gather the x terms on one side: I take 2x from both sides.'],
+          [F.balance('4x', '20'), 'Next I take 5 from both sides: 4x = 20.'],
+          [F.balance('x', '5'), 'Then I divide both sides by 4: x = 5.'],
+          [T(['6(5) + 5 = 35', '2(5) + 25 = 35 ✓']), 'I check both sides: 35 = 35. <b>Gather x terms on one side, numbers on the other.</b>', 2600]
+        ]),
         ways: [{ label: 'Move the smaller x', html: '<p>Take away the smaller x term from both sides. Then the x term left over is positive.</p>' },
           { label: 'Check by substituting', html: '<p>Put your answer back into both sides. If the two sides match, you are right.</p>' }],
         key: '<p>Gather <b>x terms on one side</b>, numbers on the other.</p>',
@@ -138,6 +202,12 @@
         watch: K.film([
           [F.ineqLine('<', 5, -1, 11), 'x < 5: open circle at 5, arrow to the left.'],
           [F.ineqLine('>=', 2, -4, 8), 'x ≥ 2: filled circle at 2, arrow to the right.', 2600]
+        ]),
+        example: K.film([
+          [T(['x > −1']), 'My turn. I will graph x > −1.'],
+          [F.ineqLine('>', -1, -7, 5), 'First the circle. x cannot equal −1, so I draw an open circle at −1.'],
+          [F.ineqLine('>', -1, -7, 5), 'Next the direction. Greater than means bigger numbers, so I shade to the right.'],
+          [T(['x = 0: 0 > −1 ✓', 'x = −1: not included']), 'I check: 0 is shaded, and 0 > −1 is true. Open circle: <b>not included</b>. Filled: <b>included</b>.', 2600]
         ]),
         try: K.reuse(C, 2, { tasks: [
           { do: 'Graph <b>x ≥ −2</b>.', goal: function (g) { return g('iqo') === '>=' && g('iqk') === -2; }, yes: 'Filled circle at −2, shading right.' },
@@ -152,6 +222,12 @@
           [T(['−2x ≥ 8']), 'Take 1 from both sides.'],
           [T(['x ≤ −4']), 'Divide by −2 and flip ≥ to ≤.'],
           [F.ineqLine('<=', -4, -10, 2), 'Check x = −5: −2(−5) + 1 = 11 ≥ 9. ✓', 2600]
+        ]),
+        example: K.film([
+          [T(['−3x − 4 &lt; 11']), 'My turn. I will solve −3x − 4 &lt; 11.'],
+          [T(['−3x &lt; 15']), 'First I add 4 to both sides: −3x &lt; 15.'],
+          [T(['x > −5']), 'Next I divide both sides by −3. I am dividing by a negative, so I flip &lt; to >. x > −5.'],
+          [F.ineqLine('>', -5, -11, 1), 'I check with x = 0: −3(0) − 4 = −4, and −4 &lt; 11. <b>Multiply or divide by a negative: flip the sign.</b>', 2800]
         ]),
         ways: [{ label: 'Why it flips', html: '<p>2 &lt; 5. Multiply both by −1: −2 and −5. Now −2 is the bigger one, so −2 &gt; −5. Multiplying by a negative reverses the order.</p>' }],
         key: '<p>× or ÷ by a negative: <b>flip the sign</b>.</p>',

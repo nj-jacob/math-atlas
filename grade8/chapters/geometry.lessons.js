@@ -21,6 +21,12 @@
           [line(130, '50' + D), 'Together they make 180°, so x = 180 − 130 = 50°.'],
           [T(['around a point: 360°', '90 + 120 + x = 360 → x = 150']), 'All the way around: 360°.', 2600]
         ]),
+        example: K.film([
+          [line(115, 'x'), 'My turn. A straight line is split into 115° and x. I will find x.'],
+          [T(['115 + x = 180']), 'First I use the fact: angles on a straight line add to 180°.'],
+          [T(['x = 180 − 115 = 65']), 'Next I subtract: 180 − 115 = 65.'],
+          [line(115, '65' + D), 'So x = 65°. I check: 115 + 65 = 180. <b>Straight line: 180°. Around a point: 360°.</b>', 2600]
+        ]),
         key: '<p>Straight line: <b>180°</b>. Around a point: <b>360°</b>.</p>',
         mistake: '<p>Using 360° for a straight line. A straight line is half a turn.</p>',
         check: [K.chk(C, 'ge-angles', 1), K.chk(C, 'ge-angles', 1)] },
@@ -30,6 +36,12 @@
           [cross('x'), 'Two lines cross. The two angles across from each other are both 35°.'],
           [cross('145' + D), 'x sits beside 35° on a straight line: 180 − 35 = 145°.'],
           [T(['triangle: 50 + 60 + x = 180', 'x = 70°']), 'In a triangle, the three angles add to 180°.', 2600]
+        ]),
+        example: K.film([
+          [T(['triangle: 72°, 41°, x']), 'My turn. A triangle has angles of 72° and 41°. I will find the third angle, x.'],
+          [T(['72 + 41 + x = 180']), 'First I use the fact: the angles inside a triangle add to 180°.'],
+          [T(['72 + 41 = 113', 'x = 180 − 113 = 67°']), 'Next I add the two I know: 113. Then 180 − 113 = 67°.'],
+          [T(['72 + 41 + 67 = 180 ✓']), 'I check: 72 + 41 + 67 = 180. Across the X: <b>equal</b>. Inside a triangle: <b>180°</b>.', 2600]
         ]),
         key: '<p>Across the X: <b>equal</b>. Inside a triangle: <b>180°</b>.</p>',
         mistake: '<p>Calling the angle beside 35° equal to it. Beside is on a straight line (180°); across is equal.</p>',
@@ -43,6 +55,12 @@
           [F.parallel(60, 'deg', [1, 5]), 'Corresponding: an F shape. Equal.'],
           [F.parallel(60, 'deg', [3, 5]), 'Alternate: a Z shape. Equal.'],
           [F.parallel(60, 'deg', [4, 5]), 'Co-interior: a C shape. 60 + 120 = 180.', 2600]
+        ]),
+        example: K.film([
+          [F.parallel(75, 'deg'), 'My turn. Two parallel lines are cut by a line at 75°. I will name the angle pairs. First I notice there are only two sizes: 75° and 105°.'],
+          [F.parallel(75, 'deg', [1, 5]), 'I trace an F shape: corresponding angles. Both are 75°, so they are equal.'],
+          [F.parallel(75, 'deg', [3, 5]), 'Next I trace a Z shape: alternate angles. Equal again.'],
+          [F.parallel(75, 'deg', [4, 5]), 'Then a C shape: co-interior angles. 105 + 75 = 180. <b>F and Z: equal. C: add to 180°.</b>', 2800]
         ]),
         try: K.reuse(C, 0, { tasks: [
           { do: 'Show the <b>alternate (Z)</b> pair. Tilt the line. Do they stay equal?', goal: function (g) { return g('plp') === '3,5' && g('pla') !== 60; }, yes: 'Alternate angles stay equal at every tilt.' },
@@ -59,6 +77,12 @@
           [T(['∠5 = 70° (corresponding to ∠1)']), 'Angle 5 matches angle 1: F shape.'],
           [T(['∠8 = 180 − 70 = 110°', '(straight line with ∠5)']), 'Angle 8 sits on a straight line with angle 5.', 2600]
         ]),
+        example: K.film([
+          [F.parallel(55, 'num'), 'My turn. Angle 1 is 55°. I will find angle 7, and give a reason for each step.'],
+          [T(['∠3 = 55°', '(across the X from ∠1)']), 'First, angle 3 is across the X from angle 1, so it is also 55°.'],
+          [T(['∠7 = 55°', '(corresponding to ∠3)']), 'Next, angle 7 sits in the same spot at the lower crossing as angle 3 at the upper one. Corresponding angles, an F shape: 55°.'],
+          [T(['∠7 = 55°']), 'So angle 7 is <b>55°</b>. Every step: angle, value, reason.', 2400]
+        ]),
         key: '<p>Every step: <b>angle, value, reason</b>.</p>',
         mistake: '<p>Writing an answer with no reason. In Grade 8, the reason is part of the answer.</p>',
         check: [K.chk(C, 'ge-parallel', 3), K.chk(C, 'ge-parallel', 2)] }
@@ -70,6 +94,12 @@
           [F.polygon(4, true), 'A quadrilateral: 2 triangles. 2 × 180 = 360°.'],
           [F.polygon(5, true), 'A pentagon: 3 triangles. 540°.'],
           [F.polygon(6, true), 'A hexagon: 4 triangles. 720°.', 2600]
+        ]),
+        example: K.film([
+          [F.polygon(7, true), 'My turn. I will find the sum of the interior angles of a heptagon: 7 sides.'],
+          [F.polygon(7, true), 'First I split it into triangles from one corner. I count 5 triangles, which is 7 − 2.'],
+          [T(['5 × 180 = 900°']), 'Each triangle holds 180°. 5 × 180 = 900°.'],
+          [T(['(7 − 2) × 180 = 900°']), 'So the angles add to <b>900°</b>. Sum = (n − 2) × 180°.', 2400]
         ]),
         try: K.reuse(C, 1, { tasks: [
           { do: 'Find the polygon whose angles add to <b>1080°</b>.', goal: function (g) { return g('pgn') === 8; }, yes: 'An octagon: 6 triangles × 180 = 1080°.' },
@@ -84,6 +114,12 @@
           [T(['720 ÷ 6 = 120°']), 'Each interior angle: 120°.'],
           [T(['exterior: 360 ÷ 6 = 60°', '120 + 60 = 180']), 'Each exterior angle is 360 ÷ 6. Interior + exterior = 180°.', 2600]
         ]),
+        example: K.film([
+          [F.polygon(9, false), 'My turn. I will find each angle of a regular nonagon: 9 equal sides and 9 equal angles.'],
+          [T(['(9 − 2) × 180 = 1260°']), 'First the sum: (9 − 2) × 180 = 1260°.'],
+          [T(['1260 ÷ 9 = 140°']), 'Next I share it equally among the 9 angles: 140° each.'],
+          [T(['exterior: 360 ÷ 9 = 40°', '140 + 40 = 180 ✓']), 'I check with the exterior angle: 360 ÷ 9 = 40°, and 140 + 40 = 180. <b>Each interior = sum ÷ n. Each exterior = 360 ÷ n.</b>', 2800]
+        ]),
         ways: [{ label: 'Walk around it', html: '<p>Walk around any polygon and you turn a full circle, 360°. Each corner turn is an exterior angle.</p>' }],
         key: '<p>Each interior = <b>sum ÷ n</b>. Each exterior = <b>360 ÷ n</b>.</p>',
         mistake: '<p>Dividing 360 by n and calling it the interior angle. That is the exterior.</p>',
@@ -93,6 +129,12 @@
         watch: K.film([
           [F.tess(), 'Hexagons fit: 3 × 120 = 360. Pentagons leave a gap: 3 × 108 = 324.'],
           [T(['triangle 6 × 60 = 360 ✓', 'square 4 × 90 = 360 ✓', 'hexagon 3 × 120 = 360 ✓']), 'Only three regular polygons tessellate on their own.', 2800]
+        ]),
+        example: K.film([
+          [T(['octagon 135°, square 90°']), 'My turn. Can regular octagons and squares tessellate together? I will check one meeting point.'],
+          [T(['135 + 135 = 270']), 'First I try two octagons at a point: 135 + 135 = 270°. That leaves a gap.'],
+          [T(['360 − 270 = 90']), 'Next I find the gap: 360 − 270 = 90°. That is exactly one square corner.'],
+          [T(['135 + 135 + 90 = 360 ✓']), 'Two octagons and a square make 360°, so yes, they tessellate. <b>Angles at each meeting point must make 360°.</b>', 2800]
         ]),
         key: '<p>Angles at each meeting point must make <b>360°</b>.</p>',
         mistake: '<p>Thinking any shape can tessellate if you squeeze it. Check whether the angle divides 360 exactly.</p>',
@@ -106,6 +148,12 @@
           [tri(TRI.map(function (p) { return F.tx('tr', [-5, -4], p); })), 'Translate 5 left and 4 down: (x, y) → (x − 5, y − 4).'],
           [tri(TRI.map(function (p) { return F.tx('rx', 0, p); })), 'Reflect in the x-axis: (x, y) → (x, −y).'],
           [tri(TRI.map(function (p) { return F.tx('r90', 0, p); })), 'Rotate 90° counter-clockwise: (x, y) → (−y, x).', 2800]
+        ]),
+        example: K.film([
+          [tri(), 'My turn. I will translate triangle ABC 2 right and 3 down.'],
+          [T(['(x, y) → (x + 2, y − 3)']), 'First I write the rule. Right adds to x. Down takes away from y.'],
+          [T(['A(1, 1) → A′(3, −2)', 'B(4, 1) → B′(6, −2)', 'C(1, 3) → C′(3, 0)']), 'Next I apply the rule to each corner.'],
+          [tri(TRI.map(function (p) { return F.tx('tr', [2, -3], p); })), 'I plot the new triangle and check: same size and shape, just moved. <b>Translation, reflection, rotation: same size and shape.</b>', 2800]
         ]),
         try: K.reuse(C, 2, { tasks: [
           { do: 'Translate the triangle <b>3 right and 2 up</b>.', goal: function (g) { return g('tft') === 'tr' && g('tfa') === 3 && g('tfb') === 2; }, yes: 'A(1, 1) → A′(4, 3).' },
@@ -121,6 +169,12 @@
           [tri(TRI.map(function (p) { return F.tx('di', 2, p); })), 'Scale factor 2: (x, y) → (2x, 2y). Twice as big.'],
           [tri(TRI.map(function (p) { return F.tx('di', 0.5, p); })), 'Scale factor 0.5: half the size.', 2600]
         ]),
+        example: K.film([
+          [tri(), 'My turn. I will dilate triangle ABC by a scale factor of 1.5 about the origin.'],
+          [T(['(x, y) → (1.5x, 1.5y)']), 'First I write the rule: multiply both coordinates by 1.5.'],
+          [T(['A(1, 1) → A′(1.5, 1.5)', 'B(4, 1) → B′(6, 1.5)', 'C(1, 3) → C′(1.5, 4.5)']), 'Next I apply the rule to each corner.'],
+          [tri(TRI.map(function (p) { return F.tx('di', 1.5, p); })), 'The new triangle has the same shape, and each side is 1.5 times as long. <b>Dilation by k: (x, y) → (kx, ky).</b>', 2800]
+        ]),
         try: K.reuse(C, 2, { tasks: [
           { do: 'Make a dilation that <b>doubles</b> the triangle.', goal: function (g) { return g('tft') === 'di' && /Dilation by 2 about/.test(g.text('#tfout')); }, yes: 'A(1, 1) → A′(2, 2).' }] }),
         key: '<p>Dilation by k: <b>(x, y) → (kx, ky)</b>.</p>',
@@ -135,6 +189,12 @@
           [T(['8 × 50 = 400 cm = 4 m', '6 × 50 = 300 cm = 3 m']), 'Multiply each length by 50.'],
           [T(['real room: 4 m by 3 m']), 'Change to metres to make sense of it.', 2600]
         ]),
+        example: K.film([
+          [F.plan(5, 3, 200), 'My turn. A garden is 5 cm by 3 cm on a plan with a scale of 1 : 200. I will find its real size.'],
+          [T(['1 cm on the plan', '= 200 cm in real life']), 'First I read the scale: every 1 cm on the plan is 200 cm in real life.'],
+          [T(['5 × 200 = 1000 cm = 10 m', '3 × 200 = 600 cm = 6 m']), 'Next I multiply each length by 200, then change centimetres to metres.'],
+          [T(['real garden: 10 m by 6 m']), 'So the garden is <b>10 m by 6 m</b>. Real = drawing × scale.', 2600]
+        ]),
         key: '<p>Real = <b>drawing × scale</b>.</p>',
         mistake: '<p>Forgetting to change cm to m at the end, giving a room 400 m long.</p>',
         check: [K.chk(C, 'ge-scale', 1), K.chk(C, 'ge-scale', 2)] },
@@ -144,6 +204,12 @@
           [T(['plan: 8 cm × 6 cm = 48 cm²']), 'On the plan: 48 cm².'],
           [T(['real: 4 m × 3 m = 12 m²']), 'In real life: 12 m².'],
           [T(['lengths × 50', 'area × 50² = × 2500']), 'Lengths grew 50 times; area grew 2500 times.', 2600]
+        ]),
+        example: K.film([
+          [T(['plan: 5 cm × 3 cm = 15 cm²']), 'My turn. The garden plan is 5 cm by 3 cm, at 1 : 200. I will compare the areas. On the plan: 15 cm².'],
+          [T(['real: 10 m × 6 m = 60 m²']), 'In real life the garden is 10 m by 6 m: 60 m².'],
+          [T(['lengths × 200', 'area × 200² = × 40 000']), 'Each length grew 200 times, so the area grew 200 × 200 = 40 000 times.'],
+          [T(['15 × 40 000 = 600 000 cm²', '= 60 m² ✓']), 'I check: 15 cm² × 40 000 = 600 000 cm², which is 60 m². <b>Lengths × k means area × k².</b>', 2800]
         ]),
         ways: [{ label: 'Tiles', html: '<p>A 1 by 1 square doubled becomes 2 by 2. It holds 4 of the original squares, not 2.</p>' },
           { label: 'Views', html: '<p>Builders also draw the front, side and top views of an object.</p><div class="fig">' + F.views() + '</div>' }],

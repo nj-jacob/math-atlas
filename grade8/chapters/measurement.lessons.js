@@ -14,6 +14,12 @@
           [F.rtri(4, 3, 'leg', 'leg', 'hypotenuse', 'c'), 'The side across from the right angle is the hypotenuse, c.'],
           [F.rtri(4, 3, 'a', 'b', 'c', 'c'), 'We call the legs a and b. The hypotenuse is always c, and it is always the longest.', 2200]
         ]),
+        example: K.film([
+          [F.rtri(15, 8, '15 cm', '8 cm', '17 cm', ''), 'My turn. This right triangle has sides of 8 cm, 15 cm and 17 cm. I will name each side.'],
+          [F.rtri(15, 8, 'leg', 'leg', '17 cm', ''), 'First I find the square corner. The 15 cm and 8 cm sides meet there, so they are the legs.'],
+          [F.rtri(15, 8, 'a = 15 cm', 'b = 8 cm', 'c = 17 cm', 'c'), 'The side across from the square corner is the hypotenuse: c = 17 cm.'],
+          [txt(['17 > 15 and 17 > 8 ✓']), 'I check: 17 cm is the longest side. <b>The hypotenuse is across from the right angle, and it is always the longest.</b>', 2600]
+        ]),
         key: '<p>The <b>hypotenuse</b> is across from the right angle and is always the longest side.</p>',
         mistake: '<p>Calling the longest-looking side on the page the hypotenuse when the triangle is turned. Ask: "Which side does not touch the square corner?"</p>',
         check: [K.mc('A right triangle has sides 9 cm, 12 cm and 15 cm. Which is the hypotenuse?', '15 cm', ['9 cm', '12 cm'], 'The hypotenuse is the longest side.', '15 cm is the longest side, so it is the hypotenuse.'),
@@ -26,6 +32,12 @@
           [F.psq(3, 4), '9 + 16 = 25. The big square on the hypotenuse holds 25. So the hypotenuse is 5.', 2400],
           [F.psq(5, 12), 'Legs of 5 and 12: 25 + 144 = 169. The hypotenuse is √169 = 13.', 2400],
           [F.psq(2, 6), 'It works for every right triangle: 4 + 36 = 40.', 2000]
+        ]),
+        example: K.film([
+          [F.psq(9, 12), 'My turn. A right triangle has legs of 9 and 12. I will use the squares on its sides to find the hypotenuse.'],
+          [F.psq(9, 12), 'First I find the square on each leg: 9 × 9 = 81 and 12 × 12 = 144.'],
+          [txt(['81 + 144 = 225']), 'Next I add them: 225. That is the area of the square on the hypotenuse.'],
+          [txt(['c² = 225', 'c = √225 = 15']), 'The side of that square is √225 = 15. <b>a² + b² = c²: the squares on the legs add up to the square on the hypotenuse.</b>', 2800]
         ]),
         try: K.tap({ groups: [{ n: 9, cols: 3, label: 'a² (leg 3)', col: 'var(--teal2)' }, { n: 16, cols: 4, label: 'b² (leg 4)', col: 'var(--coral)' }, { n: 25, cols: 5, label: 'c² (hypotenuse 5)', col: 'var(--sb)' }],
           tasks: [
@@ -50,6 +62,13 @@
           [txt(['64 + 36 = 100', 'c² = 100']), 'Step 2: add. c² = 100.'],
           [txt(['c = √100', 'c = 10 cm']), 'Step 3: take the square root. c = 10 cm.', 2200]
         ]),
+        example: K.film([
+          [F.rtri(16, 12, '16 cm', '12 cm', 'c = ?', 'c'), 'My turn. A right triangle has legs of 16 cm and 12 cm. I will find the hypotenuse, c.'],
+          [txt(['16² = 256', '12² = 144']), 'Step 1: I square each leg. 256 and 144.'],
+          [txt(['256 + 144 = 400', 'c² = 400']), 'Step 2: I add. c² = 400.'],
+          [txt(['c = √400', 'c = 20 cm']), 'Step 3: I take the square root. c = 20 cm.'],
+          [txt(['20 > 16 and 20 > 12 ✓']), 'I check: the hypotenuse is the longest side. <b>Square, add, square root.</b>', 2400]
+        ]),
         try: K.lab({ ctrls: [{ id: 'a', label: 'Leg a', min: 1, max: 15, value: 3 }, { id: 'b', label: 'Leg b', min: 1, max: 15, value: 3 }],
           draw: function (v) { var c2 = v.a * v.a + v.b * v.b, c = Math.sqrt(c2); return { fig: F.rtri(v.a, v.b, v.a, v.b, 'c', 'c'), out: v.a + '² + ' + v.b + '² = ' + c2 + ', so c = √' + c2 + (c % 1 ? ' ≈ ' + Math.round(c * 100) / 100 : ' = <b>' + c + '</b>') }; },
           tasks: [{ do: 'Make the hypotenuse exactly <b>5</b>.', goal: function (v) { return v.a * v.a + v.b * v.b === 25; }, yes: '3² + 4² = 25. c = 5.' },
@@ -68,6 +87,13 @@
           [txt(['5² = 25', '1.4² = 1.96']), 'The ladder is the hypotenuse. Square both lengths.'],
           [txt(['25 − 1.96 = 23.04', 'h² = 23.04']), 'Subtract, because we want a leg.'],
           [txt(['h = √23.04', 'h = 4.8 m']), 'Square root: the ladder reaches 4.8 m up the wall.', 2200]
+        ]),
+        example: K.film([
+          [F.rtri(2.4, 0.7, '2.4 m', 'h = ?', '2.5 m', 'b'), 'My turn. A ramp is 2.5 m long and covers 2.4 m along the ground. I will find how high it rises.'],
+          [txt(['2.5² = 6.25', '2.4² = 5.76']), 'The ramp is the hypotenuse, across from the right angle. First I square both lengths.'],
+          [txt(['6.25 − 5.76 = 0.49', 'h² = 0.49']), 'I want a leg, so I subtract: 0.49.'],
+          [txt(['h = √0.49', 'h = 0.7 m']), 'Then I take the square root: the ramp rises 0.7 m.'],
+          [txt(['0.7 &lt; 2.5 ✓']), 'I check: the leg is shorter than the hypotenuse. <b>For a leg: c² − b², then square root.</b>', 2400]
         ]),
         try: K.lab({ ctrls: [{ id: 'c', label: 'Hypotenuse c', min: 2, max: 20, value: 10 }, { id: 'b', label: 'Leg b', min: 1, max: 19, value: 6 }],
           draw: function (v) { if (v.b >= v.c) return { fig: '', out: '<b>Not possible.</b> A leg must be shorter than the hypotenuse.' }; var a2 = v.c * v.c - v.b * v.b, a = Math.sqrt(a2); return { fig: F.rtri(a, v.b, 'a = ?', v.b, v.c, 'a'), out: v.c + '² − ' + v.b + '² = ' + a2 + ', so a = √' + a2 + (a % 1 ? ' ≈ ' + Math.round(a * 100) / 100 : ' = <b>' + a + '</b>') }; },
@@ -88,6 +114,12 @@
           [txt(['7, 24, 25', '49 + 576 = 625', '25² = 625']), 'Sides 7, 24 and 25: 49 + 576 = 625, and 25² is 625. They match: a right triangle.'],
           [txt(['6, 9, 11', '36 + 81 = 117', '11² = 121']), 'Sides 6, 9 and 11: 117 is not 121. No right angle.', 2200]
         ]),
+        example: K.film([
+          [txt(['sides: 9, 40, 41']), 'My turn. A triangle has sides of 9, 40 and 41. I will test if it has a right angle.'],
+          [txt(['longest: 41 → c']), 'First I find the longest side. 41 must be c.'],
+          [txt(['9² + 40² = 81 + 1600', '= 1681']), 'Next I square the two shorter sides and add: 81 + 1600 = 1681.'],
+          [txt(['41² = 1681 ✓']), 'Then I square the longest: 41² = 1681. They match, so it is a <b>right triangle</b>. If a² + b² = c², there is a right angle.', 2800]
+        ]),
         key: '<p>If <b>a' + SQ + ' + b' + SQ + ' = c' + SQ + '</b> with c the longest side, there is a right angle.</p>',
         mistake: '<p>Using the wrong side as c. The longest side must go on its own.</p>',
         check: [function () { var t = R.pick([[3, 4, 5], [5, 12, 13], [8, 15, 17], [6, 8, 10]]), ok = R.int(0, 1), s = ok ? t : [t[0], t[1], t[2] + 1];
@@ -99,6 +131,12 @@
           [F.rtri(6, 3, '6 cm', '3 cm', 'c = ?', 'c'), 'Legs of 6 cm and 3 cm.'],
           [txt(['36 + 9 = 45', 'c = √45 ≈ 6.7 cm']), '36 + 9 = 45. √45 is about 6.7.'],
           [txt(['6 < 6.7 < 9']), 'Check: longer than 6, shorter than 6 + 3 = 9. It makes sense.', 2200]
+        ]),
+        example: K.film([
+          [F.rtri(7, 5, '7 cm', '5 cm', 'c = ?', 'c'), 'My turn. A right triangle has legs of 7 cm and 5 cm. I will find the hypotenuse.'],
+          [txt(['49 + 25 = 74', 'c² = 74']), 'I square and add: 49 + 25 = 74.'],
+          [txt(['c = √74 ≈ 8.6 cm']), '74 is not a perfect square. √74 is about 8.6. I round only at the end: c ≈ 8.6 cm.'],
+          [txt(['7 &lt; 8.6 &lt; 12 ✓']), 'I check: longer than each leg, and shorter than 7 + 5 = 12. <b>Round at the end, then check.</b>', 2400]
         ]),
         key: '<p>Round at the <b>end</b>, then check: longer than each leg, shorter than both added.</p>',
         mistake: '<p>Rounding the squares before adding. Keep every number until the last step.</p>',
@@ -113,6 +151,12 @@
           [F.circW(5), 'The diameter goes straight across: 2 × 5 = 10 cm.'],
           [F.circW(5), 'Unroll the edge and it is a bit more than 3 diameters long. That number is π, about 3.14.', 2400]
         ]),
+        example: K.film([
+          [F.circW(12), 'My turn. A plate has a radius of 12 cm. I will find its diameter, then its circumference.'],
+          [txt(['d = 2 × 12 = 24 cm']), 'First the diameter: straight across is 2 radii. 2 × 12 = 24 cm.'],
+          [txt(['C is a bit more than', '3 × 24 = 72 cm']), 'Next the edge. The circumference is a bit more than 3 diameters, so a bit more than 72 cm.'],
+          [txt(['C = π × 24 ≈ 75.4 cm']), 'Using π: π × 24 ≈ 75.4 cm. Just over 72, as I expected. <b>d = 2r, and C = πd.</b>', 2600]
+        ]),
         key: '<p><b>d = 2r</b>. Circumference <b>C = πd</b>, a bit more than 3 diameters.</p>',
         mistake: '<p>Mixing up radius and diameter. Ask: "Does this length go all the way across, or only to the centre?"</p>',
         check: [function () { var r = R.int(3, 25); return { q: 'A circle has a radius of ' + r + ' cm. What is its diameter?', type: 'num', answer: 2 * r, unit: 'cm', hint: 'The diameter is 2 radii.', explain: '2 × ' + r + ' = ' + 2 * r + ' cm.' }; },
@@ -124,6 +168,12 @@
           [F.circW(30), 'A bike wheel has a diameter of 60 cm.'],
           [txt(['C = π × 60', 'C ≈ 188.5 cm']), 'One turn rolls one circumference: π × 60 ≈ 188.5 cm.'],
           [txt(['100 turns', '≈ 18 850 cm ≈ 188.5 m']), 'In 100 turns the bike rolls about 188.5 m.', 2200]
+        ]),
+        example: K.film([
+          [F.circW(45), 'My turn. A hula hoop has a radius of 45 cm. I will find its circumference.'],
+          [txt(['C = 2πr']), 'I am given the radius, so I use C = 2πr.'],
+          [txt(['C = 2 × π × 45', '= π × 90 ≈ 282.7 cm']), 'I multiply: 2 × 45 = 90, and π × 90 ≈ 282.7 cm.'],
+          [txt(['about 3 × 90 = 270 ✓']), 'I check: it is a bit more than 3 diameters, 270 cm. <b>C = πd = 2πr.</b>', 2400]
         ]),
         try: K.lab({ ctrls: [{ id: 'r', label: 'Radius', min: 1, max: 30, value: 2, fmt: function (x) { return x + ' cm'; } }],
           draw: function (v) { return { fig: F.circW(v.r), out: 'C = 2 × π × ' + v.r + ' ≈ <b>' + F.f1(2 * Math.PI * v.r) + ' cm</b>' }; },
@@ -139,6 +189,13 @@
           [F.slices(), 'Cut a circle into thin slices and lay them side by side.'],
           [F.slices(), 'The shape is almost a rectangle: about πr long and r tall.'],
           [F.slices(), 'So the area is about πr × r = πr².', 2200]
+        ]),
+        example: K.film([
+          [F.circW(15), 'My turn. A pizza has a radius of 15 cm. I will find its area.'],
+          [txt(['A = πr²']), 'I use A = πr². The radius is squared first.'],
+          [txt(['15² = 225']), 'First I square the radius: 15 × 15 = 225.'],
+          [txt(['A = π × 225 ≈ 706.9 cm²']), 'Next I multiply by π: about 706.9 cm².'],
+          [txt(['3 × 225 = 675 ✓']), 'I check: a bit more than 3 × 225 = 675. <b>Square the radius, then multiply by π.</b>', 2600]
         ]),
         try: K.lab({ ctrls: [{ id: 'r', label: 'Radius', min: 1, max: 20, value: 3, fmt: function (x) { return x + ' cm'; } }],
           draw: function (v) { return { fig: F.circW(v.r), out: 'A = π × ' + v.r + '² = π × ' + v.r * v.r + ' ≈ <b>' + F.f1(Math.PI * v.r * v.r) + ' cm²</b>' }; },
@@ -162,6 +219,12 @@
           [txt(['40 + 12 = 52 cm²']), 'Add the pieces: 52 cm².'],
           [F.comp('L', { W: 10, H: 7, cw: 4, ch: 3 }), 'An L shape: the whole rectangle minus the missing corner. 70 − 12 = 58 cm².', 2400]
         ]),
+        example: K.film([
+          [F.comp('house', { w: 6, h: 4, t: 4 }), 'My turn. I will find the area of this house shape. First I split it into a rectangle and a triangle.'],
+          [txt(['rectangle: 6 × 4 = 24']), 'The rectangle: 6 × 4 = 24 cm².'],
+          [txt(['triangle: 6 × 4 ÷ 2 = 12']), 'The triangle: base 6 and height 4. 6 × 4 ÷ 2 = 12 cm².'],
+          [txt(['24 + 12 = 36 cm²']), 'Then I add the pieces: <b>36 cm²</b>. Split, find each area, then add.', 2600]
+        ]),
         key: '<p><b>Split</b>, find each area, then <b>add</b> (or subtract a cut-out).</p>',
         mistake: '<p>Forgetting to halve for the triangle. The triangle is half of a rectangle.</p>',
         check: [K.chk(C, 'ms-composite', 1), K.chk(C, 'ms-composite', 2)] },
@@ -171,6 +234,12 @@
           [F.comp('semi', { w: 10, h: 6 }), 'A rectangle 10 by 6 with a half circle on the end.'],
           [txt(['10 + 6 + 10 = 26']), 'Straight edges on the outside: 26. The dashed line is inside, so it does not count.'],
           [txt(['half of π × 6 ≈ 9.4', '26 + 9.4 = 35.4 cm']), 'The curved edge is half a circumference: about 9.4. Total about 35.4 cm.', 2400]
+        ]),
+        example: K.film([
+          [F.comp('L', { W: 9, H: 6, cw: 3, ch: 2 }), 'My turn. I will find the perimeter of this L shape: a 9 by 6 rectangle with a 3 by 2 corner cut out.'],
+          [txt(['top: 9 − 3 = 6', 'right side: 6 − 2 = 4']), 'First I find the missing edges. The top is 9 − 3 = 6. The lower right side is 6 − 2 = 4.'],
+          [txt(['6 + 2 + 3 + 4 + 9 + 6', '= 30 cm']), 'Next I trace the outside and add every edge: top 6, down 2, across 3, down 4, bottom 9, left side 6. That makes 30 cm.'],
+          [txt(['2 × (9 + 6) = 30 ✓']), 'I check: the cut corner just moved two edges inward, so it matches the full rectangle. <b>Perimeter: trace the outside edge only.</b>', 2800]
         ]),
         key: '<p>Perimeter: trace the outside edge only.</p>',
         mistake: '<p>Adding the dashed join line, or the full circumference instead of half.</p>',
@@ -184,6 +253,12 @@
           [F.solid('box', { l: 5, w: 4, h: 1 }, { l: '5 cm', w: '4 cm', h: '1' }), 'The base is 5 by 4: 20 cubes in one layer.'],
           [F.solid('box', { l: 5, w: 4, h: 2 }, { l: '5 cm', w: '4 cm', h: '2' }), 'Two layers: 40 cubes.'],
           [F.solid('box', { l: 5, w: 4, h: 3 }, { l: '5 cm', w: '4 cm', h: '3 cm' }), 'Three layers: 20 × 3 = 60 cm³.', 2200]
+        ]),
+        example: K.film([
+          [F.solid('box', { l: 6, w: 3, h: 1 }, { l: '6 cm', w: '3 cm', h: '1' }), 'My turn. I will find the volume of a box 6 cm by 3 cm by 4 cm. First the base: 6 × 3 = 18 cubes in one layer.'],
+          [F.solid('box', { l: 6, w: 3, h: 4 }, { l: '6 cm', w: '3 cm', h: '4 cm' }), 'Next I stack 4 layers.'],
+          [txt(['18 × 4 = 72 cm³']), 'So the volume is 18 × 4 = <b>72 cm³</b>.'],
+          [txt(['6 × 3 × 4 = 72 ✓']), 'I check by multiplying all three lengths: 72. <b>Volume = base area × height.</b>', 2400]
         ]),
         try: K.lab({ ctrls: [{ id: 'l', label: 'Length', min: 1, max: 10, value: 2 }, { id: 'w', label: 'Width', min: 1, max: 10, value: 2 }, { id: 'h', label: 'Height', min: 1, max: 10, value: 2 }],
           draw: function (v) { return { fig: F.solid('box', { l: v.l, w: v.w, h: v.h }, { l: v.l + ' cm', w: v.w + ' cm', h: v.h + ' cm' }), out: 'Base ' + v.l + ' × ' + v.w + ' = ' + v.l * v.w + ', times ' + v.h + ' = <b>' + v.l * v.w * v.h + ' cm³</b>' }; },
@@ -200,6 +275,12 @@
           [txt(['50.27 × 10 ≈ 502.7 cm³']), 'Times the height: about 502.7 cm³.'],
           [F.solid('tri', { a: 3, b: 4, len: 10 }, { a: '3 cm', b: '4 cm', len: '10 cm' }), 'A triangular prism: base 4 × 3 ÷ 2 = 6, times 10 = 60 cm³.', 2400]
         ]),
+        example: K.film([
+          [F.solid('cyl', { r: 3, h: 8 }, { r: '3 cm', h: '8 cm' }), 'My turn. A cup is a cylinder with radius 3 cm and height 8 cm. I will find its volume.'],
+          [txt(['base: π × 3² = π × 9', '≈ 28.27 cm²']), 'First the base. It is a circle: π × 9 ≈ 28.27 cm².'],
+          [txt(['28.27 × 8 ≈ 226.2 cm³']), 'Next I multiply by the height: about 226.2 cm³.'],
+          [txt(['about 3 × 9 × 8 = 216 ✓']), 'I check with π as about 3: 3 × 9 × 8 = 216, close to my answer. <b>Cylinder: V = πr²h.</b>', 2600]
+        ]),
         ways: [{ label: 'Stack of coins', html: '<p>A cylinder is a stack of thin circles, like a roll of coins. Each coin has area πr' + SQ + ', and the stack is h tall.</p>' }],
         key: '<p>Cylinder: <b>V = πr' + SQ + 'h</b>. Triangular prism: <b>(b × h ÷ 2) × length</b>.</p>',
         mistake: '<p>Using the diameter in πr' + SQ + ', or forgetting to halve the triangle.</p>',
@@ -210,6 +291,12 @@
           [F.solid('box', { l: 10, w: 10, h: 10 }, { l: '10 cm', w: '10 cm', h: '10 cm' }), 'A 10 cm cube: 1000 cm³. It holds exactly 1 L.'],
           [F.solid('box', { l: 40, w: 25, h: 30 }, { l: '40 cm', w: '25 cm', h: '30 cm' }), 'A fish tank 40 × 25 × 30 = 30 000 cm³.'],
           [txt(['30 000 ÷ 1000 = 30 L']), 'Divide by 1000: it holds 30 L.', 2200]
+        ]),
+        example: K.film([
+          [F.solid('box', { l: 60, w: 30, h: 25 }, { l: '60 cm', w: '30 cm', h: '25 cm' }), 'My turn. A planter box is 60 cm by 30 cm by 25 cm. I will find how many litres of soil it holds.'],
+          [txt(['60 × 30 × 25', '= 45 000 cm³']), 'First the volume: 60 × 30 = 1800, and 1800 × 25 = 45 000 cm³.'],
+          [txt(['45 000 ÷ 1000 = 45 L']), 'Next I change to litres. 1000 cm³ is 1 L, so I divide by 1000: 45 L.'],
+          [txt(['45 L']), 'The box holds <b>45 L</b> of soil. 1000 cm³ = 1 L.', 2400]
         ]),
         key: '<p><b>1000 cm' + CU + ' = 1 L</b>.</p>',
         mistake: '<p>Dividing by 100 instead of 1000.</p>',
@@ -224,6 +311,12 @@
           [F.boxNet(5, 4, 3), 'Unfold it. Same colours are matching faces: 20, 15 and 12.'],
           [txt(['20 + 15 + 12 = 47', '47 × 2 = 94 cm²']), 'Add one of each pair, then double: 94 cm².', 2400]
         ]),
+        example: K.film([
+          [F.solid('box', { l: 6, w: 2, h: 3 }, { l: '6 cm', w: '2 cm', h: '3 cm' }), 'My turn. I will find the surface area of a box 6 cm by 2 cm by 3 cm.'],
+          [F.boxNet(6, 2, 3), 'First I unfold it. Matching faces come in pairs: 6 × 2 = 12, 6 × 3 = 18, and 2 × 3 = 6.'],
+          [txt(['12 + 18 + 6 = 36']), 'Next I add one face from each pair: 36.'],
+          [txt(['36 × 2 = 72 cm²']), 'Each face has a twin, so I double: <b>72 cm²</b>. Box: 2 × (lw + lh + wh).', 2600]
+        ]),
         try: K.lab({ ctrls: [{ id: 'l', label: 'Length', min: 1, max: 8, value: 3 }, { id: 'w', label: 'Width', min: 1, max: 8, value: 3 }, { id: 'h', label: 'Height', min: 1, max: 8, value: 3 }],
           draw: function (v) { var s = 2 * (v.l * v.w + v.l * v.h + v.w * v.h); return { fig: F.boxNet(v.l, v.w, v.h), out: '2 × (' + v.l * v.w + ' + ' + v.l * v.h + ' + ' + v.w * v.h + ') = <b>' + s + ' cm²</b>' }; },
           tasks: [{ do: 'Make a cube (all sides equal). How many faces match?', goal: function (v) { return v.l === v.w && v.w === v.h; }, yes: 'All 6 faces are the same square.' },
@@ -237,6 +330,13 @@
           [F.solid('cyl', { r: 4, h: 10 }, { r: '4 cm', h: '10 cm' }), 'A can: radius 4 cm, height 10 cm.'],
           [F.cylNet(4, 10), 'Unroll it: two circles and a rectangle 2πr long.'],
           [txt(['circles: 2 × π × 16 ≈ 100.5', 'side: 25.13 × 10 ≈ 251.3', 'total ≈ 351.9 cm²']), 'Add the parts: about 351.9 cm².', 2600]
+        ]),
+        example: K.film([
+          [F.solid('cyl', { r: 2, h: 5 }, { r: '2 cm', h: '5 cm' }), 'My turn. A can has radius 2 cm and height 5 cm. I will find its surface area.'],
+          [F.cylNet(2, 5), 'First I unroll it: two circles and a rectangle. The rectangle is as long as the circumference.'],
+          [txt(['circles: 2 × π × 2² ≈ 25.13']), 'The two circles: 2 × π × 4 ≈ 25.13 cm².'],
+          [txt(['side: 2π × 2 × 5', '= 20π ≈ 62.83']), 'The side is a rectangle. It is as long as the circumference, 2π × 2, and as tall as the can, 5. So 20π ≈ 62.83 cm².'],
+          [txt(['25.13 + 62.83 ≈ 87.96 cm²']), 'I add the parts: about <b>87.96 cm²</b>. Cylinder: 2πr² + 2πrh.', 2600]
         ]),
         ways: [{ label: 'Peel the label', html: '<p>Peel the label off a can. It is a rectangle: its width is the height of the can, and its length goes once around, the circumference 2πr.</p>' }],
         key: '<p>Cylinder: <b>2πr' + SQ + ' + 2πrh</b>.</p>',
