@@ -326,7 +326,7 @@ A.yt({ q: 'A phone plan is $45 a month for 24 months with a free phone. Another 
           hint: 'HST = price &times; 0.13. Then add it to the price.', steps: [p.toFixed(2) + ' &times; 0.13 &asymp; ' + m(tax) + '.', p.toFixed(2) + ' + ' + tax.toFixed(2) + ' = ' + m(p + tax) + '.'], explain: 'Total: ' + m(p + tax) + '.', meta: { k: 'mt-fill', p: p } };
       }],
       [2, 'way', function (lv) {
-        var pre = R.int(10, 200) * 2, tot = c2(pre * 1.13);
+        var pre = R.pick([R.int(5, 49), R.int(51, 100)]) * 2, tot = c2(pre * 1.13);
         return K.pick1({ q: 'A receipt total is <b>$' + tot.toFixed(2) + '</b>, including 13% HST. Which way finds the price before tax?', right: tot.toFixed(2) + ' &divide; 1.13', wrong: [tot.toFixed(2) + ' &times; 0.87', tot.toFixed(2) + ' &minus; 13', tot.toFixed(2) + ' &times; 1.13'],
           hint: 'The total is 113% of the price. Undo multiplying by 1.13.', steps: ['Total = price &times; 1.13, so price = total &divide; 1.13.'], explain: tot.toFixed(2) + ' &divide; 1.13 = ' + m(pre) + '.', meta: { k: 'mt-way', pre: pre } });
       }]

@@ -419,6 +419,7 @@ A.yt({ q: 'A map has a scale of 1 cm : 2 m. A path is 7.5 cm on the map. How lon
       [2, 'pick', function (lv) {
         return K.until(function () {
           var w = R.int(2, 5), h = R.int(w + 1, 8), opts = [2, 3, 4].map(function (k) { return [w * k + ' cm by ' + h * k + ' cm', true]; }).concat([[(w + 2) + ' cm by ' + (h + 2) + ' cm', false], [w * 2 + ' cm by ' + (h * 2 + 1) + ' cm', false], [h + ' cm by ' + (w + h) + ' cm', false]]);
+          var seen = {}; if (!opts.every(function (o) { if (seen[o[0]]) return false; seen[o[0]] = 1; return true; })) return null;
           return K.pickAll({ q: 'A photo is ' + w + ' cm by ' + h + ' cm. Pick every size that is a true enlargement (the same shape).', opts: R.shuffle(opts).slice(0, 5), hint: 'Both sides must be multiplied by the same number.', steps: ['Divide each new side by the old side. The two answers must match.'], explain: 'A true enlargement multiplies both sides by the same scale factor.', meta: { k: 'gs-pick', w: w, h: h } });
         });
       }]

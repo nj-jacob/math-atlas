@@ -444,7 +444,8 @@ A.yt({ q: 'A box is 2 cm by 3 cm by 4 cm. What is its surface area?', a: 52, uni
       [2, 'pick', function (lv) {
         return K.until(function () {
           var opts = R.shuffle(TRIPLES).slice(0, 3).map(function (t) { var k = R.pick([1, 2]); return [t[0] * k + ', ' + t[1] * k + ', ' + t[2] * k, true]; })
-            .concat([[R.int(4, 8) + ', ' + R.int(9, 12) + ', ' + R.int(13, 16), false], [R.int(2, 5) + ', ' + R.int(6, 8) + ', ' + R.int(10, 12), false]]);
+            .concat([[R.int(4, 8), R.int(9, 12), R.int(13, 16)], [R.int(2, 5), R.int(6, 8), R.int(10, 12)]].map(function (t) { return [t.join(', '), t[0] * t[0] + t[1] * t[1] === t[2] * t[2]]; }));
+          var seen = {}; if (!opts.every(function (o) { if (seen[o[0]]) return false; seen[o[0]] = 1; return true; })) return null;
           return K.pickAll({ q: 'Each set gives the three sides of a triangle in cm. Pick every set that makes a <b>right</b> triangle.', opts: opts, hint: 'Square the two shorter sides and add. Does it equal the longest side squared?', steps: ['A right triangle has a' + SQ + ' + b' + SQ + ' = c' + SQ + '.'], explain: 'The right triangles are the ones where the squares match.', meta: { k: 'mh-pick' } });
         });
       }]
