@@ -6,7 +6,7 @@ The checks in `tests/run.js` stand in for a careful human tester. They run:
 
 ## What they check
 
-1. **Repository rules.** Every script parses. The shared engine exists only once, in `assets/engine/`, and every grade page loads it.
+1. **Repository rules.** Every script parses. The shared engine exists only once, in `assets/engine/`, and every grade page loads it. Every Math Plan expectation in `plan/ladder.js` has one short plain-language line in `plan/blurbs.js` (140 characters at most).
 2. **Every question.** Each practice skill is made 40 times at each level. Every lesson "Your turn" check and every written quiz question is checked too:
    - the question fits its type (for example, the right answer is one of the options);
    - nothing on screen says "undefined" or "NaN";

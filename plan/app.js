@@ -476,7 +476,7 @@
     if (acct.mode === 'adult' && acct.saved) h += '<div class="note">' + esc(acct.saved) + '</div>';
     h += '<div class="card fade-in"><h2>Levels</h2>' + levels(st) + '</div>';
     h += '<div class="card fade-in"><h2>This week\'s focus</h2><p class="t2 small">Mastered means right on ' + E.MASTER_DAYS + ' different days. Each circle is one day.</p>' + weekList(st, false) + '</div>';
-    h += '<div class="card fade-in"><h2>Concept map</h2><p class="t2 small">Every Ontario expectation from Grade 1 to Grade 8, one square each. Touch a square to see it.</p>' + cmap(st) + '<div id="pop"></div></div>';
+    h += '<div class="card fade-in"><h2>Concept map</h2><p class="t2 small">Every Ontario expectation from Grade 1 to Grade 8, one square each. Touch a square to see what it means.</p>' + cmap(st) + '</div>';
     var up = st.queue.filter(function (id) { return !st.week || st.week.items.indexOf(id) < 0; }).slice(0, 12);
     h += '<div class="card fade-in"><h2>Up next</h2>' + (up.length ? '<ul class="items">' + up.map(function (id) {
       var r = E.row(id), c = st.concepts[id];
@@ -508,7 +508,7 @@
           return '<button type="button" class="dot ' + s + '" data-id="' + r.id + '" aria-label="' + esc(E.title(r)) + (s ? ': ' + s : '') + '"></button>';
         }).join('') + '</div></div>';
       }
-      h += '</div></div>';
+      h += '</div><div class="cpop" aria-live="polite"></div></div>';
     });
     return h + '</div>';
   }
@@ -516,13 +516,7 @@
     var gu = document.getElementById('gu');
     if (gu) gu.addEventListener('click', function () { sessionStorage.setItem('mathplan-adult', grownUp() ? '0' : '1'); plan(load()); });
     [].forEach.call(app.querySelectorAll('.dot[data-id]'), function (d) {
-      d.addEventListener('click', function () {
-        var id = d.getAttribute('data-id'), r = E.row(id), c = st.concepts[id], pop = document.getElementById('pop');
-        pop.innerHTML = '<div class="pop"><b>' + esc(E.title(r)) + '</b> ' + (c ? chip(c) + (c.days.length ? ev(c) : '') : '<span class="chip">Not in the plan yet</span>') + '<p style="margin:6px 0">' + esc(E.plain(r)) + '</p>' +
-          (r.ch.length ? '<p class="small"><a href="' + siteLink(r.g, r.ch[0]) + '">Open the Grade ' + r.g + ' lesson</a>' + (lessonState(id) ? ' · ' + lessonState(id) : '') + '</p>' : '') +
-          (grownUp() && (!c || c.st !== 'mastered') ? '<p class="noprint"><button class="btn alt quiet sm" data-act="pin" data-id="' + id + '">Add to the top of the plan</button></p>' : '') + '</div>';
-        wireActs(pop, st);
-      });
+      d.addEventListener('click', function () { conceptPop(st, d); });
     });
     wireActs(app, st);
     var rc = document.getElementById('rc2');
@@ -532,6 +526,22 @@
     });
     var rs = document.getElementById('reset');
     if (rs) rs.addEventListener('click', function () { if (confirm('Delete this plan and start again from the placement check?')) { localStorage.removeItem(KEY); cur(null); go(''); } });
+  }
+  /* Concept map: tapping a square opens a short note just under that area's row; tapping it again closes it. */
+  function conceptPop(st, d) {
+    var id = d.getAttribute('data-id'), r = E.row(id), c = st.concepts[id], pop = d.closest('.carea').querySelector('.cpop');
+    var open = d.classList.contains('sel');
+    [].forEach.call(app.querySelectorAll('.cpop'), function (p) { p.innerHTML = ''; });
+    [].forEach.call(app.querySelectorAll('.dot.sel'), function (x) { x.classList.remove('sel'); });
+    if (open) return;
+    d.classList.add('sel');
+    pop.innerHTML = '<div class="pop"><p class="t2 small" style="margin:0">Grade ' + r.g + ' · ' + esc(r.topic.trim()) + ' · ' + r.code + '</p>' +
+      '<p class="blurb">' + esc(E.plain(r)) + '</p>' +
+      '<p>' + (c ? chip(c) + (c.days.length ? ev(c) : '') : '<span class="chip">Not in the plan yet</span>') + '</p>' +
+      '<details><summary>Ontario wording</summary><p class="small t2">' + esc(r.text.charAt(0).toUpperCase() + r.text.slice(1)) + '.</p></details>' +
+      (r.ch.length ? '<p class="small"><a href="' + siteLink(r.g, r.ch[0]) + '">Open the Grade ' + r.g + ' lesson</a>' + (lessonState(id) ? ' · ' + lessonState(id) : '') + '</p>' : '') +
+      (grownUp() && (!c || c.st !== 'mastered') ? '<p class="noprint"><button class="btn alt quiet sm" data-act="pin" data-id="' + id + '">Add to the top of the plan</button></p>' : '') + '</div>';
+    wireActs(pop, st);
   }
   function wireActs(root, st) {
     [].forEach.call(root.querySelectorAll('[data-act]'), function (b) {

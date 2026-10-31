@@ -43,6 +43,10 @@ Atlas.register('numbers-1000', {
 - **Question shapes**: a skill can ask the same idea in several ways. `Atlas.Q.vary(skillId, level, [[minLevel, 'shape-name', fn], ...])` picks one, never the same shape twice in a row. See `QUESTIONS.md`.
 - **Check-ups** use level 1 of every skill, then a few level-2 questions.
 
+## Math Plan
+
+`plan/index.html` loads `vis.js` (pictures), `bank.js` (placement questions), `ladder.js` (every Ontario expectation, Grades 1 to 8, in the Ministry's wording), `blurbs.js` (one short plain-language line for each expectation), `engine.js` (placement and plan logic) and `app.js` (the screens). The plain line is what children and parents see, for example on "Today's idea" and when a concept-map square is tapped. The Ministry wording is shown under "Ontario wording". When an expectation is added to `ladder.js`, add its line to `blurbs.js` too, or the checks fail.
+
 ## Saved progress
 
 Progress is kept in the browser (`localStorage`, prefix `gNatlas:`). When a child is signed in, `assets/sync.js` copies it to Firebase so parents and tutors see it.
