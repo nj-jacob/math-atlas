@@ -973,7 +973,7 @@
 
   /* reading supports: theme and larger text, remembered in this browser */
   function prefs() {
-    var root = document.documentElement, th = store('theme') === 'dark' ? 'dark' : 'light', big = store('big') === '1';
+    var root = document.documentElement, th = 'light', big = store('big') === '1';
     function apply() {
       root.setAttribute('data-theme', th);
       root.classList.toggle('bigtext', big);

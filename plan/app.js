@@ -100,7 +100,7 @@
       '<form id="sf"><label class="f" for="nm">First name</label><input class="f" id="nm" maxlength="40" autocomplete="off" value="' + esc(name) + '">' +
       '<label class="f" for="gr">Grade at school this year</label><select class="f" id="gr" required>' + opts + '</select>' +
       '<p class="t2 small" style="margin-top:10px">The check starts a little below this grade, so the first questions should feel comfortable.</p>' +
-      '<div class="row" style="margin-top:16px"><button class="btn" type="submit">' + (st ? 'Save' : 'Continue') + '</button>' + (st ? '<a class="btn quiet" href="#">Cancel</a>' : '') + '</div></form></div>', 'setup');
+      '<div class="row" style="margin-top:16px"><button class="btn" type="submit">' + (st ? 'Save' : 'Continue') + '</button>' + (st ? '<a class="btn alt quiet" href="#">Cancel</a>' : '') + '</div></form></div>', 'setup');
     document.getElementById('sf').addEventListener('submit', function (ev) {
       ev.preventDefault();
       var gr = parseInt(document.getElementById('gr').value, 10), nm = document.getElementById('nm').value.trim();
@@ -117,7 +117,7 @@
       '<li>There is no timer. If you don\'t know, press <b>I don\'t know yet</b>. That is a good answer too.</li>' +
       '<li>You can stop after any area and come back later.</li>' +
       '<li>Touch the blocks, coins and counters to count them.</li></ul>' +
-      '<div class="row" style="margin-top:14px"><button class="btn" id="go">Start the check</button><a class="btn quiet" href="#setup">Change name or grade</a></div></div>');
+      '<div class="row" style="margin-top:14px"><button class="btn" id="go">Start the check</button><a class="btn alt quiet" href="#setup">Change name or grade</a></div></div>');
     document.getElementById('go').addEventListener('click', function () { E.startPlacement(st); save(st); go('test'); });
   }
 
@@ -194,7 +194,7 @@
   /* opts: title, area, progress(0..1), feedback (show right or wrong), onAnswer(ok, q), onNext() */
   function showQ(q, opts) {
     var h = '<div class="qwrap"><div class="qhead"><span class="area">' + esc(opts.title || '') + '</span><div class="prog" aria-hidden="true"><i style="width:' + Math.round((opts.progress || 0) * 100) + '%"></i></div>' +
-      (opts.quit ? '<a class="btn quiet sm noprint" href="#">' + opts.quit + '</a>' : '') + '</div>' +
+      (opts.quit ? '<a class="btn alt quiet sm noprint" href="#">' + opts.quit + '</a>' : '') + '</div>' +
       '<div class="q" id="qc">' +
       '<div class="qtext">' + q.text + '</div>' + (q.vis ? '<div class="visbox">' + q.vis + '</div>' + (/class="[^"]*\btap\b/.test(q.vis) ? '<div style="text-align:center"><span class="count" id="cnt" aria-live="polite"></span></div>' + (q.hint ? '<p class="hint">' + esc(q.hint) + '</p>' : '') : '') : '');
     if (q.type === 'mc') {
@@ -339,7 +339,7 @@
     page('<div class="card fade-in" style="max-width:640px;margin:0 auto"><div class="row">' + tick() + '<h2 style="margin:0">' + E.AREA_NAME[a] + ' done</h2></div>' +
       '<div class="prog" style="margin:16px 0"><i style="width:' + Math.round(100 * (p.done - 1) / p.total) + '%" data-to="' + Math.round(100 * p.done / p.total) + '%"></i></div>' +
       '<p>' + p.done + ' of ' + p.total + ' areas finished. Next is <b>' + E.AREA_NAME[next] + '</b>.</p><p class="t2">Good time for a stretch or a drink of water. Everything is saved.</p>' +
-      '<div class="row"><a class="btn" href="#test" id="kg">Keep going</a><a class="btn quiet" href="#">Take a break</a></div></div>', 'test');
+      '<div class="row"><a class="btn" href="#test" id="kg">Keep going</a><a class="btn alt quiet" href="#">Take a break</a></div></div>', 'test');
     setTimeout(function () { var i = app.querySelector('.prog i'); if (i) i.style.width = i.getAttribute('data-to'); }, 60);
     document.getElementById('kg').addEventListener('click', function (e) { e.preventDefault(); placement(load()); });
   }
@@ -464,15 +464,15 @@
   function ctl(st, id) {
     if (!grownUp()) return '';
     var pin = st.prefs.pin.indexOf(id) >= 0;
-    return '<div class="ctl noprint"><button class="btn quiet sm" data-act="pin" data-id="' + id + '">' + (pin ? 'Unpin' : 'Pin to top') + '</button>' +
-      '<button class="btn quiet sm" data-act="up" data-id="' + id + '">Move up</button><button class="btn quiet sm" data-act="skip" data-id="' + id + '">Skip</button></div>';
+    return '<div class="ctl noprint"><button class="btn alt quiet sm" data-act="pin" data-id="' + id + '">' + (pin ? 'Unpin' : 'Pin to top') + '</button>' +
+      '<button class="btn alt quiet sm" data-act="up" data-id="' + id + '">Move up</button><button class="btn alt quiet sm" data-act="skip" data-id="' + id + '">Skip</button></div>';
   }
   function plan(st) {
     if (!st.levels) return go('');
     var cn = E.counts(st), lastP = st.history[st.history.length - 1];
     var h = '<div class="row" style="justify-content:space-between"><div><h1>' + (st.name ? esc(st.name) + '\'s plan' : 'The plan') + '</h1><p class="t2">Grade ' + st.grade + ' at school · placement on ' + esc(lastP ? lastP.d : '') +
       ' · ' + cn.mastered + ' mastered, ' + ((cn.learning || 0) + (cn.review || 0)) + ' in progress, ' + st.queue.length + ' in the plan</p></div>' +
-      '<div class="row noprint"><a class="btn alt sm" href="#report">Printable report</a>' + (acct.mode === 'local' ? '<button class="btn quiet sm" id="gu">' + (grownUp() ? 'Hide grown-up controls' : 'Grown-up controls') + '</button>' : '') + '</div></div>';
+      '<div class="row noprint"><a class="btn alt sm" href="#report">Printable report</a>' + (acct.mode === 'local' ? '<button class="btn alt quiet sm" id="gu">' + (grownUp() ? 'Hide grown-up controls' : 'Grown-up controls') + '</button>' : '') + '</div></div>';
     if (acct.mode === 'adult' && acct.saved) h += '<div class="note">' + esc(acct.saved) + '</div>';
     h += '<div class="card fade-in"><h2>Levels</h2>' + levels(st) + '</div>';
     h += '<div class="card fade-in"><h2>This week\'s focus</h2><p class="t2 small">Mastered means right on ' + E.MASTER_DAYS + ' different days. Each circle is one day.</p>' + weekList(st, false) + '</div>';
@@ -482,9 +482,9 @@
       var r = E.row(id), c = st.concepts[id];
       return '<li><div class="main"><b>' + esc(E.title(r)) + '</b> ' + chip(c) + (c.gap ? ' <span class="chip review">Gap found in placement</span>' : '') + '<br><span class="t2 small">' + esc(E.plain(r)) + '</span></div>' + ctl(st, id) + '</li>';
     }).join('') + '</ul>' + (st.queue.length > up.length + ((st.week && st.week.items.length) || 0) ? '<p class="t2 small">…and ' + (st.queue.length - up.length - st.week.items.length) + ' more after these.</p>' : '') : '<p>Nothing else waiting.</p>') + '</div>';
-    if (grownUp() && st.prefs.skip.length) h += '<div class="card"><h2>Skipped</h2><ul class="items">' + st.prefs.skip.map(function (id) { return '<li><div class="main">' + esc(E.title(E.row(id))) + '</div><div class="ctl"><button class="btn quiet sm" data-act="unskip" data-id="' + id + '">Put back</button></div></li>'; }).join('') + '</ul></div>';
+    if (grownUp() && st.prefs.skip.length) h += '<div class="card"><h2>Skipped</h2><ul class="items">' + st.prefs.skip.map(function (id) { return '<li><div class="main">' + esc(E.title(E.row(id))) + '</div><div class="ctl"><button class="btn alt quiet sm" data-act="unskip" data-id="' + id + '">Put back</button></div></li>'; }).join('') + '</ul></div>';
     h += '<div class="card fade-in"><h2>What changed and why</h2>' + logList(st, 15) + '</div>';
-    h += '<div class="card"><h2>Placement history</h2>' + histTable(st) + (grownUp() ? '<div class="row noprint" style="margin-top:12px"><button class="btn alt sm" id="rc2">Run a level re-check now</button>' + (acct.mode === 'local' ? '<button class="btn quiet sm" id="reset">Start over</button>' : '') + '</div>' : '') + '</div>';
+    h += '<div class="card"><h2>Placement history</h2>' + histTable(st) + (grownUp() ? '<div class="row noprint" style="margin-top:12px"><button class="btn alt sm" id="rc2">Run a level re-check now</button>' + (acct.mode === 'local' ? '<button class="btn alt quiet sm" id="reset">Start over</button>' : '') + '</div>' : '') + '</div>';
     page(h, 'plan');
     wirePlan(st);
   }
@@ -520,7 +520,7 @@
         var id = d.getAttribute('data-id'), r = E.row(id), c = st.concepts[id], pop = document.getElementById('pop');
         pop.innerHTML = '<div class="pop"><b>' + esc(E.title(r)) + '</b> ' + (c ? chip(c) + (c.days.length ? ev(c) : '') : '<span class="chip">Not in the plan yet</span>') + '<p style="margin:6px 0">' + esc(E.plain(r)) + '</p>' +
           (r.ch.length ? '<p class="small"><a href="' + siteLink(r.g, r.ch[0]) + '">Open the Grade ' + r.g + ' lesson</a>' + (lessonState(id) ? ' · ' + lessonState(id) : '') + '</p>' : '') +
-          (grownUp() && (!c || c.st !== 'mastered') ? '<p class="noprint"><button class="btn quiet sm" data-act="pin" data-id="' + id + '">Add to the top of the plan</button></p>' : '') + '</div>';
+          (grownUp() && (!c || c.st !== 'mastered') ? '<p class="noprint"><button class="btn alt quiet sm" data-act="pin" data-id="' + id + '">Add to the top of the plan</button></p>' : '') + '</div>';
         wireActs(pop, st);
       });
     });
@@ -562,7 +562,7 @@
     if (!st.levels) return go('');
     var cn = E.counts(st), since = new Date(); since.setDate(since.getDate() - 30); var from = E.today(since);
     var recent = Object.keys(st.concepts).filter(function (id) { return st.concepts[id].mastered && st.concepts[id].mastered >= from; });
-    var h = '<div class="row noprint" style="justify-content:space-between"><a class="btn quiet sm" href="#plan">Back to the plan</a><button class="btn sm" onclick="window.print()">Print</button></div>' +
+    var h = '<div class="row noprint" style="justify-content:space-between"><a class="btn alt quiet sm" href="#plan">Back to the plan</a><button class="btn sm" onclick="window.print()">Print</button></div>' +
       '<div class="card"><h1>Math progress report</h1><p><b>' + esc(st.name || 'Student') + '</b> · Grade ' + st.grade + ' · ' + E.today() + '</p>' +
       '<p>' + cn.mastered + ' ideas mastered in the plan (' + recent.length + ' in the last 30 days). ' + st.sessions.length + ' sessions and ' + st.checkins.length + ' weekly check-ins done.</p></div>' +
       '<div class="card"><h2>Levels by area</h2>' + levels(st) + histTable(st) + '</div>' +

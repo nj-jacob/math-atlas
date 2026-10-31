@@ -46,7 +46,8 @@ a{color:var(--accent);text-underline-offset:3px}
 .bar{position:sticky;top:0;z-index:20;background:var(--card);border-bottom:3px solid var(--line)}
 .bar .wrap{display:flex;align-items:center;justify-content:space-between;gap:8px 14px;min-height:60px;flex-wrap:wrap;padding-top:6px;padding-bottom:6px}
 .brand{font-family:var(--display);font-weight:600;font-size:1.25rem;color:var(--ink);text-decoration:none;display:flex;align-items:center;gap:10px}
-.brand svg{display:block}
+.brand i{display:inline-grid;place-items:center;width:34px;height:34px;border-radius:8px;font-style:normal;font-size:1.15rem;font-weight:800}
+.brand i::after{content:"1"}
 .bar nav{display:flex;gap:6px;flex-wrap:wrap}
 .bar nav a{color:var(--ink);text-decoration:none;font-weight:700;font-size:.95rem;padding:6px 12px;border-radius:99px;border:2px solid transparent}
 .bar nav a:hover{border-color:var(--line)}
