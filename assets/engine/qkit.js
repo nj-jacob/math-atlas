@@ -14,7 +14,8 @@
      build  build it with a tool.       tool: 'base10' | 'coins', opts, answer (value; coins in cents)
    Atlas.Q.mount(el, q, cb) draws the answer area. cb(ok, givenText) runs when the child commits an answer.
    It returns { lock(), reveal(), focus() }. Atlas.Q.text(q) gives the right answer in words.
-   Atlas.Q.vary(id, lv, list) picks a question shape for a skill: list = [[minLevel, shapeName, fn(lv)], ...]. */
+   Atlas.Q.vary(id, lv, list) picks a question shape for a skill: list = [[minLevel, shapeName, fn(lv)], ...].
+   Atlas.Q.shapes(chapterId, SHAPES) wires a chapter's shapes into all its practice skills. */
 (function () {
   'use strict';
   var A = window.Atlas;
@@ -315,6 +316,20 @@
     var q = s[2](lv);
     q.shape = s[1];
     return q;
+  };
+  /* Give every practice skill in a chapter its extra shapes, and turn on fresh quizzes.
+     SHAPES = { skillId: [[minLevel, name, fn(lv)], ...] }. Each skill keeps its first way of asking as 'plain'.
+     Call it once at the end of the chapter file: Atlas.Q.shapes('chapter-id', SHAPES). */
+  Q.shapes = function (id, SHAPES) {
+    var ch = A.chapters[id];
+    if (!ch) return;
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
   };
   /* names and places for word problems: short, everyday, Canadian */
   Q.names = ['Ava', 'Liam', 'Noor', 'Ethan', 'Mei', 'Arjun', 'Chloe', 'Kai', 'Zara', 'Owen', 'Amara', 'Lucas', 'Sofia', 'Jayden', 'Leila', 'Mateo', 'Hana', 'Theo'];

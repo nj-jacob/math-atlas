@@ -848,6 +848,8 @@
     });
     T.add = function (v) { items.push(v); draw(true); return T.wait(300); };
     T.sort = function () { items.sort(function (a, b) { return b - a; }); draw(false); return T.wait(400); };
+    /* put exactly these coins and bills on the mat, e.g. T.set([100, 25, 10]) */
+    T.set = function (list) { items = list.slice(); draw(false); return T.wait(300); };
     T.countAll = function (gap) {
       var ep = T.ep, i = 0, sum = 0, els = qsa('.mp-cash', purse);
       els.forEach(function (x) { x.classList.remove('lit'); });

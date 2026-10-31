@@ -233,4 +233,38 @@
   K.fx = function (id) { return A.chapters[id].fx; };
   /* attach lessons to a chapter (they appear one idea at a time) */
   K.lessons = function (id, list) { A.chapters[id].lessons = list; };
+  /* ---------- question shapes: more ways to ask each practice skill (docs/QUESTIONS.md) ----------
+     Each chapter ends with a SHAPES block: { skillId: [[minLevel, 'name', fn(lv)], ...] }.
+     K.shapes wraps every skill so practice and fresh quizzes rotate through its shapes. */
+  K.shapes = function (chId, SHAPES) {
+    var ch = A.chapters[chId];
+    ch.quizFresh = true;
+    ch.practice.forEach(function (sk) {
+      var plain = sk.gen, extra = SHAPES[sk.id] || [];
+      sk.shapes = ['plain'].concat(extra.map(function (s) { return s[1]; }));
+      sk.gen = function (lv) { return A.Q.vary(sk.id, lv, [[1, 'plain', plain]].concat(extra)); };
+    });
+    ch._shapes = SHAPES;
+  };
+  K.name = function () { return A.Q.name(); };
+  /* a "why" list for true-or-false questions: the right reason first, shown shuffled */
+  K.why = function (right, wrong) { var o = A.R.shuffle([right].concat(wrong)); return { options: o, answer: o.indexOf(right) }; };
+  /* a mistake question: someone's claim, true or false, then why. o = { q, truth, right, wrong: [..], hint, meta, fig } */
+  K.tf = function (o) {
+    return { q: o.q, type: 'tf', answer: !!o.truth, why: K.why(o.right, o.wrong), fig: o.fig || '', hint: o.hint, steps: o.steps || [o.right], explain: o.right, meta: o.meta };
+  };
+  /* multiple choice with an answer check. o = { q, right, wrong: [..], hint, explain, steps, meta, fig } */
+  K.pick1 = function (o) {
+    var m = A.R.mc(o.right, o.wrong);
+    return { q: o.q, type: 'mc', options: m.options, answer: m.answer, fig: o.fig || '', hint: o.hint, steps: o.steps, explain: o.explain, meta: o.meta };
+  };
+  /* pick all that apply. opts = [[html, isRight], ...]; returns null when every or no option is right */
+  K.pickAll = function (o) {
+    var opts = A.R.shuffle(o.opts), ans = [];
+    opts.forEach(function (x, j) { if (x[1]) ans.push(j); });
+    if (!ans.length || ans.length === opts.length) return null;
+    return { q: o.q, type: 'pick', options: opts.map(function (x) { return x[0]; }), answer: ans, fig: o.fig || '', hint: o.hint, steps: o.steps, explain: o.explain, meta: o.meta };
+  };
+  /* keep trying a generator until it gives a question (for shapes that can come out unusable) */
+  K.until = function (fn) { for (var i = 0; i < 40; i++) { var q = fn(); if (q) return q; } throw new Error('shape could not make a question'); };
 })();
