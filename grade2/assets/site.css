@@ -108,7 +108,6 @@ p{margin:.65em 0;max-width:60ch}
 .sec{background:var(--card);border:3px solid var(--line);border-radius:24px;padding:0 20px 14px;margin:26px 0;box-shadow:0 5px 0 var(--shadow);overflow:hidden}
 .sec>h2{display:flex;align-items:center;flex-wrap:wrap;gap:8px 12px;margin:0 -20px 10px;padding:14px 20px;background:color-mix(in srgb,var(--strand) 13%,var(--card));border-bottom:3px solid color-mix(in srgb,var(--strand) 35%,var(--line))}
 .sec>h2 .n{flex:none;width:40px;height:40px;border-radius:13px;display:grid;place-items:center;font-size:1.2rem;background:var(--strand);color:#fff;box-shadow:0 3px 0 color-mix(in srgb,var(--strand) 60%,#000)}
-.sec>h2 .secsay{margin:0 0 0 auto}
 .key,.mistake{border-radius:16px;padding:10px 16px;margin:16px 0;font-size:.98rem}
 .key{background:color-mix(in srgb,var(--strand) 10%,var(--card));border:3px solid color-mix(in srgb,var(--strand) 45%,var(--card))}
 .mistake{background:color-mix(in srgb,var(--bad) 8%,var(--card));border:3px solid color-mix(in srgb,var(--bad) 35%,var(--card))}
@@ -232,12 +231,6 @@ button.opt svg{display:block;margin:0 auto;max-width:100%;height:auto}
 .plv{font-size:.88rem;color:var(--ink2);margin:0 0 6px}
 .revtag{display:inline-block;margin:0 0 6px;font-size:.85rem;font-weight:600;border-radius:99px;padding:1px 12px;background:var(--ink);color:var(--card)}
 .pcard .qtext,.cu .qtext{font-size:1.15rem}
-.say{font:inherit;font-size:.82rem;font-weight:600;color:var(--ink);background:var(--card);border:2px solid var(--line);border-radius:99px;padding:3px 12px 3px 10px;cursor:pointer;margin:0 0 8px;min-height:36px;display:inline-flex;align-items:center;gap:5px}
-.say::before{content:"";width:1.1em;height:1.1em;background:currentColor;
-  -webkit-mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z'/%3E%3C/svg%3E") center/contain no-repeat;
-  mask:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M3 9v6h4l5 5V4L7 9zm13.5 3A4.5 4.5 0 0 0 14 8v8a4.5 4.5 0 0 0 2.5-4zM14 3.2v2.1a7 7 0 0 1 0 13.4v2.1a9 9 0 0 0 0-17.6z'/%3E%3C/svg%3E") center/contain no-repeat}
-.say:hover{border-color:var(--ink2)}
-.sec>h2 .say{font-family:var(--body)}
 .steps ol{margin:.3em 0;padding-left:1.4em}.steps li{margin:.35em 0}
 .sth{margin:.6em 0 0}
 .lvmsg{font-weight:700;color:var(--ink);margin:.4em 0}
@@ -282,7 +275,7 @@ footer.site p{margin:.2em 0;max-width:none}
 }
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 @media print{
-  .bar,.jump,.pn,footer.site,.btn,.say,.crumb{display:none!important}
+  .bar,.jump,.pn,footer.site,.btn,.crumb{display:none!important}
   body{background:#fff}
   .sec,.quiz{box-shadow:none;break-inside:avoid-page}
 }
@@ -301,3 +294,19 @@ ol.code li.on{background:color-mix(in srgb,var(--bad) 14%,var(--card));outline:2
 .vs>div+div b.t{background:var(--bad)}
 .vs p{margin:.3em 0}
 @media (max-width:520px){.vs{grid-template-columns:1fr}.vs>div+div{border-left:0;border-top:3px dashed var(--line)}.opts:has(svg){grid-template-columns:1fr}}
+.out svg,td svg,th svg,.tbl svg{max-width:100%;height:auto}
+/* Grade 2 "Watch" clips made from drawings, and drawing-based "Try it" activities */
+.g2-stage{display:grid;place-items:center;min-height:160px;padding:10px 4px}
+.g2-fr{width:100%;text-align:center}
+.g2-fr svg{display:block;max-width:100%;height:auto;margin:0 auto}
+.g2-fr.g2-in{animation:g2rise .45s cubic-bezier(.2,.8,.2,1)}
+.g2-fr.g2-in .g2a{animation:g2pop .5s cubic-bezier(.3,1.4,.5,1) both;animation-delay:calc(var(--i,0)*140ms);transform-box:fill-box;transform-origin:center}
+.g2-fr.g2-still .g2a{animation:none}
+.g2-fr p{margin:.4em 0}
+@keyframes g2rise{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+@keyframes g2pop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:none}}
+@media (prefers-reduced-motion:reduce){.g2-fr.g2-in,.g2-fr.g2-in .g2a{animation:none}}
+.g2-lab .fig svg,.g2-lab .vrow svg{max-width:100%;height:auto}
+
+.ls-wpanel svg,.ls-body svg,.ls-card .fig svg{max-width:100%;height:auto}
+.g2-picks .g2-pick{padding:6px;min-width:0}.g2-pick[aria-pressed=true]{outline:3px solid var(--strand);outline-offset:2px;background:color-mix(in srgb,var(--strand) 14%,var(--card))}.g2-pick svg{width:84px;height:auto}

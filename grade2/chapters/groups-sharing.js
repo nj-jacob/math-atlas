@@ -57,7 +57,179 @@
   function rep(g, n) { var a = []; for (var i = 0; i < g; i++) a.push(n); return a.join(' + '); }
   function skip(g, n) { var a = []; for (var i = 1; i <= g; i++) a.push(i * n); return a.join(', '); }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'groups-sharing';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  /* plate builder: groups and how many in each */
+  var plateLab = K.lab(
+    '<div class="ctrl"><label for="gg">Groups: <output id="ggo">2</output><input type="range" id="gg" min="1" max="8" value="2"></label><label for="gn">In each group: <output id="gno">3</output><input type="range" id="gn" min="1" max="10" value="3"></label></div><div class="fig" id="gfig"></div><div class="out" id="gout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['gg', 'gn'], function () {
+        var gg = +$('#gg', root).value, n = +$('#gn', root).value;
+        $('#ggo', root).textContent = gg; $('#gno', root).textContent = n;
+        $('#gfig', root).innerHTML = plates(gg, n, 'dot');
+        $('#gout', root).innerHTML = '<p><b>' + gg + ' group' + (gg > 1 ? 's' : '') + ' of ' + n + '</b></p><p class="math">' + rep(gg, n) + ' = <span class="big">' + gg * n + '</span></p><p class="t2">Skip count by ' + n + 's: ' + skip(gg, n) + '.</p>';
+        if (gg === 4 && n === 5) done('Yes. 4 groups of 5: 5, 10, 15, 20.');
+      });
+    }, 'Make <b>4 groups of 5</b>. How many in all?');
+  /* halves and fourths into wholes */
+  var partsLab = K.lab(
+    '<div class="ctrl"><label for="hn">How many parts: <output id="hno">3</output><input type="range" id="hn" min="1" max="12" value="3"></label><label for="hd">Each part is<select id="hd"><option value="2">one half</option><option value="4">one fourth</option></select></label></div><div class="fig" id="hfig"></div><div class="out" id="hout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['hn', 'hd'], function () {
+        var n = +$('#hn', root).value, d = +$('#hd', root).value;
+        $('#hno', root).textContent = n;
+        $('#hfig', root).innerHTML = partsToWholes(n, d);
+        $('#hout', root).innerHTML = '<p>' + n + ' ' + (d === 2 ? (n === 1 ? 'half' : 'halves') : (n === 1 ? 'fourth' : 'fourths')) + ' make <span class="big">' + wholesText(n, d) + '</span>.</p>';
+        if (n === 6 && d === 4) done('Yes. 6 fourths is 1 whole and two fourths: 1 and a half.');
+      });
+    }, 'Show <b>6 fourths</b>. How many wholes do they make?');
+  /* deal things one round at a time */
+  var dealLab = {
+    do: 'Share <b>12 crackers</b> with <b>4 friends</b>. Press <b>Give one to each</b> until you cannot go around again.',
+    mount: function (host, done) {
+      host.innerHTML = '<div class="g2-lab"><div class="ctrl"><label for="dn">Things: <output id="dno">12</output><input type="range" id="dn" min="1" max="12" value="12"></label><label for="dk">Friends: <output id="dko">4</output><input type="range" id="dk" min="1" max="6" value="4"></label></div>' +
+        '<div class="btnrow"><button type="button" class="btn" id="dgo">Give one to each</button><button type="button" class="btn alt" id="d0">Start again</button></div><div class="fig" id="dfig"></div><div class="out" id="dout" aria-live="polite"></div></div>';
+      var $ = A.$, root = host, rounds = 0;
+      function n() { return +$('#dn', root).value; }
+      function k() { return +$('#dk', root).value; }
+      function draw(anim) {
+        var N = n(), Kf = k(), given = rounds * Kf, left = N - given;
+        $('#dno', root).textContent = N; $('#dko', root).textContent = Kf;
+        var bw = 96, per = Math.min(Kf, 3), s = '';
+        for (var i = 0; i < Kf; i++) {
+          var bx = 6 + (i % per) * (bw + 12), by = 6 + Math.floor(i / per) * 112;
+          s += D.rr(bx, by, bw, 100, 14, 'var(--card)', 'style="stroke:var(--ink2)" stroke-width="2.5"') + '<text x="' + (bx + bw / 2) + '" y="' + (by + 92) + '" text-anchor="middle" font-size="17">friend ' + (i + 1) + '</text>';
+          for (var j = 0; j < rounds; j++) { var dot = A.THING.dot(bx + 22 + (j % 3) * 26, by + 20 + Math.floor(j / 3) * 24, 9, COLS[0]); s += anim && j === rounds - 1 ? K.pop(dot, i) : dot; }
+        }
+        var y0 = 6 + Math.ceil(Kf / per) * 112;
+        s += '<text x="6" y="' + (y0 + 22) + '" font-size="17" font-weight="700">Still to share: ' + left + '</text>';
+        for (var m = 0; m < left; m++) s += A.THING.dot(190 + (m % 12) * 24, y0 + 16, 9, 'var(--se)');
+        $('#dfig', root).innerHTML = '<div class="g2-fr' + (anim ? ' g2-in' : '') + '">' + A.svg(Math.max(per * (bw + 12), 190 + Math.min(left, 12) * 24 + 10), y0 + 34, s, Kf + ' friends, ' + rounds + ' each, ' + left + ' still to share') + '</div>';
+        var canGo = left >= Kf;
+        $('#dgo', root).disabled = !canGo;
+        $('#dout', root).innerHTML = canGo ? '<p>Each friend has <b>' + rounds + '</b>.</p>' : '<p>Each friend gets <span class="big">' + rounds + '</span>' + (left ? ' and <b>' + left + ' ' + (left === 1 ? 'is' : 'are') + ' left over</b>. There are not enough to go around again.' : '. Nothing is left over.') + '</p>';
+        if (!canGo && N === 12 && Kf === 4) done('Yes. 12 shared by 4 is 3 each.');
+        else if (!canGo && rounds > 0 && (N !== 12 || Kf !== 4)) done('All shared out. Try 12 crackers with 4 friends too.');
+      }
+      $('#dgo', root).addEventListener('click', function () { if (n() - rounds * k() >= k()) { rounds++; draw(true); } });
+      $('#d0', root).addEventListener('click', function () { rounds = 0; draw(false); });
+      A.bind(root, ['dn', 'dk'], function () { rounds = 0; draw(false); });
+    }
+  };
+  function dealt(r, s) { return share(r * s, s, r + ' each so far'); }
+  var LESSONS = [
+    { id: 'groups', title: 'Equal groups', sub: 'The same number in every group.', concepts: [
+      { id: 'equal', title: 'Equal groups', exp: ['B2.5'], skill: 'g2-groups',
+        body: '<p><b>Equal groups</b> all have the same number in them. To find how many in all, add the same number again and again, or <b>skip count</b>.</p>',
+        watch: K.clip([
+          ['One plate with 4 cookies.', plates(1, 4, 'dot')],
+          ['Another plate with 4. That is 4, 8.', plates(2, 4, 'dot')],
+          ['A third plate with 4: 4, 8, 12.', plates(3, 4, 'dot')],
+          ['<b>3 groups of 4</b> is 4 + 4 + 4 = <b>12</b>.', '<p class="math big">4 + 4 + 4 = 12</p>' + plates(3, 4, 'dot'), 2200]
+        ]),
+        try: plateLab,
+        key: '<p><b>3 groups of 4</b> means 4 + 4 + 4.</p>',
+        mistake: '<p>Adding the number of groups to the number in each group (3 groups of 4 = 7). Have the child point to each plate and skip count: 4, 8, 12.</p>',
+        check: [T('groups'), P('g2-groups', 1)] },
+      { id: 'notequal', title: 'Are the groups equal?', exp: ['B2.5'], skill: 'g2-groups',
+        body: '<p>Groups are equal only if <b>every</b> group has the same number. Check each group before you skip count.</p>',
+        watch: K.clip([
+          ['These plates have 5, 5 and 5. Every group is the same.', plates(3, 5, 'star')],
+          ['These have 5, 3 and 5. The middle one is different.', (function () { var s = ''; [5, 3, 5].forEach(function (n, i) { var px = 6 + i * 128; s += '<ellipse cx="' + (px + 58) + '" cy="54" rx="58" ry="48" style="fill:var(--card);stroke:var(--ink2)" stroke-width="2.5"/>'; for (var j = 0; j < n; j++) s += A.THING.star(px + 58 + ((j % 3) - 1) * 25, 54 + (Math.floor(j / 3) - 0.5) * 25, 10); }); return A.svg(386, 108, s, 'Groups of 5, 3 and 5'); })()],
+          ['Only the first set is <b>equal groups</b>: 3 groups of 5.', plates(3, 5, 'star'), 2000]
+        ]),
+        key: '<p>Equal groups: <b>every</b> group has the same number.</p>',
+        check: [T('equal'), T('equal')] },
+      { id: 'array', title: 'Arrays: rows of equal groups', exp: ['B2.5'], skill: 'g2-groups',
+        body: '<p>An <b>array</b> puts equal groups in rows. Each row is one group. An egg carton with 2 rows of 6 is 2 groups of 6: <b>12</b> eggs.</p>',
+        watch: K.clip([
+          ['One row of 6.', D.things(6, { kind: 'dot', cols: 6, r: 14 })],
+          ['Two rows of 6.', D.things(12, { kind: 'dot', cols: 6, r: 14 })],
+          ['6, 12. <b>2 groups of 6 is 12</b>.', D.things(12, { kind: 'dot', cols: 6, r: 14 }), 2000]
+        ]),
+        try: { tool: 'counters', opts: { n: 0, controls: ['tens'], max: 30 }, tasks: [
+          { do: 'Make <b>3 rows of 5</b>: add counters until there are 15. Then press <b>Group in tens</b> to see 10 and 5.', goal: function (s) { return s.n === 15 && s.mode === 'tens'; }, yes: '3 groups of 5 is 15: one ten and 5 ones.' }
+        ] },
+        key: '<p>Count an array by rows: skip count by the number in a row.</p>',
+        check: [function () { var r = R.int(2, 4), c = R.int(2, 6); return { q: 'How many dots are in this array?', type: 'num', answer: r * c, fig: D.things(r * c, { kind: 'dot', cols: c, r: 12 }), hint: 'Each row has ' + c + '. Skip count by ' + c + 's, once for each row.', steps: ['There are ' + r + ' rows of ' + c + '.', 'Skip count: ' + skip(r, c) + '.'], explain: r + ' groups of ' + c + ' is ' + r * c + '.' }; }, P('g2-groups', 2)] }
+    ] },
+    { id: 'parts', title: 'Groups of halves and fourths', sub: 'Put the parts back together.', concepts: [
+      { id: 'halves', title: 'Groups of halves and fourths', exp: ['B2.5'], skill: 'g2-parts', hard: true,
+        body: '<p>A group can be part of a thing. <b>2 halves</b> make 1 whole. <b>4 fourths</b> make 1 whole. To find how much in all, put the parts together into wholes.</p>',
+        watch: K.clip([
+          ['5 children each eat half an orange. Here is the first half.', partsToWholes(1, 2)],
+          ['2 halves make 1 whole orange.', partsToWholes(2, 2)],
+          ['4 halves make 2 whole oranges.', partsToWholes(4, 2)],
+          ['5 halves make <b>2 and a half oranges</b>.', partsToWholes(5, 2), 2200]
+        ]),
+        try: partsLab,
+        ways: [
+          { label: 'Fraction strips', html: '<p>Tap parts to shade them. See how 2 halves or 4 fourths fill a whole strip.</p>', tool: 'fractions', opts: { wall: [1, 2, 4], words: true } },
+          { label: 'Fold paper', html: '<p>Fold a paper circle in half: 2 halves. Fold it again: 4 fourths. Put 6 fourths on the table and push them together into circles. You fill 1 circle and half of another.</p>' + partsToWholes(6, 4) },
+          { label: 'Count by twos', html: '<p>Halves: every 2 is a whole. Count the halves in twos: 2, 4, and 1 more. That is 2 wholes and a half.</p>' },
+          { label: 'Use money', html: '<p>A quarter is one fourth of a dollar. 4 quarters make $1. 6 quarters make $1 and two quarters, which is <b>$1.50</b>.</p>' + D.wallet([25, 25, 25, 25, 25, 25], { W: 300 }) }
+        ],
+        key: '<p>Every 2 halves is a whole. Every 4 fourths is a whole.</p>',
+        mistake: '<p>Counting halves as wholes ("5 halves is 5 oranges"). Have the child put two halves together with paper circles.</p>',
+        check: [T('halves'), P('g2-parts', 1)] }
+    ] },
+    { id: 'share', title: 'Sharing equally', sub: 'One for you, one for you.', concepts: [
+      { id: 'deal', title: 'Share one at a time', exp: ['B2.6'], skill: 'g2-share',
+        body: '<p>To <b>share equally</b>, give one to each person, again and again, until there are not enough to go around. Every person gets the same number.</p>',
+        watch: K.clip([
+          ['12 grapes for 3 friends. Give one to each.', dealt(1, 3)],
+          ['Again: one more to each.', dealt(2, 3)],
+          ['Again.', dealt(3, 3)],
+          ['And again. All 12 are shared. Each friend gets <b>4</b>.', dealt(4, 3), 2200]
+        ]),
+        try: dealLab,
+        key: '<p>Share one at a time. Every share is the same.</p>',
+        check: [T('share'), P('g2-share', 1)] },
+      { id: 'leftover', title: 'When some are left over', exp: ['B2.6'], skill: 'g2-share',
+        body: '<p>Sometimes things do not share out evenly. <b>10 shared by 4</b> is 2 each, with <b>2 left over</b>. We do not give extra to anyone.</p>',
+        watch: K.clip([
+          ['10 stickers for 4 friends. Give one to each, then again.', share(10, 4)],
+          ['2 are left. That is not enough for 4 friends, so we stop.', share(10, 4)],
+          ['Each gets <b>2</b>, and <b>2 are left over</b>.', '<p class="math big">10 shared by 4 = 2 each, 2 left</p>', 2200]
+        ]),
+        key: '<p>If there are not enough to go around, the rest are <b>left over</b>.</p>',
+        mistake: '<p>Giving the leftovers to some people so that "nothing is left". Then the shares are not equal. Ask: "Does everyone have the same?"</p>',
+        check: [P('g2-share', 2), P('g2-share', 2)] }
+    ] },
+    { id: 'howmany', title: 'How many groups?', sub: 'Take away one group at a time.', concepts: [
+      { id: 'takeg', title: 'Take away equal groups', exp: ['B2.6', 'B2.1'], skill: 'g2-takeaway',
+        body: '<p>Sometimes you know the size of each group and need to find <b>how many groups</b>. Take away one group at a time and count how many times.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 12, every: 3, start: 12 }, steps: [
+          { say: '12 muffins go in boxes of 3. Start at 12.', ms: 1000 },
+          { say: 'Take away 3: 9. That is 1 box.', act: function (t) { return t.hop(9, '&minus;3'); } },
+          { say: '6. 2 boxes.', act: function (t) { return t.hop(6, '&minus;3'); } },
+          { say: '3. 3 boxes.', act: function (t) { return t.hop(3, '&minus;3'); } },
+          { say: '0. We took away 3 four times. <b>4 boxes</b>.', act: function (t) { return t.hop(0, '&minus;3'); }, ms: 2000 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 20, every: 5, start: 15, step: 5 }, tasks: [
+          { do: '15 apples go into bags of 5. Press <b>Jump back</b> until you reach 0. How many jumps?', goal: function (s) { return s.at === 0; }, yes: function (s) { return '3 jumps of 5. So there are 3 bags.'; } }
+        ] },
+        key: '<p>Count how many times you take away the group. That is the number of groups.</p>',
+        check: [T('takeg'), P('g2-takeaway', 1)] },
+      { id: 'stories', title: 'Group and share stories', exp: ['B2.5', 'B2.6'], skill: 'g2-story',
+        body: '<p>Ask: do I know the <b>number of groups</b>, the <b>size of each group</b>, or <b>how many in all</b>? Draw it to find the missing part.</p>',
+        watch: K.clip([
+          ['4 bags with 2 oranges in each. How many oranges? We know the groups and the size.', plates(4, 2, 'dot')],
+          ['Skip count: 2, 4, 6, 8. <b>8 oranges</b>.', plates(4, 2, 'dot')],
+          ['8 oranges shared by 2 friends. Now we know how many in all and the number of friends.', share(8, 2)],
+          ['Each gets <b>4</b>.', share(8, 2), 2000]
+        ]),
+        key: '<p>Groups, sharing, adding and subtracting all fit together: 4 + 4 = 8, so 8 shared by 2 is 4.</p>',
+        check: [P('g2-story', 1), P('g2-story', 2)] }
+    ] }
+  ];
+
   A.register('groups-sharing', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Equal groups</h2>' +
 '<p><b>Equal groups</b> all have the same number in them. To find the total, add the same number again and again, or skip count.</p>' +

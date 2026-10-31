@@ -64,7 +64,236 @@
     return A.svg(360, 180, s, 'A shelf. Top row from left to right: ' + order.slice(0, 4).join(', ') + '. Bottom row: ' + order.slice(4).join(', ') + '.');
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'maps-code';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  var GREEN = function (c) { return '<rect x="' + (2 + c[0] * C) + '" y="' + (2 + c[1] * C) + '" width="' + C + '" height="' + C + '" style="fill:color-mix(in srgb,var(--sd) 40%,transparent)"/>'; };
+  /* a ring around one thing on the shelf (i: 0-7) */
+  function ring(i, col) { var x = 50 + (i % 4) * 86, y = i < 4 ? 52 : 142; return K.pop('<circle cx="' + x + '" cy="' + y + '" r="30" fill="none" style="stroke:' + (col || 'var(--strand)') + '" stroke-width="4"/>', 0); }
+  function shelfWith(order, extra) { return shelf(order).replace('</svg>', (extra || '') + '</svg>'); }
+  var S1 = ['apple', 'star', 'fish', 'cube', 'star', 'cube', 'apple', 'fish'];
+  /* tap things on the shelf to answer position questions */
+  function shelfLab(qs) {
+    return K.lab('<p class="t2 lq"></p><div class="fig lsh"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+      var i = 0, out = root.querySelector('.out');
+      function draw(extra) {
+        var hits = S1.map(function (k, j) { var x = 50 + (j % 4) * 86, y = j < 4 ? 52 : 142; return '<rect x="' + (x - 40) + '" y="' + (y - 40) + '" width="80" height="76" fill="transparent" data-j="' + j + '" style="cursor:pointer" role="button" tabindex="0" aria-label="' + k + (j < 4 ? ' on the top shelf' : ' on the bottom shelf') + '"/>'; }).join('');
+        root.querySelector('.lsh').innerHTML = shelfWith(S1, (extra || '') + hits);
+        root.querySelector('.lq').innerHTML = i < qs.length ? '<b>' + (i + 1) + ' of ' + qs.length + ':</b> ' + qs[i][0] : '<b>All done.</b>';
+      }
+      function pick(j) {
+        if (i >= qs.length) return;
+        if (j === qs[i][1]) { out.innerHTML = '<p><span class="big">Yes.</span> ' + qs[i][2] + '</p>'; i++; draw(ring(j, 'var(--ok)')); if (i === qs.length) done('All ' + qs.length + ' found. You used position words to find each one.'); }
+        else { out.innerHTML = '<p>That is the ' + S1[j] + (j < 4 ? ' on the top shelf' : ' on the bottom shelf') + '. Try again.</p>'; draw(ring(j, 'var(--bad)')); }
+      }
+      root.addEventListener('click', function (e) { var t = e.target.closest('[data-j]'); if (t) pick(+t.getAttribute('data-j')); });
+      root.addEventListener('keydown', function (e) { var t = e.target.closest('[data-j]'); if (t && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); pick(+t.getAttribute('data-j')); } });
+      draw();
+    }, 'Tap the thing each question asks for.');
+  }
+  /* tap a place on the map */
+  var mapLab = K.lab('<p class="t2 lq"></p><div class="fig lmap"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var qs = [['Tap the <b>pond</b>. Use the legend to find its symbol.', [4, 3], 'That is the pond.'], ['Tap the place just <b>above</b> the store.', [0, 3], 'One square up from the store. It is empty.'], ['Tap the place just to the <b>left</b> of the library.', [4, 1], 'One square left of the library.']], i = 0, out = root.querySelector('.out');
+    function draw(extra) {
+      var hits = ''; for (var r = 0; r < 5; r++) for (var c = 0; c < 6; c++) hits += '<rect x="' + (2 + c * C) + '" y="' + (2 + r * C) + '" width="' + C + '" height="' + C + '" fill="transparent" data-c="' + c + ',' + r + '" style="cursor:pointer"/>';
+      root.querySelector('.lmap').innerHTML = gridSvg(6, 5, TOWN, (extra || '') + hits, 'The neighbourhood map. Tap a square.', true);
+      root.querySelector('.lq').innerHTML = i < qs.length ? '<b>' + (i + 1) + ' of ' + qs.length + ':</b> ' + qs[i][0] : '<b>All done.</b>';
+    }
+    root.addEventListener('click', function (e) {
+      var t = e.target.closest('[data-c]'); if (!t || i >= qs.length) return;
+      var p = t.getAttribute('data-c').split(',').map(Number), ok = p[0] === qs[i][1][0] && p[1] === qs[i][1][1];
+      out.innerHTML = ok ? '<p><span class="big">Yes.</span> ' + qs[i][2] + '</p>' : '<p>' + (at(p[0], p[1]) ? 'That is the ' + at(p[0], p[1]) + '.' : 'That is an empty square.') + ' Try again.</p>';
+      if (ok) i++;
+      draw(marker(p[0], p[1], ok ? 'var(--ok)' : 'var(--bad)', ''));
+      if (ok && i === qs.length) done('Well done. You read the map with the legend and position words.');
+    });
+    draw();
+  }, 'Tap the square each question asks for.');
+  /* walk the map with arrow buttons */
+  var walkLab = K.lab('<p class="t2">Start at home. Walk to the <b>library</b>. Press the arrows to move one square at a time.</p>' +
+    '<div class="btnrow"><button type="button" class="btn alt" data-mv="up" aria-label="Move up">&uarr; up</button><button type="button" class="btn alt" data-mv="down" aria-label="Move down">&darr; down</button><button type="button" class="btn alt" data-mv="left" aria-label="Move left">&larr; left</button><button type="button" class="btn alt" data-mv="right" aria-label="Move right">&rarr; right</button><button type="button" class="btn" data-mv="home">Back to home</button></div>' +
+    '<div class="fig lwfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var pos = [0, 0], moves = [];
+    function said() { var s = [], last = null; moves.forEach(function (d) { if (last && last.d === d) last.n++; else s.push(last = { d: d, n: 1 }); }); return s.map(function (x) { return x.d + ' ' + x.n; }).join(', '); }
+    function draw() {
+      var trail = [[0, 0]], c = [0, 0]; moves.forEach(function (d) { c = [c[0] + DIR[d][0], c[1] + DIR[d][1]]; trail.push(c); });
+      root.querySelector('.lwfig').innerHTML = gridSvg(6, 5, TOWN, pathSvg(trail) + marker(pos[0], pos[1], 'var(--hi)', ''), 'Map with your position marked');
+      var here = at(pos[0], pos[1]);
+      root.querySelector('.out').innerHTML = '<p>' + (here ? 'You are at the <b>' + here + '</b>.' : 'You are on an empty square.') + (moves.length ? ' Your directions: <b>' + said() + '</b>.' : '') + '</p>';
+      root.querySelectorAll('[data-mv]').forEach(function (b) { var d = DIR[b.getAttribute('data-mv')]; if (d) { var nc = pos[0] + d[0], nr = pos[1] + d[1]; b.disabled = nc < 0 || nr < 0 || nc > 5 || nr > 4; } });
+      if (here === 'library') done('You reached the library. Your directions were ' + said() + '.');
+    }
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-mv]'); if (!b) return;
+      var k = b.getAttribute('data-mv');
+      if (k === 'home') { pos = [0, 0]; moves = []; } else { pos = [pos[0] + DIR[k][0], pos[1] + DIR[k][1]]; moves.push(k); }
+      draw();
+    });
+    draw();
+  }, 'Walk from home to the library. Your directions are written for you as you go.');
+  /* the robot after k steps of code */
+  function robotFrame(start, code, k, star, cols, rows, col) {
+    var p = run(start, code.slice(0, k), cols, rows), e = p[p.length - 1];
+    return '<div class="row2"><div>' + codeHtml(code, k - 1) + '</div><div class="fig">' + gridSvg(cols, rows, star ? [[star[0], star[1], 'star']] : [], GREEN(start) + pathSvg(p, col) + K.pop(marker(e[0], e[1], col || 'var(--strand)', 'R'), 0), 'The robot after ' + k + ' steps') + '</div></div>';
+  }
+  var codeLab = K.lab('<p class="t2">Get the robot from the green square to the star. Add steps, then run the code.</p>' +
+    '<div class="ctrl"><label for="lcd">Direction<select id="lcd"><option value="up">&uarr; up</option><option value="down">&darr; down</option><option value="left">&larr; left</option><option value="right" selected>&rarr; right</option></select></label><label for="lcn">Squares<select id="lcn"><option>1</option><option selected>2</option><option>3</option><option>4</option></select></label></div>' +
+    '<div class="btnrow"><button type="button" class="btn alt" id="lcadd">Add step</button><button type="button" class="btn alt" id="lcundo">Remove last step</button></div>' +
+    '<div class="row2"><div class="lclist"></div><div class="fig lcfig"></div></div>' +
+    '<div class="btnrow"><button type="button" class="btn" id="lcrun">Run the code</button><button type="button" class="btn alt" id="lcnew">New star</button></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$, start = [0, 4], star = [4, 1], code = [], ran = false;
+    function draw() {
+      root.querySelector('.lclist').innerHTML = code.length ? codeHtml(code) : '<p class="t2">No steps yet.</p>';
+      var extra = GREEN(start), p = run(start, code, 5, 5), e = ran ? p[p.length - 1] : start;
+      if (ran) extra += pathSvg(p);
+      root.querySelector('.lcfig').innerHTML = gridSvg(5, 5, [[star[0], star[1], 'star']], extra + marker(e[0], e[1], 'var(--strand)', 'R'), 'Robot grid');
+      var out = root.querySelector('.out');
+      if (!ran) { out.innerHTML = ''; return; }
+      var ok = e[0] === star[0] && e[1] === star[1], dx = star[0] - e[0], dy = star[1] - e[1];
+      out.innerHTML = '<p><span class="big">' + (ok ? 'On the star.' : 'Not on the star yet.') + '</span></p><p>' + (p.hit ? 'The robot reached the edge and stopped. ' : '') + (ok ? 'Your code works.' : 'It needs to go ' + [dx ? Math.abs(dx) + ' ' + (dx > 0 ? 'right' : 'left') : '', dy ? Math.abs(dy) + ' ' + (dy > 0 ? 'down' : 'up') : ''].filter(Boolean).join(' and ') + ' more. Change a step and run it again.') + '</p>';
+      if (ok) done('Your code works. Press "New star" for another.');
+    }
+    $('#lcadd', root).addEventListener('click', function () { if (code.length < 8) { code.push({ d: $('#lcd', root).value, n: +$('#lcn', root).value }); ran = false; draw(); } });
+    $('#lcundo', root).addEventListener('click', function () { code.pop(); ran = false; draw(); });
+    $('#lcrun', root).addEventListener('click', function () { ran = true; draw(); });
+    $('#lcnew', root).addEventListener('click', function () { do { star = [R.int(0, 4), R.int(0, 4)]; } while (star[0] === start[0] && star[1] === start[1]); code = []; ran = false; draw(); });
+    draw();
+  }, 'Build code for the robot, then run it.');
+  /* fix one step of broken code */
+  var debugLab = K.lab('<p class="t2">This code should take the robot to the star. Run it, find the wrong step, and fix its number.</p>' +
+    '<div class="ctrl"><label for="ldb1">Step 1: move right<select id="ldb1"><option>1</option><option>2</option><option selected>3</option><option>4</option></select></label><label for="ldb2">Step 2: move down<select id="ldb2"><option>1</option><option selected>2</option><option>3</option></select></label></div>' +
+    '<div class="fig ldfig"></div><div class="btnrow"><button type="button" class="btn" id="ldrun">Run the code</button></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$, star = [2, 2];
+    function draw(ran) {
+      var code = [{ d: 'right', n: +$('#ldb1', root).value }, { d: 'down', n: +$('#ldb2', root).value }], p = run([0, 0], code, 5, 4), e = ran ? p[p.length - 1] : [0, 0], ok = e[0] === star[0] && e[1] === star[1];
+      root.querySelector('.ldfig').innerHTML = gridSvg(5, 4, [[star[0], star[1], 'star']], GREEN([0, 0]) + (ran ? pathSvg(p, ok ? 'var(--strand)' : 'var(--bad)') : '') + marker(e[0], e[1], ran && !ok ? 'var(--bad)' : 'var(--strand)', 'R'), 'Robot grid with a star');
+      root.querySelector('.out').innerHTML = !ran ? '' : ok ? '<p><span class="big">Fixed.</span> The robot lands on the star.</p>' : '<p>It ends ' + (e[0] !== star[0] ? Math.abs(e[0] - star[0]) + ' square' + (Math.abs(e[0] - star[0]) > 1 ? 's' : '') + ' too far ' + (e[0] > star[0] ? 'right' : 'left') : Math.abs(e[1] - star[1]) + ' square' + (Math.abs(e[1] - star[1]) > 1 ? 's' : '') + ' too far ' + (e[1] > star[1] ? 'down' : 'up')) + '. Which step is wrong?</p>';
+      if (ran && ok) done('You debugged it: you found the wrong step and changed only that step.');
+    }
+    root.addEventListener('change', function () { draw(false); });
+    $('#ldrun', root).addEventListener('click', function () { draw(true); });
+    draw(false);
+  }, 'Run the code. Find the wrong step and fix it.');
+  /* two robots, one step at a time */
+  function twoFrame(n) { return gridSvg(5, 4, [], pathSvg([[0, 3], [1, 3], [2, 3], [3, 3]].slice(0, n + 1)) + pathSvg([[4, 3], [4, 2], [4, 1], [4, 0]].slice(0, n + 1), 'var(--se)') + K.pop(marker(n, 3, 'var(--strand)', 'A') + marker(4, 3 - n, 'var(--se)', 'B'), 0), 'After step ' + n + ', robot A has moved ' + n + ' right and robot B ' + n + ' up'); }
+  var twoLab = K.lab('<div class="btnrow"><button type="button" class="btn" id="ltnext">Next step</button><button type="button" class="btn alt" id="ltre">Start again</button></div><div class="fig ltfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var n = 0, $ = A.$;
+    function draw() {
+      root.querySelector('.ltfig').innerHTML = twoFrame(n);
+      $('#ltnext', root).disabled = n >= 3;
+      root.querySelector('.out').innerHTML = '<p>After step <b>' + n + '</b>: A has moved <span class="big">' + n + '</span> right. B has moved <span class="big">' + n + '</span> up.</p>';
+      if (n === 3) done('Both robots moved on every step, at the same time. That is concurrent code.');
+    }
+    $('#ltnext', root).addEventListener('click', function () { n++; draw(); });
+    $('#ltre', root).addEventListener('click', function () { n = 0; draw(); });
+    draw();
+  }, 'Press "Next step". Both robots move at the same time.');
+
+  var LESSONS = [
+    { id: 'where', title: 'Where is it?', sub: 'Position words.', concepts: [
+      { id: 'leftright', title: 'Left, right and between', exp: ['E1.5'], skill: 'm2-position',
+        body: '<p><b>Left</b> and <b>right</b> tell which side. <b>Between</b> means in the middle of two things. Left and right always mean <b>your</b> left and right as you look at the picture.</p>',
+        watch: K.clip([
+          ['The top shelf: apple, star, fish, cube.', shelf(S1)],
+          ['The star is to the <b>right</b> of the apple.', shelfWith(S1, ring(0, 'var(--se)') + ring(1))],
+          ['The fish is to the <b>left</b> of the cube.', shelfWith(S1, ring(3, 'var(--se)') + ring(2))],
+          ['The star is <b>between</b> the apple and the fish.', shelfWith(S1, ring(0, 'var(--se)') + ring(2, 'var(--se)') + ring(1)), 2000]
+        ]),
+        try: shelfLab([['Tap the thing to the <b>left</b> of the fish on the top shelf.', 1, 'The star is left of the fish.'], ['Tap the thing <b>between</b> the star and the apple on the bottom shelf.', 5, 'The cube is in the middle.'], ['Tap the thing to the <b>right</b> of the apple on the top shelf.', 1, 'The star is right of the apple.']]),
+        ways: [{ label: 'Make an L', html: '<p>Hold up both hands, palms away, thumbs out. The hand whose thumb and finger make an <b>L</b> is your <b>left</b>.</p>' }],
+        key: '<p>Left and right: your left and right as you look at the picture.</p>',
+        mistake: '<p>Mixing up left and right, or using the left and right of a person in the picture. Have your child point with their own left hand first.</p>',
+        check: [T('pos'), P('m2-position', 1)] },
+      { id: 'abovebelow', title: 'Above and below', exp: ['E1.5'], skill: 'm2-position',
+        body: '<p><b>Above</b> means higher up. <b>Below</b> means lower down. Look straight up or straight down.</p>',
+        watch: K.clip([
+          ['Find the star on the top shelf.', shelfWith(S1, ring(1))],
+          ['Look straight down. The <b>cube</b> is below it.', shelfWith(S1, ring(1, 'var(--se)') + ring(5))],
+          ['Find the fish on the bottom shelf. Look straight up: the <b>cube</b> is above it.', shelfWith(S1, ring(7, 'var(--se)') + ring(3)), 2000]
+        ]),
+        try: shelfLab([['Tap the thing <b>below</b> the apple on the top shelf.', 4, 'The star is straight below the apple.'], ['Tap the thing <b>above</b> the apple on the bottom shelf.', 2, 'The fish is straight above it.'], ['Tap the thing <b>above</b> the star on the bottom shelf.', 0, 'The apple is straight above.']]),
+        key: '<p>Above: look straight up. Below: look straight down.</p>',
+        check: [P('m2-position', 2), P('m2-position', 3)] }
+    ] },
+    { id: 'maps', title: 'Reading a map', sub: 'Symbols, legends and directions.', concepts: [
+      { id: 'legend', title: 'Maps and legends', exp: ['E1.4'], skill: 'm2-map',
+        body: '<p>A <b>map</b> is a drawing of a place from above, like a bird would see it. A <b>legend</b> tells what each symbol means.</p>',
+        watch: K.clip([
+          ['A neighbourhood, seen from above.', gridSvg(6, 5, TOWN, '', 'The neighbourhood map')],
+          ['The <b>legend</b> shows what each symbol means.', gridSvg(6, 5, TOWN, '', 'The neighbourhood map with a legend', true)],
+          ['Find the pond in the legend. Then find it on the map.', gridSvg(6, 5, TOWN, K.pop(marker(4, 3, 'transparent', '')), 'The pond is circled', true)],
+          ['The pond is one square up and one square left of the playground.', gridSvg(6, 5, TOWN, pathSvg([[5, 4], [5, 3], [4, 3]]), 'From the playground up 1 and left 1 to the pond', true), 2200]
+        ]),
+        try: mapLab,
+        key: '<p>Find the symbol in the legend first. Then find it on the map.</p>',
+        mistake: '<p>Thinking a map shows things the size they really are. The symbols only show <b>where</b> things are.</p>',
+        check: [T('map'), P('m2-map', 1)] },
+      { id: 'directions', title: 'Give directions', exp: ['E1.4'], skill: 'm2-map', hard: true,
+        body: '<p>Directions say <b>which way</b> and <b>how many squares</b>: "right 3, then down 2".</p>',
+        watch: K.clip([
+          ['From home to the school.', gridSvg(6, 5, TOWN, marker(0, 0, 'var(--hi)', ''), 'Start at home')],
+          ['Right 1, 2, 3. <b>Right 3</b>.', gridSvg(6, 5, TOWN, pathSvg([[0, 0], [1, 0], [2, 0], [3, 0]]) + K.pop(marker(3, 0, 'var(--hi)', '')), 'Right 3 to the school')],
+          ['Now to the pond: <b>right 1</b>.', gridSvg(6, 5, TOWN, pathSvg([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0]]) + K.pop(marker(4, 0, 'var(--hi)', '')), 'Right 1 more')],
+          ['Then <b>down 3</b>. Right 1, down 3 reaches the pond.', gridSvg(6, 5, TOWN, pathSvg([[0, 0], [1, 0], [2, 0], [3, 0], [4, 0], [4, 1], [4, 2], [4, 3]]) + K.pop(marker(4, 3, 'var(--hi)', '')), 'Down 3 to the pond'), 2200]
+        ]),
+        try: walkLab,
+        ways: [
+          { label: 'One part at a time', html: '<p>First count the squares <b>across</b> (left or right). Then count the squares <b>up or down</b>. Say each part with its number.</p>' },
+          { label: 'Use your finger', html: '<p>Put a finger on the start. Slide it one square at a time and count out loud. Say the direction when you change.</p>' }
+        ],
+        key: '<p>Which way, and how many. Then the next way, and how many.</p>',
+        mistake: '<p>Counting the starting square as a move. The first move is the first square you step <b>onto</b>.</p>',
+        check: [T('move'), P('m2-map', 2), P('m2-map', 3)] }
+    ] },
+    { id: 'code', title: 'Writing code', sub: 'Steps in order.', concepts: [
+      { id: 'order', title: 'Code runs in order', exp: ['C3.1'], skill: 'm2-code', hard: true,
+        body: '<p><b>Code</b> is a list of steps for a computer or robot. The steps run <b>in order</b>, from top to bottom. Finish one step before starting the next.</p>',
+        watch: K.clip([
+          ['The robot starts on the green square.', robotFrame([1, 1], [{ d: 'right', n: 2 }, { d: 'down', n: 3 }], 0, [3, 4], 5, 5)],
+          ['Step 1: move right 2.', robotFrame([1, 1], [{ d: 'right', n: 2 }, { d: 'down', n: 3 }], 1, [3, 4], 5, 5)],
+          ['Step 2: move down 3. The robot ends on the <b>star</b>.', robotFrame([1, 1], [{ d: 'right', n: 2 }, { d: 'down', n: 3 }], 2, [3, 4], 5, 5), 2000]
+        ]),
+        try: codeLab,
+        ways: [
+          { label: 'Be the robot', html: '<p>Mark squares on the floor with tape. Read one step, do it, then read the next. Do not peek ahead.</p>' },
+          { label: 'Tick each step', html: '<p>Put a finger on step 1. Move the robot. Tick the step. Only then move your finger to step 2.</p>' }
+        ],
+        key: '<p>One step at a time, top to bottom. This is called <b>sequential</b> order.</p>',
+        mistake: '<p>Doing the steps out of order, or adding the moves together ("right 2 and down 3 is 5 squares") instead of following each one.</p>',
+        check: [T('end'), P('m2-code', 1), P('m2-code', 2)] }
+    ] },
+    { id: 'debug', title: 'Fixing code', sub: 'Find the wrong step.', concepts: [
+      { id: 'fix', title: 'Debugging', exp: ['C3.2'], skill: 'm2-debug',
+        body: '<p>When code does not do what you want, find the step that is wrong and change it. This is called <b>debugging</b>.</p>',
+        watch: K.clip([
+          ['The code should reach the star.', robotFrame([3, 0], [{ d: 'down', n: 2 }, { d: 'left', n: 2 }], 0, [2, 2], 5, 4)],
+          ['Run it. Step 1 is fine.', robotFrame([3, 0], [{ d: 'down', n: 2 }, { d: 'left', n: 2 }], 1, [2, 2], 5, 4)],
+          ['Step 2 goes one square too far.', robotFrame([3, 0], [{ d: 'down', n: 2 }, { d: 'left', n: 2 }], 2, [2, 2], 5, 4, 'var(--bad)')],
+          ['Change step 2 to <b>move left 1</b>. Fixed.', robotFrame([3, 0], [{ d: 'down', n: 2 }, { d: 'left', n: 1 }], 2, [2, 2], 5, 4), 2200]
+        ]),
+        try: debugLab,
+        key: '<p>Run it. Watch where it goes wrong. Change only that step.</p>',
+        mistake: '<p>Starting over from scratch, or changing a step that was already right.</p>',
+        check: [T('fix'), P('m2-debug', 1), P('m2-debug', 2)] }
+    ] },
+    { id: 'together', title: 'Two at once', sub: 'Concurrent code.', concepts: [
+      { id: 'conc', title: 'Robots at the same time', exp: ['C3.1'], skill: 'm2-together',
+        body: '<p>Some code makes things happen <b>at the same time</b>. This is called <b>concurrent</b> code. Two robots each follow their own code, step by step, together.</p>',
+        watch: K.clip([
+          ['A moves right. B moves up. Start.', twoFrame(0)],
+          ['Step 1: both move.', twoFrame(1)],
+          ['Step 2: both move again.', twoFrame(2)],
+          ['Step 3: A is 3 right, B is 3 up.', twoFrame(3), 2000]
+        ]),
+        try: twoLab,
+        key: '<p>Same time: every robot moves on every step.</p>',
+        mistake: '<p>Moving one robot all the way first, then the other.</p>',
+        check: [T('conc'), P('m2-together', 1), P('m2-together', 2)] }
+    ] }
+  ];
   A.register('maps-code', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Where is it?</h2>' +
 '<p>Position words tell where things are: <b>left</b>, <b>right</b>, <b>above</b>, <b>below</b>, <b>beside</b> (next to), and <b>between</b>.</p>' +

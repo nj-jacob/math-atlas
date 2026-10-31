@@ -1,6 +1,8 @@
 (function () {
   var A = Atlas, R = A.R;
   var SC = ['var(--sb)', 'var(--se)', 'var(--sd)', 'var(--sc)', 'var(--sf)'];
+  /* a bar named for a colour (or a fruit) is drawn in that colour */
+  var NAMED = { red: '#e03131', blue: '#1c7ed6', green: '#2f9e44', pink: '#e64980', yellow: '#f2b705', apple: '#e03131', banana: '#f2b705', grapes: '#7048e8', orange: '#e8590c', plum: '#862e9c', kiwi: '#74b816', pear: '#a9c934' };
   function sum(a) { return a.reduce(function (x, y) { return x + y; }, 0); }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
 
@@ -134,7 +136,7 @@
     }
     g.cats.forEach(function (c, i) {
       var h = g.n[i] * H / max, x = L + i * bw + bw * 0.18;
-      s += '<rect x="' + x.toFixed(1) + '" y="' + (B - h).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" style="fill:' + SC[i % 5] + ';stroke:var(--ink)" stroke-width="2"/>';
+      s += '<rect x="' + x.toFixed(1) + '" y="' + (B - h).toFixed(1) + '" width="' + (bw * 0.64).toFixed(1) + '" height="' + h.toFixed(1) + '" style="fill:' + (NAMED[c] || SC[i % 5]) + ';stroke:var(--ink)" stroke-width="2"/>';
       s += '<text x="' + (L + (i + 0.5) * bw).toFixed(1) + '" y="' + (B + 26) + '" text-anchor="middle" font-size="19" font-weight="700">' + esc(c) + '</text>';
     });
     s += '<line x1="' + L + '" y1="' + T + '" x2="' + L + '" y2="' + B + '" style="stroke:var(--ink)" stroke-width="2.5"/><line x1="' + L + '" y1="' + B + '" x2="' + (W - 6) + '" y2="' + B + '" style="stroke:var(--ink)" stroke-width="2.5"/>';
@@ -185,7 +187,246 @@
   var FRUIT = { title: 'Our favourite fruit', cats: ['apple', 'banana', 'grapes', 'orange'], n: [5, 7, 4, 2], src: 'survey of Room 12' };
   var PETS = { title: 'Pets at home', lo: 0, hi: 4, n: [6, 4, 3, 1, 1], axis: 'Number of pets' };
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'data';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  /* place each shape in the right part of the Venn diagram */
+  var placeLab = K.lab('<div class="fig lpfig"></div><p class="lq"></p><div class="btnrow lpbtn"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var a = 'blue', b = 'big', items = randSet(6), i = 0, placed = [];
+    var LAB = { a: 'Only ' + RULES[a].name, ab: 'Both', b: 'Only ' + RULES[b].name, n: 'Neither (outside)' };
+    root.querySelector('.lpbtn').innerHTML = ['a', 'ab', 'b', 'n'].map(function (g) { return '<button type="button" class="btn alt" data-g="' + g + '">' + LAB[g] + '</button>'; }).join('');
+    function draw() {
+      root.querySelector('.lpfig').innerHTML = venn(placed, a, b);
+      root.querySelector('.lq').innerHTML = i < items.length ? 'Where does this go? ' + A.svg(46, 46, icon(items[i], 23, 23), itName(items[i])) + ' <b>' + itName(items[i]) + '</b>' : '<b>All sorted.</b>';
+    }
+    root.addEventListener('click', function (e) {
+      var btn = e.target.closest('[data-g]'); if (!btn || i >= items.length) return;
+      var it = items[i], g = region(it, a, b), out = root.querySelector('.out');
+      if (btn.getAttribute('data-g') === g) { placed.push(it); i++; out.innerHTML = '<p><span class="big">Yes.</span> ' + (g === 'ab' ? 'It is blue and big, so it goes in the overlap.' : g === 'n' ? 'It is not blue and not big, so it goes outside both circles.' : 'It fits one rule only.') + '</p>'; draw(); if (i === items.length) done('All 6 sorted. Every shape has exactly one place.'); }
+      else out.innerHTML = '<p>Check both rules. Is it blue? ' + (RULES[a].t(it) ? 'Yes' : 'No') + '. Is it big? ' + (RULES[b].t(it) ? 'Yes' : 'No') + '.</p>';
+    });
+    draw();
+  }, 'Sort each shape. Rule 1: <b>blue</b>. Rule 2: <b>big</b>.');
+  var sortLab = K.lab('<div class="ctrl"><label for="lvA">Rule 1<select id="lvA"><option value="red">red</option><option value="blue">blue</option><option value="big">big</option></select></label><label for="lvB">Rule 2<select id="lvB"><option value="tri">triangle</option><option value="sq" selected>square</option><option value="big">big</option></select></label><label for="lvK">Show as<select id="lvK"><option value="c" selected>Carroll diagram</option><option value="v">Venn diagram</option></select></label></div><div class="fig lvfig"></div><div class="out" aria-live="polite"></div><button type="button" class="btn alt" id="lvnew">New shapes</button>', function (root, done) {
+    var $ = A.$, items = SET.slice();
+    function v() {
+      var a = $('#lvA', root).value, b = $('#lvB', root).value;
+      if (a === b) { b = 'tri'; $('#lvB', root).value = b; }
+      var c = counts(items, a, b);
+      root.querySelector('.lvfig').innerHTML = $('#lvK', root).value === 'v' ? venn(items, a, b) : carroll(items, a, b);
+      root.querySelector('.out').innerHTML = '<p>Only <b>' + RULES[a].name + '</b>: ' + c.a + '. Both: <b>' + c.ab + '</b>. Only <b>' + RULES[b].name + '</b>: ' + c.b + '. Neither: ' + c.n + '.</p><p class="t2">' + (c.a + c.ab + c.b + c.n) + ' shapes in all. Every shape goes in exactly one place.</p>';
+      done();
+    }
+    A.bind(root, ['lvA', 'lvB', 'lvK'], v);
+    $('#lvnew', root).addEventListener('click', function () { items = randSet(10); v(); });
+  }, 'Change the rules. Switch between the two diagrams. The counts stay the same.');
+  var tallyLab = K.lab('<div class="btnrow"><button type="button" class="btn" id="ltadd">Add a mark</button><button type="button" class="btn alt" id="ltclr">Clear</button></div><div class="fig ltfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var n = 0, $ = A.$;
+    function draw() {
+      root.querySelector('.ltfig').innerHTML = n ? tally(n) : '<p class="t2">No marks yet.</p>';
+      var g = Math.floor(n / 5), r = n % 5, say = []; for (var i = 1; i <= g; i++) say.push(5 * i); for (var j = 1; j <= r; j++) say.push(5 * g + j);
+      root.querySelector('.out').innerHTML = n ? '<p><span class="big">' + n + '</span> &nbsp;Count: ' + say.join(', ') + '</p>' + (n === 4 ? '<p class="t2">The next mark crosses the four.</p>' : '') : '';
+      $('#ltadd', root).disabled = n >= 20;
+      if (n === 12) done('12: count 5, 10, then 11, 12.');
+    }
+    $('#ltadd', root).addEventListener('click', function () { n++; draw(); });
+    $('#ltclr', root).addEventListener('click', function () { n = 0; draw(); });
+    draw();
+  }, 'Add marks one at a time, up to 12. Watch the fifth mark cross the others.');
+  var surveyLab = K.lab('<p class="t2">Press a button for each person you ask. Each press adds one tally mark.</p><div class="btnrow"><button type="button" class="btn alt" data-tw="0,0">Walk, Grade 2</button><button type="button" class="btn alt" data-tw="0,1">Walk, Grade 3</button><button type="button" class="btn alt" data-tw="1,0">Ride, Grade 2</button><button type="button" class="btn alt" data-tw="1,1">Ride, Grade 3</button></div><div class="lsfig"></div><div class="out" aria-live="polite"></div><div class="btnrow"><button type="button" class="btn alt" id="lsr">Ask 10 people</button><button type="button" class="btn alt" id="ls0">Clear</button></div>', function (root, done) {
+    var tw = [[0, 0], [0, 0]], $ = A.$;
+    function t() {
+      root.querySelector('.lsfig').innerHTML = twoWay(['Walk', 'Ride'], ['Grade 2', 'Grade 3'], tw, true, true);
+      var all = tw[0][0] + tw[0][1] + tw[1][0] + tw[1][1];
+      root.querySelector('.out').innerHTML = all ? '<p>You asked <b>' + all + '</b> people. Walk: ' + sum(tw[0]) + '. Ride: ' + sum(tw[1]) + '. Grade 2: ' + (tw[0][0] + tw[1][0]) + '. Grade 3: ' + (tw[0][1] + tw[1][1]) + '.</p>' : '<p>No answers yet.</p>';
+      if (all >= 5) done('Each person goes in one box: their row and their column.');
+    }
+    root.addEventListener('click', function (e) { var b = e.target.closest('[data-tw]'); if (!b) return; var p = b.getAttribute('data-tw').split(','); if (tw[+p[0]][+p[1]] < 20) tw[+p[0]][+p[1]]++; t(); });
+    $('#lsr', root).addEventListener('click', function () { for (var i = 0; i < 10; i++) { var r = R.int(0, 1), c = R.int(0, 1); if (tw[r][c] < 20) tw[r][c]++; } t(); });
+    $('#ls0', root).addEventListener('click', function () { tw = [[0, 0], [0, 0]]; t(); });
+    t();
+  }, 'Run a survey: walk or ride, Grade 2 or Grade 3.');
+  function graphLab(text, mode) {
+    return K.lab('<div class="ctrl lgst"></div><div class="ctrl"><label>Show as<select class="lgk"><option value="b">bar graph</option><option value="p">pictograph</option></select></label></div><div class="fig lgfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+      var gv = FRUIT.n.slice(), gst = root.querySelector('.lgst');
+      gst.innerHTML = FRUIT.cats.map(function (c, i) { return '<div><span class="t2" style="font-size:.9rem;font-weight:600">' + c + '</span><div class="step"><button type="button" class="btn alt" data-gi="' + i + '" data-s="-1" aria-label="One less ' + c + '">&minus;</button><b class="lgv">' + gv[i] + '</b><button type="button" class="btn alt" data-gi="' + i + '" data-s="1" aria-label="One more ' + c + '">+</button></div></div>'; }).join('');
+      function g() {
+        var d = { title: FRUIT.title, cats: FRUIT.cats, n: gv, src: FRUIT.src }, m = modes(gv);
+        root.querySelectorAll('.lgv').forEach(function (b, i) { b.textContent = gv[i]; });
+        root.querySelector('.lgfig').innerHTML = root.querySelector('.lgk').value === 'b' ? barG(d) : picto(d);
+        root.querySelector('.out').innerHTML = mode ? '<p>Mode: <span class="big">' + modeWords(FRUIT.cats, gv) + '</span></p><p class="t2">' + (!m.length ? 'Every fruit has the same number of votes, so there is no mode.' : m.length > 1 ? 'A tie for the most votes: ' + m.length + ' modes.' : FRUIT.cats[m[0]] + ' has the most votes: ' + gv[m[0]] + '. The mode is the fruit, not the number.') + '</p>' : '<p>Total votes: <b>' + sum(gv) + '</b>. ' + FRUIT.cats.map(function (c, i) { return c + ' ' + gv[i]; }).join(', ') + '.</p>';
+      }
+      gst.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-gi]'); if (!b) return;
+        var i = +b.getAttribute('data-gi'); gv[i] = Math.max(0, Math.min(10, gv[i] + +b.getAttribute('data-s'))); g();
+        if (!mode || modes(gv).length !== 1 || modes(gv)[0] !== 1) done(mode ? 'You changed the mode. It is always the answer with the most votes.' : undefined);
+      });
+      root.querySelector('.lgk').addEventListener('change', g);
+      g();
+    }, text);
+  }
+  var plotLab = K.lab('<p class="t2">How many pets do 6 more children have? Tap a number for each child.</p><div class="btnrow">' + [0, 1, 2, 3, 4].map(function (v) { return '<button type="button" class="btn alt" data-pv="' + v + '">' + v + '</button>'; }).join('') + '</div><div class="fig lpl"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var n = [0, 0, 0, 0, 0], k = 0;
+    function draw() {
+      root.querySelector('.lpl').innerHTML = linePlot({ title: 'Pets at home', lo: 0, hi: 4, n: n, axis: 'Number of pets' });
+      root.querySelector('.out').innerHTML = '<p>' + k + ' of 6 children added.</p>';
+      if (k >= 6) done('Each X is one child. The tallest stack is the most common answer.');
+    }
+    root.addEventListener('click', function (e) { var b = e.target.closest('[data-pv]'); if (!b || k >= 6) return; n[+b.getAttribute('data-pv')]++; k++; draw(); });
+    draw();
+  }, 'Build a line plot one X at a time.');
+  var bagLab = K.lab('<div class="ctrl"><label for="lbr">Red marbles: <output id="lbro">3</output><input type="range" id="lbr" min="0" max="6" value="3"></label><label for="lbb">Blue marbles: <output id="lbbo">2</output><input type="range" id="lbb" min="0" max="6" value="2"></label></div><div class="vrow lbfig"></div><div class="out lbout"></div><div class="btnrow"><button type="button" class="btn alt" id="lbpick">Pick 10 times</button></div><div class="out lbres" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$, seen = {};
+    function bg() {
+      var r = +$('#lbr', root).value, b = +$('#lbb', root).value, m = { red: r, blue: b };
+      $('#lbro', root).textContent = r; $('#lbbo', root).textContent = b;
+      root.querySelector('.lbfig').innerHTML = '<figure>' + bag(m) + '</figure>';
+      root.querySelector('.lbout').innerHTML = r + b === 0 ? '<p>The bag is empty. Picking any marble is <b>impossible</b>.</p>' : '<p>Picking red: <span class="big">' + chance(m, 'red') + '</span></p><p>Picking blue: <b>' + chance(m, 'blue') + '</b>. Picking green: <b>impossible</b>.</p>';
+      root.querySelector('.lbres').innerHTML = '';
+      if (r + b) seen[chance(m, 'red')] = 1;
+      if (Object.keys(seen).length >= 3) done('You made red impossible, possible and certain.');
+    }
+    A.bind(root, ['lbr', 'lbb'], bg);
+    $('#lbpick', root).addEventListener('click', function () {
+      var r = +$('#lbr', root).value, b = +$('#lbb', root).value, res = root.querySelector('.lbres');
+      if (!r && !b) { res.innerHTML = '<p>Add some marbles first.</p>'; return; }
+      var got = [], nr = 0;
+      for (var i = 0; i < 10; i++) { var red = R.int(1, r + b) <= r; if (red) nr++; got.push(red ? 'R' : 'B'); }
+      res.innerHTML = '<p>You picked (and put back): ' + got.join(' ') + '</p><p>Red <b>' + nr + '</b> times, blue <b>' + (10 - nr) + '</b> times.</p>';
+    });
+  }, 'Change the marbles. Make picking red impossible, then possible, then certain.');
+
+  var LESSONS = [
+    { id: 'sort', title: 'Sorting by two rules', sub: 'Venn and Carroll diagrams.', concepts: [
+      { id: 'venn', title: 'Venn diagrams', exp: ['D1.1'], skill: 'd2-sort', hard: true,
+        body: '<p>A <b>Venn diagram</b> sorts with two rules using two circles. Things that fit <b>both</b> rules go where the circles <b>overlap</b>. Things that fit neither go <b>outside</b>.</p>',
+        watch: K.clip([
+          ['Rules: <b>red</b> and <b>triangle</b>.', venn([], 'red', 'tri')],
+          ['A big red circle: red, not a triangle. Red circle only.', venn(SET.slice(0, 1), 'red', 'tri')],
+          ['A small red triangle fits both. It goes in the <b>overlap</b>.', venn(SET.slice(0, 2), 'red', 'tri')],
+          ['A big blue square fits neither. It goes <b>outside</b>.', venn(SET.slice(0, 3), 'red', 'tri')],
+          ['Every shape has one place.', venn(SET, 'red', 'tri'), 2000]
+        ]),
+        try: placeLab,
+        ways: [
+          { label: 'Two questions', html: '<p>Ask two yes-or-no questions about each thing. Is it red? Is it a triangle?</p><div class="tbl"><table><thead><tr><th>Red?</th><th>Triangle?</th><th>Goes in</th></tr></thead><tbody><tr><td>yes</td><td>yes</td><td>the overlap</td></tr><tr><td>yes</td><td>no</td><td>red only</td></tr><tr><td>no</td><td>yes</td><td>triangle only</td></tr><tr><td>no</td><td>no</td><td>outside</td></tr></tbody></table></div>' },
+          { label: 'Hoops on the floor', html: '<p>Lay two hula hoops on the floor so they overlap. Sort real toys into them. Things that fit both rules sit in the overlap.</p>' }
+        ],
+        key: '<p>Both rules: the overlap. Neither rule: outside.</p>',
+        mistake: '<p>Putting a thing that fits both rules in only one circle.</p>',
+        check: [T('venn'), P('d2-sort', 1)] },
+      { id: 'carroll', title: 'Carroll diagrams', exp: ['D1.1'], skill: 'd2-sort',
+        body: '<p>A <b>Carroll diagram</b> sorts with two rules in a table of 4 boxes. Each thing goes in the box where its row and its column both fit.</p>',
+        watch: K.clip([
+          ['Columns: red, not red. Rows: triangle, not triangle.', carroll([], 'red', 'tri')],
+          ['A red triangle: red column, triangle row.', carroll([SET[1]], 'red', 'tri')],
+          ['A blue square: not red, not triangle.', carroll([SET[1], SET[2]], 'red', 'tri')],
+          ['All sorted. Same shapes as the Venn diagram.', carroll(SET, 'red', 'tri'), 2000]
+        ]),
+        try: sortLab,
+        key: '<p>Find the column. Find the row. It goes where they meet.</p>',
+        check: [T('carroll'), P('d2-sort', 2), P('d2-sort', 3)] }
+    ] },
+    { id: 'tally', title: 'Tally tables', sub: 'Count by fives.', concepts: [
+      { id: 'marks', title: 'Tally marks', exp: ['D1.2'], skill: 'd2-tally',
+        body: '<p>A <b>tally mark</b> is one line for each answer. The fifth mark crosses the other four, so you can count by 5s.</p>',
+        watch: K.clip([
+          ['1, 2, 3, 4 marks.', '<div class="fig">' + tally(4) + '</div>'],
+          ['The 5th mark crosses them. That is a group of 5.', '<div class="fig">' + tally(5) + '</div>'],
+          ['More marks: 5, 10, then 11, 12.', '<div class="fig">' + tally(12) + '</div>', 2000]
+        ]),
+        try: tallyLab,
+        key: '<p>Count the groups by 5s. Then count on the single marks by 1s.</p>',
+        mistake: '<p>Counting the crossing mark as a separate group, or drawing 5 marks and then crossing them (6).</p>',
+        check: [T('tally'), P('d2-tally', 1)] },
+      { id: 'twoway', title: 'Tables with two questions', exp: ['D1.2'], skill: 'd2-tally', hard: true,
+        body: '<p>A <b>two-way table</b> keeps two pieces of information about each person. Find the right row and the right column. Read where they meet.</p>' + twoWay(['Walk', 'Ride'], ['Grade 2', 'Grade 3'], [[7, 4], [3, 6]], true),
+        watch: K.clip([
+          ['How many Grade 2 students walk?', '<p class="math big">Walk row &rarr; Grade 2 column</p>'],
+          ['Where they meet: 5, then 6, 7. <b>7</b>.', '<div class="fig">' + tally(7) + '</div>'],
+          ['How many walk in all? Add the Walk row: 7 + 4 = <b>11</b>.', '<p class="math big">7 + 4 = 11</p>', 2000]
+        ]),
+        try: surveyLab,
+        ways: [
+          { label: 'Finger and finger', html: '<p>Put one finger on the row name and slide it across. Put another finger on the column name and slide it down. Read the box where your fingers meet.</p>' }
+        ],
+        key: '<p>Row, then column. Read where they meet. Add a row for its total.</p>',
+        mistake: '<p>Reading the wrong row or column. Have your child say the row and column names out loud first.</p>',
+        check: [P('d2-tally', 2), P('d2-tally', 3)] }
+    ] },
+    { id: 'graphs', title: 'Graphs', sub: 'Pictographs, bar graphs and line plots.', concepts: [
+      { id: 'bars', title: 'Pictographs and bar graphs', exp: ['D1.3', 'D1.5'], skill: 'd2-graph',
+        body: '<p>A graph shows data as a picture. A good graph has a <b>title</b>, <b>labels</b> and a <b>source</b>. In a <b>pictograph</b> each picture is one thing. In a <b>bar graph</b> the height of each bar shows how many.</p>',
+        watch: K.clip([
+          ['A pictograph. Each face is 1 child.', picto(FRUIT)],
+          ['The same data as a bar graph.', barG(FRUIT)],
+          ['Banana stops at 7. Grapes stops at 4.', barG(FRUIT)],
+          ['7 &minus; 4 = 3. <b>3 more</b> children like bananas.', '<p class="math big">7 &minus; 4 = 3</p>', 2000]
+        ]),
+        try: graphLab('Change the votes. Watch the graph change.', false),
+        key: '<p>Read the title and labels first. Then read the bars.</p>',
+        mistake: '<p>Reading the top of a bar between two lines. Have your child slide a finger straight across to the numbers.</p>',
+        check: [T('graph'), P('d2-graph', 1), P('d2-graph', 2)] },
+      { id: 'plot', title: 'Line plots', exp: ['D1.3'], skill: 'd2-graph',
+        body: '<p>A <b>line plot</b> puts an X above a number line for each answer. It works well when the answers are numbers.</p>',
+        watch: K.clip([
+          ['How many pets do you have? A number line from 0 to 4.', linePlot({ title: 'Pets at home', lo: 0, hi: 4, n: [0, 0, 0, 0, 0], axis: 'Number of pets' })],
+          ['Each answer gets an X.', linePlot({ title: 'Pets at home', lo: 0, hi: 4, n: [2, 1, 1, 0, 0], axis: 'Number of pets' })],
+          ['15 children. 6 have no pets.', linePlot(PETS), 2000]
+        ]),
+        try: plotLab,
+        key: '<p>One X for each answer, above its number.</p>',
+        check: [T('plot'), P('d2-graph', 3)] }
+    ] },
+    { id: 'mode', title: 'The mode', sub: 'The most common answer.', concepts: [
+      { id: 'mode', title: 'Find the mode', exp: ['D1.4'], skill: 'd2-mode', hard: true,
+        body: '<p>The <b>mode</b> is the answer that shows up <b>most often</b>. On a bar graph it is the tallest bar. On a line plot it is the tallest stack.</p>' + K.vs('The mode is the answer: <b>banana</b>.', 'The mode is the number of votes: 7.'),
+        watch: K.clip([
+          ['Which bar is tallest?', barG(FRUIT)],
+          ['Banana, with 7. The mode is <b>banana</b>.', barG(FRUIT)],
+          ['Two tallest bars? Two modes: summer and winter.', barG({ title: 'Favourite season', cats: ['spring', 'summer', 'fall', 'winter'], n: [3, 6, 2, 6] })],
+          ['All the same? <b>No mode</b>.', barG({ title: 'Favourite colour', cats: ['red', 'blue', 'green'], n: [4, 4, 4] }), 2200]
+        ]),
+        try: graphLab('Change the votes to make a new mode, a tie, or no mode.', true),
+        ways: [
+          { label: 'Line plot stacks', html: '<p>On a line plot, the mode is the number under the tallest stack of Xs.</p><div class="fig">' + linePlot(PETS) + '</div><p>The tallest stack is over 0. The mode is <b>0 pets</b>.</p>' },
+          { label: 'Line them up', html: '<p>With a list of answers, put the same answers together in groups. The biggest group is the mode.</p><p class="math">3, 5, 3, 4, 3 &rarr; 3 3 3 | 4 | 5 &rarr; mode 3</p>' }
+        ],
+        key: '<p>Most often. Say the answer, not the count.</p>',
+        mistake: '<p>Saying the mode is the number of votes, like "7", instead of the answer, like "banana".</p>',
+        check: [T('mode'), P('d2-mode', 1), P('d2-mode', 2)] },
+      { id: 'predict', title: 'Will another group match?', exp: ['D1.4'], skill: 'd2-mode',
+        body: '<p>Room 12 likes bananas most. Will Room 14? Make a prediction, collect the data, then check. Different groups can give different results.</p>',
+        watch: K.clip([
+          ['Room 12: the mode is banana.', barG(FRUIT)],
+          ['Prediction: Room 14 will pick banana too.', '<p class="math big">Room 14: banana?</p>'],
+          ['Room 14 votes. Their mode is <b>apple</b>. The prediction was wrong, and that is fine.', barG({ title: 'Room 14 favourite fruit', cats: FRUIT.cats, n: [8, 6, 3, 3], src: 'survey of Room 14' }), 2400]
+        ]),
+        key: '<p>Predict, collect, check. Data from a new group can be different.</p>',
+        check: [P('d2-mode', 3), T('mode')] }
+    ] },
+    { id: 'chance', title: 'Impossible, possible, certain', sub: 'How likely is it?', concepts: [
+      { id: 'words', title: 'Chance words', exp: ['D2.1', 'D2.2'], skill: 'd2-chance',
+        body: '<p><b>Certain</b>: it will happen for sure. <b>Impossible</b>: it cannot happen. <b>Possible</b>: it might happen or might not.</p>',
+        watch: K.clip([
+          ['Only red marbles. Picking red is <b>certain</b>.', bag({ red: 5 }, 'A bag with 5 red marbles')],
+          ['Red and blue. Picking red is <b>possible</b>.', bag({ red: 3, blue: 2 })],
+          ['Only blue. Picking red is <b>impossible</b>.', bag({ blue: 5 }, 'A bag with 5 blue marbles')],
+          ['So picking <b>not red</b> is <b>certain</b>.', bag({ blue: 5 }, 'A bag with 5 blue marbles'), 2000]
+        ]),
+        try: bagLab,
+        ways: [
+          { label: 'Everyday events', html: '<p><b>Certain</b>: the sun will rise tomorrow. <b>Possible</b>: it will rain this week. <b>Impossible</b>: a dog will fly to the moon.</p>' },
+          { label: 'Opposites', html: '<p>If something is impossible, its opposite is certain. No red marbles: picking red is impossible, so picking not-red is certain.</p>' }
+        ],
+        key: '<p>Are there any? Are there only those? Then decide.</p>',
+        mistake: '<p>Calling something "impossible" because it is unlikely. If there is even one red marble, red is possible.</p>',
+        check: [T('chance'), P('d2-chance', 1), P('d2-chance', 3)] }
+    ] }
+  ];
   A.register('data', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Sorting by two rules</h2>' +
 '<p>We can <b>sort</b> things using two rules at once. A <b>Venn diagram</b> uses two circles. A <b>Carroll diagram</b> uses a table with 4 boxes.</p>' +

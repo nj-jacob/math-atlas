@@ -88,7 +88,257 @@
     return A.svg(440, 200, out, 'Two shapes. The second is ' + ({ same: 'an exact copy', turn: 'turned', flip: 'flipped', big: 'made bigger', small: 'made smaller' })[how] + '.');
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'shapes';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  /* a hexagon with its sides numbered one at a time */
+  function numbered(upto) {
+    var c = regular(6, 110, 95, 76, 0), s = poly(c);
+    for (var i = 0; i < upto; i++) {
+      var a = c[i], b = c[(i + 1) % 6], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2;
+      s += K.pop('<line x1="' + a[0].toFixed(1) + '" y1="' + a[1].toFixed(1) + '" x2="' + b[0].toFixed(1) + '" y2="' + b[1].toFixed(1) + '" style="stroke:var(--hi)" stroke-width="7" stroke-linecap="round"/><text x="' + (110 + (mx - 110) * 1.25).toFixed(1) + '" y="' + (95 + (my - 95) * 1.25 + 7).toFixed(1) + '" text-anchor="middle" font-size="20" font-weight="800" style="fill:var(--strand)">' + (i + 1) + '</text>', i === upto - 1 ? 0 : -9);
+    }
+    return A.svg(220, 190, s + (upto === 6 ? K.pop(dots(c), 1) : ''), 'A hexagon with ' + upto + ' sides counted');
+  }
+  /* a page corner placed on a shape's corner */
+  function pageCorner(x, y, fits) {
+    return '<path d="M' + x + ' ' + (y - 34) + ' V' + y + ' H' + (x + 34) + '" fill="none" style="stroke:' + (fits ? 'var(--ok)' : 'var(--bad)') + '" stroke-width="5"/>';
+  }
+  function cornerFrame(k, fits) {
+    var L = lib(110, 85), p = L[k].p, c = k === 'rhombus' ? p[3] : k === 'hex' ? p[4] : p[3];
+    return A.svg(220, 180, poly(p) + K.pop(pageCorner(c[0], c[1], fits), 0), 'A ' + L[k].name + ' with a page corner on one corner');
+  }
+  /* tap every shape that matches a rule */
+  function pickLab(rule, keys, test, label) {
+    return K.lab('<p class="t2">' + label + '</p><div class="btnrow g2-picks">' + keys.map(function (k) { var L = lib(50, 46, 0.62); return '<button type="button" class="btn alt g2-pick" aria-pressed="false" data-k="' + k + '">' + A.svg(100, 92, poly(L[k].p), L[k].name) + '</button>'; }).join('') + '</div><div class="out" aria-live="polite"></div>',
+      function (root, done) {
+        var out = root.querySelector('.out'), L = lib(0, 0);
+        root.addEventListener('click', function (e) {
+          var b = e.target.closest('.g2-pick'); if (!b) return;
+          b.setAttribute('aria-pressed', b.getAttribute('aria-pressed') === 'true' ? 'false' : 'true');
+          var picked = [].filter.call(root.querySelectorAll('.g2-pick'), function (x) { return x.getAttribute('aria-pressed') === 'true'; }).map(function (x) { return x.getAttribute('data-k'); });
+          var want = keys.filter(function (k) { return test(L[k]); });
+          var wrong = picked.filter(function (k) { return want.indexOf(k) < 0; });
+          if (wrong.length) out.innerHTML = '<p>Check the <b>' + L[wrong[0]].name + '</b> again. ' + rule(L[wrong[0]]) + '</p>';
+          else if (picked.length < want.length) out.innerHTML = '<p>' + picked.length + ' found. ' + (want.length - picked.length) + ' more to go.</p>';
+          else { out.innerHTML = '<p><span class="big">All ' + want.length + ' found.</span></p>'; done('Yes. Every shape you picked follows the rule.'); }
+        });
+      }, 'Tap every shape that follows the rule. Tap again to undo.');
+  }
+  var namesLab = K.lab(
+    '<div class="ctrl"><label for="lsn">Sides: <output id="lsno">5</output><input type="range" id="lsn" min="3" max="8" value="5"></label></div><div class="vrow" id="lsfig"></div><div class="out" id="lsout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['lsn'], function () {
+        var n = +$('#lsn', root).value, p1 = regular(n, 90, 85, 70), p2 = irregular(n, 90, 85, 66, n);
+        $('#lsno', root).textContent = n;
+        $('#lsfig', root).innerHTML = '<figure>' + A.svg(180, 170, poly(p1) + dots(p1), 'A ' + NAMES[n] + ' with equal sides') + '</figure><figure>' + A.svg(200, 170, poly(p2, 'color-mix(in srgb,var(--hi) 55%,var(--card))') + dots(p2), 'A ' + NAMES[n] + ' with uneven sides') + '</figure>';
+        $('#lsout', root).innerHTML = '<p><span class="big">' + n + ' sides, ' + n + ' corners</span></p><p>Both are <b>' + NAMES[n] + 's</b>. One has equal sides. One has uneven sides. The name comes from the number of sides.</p>';
+        done();
+      });
+    }, 'Slide to change the number of sides. Watch the name.');
+  var symLab = K.lab(
+    '<div class="ctrl"><label for="lyk">Shape<select id="lyk">' + ['square', 'rectangle', 'eqtri', 'isotri', 'righttri', 'rhombus', 'trap', 'house', 'hex'].map(function (k) { return '<option value="' + k + '"' + (k === 'isotri' ? ' selected' : '') + '>' + lib(0, 0)[k].name + '</option>'; }).join('') + '</select></label></div>' +
+    '<div class="btnrow"><button type="button" class="btn" id="lynext">Show a line</button><button type="button" class="btn alt" id="lyclr">Start again</button></div><div class="fig" id="lyfig"></div><div class="out" id="lyout" aria-live="polite"></div>',
+    function (root, done) {
+      var $ = A.$, shown = 0;
+      function draw() {
+        var k = $('#lyk', root).value, L = lib(140, 100, 1.2), sh = L[k], lines = symLines(k, 140, 100, 46 * 1.2).split('/>').filter(Boolean).slice(0, shown).map(function (x) { return x + '/>'; }).join('');
+        $('#lyfig', root).innerHTML = A.svg(280, 200, poly(sh.p) + lines, 'A ' + sh.name + ' showing ' + shown + ' lines of symmetry');
+        var all = shown >= sh.sym;
+        $('#lynext', root).disabled = all;
+        $('#lyout', root).innerHTML = sh.sym === 0 ? '<p>No fold makes the halves match. A ' + sh.name + ' has <span class="big">0</span> lines of symmetry.</p>' : all ? '<p>That is all of them. A ' + sh.name + ' has <span class="big">' + sh.sym + '</span> line' + (sh.sym === 1 ? '' : 's') + ' of symmetry.</p>' : '<p>' + (shown ? shown + ' so far. Is there another fold that matches?' : 'Guess first: how many folds make the halves match?') + '</p>';
+        return all;
+      }
+      $('#lynext', root).addEventListener('click', function () { shown++; if (draw()) done('Good. Now pick another shape and guess before you look.'); });
+      $('#lyclr', root).addEventListener('click', function () { shown = 0; draw(); });
+      $('#lyk', root).addEventListener('change', function () { shown = 0; draw(); });
+      draw();
+    }, 'Pick a shape. Guess its lines of symmetry, then show them one at a time.');
+  var hexLab = K.lab(
+    '<div class="btnrow"><button type="button" class="btn alt" data-hx="tri">Triangles</button><button type="button" class="btn alt" data-hx="rho">Rhombuses</button><button type="button" class="btn alt" data-hx="trap">Trapezoids</button><button type="button" class="btn alt" data-hx="mix">Mix them</button></div><div class="fig" id="lxfig"></div><div class="out" id="lxout" aria-live="polite"></div>',
+    function (root, done) {
+      var $ = A.$;
+      function x(kind) {
+        $('#lxfig', root).innerHTML = A.svg(200, 180, hexFill(kind, 100, 90, 84), kind === 'none' ? 'An empty hexagon' : 'A hexagon filled with ' + HEX[kind].n + ' ' + HEX[kind].w);
+        $('#lxout', root).innerHTML = kind === 'none' ? '<p>Pick a kind of piece.</p>' : '<p>The hexagon is filled with <span class="big">' + HEX[kind].n + '</span> ' + HEX[kind].w + '.</p>' + (kind === 'mix' ? '<p class="t2">A trapezoid is 3 triangles, and a rhombus is 2 triangles. 3 + 2 + 1 = 6 triangles, the same as a full hexagon.</p>' : '');
+      }
+      root.addEventListener('click', function (e) { var b = e.target.closest('[data-hx]'); if (b) { x(b.getAttribute('data-hx')); done(); } });
+      x('none');
+    }, 'Fill the same hexagon with different pieces.');
+  var copyLab = K.lab(
+    '<div class="ctrl"><label for="lck">Shape<select id="lck"><option value="trap">trapezoid</option><option value="isotri">tall triangle</option><option value="righttri" selected>triangle with a square corner</option><option value="house">house shape</option></select></label></div>' +
+    '<div class="btnrow"><button type="button" class="btn alt" data-cp="same">Exact copy</button><button type="button" class="btn alt" data-cp="turn">Turn it</button><button type="button" class="btn alt" data-cp="flip">Flip it</button><button type="button" class="btn alt" data-cp="big">Make it bigger</button><button type="button" class="btn alt" data-cp="small">Make it smaller</button></div>' +
+    '<div class="fig" id="lcfig"></div><div class="out" id="lcout" aria-live="polite"></div>',
+    function (root, done) {
+      var $ = A.$, how = 'same', tried = {};
+      function c() {
+        $('#lcfig', root).innerHTML = copyOf($('#lck', root).value, how);
+        var yes = how !== 'big' && how !== 'small';
+        $('#lcout', root).innerHTML = '<p><span class="big">' + (yes ? 'Congruent' : 'Not congruent') + '</span></p><p>' + (yes ? 'Same size and shape. ' + (how === 'same' ? 'It is not moved at all.' : 'It is only ' + (how === 'turn' ? 'turned' : 'flipped') + '.') : 'Same shape, but its sides are ' + (how === 'big' ? 'longer' : 'shorter') + '.') + '</p>';
+      }
+      root.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-cp]'); if (!b) return;
+        how = b.getAttribute('data-cp'); tried[how] = 1; c();
+        if ((tried.turn || tried.flip) && (tried.big || tried.small)) done('Right. Turning and flipping keep it congruent. Changing the size does not.');
+      });
+      $('#lck', root).addEventListener('change', c);
+      c();
+    }, 'Move the copy. Try a turn or flip, and try a size change.');
+  function areaFrame(a, col, ox, w, h) { return grid(w, h, 36, ox, 4) + cells(a, col, 36, ox, 4); }
+  var GEO = 'Tap pegs to stretch the band. Tap the first peg again to close it.';
+
+  var LESSONS = [
+    { id: 'sides', title: 'Sides and corners', sub: 'Count to name a shape.', concepts: [
+      { id: 'count', title: 'Count sides and corners', exp: ['E1.1'], skill: 's2-name',
+        body: '<p>A <b>side</b> is a straight edge of a shape. A <b>corner</b> is where two sides meet. Count each side once as you go around.</p>',
+        watch: K.clip([
+          ['Start at one side. That is 1.', numbered(1)],
+          ['Go around: 2, 3.', numbered(3)],
+          ['4, 5, 6. Back to the start.', numbered(6)],
+          ['6 sides and 6 corners. It is a <b>hexagon</b>.', numbered(6), 2000]
+        ]),
+        try: { tool: 'geoboard', opts: {}, tasks: [
+          { do: 'Make a shape with <b>3 sides</b>. ' + GEO, goal: function (s) { return s.closed && s.sides === 3 && s.area > 0; }, yes: 'A triangle: 3 sides and 3 corners.' },
+          { do: 'Now make a shape with <b>4 sides</b>.', goal: function (s) { return s.closed && s.sides === 4 && s.area > 0; }, yes: 'A quadrilateral: 4 sides and 4 corners.' },
+          { do: 'Now make a shape with <b>5 sides</b>.', goal: function (s) { return s.closed && s.sides === 5 && s.area > 0; }, yes: 'A pentagon. Did it look like a house? It does not have to.' }
+        ] },
+        key: '<p>Same number of sides and corners, every time. 3 triangle, 4 quadrilateral, 5 pentagon, 6 hexagon, 8 octagon.</p>',
+        mistake: '<p>Counting the first side twice. Have your child put a finger on the first side and stop when they reach it again.</p>',
+        check: [T('sides'), P('s2-name', 1)] },
+      { id: 'names', title: 'The name stays the same', exp: ['E1.1'], skill: 's2-name', hard: true,
+        body: '<p>A shape is named by its <b>number of sides</b>. It keeps its name when it is turned, stretched or has uneven sides.</p>' + K.vs('Any shape with 5 straight sides is a pentagon.', 'A pentagon must look like a house.'),
+        watch: K.clip([
+          ['A pentagon with equal sides.', A.svg(220, 180, K.pop(poly(regular(5, 110, 92, 76))), 'A pentagon')],
+          ['Stretch it. Still 5 sides.', A.svg(220, 180, K.pop(poly(irregular(5, 110, 92, 76, 3))), 'A stretched pentagon')],
+          ['Turn it upside down. Still 5 sides.', A.svg(220, 180, K.pop(poly(irregular(5, 110, 92, 76, 3).map(function (q) { return [q[0], 184 - q[1]]; }))), 'A turned pentagon')],
+          ['All three are <b>pentagons</b>.', A.svg(330, 120, poly(regular(5, 55, 62, 48)) + poly(irregular(5, 165, 62, 48, 3)) + poly(irregular(5, 275, 62, 48, 3).map(function (q) { return [q[0], 124 - q[1]]; })), 'Three pentagons'), 2000]
+        ]),
+        try: namesLab,
+        ways: [
+          { label: 'Count the corners', html: '<p>Corners are easier to count than sides. Put a dot on each corner. The number of dots is the number of sides.</p><div class="fig">' + A.svg(200, 170, poly(irregular(6, 100, 85, 66, 4)) + dots(irregular(6, 100, 85, 66, 4)), 'An uneven hexagon with its corners dotted') + '</div><p>6 dots, so it is a hexagon.</p>' },
+          { label: 'Ignore the look', html: '<p>Ask only one question: <b>how many straight sides?</b> Colour, size and which way it points do not matter.</p>' }
+        ],
+        key: '<p>Count the sides. The count gives the name. Nothing else does.</p>',
+        mistake: '<p>Calling a shape "not a triangle" or "not a hexagon" because it is turned or has uneven sides.</p>',
+        check: [P('s2-name', 2), P('s2-name', 3)] }
+    ] },
+    { id: 'sort', title: 'Sorting shapes', sub: 'Sort by corners and sides.', concepts: [
+      { id: 'corner', title: 'Square corners', exp: ['E1.1'], skill: 's2-sort',
+        body: '<p>A <b>square corner</b> fits the corner of a page exactly. Hold a page corner on each corner of a shape to check.</p>',
+        watch: K.clip([
+          ['Put a page corner on the rectangle.', cornerFrame('rectangle', true)],
+          ['It fits. That is a <b>square corner</b>.', cornerFrame('rectangle', true)],
+          ['Try the rhombus. It does not fit.', cornerFrame('rhombus', false)],
+          ['The rhombus has <b>no square corners</b>.', cornerFrame('rhombus', false), 2000]
+        ]),
+        try: pickLab(function (s) { return s.sq ? 'It has ' + s.sq + ' square corners.' : 'Put a page corner on it. Does it fit?'; }, ['square', 'rhombus', 'righttri', 'hex', 'house', 'eqtri'], function (s) { return s.sq > 0; }, 'Rule: <b>has a square corner</b>.'),
+        key: '<p>Check every corner with a page corner. It fits exactly, or it does not.</p>',
+        mistake: '<p>Calling any pointy corner a square corner. Use a real page corner to check.</p>',
+        check: [T('sort'), P('s2-sort', 2)] },
+      { id: 'equal', title: 'Equal sides', exp: ['E1.1'], skill: 's2-sort',
+        body: '<p>Some shapes have all their sides the <b>same length</b>. A square does. A rectangle does not. A square is a special rectangle.</p><div class="vrow"><figure>' + one('square') + '<figcaption>4 equal sides, 4 square corners</figcaption></figure><figure>' + one('rectangle') + '<figcaption>4 square corners, sides not all equal</figcaption></figure></div>',
+        watch: K.clip([
+          ['A square: all 4 sides the same length.', one('square')],
+          ['A rectangle: 2 long sides and 2 short sides.', one('rectangle')],
+          ['A rhombus: 4 equal sides, but no square corners.', one('rhombus')],
+          ['Sort them by more than one rule.', '<div class="vrow">' + one('square') + one('rectangle') + one('rhombus') + '</div>', 2000]
+        ]),
+        try: { tool: 'geoboard', opts: {}, tasks: [
+          { do: 'Make a <b>square</b>: 4 equal sides and 4 square corners. ' + GEO, goal: function (s) { return s.closed && s.sides === 4 && s.perimeter != null && s.perimeter * s.perimeter === 16 * s.area && s.area > 0; }, yes: 'A square. All 4 sides match.' },
+          { do: 'Now make a <b>rectangle that is not a square</b>.', goal: function (s) { return s.closed && s.sides === 4 && s.perimeter != null && s.area > 0 && s.perimeter * s.perimeter !== 16 * s.area; }, yes: 'A rectangle. The long sides match, and the short sides match.' }
+        ] },
+        key: '<p>Rules to sort by: number of sides, square corners, equal sides.</p>',
+        check: [T('odd'), P('s2-sort', 3)] }
+    ] },
+    { id: 'sym', title: 'Lines of symmetry', sub: 'Fold so the halves match.', concepts: [
+      { id: 'fold', title: 'What a line of symmetry is', exp: ['E1.1'], skill: 's2-sym', hard: true,
+        body: '<p>A <b>line of symmetry</b> cuts a shape into two halves that match exactly. Fold on the line, and one half sits right on top of the other.</p>',
+        watch: K.clip([
+          ['A tall triangle.', A.svg(220, 180, poly(lib(110, 90).isotri.p), 'A tall triangle')],
+          ['Fold it down the middle.', A.svg(220, 180, poly(lib(110, 90).isotri.p) + K.pop(symLines('isotri', 110, 90, 46), 0), 'A tall triangle with a fold line')],
+          ['One half lands on the other. They <b>match</b>.', A.svg(220, 180, poly(lib(110, 90).isotri.p) + K.pop(poly([lib(110, 90).isotri.p[0], lib(110, 90).isotri.p[1], [110, lib(110, 90).isotri.p[1][1]]], 'color-mix(in srgb,var(--hi) 60%,var(--card))'), 0) + symLines('isotri', 110, 90, 46), 'The two halves match')],
+          ['A fold from a corner to a side does not match. Not a line of symmetry.', A.svg(220, 180, poly(lib(110, 90).isotri.p) + K.pop('<line x1="' + lib(110, 90).isotri.p[1][0] + '" y1="' + lib(110, 90).isotri.p[1][1] + '" x2="72" y2="68" style="stroke:var(--bad)" stroke-width="3" stroke-dasharray="8 5"/>', 0), 'A fold that does not match'), 2200]
+        ]),
+        try: symLab,
+        ways: [
+          { label: 'Fold paper', html: '<p>Cut the shape out of paper. Fold it. If the edges line up all the way around, the fold is a line of symmetry.</p>' },
+          { label: 'Use a mirror', html: '<p>Stand a small mirror on the line. If the half you see plus its reflection looks like the whole shape, it is a line of symmetry.</p>' },
+          { label: 'This, not that', html: K.vs('Both halves are the same size and shape, and they match when folded.', 'The line just cuts the shape into two pieces.') }
+        ],
+        key: '<p>Fold in your head. Halves match: line of symmetry. Halves do not match: not one.</p>',
+        mistake: '<p>Thinking any line through the middle is a line of symmetry. The halves must match when folded, not just be the same size.</p>',
+        check: [T('isline'), P('s2-sym', 1)] },
+      { id: 'many', title: 'Some shapes have more', exp: ['E1.1'], skill: 's2-sym',
+        body: '<p>Some shapes have more than one line of symmetry. Some have none. Try every fold: up and down, side to side, and corner to corner.</p>',
+        watch: K.clip([
+          ['A square. Fold up and down: 1.', A.svg(220, 180, poly(lib(110, 90).square.p) + K.pop(symLines('square', 110, 90, 46).split('/>')[0] + '/>'), 'A square with 1 line')],
+          ['Side to side: 2.', A.svg(220, 180, poly(lib(110, 90).square.p) + symLines('square', 110, 90, 46).split('/>').slice(0, 2).join('/>') + '/>', 'A square with 2 lines')],
+          ['Corner to corner: 3 and 4.', A.svg(220, 180, poly(lib(110, 90).square.p) + K.pop(symLines('square', 110, 90, 46)), 'A square with 4 lines')],
+          ['A square has <b>4 lines of symmetry</b>.', A.svg(220, 180, poly(lib(110, 90).square.p) + symLines('square', 110, 90, 46), 'A square with 4 lines of symmetry'), 2000]
+        ]),
+        try: symLab,
+        key: '<p>Try every kind of fold. Count only the ones that match.</p>',
+        check: [T('count'), P('s2-sym', 2)] }
+    ] },
+    { id: 'make', title: 'Putting shapes together', sub: 'Make and break shapes.', concepts: [
+      { id: 'hexagon', title: 'Many ways to make a hexagon', exp: ['E1.2'], skill: 's2-compose',
+        body: '<p>Small shapes fit together to <b>make</b> a bigger shape. A big shape can be <b>broken</b> into smaller ones.</p>',
+        watch: K.clip([
+          ['An empty hexagon.', A.svg(200, 180, hexFill('none', 100, 90, 84), 'An empty hexagon')],
+          ['Fill it with 6 triangles.', A.svg(200, 180, K.pop(hexFill('tri', 100, 90, 84)), 'A hexagon of 6 triangles')],
+          ['Or with 3 rhombuses.', A.svg(200, 180, K.pop(hexFill('rho', 100, 90, 84)), 'A hexagon of 3 rhombuses')],
+          ['Or with 2 trapezoids. The same hexagon each time.', A.svg(200, 180, K.pop(hexFill('trap', 100, 90, 84)), 'A hexagon of 2 trapezoids'), 2000]
+        ]),
+        try: hexLab,
+        ways: [
+          { label: 'Think in triangles', html: '<p>A hexagon is 6 triangles. A trapezoid is 3 triangles, so 2 trapezoids make a hexagon. A rhombus is 2 triangles, so 3 rhombuses make a hexagon.</p><div class="fig">' + A.svg(200, 180, hexFill('mix', 100, 90, 84), 'A hexagon of 1 trapezoid, 1 rhombus and 1 triangle') + '</div>' }
+        ],
+        key: '<p>Bigger pieces: fewer of them. Smaller pieces: more of them.</p>',
+        mistake: '<p>Thinking the hexagon is a different size when it is made of different pieces.</p>',
+        check: [T('hex'), P('s2-compose', 1), P('s2-compose', 2)] },
+      { id: 'area', title: 'Move the pieces, same area', exp: ['E1.2'], skill: 's2-compose', hard: true,
+        body: '<p>The <b>area</b> is how much space a shape covers. Move the same pieces into a new shape, and the area stays the same.</p>',
+        watch: K.clip([
+          ['A shape made of 6 squares.', A.svg(400, 120, areaFrame(SHAPES2[0], 'var(--strand)', 4, 4, 2), 'A shape of 6 squares')],
+          ['Move the same 6 squares.', A.svg(400, 120, areaFrame(SHAPES2[0], 'var(--strand)', 4, 4, 2) + K.pop(areaFrame(SHAPES2[2], 'var(--sd)', 240, 3, 2)), 'Two shapes of 6 squares')],
+          ['They look different. Both cover <b>6 squares</b>.', A.svg(400, 120, areaFrame(SHAPES2[0], 'var(--strand)', 4, 4, 2) + areaFrame(SHAPES2[2], 'var(--sd)', 240, 3, 2), 'Two shapes, same area'), 2000]
+        ]),
+        try: { tool: 'geoboard', opts: {}, tasks: [
+          { do: 'Make a shape that covers exactly <b>4 squares</b>. ' + GEO, goal: function (s) { return s.closed && s.area === 4; }, yes: 'Area 4. The board shows it.' },
+          { do: 'Now make a <b>different</b> shape that also covers 4 squares. Try a long thin one.', goal: function (s) { return s.closed && s.area === 4 && s.perimeter != null && s.perimeter !== 8; }, yes: 'It looks different, but it covers the same 4 squares.' }
+        ] },
+        ways: [
+          { label: 'Count the squares', html: '<p>Area here means counting squares. Count each square once. Two shapes with the same count have the same area, whatever they look like.</p>' },
+          { label: 'Cut and move', html: '<p>Cut a paper rectangle in two. Put the pieces together a new way. You did not add or throw away any paper, so the area did not change.</p>' }
+        ],
+        key: '<p>Same pieces, new shape: same area.</p>',
+        mistake: '<p>Thinking a longer or taller shape must cover more space.</p>',
+        check: [T('area'), P('s2-compose', 3)] }
+    ] },
+    { id: 'cong', title: 'Same size, same shape', sub: 'Congruent shapes.', concepts: [
+      { id: 'congruent', title: 'Congruent shapes', exp: ['E1.3'], skill: 's2-congruent', hard: true,
+        body: '<p>Two shapes are <b>congruent</b> when they are the same size and the same shape. One would fit exactly on top of the other. Turning or flipping does not change that.</p>',
+        watch: K.clip([
+          ['A shape and an exact copy. <b>Congruent</b>.', copyOf('righttri', 'same')],
+          ['Turn the copy. Still <b>congruent</b>.', copyOf('righttri', 'turn')],
+          ['Flip the copy. Still <b>congruent</b>.', copyOf('righttri', 'flip')],
+          ['Make it bigger. Same shape, new size. <b>Not congruent</b>.', copyOf('righttri', 'big'), 2200]
+        ]),
+        try: copyLab,
+        ways: [
+          { label: 'Trace it', html: '<p>Trace one shape on thin paper. Slide, turn or flip the paper. If the tracing fits exactly on the other shape, they are congruent.</p>' },
+          { label: 'Match the sides', html: '<p>Measure each side. Congruent shapes have sides of the same lengths and corners of the same sizes.</p>' },
+          { label: 'This, not that', html: K.vs('Same size and same shape, even if turned or flipped.', 'Same shape but a different size.') }
+        ],
+        key: '<p>Turn it, flip it, slide it: still congruent. Change its size: not congruent.</p>',
+        mistake: '<p>Saying a turned or flipped copy is not congruent, or saying a bigger copy is congruent because it is "the same shape".</p>',
+        check: [T('cong'), P('s2-congruent', 1), P('s2-congruent', 2)] }
+    ] }
+  ];
   A.register('shapes', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Sides and corners</h2>' +
 '<p>A <b>side</b> is a straight line on the edge of a shape. A <b>corner</b> (also called a vertex) is where two sides meet. Shapes are named by how many sides they have.</p>' +

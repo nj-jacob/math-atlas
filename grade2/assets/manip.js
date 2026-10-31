@@ -524,9 +524,11 @@
       cells[i] = o.two ? (cells[i] + 1) % 3 : cells[i] ? 0 : 1;
       draw();
     });
+    /* fill the first n boxes; boxes already full are skipped without a pause */
     T.fill = function (n, gap) {
       var ep = T.ep, i = 0;
       function one() {
+        while (i < n && cells[i]) i++;
         if (!T.alive(ep) || i >= n) return Promise.resolve();
         cells[i++] = 1; draw();
         return T.wait(gap || 220).then(one);
@@ -540,7 +542,7 @@
   };
 
   /* ================= Hundred chart =================
-     options: from (1, or 101 for 101 to 200), pages (true: buttons for 1 to 100 and 101 to 200), lit [numbers], onChange.
+     options: from (1, or 101 for 101 to 200), to (last number shown, e.g. 50 for a 1 to 50 chart), pages (true: buttons for 1 to 100 and 101 to 200), lit [numbers], onChange.
      Moves: skip(step, start, upto), clear(), page(from). Tap a number to light it. */
   M.hundred = function (root, o) {
     o = o || {};
@@ -550,7 +552,7 @@
     var grid = qs('.mp-grid', root), read = qs('.mp-read', root);
     function draw() {
       var h = '';
-      for (var i = 0; i < 100; i++) {
+      for (var i = 0; i < lastN() - from + 1; i++) {
         var n = from + i;
         h += '<button type="button" class="mp-hn' + (lit[n] ? ' lit' : '') + '" data-n="' + n + '" aria-pressed="' + !!lit[n] + '">' + n + '</button>';
       }
@@ -558,6 +560,7 @@
       qsa('.mp-act[data-p]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-p') === from)); });
       readout();
     }
+    function lastN() { return Math.min(from + 99, o.to || from + 99); }
     function readout() {
       var list = order.slice(0, 40);
       read.innerHTML = order.length ? '<p class="mp-seq">' + list.map(function (n) { return '<b>' + n + '</b>'; }).join(', ') + (order.length > 40 ? ' &hellip;' : '') + '</p>' : '<p class="t2">Tap a number to light it up.</p>';
@@ -586,10 +589,10 @@
     T.clear = function () { lit = {}; order = []; last = 'clear'; draw(); return T.wait(100); };
     T.skip = function (step, start, upto, gap) {
       var ep = T.ep, n = start == null ? step : start;
-      upto = upto || from + 99;
+      upto = Math.min(upto || lastN(), lastN());
       function one() {
         if (!T.alive(ep) || n > upto) return Promise.resolve();
-        if (n >= from && n < from + 100) set(n, true);
+        if (n >= from && n <= lastN()) set(n, true);
         readout(); n += step;
         return T.wait(gap || 180).then(one);
       }
@@ -734,8 +737,11 @@
   };
 
   /* ================= Fraction strips =================
-     options: parts (start), choices [2,3,4,6,8], wall [1,2,3,6] (a stack of strips to compare), onChange.
+     options: parts (start), choices [2,3,4,6,8], wall [1,2,3,6] (a stack of strips to compare),
+     words (true: fraction words only, "one half", "two sixths", for Grades 1 and 2;
+     'both': standard notation with the word name beside it, for Grade 3 on), onChange.
      Tap a part to shade it. Moves: split(d), shade(k). */
+  var NUMW = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve'];
   M.fractions = function (root, o) {
     o = o || {};
     var T = base(root, 'fr'), rows = o.wall ? o.wall.slice() : [o.parts || 1], shade = rows.map(function () { return {}; });
@@ -745,13 +751,15 @@
     var wall = qs('.mp-wall', root), read = qs('.mp-read', root);
     function name(n, d) {
       var w = { 1: 'whole', 2: 'half', 3: 'third', 4: 'fourth', 5: 'fifth', 6: 'sixth', 8: 'eighth', 10: 'tenth', 12: 'twelfth' }[d] || (d + 'th');
-      if (d === 1) return n + ' whole';
-      return n + ' ' + (n === 1 ? w : (d === 2 ? 'halves' : w + 's'));
+      var k = o.words ? (NUMW[n] || String(n)) : n;
+      if (d === 1) return k + (n === 1 ? ' whole' : ' wholes');
+      return k + ' ' + (n === 1 ? w : (d === 2 ? 'halves' : w + 's'));
     }
+    function label(d) { return d === 1 ? (o.words === true ? 'one whole' : '1') : o.words === true ? '<span class="mp-fw">' + name(1, d) + '</span>' : '<span class="mp-fr"><b>1</b><i>' + d + '</i></span>'; }
     function draw(anim) {
       wall.innerHTML = rows.map(function (d, r) {
         var h = '<div class="mp-strip' + (anim && !T.fast ? ' mp-split' : '') + '" data-r="' + r + '">';
-        for (var i = 0; i < d; i++) h += '<button type="button" class="mp-part' + (shade[r][i] ? ' on' : '') + '" data-r="' + r + '" data-i="' + i + '" aria-pressed="' + !!shade[r][i] + '" aria-label="Part ' + (i + 1) + ' of ' + d + '">' + (d === 1 ? '1' : '<span class="mp-fr"><b>1</b><i>' + d + '</i></span>') + '</button>';
+        for (var i = 0; i < d; i++) h += '<button type="button" class="mp-part' + (shade[r][i] ? ' on' : '') + '" data-r="' + r + '" data-i="' + i + '" aria-pressed="' + !!shade[r][i] + '" aria-label="Part ' + (i + 1) + ' of ' + d + '">' + label(d) + '</button>';
         return h + '</div>';
       }).join('');
       qsa('.mp-act[data-d]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-d') === rows[0])); });
@@ -762,7 +770,7 @@
     }
     function readout() {
       read.innerHTML = state().map(function (s) {
-        return s.n ? '<p><span class="mp-fr big"><b>' + s.n + '</b><i>' + s.d + '</i></span> ' + name(s.n, s.d) + ' shaded' + (s.d > 1 ? ' (' + s.n + ' of ' + s.d + ' equal parts)' : '') + '</p>' : '';
+        return s.n ? '<p>' + (o.words === true ? '<b class="mp-fwb">' + name(s.n, s.d) + '</b>' : '<span class="mp-fr big"><b>' + s.n + '</b><i>' + s.d + '</i></span> ' + name(s.n, s.d)) + ' shaded' + (s.d > 1 ? ' (' + s.n + ' of ' + s.d + ' equal parts)' : '') + '</p>' : '';
       }).join('') || '<p class="t2">Tap a part to shade it.</p>';
       if (o.onChange) o.onChange(state(), T);
     }
@@ -921,11 +929,11 @@
   };
 
   /* ================= Algebra tiles =================
-     options: x2 (offer x squared tiles), start {x2, x, one} (negative numbers make red tiles), onChange.
+     options: x2 (offer x squared tiles), ones (unit tiles only, for integers), kinds (e.g. ['x', 'one']), start {x2, x, one} (negative numbers make red tiles), onChange.
      Tap the tray to add, tap a tile to take it away, "Remove zero pairs" cancels a positive and a negative tile. */
   M.tiles = function (root, o) {
     o = o || {};
-    var T = base(root, 'tile'), kinds = o.x2 ? ['x2', 'x', 'one'] : ['x', 'one'], tiles = [];
+    var T = base(root, 'tile'), kinds = o.kinds || (o.ones ? ['one'] : o.x2 ? ['x2', 'x', 'one'] : ['x', 'one']), tiles = [];
     var LAB = { x2: 'x²', x: 'x', one: '1' };
     root.innerHTML = '<div class="mp-tray">' + kinds.map(function (k) {
       return '<div class="mp-tg"><button type="button" class="mp-tadd" data-k="' + k + '" data-s="1" aria-label="Add a positive ' + LAB[k] + ' tile"><i class="mp-tl-' + k + '">+' + LAB[k] + '</i></button>' +
@@ -978,38 +986,191 @@
     return T;
   };
 
+  /* ================= Place value disks (from Grade 5) =================
+     options: places (high to low: 5 = hundred thousands ... 0 = ones, -1 tenths, -2 hundredths; default [4,3,2,1,0]),
+     start {place: count}, controls, max per column (default 19), onChange(state, tool).
+     Tap a disk to light it and count. Moves: add(p, n, ms), remove(p, n), set(counts), group(p), split(p), countAll(ms), pulseCol(p), clearLit(). */
+  var PN = { 5: 'hundred thousands', 4: 'ten thousands', 3: 'thousands', 2: 'hundreds', 1: 'tens', 0: 'ones', '-1': 'tenths', '-2': 'hundredths' };
+  var PS = { 5: '100 000s', 4: '10 000s', 3: '1000s', 2: '100s', 1: '10s', 0: '1s', '-1': '0.1s', '-2': '0.01s' };
+  var PC = { 5: '#0b7a8a', 4: '#7247e0', 3: '#d1356b', 2: 'var(--mh)', 1: 'var(--mt)', 0: 'var(--mo)', '-1': '#e8590c', '-2': '#9c36b5' };
+  function clean(x) { return Math.round(x * 1e6) / 1e6; }
+  function pv(p) { return clean(Math.pow(10, p)); }
+  function plab(p) { return p >= 0 ? fmt(pv(p)) : String(pv(p)); }
+  /* a grade can recolour a place with --mp-d5 ... --mp-d0, --mp-dm1, --mp-dm2 */
+  function pcol(p) { return 'var(--mp-d' + (p < 0 ? 'm' + -p : p) + ',' + PC[p] + ')'; }
+  M.disks = function (root, o) {
+    o = o || {};
+    var T = base(root, 'disks'), places = o.places || [4, 3, 2, 1, 0], cnt = {}, lit = [], last = '', max = o.max || 19, mode = '';
+    root.innerHTML = (o.controls ? '<div class="mp-tray">' + places.map(function (p) {
+      return '<div class="mp-tg"><button type="button" class="mp-add" data-p="' + p + '" aria-label="Add a ' + plab(p) + ' disk"><i class="mp-dk sm" style="--c:' + pcol(p) + '"></i><span>+ ' + plab(p) + '</span></button>' +
+        '<button type="button" class="mp-sub" data-p="' + p + '" aria-label="Take away a ' + plab(p) + ' disk">&minus;</button></div>';
+    }).join('') + '</div><div class="mp-acts"><button type="button" class="mp-act" data-a="group">Group 10 into 1</button><button type="button" class="mp-act" data-a="split" aria-pressed="false">Break 1 into 10</button>' +
+      '<button type="button" class="mp-act" data-a="count">Count them</button><button type="button" class="mp-act" data-a="clear">Clear</button></div>' : '') +
+      '<div class="mp-dmat" style="--n:' + places.length + '">' + places.map(function (p) {
+        return '<div class="mp-dcol" data-p="' + p + '"><span class="mp-dh" style="--c:' + pcol(p) + '"><span class="lg">' + PN[p] + '</span><span class="sm">' + PS[p] + '</span></span><div class="mp-dstack"></div><span class="mp-dn"></span></div>';
+      }).join('') + '</div><div class="mp-read" aria-live="polite"></div>';
+    var read = qs('.mp-read', root);
+    function total() { var t = 0; places.forEach(function (p) { t += cnt[p]; }); return t; }
+    function value() { var v = 0; places.forEach(function (p) { v += cnt[p] * pv(p); }); return clean(v); }
+    function state() { return { value: value(), counts: Object.assign({}, cnt), last: last, lit: lit.length, allLit: lit.length > 0 && lit.length === total() }; }
+    function fire() { if (o.onChange) o.onChange(state(), T); }
+    function stack(p) { return qs('.mp-dcol[data-p="' + p + '"] .mp-dstack', root); }
+    function draw(p, fresh) {
+      var st = stack(p), have = st.children.length;
+      while (have > cnt[p]) { st.lastChild.remove(); have--; }
+      while (have < cnt[p]) {
+        var d = button('mp-dk' + (fresh && !T.fast ? ' mp-drop' : ''), '<b>' + plab(p) + '</b>', plab(p) + ' disk');
+        d.style.setProperty('--c', pcol(p));
+        d.setAttribute('data-p', p); d.setAttribute('data-l', String(plab(p).replace(/\s/g, '').length));
+        st.appendChild(d); have++;
+      }
+      qs('.mp-dcol[data-p="' + p + '"] .mp-dn', root).textContent = cnt[p];
+    }
+    function line(html) { var l = qs('.mp-litline', read); if (l) l.innerHTML = html; }
+    function readout() {
+      var parts = places.filter(function (p) { return cnt[p]; }).map(function (p) { return '<b style="color:' + pcol(p) + '">' + fmt(clean(cnt[p] * pv(p))) + '</b>'; });
+      var over = places.filter(function (p) { return cnt[p] > 9; });
+      read.innerHTML = (o.readout === false ? '' : '<p><span class="mp-num">' + fmt(value()) + '</span></p>') + '<p class="mp-litline">' + (parts.join(' + ') || '0') + '</p>' +
+        (over.length ? '<p class="mp-tip">' + over.map(function (p) { return cnt[p] + ' ' + PN[p]; }).join(', ') + ': ten of them can be grouped.</p>' : '');
+    }
+    function all(fresh) { places.forEach(function (p) { draw(p, fresh); }); readout(); }
+    T.clearLit = function () { lit = []; qsa('.mp-dk.on', root).forEach(function (d) { d.classList.remove('on'); }); };
+    T.set = function (c) { places.forEach(function (p) { cnt[p] = c[p] || 0; }); last = 'set'; T.clearLit(); qsa('.mp-dstack', root).forEach(function (x) { x.innerHTML = ''; }); all(true); fire(); return T.wait(500); };
+    T.add = function (p, n, ms) {
+      n = n || 1;
+      var ep = T.ep, k = 0;
+      function one() {
+        if (!T.alive(ep) || k >= n || cnt[p] >= max) { fire(); return Promise.resolve(); }
+        cnt[p]++; k++; last = 'add'; T.clearLit(); draw(p, true); readout();
+        return T.wait(ms || 260).then(one);
+      }
+      return one();
+    };
+    T.remove = function (p, n) { cnt[p] = Math.max(0, cnt[p] - (n || 1)); last = 'remove'; T.clearLit(); draw(p); readout(); fire(); return T.wait(300); };
+    T.pulseCol = function (p) { var c = qs('.mp-dcol[data-p="' + p + '"]', root); if (!T.fast) bump(c, 'mp-glow'); return T.wait(1200); };
+    /* 10 disks of a place slide together into 1 disk of the next place to the left */
+    T.group = function (p) {
+      var up = p + 1;
+      if (places.indexOf(up) < 0 || cnt[p] < 10) return Promise.resolve(false);
+      var ep = T.ep;
+      qsa('.mp-dk', stack(p)).slice(-10).forEach(function (d) { d.classList.add('on', 'mp-go'); });
+      return T.wait(650).then(function () {
+        if (!T.alive(ep)) return false;
+        cnt[p] -= 10; cnt[up]++; last = 'group-' + p; T.clearLit(); draw(p); draw(up, true); readout();
+        var nd = stack(up).lastChild;
+        if (nd && !T.fast) { nd.classList.add('on'); bump(nd); }
+        fire();
+        return T.wait(700).then(function () { return true; });
+      });
+    };
+    /* 1 disk breaks into 10 disks of the next place to the right */
+    T.split = function (p) {
+      var dn = p - 1;
+      if (places.indexOf(dn) < 0 || cnt[p] < 1 || cnt[dn] > max - 10) return Promise.resolve(false);
+      var ep = T.ep, d = stack(p).lastChild;
+      if (d) d.classList.add('on', 'mp-go');
+      return T.wait(500).then(function () {
+        if (!T.alive(ep)) return false;
+        cnt[p]--; cnt[dn] += 10; last = 'split-' + p; T.clearLit(); draw(p); draw(dn, true); readout(); fire();
+        return T.wait(800).then(function () { return true; });
+      });
+    };
+    /* light every disk, biggest place first, with the running total */
+    T.countAll = function (ms) {
+      var ep = T.ep, ds = [], run = 0, i = 0;
+      T.clearLit();
+      places.forEach(function (p) { qsa('.mp-dk', stack(p)).forEach(function (d) { ds.push(d); }); });
+      function step() {
+        if (!T.alive(ep) || i >= ds.length) { last = 'count'; fire(); return Promise.resolve(); }
+        var d = ds[i++];
+        run = clean(run + pv(+d.getAttribute('data-p'))); d.classList.add('on'); lit.push(d);
+        if (!T.fast) { bump(d); floatText(root, d.offsetLeft + d.offsetWidth / 2, d.offsetTop, fmt(run)); }
+        line('Counted so far: <b>' + fmt(run) + '</b>');
+        return T.wait(ms || 220).then(step);
+      }
+      return step();
+    };
+    T.state = state;
+    T.reset = function () { T.ep++; places.forEach(function (p) { cnt[p] = (o.start && o.start[p]) || 0; }); last = ''; lit = []; mode = ''; qsa('.mp-dstack', root).forEach(function (x) { x.innerHTML = ''; }); all(false); };
+    root.addEventListener('click', function (e) {
+      var h = e.target.closest('.mp-dh');
+      if (h && mode === 'split') {
+        mode = '';
+        var sb = qs('[data-a="split"]', root); if (sb) sb.setAttribute('aria-pressed', 'false');
+        T.split(+h.parentNode.getAttribute('data-p')).then(function (ok) { if (ok === false) line('<span class="mp-tip">There is nothing to break there.</span>'); });
+        return;
+      }
+      var b = e.target.closest('button');
+      if (!b || o.tap === false) return;
+      if (b.classList.contains('mp-dk')) {
+        if (b.classList.contains('on')) return;
+        b.classList.add('on'); lit.push(b); bump(b);
+        var run = 0; lit.forEach(function (x) { run = clean(run + pv(+x.getAttribute('data-p'))); });
+        floatText(root, b.offsetLeft + b.offsetWidth / 2, b.offsetTop, fmt(run));
+        line('Counted so far: <b>' + fmt(run) + '</b>');
+        last = 'tap'; fire(); return;
+      }
+      var p = b.hasAttribute('data-p') ? +b.getAttribute('data-p') : null, a = b.getAttribute('data-a');
+      if (b.classList.contains('mp-add')) T.add(p, 1, 1);
+      else if (b.classList.contains('mp-sub')) T.remove(p, 1);
+      else if (a === 'count') T.countAll(180);
+      else if (a === 'clear') T.set({});
+      else if (a === 'group') {
+        var g = places.slice().reverse().filter(function (q) { return cnt[q] >= 10 && places.indexOf(q + 1) >= 0; })[0];
+        if (g == null) line('<span class="mp-tip">You need 10 disks in one column to group them.</span>'); else T.group(g);
+      } else if (a === 'split') { mode = 'split'; b.setAttribute('aria-pressed', 'true'); line('Now tap the <b>column heading</b> of the disk you want to break.'); }
+    });
+    T.reset();
+    return T;
+  };
+
+  /* ================= Frames: a Watch clip from drawings (from Grade 5) =================
+     Manip.frames([{ say, fig, ms }, ...]) or ([[say, fig, ms], ...]) returns a watch spec: { mount, steps }.
+     Each frame swaps in a new picture (usually one svg); the parts that are new pop in, the parts that stay still do not move. */
+  M.frames = function (frames) {
+    frames = frames.map(function (f) { return Array.isArray(f) ? { say: f[0], fig: f[1], ms: f[2] } : f; });
+    return {
+      mount: function (stage) {
+        var T = { root: stage, fast: false, prev: {} };
+        stage.classList.add('mp-scene');
+        T.show = function (html) {
+          var seen = T.prev, now = {}, first = !Object.keys(seen).length;
+          stage.innerHTML = html;
+          qsa('svg > *, .mp-anim > *', stage).forEach(function (n, i) {
+            var key = n.outerHTML;
+            now[key] = 1;
+            if (!seen[key] && !T.fast && !first) { n.classList.add('mp-new'); n.style.animationDelay = Math.min(i * 18, 500) + 'ms'; }
+          });
+          if (first && !T.fast) bump(stage, 'mp-fade');
+          T.prev = now;
+          return T.fast ? Promise.resolve() : new Promise(function (r) { setTimeout(r, 450); });
+        };
+        T.reset = function () { T.prev = {}; stage.innerHTML = frames[0].fig || ''; };
+        T.reset();
+        return T;
+      },
+      steps: frames.map(function (f) { return { say: f.say, ms: f.ms == null ? 1500 : f.ms, act: function (t) { return t.show(f.fig); } }; })
+    };
+  };
+
   /* ================= "Watch" player =================
      A short animated demonstration, like a video clip, built from a tool's own moves.
      steps: [{say: caption, act: function (tool) { return promise }, ms: pause after}]
-     Plays once when it scrolls into view. Pause, replay, and step dots to jump to any part. Captions can be read aloud. */
+     Plays once when it scrolls into view. Pause, replay, and step dots to jump to any part. */
   M.player = function (root, tool, steps, o) {
     o = o || {};
-    var k = 0, playing = false, run = 0, sound = false, started = false;
+    var k = 0, playing = false, run = 0, started = false;
     root.classList.add('mp-player');
     root.innerHTML = '<div class="mp-stage"></div><p class="mp-cap" aria-live="polite"></p>' +
       '<div class="mp-pctl"><button type="button" class="mp-pb mp-play" aria-label="Play">Play</button>' +
       '<button type="button" class="mp-pb mp-again">Replay</button>' +
-      '<span class="mp-dots">' + steps.map(function (s, i) { return '<button type="button" class="mp-sd" data-i="' + i + '" aria-label="Part ' + (i + 1) + ' of ' + steps.length + '"></button>'; }).join('') + '</span>' +
-      ('speechSynthesis' in window ? '<button type="button" class="mp-pb mp-snd" aria-pressed="false">Sound off</button>' : '') + '</div>';
-    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root), sndB = qs('.mp-snd', root);
+      '<span class="mp-dots">' + steps.map(function (s, i) { return '<button type="button" class="mp-sd" data-i="' + i + '" aria-label="Part ' + (i + 1) + ' of ' + steps.length + '"></button>'; }).join('') + '</span></div>';
+    var stage = qs('.mp-stage', root), cap = qs('.mp-cap', root), playB = qs('.mp-play', root);
     stage.appendChild(tool.root);
     function caption(i) {
       cap.innerHTML = steps[i] ? steps[i].say : '';
       if (steps[i] && !tool.fast) bump(cap, 'mp-fade');
       qsa('.mp-sd', root).forEach(function (d, j) { d.classList.toggle('on', j < i || (j === i && playing)); d.classList.toggle('cur', j === i); });
-    }
-    function say(text) {
-      if (!sound || !('speechSynthesis' in window)) return Promise.resolve();
-      return new Promise(function (res) {
-        speechSynthesis.cancel();
-        var d = document.createElement('div'); d.innerHTML = text;
-        var u = new SpeechSynthesisUtterance(d.textContent);
-        u.lang = 'en-CA'; u.rate = 0.9;
-        var done = false, fin = function () { if (!done) { done = true; res(); } };
-        u.onend = fin; u.onerror = fin;
-        setTimeout(fin, 9000);
-        speechSynthesis.speak(u);
-      });
     }
     function ui() {
       playB.textContent = playing ? 'Pause' : k >= steps.length ? 'Play again' : started ? 'Play' : 'Play';
@@ -1025,13 +1186,13 @@
         if (k >= steps.length) { playing = false; ui(); caption(steps.length - 1); qsa('.mp-sd', root).forEach(function (d) { d.classList.add('on'); }); if (o.onEnd) o.onEnd(); return; }
         var s = steps[k];
         caption(k);
-        Promise.all([Promise.resolve(s.act ? s.act(tool) : null), say(s.say)]).then(function () {
+        Promise.resolve(s.act ? s.act(tool) : null).then(function () {
           return new Promise(function (r) { setTimeout(r, s.ms == null ? 1100 : s.ms); });
         }).then(function () { if (my !== run) return; k++; next(); });
       }
       next();
     }
-    function pause() { playing = false; run++; ui(); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
+    function pause() { playing = false; run++; ui(); }
     /* jump: rebuild the picture instantly up to part j, then play from there */
     function jump(j, play) {
       pause();
@@ -1045,7 +1206,6 @@
     playB.addEventListener('click', function () { if (playing) pause(); else go(); });
     qs('.mp-again', root).addEventListener('click', restart);
     qs('.mp-dots', root).addEventListener('click', function (e) { var d = e.target.closest('.mp-sd'); if (d) jump(+d.getAttribute('data-i'), true); });
-    if (sndB) sndB.addEventListener('click', function () { sound = !sound; sndB.setAttribute('aria-pressed', String(sound)); sndB.textContent = sound ? 'Sound on' : 'Sound off'; if (!sound) speechSynthesis.cancel(); });
     caption(0); ui();
     /* start by itself the first time it is on screen */
     if (o.autoplay !== false && window.IntersectionObserver) {
@@ -1062,5 +1222,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['base10', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['base10', 'disks', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

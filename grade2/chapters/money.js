@@ -50,7 +50,145 @@
     }).join('') + '</div>';
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'money';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  var BSET = [100, 200, 500, 1000, 2000, 5000, 10000];
+  function add(v, say, ms) { return { say: say, act: function (t) { return t.add(v); }, ms: ms }; }
+  function only(v) { return function (s) { return s.items.length && s.items.every(function (x) { return x === v; }); }; }
+  /* which coin is worth more? */
+  var sizeLab = K.lab('<p class="lq"></p><div class="btnrow lsz"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var Q = [[10, 5], [25, 100], [5, 25], [200, 100]], i = 0;
+    function draw() {
+      root.querySelector('.lq').innerHTML = i < Q.length ? '<b>' + (i + 1) + ' of ' + Q.length + ':</b> Tap the coin worth <b>more</b>.' : '<b>All done.</b>';
+      root.querySelector('.lsz').innerHTML = i < Q.length ? Q[i].map(function (v) { return '<button type="button" class="btn alt" data-v="' + v + '" aria-label="' + CASH[v].n + '">' + WAL([v], { W: 90, label: 'a ' + CASH[v].n }) + '</button>'; }).join('') : '';
+    }
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-v]'); if (!b || i >= Q.length) return;
+      var v = +b.getAttribute('data-v'), hi = Math.max.apply(null, Q[i]), out = root.querySelector('.out');
+      if (v === hi) { out.innerHTML = '<p><span class="big">Yes.</span> A ' + CASH[v].n + ' is ' + c(v) + '.</p>'; i++; draw(); if (i === Q.length) done('You went by value, not by size.'); }
+      else out.innerHTML = '<p>A ' + CASH[v].n + ' is only ' + c(v) + '. A ' + CASH[hi].n + ' is ' + c(hi) + '.</p>';
+    });
+    draw();
+  }, 'Pick the coin worth more. Do not go by size.');
+
+  var LESSONS = [
+    { id: 'coins', title: 'Canadian coins', sub: 'Names and values.', concepts: [
+      { id: 'names', title: 'Know the coins', exp: ['F1.1'], skill: 'f2-coins',
+        body: '<p>Canada uses five coins. Each has a value in <b>cents</b> (¢). 100 cents is 1 dollar.</p><div class="tbl"><table><thead><tr><th scope="col">Coin</th><th scope="col">Name</th><th scope="col">Value</th></tr></thead><tbody>' + COINS.map(function (v) { return '<tr><td>' + WAL([v], { W: 80, label: 'a ' + CASH[v].n }) + '</td><td><b>' + CASH[v].n + '</b></td><td>' + c(v) + (v >= 100 ? ' = ' + d(v) : '') + '</td></tr>'; }).join('') + '</tbody></table></div>',
+        watch: { tool: 'coins', opts: {}, steps: [
+          add(5, 'A <b>nickel</b>: 5¢.'),
+          add(10, 'A <b>dime</b>: 10¢.'),
+          add(25, 'A <b>quarter</b>: 25¢.'),
+          add(100, 'A <b>loonie</b>: 100¢, or $1.'),
+          add(200, 'A <b>toonie</b>: 200¢, or $2.', 2000)
+        ] },
+        try: { tool: 'coins', opts: {}, tasks: [
+          { do: 'Put a <b>quarter</b> on the mat. Tap a coin to take it away.', goal: function (s) { return s.items.indexOf(25) >= 0; }, yes: 'A quarter is 25¢.' },
+          { do: 'Clear the mat. Show <b>15¢</b> with 2 coins.', goal: function (s) { return s.total === 15 && s.n === 2; }, yes: 'A dime and a nickel: 10, 15.' }
+        ] },
+        key: '<p>Nickel 5¢, dime 10¢, quarter 25¢, loonie $1, toonie $2.</p>',
+        mistake: '<p>Mixing up the nickel and the dime. Point to the animal: the beaver is on the nickel, the schooner (boat) is on the dime.</p>',
+        check: [T('coin'), P('f2-coins', 1)] },
+      { id: 'size', title: 'Size is not value', exp: ['F1.1'], skill: 'f2-coins', hard: true,
+        body: '<p>A coin\'s size does not tell its value. A dime is smaller than a nickel, but worth more.</p>' + K.vs('Count a coin by its <b>value</b>: a dime is 10¢.', 'Go by size: the nickel is bigger, but it is only 5¢.'),
+        watch: K.clip([
+          ['A nickel and a dime.', WAL([5, 10], { W: 200, keep: true, label: 'A nickel and a dime' })],
+          ['The nickel is <b>bigger</b>.', WAL([5], { W: 120, label: 'A nickel' }) + '<p class="math big">5¢</p>'],
+          ['The dime is smaller, but worth <b>10¢</b>.', WAL([10], { W: 120, label: 'A dime' }) + '<p class="math big">10¢</p>'],
+          ['Go by value, not size.', '<p class="math big">10¢ &gt; 5¢</p>', 2000]
+        ]),
+        try: sizeLab,
+        ways: [
+          { label: 'Say the value', html: '<p>Each time you pick up a coin, say its value out loud: "dime, ten". The name and value stick together.</p>' },
+          { label: 'Real coins', html: '<p>Use real coins. Sort them by value into a row: nickel, dime, quarter, loonie, toonie. Notice the sizes do not line up the same way.</p>' }
+        ],
+        key: '<p>Value, not size.</p>',
+        mistake: '<p>Thinking the nickel is worth more than the dime because it is bigger.</p>',
+        check: [P('f2-coins', 2), P('f2-coins', 3)] }
+    ] },
+    { id: 'count', title: 'Counting coins', sub: 'Biggest first, then skip count.', concepts: [
+      { id: 'biggest', title: 'Start with the biggest', exp: ['F1.1'], skill: 'f2-count', hard: true,
+        body: '<p>To count coins, sort them so the coin worth the <b>most</b> comes first. Then skip count as you add each coin.</p>',
+        watch: { tool: 'coins', opts: {}, steps: [
+          add(5, 'Some coins, in a jumble.', 300),
+          add(25, '', 300),
+          add(10, '', 300),
+          add(25, 'A nickel, two quarters and a dime.', 900),
+          { say: 'Sort them: biggest first.', act: function (t) { return t.sort(); } },
+          { say: 'Count on: 25, 50, 60, 65.', act: function (t) { return t.countAll(600); }, ms: 1400 },
+          { say: 'The total is <b>65¢</b>.', ms: 1800 }
+        ] },
+        try: { tool: 'coins', opts: {}, tasks: [
+          { do: 'Make <b>65¢</b>. Press "Count it" to check.', goal: function (s) { return s.total === 65; }, yes: '65¢. Biggest coin first makes it easy to count.' },
+          { do: 'Clear the mat. Make <b>80¢</b> with exactly <b>4 coins</b>.', goal: function (s) { return s.total === 80 && s.n === 4; }, yes: '3 quarters and a nickel: 25, 50, 75, 80.' }
+        ] },
+        ways: [
+          { label: 'Group the same coins', html: '<p>Put the quarters together, then the dimes, then the nickels. Count each group by its own skip count: 25s, then 10s, then 5s.</p><p class="math">25, 50 &rarr; 60 &rarr; 65</p>' },
+          { label: 'Use a hundred chart', html: '<p>Start at 0. Jump 25 for each quarter, 10 for each dime and 5 for each nickel. Where you land is the total.</p>' }
+        ],
+        key: '<p>Biggest first. Count on by each coin\'s value.</p>',
+        mistake: '<p>Counting every coin by 1s ("1, 2, 3, 4 coins") instead of counting their values.</p>',
+        check: [T('count'), P('f2-count', 1), P('f2-count', 2)] }
+    ] },
+    { id: 'same', title: 'Same amount, different coins', sub: 'Many ways to make it.', concepts: [
+      { id: 'ways', title: 'Many ways to make 50¢', exp: ['F1.1'], skill: 'f2-same',
+        body: '<p>The same amount can be made with different coins. All of these are <b>50¢</b>.</p>',
+        watch: K.clip(SAME[50].map(function (L, i) { return [(i ? 'Or ' : '') + names(L) + ': ' + run(L, c) + '.', WAL(L, { W: 300, label: names(L) + '. Total 50¢' }), i === 3 ? 2000 : 1600]; })),
+        try: { tool: 'coins', opts: {}, tasks: [
+          { do: 'Make <b>50¢</b> using only <b>dimes</b>.', goal: function (s) { return s.total === 50 && only(10)(s); }, yes: '5 dimes: 10, 20, 30, 40, 50.' },
+          { do: 'Clear the mat. Make <b>50¢</b> another way, with a <b>quarter</b> in it.', goal: function (s) { return s.total === 50 && s.items.indexOf(25) >= 0; }, yes: 'Same amount, different coins.' }
+        ] },
+        key: '<p>Different coins can make the same amount.</p>',
+        mistake: '<p>Thinking more coins means more money. 5 dimes and 2 quarters are both 50¢.</p>',
+        check: [T('same'), P('f2-same', 1)] },
+      { id: 'trade', title: 'Quarters, loonies, toonies', exp: ['F1.1'], skill: 'f2-same',
+        body: '<p><b>4 quarters</b> make 100¢, the same as 1 loonie ($1). <b>2 loonies</b> make 1 toonie ($2).</p>',
+        watch: { tool: 'coins', opts: {}, steps: [
+          add(25, '25.', 300), add(25, '50.', 300), add(25, '75.', 300), add(25, '100. <b>4 quarters = $1</b>, the same as a loonie.', 1500),
+          { say: '2 loonies make $2, the same as a toonie.', act: function (t) { t.reset(); return t.add(100); }, ms: 300 },
+          add(100, '<b>2 loonies = 1 toonie</b>.', 1800)
+        ] },
+        try: { tool: 'coins', opts: {}, tasks: [
+          { do: 'Make <b>$1</b> using only <b>quarters</b>.', goal: function (s) { return s.total === 100 && only(25)(s); }, yes: '4 quarters make $1.' },
+          { do: 'Clear the mat. Make <b>$2</b> with just <b>one coin</b>.', goal: function (s) { return s.total === 200 && s.n === 1; }, yes: 'A toonie is $2.' }
+        ] },
+        key: '<p>4 quarters = $1. 2 loonies = $2.</p>',
+        check: [P('f2-same', 2), P('f2-make', 1)] }
+    ] },
+    { id: 'bills', title: 'Dollars and bills', sub: 'Bigger amounts.', concepts: [
+      { id: 'countb', title: 'Count bills', exp: ['F1.1'], skill: 'f2-bills',
+        body: '<p>Bigger amounts use <b>dollars</b> ($). Canadian bills are $5, $10, $20, $50 and $100. Count bills the same way as coins: biggest first.</p>',
+        watch: { tool: 'coins', opts: { set: BSET }, steps: [
+          add(5000, 'A $50 bill.', 500), add(2000, '$20 makes 70.', 500), add(2000, 'Another $20 makes 90.', 500), add(500, '$5 makes 95.', 500), add(200, 'A toonie: 97.', 600),
+          { say: 'Count on: 50, 70, 90, 95, 97. <b>$97</b>.', act: function (t) { return t.countAll(500); }, ms: 1800 }
+        ] },
+        try: { tool: 'coins', opts: { set: BSET }, tasks: [
+          { do: 'Show <b>$35</b>.', goal: function (s) { return s.total === 3500; }, yes: '$35. Count on: 20, 30, 35, or another way.' },
+          { do: 'Clear the mat. Show <b>$100</b> without a $100 bill.', goal: function (s) { return s.total === 10000 && s.items.indexOf(10000) < 0; }, yes: 'Same amount, different bills.' }
+        ] },
+        key: '<p>Count by the value on each bill, biggest first.</p>',
+        mistake: '<p>Counting each bill as one dollar. A $20 bill is worth 20 dollars.</p>',
+        check: [T('bills'), P('f2-bills', 1), P('f2-bills', 2)] },
+      { id: 'sameb', title: 'Same amount with bills', exp: ['F1.1'], skill: 'f2-make', hard: true,
+        body: '<p>Bills can make the same amount in different ways. All of these are <b>$100</b>.</p>',
+        watch: K.clip(SAMEB[10000].map(function (L, i) { return [(i ? 'Or ' : '') + names(L) + ': ' + run(L, d) + '.', WAL(L, { W: 320, label: names(L) + '. Total $100' }), i === 3 ? 2200 : 1700]; })),
+        try: { tool: 'coins', opts: { set: BSET }, tasks: [
+          { do: 'Pay <b>$50</b> using only <b>$10 bills</b>.', goal: function (s) { return s.total === 5000 && only(1000)(s); }, yes: '5 tens make $50.' },
+          { do: 'Clear the mat. Pay <b>$50</b> with exactly <b>3 bills</b>.', goal: function (s) { return s.total === 5000 && s.n === 3; }, yes: '$20, $20 and $10 make $50.' }
+        ] },
+        ways: [
+          { label: 'Trade up', html: '<p>Two $5 bills are worth one $10. Two $10 bills are worth one $20. Five $10 bills are worth one $50. Trading keeps the amount the same.</p>' },
+          { label: 'Count both piles', html: '<p>To check two piles match, count each one, biggest bill first. Same total: same amount.</p>' }
+        ],
+        key: '<p>Count it, and check. Different bills can make the same amount.</p>',
+        mistake: '<p>Thinking more bills means more money. Five $10 bills and one $50 bill are both $50.</p>',
+        check: [T('sameb'), P('f2-make', 2), P('f2-make', 3)] }
+    ] }
+  ];
   A.register('money', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Canadian coins</h2>' +
 '<p>Canada uses five coins. Each coin has a value in <b>cents</b> (¢). 100 cents is the same as 1 dollar.</p>' +

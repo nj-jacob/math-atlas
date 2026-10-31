@@ -60,7 +60,219 @@
   function hourName(h) { h = ((h - 1) % 12) + 1; return h + ' o\'clock'; }
   var EVENTS = [['a sneeze', 'seconds'], ['tying a shoe', 'seconds'], ['a clap', 'seconds'], ['brushing your teeth', 'minutes'], ['eating a snack', 'minutes'], ['walking to the corner', 'minutes'], ['a school day', 'hours'], ['a long car trip', 'hours'], ['a night of sleep', 'hours']];
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'length-time';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  /* the pencil with the first k cubes laid under it */
+  function laying(k, gap) {
+    var sc = 15, len = 18 * sc, w = 2 * sc, s = objShape('pencil', 6, 4, len, OBJ.pencil.col);
+    for (var i = 0; i < k; i++) s += K.pop(unitShape('cube', 6 + i * (w + (gap ? 6 : 0)), 48, w), i === k - 1 ? 0 : -9);
+    s += '<line x1="6" y1="40" x2="6" y2="74" style="stroke:var(--bad)" stroke-width="2" stroke-dasharray="4 3"/><line x1="' + (6 + len) + '" y1="0" x2="' + (6 + len) + '" y2="74" style="stroke:var(--bad)" stroke-width="2" stroke-dasharray="4 3"/>';
+    return A.svg(len + 14 + (gap ? 60 : 0), 78, s, 'A pencil with ' + k + ' cubes under it');
+  }
+  var layLab = K.lab('<div class="btnrow"><button type="button" class="btn" id="llad">Add a cube</button><button type="button" class="btn alt" id="llrm">Take one away</button></div><div class="fig llfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var k = 0, $ = A.$;
+    function draw() {
+      root.querySelector('.llfig').innerHTML = laying(k);
+      root.querySelector('.out').innerHTML = k < 9 ? '<p><span class="big">' + k + '</span> cube' + (k === 1 ? '' : 's') + ' so far. ' + (k ? 'Not to the end yet.' : 'Start at the left end.') + '</p>' : '<p>The cubes reach the end. The pencil is <span class="big">9 cubes</span> long.</p>';
+      $('#llad', root).disabled = k >= 9;
+      if (k === 9) done('9 cubes, end to end, with no gaps. The pencil is 9 cubes long.');
+    }
+    $('#llad', root).addEventListener('click', function () { k++; draw(); });
+    $('#llrm', root).addEventListener('click', function () { if (k) k--; draw(); });
+    draw();
+  }, 'Lay cubes under the pencil, end to end, until you reach the other end.');
+  var unitLab = K.lab('<div class="ctrl"><label for="luo">Thing to measure<select id="luo"><option value="crayon">crayon</option><option value="pencil">pencil</option><option value="book" selected>book</option><option value="ribbon">ribbon</option></select></label><label for="luu">Unit<select id="luu"><option value="cube">cube</option><option value="clip">paper clip</option><option value="eraser">eraser</option></select></label></div><div class="fig lufig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$, seen = {};
+    A.bind(root, ['luo', 'luu'], function () {
+      var o = $('#luo', root).value, k = $('#luu', root).value, n = OBJ[o].cm / UNIT[k].cm;
+      seen[k] = 1;
+      root.querySelector('.lufig').innerHTML = measured(o, k, o === 'ribbon' ? 15 : 16);
+      root.querySelector('.out').innerHTML = '<p>The ' + OBJ[o].n + ' is <span class="big">' + n + ' ' + (n === 1 ? UNIT[k].n : UNIT[k].many) + '</span> long.</p><p class="t2">Cubes ' + OBJ[o].cm / 2 + ', paper clips ' + OBJ[o].cm / 3 + ', erasers ' + OBJ[o].cm / 6 + '.</p>';
+      if (Object.keys(seen).length >= 2) done('Same thing, different unit, different count. The bigger the unit, the fewer you need.');
+    });
+  }, 'Measure the same thing with two different units.');
+  /* choose cm or m for each thing */
+  var cmLab = K.lab('<p class="lq"></p><div class="btnrow"><button type="button" class="btn alt" data-u="cm">centimetres (cm)</button><button type="button" class="btn alt" data-u="m">metres (m)</button></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var L = [['a pencil', 'cm', 'A pencil is short. About 18 cm.'], ['a hallway', 'm', 'A hallway is long. Many metres.'], ['an ant', 'cm', 'An ant is tiny. Less than 1 cm.'], ['a swimming pool', 'm', 'A pool is very long. About 25 m.'], ['a book', 'cm', 'A book is about 24 cm.']], i = 0;
+    function q() { root.querySelector('.lq').innerHTML = i < L.length ? '<b>' + (i + 1) + ' of ' + L.length + ':</b> Measure <b>' + L[i][0] + '</b> in&hellip;' : '<b>All done.</b>'; }
+    root.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-u]'); if (!b || i >= L.length) return;
+      var ok = b.getAttribute('data-u') === L[i][1];
+      root.querySelector('.out').innerHTML = '<p>' + (ok ? '<span class="big">Yes.</span> ' + L[i][2] : 'Think again. Is ' + L[i][0] + ' shorter or longer than a door is wide?') + '</p>';
+      if (ok) { i++; q(); if (i === L.length) done('Short things in centimetres. Long things in metres.'); }
+    });
+    q();
+  }, 'Pick the better unit for each thing.');
+  /* read the end of the crayon on a ruler */
+  function readLab(shift) {
+    return K.lab('<div class="fig lrfig"></div><p class="lq"></p><div class="btnrow lrnums"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+      var a, l, got = 0;
+      function fresh() {
+        a = shift ? R.int(1, 4) : 0; l = R.int(3, 7);
+        root.querySelector('.lrfig').innerHTML = ruler(12, a, l, 'crayon');
+        root.querySelector('.lq').innerHTML = 'How long is the crayon? Tap the length in cm.';
+        var opts = R.shuffle([l, a + l, l + 1, l - 1].filter(function (v, i, s) { return v > 0 && s.indexOf(v) === i; }));
+        root.querySelector('.lrnums').innerHTML = opts.map(function (v) { return '<button type="button" class="btn alt" data-v="' + v + '">' + v + ' cm</button>'; }).join('');
+      }
+      root.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-v]'); if (!b) return;
+        var v = +b.getAttribute('data-v'), out = root.querySelector('.out');
+        if (v === l) { got++; out.innerHTML = '<p><span class="big">Yes, ' + l + ' cm.</span> ' + (a ? (a + l) + ' ' + M + ' ' + a + ' = ' + l + '.' : 'It starts at 0, so the end number is the length.') + '</p>'; if (got >= 2) done('Two right. You read the ruler the right way.'); fresh(); }
+        else out.innerHTML = '<p>' + (v === a + l && a ? 'That is where it ends, but it starts at ' + a + ', not 0. Count the spaces between.' : 'Not quite. Look at where each end of the crayon lines up.') + '</p>';
+      });
+      fresh();
+    }, shift ? 'The crayon does not start at 0. Find its length. Get two right.' : 'Read the length. Get two right.');
+  }
+  var slideLab = K.lab('<div class="ctrl"><label for="lra">Start at (cm): <output id="lrao">2</output><input type="range" id="lra" min="0" max="8" value="2"></label><label for="lrl">Crayon length (cm): <output id="lrlo">6</output><input type="range" id="lrl" min="2" max="7" value="6"></label></div><div class="fig lsfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$;
+    A.bind(root, ['lra', 'lrl'], function () {
+      var a = +$('#lra', root).value, l = +$('#lrl', root).value;
+      $('#lrao', root).textContent = a; $('#lrlo', root).textContent = l;
+      root.querySelector('.lsfig').innerHTML = ruler(15, a, l, 'crayon');
+      root.querySelector('.out').innerHTML = '<p>Starts at <b>' + a + '</b>, ends at <b>' + (a + l) + '</b>. <span class="big">' + (a + l) + ' ' + M + ' ' + a + ' = ' + l + ' cm</span></p>' + (a ? '<p class="t2">The end reads ' + (a + l) + ', but the crayon is still ' + l + ' cm.</p>' : '<p class="t2">It starts at 0, so the end number is the length.</p>');
+      done();
+    });
+  }, 'Slide the crayon along the ruler. Does its length change?');
+  var timerLab = K.lab('<div class="btnrow"><button type="button" class="btn" id="ltgo">Start</button><button type="button" class="btn alt" id="ltstop" disabled>Stop</button></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$, t0 = 0;
+    $('#ltgo', root).addEventListener('click', function () { t0 = Date.now(); this.disabled = true; $('#ltstop', root).disabled = false; root.querySelector('.out').innerHTML = '<p>Counting&hellip; press Stop at 10 seconds.</p>'; });
+    $('#ltstop', root).addEventListener('click', function () {
+      var s = Math.round((Date.now() - t0) / 100) / 10;
+      $('#ltgo', root).disabled = false; this.disabled = true; $('#ltgo', root).textContent = 'Try again';
+      root.querySelector('.out').innerHTML = '<p>You stopped at <span class="big">' + s + ' seconds</span>.</p><p>' + (Math.abs(s - 10) <= 1.5 ? 'Very close to 10 seconds.' : s < 10 ? 'A little early. Try counting "one Mississauga, two Mississauga".' : 'A little late. Try counting a bit faster.') + '</p>';
+      done('A second is short. 60 of them make a minute.');
+    });
+  }, 'Press Start, close your eyes, and press Stop when you think 10 seconds have passed.');
+  var hourLab = K.lab('<div class="ctrl"><label for="lts">Starts at<select id="lts"><option>8</option><option selected>9</option><option>10</option><option>11</option><option>12</option><option>1</option><option>2</option></select></label><label for="ltl">Hours it lasts: <output id="ltlo">3</output><input type="range" id="ltl" min="1" max="6" value="3"></label></div><div class="vrow lhfig"></div><div class="out" aria-live="polite"></div>', function (root, done) {
+    var $ = A.$;
+    A.bind(root, ['lts', 'ltl'], function () {
+      var s = +$('#lts', root).value, l = +$('#ltl', root).value, e = ((s + l - 1) % 12) + 1, steps = [];
+      $('#ltlo', root).textContent = l;
+      root.querySelector('.lhfig').innerHTML = '<figure>' + clock(s, 0, 54) + '<figcaption>Start: ' + hourName(s) + '</figcaption></figure><figure>' + clock(e, 0, 54) + '<figcaption>End: ' + hourName(e) + '</figcaption></figure>';
+      for (var i = 1; i <= l; i++) steps.push(hourName(s + i).replace(' o\'clock', ''));
+      root.querySelector('.out').innerHTML = '<p>From ' + hourName(s) + ' to ' + hourName(e) + ' is <span class="big">' + l + ' hour' + (l > 1 ? 's' : '') + '</span>.</p><p class="t2">Count the jumps: ' + steps.join(', ') + '.</p>';
+      done();
+    });
+  }, 'Pick a start time and how long it lasts. Count the jumps of the short hand.');
+  var rulerEnd = function (a, l, hop) { return ruler(12, a, l, 'crayon').replace('</svg>', (hop || '') + '</svg>'); };
+  function spaces(a, k) { var s = ''; for (var i = 0; i < k; i++) s += K.pop('<path d="M' + (16 + (a + i) * PX + 3) + ' 44 q' + (PX / 2 - 3) + ' -16 ' + (PX - 6) + ' 0" fill="none" style="stroke:var(--strand)" stroke-width="3"/>', i - k + 1); return s; }
+
+  var LESSONS = [
+    { id: 'units', title: 'Measure with units', sub: 'Lay units end to end.', concepts: [
+      { id: 'endtoend', title: 'End to end, no gaps', exp: ['E2.1'], skill: 'l2-units',
+        body: '<p>To measure a length, lay units of the <b>same size</b> end to end. No gaps and no overlaps. Then count them.</p>' + K.vs('Cubes touching, in a straight line, starting at the very end.', 'Gaps between cubes, or cubes that overlap.'),
+        watch: K.clip([
+          ['Start at the left end of the pencil.', laying(1)],
+          ['Lay the next cube right against it. 2, 3, 4.', laying(4)],
+          ['5, 6, 7, 8, 9. The cubes reach the end.', laying(9)],
+          ['The pencil is <b>9 cubes</b> long.', laying(9), 2000]
+        ]),
+        try: layLab,
+        key: '<p>Same-size units, end to end, no gaps, no overlaps. Count them.</p>',
+        mistake: '<p>Leaving gaps or letting units overlap, so the count is wrong.</p>',
+        check: [T('count'), P('l2-units', 1)] },
+      { id: 'bigger', title: 'Bigger unit, fewer units', exp: ['E2.1'], skill: 'l2-units', hard: true,
+        body: '<p>Measure the same thing with a <b>bigger</b> unit and you need <b>fewer</b> of them. The thing did not change. The unit did.</p>',
+        watch: K.clip([
+          ['The pencil in cubes: <b>9</b>.', measured('pencil', 'cube')],
+          ['In paper clips: <b>6</b>.', measured('pencil', 'clip')],
+          ['In erasers: <b>3</b>.', measured('pencil', 'eraser')],
+          ['Same pencil. Bigger unit, fewer units.', measured('pencil', 'eraser'), 2000]
+        ]),
+        try: unitLab,
+        ways: [
+          { label: 'Steps and giant steps', html: '<p>Walk across a room in tiny steps, then in giant steps. You take fewer giant steps. The room did not change size.</p>' },
+          { label: 'This, not that', html: K.vs('3 erasers and 9 cubes can be the same length.', 'The bigger number always means the longer thing.') }
+        ],
+        key: '<p>Bigger unit: fewer of them. Smaller unit: more of them.</p>',
+        mistake: '<p>Thinking 9 cubes must be longer than 3 erasers because 9 is more than 3.</p>',
+        check: [P('l2-units', 2), P('l2-units', 3)] }
+    ] },
+    { id: 'cmm', title: 'Centimetres and metres', sub: 'Units everyone uses.', concepts: [
+      { id: 'cm-m', title: 'Centimetres and metres', exp: ['E2.2'], skill: 'l2-cmm',
+        body: '<p>Small lengths are measured in <b>centimetres (cm)</b>. Long lengths are measured in <b>metres (m)</b>. <span class="big">100 cm = 1 m</span></p>',
+        watch: K.clip([
+          ['A fingertip is about <b>1 cm</b> wide.', A.svg(200, 100, K.pop('<rect x="80" y="10" width="40" height="80" rx="20" style="fill:#f2c9a5" stroke="rgba(0,0,0,.4)"/><line x1="80" y1="96" x2="120" y2="96" style="stroke:var(--bad)" stroke-width="4"/>'), 'A fingertip, about 1 cm wide')],
+          ['A door is about <b>1 m</b> wide.', A.svg(200, 140, K.pop('<rect x="50" y="6" width="100" height="120" rx="3" style="fill:#b07a4a" stroke="rgba(0,0,0,.45)"/><circle cx="136" cy="70" r="4" fill="#2b2118"/><line x1="50" y1="134" x2="150" y2="134" style="stroke:var(--bad)" stroke-width="4"/>'), 'A door, about 1 m wide')],
+          ['100 fingertips fit across the door. <b>100 cm = 1 m</b>.', '<p class="math big">100 cm = 1 m</p>'],
+          ['Short things: cm. Long things: m.', '<p class="math big">pencil: 18 cm &nbsp; classroom: 9 m</p>', 2000]
+        ]),
+        try: cmLab,
+        key: '<p>Shorter than a door is wide: centimetres. Longer: metres.</p>',
+        mistake: '<p>Writing a long distance in cm (a classroom is "9 cm"). Ask: does that make sense?</p>',
+        check: [T('unit'), T('est'), P('l2-cmm', 1)] }
+    ] },
+    { id: 'ruler', title: 'Using a ruler', sub: 'Start at zero.', concepts: [
+      { id: 'zero', title: 'Line up with 0', exp: ['E2.3'], skill: 'l2-ruler',
+        body: '<p>Line up one end with the <b>0</b> on the ruler. Read the number at the other end. That is the length in centimetres.</p>',
+        watch: K.clip([
+          ['Line up the end of the crayon with 0.', rulerEnd(0, 9)],
+          ['Look at the other end. It lines up with 9.', rulerEnd(0, 9, K.pop('<circle cx="' + (16 + 9 * PX) + '" cy="82" r="14" fill="none" style="stroke:var(--strand)" stroke-width="3"/>', 0))],
+          ['The crayon is <b>9 cm</b> long.', rulerEnd(0, 9), 1800]
+        ]),
+        try: readLab(false),
+        key: '<p>Start at 0. Read the end.</p>',
+        check: [T('read'), P('l2-ruler', 1)] },
+      { id: 'shift', title: 'When it does not start at 0', exp: ['E2.3'], skill: 'l2-ruler', hard: true,
+        body: '<p>If the object does not start at 0, count the centimetre <b>spaces</b> between its ends, or subtract the start from the end.</p>',
+        watch: K.clip([
+          ['This crayon starts at 3 and ends at 10.', rulerEnd(3, 7)],
+          ['Count the spaces: 1, 2, 3, 4.', rulerEnd(3, 7, spaces(3, 4))],
+          ['5, 6, 7.', rulerEnd(3, 7, spaces(3, 7))],
+          ['It is <b>7 cm</b>, not 10 cm. 10 &minus; 3 = 7.', rulerEnd(3, 7, spaces(3, 7)), 2200]
+        ]),
+        try: slideLab,
+        ways: [
+          { label: 'Hop the spaces', html: '<p>Hop from the start to the end. Count the hops. Start at 3 and hop 1 each time until you reach 10.</p>', tool: 'numberline', opts: { min: 0, max: 12, start: 3, step: [1] } },
+          { label: 'Subtract', html: '<p>End number take away start number.</p><p class="math big">10 &minus; 3 = 7 cm</p>' },
+          { label: 'Slide to 0', html: '<p>If you can, slide the object so one end sits on 0. Then read the other end.</p>' }
+        ],
+        key: '<p>Check where it starts. Count spaces, not marks.</p>',
+        mistake: '<p>Reading only the end number when the object does not start at 0, or counting the tick marks instead of the spaces.</p>',
+        check: [T('shift'), P('l2-ruler', 2)] },
+      { id: 'practise', title: 'Read any ruler', exp: ['E2.3'], skill: 'l2-ruler',
+        body: '<p>Now mix them up. First check where it starts. Then find the length.</p>',
+        try: readLab(true),
+        key: '<p>Where does it start? Where does it end? How many spaces between?</p>',
+        check: [P('l2-ruler', 2), P('l2-ruler', 3)] }
+    ] },
+    { id: 'time', title: 'Seconds, minutes, hours', sub: 'Units of time.', concepts: [
+      { id: 'tunits', title: 'Pick a unit of time', exp: ['E2.4'], skill: 'l2-timeunit',
+        body: '<p>We measure how long something takes in <b>seconds</b>, <b>minutes</b> and <b>hours</b>. 60 seconds make 1 minute. 60 minutes make 1 hour.</p>',
+        watch: K.clip([
+          ['A clap takes about 1 <b>second</b>.', '<p class="math big">clap: 1 second</p>'],
+          ['Washing your hands takes about 1 <b>minute</b>. That is 60 seconds.', '<p class="math big">wash hands: 1 minute</p>'],
+          ['A hockey game takes about 2 to 3 <b>hours</b>.', '<p class="math big">hockey game: 2 to 3 hours</p>'],
+          ['Short: seconds. Longer: minutes. Longest: hours.', '<p class="math big">seconds &lt; minutes &lt; hours</p>', 2000]
+        ]),
+        try: timerLab,
+        key: '<p>Pick the unit that gives a small, sensible number.</p>',
+        mistake: '<p>Choosing hours for something quick, or seconds for something long.</p>',
+        check: [T('tunit'), P('l2-timeunit', 1), P('l2-timeunit', 2)] }
+    ] },
+    { id: 'hours', title: 'How long did it take?', sub: 'Count the hours.', concepts: [
+      { id: 'elapsed', title: 'Count the hours', exp: ['E2.4'], skill: 'l2-hours', hard: true,
+        body: '<p>On a clock, the short hand points to the hour. Each time it moves to the next number, <b>1 hour</b> has passed. Count the jumps, not the starting hour.</p>',
+        watch: K.clip([
+          ['The party starts at 2 o\'clock.', clock(2, 0)],
+          ['Jump to 3: <b>1 hour</b>.', clock(3, 0)],
+          ['Jump to 4: <b>2 hours</b>.', clock(4, 0)],
+          ['Jump to 5: <b>3 hours</b>. The party lasted 3 hours.', clock(5, 0), 2000]
+        ]),
+        try: hourLab,
+        ways: [
+          { label: 'Hop on a line', html: '<p>Put the hours on a line. Start at 2 and hop to 5. Count the hops.</p>', tool: 'numberline', opts: { min: 0, max: 12, start: 2, step: [1] } },
+          { label: 'Use your fingers', html: '<p>Say the start hour with a closed fist. Put up one finger for each hour after it: 3, 4, 5. Three fingers: 3 hours.</p>' }
+        ],
+        key: '<p>Count the jumps from start to end.</p>',
+        mistake: '<p>Counting the starting hour: 2, 3, 4, 5 is four numbers but only <b>3</b> hours.</p>',
+        check: [T('hours'), P('l2-hours', 1), P('l2-hours', 2)] }
+    ] }
+  ];
   A.register('length-time', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Measure with units</h2>' +
 '<p>To measure a length, lay small things of the <b>same size</b> end to end. No gaps and no overlaps. Then count them. Each small thing is a <b>unit</b>.</p>' +

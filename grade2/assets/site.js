@@ -429,23 +429,6 @@
   function unitHtml(q) { return q.unit && q.unit !== '$' ? '<span class="unit">' + q.unit + '</span>' : ''; }
   function parseNum(t) { return parseFloat(String(t).replace(/[^0-9.\-]/g, '')); }
   function numOk(q, v) { return Math.abs(v - q.answer) <= (q.tol || 1e-9); }
-  function speak(text) {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    var u = new SpeechSynthesisUtterance(text.replace(/×/g, ' times ').replace(/÷/g, ' divided by ').replace(/−/g, ' minus ').replace(/¢/g, ' cents').replace(/□/g, ' box ').replace(/\?\s*$/, '?').replace(/\s+/g, ' '));
-    u.lang = 'en-CA'; u.rate = 0.85;
-    window.speechSynthesis.speak(u);
-  }
-  Atlas.speak = speak;
-  /* text of an element for reading aloud, skipping drawings, controls and the number badge */
-  function sayText(el) {
-    var c = el.cloneNode(true);
-    Atlas.$$('svg,.qn,button,input,select,.lab,.fig,.sr', c).forEach(function (x) { x.remove(); });
-    return c.textContent.replace(/<|&lt;/g, ' is less than ').replace(/>|&gt;/g, ' is greater than ');
-  }
-  function tmp(html) { var d = document.createElement('div'); d.innerHTML = html; return sayText(d); }
-  Atlas.sayText = sayText;
-  function sayBtn() { return 'speechSynthesis' in window ? '<button type="button" class="say" aria-label="Read the question aloud">Read aloud</button>' : ''; }
 
   /* Practice questions.
      {q, type:'mc', options:[...], answer:index, explain, hint}
@@ -467,7 +450,7 @@
     qs.forEach(function (q, i) {
       var d = document.createElement('div');
       d.className = 'q';
-      var h = '<p class="qtext"><span class="qn">' + (i + 1) + '</span>' + q.q + '</p>' + sayBtn();
+      var h = '<p class="qtext"><span class="qn">' + (i + 1) + '</span>' + q.q + '</p>';
       if (q.fig) h += '<div class="fig">' + q.fig + '</div>';
       if (q.type === 'mc') {
         h += '<div class="opts">' + q.options.map(function (o, j) {
@@ -482,8 +465,7 @@
       h += '<div class="fb" aria-live="polite"></div>';
       d.innerHTML = h;
       box.appendChild(d);
-      var fb = $('.fb', d), s = st[i], sb = $('.say', d);
-      if (sb) sb.addEventListener('click', function () { speak(sayText($('.qtext', d)) + (q.type === 'mc' ? ' Choices: ' + q.options.map(function (o) { return tmp(o); }).join('; or ') : '')); });
+      var fb = $('.fb', d), s = st[i];
       function finish(ok) {
         s.done = true;
         if (ok && s.tries === 1) s.first = true;
@@ -536,14 +518,13 @@
       function show() {
         var q = gen ? src() : src, tries = 0, done = false, uid = id + '-yt' + n;
         count++;
-        var h = '<p class="ytl">Your turn</p><p class="qtext">' + q.q + '</p>' + sayBtn() + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+        var h = '<p class="ytl">Your turn</p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
         if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
         else h += '<form class="numrow"><label class="sr" for="' + uid + '">Your answer</label>' + '<input type="text" inputmode="numeric" autocomplete="off" id="' + uid + '" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Check</button></form>';
         h += '<div class="fb" aria-live="polite"></div><div class="ytn"></div>';
         box.innerHTML = h;
         box._q = q; /* exposed for automated checks */
-        var fb = $('.fb', box), say = $('.say', box);
-        if (say) say.addEventListener('click', function () { speak(sayText($('.qtext', box)) + (q.type === 'mc' ? ' Choices: ' + q.options.map(tmp).join('; or ') : '')); });
+        var fb = $('.fb', box);
         function result(ok, btn) {
           tries++;
           if (ok) {
@@ -676,14 +657,12 @@
       Atlas._q = q; /* exposed for automated checks */
       refreshRow();
       var h = '<div class="pcard">' + (rev ? '<p class="revtag">Review from ' + rev.ch.title + '</p>' : '') + '<p class="plv"><span class="pill">' + cur.code + '</span> <b>' + cur.name + '</b> &middot; Level ' + lv + ': ' + LV[lv] + '</p>' +
-        '<p class="qtext">' + q.q + '</p>' + sayBtn() + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+        '<p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += '<form class="numrow"><label class="sr" for="pin-' + id + '">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
         '<input type="text" inputmode="numeric" autocomplete="off" id="pin-' + id + '" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Check</button></form>';
       h += '<div class="fb"></div><div class="steps"></div><div class="pnext"></div></div>';
       pq.innerHTML = h;
-      var say = $('.say', pq);
-      if (say) say.addEventListener('click', function () { speak(sayText($('.qtext', pq)) + (q.type === 'mc' ? ' Choices: ' + q.options.map(function (o) { return tmp(o); }).join('; or ') : '')); });
       if (q.type === 'mc') Atlas.$$('.opt', pq).forEach(function (b) {
         b.addEventListener('click', function () {
           if (done) return;
@@ -827,14 +806,12 @@
       var h = '<div class="wrap chapter" data-strand="' + q.ch.strand + '"><p class="crumb"><a href="#check-up">Check-up</a></p>' +
         '<div class="sec cu"><div class="cuprog"><span>' + label + (q.lv > 1 ? ' &middot; a step harder' : '') + '</span><span>Question ' + (k + 1) + ' of ' + qs.length + (chapterScope && !stepUps ? ' (up to ' + (qs.length + Math.min(3, qs.length)) + ')' : '') + '</span></div>' +
         '<div class="bar-h"><i style="width:' + (k / qs.length * 100) + '%;background:var(--accent)"></i></div>' +
-        '<p class="plv"><span class="pill">' + q.ch.title + '</span></p><p class="qtext">' + q.q + '</p>' + sayBtn() + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+        '<p class="plv"><span class="pill">' + q.ch.title + '</span></p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
       else h += '<form class="numrow"><label class="sr" for="cuin">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
         '<input type="text" inputmode="numeric" autocomplete="off" id="cuin" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Save answer</button></form>';
       h += '<p><button type="button" class="btn alt" id="cuskip">I\'m not sure yet</button></p></div></div>';
       app.innerHTML = h;
-      var say = $('.say', app);
-      if (say) say.addEventListener('click', function () { speak(sayText($('.qtext', app)) + (q.type === 'mc' ? ' Choices: ' + q.options.map(function (o) { return tmp(o); }).join('; or ') : '')); });
       function rec(given, ok) { res.push({ given: given, ok: ok }); k++; if (k === qs.length) stepUp(); if (k < qs.length) { show(); var f = $('.opt, input', app); if (f) f.focus(); } else report(); }
       if (q.type === 'mc') Atlas.$$('.opt', app).forEach(function (b) {
         b.addEventListener('click', function () { var j = +b.getAttribute('data-j'); rec(q.options[j], j === q.answer); });
@@ -915,7 +892,7 @@
         (plan.length ? '<p>Next up:</p><ul>' + plan.map(function (p) { return '<li><a href="#' + p.ch + '/practice/' + p.sk + '">' + p.name + '</a> <span class="t2">(' + p.t + ')</span></li>'; }).join('') + '</ul>' : '') +
         '<p><a href="#check-up">Take another check-up</a></p>';
     } else {
-      h += '<p><b>Not sure where to start?</b> Take the <a href="#check-up">check-up</a>. It takes about 15 minutes and builds a practice plan for you. Every page has a <b>Read aloud</b> button.</p>';
+      h += '<p><b>Not sure where to start?</b> Take the <a href="#check-up">check-up</a>. It takes about 10 minutes and builds a practice plan for you.</p>';
     }
     h += '</div><div class="cards">';
     Atlas.meta.forEach(function (m, i) {
@@ -953,18 +930,6 @@
       (prev ? '<a href="#' + prev.id + '"><small>Previous</small>' + prev.title + '</a>' : '<span></span>') +
       (next ? '<a class="nx" href="#' + next.id + '"><small>Next</small>' + next.title + '</a>' : '') + '</div></div>';
     app.innerHTML = h;
-    if ('speechSynthesis' in window) Atlas.$$('#lesson .sec>h2', app).forEach(function (h2) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'say secsay'; b.textContent = 'Read aloud';
-      b.setAttribute('aria-label', 'Read this part aloud');
-      b.addEventListener('click', function () {
-        if (b.getAttribute('aria-pressed') === 'true') { window.speechSynthesis.cancel(); return; }
-        var sec = h2.parentNode, parts = [];
-        Atlas.$$(':scope > h2, :scope > p, :scope > ul li, :scope > ol li, :scope > .key, :scope > .eg p, :scope > .lab > .lt', sec).forEach(function (el) { parts.push(sayText(el).replace(/^\d+/, '')); });
-        speak(parts.join('. ').replace(/\.\s*\./g, '.'));
-      });
-      h2.appendChild(b);
-    });
     if (ch.init) ch.init(app);
     if (ch.turns) Atlas.turns(app, id, ch.turns);
     var parts = (sub || '').split('/');

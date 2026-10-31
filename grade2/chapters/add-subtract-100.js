@@ -52,7 +52,157 @@
     return ['Start at ' + a + '. Jump back ' + tens(b) * 10 + ' (the tens): ' + (a - tens(b) * 10) + '.', 'Jump back ' + b % 10 + ' (the ones): ' + (a - b) + '.', 'So ' + a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.<div class="fig">' + openLine(a, [-tens(b) * 10, -(b % 10)].filter(function (x) { return x; })) + '</div>'];
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'add-subtract-100';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  var LESSONS = [
+    { id: 'tens', title: 'Tens on the hundred chart', sub: 'Down a row adds 10.', concepts: [
+      { id: 'addtens', title: 'Adding tens', exp: ['B2.3'], skill: 'a2-tens',
+        body: '<p>On a hundred chart, moving <b>down one row</b> adds 10. The ones digit stays the same. Only the tens change.</p>',
+        watch: { tool: 'hundred', opts: {}, steps: [
+          { say: 'Let\'s add 34 + 30. Find 34.', act: function (t) { return t.skip(10, 34, 34); }, ms: 900 },
+          { say: 'Move down one row for each ten: 44, 54, 64.', act: function (t) { return t.skip(10, 44, 64, 650); } },
+          { say: 'We land on 64. <b>34 + 30 = 64</b>. The 4 in the ones place did not change.', ms: 2200 }
+        ] },
+        try: { tool: 'hundred', opts: {}, tasks: [
+          { do: 'Start at <b>23</b>. Tap 23, then tap each number you land on as you add 10 three times.', goal: function (s) { return [23, 33, 43, 53].every(function (n) { return s.lit.indexOf(n) >= 0; }); }, yes: '23 + 30 = 53. You moved down 3 rows.' },
+          { do: 'Start at <b>58</b>. Add 20. Tap 58 and every number you land on.', goal: function (s) { return [58, 68, 78].every(function (n) { return s.lit.indexOf(n) >= 0; }); }, yes: '58 + 20 = 78.' }
+        ] },
+        key: '<p>Adding tens is like adding ones: 3 + 2 = 5, so <b>30 + 20 = 50</b>.</p>',
+        check: [T('tens'), P('a2-tens', 1)] },
+      { id: 'subtens', title: 'Taking away tens', exp: ['B2.3'], skill: 'a2-tens',
+        body: '<p>Moving <b>up one row</b> takes away 10. 76 &minus; 30: go up 3 rows to <b>46</b>.</p>',
+        watch: K.clip([
+          ['Start at 76.', chart(76, 0, [])],
+          ['Go up one row for each ten: 66, 56, 46.', chart(76, 46, [66, 56])],
+          ['<b>76 &minus; 30 = 46</b>. The ones digit stays 6.', chart(76, 46, [66, 56]), 2200]
+        ]),
+        try: { tool: 'hundred', opts: {}, tasks: [
+          { do: 'Show <b>85 &minus; 40</b>. Tap 85, then each number you land on going up.', goal: function (s) { return [85, 75, 65, 55, 45].every(function (n) { return s.lit.indexOf(n) >= 0; }); }, yes: '85 &minus; 40 = 45.' }
+        ] },
+        key: '<p>Down a row: + 10. Up a row: &minus; 10.</p>',
+        check: [P('a2-tens', 2), P('a2-tens', 2)] }
+    ] },
+    { id: 'add2', title: 'Adding two-digit numbers', sub: 'Tens with tens, ones with ones.', concepts: [
+      { id: 'tensones', title: 'Add the tens, then the ones', exp: ['B2.4'], skill: 'a2-add',
+        body: '<p>To add <b>34 + 23</b>, add the tens: 30 + 20 = 50. Add the ones: 4 + 3 = 7. Together: <b>57</b>.</p>',
+        watch: { tool: 'base10', opts: { cols: ['t', 'o'], t: 3, o: 4 }, steps: [
+          { say: 'Here is 34: 3 tens and 4 ones.', ms: 1200 },
+          { say: 'Add 23. First the 2 tens: 40, 50.', act: function (t) { return t.add('t', 2, 450); } },
+          { say: 'Then the 3 ones: 55, 56, 57.', act: function (t) { return t.add('o', 3, 350); } },
+          { say: '5 tens and 7 ones. <b>34 + 23 = 57</b>.', act: function (t) { return t.countAll(200); }, ms: 1600 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 4, o: 2 }, tasks: [
+          { do: 'There is 42. Add <b>35</b>.', reset: false, goal: function (s) { return s.value === 77; }, yes: '42 + 35 = 77: 7 tens and 7 ones.' },
+          { do: 'Start again with 42 and add <b>16</b>.', setup: function (t) { t.set(0, 4, 2); }, reset: false, goal: function (s) { return s.value === 58; }, yes: '42 + 16 = 58.' }
+        ] },
+        key: '<p>Tens with tens. Ones with ones.</p>',
+        check: [P('a2-add', 1), P('a2-add', 1)] },
+      { id: 'trade', title: 'Trade 10 ones for a ten', exp: ['B2.4'], skill: 'a2-add', hard: true,
+        body: '<p>Sometimes the ones add up to 10 or more. Then we <b>trade</b> 10 ones for 1 ten. 36 + 27: tens make 50, ones make 13. 13 ones is 1 ten and 3 ones. The answer is <b>63</b>.</p>',
+        watch: { tool: 'base10', opts: { cols: ['t', 'o'], t: 3, o: 6 }, steps: [
+          { say: 'Here is 36.', ms: 1000 },
+          { say: 'Add 27. First the 2 tens.', act: function (t) { return t.add('t', 2, 350); } },
+          { say: 'Then the 7 ones.', act: function (t) { return t.add('o', 7, 250); } },
+          { say: 'Now there are 13 ones. That is more than 9.', act: function (t) { return t.lightKind('o', 160); }, ms: 900 },
+          { say: 'Trade 10 ones for 1 ten.', act: function (t) { t.clearLit(); return t.group('o'); } },
+          { say: '6 tens and 3 ones. <b>36 + 27 = 63</b>.', ms: 2200 }
+        ] },
+        try: { tool: 'base10', opts: { cols: ['t', 'o'], controls: true, t: 4, o: 8 }, tasks: [
+          { do: 'There is 48. Add <b>35</b>, then group 10 ones into a ten.', reset: false, goal: function (s) { return s.value === 83 && s.o < 10; }, yes: '48 + 35 = 83: 8 tens and 3 ones.' },
+          { do: 'Show <b>29 + 45</b>. Build 29, add 45, then trade.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 74 && s.o < 10; }, yes: '29 + 45 = 74.' }
+        ] },
+        ways: [
+          { label: 'Open number line', html: '<p>Start at 36. Jump 20 to 56. Jump 4 to 60, then 3 to 63.</p>' + openLine(36, [20, 4, 3]) },
+          { label: 'With numbers', html: '<p class="math">36 + 27</p><p class="math">30 + 20 = 50<br>6 + 7 = 13<br>50 + 13 = <b>63</b></p>' },
+          { label: 'Make a ten', html: '<p>Take 4 from the 27 to make 36 into 40. Then 40 + 23 = <b>63</b>.</p>' }
+        ],
+        key: '<p>10 ones or more? <b>Trade 10 ones for 1 ten.</b></p>',
+        mistake: '<p>Writing 513 for 36 + 27 by putting "5 tens" and "13 ones" side by side. Ask the child to show the 13 ones with blocks, then trade 10 of them for a ten.</p>',
+        check: [T('add2'), P('a2-add', 2)] }
+    ] },
+    { id: 'mental', title: 'Mental math to 50', sub: 'Jump in your head.', concepts: [
+      { id: 'jumps', title: 'Jump the tens, then the ones', exp: ['B2.3'], skill: 'a2-mental',
+        body: '<p>Picture an <b>open number line</b>. Start at the bigger number. Jump the tens, then the ones.</p>',
+        watch: { tool: 'numberline', opts: { min: 20, max: 50, every: 5, start: 20 }, steps: [
+          { say: '18 + 25. Start at the bigger number, 25.', act: function (t) { return t.moveTo(25); }, ms: 900 },
+          { say: 'Jump the ten: 35.', act: function (t) { return t.hop(35, '+10'); } },
+          { say: 'Jump the 8 ones: 43.', act: function (t) { return t.hop(43, '+8'); } },
+          { say: '<b>18 + 25 = 43</b>.', ms: 2000 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 20, max: 50, every: 5, start: 24, step: [10, 1] }, tasks: [
+          { do: 'Show <b>24 + 13</b>. Use <b>Jumps of 10</b> once, then <b>Jumps of 1</b> three times.', goal: function (s) { return s.at === 37; }, yes: '24 + 10 = 34, then + 3 = 37.' }
+        ] },
+        key: '<p>Start big. Jump the tens. Then jump the ones.</p>',
+        check: [T('mental'), P('a2-mental', 1)] },
+      { id: 'estimate', title: 'Estimate first', exp: ['B2.3'], skill: 'a2-mental',
+        body: '<p>An <b>estimate</b> is a close guess. Change each number to its closest ten, then add. 19 + 22 is about <b>20 + 20 = 40</b>.</p>',
+        watch: K.clip([
+          ['19 + 22. Where is 19? It is close to 20.', openLine(19, [1], 'From 19, 20 is only 1 away')],
+          ['22 is close to 20 too.', openLine(20, [2], 'From 20, 22 is 2 more')],
+          ['20 + 20 = 40. So 19 + 22 is <b>about 40</b>. The exact answer, 41, is close. It makes sense.', '<p class="math big">19 + 22 &asymp; 20 + 20 = 40</p>', 2400]
+        ]),
+        key: '<p>Estimate to check: is my answer about the right size?</p>',
+        mistake: '<p>Changing numbers to the closest ten and then reporting the estimate as the exact answer. Ask for both: "about how much?" and "exactly how much?"</p>',
+        check: [T('est'), T('est')] },
+      { id: 'order', title: 'Add in any order', exp: ['B2.1'], skill: 'a2-mental',
+        body: '<p>You can add numbers in any order and group them in any way. Look for pairs that make 10. <b>7 + 8 + 3</b>: 7 + 3 = 10, then 10 + 8 = <b>18</b>.</p>',
+        watch: K.clip([
+          ['7 + 8 + 3. Look for a pair that makes 10.', '<p class="math big">7 + 8 + 3</p>'],
+          ['7 and 3 make 10.', '<p class="math big"><b>7</b> + 8 + <b>3</b></p><p>7 + 3 = 10</p>'],
+          ['Then 10 + 8 = <b>18</b>.', '<p class="math big">10 + 8 = 18</p>', 2000]
+        ]),
+        key: '<p>Find friendly pairs first. The total stays the same.</p>',
+        check: [function () { var a = R.int(2, 8), b = 10 - a, c = R.int(3, 9); return { q: '<span class="math big">' + a + ' + ' + c + ' + ' + b + ' = ?</span>', type: 'num', answer: 20 - 10 + c, hint: 'Find two numbers that make 10.', steps: [a + ' + ' + b + ' = 10.', '10 + ' + c + ' = ' + (10 + c) + '.'], explain: a + ' + ' + b + ' = 10, and 10 + ' + c + ' = ' + (10 + c) + '.' }; },
+          function () { var a = R.int(12, 25), b = R.int(11, 24), o = R.mc(b + ' + ' + a, [a + ' ' + M + ' ' + b, a + ' + ' + a, b + ' + ' + b]); return { q: 'Which has the same total as <span class="math">' + a + ' + ' + b + '</span>?', type: 'mc', options: o.options, answer: o.answer, hint: 'You can add in any order.', explain: a + ' + ' + b + ' = ' + b + ' + ' + a + ' = ' + (a + b) + '.' }; }] }
+    ] },
+    { id: 'sub', title: 'Subtracting to 100', sub: 'Jump back, or count up.', concepts: [
+      { id: 'back', title: 'Jump back the tens, then the ones', exp: ['B2.4'], skill: 'a2-sub',
+        body: '<p>To subtract, start at the whole and <b>jump back</b>: first the tens, then the ones.</p>',
+        watch: { tool: 'numberline', opts: { min: 30, max: 60, every: 5, start: 52 }, steps: [
+          { say: '52 &minus; 17. Start at 52.', ms: 1000 },
+          { say: 'Jump back the ten: 42.', act: function (t) { return t.hop(42, '&minus;10'); } },
+          { say: 'Jump back the 7 ones: 35.', act: function (t) { return t.hop(35, '&minus;7'); } },
+          { say: '<b>52 &minus; 17 = 35</b>.', ms: 2000 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 40, max: 80, every: 5, start: 73, step: [10, 1] }, tasks: [
+          { do: 'Show <b>73 &minus; 28</b>. Use <b>Jump back</b> with jumps of 10 twice, then with jumps of 1 eight times.', goal: function (s) { return s.at === 45; }, yes: '73 &minus; 20 = 53, then &minus; 8 = 45.' }
+        ] },
+        key: '<p>Start at the whole. Jump back the tens, then the ones.</p>',
+        mistake: '<p>For 52 &minus; 17, doing "7 &minus; 2 = 5" in the ones and getting 45. The ones cannot be turned around. Jump back 7 from 42 on a number line instead.</p>',
+        check: [T('back'), P('a2-sub', 1)] },
+      { id: 'countup', title: 'Count up when numbers are close', exp: ['B2.3', 'B2.4'], skill: 'a2-sub', hard: true,
+        body: '<p>When the two numbers are close, <b>count up</b> from the smaller one. 61 &minus; 58: from 58 to 60 is 2, then 1 more to 61. The answer is <b>3</b>.</p>',
+        watch: K.clip([
+          ['61 &minus; 58. These numbers are close together.', openLine(58, [3], '58 and 61')],
+          ['Count up from 58: 2 to get to 60.', openLine(58, [2])],
+          ['Then 1 more to 61. 2 + 1 = <b>3</b>. So 61 &minus; 58 = 3.', openLine(58, [2, 1]), 2200]
+        ]),
+        ways: [
+          { label: 'Think addition', html: '<p>61 &minus; 58 asks: 58 plus what makes 61? 58 + 3 = 61. The answer is <b>3</b>.</p>' },
+          { label: 'Jump back is slow here', html: '<p>Jumping back 58 from 61 takes many jumps. Counting up takes only two hops. Pick the fast way.</p>' + openLine(61, [-50, -8]) }
+        ],
+        key: '<p>Close numbers: count up from the smaller one.</p>',
+        check: [function () { var b = R.int(25, 85), d = R.int(2, 6), a = b + d; return { q: '<span class="math big">' + a + ' ' + M + ' ' + b + ' = ?</span>', type: 'num', answer: d, hint: 'Count up from ' + b + ' to ' + a + '.', steps: ['Start at ' + b + '.', 'Count up to ' + a + '.', 'That is ' + d + '.'], explain: b + ' + ' + d + ' = ' + a + ', so ' + a + ' ' + M + ' ' + b + ' = ' + d + '.' }; }, P('a2-sub', 2)] }
+    ] },
+    { id: 'story', title: 'Story problems', sub: 'Find the whole or a part.', concepts: [
+      { id: 'story', title: 'Parts and wholes in stories', exp: ['B2.4'], skill: 'a2-story',
+        body: '<p>Read the story and ask: do I know <b>both parts</b>, or the <b>whole and one part</b>? Draw a bar to see it.</p>',
+        watch: K.clip([
+          ['A class has 26 girls and 29 boys. How many children in all?', bar(26, 29, 'w')],
+          ['Both parts are known, so add: 26 + 29 = <b>55</b>.', bar(26, 29)],
+          ['A bus has 64 seats. 38 people sit down. How many seats are empty?', bar(38, 26, 'b')],
+          ['The whole and one part are known, so subtract: 64 &minus; 38 = <b>26</b>.', bar(38, 26), 2200]
+        ]),
+        key: '<p>Both parts known: <b>add</b>. Whole and one part known: <b>subtract</b>.</p>',
+        mistake: '<p>Picking the operation from one word ("more" means add). Ask: "Is the big number the whole or a part?" and draw the bar.</p>',
+        check: [T('story'), P('a2-story', 2)] }
+    ] }
+  ];
+
   A.register('add-subtract-100', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Adding tens</h2>' +
 '<p>On a hundred chart, moving <b>down one row</b> adds 10. Moving <b>right one square</b> adds 1.</p>' +
@@ -203,7 +353,7 @@
       { id: 'a2-story', name: 'Story problems to 100', code: 'B2.4', gen: function (lv) {
         var a = R.int(12, 48), b = R.int(11, 45), w = a + b, kind = lv === 1 ? 0 : lv === 2 ? R.int(0, 1) : R.int(1, 2);
         var nm = R.pick(['Ava', 'Ben', 'Raj', 'Lin', 'Zoe', 'Tom']);
-        if (kind === 0) return { q: nm + ' has ' + a + ' green blocks and ' + b + ' red blocks. How many blocks in all?', type: 'num', answer: w, fig: bar(a, b, 'w'), hint: 'You know both parts. Add.', steps: ['Both parts are known: ' + a + ' and ' + b + '.'].concat(addSteps(a, b)), explain: a + ' + ' + b + ' = ' + w + '.' };
+        if (kind === 0) return { q: nm + ' has ' + a + ' blue blocks and ' + b + ' yellow blocks. How many blocks in all?', type: 'num', answer: w, fig: bar(a, b, 'w'), hint: 'You know both parts. Add.', steps: ['Both parts are known: ' + a + ' and ' + b + '.'].concat(addSteps(a, b)), explain: a + ' + ' + b + ' = ' + w + '.' };
         if (kind === 1) return { q: 'There are ' + w + ' children at the park. ' + a + ' go home. How many are still at the park?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: 'You know the whole (' + w + ') and one part (' + a + '). Subtract.', steps: subSteps(w, a), explain: w + ' ' + M + ' ' + a + ' = ' + b + '.' };
         return { q: nm + ' has ' + w + ' stickers. Sam has ' + a + ' stickers. How many <b>more</b> stickers does ' + nm + ' have?', type: 'num', answer: b, fig: bar(a, b, 'b'), hint: '"How many more" means find the difference. Subtract ' + w + ' ' + M + ' ' + a + ', or count up from ' + a + '.', steps: subSteps(w, a), explain: w + ' ' + M + ' ' + a + ' = ' + b + '.' };
       } }

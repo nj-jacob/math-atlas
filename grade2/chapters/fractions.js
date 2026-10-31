@@ -52,7 +52,177 @@
     return A.svg(W, 132, s, fw(k, 3) + ' and ' + fw(2 * k, 6) + ' of the same bar cover the same amount');
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'fractions';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  /* one bar cut into halves, thirds, fourths and sixths, one part shaded in each (rows: how many to show) */
+  function ladder(rows) {
+    var s = '', list = [2, 3, 4, 6].slice(0, rows || 4);
+    list.forEach(function (d, r) {
+      s += '<text x="0" y="' + (r * 62 + 36) + '" font-size="19" font-weight="700">' + MANY[d] + '</text>';
+      for (var i = 0; i < d; i++) s += '<rect x="' + (90 + i * 326 / d).toFixed(1) + '" y="' + (r * 62 + 8) + '" width="' + (326 / d).toFixed(1) + '" height="46" style="fill:' + (i === 0 ? 'var(--strand)' : 'var(--card)') + ';stroke:var(--ink)" stroke-width="2.5"/>';
+    });
+    return A.svg(420, list.length * 62 + 4, s, 'The same bar cut into ' + list.map(function (d) { return MANY[d]; }).join(', ') + '. One part of each is shaded.');
+  }
+  function plainBars(n) {
+    var s = '';
+    for (var i = 0; i < n; i++) s += '<rect x="' + (4 + (i % 2) * 248) + '" y="' + (4 + Math.floor(i / 2) * 52) + '" width="230" height="40" rx="6" style="fill:var(--card);stroke:var(--ink)" stroke-width="2"/>';
+    return A.svg(486, Math.ceil(n / 2) * 52 + 4, s, n + ' whole bars');
+  }
+  var cutLab = K.lab(
+    '<div class="ctrl"><label for="cd">Number of sharers<select id="cd"><option>2</option><option>3</option><option selected>4</option><option>6</option></select></label><label for="ck">Parts to shade: <output id="cko">1</output><input type="range" id="ck" min="0" max="4" value="1"></label></div><div class="vrow" id="cfig"></div><div class="out" id="cout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['cd', 'ck'], function () {
+        var d = +$('#cd', root).value, kEl = $('#ck', root);
+        kEl.max = d;
+        var k = Math.min(+kEl.value, d); kEl.value = k;
+        $('#cko', root).textContent = k;
+        $('#cfig', root).innerHTML = '<figure>' + pie(d, k, 60) + '</figure><figure>' + rect(d, k, 300, false, 'A bar cut into ' + d + ' equal parts, ' + k + ' shaded') + '</figure>';
+        $('#cout', root).innerHTML = '<p>' + d + ' equal parts are called <b>' + MANY[d] + '</b>. Shaded: <span class="big">' + (k ? fw(k, d) : 'nothing') + '</span>' + (k === d ? ', which is <b>one whole</b>.' : '.') + '</p>';
+        if (d === 6 && k === 2) done('Yes. Two sixths are shaded.');
+      });
+    }, 'Cut the shape into <b>sixths</b>. Then shade <b>two sixths</b>.');
+  var dealLab = K.lab(
+    '<div class="ctrl"><label for="dn">Bars: <output id="dno">3</output><input type="range" id="dn" min="1" max="10" value="3"></label><label for="ds">Friends<select id="ds"><option>2</option><option>3</option><option selected>4</option><option>6</option></select></label></div><div class="fig" id="dfig"></div><div class="out" id="dout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['dn', 'ds'], function () {
+        var n = +$('#dn', root).value, s = +$('#ds', root).value, w = Math.floor(n / s), r = n % s;
+        $('#dno', root).textContent = n;
+        $('#dfig', root).innerHTML = dealBars(n, s);
+        $('#dout', root).innerHTML = '<p>Each friend gets <span class="big">' + shareWords(n, s) + '</span>.</p><p class="t2">' + (w ? w * s + ' bars are shared out whole: ' + w + ' each. ' : 'Not enough bars for a whole one each. ') + (r ? r + ' bar' + (r > 1 ? 's are' : ' is') + ' cut into ' + MANY[s] + '.' : 'Nothing is left over.') + '</p>';
+        if (n === 5 && s === 4) done('Yes. 5 bars for 4 friends: 1 whole and one fourth each.');
+      });
+    }, 'Share <b>5 bars</b> among <b>4 friends</b>. How much does each friend get?');
+  var tsLab = K.lab(
+    '<div class="ctrl"><label for="tk">Thirds shaded: <output id="tko">0</output><input type="range" id="tk" min="0" max="3" value="0"></label></div><div class="fig" id="tfig"></div><div class="out" id="tout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['tk'], function () {
+        var k = +$('#tk', root).value;
+        $('#tko', root).textContent = k;
+        $('#tfig', root).innerHTML = thirdsSixths(k);
+        $('#tout', root).innerHTML = '<p><span class="big">' + (k ? fw(k, 3) + ' = ' + fw(2 * k, 6) : 'zero thirds = zero sixths') + '</span></p><p class="t2">Every third is the same as two sixths.</p>';
+        if (k === 2) done('Yes. Two thirds covers the same as four sixths.');
+      });
+    }, 'Shade <b>two thirds</b>. How many sixths cover the same amount?');
+  var LESSONS = [
+    { id: 'fair', title: 'Fair shares', sub: 'Equal parts and their names.', concepts: [
+      { id: 'equal', title: 'Fair shares are equal parts', exp: ['B1.6'], skill: 'r2-fair',
+        body: '<p>A <b>fair share</b> means every part is the <b>same size</b>. Parts that are different sizes are not fair.</p>',
+        watch: K.clip([
+          ['4 friends share a granola bar.', rect(1, 0, 300, false, 'A whole bar')],
+          ['Cut like this, some pieces are big and some are small. Not fair.', rect(4, 0, 300, true)],
+          ['Cut like this, every piece is the same size. <b>Fair shares</b>.', rect(4, 0, 300), 2000]
+        ]),
+        key: '<p>Fair shares: <b>all parts the same size</b>.</p>',
+        check: [T('fair'), P('r2-fair', 1)] },
+      { id: 'names', title: 'Names of equal parts', exp: ['B1.6'], skill: 'r2-name',
+        body: '<p>The number of equal parts gives the name. 2 parts are <b>halves</b>. 3 parts are <b>thirds</b>. 4 parts are <b>fourths</b>. 6 parts are <b>sixths</b>.</p>',
+        watch: K.clip([
+          ['2 equal parts: halves. One part is <b>one half</b>.', pie(2, 1, 60)],
+          ['3 equal parts: thirds. One part is <b>one third</b>.', pie(3, 1, 60)],
+          ['4 equal parts: fourths. One part is <b>one fourth</b>.', pie(4, 1, 60)],
+          ['6 equal parts: sixths. Two parts are <b>two sixths</b>.', pie(6, 2, 60), 2000]
+        ]),
+        try: cutLab,
+        key: '<p>Count the equal parts to get the name. Count the shaded parts to say how many.</p>',
+        mistake: '<p>Naming the parts by the shaded count only ("two" instead of "two sixths"). Ask two questions: how many parts in all, and how many are shaded?</p>',
+        check: [T('name'), P('r2-name', 1)] },
+      { id: 'whole', title: 'All the parts make a whole', exp: ['B1.6'], skill: 'r2-name',
+        body: '<p>All the equal parts together make <b>one whole</b>. 2 halves make a whole. 3 thirds make a whole. 6 sixths make a whole.</p>',
+        watch: K.clip([
+          ['One sixth.', pie(6, 1, 60)],
+          ['Three sixths.', pie(6, 3, 60)],
+          ['Six sixths: the <b>whole</b> circle.', pie(6, 6, 60), 2000]
+        ]),
+        try: { tool: 'fractions', opts: { choices: [2, 3, 4, 6], words: true }, tasks: [
+          { do: 'Cut the strip into <b>fourths</b>. Then tap parts until you have shaded <b>one whole</b>.', goal: function (s) { return s[0].d === 4 && s[0].n === 4; }, yes: 'Four fourths make one whole.' },
+          { do: 'Now cut it into <b>sixths</b> and shade one whole.', goal: function (s) { return s[0].d === 6 && s[0].n === 6; }, yes: 'Six sixths make one whole.' }
+        ] },
+        key: '<p>All the parts = one whole.</p>',
+        check: [function () { var d = R.pick([2, 3, 4, 6]); return { q: 'How many <b>' + MANY[d] + '</b> make one whole?', type: 'num', answer: d, fig: pie(d, d, 50, 'A circle in ' + d + ' equal parts, all shaded'), hint: 'Count all the equal parts in the circle.', explain: d + ' ' + MANY[d] + ' make one whole.' }; }] }
+    ] },
+    { id: 'size', title: 'Bigger and smaller shares', sub: 'More sharers, smaller pieces.', concepts: [
+      { id: 'smaller', title: 'More sharers, smaller shares', exp: ['B1.6'], skill: 'r2-compare', hard: true,
+        body: '<p>When one thing is shared by <b>more</b> people, each piece is <b>smaller</b>. One half is bigger than one sixth.</p>',
+        watch: K.clip([
+          ['Cut a bar into halves.', ladder(1)],
+          ['The same bar in thirds. Each piece is smaller.', ladder(2)],
+          ['Fourths. Smaller again.', ladder(3)],
+          ['Sixths: the smallest. <b>More pieces means smaller pieces.</b>', ladder(4), 2200]
+        ]),
+        ways: [
+          { label: 'Share a pizza', html: '<p>If 2 friends share a pizza, each gets a big slice. If 6 friends share the same pizza, each gets a small slice.</p><div class="vrow"><figure>' + pie(2, 1, 50) + '<figcaption>2 friends</figcaption></figure><figure>' + pie(6, 1, 50) + '<figcaption>6 friends</figcaption></figure></div>' },
+          { label: 'Fraction strips', html: '<p>Each strip is the same whole. Tap one part on each strip and compare the sizes.</p>', tool: 'fractions', opts: { wall: [2, 3, 4, 6], words: true } },
+          { label: 'This, not that', html: K.vs('One third is <b>bigger</b> than one sixth. Fewer sharers, bigger pieces.', 'One sixth is not bigger just because 6 is bigger than 3.') }
+        ],
+        key: '<p>More sharers: <b>smaller</b> pieces.</p>',
+        mistake: '<p>Thinking one sixth is bigger because 6 is bigger than 3. Cut two paper strips, one in thirds and one in sixths, and lay one piece of each side by side.</p>',
+        check: [T('bigger'), P('r2-compare', 1)] }
+    ] },
+    { id: 'several', title: 'Sharing more than one thing', sub: 'Wholes first, then cut the rest.', concepts: [
+      { id: 'deal', title: 'Wholes first, then cut the rest', exp: ['B1.6'], skill: 'r2-share', hard: true,
+        body: '<p>To share several things, first give out <b>whole</b> ones. Then cut each leftover into equal parts, one part for each sharer.</p>',
+        watch: K.clip([
+          ['4 granola bars for 3 friends.', plainBars(4)],
+          ['Give each friend 1 whole bar. 1 bar is left.', dealBars(3, 3)],
+          ['Cut the last bar into 3 equal parts: thirds.', dealBars(4, 3)],
+          ['Each friend gets <b>1 whole and one third</b>.', dealBars(4, 3), 2200]
+        ]),
+        try: dealLab,
+        ways: [
+          { label: 'Draw it', html: '<p>Draw the bars. Draw a line from each bar to a friend. When there are not enough bars for everyone, cut the rest into as many parts as there are friends.</p>' },
+          { label: 'With 2 friends', html: '<p>5 sandwiches for 2 friends: 2 whole each, and the last one is cut in half. Each gets <b>2 wholes and one half</b>.</p>' + dealBars(5, 2) }
+        ],
+        key: '<p>Wholes first. Then cut each leftover into one part per sharer.</p>',
+        check: [T('deal'), P('r2-share', 1)] },
+      { id: 'fewer', title: 'Fewer things than sharers', exp: ['B1.6'], skill: 'r2-share',
+        body: '<p>If there are fewer things than sharers, nobody gets a whole one. Cut <b>every</b> thing into equal parts. 2 muffins for 3 friends: each gets <b>two thirds</b>.</p>',
+        watch: K.clip([
+          ['2 muffins for 3 friends. Not enough for one each.', dealBars(2, 3).replace(/style="fill:var\(--s[a-z]\)/g, 'style="fill:var(--card)')],
+          ['Cut each muffin into thirds.', dealBars(2, 3)],
+          ['Each friend gets one third from each muffin: <b>two thirds</b>.', dealBars(2, 3), 2200]
+        ]),
+        key: '<p>Each friend gets one part from every thing.</p>',
+        check: [P('r2-share', 2), P('r2-share', 2)] }
+    ] },
+    { id: 'same', title: 'One third and two sixths', sub: 'Different names, same amount.', concepts: [
+      { id: 'thirdsix', title: 'One third equals two sixths', exp: ['B1.7'], skill: 'r2-thirds', hard: true,
+        body: '<p>Cut a bar into thirds. Then cut each third in half. Now there are 6 parts: sixths. <b>One third covers the same amount as two sixths.</b></p>',
+        watch: K.clip([
+          ['A bar cut into thirds. One third is shaded.', thirdsSixths(1).replace(/<rect[^>]*y="76"[^>]*\/>/g, '').replace('<text x="0" y="104" font-size="18" font-weight="700">sixths</text>', '')],
+          ['The same bar cut into sixths, just below.', thirdsSixths(1)],
+          ['One third and two sixths end at the same line. <b>Same amount.</b>', thirdsSixths(1), 2200]
+        ]),
+        try: tsLab,
+        ways: [
+          { label: 'Pizza', html: '<p>Mia gets one third of a pizza. Jon gets two sixths of the same pizza. They get the same amount. Jon just has more, smaller slices.</p><div class="vrow"><figure>' + pie(3, 1, 50) + '<figcaption>Mia: one third</figcaption></figure><figure>' + pie(6, 2, 50) + '<figcaption>Jon: two sixths</figcaption></figure></div>' },
+          { label: 'Fraction strips', html: '<p>Tap parts to shade them. Shade one third on the top strip, then shade sixths below until they line up.</p>', tool: 'fractions', opts: { wall: [1, 3, 6], words: true } },
+          { label: 'Fold paper', html: '<p>Fold a paper strip into 3 equal parts and colour one. Fold every part in half. Count the small parts that are coloured: <b>two sixths</b>.</p>' },
+          { label: 'Sharing', html: '<p>2 pizzas shared by 6 friends: two sixths each. 1 pizza shared by 3 friends: one third each. Both groups get the same amount.</p>' }
+        ],
+        key: '<p><b>One third = two sixths</b> of the same whole.</p>',
+        mistake: '<p>Saying two sixths is more because 2 is more than 1. Line up the two bars and check where each share ends.</p>',
+        check: [T('same'), P('r2-thirds', 1)] }
+    ] },
+    { id: 'compare', title: 'Compare fair shares', sub: 'Who gets more?', concepts: [
+      { id: 'cmp', title: 'Who gets more?', exp: ['B1.6'], skill: 'r2-compare',
+        body: '<p>To compare two sharing problems, draw both. Same things, more sharers: each share is smaller. Same sharers, more things: each share is bigger.</p>',
+        watch: K.clip([
+          ['Group A: 3 friends share 2 pancakes.', dealBars(2, 3)],
+          ['Group B: 6 friends share 2 pancakes.', dealBars(2, 6)],
+          ['A gets two thirds each. B gets two sixths each. Thirds are bigger, so <b>group A</b> gets more.', '<div class="vrow"><figure>' + dealBars(2, 3) + '<figcaption>A</figcaption></figure><figure>' + dealBars(2, 6) + '<figcaption>B</figcaption></figure></div>', 2400]
+        ]),
+        key: '<p>Draw both. Then compare the shares.</p>',
+        check: [T('cmp'), P('r2-compare', 3)] }
+    ] }
+  ];
+
   A.register('fractions', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Fair shares are equal parts</h2>' +
 '<p>In math, a <b>fair share</b> means every part is the <b>same size</b>. Parts that are different sizes are not fair shares.</p>' +

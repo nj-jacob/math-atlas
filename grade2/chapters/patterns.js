@@ -75,7 +75,204 @@
       steps: ['The part that repeats is: ' + core.split('').map(function (c) { return PIECE[c].n; }).join(', ') + '.', 'Mark each repeat.<div class="fig">' + row(str, core.length) + '</div>', 'The next piece is a ' + PIECE[ans].n + '.'], explain: 'The pattern repeats ' + core.split('').map(function (c) { return PIECE[c].n; }).join(', ') + ', so a ' + PIECE[ans].n + ' comes next.' };
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'patterns';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  /* the shortest core that repeats to make str (at least twice), or '' */
+  function coreOf(str) {
+    for (var L = 1; L <= str.length / 2; L++) { var c = str.slice(0, L); if (extend(c, str.length) === str && str.length >= 2 * L) return c; }
+    return '';
+  }
+  function coreName(c) { return c.split('').map(function (x) { return PIECE[x].n; }).join(', '); }
+  /* build a pattern by tapping pieces */
+  var buildLab = {
+    do: 'Tap the pieces to build <b>blue circle, yellow square, yellow square</b>, two times.',
+    mount: function (host, done) {
+      host.innerHTML = '<div class="g2-lab"><div class="btnrow">' + 'ABCD'.split('').map(function (k) { return '<button type="button" class="btn alt" data-p="' + k + '" aria-label="Add a ' + PIECE[k].n + '">' + A.svg(36, 36, shape(PIECE[k].k, 18, 18, 14, PIECE[k].c), PIECE[k].n) + '</button>'; }).join('') +
+        '<button type="button" class="btn alt" data-p="undo">Undo</button><button type="button" class="btn alt" data-p="clear">Clear</button></div><div class="fig" id="pbfig"></div><div class="out" id="pbout" aria-live="polite"></div></div>';
+      var str = '', $ = A.$, root = host;
+      function draw() {
+        $('#pbfig', root).innerHTML = str ? row(str, coreOf(str).length || 0) : '<p class="t2">Your pattern goes here.</p>';
+        var c = coreOf(str);
+        $('#pbout', root).innerHTML = !str ? '' : c && c.length > 1 ? '<p>The core is <b>' + coreName(c) + '</b>. It repeats ' + Math.floor(str.length / c.length) + ' times. Next comes a <span class="big">' + PIECE[c.charAt(str.length % c.length)].n + '</span>.</p>' : '<p>Keep going. A pattern needs its core to repeat.</p>';
+        if (/^(ABB){2,}/.test(str)) done('Yes. The core circle, square, square repeats.');
+        else if (c && c.length > 1 && str.length >= 6) done('That is a repeating pattern. Now try circle, square, square.');
+      }
+      root.addEventListener('click', function (e) {
+        var b = e.target.closest('[data-p]'); if (!b) return;
+        var k = b.getAttribute('data-p');
+        if (k === 'undo') str = str.slice(0, -1); else if (k === 'clear') str = ''; else if (str.length < 12) str += k;
+        draw();
+      });
+      draw();
+    }
+  };
+  var placeLab = K.lab(
+    '<div class="ctrl"><label for="pc">Core<select id="pc"><option value="AB">circle, square</option><option value="ABB" selected>circle, square, square</option><option value="AAB">circle, circle, square</option><option value="ABC">circle, square, triangle</option><option value="AABB">circle, circle, square, square</option></select></label>' +
+    '<label for="pn">Which place? <output id="pno">7</output><input type="range" id="pn" min="1" max="24" value="7"></label></div><div class="fig" id="pfig"></div><div class="out" id="pout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['pc', 'pn'], function () {
+        var core = $('#pc', root).value, n = +$('#pn', root).value;
+        $('#pno', root).textContent = n;
+        $('#pfig', root).innerHTML = row(extend(core, Math.max(n, 2 * core.length)), core.length);
+        var k = (n - 1) % core.length, full = Math.floor((n - 1) / core.length);
+        $('#pout', root).innerHTML = '<p>Place ' + n + ' is a <span class="big">' + PIECE[core.charAt(k)].n + '</span>.</p><p class="t2">The core has ' + core.length + ' pieces. ' + (full ? full + ' full core' + (full > 1 ? 's' : '') + ' come first, then ' : '') + 'place ' + (k + 1) + ' of the core.</p>';
+        if (core === 'ABC' && n === 20) done('Yes. 6 full cores make 18, so place 20 is the 2nd piece: a yellow square.');
+      });
+    }, 'Choose the core <b>circle, square, triangle</b>. What is at place <b>20</b>?');
+  var chartLab = K.lab(
+    '<div class="ctrl"><label for="ns">Start at<input type="number" id="ns" min="1" max="99" value="3"></label><label for="nk">Add each time<select id="nk"><option>2</option><option>3</option><option>4</option><option selected>5</option><option>9</option><option>10</option><option>11</option></select></label></div><div class="fig" id="nfig"></div><div class="out" id="nout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['ns', 'nk'], function () {
+        var st = Math.max(1, Math.min(99, parseInt($('#ns', root).value, 10) || 1)), k = +$('#nk', root).value, set = [];
+        for (var v = st; v <= 100; v += k) set.push(v);
+        $('#nfig', root).innerHTML = chart(set);
+        $('#nout', root).innerHTML = '<p><b>Rule:</b> start at ' + st + ', add ' + k + ' each time.</p><p class="t2">' + (k === 10 ? 'Adding 10 goes straight down a column.' : k === 9 ? 'Adding 9 moves down and one to the left.' : k === 11 ? 'Adding 11 moves down and one to the right.' : k === 5 ? 'Adding 5 makes two columns.' : 'Look for stripes or columns.') + '</p>';
+        if (k === 9 || k === 11) done('Yes. ' + (k === 9 ? 'Adding 9 slants down to the left.' : 'Adding 11 slants down to the right.'));
+      });
+    }, 'Change <b>Add each time</b> to 9, then to 11. What shape does the pattern make?');
+  var balLab = K.lab(
+    '<div class="ctrl"><label for="ba">Left: first<input type="number" id="ba" min="0" max="50" value="9"></label><label for="bb">Left: second<input type="number" id="bb" min="0" max="50" value="6"></label><label for="bc">Right: first<input type="number" id="bc" min="0" max="50" value="10"></label><label for="bd">Right: second<input type="number" id="bd" min="0" max="50" value="0"></label></div><div class="fig" id="bfig"></div><div class="out" id="bout"></div>',
+    function (root, done) {
+      var $ = A.$;
+      A.bind(root, ['ba', 'bb', 'bc', 'bd'], function () {
+        var g = function (id) { return Math.max(0, Math.min(50, parseInt($('#' + id, root).value, 10) || 0)); };
+        var a = g('ba'), bb = g('bb'), c = g('bc'), d = g('bd'), L = a + bb, Rr = c + d;
+        $('#bfig', root).innerHTML = balance(a + ' + ' + bb, c + ' + ' + d, L === Rr ? 0 : L > Rr ? -1 : 1);
+        $('#bout', root).innerHTML = '<p>Left: <b>' + L + '</b>. Right: <b>' + Rr + '</b>.</p><p>' + (L === Rr ? '<span class="big">' + a + ' + ' + bb + ' = ' + c + ' + ' + d + '</span> Level!' : 'Not level yet.') + '</p>';
+        if (L === Rr && a === 9 && bb === 6 && c === 10) done('Yes. 9 + 6 = 10 + 5. Both sides are 15.');
+      });
+    }, 'Change the right side\'s second number so the balance is level: <b>9 + 6 = 10 + &#9633;</b>');
+  function grow(str, core) { return row(str, core); }
+  var LESSONS = [
+    { id: 'repeat', title: 'Repeating patterns', sub: 'Find the part that repeats.', concepts: [
+      { id: 'core', title: 'Find the core', exp: ['C1.1'], skill: 'p2-repeat',
+        body: '<p>A <b>repeating pattern</b> has a part that repeats again and again. That part is the <b>core</b>. Find the core and you can tell what comes next.</p>',
+        watch: K.clip([
+          ['Circle, square, square.', grow('ABB', 3)],
+          ['Circle, square, square again.', grow('ABBABB', 3)],
+          ['And again. The core is <b>circle, square, square</b>.', grow('ABBABBABB', 3)],
+          ['So next comes a <b>circle</b>.', grow('ABBABBABBA', 3), 2000]
+        ]),
+        try: buildLab,
+        key: '<p>Find the core. Mark each core with a bracket.</p>',
+        mistake: '<p>Calling any row of shapes a pattern. The core must repeat at least twice in the same order.</p>',
+        check: [T('next'), P('p2-repeat', 1)] },
+      { id: 'place', title: 'Predict any place', exp: ['C1.3'], skill: 'p2-repeat', hard: true,
+        body: '<p>Count in cores to predict a piece far away. In circle, square, square, every 3rd piece is the end of a core. Place 9 ends the 3rd core, so place 10 is a <b>circle</b>.</p>',
+        watch: K.clip([
+          ['What is at place 11 of circle, square, square?', grow('ABBABBABB??'.replace(/\?/g, '?'), 3)],
+          ['Count in cores of 3: 3, 6, 9. Place 9 ends a core.', grow('ABBABBABB', 3)],
+          ['Place 10 starts a new core: circle. Place 11 is a <b>square</b>.', grow('ABBABBABBAB', 3), 2200]
+        ]),
+        try: placeLab,
+        ways: [
+          { label: 'Use letters', html: '<p>Write the core as letters: A B B. Write it again and again under numbers 1, 2, 3 ... until you reach the place you need.</p><p class="math">1 2 3 4 5 6 7 8 9 10 11<br>A B B A B B A B B A&nbsp; B</p>' },
+          { label: 'Colour the core ends', html: '<p>Colour every 3rd place: 3, 6, 9, 12. Each one ends a core. Then count on from the closest one.</p>' }
+        ],
+        key: '<p>Count by the core length. Then count on.</p>',
+        check: [P('p2-repeat', 2), P('p2-repeat', 3)] },
+      { id: 'translate', title: 'Same pattern, new look', exp: ['C1.2'], skill: 'p2-translate',
+        body: '<p>The same pattern can be shown with shapes, letters, numbers or sounds. Changing how it looks is called <b>translating</b> the pattern.</p>',
+        watch: K.clip([
+          ['A shape pattern.', row('ABBABB')],
+          ['As letters: A B B A B B.', row('ABBABB') + '<p class="math big">A B B A B B</p>'],
+          ['As numbers: 1 2 2 1 2 2.', '<p class="math big">A B B A B B<br>1 2 2 1 2 2</p>'],
+          ['As sounds: clap, snap, snap. All the same pattern: <b>one, then two the same</b>.', '<p class="math big">clap snap snap clap snap snap</p>', 2200]
+        ]),
+        key: '<p>Same structure, new look. A B B is "one, then two the same".</p>',
+        mistake: '<p>Matching colours or shapes instead of the structure. Red, blue, blue and 5, 7, 7 are both A B B.</p>',
+        check: [T('translate'), P('p2-translate', 1)] }
+    ] },
+    { id: 'number', title: 'Number patterns', sub: 'Find the rule.', concepts: [
+      { id: 'rule', title: 'Find the rule', exp: ['C1.3'], skill: 'p2-number',
+        body: '<p>In a number pattern, the <b>rule</b> tells how to get the next number. "Start at 4. Add 5 each time." gives 4, 9, 14, 19.</p>',
+        watch: { tool: 'numberline', opts: { min: 20, max: 32, every: 2, start: 30 }, steps: [
+          { say: '30, 28, 26, 24. What is the rule? Start at 30.', ms: 1100 },
+          { say: 'To 28: back 2.', act: function (t) { return t.hop(28, '&minus;2'); } },
+          { say: 'To 26: back 2 again.', act: function (t) { return t.hop(26, '&minus;2'); } },
+          { say: 'To 24: back 2.', act: function (t) { return t.hop(24, '&minus;2'); } },
+          { say: 'The rule: <b>start at 30, subtract 2 each time</b>. Next is 22.', act: function (t) { return t.hop(22, '&minus;2'); }, ms: 2000 }
+        ] },
+        try: { tool: 'hundred', opts: {}, tasks: [
+          { do: 'Show the rule <b>start at 3, add 5 each time</b>. Tap 3 and the next four numbers.', goal: function (s) { return [3, 8, 13, 18, 23].every(function (n) { return s.lit.indexOf(n) >= 0; }); }, yes: '3, 8, 13, 18, 23. The ones go 3, 8, 3, 8.' }
+        ] },
+        key: '<p>Bigger each time: the rule <b>adds</b>. Smaller each time: the rule <b>subtracts</b>.</p>',
+        check: [T('rule'), P('p2-number', 1)] },
+      { id: 'missing', title: 'Missing numbers', exp: ['C1.3'], skill: 'p2-number',
+        body: '<p>Use the rule to fill a gap. 5, 10, &#9633;, 20: the rule adds 5, so the gap is <b>15</b>.</p>',
+        watch: K.clip([
+          ['5, 10, ?, 20, 25.', '<p class="math big">5, 10, &#9633;, 20, 25</p>'],
+          ['From 5 to 10 is + 5. From 20 to 25 is + 5.', '<p class="math big">5 <sup>+5</sup> 10, &#9633;, 20 <sup>+5</sup> 25</p>'],
+          ['10 + 5 = <b>15</b>.', '<p class="math big">5, 10, <b>15</b>, 20, 25</p>', 2000]
+        ]),
+        key: '<p>Find the rule from the numbers you know, then use it.</p>',
+        check: [T('missing'), P('p2-number', 2)] },
+      { id: 'chart', title: 'Patterns on the hundred chart', exp: ['C1.4'], skill: 'p2-number',
+        body: '<p>A hundred chart turns number patterns into pictures. Adding 10 goes straight down. Adding 5 makes two columns.</p>',
+        watch: { tool: 'hundred', opts: {}, steps: [
+          { say: 'Start at 4 and add 10 each time.', act: function (t) { return t.skip(10, 4, 94, 260); } },
+          { say: 'A straight column. Every number ends in 4.', ms: 1400 },
+          { say: 'Now start at 5 and add 5.', act: function (t) { t.clear(); return t.skip(5, 5, 100, 140); } },
+          { say: 'Two columns: numbers ending in 5 and in 0.', ms: 2000 }
+        ] },
+        try: chartLab,
+        key: '<p>Look at the ones digits to see the pattern.</p>',
+        check: [P('p2-number', 2), P('p2-number', 3)] }
+    ] },
+    { id: 'symbol', title: 'Symbols for unknown numbers', sub: 'A box can hide a number.', concepts: [
+      { id: 'box', title: 'A symbol stands for a number', exp: ['C2.1'], skill: 'p2-symbol',
+        body: '<p>A symbol like &#9633; or ? can stand for a number we do not know yet. In <b>7 + &#9633; = 12</b>, the box is <b>5</b>.</p>',
+        watch: K.clip([
+          ['7 + &#9633; = 12. What is in the box?', '<p class="math big">7 + &#9633; = 12</p>'],
+          ['Count up from 7 to 12: 8, 9, 10, 11, 12. That is 5.', D.hops({ min: 6, max: 13, tick: 1, every: 1, id: 'bx', hops: [{ a: 7, b: 12, t: '+5' }] })],
+          ['The box is <b>5</b>. 7 + 5 = 12.', '<p class="math big">7 + 5 = 12</p>', 2000]
+        ]),
+        key: '<p>The symbol holds the place of a number.</p>',
+        check: [T('box'), P('p2-symbol', 1)] },
+      { id: 'same', title: 'The same symbol, the same number', exp: ['C2.1'], skill: 'p2-symbol',
+        body: '<p>In one number sentence, the same symbol always stands for the <b>same number</b>. In &#9650; + &#9650; = 10, each &#9650; is <b>5</b>.</p>',
+        watch: K.clip([
+          ['&#9650; + &#9650; = 10. Both triangles are the same number.', '<p class="math big">&#9650; + &#9650; = 10</p>'],
+          ['Which number added to itself makes 10? 5 + 5 = 10.', D.things(10, { kind: 'dot', cols: 5, r: 13 })],
+          ['So &#9650; = <b>5</b>.', '<p class="math big">5 + 5 = 10</p>', 2000]
+        ]),
+        key: '<p>Same symbol, same number.</p>',
+        check: [T('same'), T('same')] }
+    ] },
+    { id: 'equal', title: 'Equal sides', sub: 'The = sign means "the same as".', concepts: [
+      { id: 'equals', title: 'What = means', exp: ['C2.3'], skill: 'p2-equal',
+        body: '<p>The equal sign means <b>"is the same as"</b>. Both sides must be worth the same, like a balance that is level. <b>5 + 3 = 4 + 4</b> is true: both sides are 8.</p>',
+        watch: K.clip([
+          ['5 + 3 on one side, 4 + 4 on the other.', balance('5 + 3', '4 + 4', 0)],
+          ['Both sides are 8. The balance is level. <b>5 + 3 = 4 + 4</b> is true.', balance('5 + 3', '4 + 4', 0)],
+          ['5 + 3 and 4 + 5 are not the same: 8 and 9. It tips.', balance('5 + 3', '4 + 5', 1), 2200]
+        ]),
+        key: '<p>= means both sides are the same amount.</p>',
+        mistake: '<p>Thinking = means "the answer comes next". In 8 + 4 = &#9633; + 5, the box is not 12. Both sides must make 12, so the box is 7.</p>',
+        check: [T('tf'), T('tf')] },
+      { id: 'balance', title: 'Make both sides equal', exp: ['C2.2'], skill: 'p2-equal', hard: true,
+        body: '<p>To make both sides equal, find what is missing. <b>8 + 4 = 10 + &#9633;</b>: the left side is 12, so the right side must be 12. The box is <b>2</b>.</p>',
+        watch: K.clip([
+          ['8 + 4 = 10 + &#9633;.', balance('8 + 4', '10 + ?', -1)],
+          ['The left side is 12. The right side needs to be 12 too.', balance('8 + 4', '10 + ?', -1)],
+          ['10 + 2 = 12. Now it is level. The box is <b>2</b>.', balance('8 + 4', '10 + 2', 0), 2200]
+        ]),
+        try: balLab,
+        ways: [
+          { label: 'Compare the numbers', html: '<p>8 + 4 = 10 + &#9633;. 10 is 2 more than 8. So the box must be 2 less than 4: <b>2</b>.</p>' },
+          { label: 'Count it out', html: '<p>Put 8 counters and 4 counters on the left. Put 10 on the right. Add counters to the right one at a time until both sides have 12.</p>' }
+        ],
+        key: '<p>Work out one side. Make the other side match.</p>',
+        check: [T('balance'), P('p2-equal', 2)] }
+    ] }
+  ];
+
   A.register('patterns', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Repeating patterns</h2>' +
 '<p>A <b>repeating pattern</b> has a part that repeats again and again. This part is called the <b>core</b>. Find the core, and you can tell what comes next.</p>' +

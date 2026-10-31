@@ -69,8 +69,15 @@
   }
   function dot(k) { return '<span class="ls-st s' + k + '" aria-hidden="true"></span>'; }
   function legend() { return '<p class="ls-legend">' + ST.map(function (t, k) { return '<span>' + dot(k) + t + '</span>'; }).join('') + '</p>'; }
-  function say(text) { if (A.speak) A.speak(text); }
-  function sayBtn(label) { return 'speechSynthesis' in window ? '<button type="button" class="say" aria-label="' + (label || 'Read aloud') + '">Read aloud</button>' : ''; }
+  /* typed answers: whole numbers, decimals, fractions (3/4), mixed numbers (1 3/4), and the minus signs − and – */
+  function parseNum(t) {
+    if (A.parseNum) return A.parseNum(t);
+    var x = String(t).replace(/[\u2212\u2013]/g, '-').replace(/[$,¢\s]+$/, '').replace(/^\$/, '').trim(), m;
+    if ((m = x.match(/^(-?)(\d+)\s+(\d+)\s*\/\s*(\d+)$/))) return (m[1] ? -1 : 1) * (+m[2] + m[3] / m[4]);
+    if ((m = x.match(/^(-?\d+(?:\.\d+)?)\s*\/\s*(\d+(?:\.\d+)?)$/))) return m[1] / m[2];
+    return parseFloat(x.replace(/[^0-9.\-]/g, ''));
+  }
+  L.parseNum = parseNum;
 
   /* ---------- the chapter page ---------- */
   L.chapter = function (app, id, sub, ctx) {
@@ -143,19 +150,6 @@
       '<a class="btn ls-next" href="#' + id + '/learn/' + (endOfLesson ? 'end-' + ls.id : next.slug) + '">' + (endOfLesson ? 'Finish the lesson' : 'Next idea') + ' &rarr;</a></nav>' + '</div>';
     app.innerHTML = h;
     var card = $('.ls-card', app);
-    /* read aloud: title, explanation and key idea */
-    var h2 = $('h2', card);
-    if ('speechSynthesis' in window) {
-      var b = document.createElement('button');
-      b.type = 'button'; b.className = 'say secsay'; b.textContent = 'Read aloud';
-      b.setAttribute('aria-label', 'Read this idea aloud');
-      b.addEventListener('click', function () {
-        var parts = [c.title];
-        $$('.ls-body p, .ls-body li, .key p', card).forEach(function (p) { parts.push(A.sayText ? A.sayText(p) : p.textContent); });
-        say(parts.join('. ').replace(/\.\s*\./g, '.'));
-      });
-      h2.appendChild(b);
-    }
     if (c.watch) mountWatch($('.ls-watch', card), c.watch);
     if (c.try) mountTry($('.ls-try', card), c);
     if (c.ways) mountWays($('.ls-ways', card), c.ways);
@@ -170,13 +164,15 @@
   function makeTool(host, spec) {
     var el = document.createElement('div');
     host.appendChild(el);
-    return spec.mount ? spec.mount(el) : M.make(spec.tool, el, typeof spec.opts === 'function' ? spec.opts() : spec.opts);
+    var opts = typeof spec.opts === 'function' ? spec.opts() : spec.opts;
+    /* a custom tool gets the options too, so it can call opts.onChange(state, tool) to drive the challenges */
+    return spec.mount ? spec.mount(el, opts || {}) : M.make(spec.tool, el, opts);
   }
   function mountWatch(host, w) {
     var holder = document.createElement('div');
     host.appendChild(holder);
     var stage = document.createElement('div'), tool;
-    tool = w.mount ? w.mount(stage) : M.make(w.tool, stage, Object.assign({ tap: false, controls: false }, w.opts || {}));
+    tool = w.mount ? w.mount(stage, w.opts || {}) : M.make(w.tool, stage, Object.assign({ tap: false, controls: false }, w.opts || {}));
     if (!tool.root) tool.root = stage;
     M.player(holder, tool, w.steps, { autoplay: w.autoplay });
   }
@@ -185,7 +181,7 @@
     var t = c.try, task = $('.ls-task', box), done = $('.ls-done', box), nx = $('.ls-tnext', box), host = $('.ls-tool', box), k = 0, tool, solved = false;
     if (t.mount) {
       task.innerHTML = t.do || '';
-      t.mount(host, function (msg) { done.textContent = msg || 'Well done.'; M.bump(done, 'yes'); mark(c, { tried: 1 }); });
+      t.mount(host, function (msg) { done.innerHTML = msg || 'Well done.'; M.bump(done, 'yes'); mark(c, { tried: 1 }); });
       return;
     }
     var tasks = t.tasks || [];
@@ -199,7 +195,7 @@
       var tk = tasks[k];
       if (!tk || solved || !tk.goal(state, tl || tool)) return;
       solved = true;
-      done.textContent = (typeof tk.yes === 'function' ? tk.yes(state) : tk.yes) || 'Yes, that is it.';
+      done.innerHTML = (typeof tk.yes === 'function' ? tk.yes(state) : tk.yes) || 'Yes, that is it.';
       M.bump(done, 'yes');
       if (k + 1 < tasks.length) {
         nx.innerHTML = '<button type="button" class="btn">Next challenge</button>';
@@ -240,15 +236,19 @@
       var gen = gens[round % gens.length], q = typeof gen === 'function' ? gen() : gen, tries = 0, done = false;
       round++;
       var uid = 'ck-' + c.slug + round;
-      var h = '<p class="ytl">Your turn</p><p class="qtext">' + q.q + '</p>' + sayBtn('Read the question aloud') + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
+      var h = '<p class="ytl">Your turn</p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
-      else h += '<form class="numrow"><label class="sr" for="' + uid + '">Your answer</label><input type="text" inputmode="numeric" autocomplete="off" id="' + uid + '" placeholder="Type a number">' + (q.unit ? '<span class="unit">' + q.unit + '</span>' : '') + '<button class="btn" type="submit">Check</button></form>';
+      else h += '<form class="numrow"><label class="sr" for="' + uid + '">Your answer</label><input type="text" inputmode="' + (q.kb || 'decimal') + '" autocomplete="off" id="' + uid + '" placeholder="Type your answer">' + (q.unit === '$' ? '' : q.unit ? '<span class="unit">' + q.unit + '</span>' : '') + '<button class="btn" type="submit">Check</button></form>';
       h += '<div class="fb" aria-live="polite"></div><div class="ytn"></div>';
       box.innerHTML = h;
       box._q = q; /* exposed for automated checks */
-      var fb = $('.fb', box), sb = $('.say', box);
-      if (sb) sb.addEventListener('click', function () { say((A.sayText ? A.sayText($('.qtext', box)) : '') + (q.type === 'mc' ? ' Choices: ' + q.options.map(function (o) { var d = document.createElement('div'); d.innerHTML = o; return d.textContent; }).join('; or ') : '')); });
-      function shown(v) { return q.type === 'mc' ? q.options[v] : A.fmt(v) + (q.unit ? ' ' + q.unit : ''); }
+      var fb = $('.fb', box);
+      function shown(v) {
+        if (q.type === 'mc') return q.options[v];
+        if (q.show != null) return typeof q.show === 'function' ? q.show(v) : q.show;
+        if (q.unit === '$') return '$' + Number(v).toFixed(2);
+        return A.fmt(v) + (q.unit ? ' ' + q.unit : '');
+      }
       function result(ok, btn) {
         tries++;
         if (ok) {
@@ -285,9 +285,10 @@
       else $('form', box).addEventListener('submit', function (e) {
         e.preventDefault();
         if (done) return;
-        var v = parseFloat(String($('input', box).value).replace(/[^0-9.\-]/g, ''));
+        var raw = $('input', box).value, v = parseNum(raw);
         if (isNaN(v)) { fb.className = 'fb bad'; fb.textContent = 'Type a number first.'; return; }
-        result(Math.abs(v - q.answer) <= (q.tol || 1e-9));
+        /* a grade can judge answers its own way (accepted forms, units) with Atlas.judgeNum(q, value, raw) */
+        result(A.judgeNum ? A.judgeNum(q, v, raw) : Math.abs(v - q.answer) <= (q.tol || Math.max(1e-9, 1e-9 * Math.abs(q.answer))));
       });
     }
     show();
@@ -349,6 +350,7 @@
   /* ---------- Toolbox: every manipulative, free to play with ---------- */
   var BOX = [
     ['base10', 'Base-ten blocks', 'Tap + to add blocks. Tap a block to light it up and count. Group 10 ones into a ten, or break a ten apart.', { controls: true, words: function (n) { return A.words ? A.words(n) : ''; } }],
+    ['disks', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] }],
     ['counters', 'Counters', 'Tap counters to count them. Pair them up to see even and odd, or group them in tens.', { n: 13, controls: true, max: 60 }],
     ['tenframe', 'Ten-frames', 'Tap a box to put in a counter. Tap again to change its colour.', { frames: 2, two: true }],
     ['hundred', 'Hundred chart', 'Tap numbers to light them up and look for patterns.', { pages: true }],

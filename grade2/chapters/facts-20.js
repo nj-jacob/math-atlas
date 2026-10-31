@@ -96,7 +96,197 @@
       steps: [think, 'Count up from ' + t + ' to ' + w + '.', 'That is ' + (w - t) + ', so ' + w + ' ' + M + ' ' + t + ' = ' + (w - t) + '.'], explain: w + ' ' + M + ' ' + t + ' = ' + (w - t) + ' because ' + t + ' + ' + (w - t) + ' = ' + w + '.' };
   }
 
+  /* ---------- lessons: one idea at a time ---------- */
+  var K = A.kit, CH = 'facts-20';
+  function T(k) { return K.T(CH, k); }
+  function P(id, lv) { return K.P(CH, id, lv); }
+  function nlSvg(a, hops, max, marks) { return D.hops({ min: 0, max: max || 20, tick: 1, every: 2, hops: hops, marks: marks || [], id: 'fx' + a }); }
+  var LESSONS = [
+    { id: 'add', title: 'Adding facts', sub: 'Put parts together.', concepts: [
+      { id: 'together', title: 'Adding puts parts together', exp: ['B2.2'], skill: 'f2-add',
+        body: '<p>When we <b>add</b>, we put two parts together to find the <b>whole</b>. The + sign means "put together". The = sign means "is the same as".</p>',
+        watch: K.clip([
+          ['Here are 5 blue counters.', split(5, 0)],
+          ['Put 3 yellow counters with them.', split(5, 3)],
+          ['Count them all: 1, 2, 3, 4, 5, 6, 7, 8.', split(5, 3)],
+          ['5 and 3 make 8. We write <b>5 + 3 = 8</b>.', '<p class="math big">5 + 3 = 8</p>' + split(5, 3), 2200]
+        ]),
+        try: { tool: 'tenframe', opts: { frames: 2, two: true }, tasks: [
+          { do: 'Tap boxes to show <b>6 + 3</b>. Tap once for blue, twice for yellow. Make 6 blue and 3 yellow.', goal: function (s) { return s.a === 6 && s.b === 3; }, yes: '6 and 3 make 9. 6 + 3 = 9.' },
+          { do: 'Now show <b>4 + 5</b>.', goal: function (s) { return s.a === 4 && s.b === 5; }, yes: '4 + 5 = 9. A different pair can make the same whole.' }
+        ] },
+        key: '<p><b>Part + part = whole.</b></p>',
+        check: [P('f2-add', 1), P('f2-add', 1)] },
+      { id: 'counton', title: 'Count on from the bigger number', exp: ['B2.2'], skill: 'f2-add',
+        body: '<p>You do not have to count from 1. Start at the <b>bigger</b> number and <b>count on</b>.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0 }, steps: [
+          { say: 'Let\'s add 9 + 3. Start at the bigger number, 9.', act: function (t) { return t.moveTo(9); }, ms: 900 },
+          { say: 'Count on 3: 10,', act: function (t) { return t.hop(10, '+1'); } },
+          { say: '11,', act: function (t) { return t.hop(11, '+1'); } },
+          { say: '12. We land on 12. So <b>9 + 3 = 12</b>.', act: function (t) { return t.hop(12, '+1'); }, ms: 2000 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0, step: 1 }, tasks: [
+          { do: 'Show <b>8 + 4</b>. Tap 8 on the line, then press <b>Jump +1</b> four times.', goal: function (s) { return s.at === 12 && s.hops >= 4; }, yes: 'You counted on 4 from 8 and landed on 12.' },
+          { do: 'Show <b>2 + 9</b>. Start at the bigger number!', goal: function (s) { return s.at === 11 && s.hops === 2; }, yes: 'Start at 9 and count on 2: 10, 11. Only 2 jumps.' }
+        ] },
+        key: '<p>Start at the <b>bigger</b> number. Count on the smaller one.</p>',
+        mistake: '<p>Counting the start number as the first jump ("9, 10, 11" for 9 + 3). The first number said after the start is the first jump: 10, 11, 12.</p>',
+        check: [T('addon'), T('addon')] },
+      { id: 'turnaround', title: 'Turn-around facts', exp: ['B2.1'], skill: 'f2-family',
+        body: '<p>You can add in any order. <b>3 + 6</b> and <b>6 + 3</b> are both 9. They are called <b>turn-around facts</b>.</p>',
+        watch: K.clip([
+          ['3 blue and 6 yellow: 3 + 6.', split(3, 6)],
+          ['Turn the picture around: 6 yellow and 3 blue.', frames2([YEL, YEL, YEL, YEL, YEL, YEL, BLUE, BLUE, BLUE], '6 yellow and 3 blue counters')],
+          ['Same counters, same total. <b>3 + 6 = 6 + 3 = 9</b>.', '<p class="math big">3 + 6 = 6 + 3</p>', 2200]
+        ]),
+        try: { tool: 'tenframe', opts: { frames: 2, two: true }, tasks: [
+          { do: 'Show <b>2 + 7</b>: 2 blue and 7 yellow.', goal: function (s) { return s.a === 2 && s.b === 7; }, yes: '2 + 7 = 9.' },
+          { do: 'Now show the turn-around fact, <b>7 + 2</b>: 7 blue and 2 yellow.', goal: function (s) { return s.a === 7 && s.b === 2; }, yes: '7 + 2 = 9 too. Same parts, same whole.' }
+        ] },
+        key: '<p>Changing the order of the parts does not change the whole. Adding 0 does not change a number either: 8 + 0 = 8.</p>',
+        check: [function () {
+          var a = R.int(2, 9), b = R.int(2, 9); while (b === a) b = R.int(2, 9);
+          var o = R.mc(b + ' + ' + a, [a + ' ' + M + ' ' + b, a + ' + ' + a, (a + b) + ' + ' + b]);
+          return { q: 'Which is the same as <span class="math">' + a + ' + ' + b + '</span>?', type: 'mc', options: o.options, answer: o.answer, hint: 'You can add in any order.', explain: a + ' + ' + b + ' and ' + b + ' + ' + a + ' are both ' + (a + b) + '.' };
+        }, function () {
+          var a = R.int(3, 12);
+          return { q: '<span class="math big">' + a + ' + 0 = ?</span>', type: 'num', answer: a, hint: 'Adding 0 means adding nothing.', explain: a + ' + 0 = ' + a + '. Adding 0 does not change the number.' };
+        }] }
+    ] },
+    { id: 'ten', title: 'Make a ten', sub: 'Ten is a friendly number.', concepts: [
+      { id: 'pairs10', title: 'Pairs that make 10', exp: ['B2.2'], skill: 'f2-make10',
+        body: '<p>Some pairs of numbers make exactly <b>10</b>: 1 + 9, 2 + 8, 3 + 7, 4 + 6, 5 + 5. A ten-frame shows them: the filled boxes and the empty boxes make 10.</p>',
+        watch: { tool: 'tenframe', opts: {}, steps: [
+          { say: 'A ten-frame has 10 boxes.', ms: 900 },
+          { say: 'Fill 7 boxes.', act: function (t) { return t.fill(7, 250); } },
+          { say: 'How many are empty? 3. So <b>7 + 3 = 10</b>.', ms: 2200 }
+        ] },
+        try: { tool: 'tenframe', opts: { two: true }, tasks: [
+          { do: 'Fill <b>6</b> boxes blue. Then fill the empty boxes yellow. How many yellow?', goal: function (s) { return s.a === 6 && s.b === 4; }, yes: '6 + 4 = 10.' },
+          { do: 'Show another pair that makes 10.', goal: function (s) { return s.full && s.a > 0 && s.b > 0; }, yes: function (s) { return s.a + ' + ' + s.b + ' = 10.'; } }
+        ] },
+        key: '<p>Know your pairs that make 10. They help with every other fact.</p>',
+        check: [T('need10'), T('need10')] },
+      { id: 'bridge', title: 'Make a ten to add', exp: ['B2.2'], skill: 'f2-make10', hard: true,
+        body: '<p>To add <b>9 + 5</b>, first make a ten. 9 needs 1 more to make 10. Take 1 from the 5. Now it is <b>10 + 4 = 14</b>, which is easy.</p>',
+        watch: K.clip([
+          ['9 blue and 5 yellow. That is 9 + 5.', split(9, 5)],
+          ['Move 1 yellow up to fill the first frame. Now it has 10.', made10(9, 5)],
+          ['10 and 4 more. <b>9 + 5 = 10 + 4 = 14</b>.', '<p class="math big">9 + 5 = 10 + 4 = 14</p>' + made10(9, 5), 2400]
+        ]),
+        try: { tool: 'tenframe', opts: { frames: 2 }, tasks: [
+          { do: 'Show <b>8 + 5</b>. Fill the first frame (8 and 2 more), then put the rest in the second frame.', goal: function (s) { return s.n === 13; }, yes: '8 + 5 = 10 + 3 = 13.' },
+          { do: 'Show <b>7 + 6</b> the same way.', goal: function (s) { return s.n === 13; }, yes: '7 needs 3 to make 10. 6 is 3 and 3. So 10 + 3 = 13.' }
+        ] },
+        ways: [
+          { label: 'On a number line', html: '<p>Hop to 10 first, then hop the rest.</p>' + nlSvg(9, [{ a: 9, b: 10, t: '+1' }, { a: 10, b: 14, t: '+4' }], 16, [{ v: 14, t: '14' }]) + '<p>9 + 1 = 10. 10 + 4 = 14.</p>' },
+          { label: 'With numbers', html: '<p class="math">8 + 6</p><p>8 needs <b>2</b>. Split 6 into <b>2</b> and <b>4</b>.</p><p class="math">8 + 2 = 10, &nbsp; 10 + 4 = 14</p>' },
+          { label: 'Use a double', html: '<p>Some people use doubles instead: 7 + 6 is 6 + 6 + 1 = 13. Use the way that makes sense to you.</p>' }
+        ],
+        key: '<p>Fill a ten first, then add what is left.</p>',
+        mistake: '<p>Forgetting to take the moved amount away from the second number (9 + 5 becomes 10 + 5). Ask: "You moved 1 counter. How many are left in the second frame?"</p>',
+        check: [T('make10'), P('f2-make10', 2)] }
+    ] },
+    { id: 'doubles', title: 'Doubles', sub: 'Same and same.', concepts: [
+      { id: 'dbl', title: 'Doubles', exp: ['B2.2'], skill: 'f2-doubles',
+        body: '<p>A <b>double</b> adds a number to itself: 6 + 6. Two rows that match show a double.</p>' +
+          '<div class="tbl"><table><tbody><tr>' + [1, 2, 3, 4, 5].map(function (n) { return '<td>' + n + ' + ' + n + ' = <b>' + 2 * n + '</b></td>'; }).join('') + '</tr><tr>' + [6, 7, 8, 9, 10].map(function (n) { return '<td>' + n + ' + ' + n + ' = <b>' + 2 * n + '</b></td>'; }).join('') + '</tr></tbody></table></div>',
+        watch: K.clip([
+          ['One row of 6.', dbl(6).replace(/<circle[^>]*cy="56"[^>]*\/>/g, '')],
+          ['A matching row of 6.', dbl(6)],
+          ['6 + 6 = <b>12</b>. A double always makes an even number.', dbl(6), 2000]
+        ]),
+        try: { tool: 'counters', opts: { n: 0, controls: ['pairs'], max: 20 }, tasks: [
+          { do: 'Make <b>7 + 7</b>: add counters until there are 14, then press <b>Pair them up</b>.', goal: function (s) { return s.n === 14 && s.mode === 'pairs'; }, yes: '7 pairs. 7 + 7 = 14.' },
+          { do: 'Make <b>9 + 9</b> and pair them up.', goal: function (s) { return s.n === 18 && s.mode === 'pairs'; }, yes: '9 + 9 = 18.' }
+        ] },
+        key: '<p>Learn the doubles by heart. They are some of the easiest facts to remember.</p>',
+        check: [function () { var n = R.int(3, 10); return { q: '<span class="math big">' + n + ' + ' + n + ' = ?</span>', type: 'num', answer: 2 * n, fig: dbl(n), hint: 'This is a double. Count both rows, or count by ' + n + 's twice.', explain: n + ' + ' + n + ' = ' + 2 * n + '.' }; }, P('f2-doubles', 1)] },
+      { id: 'near', title: 'Near doubles', exp: ['B2.2'], skill: 'f2-doubles', hard: true,
+        body: '<p><b>7 + 8</b> is almost a double. Think <b>7 + 7 = 14</b>, then add 1 more: <b>15</b>.</p>',
+        watch: K.clip([
+          ['7 + 8. One row of 7 and one row of 8.', dbl(7, true)],
+          ['Look: it is 7 + 7 with one extra counter.', dbl(7, true)],
+          ['7 + 7 = 14, and 1 more is <b>15</b>.', '<p class="math big">7 + 8 = 7 + 7 + 1 = 15</p>', 2200]
+        ]),
+        ways: [
+          { label: 'Double the smaller', html: '<p>6 + 7: double the smaller number, 6 + 6 = 12. Then 1 more: <b>13</b>.</p>' + dbl(6, true) },
+          { label: 'Double the bigger', html: '<p>6 + 7: double the bigger number, 7 + 7 = 14. Then 1 less: <b>13</b>. Both ways give the same answer.</p>' },
+          { label: 'Make a ten', html: '<p>6 + 7: 6 needs 4 to make 10. 7 is 4 and 3. 10 + 3 = <b>13</b>.</p>' }
+        ],
+        key: '<p>Near double: find the double, then add 1.</p>',
+        mistake: '<p>Doubling the bigger number and then adding 1 (7 + 8 as 8 + 8 + 1 = 17). If you double the bigger number, take 1 away.</p>',
+        check: [T('near'), T('near')] }
+    ] },
+    { id: 'sub', title: 'Subtracting facts', sub: 'Take away, and find the difference.', concepts: [
+      { id: 'takeaway', title: 'Take away', exp: ['B2.2'], skill: 'f2-sub',
+        body: '<p>When we <b>subtract</b>, we take a part away from the whole. The &minus; sign means "take away". What is left is the answer.</p>',
+        watch: K.clip([
+          ['There are 13 counters.', takeAway(13, 0)],
+          ['Take away 5. Cross them out.', takeAway(13, 5)],
+          ['8 are left. <b>13 &minus; 5 = 8</b>.', '<p class="math big">13 &minus; 5 = 8</p>' + takeAway(13, 5), 2200]
+        ]),
+        try: { tool: 'tenframe', opts: { frames: 2, n: 15 }, tasks: [
+          { do: 'There are 15. Tap counters to take away <b>6</b>.', goal: function (s) { return s.n === 9; }, yes: '15 &minus; 6 = 9.' },
+          { do: 'Now take away <b>4 more</b>. How many are left?', reset: false, goal: function (s) { return s.n === 5; }, yes: '9 &minus; 4 = 5.' }
+        ] },
+        key: '<p><b>Whole &minus; part = part.</b></p>',
+        check: [T('take'), P('f2-sub', 1)] },
+      { id: 'difference', title: 'How many more?', exp: ['B2.2'], skill: 'f2-sub',
+        body: '<p>Subtracting also tells how many <b>more</b> one number is than another. This is the <b>difference</b>. Count up from the smaller number to the bigger one.</p>',
+        watch: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0 }, steps: [
+          { say: 'Ana has 14 stickers. Ben has 9. How many more does Ana have?', act: function (t) { t.mark(14, '14', true); return t.moveTo(9); }, ms: 1200 },
+          { say: 'Start at 9. Hop to 10.', act: function (t) { return t.hop(10, '+1'); } },
+          { say: 'Then hop to 14.', act: function (t) { return t.hop(14, '+4'); } },
+          { say: '1 and 4 make 5. Ana has <b>5 more</b>. 14 &minus; 9 = 5.', ms: 2200 }
+        ] },
+        try: { tool: 'numberline', opts: { min: 0, max: 20, every: 2, start: 0, step: 1 }, tasks: [
+          { do: 'How many more is 12 than 8? Tap <b>8</b>, then jump +1 until you reach 12.', goal: function (s) { return s.at === 12 && s.hops >= 4; }, yes: function (s) { return 'You made ' + s.hops + ' jumps. 12 is 4 more than 8.'; } }
+        ] },
+        key: '<p>"How many more" means find the <b>difference</b>: subtract, or count up.</p>',
+        mistake: '<p>Adding the two numbers because the question says "more". "How many more" asks for the difference, so subtract.</p>',
+        check: [function () { var a = R.int(11, 18), b = R.int(a - 9, a - 2); return { q: 'How many more is <b>' + a + '</b> than <b>' + b + '</b>?', type: 'num', answer: a - b, fig: nlSvg(a, [{ a: b, b: a, t: '?' }], 20, [{ v: b, t: String(b) }, { v: a, t: String(a) }]), hint: 'Count up from ' + b + ' to ' + a + '.', steps: ['Start at ' + b + '.', 'Count up to ' + a + '.', 'That is ' + (a - b) + '.'], explain: a + ' ' + M + ' ' + b + ' = ' + (a - b) + '.' }; }, P('f2-story', 2)] },
+      { id: 'thinkadd', title: 'Think addition to subtract', exp: ['B2.1', 'B2.2'], skill: 'f2-sub', hard: true,
+        body: '<p>Adding and subtracting undo each other. To find <b>13 &minus; 5</b>, ask: <b>5 plus what makes 13?</b> 5 + 8 = 13, so 13 &minus; 5 = 8.</p>',
+        watch: K.clip([
+          ['13 &minus; 5. The whole is 13. One part is 5.', ppw(5, 8, 'b')],
+          ['Ask: 5 plus what makes 13? Count up: 6, 7, 8, 9, 10, 11, 12, 13. That is 8.', ppw(5, 8, 'b')],
+          ['The missing part is 8. So <b>13 &minus; 5 = 8</b>.', ppw(5, 8), 2200]
+        ]),
+        ways: [
+          { label: 'Bar model', html: '<p>The top bar is the whole. The bottom bars are the parts. Knowing two of them gives you the third.</p>' + ppw(6, 9, 'b') + '<p>6 + ? = 15. The missing part is 9.</p>' },
+          { label: 'Use a fact you know', html: '<p>16 &minus; 8: you know the double 8 + 8 = 16. So 16 &minus; 8 = <b>8</b>.</p>' },
+          { label: 'Back through 10', html: '<p>14 &minus; 6: take 4 to get to 10, then 2 more. 10 &minus; 2 = <b>8</b>.</p>' + nlSvg(14, [{ a: 14, b: 10, t: '&minus;4' }, { a: 10, b: 8, t: '&minus;2' }], 16, [{ v: 8, t: '8' }]) }
+        ],
+        key: '<p>To subtract, think of the addition fact.</p>',
+        check: [P('f2-sub', 2), P('f2-sub', 2)] }
+    ] },
+    { id: 'family', title: 'Fact families and stories', sub: 'Three numbers, four facts.', concepts: [
+      { id: 'family', title: 'Fact families', exp: ['B2.1'], skill: 'f2-family',
+        body: '<p>The numbers <b>6, 8 and 14</b> make a fact family: two adding facts and two subtracting facts.</p><p class="math">6 + 8 = 14 &nbsp; 8 + 6 = 14<br>14 &minus; 6 = 8 &nbsp; 14 &minus; 8 = 6</p>',
+        watch: K.clip([
+          ['The whole is 14. The parts are 6 and 8.', ppw(6, 8)],
+          ['Put the parts together: 6 + 8 = 14 and 8 + 6 = 14.', '<p class="math big">6 + 8 = 14<br>8 + 6 = 14</p>'],
+          ['Take a part away from the whole: 14 &minus; 6 = 8 and 14 &minus; 8 = 6.', '<p class="math big">14 &minus; 6 = 8<br>14 &minus; 8 = 6</p>', 2200]
+        ]),
+        key: '<p>In a subtracting fact, the <b>whole comes first</b>.</p>',
+        mistake: '<p>Writing a subtracting fact with a part first (8 &minus; 14). Point to the bar: you take a part away from the whole.</p>',
+        check: [T('fam'), P('f2-family', 2)] },
+      { id: 'story', title: 'Story problems', exp: ['B2.2'], skill: 'f2-story',
+        body: '<p>In a story, ask: do I know <b>both parts</b> (add), or the <b>whole and one part</b> (subtract)? A bar model helps you see it.</p>',
+        watch: K.clip([
+          ['Mia has 8 red beads and 7 blue beads. How many in all?', ppw(8, 7, 'w')],
+          ['Both parts are known, so add: 8 + 7 = 15.', ppw(8, 7)],
+          ['Mia has 15 beads. She uses 6. How many are left? Now we know the whole and a part.', ppw(6, 9, 'b')],
+          ['Subtract: 15 &minus; 6 = <b>9</b>.', ppw(6, 9), 2200]
+        ]),
+        key: '<p>Both parts known: add. Whole and one part known: subtract.</p>',
+        check: [P('f2-story', 1), P('f2-story', 2)] }
+    ] }
+  ];
+
   A.register('facts-20', {
+    lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Adding: count on</h2>' +
 '<p>To add, put two groups together. Start at the <b>bigger</b> number and count on.</p>' +
