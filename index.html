@@ -1,39 +1,142 @@
 <!DOCTYPE html>
-<html lang="en-CA">
+<html lang="en-CA" data-theme="light">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Math Atlas · Ontario math study sites</title>
-<meta name="description" content="Free study sites for Ontario elementary math, with short lessons, adaptive practice and check-ups.">
+<title>Math Atlas · Ontario math, Grades 1 to 8</title>
+<meta name="description" content="Ontario math study sites for Grades 1 to 8, plus a placement check and a learning plan that adjusts each week.">
+<meta name="theme-color" content="#ffffff">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="assets/site.css">
-<link rel="stylesheet" href="assets/family.css">
+<link rel="stylesheet" href="assets/home.css">
 </head>
-<body>
-<a class="skip" href="#app">Skip to content</a>
-<header class="bar"><div class="wrap">
-  <a class="brand" href="./"><i class="m" aria-hidden="true"></i>Math Atlas</a>
-  <nav aria-label="Main"><a href="family.html">Family page</a></nav>
+<body class="home">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="hwrap">
+  <a class="brand" href="./" aria-label="Math Atlas home"><i aria-hidden="true">M</i><span>Math Atlas</span></a>
+  <nav class="jump" aria-label="On this page"><a href="#plan" id="nav-plan">My plan</a><a href="#curriculum">Curriculum</a></nav>
+  <div class="acct" id="acct">
+    <a class="hbtn" id="signin-btn" href="family.html" aria-haspopup="dialog" aria-expanded="false" aria-controls="signin">Sign in</a>
+  </div>
 </div></header>
-<main id="app" tabindex="-1"><div class="wrap">
-  <div class="hero"><h1>Math Atlas</h1>
-    <p class="lede">Free study sites for Ontario math. Short lessons, drawings you can change, practice that adjusts to you, and check-ups that show what to work on next.</p></div>
-  <div class="cards" id="grades"><a class="card" data-strand="B" href="grade5/"><span class="no">5</span><h2>Grade 5 Math Atlas</h2><p class="desc">Lessons, adaptive practice, quizzes and a check-up.</p></a></div>
-  <div class="start"><p><b>Family accounts.</b> Students can sign in so their practice is saved and works on any device. Parents and tutors can see progress and suggest what to practise.</p>
-    <p><a class="btn" href="family.html">Sign in or create an account</a></p></div>
-  <div class="note"><p>You do not need an account to use the sites. Without one, progress is saved only in this browser.</p></div>
-</div></main>
-<footer class="site"><div class="wrap"><p>A study aid only. Check details against the Ontario Ministry of Education's 2020 Mathematics curriculum.</p></div></footer>
-<script type="module">
-  /* one card per grade switched on in assets/fb.js */
-  import { SITES } from './assets/fb.js';
-  const strands = 'BCDEF';
-  document.getElementById('grades').innerHTML = Object.keys(SITES).filter((k) => SITES[k].on).map((k, i) =>
-    '<a class="card" data-strand="' + strands[i % 5] + '" href="' + SITES[k].path + '"><span class="no">' + k.slice(1) + '</span><h2>' + SITES[k].name +
-    ' Math Atlas</h2><p class="desc">Lessons, adaptive practice, quizzes and a check-up.</p></a>').join('') +
-    '<a class="card" data-strand="E" href="plan/"><span class="no">+</span><h2>Math Plan: placement check and learning plan</h2><p class="desc">Find where a student is in Grades 1 to 8, then follow a plan with weekly check-ins.</p></a>';
-</script>
+
+<div class="pop" id="signin" role="dialog" aria-modal="false" aria-labelledby="signin-h" hidden>
+  <div class="pophead"><h2 id="signin-h">Sign in</h2><button type="button" class="x" id="signin-close" aria-label="Close sign in">&times;</button></div>
+  <div class="seg" role="radiogroup" aria-label="Who is signing in">
+    <label><input type="radio" name="who" value="kid" checked><span>Student</span></label>
+    <label><input type="radio" name="who" value="adult"><span>Parent or tutor</span></label>
+  </div>
+  <form id="f-kid" class="sform">
+    <label>Username<input name="u" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
+    <label>Password<input name="p" type="password" autocomplete="current-password" required></label>
+    <button class="hbtn wide" type="submit">Sign in</button>
+    <p class="fb" aria-live="polite"></p>
+    <p class="hint">Forgot your password? Ask the grown-up who made your account.</p>
+  </form>
+  <form id="f-adult" class="sform" hidden>
+    <label>Email<input name="e" type="email" autocomplete="email" required></label>
+    <label>Password<input name="p" type="password" autocomplete="current-password" required></label>
+    <button class="hbtn wide" type="submit">Sign in</button>
+    <p class="fb" aria-live="polite"></p>
+    <p class="hint"><button type="button" class="link" id="forgot">Forgot password?</button> · <a href="family.html">Create an account</a></p>
+  </form>
+</div>
+
+<main id="main" tabindex="-1">
+  <section class="hero"><div class="hwrap">
+    <p class="eyebrow" id="hello-role">Ontario curriculum (2020)</p>
+    <h1 id="hello">Ontario math, Grades&nbsp;1&nbsp;to&nbsp;8</h1>
+    <p class="lede" id="hello-sub">Short lessons that show one idea at a time, models you can move, and practice that adjusts. Start with a placement check, or open any grade.</p>
+  </div></section>
+
+  <div class="hwrap layout">
+    <section class="panel planp" id="plan" aria-labelledby="plan-h">
+      <div class="phead"><p class="kicker">My plan</p><h2 id="plan-h">Find the right starting point</h2></div>
+      <div id="plan-body">
+        <p>A short placement check finds where your child is in each part of math, from Grade 1 to Grade 8. Then it builds a plan that works on a few ideas each week.</p>
+        <ol class="steps">
+          <li><b>Placement check</b><span>About 30 questions, 15 to 20 minutes. It gets easier or harder as you go.</span></li>
+          <li><b>Weekly plan</b><span>Four ideas at a time, gaps first, each linked to its lesson.</span></li>
+          <li><b>Check-ins</b><span>Ten questions each week. The plan moves on, or steps back.</span></li>
+        </ol>
+        <p><a class="hbtn" href="plan/">Start the placement check</a></p>
+      </div>
+    </section>
+
+    <section class="panel curp" id="curriculum" aria-labelledby="cur-h">
+      <div class="phead"><p class="kicker">Curriculum</p><h2 id="cur-h">Grades 1 to 8</h2>
+        <p class="psub">Every expectation in the Ontario 2020 math curriculum, one chapter at a time. Open a grade to see its chapters.</p>
+        <ul class="strands" aria-label="Colour key for the strands">
+          <li data-s="B">Number</li><li data-s="C">Algebra</li><li data-s="D">Data</li><li data-s="E">Spatial sense</li><li data-s="F">Financial literacy</li>
+        </ul>
+      </div>
+      <div class="grades">
+<details class="grade" id="g1" data-g="1">
+  <summary><span class="gn" aria-hidden="true">1</span><span class="gt"><span class="gh">Grade 1</span><span class="gf">Counting to 50, adding to 10, shapes and coins</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade1/#counting" data-s="B"><span class="ct">Counting to 50</span><span class="cs">read, count, skip count, estimate</span></a></li><li><a href="grade1/#tens-ones" data-s="B"><span class="ct">Tens and Ones</span><span class="cs">make, break apart, compare</span></a></li><li><a href="grade1/#add-sub-10" data-s="B"><span class="ct">Adding and Subtracting to 10</span><span class="cs">the facts to 10</span></a></li><li><a href="grade1/#add-sub-50" data-s="B"><span class="ct">Adding and Subtracting to 50</span><span class="cs">mental math and stories</span></a></li><li><a href="grade1/#groups-shares" data-s="B"><span class="ct">Equal Groups and Fair Shares</span><span class="cs">sharing, halves and fourths</span></a></li><li><a href="grade1/#patterns" data-s="C"><span class="ct">Patterns</span><span class="cs">find, make, continue</span></a></li><li><a href="grade1/#shapes-position" data-s="E"><span class="ct">Shapes, Position and Coding</span><span class="cs">shapes, where things are, directions</span></a></li><li><a href="grade1/#measuring" data-s="E"><span class="ct">Measuring and the Calendar</span><span class="cs">longer, heavier, holds more</span></a></li><li><a href="grade1/#data" data-s="D"><span class="ct">Sorting and Picture Graphs</span><span class="cs">sort, tally, graph, chance</span></a></li><li><a href="grade1/#money" data-s="F"><span class="ct">Canadian Money</span><span class="cs">coins and bills</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade1/">Open Grade 1</a> <a class="hbtn ghost" href="grade1/#check-up">Check-up</a> <a class="hbtn ghost" href="grade1/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g2" data-g="2">
+  <summary><span class="gn" aria-hidden="true">2</span><span class="gt"><span class="gh">Grade 2</span><span class="gf">Numbers to 200, facts to 20, fair shares and maps</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade2/#numbers-200" data-s="B"><span class="ct">Numbers to 200</span><span class="cs">read, build, compare, count</span></a></li><li><a href="grade2/#facts-20" data-s="B"><span class="ct">Facts to 20</span><span class="cs">adding and taking away</span></a></li><li><a href="grade2/#add-subtract-100" data-s="B"><span class="ct">Adding and Subtracting to 100</span><span class="cs">tens first, then ones</span></a></li><li><a href="grade2/#groups-sharing" data-s="B"><span class="ct">Equal Groups and Sharing</span><span class="cs">groups of, shared by</span></a></li><li><a href="grade2/#fractions" data-s="B"><span class="ct">Fair Shares</span><span class="cs">halves, fourths, thirds, sixths</span></a></li><li><a href="grade2/#patterns" data-s="C"><span class="ct">Patterns and Equal Sides</span><span class="cs">rules, missing parts, balance</span></a></li><li><a href="grade2/#shapes" data-s="E"><span class="ct">Shapes</span><span class="cs">sides, corners, symmetry</span></a></li><li><a href="grade2/#maps-code" data-s="E"><span class="ct">Maps, Moves and Code</span><span class="cs">where things are, how to get there</span></a></li><li><a href="grade2/#length-time" data-s="E"><span class="ct">Length and Time</span><span class="cs">centimetres, metres, minutes</span></a></li><li><a href="grade2/#data" data-s="D"><span class="ct">Data and Chance</span><span class="cs">sort, graph, the mode, likely</span></a></li><li><a href="grade2/#money" data-s="F"><span class="ct">Money</span><span class="cs">coins and bills to $200</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade2/">Open Grade 2</a> <a class="hbtn ghost" href="grade2/#check-up">Check-up</a> <a class="hbtn ghost" href="grade2/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g3" data-g="3">
+  <summary><span class="gn" aria-hidden="true">3</span><span class="gt"><span class="gh">Grade 3</span><span class="gf">Numbers to 1000, multiplying, fractions and area</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade3/#numbers-1000" data-s="B"><span class="ct">Numbers to 1000</span><span class="cs">hundreds, tens and ones</span></a></li><li><a href="grade3/#add-subtract" data-s="B"><span class="ct">Adding and Subtracting</span><span class="cs">sums up to 1000</span></a></li><li><a href="grade3/#multiply-divide" data-s="B"><span class="ct">Multiplying and Dividing</span><span class="cs">equal groups and arrays</span></a></li><li><a href="grade3/#fractions" data-s="B"><span class="ct">Fractions and Fair Shares</span><span class="cs">equal parts</span></a></li><li><a href="grade3/#patterns" data-s="C"><span class="ct">Patterns, Equations and Code</span><span class="cs">rules, equal sides, steps</span></a></li><li><a href="grade3/#data" data-s="D"><span class="ct">Data and Chance</span><span class="cs">sort, graph, predict</span></a></li><li><a href="grade3/#shapes" data-s="E"><span class="ct">3D Shapes and Directions</span><span class="cs">faces, edges, turns</span></a></li><li><a href="grade3/#length-area" data-s="E"><span class="ct">Length, Perimeter and Area</span><span class="cs">units, perimeter, area</span></a></li><li><a href="grade3/#time-mass" data-s="E"><span class="ct">Time, Mass and Capacity</span><span class="cs">clocks, balances, containers</span></a></li><li><a href="grade3/#money" data-s="F"><span class="ct">Money: Making Change</span><span class="cs">coins, bills and change</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade3/">Open Grade 3</a> <a class="hbtn ghost" href="grade3/#check-up">Check-up</a> <a class="hbtn ghost" href="grade3/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g4" data-g="4">
+  <summary><span class="gn" aria-hidden="true">4</span><span class="gt"><span class="gh">Grade 4</span><span class="gf">Numbers to 10 000, decimal tenths, angles and smart money choices</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade4/#numbers" data-s="B"><span class="ct">Numbers to 10 000</span><span class="cs">read, build, compare and round</span></a></li><li><a href="grade4/#add-subtract" data-s="B"><span class="ct">Adding and Subtracting</span><span class="cs">regrouping and checking</span></a></li><li><a href="grade4/#multiply-divide" data-s="B"><span class="ct">Multiplying and Dividing</span><span class="cs">facts, arrays and sharing</span></a></li><li><a href="grade4/#fractions" data-s="B"><span class="ct">Fractions</span><span class="cs">halves to tenths</span></a></li><li><a href="grade4/#decimals" data-s="B"><span class="ct">Decimal Tenths</span><span class="cs">one tenth is 0.1</span></a></li><li><a href="grade4/#patterns" data-s="C"><span class="ct">Patterns, Equations and Code</span><span class="cs">rules, missing numbers, loops</span></a></li><li><a href="grade4/#data" data-s="D"><span class="ct">Data and Chance</span><span class="cs">collect, graph, describe, predict</span></a></li><li><a href="grade4/#shapes" data-s="E"><span class="ct">Shapes, Angles and Grids</span><span class="cs">rectangles, angles, slides and flips</span></a></li><li><a href="grade4/#measuring" data-s="E"><span class="ct">Measuring</span><span class="cs">mass, capacity, time and area</span></a></li><li><a href="grade4/#money" data-s="F"><span class="ct">Money and Smart Choices</span><span class="cs">pay, save, spend, give</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade4/">Open Grade 4</a> <a class="hbtn ghost" href="grade4/#check-up">Check-up</a> <a class="hbtn ghost" href="grade4/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g5" data-g="5">
+  <summary><span class="gn" aria-hidden="true">5</span><span class="gt"><span class="gh">Grade 5</span><span class="gf">Place value to 100 000, decimals and percents, ratios and budgets</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade5/#place-value" data-s="B"><span class="ct">Place Value</span><span class="cs">whole numbers to 100 000</span></a></li><li><a href="grade5/#fractions" data-s="B"><span class="ct">Fractions</span><span class="cs">equal parts of a whole</span></a></li><li><a href="grade5/#decimals" data-s="B"><span class="ct">Decimals and Percents</span><span class="cs">tenths, hundredths, out of 100</span></a></li><li><a href="grade5/#multiply-divide" data-s="B"><span class="ct">Multiplying and Dividing</span><span class="cs">area models and algorithms</span></a></li><li><a href="grade5/#ratios" data-s="B"><span class="ct">Ratios and Rates</span><span class="cs">comparing two amounts</span></a></li><li><a href="grade5/#patterns-algebra" data-s="C"><span class="ct">Patterns, Equations and Code</span><span class="cs">rules, variables, loops</span></a></li><li><a href="grade5/#data-probability" data-s="D"><span class="ct">Data and Probability</span><span class="cs">samples, graphs, averages, chance</span></a></li><li><a href="grade5/#shapes-grids" data-s="E"><span class="ct">Shapes and Grids</span><span class="cs">triangles, views, coordinates</span></a></li><li><a href="grade5/#measurement" data-s="E"><span class="ct">Measurement</span><span class="cs">units, angles, area</span></a></li><li><a href="grade5/#money" data-s="F"><span class="ct">Money Matters</span><span class="cs">spending, budgets, credit, taxes</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade5/">Open Grade 5</a> <a class="hbtn ghost" href="grade5/#check-up">Check-up</a> <a class="hbtn ghost" href="grade5/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g6" data-g="6">
+  <summary><span class="gn" aria-hidden="true">6</span><span class="gt"><span class="gh">Grade 6</span><span class="gf">Integers, thousandths, percents and surface area</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade6/#numbers-integers" data-s="B"><span class="ct">Big Numbers, Integers and Factors</span><span class="cs">to one million, below zero, prime factors</span></a></li><li><a href="grade6/#decimals" data-s="B"><span class="ct">Decimals to Thousandths</span><span class="cs">tenths, hundredths, thousandths</span></a></li><li><a href="grade6/#fractions" data-s="B"><span class="ct">Fractions</span><span class="cs">unlike denominators, groups of a fraction</span></a></li><li><a href="grade6/#decimal-ops" data-s="B"><span class="ct">Decimal Calculations</span><span class="cs">add, subtract, multiply, divide</span></a></li><li><a href="grade6/#ratios-percents" data-s="B"><span class="ct">Ratios, Rates and Percents</span><span class="cs">comparing and scaling</span></a></li><li><a href="grade6/#patterns-algebra" data-s="C"><span class="ct">Patterns, Equations and Code</span><span class="cs">rules, variables, balance</span></a></li><li><a href="grade6/#data-probability" data-s="D"><span class="ct">Data, Graphs and Probability</span><span class="cs">histograms, averages, chance</span></a></li><li><a href="grade6/#shapes-grids" data-s="E"><span class="ct">Shapes, Grids and Moves</span><span class="cs">quadrilaterals, views, four quadrants</span></a></li><li><a href="grade6/#measurement" data-s="E"><span class="ct">Measuring</span><span class="cs">units, angles, area, surface area</span></a></li><li><a href="grade6/#money" data-s="F"><span class="ct">Money Matters</span><span class="cs">paying, saving, interest</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade6/">Open Grade 6</a> <a class="hbtn ghost" href="grade6/#check-up">Check-up</a> <a class="hbtn ghost" href="grade6/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g7" data-g="7">
+  <summary><span class="gn" aria-hidden="true">7</span><span class="gt"><span class="gh">Grade 7</span><span class="gf">Exponents, integers, circles and volume, and interest</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade7/#powers-factors" data-s="B"><span class="ct">Powers, Roots and Factors</span><span class="cs">big numbers, exponents, square roots, GCF and LCM</span></a></li><li><a href="grade7/#fractions" data-s="B"><span class="ct">Fractions</span><span class="cs">simplify, compare, add and subtract</span></a></li><li><a href="grade7/#mult-div" data-s="B"><span class="ct">Multiplying and Dividing</span><span class="cs">fractions, decimals, rounding, order of operations</span></a></li><li><a href="grade7/#integers" data-s="B"><span class="ct">Integers</span><span class="cs">numbers below zero</span></a></li><li><a href="grade7/#percent-ratio" data-s="B"><span class="ct">Percents, Ratios and Rates</span><span class="cs">comparing amounts fairly</span></a></li><li><a href="grade7/#algebra" data-s="C"><span class="ct">Patterns, Expressions and Equations</span><span class="cs">rules, variables, balance, code</span></a></li><li><a href="grade7/#data-probability" data-s="D"><span class="ct">Data and Probability</span><span class="cs">circle graphs, averages, chance</span></a></li><li><a href="grade7/#shapes-moves" data-s="E"><span class="ct">Shapes, Views and Moves</span><span class="cs">3-D objects and transformations</span></a></li><li><a href="grade7/#circles-volume" data-s="E"><span class="ct">Circles, Surface Area and Volume</span><span class="cs">pi, cylinders and prisms</span></a></li><li><a href="grade7/#money" data-s="F"><span class="ct">Money Matters</span><span class="cs">exchange rates, budgets, interest</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade7/">Open Grade 7</a> <a class="hbtn ghost" href="grade7/#check-up">Check-up</a> <a class="hbtn ghost" href="grade7/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+<details class="grade" id="g8" data-g="8">
+  <summary><span class="gn" aria-hidden="true">8</span><span class="gt"><span class="gh">Grade 8</span><span class="gf">Scientific notation, square roots, Pythagoras and probability</span></span><span class="gtag" hidden>Your grade</span><span class="chev" aria-hidden="true"></span></summary>
+  <div class="gbody">
+    <ol class="chaps"><li><a href="grade8/#big-small" data-s="B"><span class="ct">Big and Small Numbers</span><span class="cs">powers of ten and scientific notation</span></a></li><li><a href="grade8/#roots-real" data-s="B"><span class="ct">Squares, Roots and Real Numbers</span><span class="cs">perfect squares and the numbers between</span></a></li><li><a href="grade8/#integers" data-s="B"><span class="ct">Integers</span><span class="cs">working with negatives</span></a></li><li><a href="grade8/#fractions" data-s="B"><span class="ct">Fractions</span><span class="cs">all four operations</span></a></li><li><a href="grade8/#percent-ratio" data-s="B"><span class="ct">Percents, Ratios and Rates</span><span class="cs">comparing and scaling</span></a></li><li><a href="grade8/#algebra" data-s="C"><span class="ct">Patterns, Expressions and Equations</span><span class="cs">rules, like terms, balance</span></a></li><li><a href="grade8/#data" data-s="D"><span class="ct">Data and Graphs</span><span class="cs">scatter plots, trends, code</span></a></li><li><a href="grade8/#probability" data-s="D"><span class="ct">Probability</span><span class="cs">trees, Venn diagrams, events</span></a></li><li><a href="grade8/#geometry" data-s="E"><span class="ct">Angles, Shapes and Moves</span><span class="cs">angle rules, transformations, scale</span></a></li><li><a href="grade8/#measurement" data-s="E"><span class="ct">Pythagoras, Area and Volume</span><span class="cs">right triangles, circles, solids</span></a></li><li><a href="grade8/#money" data-s="F"><span class="ct">Money and Planning</span><span class="cs">budgets, interest, credit</span></a></li></ol>
+    <p class="gacts"><a class="hbtn" href="grade8/">Open Grade 8</a> <a class="hbtn ghost" href="grade8/#check-up">Check-up</a> <a class="hbtn ghost" href="grade8/#fact-sheet">Fact sheet</a></p>
+  </div>
+</details>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot"><div class="hwrap">
+  <p>Math Atlas is a free study aid that follows the Ontario Mathematics curriculum (2020), Grades 1 to 8. It does not replace a teacher's assessment.</p>
+  <p>You do not need an account. Without one, progress is saved only in this browser. <a href="family.html">Family accounts</a> keep it on any device and let parents and tutors follow along.</p>
+</div></footer>
+<script type="module" src="assets/home.js"></script>
 </body>
 </html>
