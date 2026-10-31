@@ -440,6 +440,12 @@
         }]
       ],
       'mn-make': [
+        [1, 'build', function (lv) {
+          var tg = lv === 1 ? R.int(2, 9) * 10 : R.int(4, 19) * 5;
+          return { q: 'Show <b>' + tg + '¢</b> with coins. Then press Check.', type: 'build', tool: 'coins', answer: tg,
+            hint: 'Start with the biggest coin that fits. Then add smaller coins.', steps: ['One way: ' + listName(make(tg, [25, 10, 5])) + '.', 'Any coins that add up to ' + tg + '¢ are right.'],
+            explain: listName(make(tg, [25, 10, 5])) + ' make ' + tg + '¢. Other coins can make it too.', meta: { k: 'make-build', tg: tg } };
+        }],
         [1, 'pick', function (lv) {
           var tg = lv === 1 ? R.int(3, 9) * 10 : R.int(4, 19) * 5, good = [make(tg, [25, 10, 5]), make(tg, [10, 5])], opts = [], seen = {};
           if (lv === 1) good[0] = make(tg, [10]);
