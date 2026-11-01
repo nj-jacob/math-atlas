@@ -17,7 +17,7 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | `assets/atlas-header.js` | The shared header on grade sites ("All grades" link to the Curriculum page) |
 | `assets/icon.svg` | The site icon shown in browser tabs and bookmarks. Every page links to it. |
 | `assets/load-note.js` | On the family and "Work together" pages: if sign-in cannot load, shows a short note instead of a blank page |
-| `assets/fb.js`, `sync.js`, `family.js`, `live.js` | Sign-in and saving progress (Firebase) |
+| `assets/fb.js`, `sync.js`, `family.js`, `live.js`, `langplace.js` | Sign-in and saving progress (Firebase); `langplace.js` shows Language placement results on the parent pages |
 | `assets/review.js` | Review notes: the grown-up "Note" button on grade pages (see "Review notes" below) |
 | `tests/` | Automatic checks (see `CHECKS.md`) |
 | `.github/workflows/` | `checks.yml` runs the checks on pull requests. `deploy.yml` runs them again, then publishes `main`. |
@@ -84,6 +84,7 @@ How publishing works:
 
 What they share at runtime (same website, so same browser storage and sign-in):
 - Language pages load `assets/sync.js`, `fb.js` and `family.css` from here, so their progress saves to the family account as `students/{id}/progress/l1` … `l8`. `SITES` in `assets/fb.js` lists every Math (`g1`…) and Language (`l1`…) grade, and the family page and home page show both.
+- The Language placement check (`language/placement/`) saves to `students/{id}/progress/lplace` (its whole state as `data.state`). `assets/langplace.js` reads it: one line on each child's card on the home page, and a **Language placement check** section on the Progress and notes page (secure grade and starting lesson for each of the 7 parts, reading aloud, writing sample). `lplace` is not in `SITES`, because it is not a grade.
 - The Curriculum page reads `language/index.html` to see which Language grades are ready, then each `language/gradeN/grade.js` for its chapters. Keep `Atlas.setup({ grade, chapters: [{ id, title, sub, strand }] })` in that shape.
 - Browser storage: Math grades use `gNatlas:` keys, Language grades `lang-gN:`. Both use `atlas:adult` for the grown-up view.
 
