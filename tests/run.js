@@ -320,14 +320,14 @@ async function checkSaved(browser, base, g) {
     st[P + 'plan'] = [{ ch: m.id, sk: sk[1].id, name: sk[1].name, t: m.title }];
     st[P + 'cov'] = { [sk[0].code.split(/,\s*/)[0]]: { d: '2026-10-25', ok: 1, n: 1 } };
     Object.keys(st).forEach(k => localStorage.setItem(k, typeof st[k] === 'number' ? String(st[k]) : JSON.stringify(st[k])));
-    return { ch: m.id, title: m.title, s0: sk[0].id, s1: sk[1].id, name1: sk[1].name, nsk: sk.length };
+    return { ch: m.id, s0: sk[0].id, s1: sk[1].id, nsk: sk.length };
   }, P);
   await page.evaluate(() => { location.hash = '#check-up'; location.hash = '#home'; });
   await page.waitForTimeout(80);
-  const home = await page.evaluate(id => ({ card: (document.querySelector('a.card[href="#' + id + '"]') || {}).textContent || '', start: document.querySelector('.start').textContent }), seed.ch);
+  const home = await page.evaluate(s => ({ card: (document.querySelector('a.card[href="#' + s.ch + '"]') || {}).textContent || '', start: document.querySelector('.start').textContent, plan: !!document.querySelector('.start a[href="#' + s.ch + '/practice/' + s.s1 + '"]') }), seed);
   if (!home.card.includes('quiz 6/')) fail(where, 'the chapter card does not show the saved quiz score 6');
   if (!home.card.includes('1/' + seed.nsk + ' secure')) fail(where, 'the chapter card does not show 1 secure skill');
-  if (!home.start.includes('Last check-up (2026-10-25): 7 of 10.') || !home.start.includes(seed.name1)) fail(where, 'the home page does not show the saved check-up and plan');
+  if (!home.start.includes('Last check-up (2026-10-25): 7 of 10.') || !home.plan) fail(where, 'the home page does not show the saved check-up and plan');
   const status = await page.evaluate(s => [Atlas.skillStatus(s.s0).t, Atlas.skillStatus(s.s1).t], seed);
   if (status[0] !== 'Secure' || status[1] !== 'Level 2: Building') fail(where, 'saved skill levels read as ' + status.join(' and '));
   await page.evaluate(() => { location.hash = '#check-up'; });
