@@ -54,7 +54,7 @@
     var neg = typeof n === 'number' && n < 0 ? '&minus;' : '';
     return neg + '<span class="fr"><span>' + (neg ? -n : n) + '</span><span>' + d + '</span></span>';
   };
-  Atlas.mixed = function (w, n, d) { return (w < 0 ? '&minus;' + (-w) : w) + (n ? '&#8202;' + Atlas.fr(n, d) : ''); };
+  Atlas.mixed = function (w, n, d) { if (w === 0 && n) return Atlas.fr(n, d); return (w < 0 ? '&minus;' + (-w) : w) + (n ? '&#8202;' + Atlas.fr(n, d) : ''); };
   /* a fraction n/d in simplest form, as a mixed number if it is more than 1 */
   Atlas.frs = function (n, d, plain) {
     if (d < 0) { n = -n; d = -d; }

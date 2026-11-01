@@ -403,7 +403,7 @@ A.yt({ q: '<span class="math">7.38 &divide; 3 = ?</span>', type: 'num', answer: 
           explain: dec(k) + ' &divide; ' + n + ' = ' + dec(q) + '. Check: ' + dec(q) + ' &times; ' + n + ' = ' + dec(k) + '.' };
       } },
       { id: 'do-multi', name: 'Multi-step problems', code: 'B2.1', gen: function (lv) {
-        var p = R.int(1, 9) * 100 + R.pick([25, 50, 75, 95, 49]), n = R.int(2, lv === 1 ? 4 : 6), extra = R.int(1, 5) * 100 + R.pick([0, 25, 50]), pay = lv === 1 ? 2000 : R.pick([2000, 5000]);
+        var p = R.int(1, 9) * 100 + R.pick([25, 50, 75, 95, 45]), n = R.int(2, lv === 1 ? 4 : 6), extra = R.int(1, 5) * 100 + R.pick([0, 25, 50]), pay = lv === 1 ? 2000 : R.pick([2000, 5000]);
         var item = R.pick(['notebooks', 'hot chocolates', 'bus tickets', 'muffins', 'packs of markers']), other = R.pick(['a pencil case', 'a water bottle', 'an eraser']);
         var cost = n * p + extra;
         while (cost >= pay) { n--; cost = n * p + extra; if (n < 2) { p = 125; n = 2; cost = n * p + extra; } }
@@ -532,18 +532,18 @@ A.yt({ q: '<span class="math">7.38 &divide; 3 = ?</span>', type: 'num', answer: 
       ],
       'do-multi': [
         [1, 'order', function () {
-          var n = R.int(2, 5), p = R.int(105, 450), extra = R.int(150, 600), pay = Math.ceil((n * p + extra) / 500) * 500 + 500, item = R.pick(['muffins', 'pens', 'apples']);
+          var n = R.int(2, 5), p = R.int(21, 90) * 5, extra = R.int(30, 120) * 5, pay = Math.ceil((n * p + extra) / 500) * 500 + 500, item = R.pick(['muffins', 'pens', 'apples']);
           return { q: 'You buy ' + n + ' ' + item + ' at ' + A.money(p) + ' each and a drink for ' + A.money(extra) + '. You pay with ' + A.money(pay) + '. Put the steps for finding your change in order.', type: 'order',
             items: ['Multiply to find the cost of the ' + item + '.', 'Add the cost of the drink.', 'Subtract the total from ' + A.money(pay) + '.'], first: 'first', last: 'last',
             hint: 'You need the total cost before you can find the change.', steps: ['Cost of ' + item + ', then the total, then the change.'], explain: 'Multiply, add, then subtract.', meta: { k: 'g6-multi-order' } };
         }],
         [1, 'fill', function () {
-          var n = R.int(2, 5), p = R.int(105, 450), pay = Math.ceil(n * p / 500) * 500 + 500, item = R.pick(['notebooks', 'juice boxes', 'markers']);
+          var n = R.int(2, 5), p = R.int(21, 90) * 5, pay = Math.ceil(n * p / 500) * 500 + 500, item = R.pick(['notebooks', 'juice boxes', 'markers']);
           return { q: 'You buy ' + n + ' ' + item + ' at ' + A.money(p) + ' each and pay with ' + A.money(pay) + '.', type: 'fill', fill: 'Cost: $[[]] &nbsp; Change: $[[]]', answers: [n * p / 100, (pay - n * p) / 100],
             hint: 'Multiply first, then subtract.', steps: [n + ' &times; ' + A.money(p) + ' = ' + A.money(n * p) + '.', A.money(pay) + ' &minus; ' + A.money(n * p) + ' = ' + A.money(pay - n * p) + '.'], explain: 'Change: ' + A.money(pay - n * p) + '.', meta: { k: 'g6-multi-fill', n: n, p: p, pay: pay } };
         }],
         [1, 'mistake', function () {
-          var n = R.int(2, 5), p = R.int(105, 450), extra = R.int(150, 600), tot = n * p + extra, pay = Math.ceil(tot / 500) * 500 + 500, who = nm(), truth = !R.int(0, 2), said = truth ? pay - tot : pay - n * p;
+          var n = R.int(2, 5), p = R.int(21, 90) * 5, extra = R.int(30, 120) * 5, tot = n * p + extra, pay = Math.ceil(tot / 500) * 500 + 500, who = nm(), truth = !R.int(0, 2), said = truth ? pay - tot : pay - n * p;
           return { q: 'You buy ' + n + ' tickets at ' + A.money(p) + ' each and popcorn for ' + A.money(extra) + '. You pay with ' + A.money(pay) + '. ' + who + ' says the change is <b>' + A.money(said) + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
             why: why('The total is ' + A.money(tot) + ', so the change is ' + A.money(pay - tot) + '.', ['The change is what the tickets cost.', 'You only subtract the popcorn.']),
             hint: 'Find the full total first.', steps: [n + ' &times; ' + A.money(p) + ' + ' + A.money(extra) + ' = ' + A.money(tot) + '.', A.money(pay) + ' &minus; ' + A.money(tot) + ' = ' + A.money(pay - tot) + '.'], explain: 'Change: ' + A.money(pay - tot) + '.', meta: { k: 'g6-multi-tf', n: n, p: p, extra: extra, pay: pay, said: said } };

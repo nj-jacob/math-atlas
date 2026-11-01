@@ -648,7 +648,7 @@
       [1, 'tap', function (lv) {
         var a = numIn(lv), b; do { b = numIn(lv); } while (b === a);
         var more = R.int(0, 1), ans = more ? Math.max(a, b) : Math.min(a, b), set = R.shuffle([a, b]);
-        return { q: 'Tap the blocks that show the <b>' + (more ? 'greater' : 'lesser') + '</b> number.', type: 'tap', tiles: set.map(function (v) { return blocks(v); }), answer: set.indexOf(ans), answerText: 'the blocks for ' + ans,
+        return { q: 'Tap the blocks that show the <b>' + (more ? 'greater' : 'smaller') + '</b> number.', type: 'tap', tiles: set.map(function (v) { return blocks(v); }), answer: set.indexOf(ans), answerText: 'the blocks for ' + ans,
           hint: 'Compare the rods first. More rods means a greater number.', steps: ['Count the rods in each picture.', tn(a) === tn(b) ? 'The rods are the same, so compare the small cubes.' : 'The one with more rods is greater.'],
           explain: Math.max(a, b) + ' is greater than ' + Math.min(a, b) + '.', meta: { k: 'g1-cmp-tap', more: more } };
       }],

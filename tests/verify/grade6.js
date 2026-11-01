@@ -101,8 +101,10 @@
   set('g6-dvw-tf', (q, m) => tf(m.said * m.n === m.k10, q));
   set('g6-dvw-match', q => (q.pairs.every(p => { const l = nums(p[0]); return H.close(l[0] / l[1], H.num(p[1])); }) ? '' : 'pairs'));
   set('g6-multi-order', q => (/^Multiply/.test(q.items[0]) && /^Add/.test(q.items[1]) && /^Subtract/.test(q.items[2]) ? '' : 'order'));
-  set('g6-multi-fill', (q, m) => (H.close(q.answers[0], m.n * m.p / 100) && H.close(q.answers[0] + q.answers[1], m.pay / 100) ? '' : 'blanks'));
-  set('g6-multi-tf', (q, m) => tf(m.said === m.pay - m.n * m.p - m.extra, q));
+  /* paid with cash, so the change must be a multiple of 5 cents (no pennies) */
+  const cash5ok = cents => Math.round(cents) % 5 === 0;
+  set('g6-multi-fill', (q, m) => (!cash5ok(q.answers[1] * 100) ? 'cash change is not a multiple of 5 cents' : H.close(q.answers[0], m.n * m.p / 100) && H.close(q.answers[0] + q.answers[1], m.pay / 100) ? '' : 'blanks'));
+  set('g6-multi-tf', (q, m) => (!cash5ok(m.pay - m.n * m.p - m.extra) ? 'cash change is not a multiple of 5 cents' : tf(m.said === m.pay - m.n * m.p - m.extra, q)));
 
   /* ---- Ratios and percents ---- */
   const ratio = t => H.strip(t).split(':').map(Number);

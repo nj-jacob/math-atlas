@@ -478,9 +478,9 @@ payGallery() +
       } },
       { id: 'mo-tax', name: 'Totals, tax and change', code: 'F1.2', gen: function (lv) {
         if (lv === 1) {
-          var p = R.int(150, 1900), g = p < 500 ? 500 : p < 1000 ? 1000 : 2000;
-          return { q: 'You buy something for ' + M(p) + ' and pay with a ' + M(g).replace('.00', '') + ' bill. How much change do you get?', type: 'num', answer: A.clean((g - p) / 100), unit: '$',
-            hint: 'Count up from ' + M(p) + ' to ' + M(g) + '.', steps: ['Change = amount given &minus; price. Count up:' + countUp(p, g), M(g) + ' &minus; ' + M(p) + '.', '= ' + M(g - p) + '.'], explain: M(g) + ' &minus; ' + M(p) + ' = ' + M(g - p) + '.' };
+          var p = R.int(150, 1900), g = p < 500 ? 500 : p < 1000 ? 1000 : 2000, c = cash(p);
+          return { q: 'You buy something for ' + M(p) + ' and pay in cash with a ' + M(g).replace('.00', '') + ' bill. How much change do you get?', type: 'num', answer: A.clean((g - c) / 100), unit: '$',
+            hint: (c === p ? '' : 'Round ' + M(p) + ' to the nearest 5 cents first. ') + 'Count up to ' + M(g) + '.', steps: [c === p ? 'The total is ' + M(p) + '. No rounding is needed.' : 'Cash rounds to the nearest 5 cents: ' + M(p) + ' rounds to ' + M(c) + '.', 'Count up from ' + M(c) + ' to ' + M(g) + ':' + countUp(c, g), M(g) + ' &minus; ' + M(c) + ' = ' + M(g - c) + '.'], explain: M(g) + ' &minus; ' + M(c) + ' = ' + M(g - c) + '.', meta: { k: 'g5mo-taxchange', p: p, g: g } };
         }
         if (lv === 2) {
           var base = R.pick([1000, 2000, 3000, 4000, 5000, 10000]), tax = hst(base);
@@ -579,9 +579,10 @@ payGallery() +
       }],
       [1, 'story', function (lv) {
         var who = nm(), a = R.int(2, 6) * 100 + R.pick([25, 50, 75, 99]), b = R.int(1, 4) * 100 + R.pick([0, 25, 49, 50]), bill = a + b < 1000 ? 1000 : 2000;
-        return { q: who + ' buys a book for ' + M(a) + ' and a pen for ' + M(b) + ' and pays with a ' + M(bill).replace('.00', '') + ' bill. How much change does ' + who + ' get? (Tax is included.)', type: 'num', answer: A.clean((bill - a - b) / 100), unit: '$',
-          hint: 'Add the prices first. Then count up to ' + M(bill) + '.', steps: [M(a) + ' + ' + M(b) + ' = ' + M(a + b) + '.', M(bill) + ' &minus; ' + M(a + b) + ' = ' + M(bill - a - b) + '.'],
-          explain: who + ' gets ' + M(bill - a - b) + ' in change.', meta: { k: 'g5mo-taxstory' } };
+        var c = cash(a + b);
+        return { q: who + ' buys a book for ' + M(a) + ' and a pen for ' + M(b) + ' and pays in cash with a ' + M(bill).replace('.00', '') + ' bill. How much change does ' + who + ' get? (Tax is included.)', type: 'num', answer: A.clean((bill - c) / 100), unit: '$',
+          hint: 'Add the prices. Round the total to the nearest 5 cents. Then count up to ' + M(bill) + '.', steps: [M(a) + ' + ' + M(b) + ' = ' + M(a + b) + '.' + (c === a + b ? '' : ' In cash, that rounds to ' + M(c) + '.'), M(bill) + ' &minus; ' + M(c) + ' = ' + M(bill - c) + '.'],
+          explain: who + ' gets ' + M(bill - c) + ' in change.', meta: { k: 'g5mo-taxstory' } };
       }],
       [2, 'mistake', function (lv) {
         var p = R.int(2, 9) * 100 + R.int(1, 9) * 10 + R.pick([1, 2, 3, 4, 6, 7, 8, 9]), who = nm(), truth = !R.int(0, 2), said = truth ? cash(p) : cash(p) === Math.floor(p / 5) * 5 ? cash(p) + 5 : cash(p) - 5;

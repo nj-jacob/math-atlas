@@ -620,7 +620,7 @@ A.yt({ gen: function () { return gen.rate(1); } }) +
           explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'md4-tens-match', pairs: pairs } };
       }],
       [3, 'story', function () {
-        var c = R.pick([['crayons', 'A box holds', 100], ['sheets of paper', 'A pack has', 100], ['beads', 'A jar holds', 1000], ['loonies', 'A roll has', 10]]), n = R.int(2, 9) * (c[2] === 10 ? 11 : 1);
+        var c = R.pick([['crayons', 'A box holds', 100], ['sheets of paper', 'A pack has', 100], ['beads', 'A jar holds', 1000], ['loonies', 'A bag holds', 10]]), n = R.int(2, 9) * (c[2] === 10 ? 11 : 1);
         return { q: c[1] + ' ' + A.fmt(c[2]) + ' ' + c[0] + '. How many ' + c[0] + ' are in <b>' + n + '</b>?', type: 'num', answer: n * c[2],
           hint: 'Multiply ' + n + ' by ' + A.fmt(c[2]) + '.', steps: [n + ' &times; ' + A.fmt(c[2]) + ' = ' + A.fmt(n * c[2]) + '.'],
           explain: n + ' groups of ' + A.fmt(c[2]) + ' make ' + A.fmt(n * c[2]) + ' ' + c[0] + '.', meta: { k: 'md4-tens-story', n: n, f: c[2] } };

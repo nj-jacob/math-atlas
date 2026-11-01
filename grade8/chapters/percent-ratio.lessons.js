@@ -127,7 +127,7 @@
         body: '<p>A situation is proportional when doubling one amount doubles the other. Recipes and prices usually are. Ages and setup times usually are not.</p>',
         watch: K.film([
           [T(['2 tickets: $18', '4 tickets: $36']), 'Double the tickets, double the cost: proportional.'],
-          [T(['1 painter: 6 h', '2 painters: 12 h?']), 'Double the painters does not double the time. It is not proportional.', 2800]
+          [T(['Bike: $10 fee + $5 an hour', '1 h: $15', '2 h: $20']), 'Double the hours does not double the cost, because of the fee. It is not proportional.', 2800]
         ]),
         example: K.film([
           [T(['3 kg: $7.50', '5 kg: $12.50']), 'My turn. I will check if the cost of rice is proportional to its mass.'],

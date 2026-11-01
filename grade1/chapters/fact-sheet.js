@@ -28,7 +28,7 @@
 '<section class="sec"><h2>Shapes and position</h2>' +
 '<div class="tbl"><table><thead><tr><th class="l">Flat shape</th><th>Sides</th><th>Corners</th></tr></thead><tbody>' +
 '<tr><td class="l">circle</td><td>0</td><td>0</td></tr><tr><td class="l">triangle</td><td>3</td><td>3</td></tr><tr><td class="l">square</td><td>4</td><td>4</td></tr><tr><td class="l">rectangle</td><td>4</td><td>4</td></tr><tr><td class="l">hexagon</td><td>6</td><td>6</td></tr></tbody></table></div>' +
-'<p><b>Solids:</b> cube (a die), sphere (a ball), cylinder (a can), cone (an ice cream cone), rectangular prism (a box), pyramid (a tent).</p>' +
+'<p><b>Solids:</b> cube (a die), sphere (a ball), cylinder (a can), cone (an ice cream cone), rectangular prism (a box), pyramid (the top of a tower).</p>' +
 '<p><b>Position words:</b> above, below, beside, between, in front of, behind, left, right.</p></section>' +
 
 '<section class="sec"><h2>Measuring and the calendar</h2>' +

@@ -1,6 +1,11 @@
 (function () {
   var A = Atlas, R = A.R;
   var DAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  /* calendars show this year, so the dates never go out of date */
+  var YR = new Date().getFullYear();
+  function dayOf(m, d) { return DAYS[new Date(YR, m, d).getDay()]; }
+  /* three day names for a choice: the day before, the day of the date, the day after (gap days apart) */
+  function near(m, d, gap) { var i = DAYS.indexOf(dayOf(m, d)); return [DAYS[(i + 7 - gap) % 7], DAYS[i], DAYS[(i + gap) % 7]]; }
   var MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
   var SEASON = ['winter', 'winter', 'spring', 'spring', 'spring', 'summer', 'summer', 'summer', 'fall', 'fall', 'fall', 'winter'];
   var COLS = ['#e04b3a', '#2c68cf', '#2f9a4c', '#8441bd', '#ee7d24'];
@@ -161,7 +166,7 @@
       var o3 = R.mc(ev[1], ['winter', 'spring', 'summer', 'fall'].filter(function (x) { return x !== ev[1]; }));
       return { q: 'In Ontario, which season is it when ' + ev[0] + '?', type: 'mc', options: o3.options, answer: o3.answer, hint: 'The seasons go winter, spring, summer, fall.', steps: ['Think about the weather in each season.', 'Which season matches: ' + ev[0] + '?', 'It is ' + ev[1] + '.'], explain: 'In Ontario, ' + ev[0] + ' in ' + ev[1] + '.' };
     }
-    var yr = 2026, mo = R.int(0, 11), first = new Date(yr, mo, 1).getDay(), days = new Date(yr, mo + 1, 0).getDate(), d = R.int(2, days);
+    var yr = YR, mo = R.int(0, 11), first = new Date(yr, mo, 1).getDay(), days = new Date(yr, mo + 1, 0).getDate(), d = R.int(2, days);
     var dayName = DAYS[(first + d - 1) % 7], o4 = R.mc(dayName, R.shuffle(DAYS.filter(function (x) { return x !== dayName; })).slice(0, 2));
     return { q: 'Look at the calendar. What day of the week is <b>' + MONTHS[mo] + ' ' + d + '</b>?', type: 'mc', options: o4.options, answer: o4.answer, fig: calendar(yr, mo),
       hint: 'Find ' + d + ' on the calendar. Look up to the top of its column.', steps: ['Find the number ' + d + '.', 'Go straight up its column to the day name at the top.', MONTHS[mo] + ' ' + d + ' is a ' + dayName + '.'], explain: MONTHS[mo] + ' ' + d + ', ' + yr + ' is a ' + dayName + '.' };
@@ -368,17 +373,17 @@
       { id: 'read', title: 'Read a calendar', exp: ['E2.3'], skill: 'm-cal',
         body: '<p>To find the day for a date, find the number, then look <b>up its column</b> to the day name at the top.</p>',
         watch: { tool: 'g1stage', steps: [
-          { say: 'What day is July 1, 2026?', act: function (t) { return t.show(calendar(2026, 6)); }, ms: 1400 },
-          { say: 'Find the 1.', act: function (t) { return t.show(calendar(2026, 6, 1)); }, ms: 1200 },
-          { say: 'Look up its column: <b>Wednesday</b>. Canada Day 2026 is on a Wednesday.', ms: 2000 }
+          { say: 'What day is July 1, ' + YR + '?', act: function (t) { return t.show(calendar(YR, 6)); }, ms: 1400 },
+          { say: 'Find the 1.', act: function (t) { return t.show(calendar(YR, 6, 1)); }, ms: 1200 },
+          { say: 'Look up its column: <b>' + dayOf(6, 1) + '</b>. Canada Day ' + YR + ' is on a ' + dayOf(6, 1) + '.', ms: 2000 }
         ] },
         example: { tool: 'g1stage', steps: [
-          { say: 'My turn. What day is December 25, 2026?', act: function (t) { return t.show(calendar(2026, 11)); }, ms: 1400 },
-          { say: 'I find the 25.', act: function (t) { return t.show(calendar(2026, 11, 25)); }, ms: 1200 },
-          { say: 'I look up its column to the top: <b>Fri</b>. December 25, 2026 is a <b>Friday</b>.', ms: 2000 }
+          { say: 'My turn. What day is December 25, ' + YR + '?', act: function (t) { return t.show(calendar(YR, 11)); }, ms: 1400 },
+          { say: 'I find the 25.', act: function (t) { return t.show(calendar(YR, 11, 25)); }, ms: 1200 },
+          { say: 'I look up its column to the top: <b>' + dayOf(11, 25).slice(0, 3) + '</b>. December 25, ' + YR + ' is a <b>' + dayOf(11, 25) + '</b>.', ms: 2000 }
         ] },
-        try: { tool: 'g1pick', opts: { multi: false, items: ['Monday', 'Wednesday', 'Saturday'].map(function (d) { return { id: d, html: '<span>' + d + '</span>' }; }) }, tasks: [
-          { do: 'Remembrance Day is <b>November 11</b>. What day is it in 2026?<div class="fig">' + calendar(2026, 10, 11) + '</div>', goal: function (s) { return s.picked[0] === 'Wednesday'; }, yes: 'November 11, 2026 is a Wednesday.' }
+        try: { tool: 'g1pick', opts: { multi: false, items: near(10, 11, 2).map(function (d) { return { id: d, html: '<span>' + d + '</span>' }; }) }, tasks: [
+          { do: 'Remembrance Day is <b>November 11</b>. What day is it in ' + YR + '?<div class="fig">' + calendar(YR, 10, 11) + '</div>', goal: function (s) { return s.picked[0] === dayOf(10, 11); }, yes: 'November 11, ' + YR + ' is a ' + dayOf(10, 11) + '.' }
         ] },
         key: '<p>Find the date, then look <b>up</b> to the day.</p>',
         check: [P('m-cal', 3), P('m-cal', 3)] }
@@ -434,7 +439,7 @@
 '<p>A <b>week</b> has 7 days. A <b>year</b> has 12 months. Canada has 4 seasons: winter, spring, summer and fall.</p>' +
 '<div class="tbl"><table><thead><tr><th class="l">Season</th><th class="l">Months (mostly)</th></tr></thead><tbody><tr><td class="l">Winter</td><td class="l">December, January, February</td></tr><tr><td class="l">Spring</td><td class="l">March, April, May</td></tr><tr><td class="l">Summer</td><td class="l">June, July, August</td></tr><tr><td class="l">Fall</td><td class="l">September, October, November</td></tr></tbody></table></div>' +
 '<p>Some special days: New Year\'s Day is January 1. Canada Day is July 1. Remembrance Day is November 11.</p>' +
-'<div class="eg"><b class="t">Watch me</b><div class="fig">' + calendar(2026, 6, 1) + '</div><p>To find what day July 1 is, I find the 1 and look up its column. It says Wed. Canada Day 2026 is on a <b>Wednesday</b>.</p></div>' +
+'<div class="eg"><b class="t">Watch me</b><div class="fig">' + calendar(YR, 6, 1) + '</div><p>To find what day July 1 is, I find the 1 and look up its column. It says ' + dayOf(6, 1).slice(0, 3) + '. Canada Day ' + YR + ' is on a <b>' + dayOf(6, 1) + '</b>.</p></div>' +
 '<div class="lab"><span class="lt">Try it: read a calendar</span><div class="ctrl"><label for="calm">Month<select id="calm">' + MONTHS.map(function (m, i) { return '<option value="' + i + '"' + (i === 9 ? ' selected' : '') + '>' + m + '</option>'; }).join('') + '</select></label></div>' + A.stepHtml('cald', 'Date', 31) +
 '<div class="fig" id="calfig"></div><div class="out" id="calout"></div></div>' +
 '<div class="yt"></div>' +
@@ -452,11 +457,11 @@
       $('#rbline', root).addEventListener('click', function () { lined = !lined; this.setAttribute('aria-pressed', String(lined)); this.textContent = 'Ends lined up: ' + (lined ? 'yes' : 'no'); rib(); });
       var cd;
       function cal() {
-        var m = +$('#calm', root).value, days = new Date(2026, m + 1, 0).getDate();
+        var m = +$('#calm', root).value, days = new Date(YR, m + 1, 0).getDate();
         if (cd && cd.get() > days) { cd.set(days); return; }
-        var d = cd ? cd.get() : 31, wd = DAYS[new Date(2026, m, d).getDay()];
-        $('#calfig', root).innerHTML = calendar(2026, m, d);
-        $('#calout', root).innerHTML = '<b>' + MONTHS[m] + ' ' + d + ', 2026</b> is a <b>' + wd + '</b>. ' + MONTHS[m] + ' has ' + days + ' days. It is in ' + SEASON[m] + ' (mostly).';
+        var d = cd ? cd.get() : 31, wd = dayOf(m, d);
+        $('#calfig', root).innerHTML = calendar(YR, m, d);
+        $('#calout', root).innerHTML = '<b>' + MONTHS[m] + ' ' + d + ', ' + YR + '</b> is a <b>' + wd + '</b>. ' + MONTHS[m] + ' has ' + days + ' days. It is in ' + SEASON[m] + ' (mostly).';
       }
       cd = A.stepper(root, 'cald', 1, 31, function () { cal(); });
       $('#calm', root).addEventListener('change', cal);
@@ -485,8 +490,8 @@
         hint: 'Count the cups in each jug.', explain: 'A holds 5, B holds 3, C holds 6. B holds the least.' },
       { q: 'What month comes after <b>April</b>?', type: 'mc', options: ['March', 'May', 'June'], answer: 1,
         hint: 'January, February, March, April...', explain: 'May comes after April.' },
-      { q: 'Look at the calendar. What day of the week is <b>November 11</b>?', type: 'mc', options: ['Tuesday', 'Wednesday', 'Thursday'], answer: 1, fig: calendar(2026, 10, 0),
-        hint: 'Find 11 and look up its column.', explain: 'Remembrance Day, November 11, 2026, is a Wednesday.' }
+      { q: 'Look at the calendar. What day of the week is <b>November 11</b>?', type: 'mc', options: near(10, 11, 1), answer: 1, fig: calendar(YR, 10, 0),
+        hint: 'Find 11 and look up its column.', explain: 'Remembrance Day, November 11, ' + YR + ', is a ' + dayOf(10, 11) + '.' }
     ],
 
     practice: [
@@ -631,7 +636,7 @@
     'm-cal': [
       [1, 'order', function () {
         var i = R.int(0, 6), list = [0, 1, 2, 3].map(function (k) { return DAYS[(i + k) % 7]; });
-        return { q: 'Put the days in order.', type: 'order', items: list, hint: 'Say the days of the week: Sunday, Monday, Tuesday...', steps: ['Start with ' + list[0] + '.'],
+        return { q: 'Put the days in order. Start with <b>' + list[0] + '</b>.', type: 'order', items: list, hint: 'Say the days of the week: Sunday, Monday, Tuesday...', steps: ['Start with ' + list[0] + '.'],
           explain: list.join(', ') + '.', meta: { k: 'g1-cal-order' } };
       }],
       [1, 'match', function () {
@@ -641,7 +646,7 @@
           explain: 'Each month belongs to one season.', meta: { k: 'g1-cal-match' } };
       }],
       [2, 'fill', function () {
-        var yr = 2026, mo = R.int(0, 11), dn = R.int(0, 6), days = new Date(yr, mo + 1, 0).getDate(), count = 0;
+        var yr = YR, mo = R.int(0, 11), dn = R.int(0, 6), days = new Date(yr, mo + 1, 0).getDate(), count = 0;
         for (var d = 1; d <= days; d++) if (new Date(yr, mo, d).getDay() === dn) count++;
         return { q: 'Look at the calendar. Fill in the blanks.', type: 'fill', fig: calendar(yr, mo), fill: MONTHS[mo] + ' has [[]] days. [[]] of them are ' + DAYS[dn] + 's.', answers: [days, count],
           hint: 'The last number is how many days. Count down the ' + DAYS[dn] + ' column.', steps: ['The last day is ' + days + '.', 'Count the ' + DAYS[dn] + 's: ' + count + '.'],

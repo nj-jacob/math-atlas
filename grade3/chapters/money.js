@@ -1,6 +1,6 @@
 (function () {
   var A = Atlas, R = A.R;
-  /* Canadian coins and bills. Values in cents. No pennies: prices end in 0 or 5. */
+  /* Canadian coins and bills. Values in cents. No pennies: cash totals round to the nearest 5 cents. */
   var C = {
     5: { name: 'nickel', r: 23, lab: '5¢', fill: '#c9ced6', ring: '#8d949e' },
     10: { name: 'dime', r: 20, lab: '10¢', fill: '#d4d8de', ring: '#8d949e' },
@@ -87,7 +87,7 @@
   var LESSONS = [
     { id: 'coins', title: 'Coins and bills', sub: 'Canadian money, and how to count it.', concepts: [
       { id: 'names', title: 'Know your money', exp: ['F1.1'], skill: 'mn-count',
-        body: '<p>Canadian coins: <b>nickel</b> (5¢), <b>dime</b> (10¢), <b>quarter</b> (25¢), <b>loonie</b> ($1), <b>toonie</b> ($2). Bills: $5, $10, $20, $50, $100. 100 cents make 1 dollar. There are no pennies, so cash prices end in 0 or 5.</p>',
+        body: '<p>Canadian coins: <b>nickel</b> (5¢), <b>dime</b> (10¢), <b>quarter</b> (25¢), <b>loonie</b> ($1), <b>toonie</b> ($2). Bills: $5, $10, $20, $50, $100. 100 cents make 1 dollar. There are no pennies. When you pay with cash, the total is rounded to the nearest 5¢.</p>',
         watch: { tool: 'coins', opts: { set: [5, 10, 25, 100, 200] }, steps: [
           { say: 'A nickel is 5¢.', act: function (t) { return t.add(5); }, ms: 900 },
           { say: 'A dime is 10¢. It is smaller than a nickel, but worth more.', act: function (t) { return t.add(10); }, ms: 1300 },
@@ -236,7 +236,7 @@
         check: [TU('s4', 0), SK('mn-estimate', 1)] },
 
       { id: 'enough', title: 'Do I have enough?', exp: ['F1.1'], skill: 'mn-estimate', hard: true,
-        body: '<p>Before you pay, add the prices roughly. If they come to <b>less than what you have</b>, you have enough.</p>',
+        body: '<p>Before you pay, add the prices roughly. If they come to <b>less than or equal to what you have</b>, you have enough.</p>',
         watch: { mount: G3.view(haveView, { bill: 1000, say: 'You have $10' }), steps: [
           { say: 'You have $10. A puzzle is $4 and a ball is $5.', ms: 1600 },
           { say: 'Add: 4 + 5 = 9.', act: function (t) { return t.set({ say: '$4 + $5 = $9' }, 1500); } },
@@ -266,7 +266,7 @@
     lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Canadian coins and bills</h2>' +
-'<p>In Canada we use these coins: the <b>nickel</b> (5¢), <b>dime</b> (10¢), <b>quarter</b> (25¢), <b>loonie</b> ($1) and <b>toonie</b> ($2). 100 cents make 1 dollar. Bills come in $5, $10, $20, $50 and $100. Canada no longer uses pennies, so cash prices end in 0 or 5.</p>' +
+'<p>In Canada we use these coins: the <b>nickel</b> (5¢), <b>dime</b> (10¢), <b>quarter</b> (25¢), <b>loonie</b> ($1) and <b>toonie</b> ($2). 100 cents make 1 dollar. Bills come in $5, $10, $20, $50 and $100. Canada no longer uses pennies. When you pay with cash, the total is rounded to the nearest 5¢.</p>' +
 '<div class="fig">' + coins([5, 10, 25, 100, 200], 'A nickel, a dime, a quarter, a loonie and a toonie') + '</div>' +
 '<div class="fig">' + coins([500, 1000, 2000], 'A $5 bill, a $10 bill and a $20 bill') + '</div>' +
 '<div class="lab"><span class="lt">Try it: count the coins</span>' +

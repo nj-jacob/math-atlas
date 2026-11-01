@@ -2,6 +2,8 @@
   var A = Atlas, R = A.R, cl = A.clean, fr = A.fr, frs = A.frs, gcd = A.gcd, fmt = A.fmt;
   function dec(x) { return String(cl(x)); }
   function plain(n, d) { return frs(n, d, true); }
+  /* two events on the same kind of object: say which one is first and which is second */
+  function two(a, b) { var re = / on a (coin|die|4-colour spinner)$/, x = a.match(re), y = b.match(re); return x && y && x[1] === y[1] ? [a.replace(re, ' on the first $1'), b.replace(re, ' on the second $1')] : [a, b]; }
   /* examples of data, with their kind: 0 qualitative, 1 discrete, 2 continuous */
   var KINDS = [['favourite ice cream flavour', 0], ['eye colour', 0], ['province of birth', 0], ['type of pet', 0], ['number of books read this month', 1], ['number of goals in a game', 1], ['number of people in a family', 1], ['number of texts sent in a day', 1],
     ['height of each student', 2], ['time to run 1 km', 2], ['temperature at noon', 2], ['mass of a backpack', 2], ['amount of rain in a day', 2]];
@@ -467,7 +469,7 @@
           return { q: 'You get ' + A1[2] + ', and then ' + B1[2] + '. Are these events independent or dependent?', type: 'mc', options: ['Independent', 'Dependent'], answer: 0,
             hint: 'Does the first result change the chances for the second?', steps: ['The first event does not change the second at all.', 'So they are independent.'], explain: 'They do not affect each other, so they are independent.' };
         }
-        var N = A1[0] * B1[0], D = A1[1] * B1[1];
+        var N = A1[0] * B1[0], D = A1[1] * B1[1], tw = two(A1[2], B1[2]); A1 = [A1[0], A1[1], tw[0]]; B1 = [B1[0], B1[1], tw[1]];
         return { q: 'What is the probability of ' + A1[2] + ' <b>and</b> ' + B1[2] + '? Type a fraction.', type: 'num', answer: N / D, show: plain(N, D), kb: 'text', tol: 1e-6,
           hint: 'Independent events: multiply the two probabilities.', steps: ['P(' + A1[2] + ') = ' + fr(A1[0], A1[1]) + '.', 'P(' + B1[2] + ') = ' + fr(B1[0], B1[1]) + '.', 'Multiply: ' + fr(N, D) + (gcd(N, D) > 1 ? ' = ' + frs(N, D) : '') + '.'],
           explain: fr(A1[0], A1[1]) + ' &times; ' + fr(B1[0], B1[1]) + ' = ' + frs(N, D) + '.' };
@@ -603,7 +605,8 @@
     ],
     'dp-indep': [
       [1, 'fill', function () {
-        var A1 = R.pick([[1, 2, 'heads on a coin'], [1, 6, 'a 4 on a die'], [1, 4, 'red on a 4-colour spinner']]), B1 = R.pick([[1, 6, 'a 5 on a die'], [1, 2, 'tails on a coin'], [1, 4, 'green on a 4-colour spinner']]);
+        var A1 = R.pick([[1, 2, 'heads on a coin'], [1, 6, 'a 4 on a die'], [1, 4, 'red on a 4-colour spinner']]), B1 = R.pick([[1, 6, 'a 5 on a die'], [1, 2, 'tails on a coin'], [1, 4, 'green on a 4-colour spinner']]), tw = two(A1[2], B1[2]);
+        A1 = [A1[0], A1[1], tw[0]]; B1 = [B1[0], B1[1], tw[1]];
         return { q: 'P(' + A1[2] + ' and ' + B1[2] + '). Multiply the probabilities.', type: 'fill', fill: '<span class="math">' + fr(A1[0], A1[1]) + ' &times; ' + fr(B1[0], B1[1]) + ' = </span>[[]] <span class="math">/</span> [[]]', answers: [A1[0] * B1[0], A1[1] * B1[1]],
           hint: 'Independent events: multiply. Tops times tops, bottoms times bottoms.', steps: [fr(A1[0], A1[1]) + ' &times; ' + fr(B1[0], B1[1]) + ' = ' + fr(A1[0] * B1[0], A1[1] * B1[1]) + '.'],
           explain: 'P = ' + fr(A1[0] * B1[0], A1[1] * B1[1]) + '.', meta: { k: 'dp-and-fill', a: A1[2], b: B1[2] } };

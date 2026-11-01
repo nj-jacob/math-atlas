@@ -156,7 +156,7 @@
 
   var LESSONS = [
     { id: 'below', title: 'Numbers below zero', sub: 'Integers and their opposites.', concepts: [
-      { id: 'zero', title: 'Below zero', exp: ['B1.2'], skill: 'in-compare',
+      { id: 'zero', title: 'Below zero', exp: ['B1.3'], skill: 'in-compare',
         body: '<p><b>Integers</b> are the whole numbers, their opposites, and zero: ..., &minus;3, &minus;2, &minus;1, 0, 1, 2, 3, ... Negative numbers are <b>below zero</b>.</p>',
         watch: K.slides([
           { say: 'On a spring day it is 12&deg;C: 12 degrees above zero.', fig: function () { return thermo(12); } },
@@ -178,7 +178,7 @@
         key: '<p><b>Negative means below zero.</b> The minus sign tells you which side of zero.</p>',
         mistake: '<p>Reading &minus;12 as "12" and ignoring the sign. Ask: above or below zero?</p>',
         check: [function () { var t = R.int(3, 25); return mc('Which temperature is ' + t + ' degrees below zero?', '&minus;' + t + '&deg;C', [t + '&deg;C', '&minus;' + (t + 10) + '&deg;C', '0&deg;C'], 'Below zero means negative.', t + ' degrees below zero is &minus;' + t + '&deg;C.'); }, K.ck('in-compare', 1)] },
-      { id: 'opposite', title: 'Opposites', exp: ['B1.2'], skill: 'in-compare',
+      { id: 'opposite', title: 'Opposites', exp: ['B1.3'], skill: 'in-compare',
         body: '<p>Two numbers the <b>same distance from zero</b>, on opposite sides, are <b>opposites</b>. The opposite of 7 is &minus;7. A number and its opposite add to 0.</p>',
         watch: { tool: 'numberline', opts: { min: -10, max: 10, start: 0, tap: false }, steps: [
           { say: 'Start at zero.', act: null, ms: 1000 },
@@ -222,7 +222,7 @@
         key: '<p><b>Further right is greater.</b> For negatives, the one closer to zero is greater.</p>',
         mistake: '<p>Comparing the sizes without the signs: saying &minus;8 &gt; &minus;3 because 8 &gt; 3. Always picture the line.</p>',
         check: [function () { return mc('The temperature is &minus;6&deg;C. Which temperature is colder?', '&minus;9&deg;C', ['&minus;2&deg;C', '0&deg;C', '3&deg;C'], 'Colder means further below zero.', '&minus;9 is further left on the line than &minus;6.'); }, K.ck('in-compare', 1), K.ck('in-compare', 2)] },
-      { id: 'rational', title: 'Negative fractions and decimals', exp: ['B1.2', 'B1.3'], skill: 'in-compare', hard: true,
+      { id: 'rational', title: 'Negative fractions and decimals', exp: ['B1.3'], skill: 'in-compare', hard: true,
         body: '<p>Fractions and decimals can be negative too. &minus;2.5 is halfway between &minus;3 and &minus;2. All of these are <b>rational numbers</b>.</p>',
         watch: K.slides([
           { say: '&minus;2.5 is halfway between &minus;3 and &minus;2.', fig: function () { return iline(-4, 2, [{ v: -2.5, lab: '&minus;2.5', col: 'var(--sb)' }]); } },
@@ -468,10 +468,10 @@
             steps: ['Start: ' + sg(bal) + '.', 'Spend $' + sp + ': ' + sg(bal) + ' &minus; ' + sp + ' = ' + sg(bal - sp) + '.', dep ? 'Earn $' + dep + ': ' + sg(bal - sp) + ' + ' + dep + ' = ' + sg(end) + '.' : 'Balance: ' + sg(end) + '.'],
             explain: 'The balance is ' + (end < 0 ? '&minus;$' + (-end) + ', so he owes $' + (-end) : '$' + end) + '.' };
         }
-        var d1 = -R.int(5, 40), up = R.int(3, 30), dn = lv > 1 ? R.int(3, 25) : 0, e = d1 + up - dn;
-        return { q: 'A submarine is at ' + sg(d1) + ' m. It rises ' + up + ' m' + (dn ? ', then dives ' + dn + ' m' : '') + '. What is its depth now? (Below sea level is negative.)', type: 'num', answer: e, kb: 'text', unit: 'm',
+        var d1 = -R.int(5, 40), up = R.int(3, Math.min(30, -d1 - 1)), dn = lv > 1 ? R.int(3, 25) : 0, e = d1 + up - dn;
+        return { q: 'A submarine is at ' + sg(d1) + ' m. It rises ' + up + ' m' + (dn ? ', then dives ' + dn + ' m' : '') + '. What is its position now? (Below sea level is negative.)', type: 'num', answer: e, kb: 'text', unit: 'm',
           hint: 'Rising is adding. Diving is subtracting.',
-          steps: ['Start at ' + sg(d1) + '.', 'Rise ' + up + ': ' + sg(d1) + ' + ' + up + ' = ' + sg(d1 + up) + '.', dn ? 'Dive ' + dn + ': ' + sg(d1 + up) + ' &minus; ' + dn + ' = ' + sg(e) + '.' : 'Depth: ' + sg(e) + ' m.'],
+          steps: ['Start at ' + sg(d1) + '.', 'Rise ' + up + ': ' + sg(d1) + ' + ' + up + ' = ' + sg(d1 + up) + '.', dn ? 'Dive ' + dn + ': ' + sg(d1 + up) + ' &minus; ' + dn + ' = ' + sg(e) + '.' : 'Position: ' + sg(e) + ' m.'],
           explain: 'It is at ' + sg(e) + ' m.' };
       } },
       { id: 'in-pattern', name: 'Integer patterns', code: 'C1.4', gen: function (lv) {
@@ -585,7 +585,7 @@
           explain: right + ' = ' + sg(up ? s + c : s - c) + '&deg;C.', meta: { k: 'in-word-which', s: s, c: c, up: up } };
       }],
       [1, 'line', function () {
-        var who = K.name(), d = -R.int(5, 18), up = R.int(2, Math.min(12, -d + 4));
+        var who = K.name(), d = -R.int(5, 18), up = R.int(2, Math.min(12, -d - 1));
         return { q: who + ' is scuba diving at <b>' + sg(d) + ' m</b> (below sea level). ' + who + ' swims up <b>' + up + ' m</b>. Place ' + who + '\'s new depth on the line.', type: 'line', min: -20, max: 5, tick: 1, every: 5, snap: 1, answer: d + up,
           hint: 'Sea level is 0. Going up moves right on this line.', steps: [sg(d) + ' + ' + up + ' = ' + sg(d + up) + '.'],
           explain: who + ' is now at ' + sg(d + up) + ' m.', meta: { k: 'in-word-line', d: d, up: up } };

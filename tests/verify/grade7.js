@@ -88,7 +88,7 @@
   set('in-sub-story', (q, m) => { let n = 0; for (let t = m.lo; t < m.hi; t++) n++; return n === q.answer ? '' : 'difference'; });
   set('in-sub-tf', (q, m) => tf(q, m.said === m.a - m.b));
   set('in-word-which', (q, m) => { const t = H.strip(q.options[q.answer]).replace(/[−–]/g, '-'), g = t.match(/^(-?\d+) ([+-]) (\d+)$/); return g && +g[1] === m.s && +g[3] === m.c && (g[2] === '+') === !!m.up ? '' : 'number sentence'; });
-  set('in-word-line', (q, m) => (q.answer === m.d + m.up ? '' : 'depth'));
+  set('in-word-line', (q, m) => (m.d + m.up >= 0 ? 'the diver would be out of the water' : q.answer === m.d + m.up ? '' : 'depth'));
   set('in-word-tf', (q, m) => tf(q, m.said === m.bal + m.dep));
   set('in-pat-fill', (q, m) => { const d = m.t[1] - m.t[0]; return m.t.every((x, i) => !i || x - m.t[i - 1] === d) && q.answers[0] === m.t[3] + d && q.answers[1] === m.t[3] + 2 * d ? '' : 'next terms'; });
   set('in-pat-tap', (q, m) => { const fits = b => { const k = [0, 1, 2, 3, 4].filter(i => i !== b), d = (m.t[k[k.length - 1]] - m.t[k[0]]) / (k[k.length - 1] - k[0]); return k.every(i => m.t[i] === m.t[k[0]] + (i - k[0]) * d); }; const c = [0, 1, 2, 3, 4].filter(fits); return c.length === 1 && c[0] === q.answer ? '' : 'odd one out'; });
@@ -143,7 +143,7 @@
   const KN = ['qualitative', 'discrete', 'continuous'];
   const med = d => { const s = d.slice().sort((a, b) => a - b), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; };
   const tot = d => d.reduce((a, b) => a + b, 0);
-  const prob = t => (/coin/.test(t) ? 1 / 2 : /on a die/.test(t) ? 1 / 6 : /4-colour spinner/.test(t) ? 1 / 4 : /3 red and 7 blue/.test(t) ? 3 / 10 : NaN);
+  const prob = t => (/coin/.test(t) ? 1 / 2 : /\bdie\b/.test(t) ? 1 / 6 : /4-colour spinner/.test(t) ? 1 / 4 : /3 red and 7 blue/.test(t) ? 3 / 10 : NaN);
   const frv = h => { const d = document.createElement('div'); d.innerHTML = h; const f = d.querySelector('.fr'); return f ? +f.children[0].textContent / +f.children[1].textContent : NaN; };
   set('dp-type-match', q => (q.pairs.every(p => kindOf(p[0]) === p[1]) ? '' : 'pairs'));
   set('dp-type-pick', (q, m) => (same(picked(q.options, t => kindOf(t) === KN[m.kind]), q.answer) ? '' : 'picks'));

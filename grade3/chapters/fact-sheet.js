@@ -47,7 +47,8 @@
 '<section class="sec"><h2><span class="n">5</span>3D objects and directions</h2>' +
 '<div class="tbl"><table><thead><tr><th class="l">Object</th><th>Faces</th><th>Edges</th><th>Vertices</th></tr></thead><tbody>' +
 '<tr><td class="l">cube</td><td>6</td><td>12</td><td>8</td></tr><tr><td class="l">rectangular prism</td><td>6</td><td>12</td><td>8</td></tr><tr><td class="l">triangular prism</td><td>5</td><td>9</td><td>6</td></tr>' +
-'<tr><td class="l">square-based pyramid</td><td>5</td><td>8</td><td>5</td></tr><tr><td class="l">triangular pyramid</td><td>4</td><td>6</td><td>4</td></tr><tr><td class="l">cylinder</td><td>2</td><td>2</td><td>0</td></tr><tr><td class="l">cone</td><td>1</td><td>1</td><td>1</td></tr></tbody></table></div>' +
+'<tr><td class="l">square-based pyramid</td><td>5</td><td>8</td><td>5</td></tr><tr><td class="l">triangular pyramid</td><td>4</td><td>6</td><td>4</td></tr></tbody></table></div>' +
+'<p>Curved objects: a <b>cylinder</b> has 2 flat faces (circles) and 1 curved surface. A <b>cone</b> has 1 flat face (a circle), 1 curved surface and 1 point.</p>' +
 '<div class="fig">' + compass() + '</div>' +
 '<p>A quarter turn right from north faces east. A half turn faces the opposite way. Four quarter turns make a full turn.</p>' +
 '</section>' +

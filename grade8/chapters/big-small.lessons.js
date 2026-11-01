@@ -107,7 +107,7 @@
           [T(['4.73 × 10 000 000', '= 47 300 000 ✓']), 'I check by writing it back out. <b>Big number: count the hops left. Positive power.</b>', 2600]
         ]),
         key: '<p>Big number: <b>count the hops left</b> → positive power.</p>',
-        mistake: '<p>Counting the zeros only (4) instead of the hops (6).</p>',
+        mistake: '<p>Counting the zeros only (5) instead of the hops (6).</p>',
         check: [K.chk(C, 'bs-sci-big', 1), K.chk(C, 'bs-sci-big', 2)] },
       { id: 'small', title: 'Small numbers', exp: ['B1.1'], skill: 'bs-sci-small', hard: true,
         body: '<p>For a number less than 1, hop the point <b>right</b> to just after the first non-zero digit. The power is negative.</p>',
@@ -142,7 +142,7 @@
           [T(['2.5 × 1000 = 2500 g']), 'One step is 1000, so 2.5 × 1000 = 2500 g.'],
           [T(['2500 ÷ 1000 = 2.5 kg ✓']), 'I check by going back up: 2500 ÷ 1000 = 2.5 kg. <b>Smaller unit: multiply. Bigger unit: divide.</b>', 2600]
         ]),
-        try: K.reuse(C, 2, { tasks: [{ do: 'Change it to convert <b>4 kilo</b> into <b>milli</b>.', goal: function (g) { return g('pcf') === 3 && g('pct') === -3 && String(g('pcv')).replace(/\s/g, '') === '4'; }, yes: 'Kilo to milli is 6 steps down, so 4 kilo = 4 000 000 milli (times 10⁶).' }] }),
+        try: K.reuse(C, 2, { tasks: [{ do: 'Change it to convert <b>4 kilo</b> into <b>milli</b>.', goal: function (g) { return g('pcf') === 3 && g('pct') === -3 && String(g('pcv')).replace(/\s/g, '') === '4'; }, yes: 'Kilo to milli is 2 steps down (10⁶), so 4 kilo = 4 000 000 milli.' }] }),
         ways: [{ label: 'Smaller unit, more of them', html: '<p>A kilometre is long, so you need only a few. A millimetre is tiny, so you need lots. Smaller unit → bigger number.</p>' }],
         key: '<p>Smaller unit → <b>multiply</b>. Bigger unit → <b>divide</b>.</p>',
         mistake: '<p>Multiplying when going to a bigger unit. Ask: "Should the number of units go up or down?"</p>',

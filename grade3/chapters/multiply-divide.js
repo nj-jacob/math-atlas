@@ -215,22 +215,22 @@
 
     { id: 'facts', title: 'Facts of 2, 5 and 10', sub: 'Skip count to learn them by heart.', concepts: [
       { id: 'skip', title: 'Skip count to multiply', exp: ['B2.2'], skill: 'md-facts',
-        body: '<p>To find <span class="math">5 &times; 7</span>, count by 5s seven times: 5, 10, 15, 20, 25, 30, 35.</p>',
+        body: '<p><span class="math">5 &times; 7 = 7 &times; 5</span>, so count by 5s seven times: 5, 10, 15, 20, 25, 30, 35.</p>',
         watch: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0 }, steps: [
-          { say: '5 &times; 7: start at 0 and jump by 5, seven times.', ms: 1300 },
+          { say: '5 &times; 7 is the same as 7 &times; 5. Start at 0 and jump by 5, seven times.', ms: 1600 },
           { say: '5, 10, 15, 20, 25, 30, 35.', act: function (t) { return t.jumps(5, 7, 280); } },
           { say: '7 jumps of 5 land on <b>35</b>. So 5 &times; 7 = 35.', act: function (t) { return t.mark(35, '35'); }, ms: 2000 }
         ] },
         example: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0 }, steps: [
-          { say: 'My turn. 4 &times; 6: I start at 0 and jump by 4, six times.', ms: 1400 },
+          { say: 'My turn. 4 &times; 6 is the same as 6 &times; 4. I start at 0 and jump by 4, six times.', ms: 1700 },
           { say: '4, 8, 12, 16, 20, 24.', act: function (t) { return t.jumps(4, 6, 300); } },
           { say: '6 jumps of 4 land on <b>24</b>. So 4 &times; 6 = 24.', act: function (t) { return t.mark(24, '24'); }, ms: 2000 }
         ] },
         try: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 10, start: 0, step: [2, 5, 10] }, tasks: [
-          { do: 'Find <b>2 &times; 8</b>: jump by 2, eight times.', goal: function (s) { return s.at === 16; }, yes: '8 jumps of 2: 16.' },
-          { do: 'Now find <b>10 &times; 6</b>. Start again from 0.', goal: function (s) { return s.at === 60; }, yes: '6 jumps of 10: 60.' }
+          { do: 'Find <b>2 &times; 8</b>. It is the same as 8 &times; 2: jump by 2, eight times.', goal: function (s) { return s.at === 16; }, yes: '8 jumps of 2: 16.' },
+          { do: 'Now find <b>10 &times; 6</b>. Start again from 0.', goal: function (s) { return s.at === 60; }, yes: '6 jumps of 10: 6 &times; 10 = 10 &times; 6 = 60.' }
         ] },
-        key: '<p>Count by the number, <b>that many times</b>.</p>',
+        key: '<p>Turn it around if it helps. Count by one number, <b>the other number of times</b>.</p>',
         check: [TU('s3', 0), TU('s3', 1), SK('md-facts', 1)] },
 
       { id: 'patterns', title: 'Patterns in the facts', exp: ['B2.2'], skill: 'md-facts',
@@ -257,12 +257,12 @@
         watch: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
           { say: '5 &times; ___ = 30. Count by 5s to 30.', ms: 1300 },
           { say: '5, 10, 15, 20, 25, 30.', act: function (t) { return t.jumps(5, 6, 300); } },
-          { say: 'That was 6 jumps. <b>5 &times; 6 = 30</b>.', ms: 2000 }
+          { say: 'That was 6 jumps of 5: 6 &times; 5 = 30. Turn it around: <b>5 &times; 6 = 30</b>.', ms: 2200 }
         ] },
         example: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
           { say: 'My turn. 4 &times; ___ = 32. I count by 4s to 32.', ms: 1400 },
           { say: '4, 8, 12, 16, 20, 24, 28, 32.', act: function (t) { return t.jumps(4, 8, 280); } },
-          { say: 'I count my jumps: 8. <b>4 &times; 8 = 32</b>. The number of jumps was the missing number.', ms: 2200 }
+          { say: 'I count my jumps: 8 jumps of 4. 8 &times; 4 = 4 &times; 8, so <b>4 &times; 8 = 32</b>.', ms: 2200 }
         ] },
         ways: [
           { label: 'Use the chart', html: '<p>Read across the row of 5s until you find 30. It is under the 6.</p><div class="tbl"><table><thead><tr><th>&times;</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<th>' + i + '</th>'; }).join('') + '</tr></thead><tbody><tr><th>5</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<td' + (i === 6 ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : '') + '>' + 5 * i + '</td>'; }).join('') + '</tr></tbody></table></div>' },
@@ -467,7 +467,7 @@
 '<div class="tbl"><table><thead><tr><th>&times;</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr></thead><tbody>' +
 [2, 5, 10].map(function (k) { var r = '<tr><th>' + k + '</th>'; for (var i = 1; i <= 10; i++) r += '<td>' + k * i + '</td>'; return r + '</tr>'; }).join('') + '</tbody></table></div>' +
 '<div class="key"><b class="t">Key idea</b><p>Facts of 2 are all even. Facts of 5 end in 5 or 0. Facts of 10 end in 0.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>Find 5 &times; 7. Count by 5s seven times: 5, 10, 15, 20, 25, 30, 35. <b>5 &times; 7 = 35</b>.</p></div>' +
+'<div class="eg"><b class="t">Watch first</b><p>Find 5 &times; 7. It is the same as 7 &times; 5, so count by 5s seven times: 5, 10, 15, 20, 25, 30, 35. <b>5 &times; 7 = 35</b>.</p></div>' +
 '<div class="yt" data-yt="s3"></div>' +
 '</section>' +
 
@@ -616,12 +616,12 @@
         var a = first ? k : n, b = first ? n : k, list = []; for (var i = 1; i <= n; i++) list.push(k * i);
         if (lv === 3) {
           return { q: 'Find the missing number: <span class="math">' + a + ' &times; ___ = ' + a * b + '</span>', type: 'num', answer: b,
-            hint: 'Count by ' + a + 's until you reach ' + a * b + '. How many jumps?', steps: ['Count by ' + a + 's: ' + (function () { var l = []; for (var j = 1; j <= b; j++) l.push(a * j); return l.join(', '); })() + '.', 'That is ' + b + ' jumps.', a + ' &times; ' + b + ' = ' + a * b + ', so the missing number is ' + b + '.'],
+            hint: 'Count by ' + a + 's until you reach ' + a * b + '. How many jumps?', steps: ['Count by ' + a + 's: ' + (function () { var l = []; for (var j = 1; j <= b; j++) l.push(a * j); return l.join(', '); })() + '.', 'That is ' + b + ' jumps of ' + a + ': ' + b + ' &times; ' + a + ' = ' + a * b + '.', 'Turn it around: ' + a + ' &times; ' + b + ' = ' + a * b + ', so the missing number is ' + b + '.'],
             explain: a + ' &times; ' + b + ' = ' + a * b + '.' };
         }
         return { q: 'What is <span class="math">' + a + ' &times; ' + b + '</span>?', type: 'num', answer: a * b,
           hint: 'Skip count by ' + k + ', ' + n + ' time' + (n > 1 ? 's' : '') + '.',
-          steps: ['This is a fact of ' + k + '.', 'Count by ' + k + 's ' + n + ' time' + (n > 1 ? 's' : '') + ': ' + list.join(', ') + '.', a + ' &times; ' + b + ' = ' + a * b + '.'],
+          steps: ['This is a fact of ' + k + '.' + (a === k && a !== b ? ' ' + a + ' &times; ' + b + ' = ' + b + ' &times; ' + a + '.' : ''), 'Count by ' + k + 's ' + n + ' time' + (n > 1 ? 's' : '') + ': ' + list.join(', ') + '.', a + ' &times; ' + b + ' = ' + a * b + '.'],
           explain: a + ' &times; ' + b + ' = ' + a * b + '.' };
       } },
       { id: 'md-array', name: 'Arrays', code: 'B2.6', gen: function (lv) {

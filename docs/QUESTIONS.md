@@ -53,7 +53,7 @@ Each skill keeps its first way of asking as `plain`. Don't copy this loop into a
 
 `grade3/chapters/numbers-1000.js` is the worked example.
 
-Grade kits may add small helpers for writing shapes, such as `G6.why(right, wrong)` in `grade6/assets/g6lessons.js`, which builds the "why" choices for a `tf` question.
+Grade kits may add small helpers for writing shapes, such as `G6.why(right, wrong)` in `grade6/assets/g6lessons.js`, which builds the "why" choices for a `tf` question. In Grade 3, `G3.pl(n, 'vote')` gives "1 vote" or "3 votes" and `G3.an('apple')` gives "an apple" (`grade3/assets/g3kit.js`), so generated sentences stay grammatical.
 
 ## Answer checks (required)
 
