@@ -65,6 +65,7 @@ function route() {
   const h = location.hash;
   if (h.indexOf('#s/') === 0) return studentDetail(decodeURIComponent(h.slice(3)));
   if (h === '#add') return addStudent();
+  if (h === '#notes') return myNotes();
   return adultHome();
 }
 
@@ -274,6 +275,7 @@ async function adultHome() {
   }
   h += '<div id="kids"><p class="t2">Loading students…</p></div>' +
     '<p><a class="btn" href="#add">Add a student</a></p>' +
+    '<section class="sec" data-strand="C"><h2>My notes</h2><p id="rv-sum" class="t2">Loading…</p><p><a class="btn alt" href="#notes">See my notes</a></p></section>' +
     '<div class="note"><p><b>How sharing works.</b> The adult who adds a student can share them with another parent or a tutor by email. ' +
     'People you share with see the student here after they create an account with that email.</p>' +
     (me.role === 'tutor' ? '<p>To get a family\'s student on this page, give the parent this email: <b>' + esc(me.user.email) + '</b>.</p>' : '') + '</div></div>';
@@ -287,6 +289,11 @@ async function adultHome() {
       try { await sendEmailVerification(me.user); okMsg($('#verify .fb'), 'Sent. Check your inbox.'); } catch (e) { fail($('#verify .fb'), e); }
     });
   }
+  reviews().then((all) => {
+    const el = $('#rv-sum'), open = all.filter((r) => !r.done).length;
+    if (el) el.textContent = all.length ? open + ' to do, ' + (all.length - open) + ' done.' :
+      'In grown-up view, every lesson and question has a Note button. Notes you leave there are listed here.';
+  }).catch(() => { const el = $('#rv-sum'); if (el) el.textContent = 'Notes could not load.'; });
   const kids = await myStudents(), box = $('#kids');
   if (!box) return;
   if (!kids.length) {
@@ -301,6 +308,63 @@ async function adultHome() {
     const d = await loadKid(k.id), w = weekTotals(d.days), la = lastActive(d.prog), el = $('#k-' + CSS.escape(k.id) + ' .kstat');
     if (el) el.innerHTML = 'Last active: <b>' + when(la) + '</b><br>This week: <b>' + weekLine(w) + '</b>' + (w.n ? ', ' + pct(w.ok, w.n) + ' right on the first try' : '');
   }
+}
+
+/* ---------- My notes: review notes left with the Note button on grade pages (review.js) ---------- */
+async function reviews() {
+  const snap = await getDocs(query(collection(db, 'users', me.user.uid, 'reviews'), orderBy('at', 'desc')));
+  return snap.docs.map((d) => Object.assign({ id: d.id }, d.data()));
+}
+function notesText(list) {
+  return 'Atlas review notes, ' + today() + ' (' + list.length + ' to do)\n\n' + list.map((r, i) =>
+    (i + 1) + '. ' + r.text + '\n   Screen: ' + r.where + (r.q ? '\n   Question: ' + r.q : '') + '\n   Link: ' + location.origin + r.url).join('\n\n');
+}
+async function myNotes() {
+  let tab = 'todo', all = [];
+  app.innerHTML = '<div class="wrap"><p class="crumb"><a href="#">Back</a></p><header class="chead"><h1>My notes</h1>' +
+    '<p class="lede">Your notes on lessons and questions. Copy the list and send it to Claude, who fixes them in one go.</p></header>' +
+    '<section class="sec" data-strand="C"><div class="rv-tabs" role="group" aria-label="Show"><button type="button" class="btn alt sm" data-t="todo"></button><button type="button" class="btn alt sm" data-t="done"></button></div>' +
+    '<ul class="rvlist" id="rvlist"><li class="t2">Loading…</li></ul><p class="rv-act"><button type="button" class="btn" id="rv-copy">Copy notes to send</button></p><p class="fb" id="rv-fb" aria-live="polite"></p></section>' +
+    '<div class="note"><p><b>How to leave a note.</b> Turn on grown-up view on any grade page. Tap <b>Note</b> at the bottom of the screen and type what you would change. The note keeps the exact screen and question it came from.</p></div></div>';
+  function draw() {
+    const todo = all.filter((r) => !r.done), done = all.filter((r) => r.done), list = tab === 'todo' ? todo : done;
+    $$('.rv-tabs button').forEach((b) => {
+      b.textContent = (b.dataset.t === 'todo' ? 'To do' : 'Done') + ' (' + (b.dataset.t === 'todo' ? todo : done).length + ')';
+      b.setAttribute('aria-pressed', String(b.dataset.t === tab));
+    });
+    $('#rv-copy').hidden = tab !== 'todo' || !todo.length;
+    $('#rvlist').innerHTML = list.length ? list.map((r) =>
+      '<li data-id="' + esc(r.id) + '"' + (r.done ? ' class="done"' : '') + '><p class="rv-text">' + esc(r.text) + '</p>' +
+      '<p class="rv-where">' + esc(r.where) + (r.q ? '<br><span>Question: ' + esc(r.q) + '</span>' : '') + '<br>' + when(r.at) + '</p>' +
+      '<p class="rv-act"><a class="btn alt sm" href="' + esc(r.url) + '">Open screen</a>' +
+      '<button type="button" class="btn alt sm rv-done">' + (r.done ? 'Not done' : 'Mark done') + '</button>' +
+      '<button type="button" class="btn alt sm rv-del">Delete</button></p></li>').join('') :
+      '<li class="t2">' + (tab === 'todo' ? 'Nothing to do. Notes you leave with the Note button show here.' : 'No finished notes yet.') + '</li>';
+  }
+  $$('.rv-tabs button').forEach((b) => b.addEventListener('click', () => { tab = b.dataset.t; draw(); }));
+  $('#rvlist').addEventListener('click', async (e) => {
+    const li = e.target.closest('li[data-id]'), r = li && all.find((x) => x.id === li.dataset.id);
+    if (!r) return;
+    const ref = doc(db, 'users', me.user.uid, 'reviews', r.id);
+    try {
+      if (e.target.closest('.rv-done')) {
+        await updateDoc(ref, { done: !r.done, doneAt: r.done ? null : serverTimestamp() });
+        r.done = !r.done;
+      } else if (e.target.closest('.rv-del')) {
+        if (!confirm('Delete this note?')) return;
+        await deleteDoc(ref);
+        all = all.filter((x) => x !== r);
+      } else return;
+      draw();
+    } catch (er) { fail($('#rv-fb'), er); }
+  });
+  $('#rv-copy').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(notesText(all.filter((r) => !r.done)));
+      okMsg($('#rv-fb'), 'Copied. Paste it into your chat with Claude.');
+    } catch (er) { fail($('#rv-fb'), 'Could not copy here. Select the notes above and copy them instead.'); }
+  });
+  try { all = await reviews(); draw(); } catch (er) { fail($('#rv-fb'), er); $('#rvlist').innerHTML = ''; }
 }
 
 async function addStudent() {

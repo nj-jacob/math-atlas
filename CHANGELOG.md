@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-01
+- Review notes for grown-ups: in grown-up view, every grade page has a **Note** button. A parent or tutor types a tweak and the note saves to their account with the exact screen and question. **My notes** on the parent page lists them (to do and done), with a button to copy them all to send to Claude. Students never see the button or the notes.
+
 ## 2026-10-31
 - One app: Math and Language are now one site, **Atlas**. The home page shows Math and Language side by side (for parents, each child's card shows both subjects). The Curriculum page has a Math / Language switch, and Language grades and chapters appear there as they are published. The parent page shows Language progress too. Language pages are published under /language/ from the language-atlas repository (one-time setup in SETUP.md).
 - Home page: the curriculum now has its own page under the "Curriculum" tab in the top bar, with each grade opening to its chapters. The home page shows only the plan (for parents and tutors: their children). Every "All grades" link goes to the Curriculum page. On a phone the top bar keeps both tabs.

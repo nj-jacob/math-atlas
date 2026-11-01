@@ -1,6 +1,7 @@
 rules_version = '2';
 // Math Atlas family accounts.
 // users/{uid}            one per login: role is parent, tutor or student
+// users/{uid}/reviews/{id}         a parent's or tutor's own review notes about a screen (only they can see them)
 // students/{sid}         one per child: who may see them, and practice a tutor or parent suggests
 // students/{sid}/progress/{site}   saved progress for one grade site (g5, g3)
 // students/{sid}/days/{id}         daily totals, for the activity chart
@@ -30,6 +31,23 @@ service cloud.firestore {
       allow update: if signedIn() && request.auth.uid == uid
         && request.resource.data.role == resource.data.role
         && request.resource.data.name is string && request.resource.data.name.size() <= 60;
+
+      // Review notes: "this picture is too small". Only the grown-up who wrote them reads them; students cannot write any.
+      match /reviews/{rid} {
+        function grownUp() {
+          return get(/databases/$(database)/documents/users/$(uid)).data.role in ['parent', 'tutor'];
+        }
+        function shapeOk(d) {
+          return d.keys().hasOnly(['text', 'where', 'q', 'url', 'site', 'at', 'done', 'doneAt'])
+            && d.text is string && d.text.size() > 0 && d.text.size() <= 1000
+            && d.where is string && d.where.size() <= 300 && d.q is string && d.q.size() <= 300
+            && d.url is string && d.url.size() <= 300 && d.site is string && d.site.size() <= 20 && d.done is bool;
+        }
+        allow read, delete: if signedIn() && request.auth.uid == uid;
+        allow create: if signedIn() && request.auth.uid == uid && grownUp() && shapeOk(request.resource.data);
+        allow update: if signedIn() && request.auth.uid == uid && shapeOk(request.resource.data)
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['done', 'doneAt']);
+      }
     }
 
     match /students/{sid} {
