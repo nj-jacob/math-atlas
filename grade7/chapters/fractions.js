@@ -649,7 +649,7 @@
         var o3 = R.mc(ans, wrong);
         return { q: 'Which fraction is between ' + fr(p[0], p[1]) + ' and ' + fr(q[0], q[1]) + '?', type: 'mc', options: o3.options, answer: o3.answer,
           hint: 'Rewrite both with the denominator ' + z.D + '.',
-          steps: ['Rewrite with the denominator ' + z.D + ': ' + fr(z.lo, z.D) + ' and ' + fr(z.hi, z.D) + '.', 'Any top from ' + (z.lo + 1) + ' to ' + (z.hi - 1) + ' fits.<div class="fig">' + z.svg + '</div>', ans + ' = ' + fr(pick, z.D) + ' is between them.'],
+          steps: ['Rewrite with the denominator ' + z.D + ': ' + fr(z.lo, z.D) + ' and ' + fr(z.hi, z.D) + '.', (z.hi - z.lo === 2 ? (z.lo + 1) + ' is the only top that fits.' : 'Any top from ' + (z.lo + 1) + ' to ' + (z.hi - 1) + ' fits.') + '<div class="fig">' + z.svg + '</div>', ans + ' = ' + fr(pick, z.D) + ' is between them.'],
           explain: fr(z.lo, z.D) + ' &lt; ' + fr(pick, z.D) + ' &lt; ' + fr(z.hi, z.D) + '.' };
       } },
       { id: 'fr-add', name: 'Add fractions', code: 'B2.5', gen: function (lv) {
@@ -841,7 +841,7 @@
     'fr-sub': [
       [1, 'which', function () {
         var who = K.name(), b, d, a, c;
-        do { b = R.pick([2, 3, 4, 6, 8]); d = R.pick([2, 3, 4, 6, 8]); a = R.int(1, b - 1); c = R.int(1, d - 1); } while (a / b <= c / d);
+        do { b = R.pick([2, 3, 4, 6, 8]); d = R.pick([2, 3, 4, 6, 8]); a = R.int(1, b - 1); c = R.int(1, d - 1); } while (a / b <= c / d || a / b + c / d > 1);
         var st = R.pick([
           ['sub', who + ' had ' + fr(a, b) + ' of a tank of gas, then used ' + fr(c, d) + ' of a tank. How much is left?'],
           ['add', who + ' painted ' + fr(a, b) + ' of a fence on Saturday and ' + fr(c, d) + ' of it on Sunday. How much is painted?'],

@@ -19,9 +19,10 @@
     s += '<text x="405" y="96" text-anchor="end" font-size="15" class="t2">cm</text>';
     return A.svg(430, 140, s, label || 'A ruler from 0 to 10 cm');
   }
-  /* the unit ladder: km, m, cm, mm */
-  function ladder() {
+  /* the unit ladder: km, m, cm, mm. up: smallest at the top instead */
+  function ladder(up) {
     var B = [['km', 'kilometre', 'var(--sd)'], ['m', 'metre', 'var(--sc)'], ['cm', 'centimetre', 'var(--sb)'], ['mm', 'millimetre', 'var(--se)']], L = ['1 km = 1000 m', '1 m = 100 cm', '1 cm = 10 mm'], s = '';
+    if (up) { B.reverse(); L = ['10 mm = 1 cm', '100 cm = 1 m', '1000 m = 1 km']; }
     B.forEach(function (b, i) {
       var y = 8 + i * 74;
       s += '<rect x="10" y="' + y + '" width="150" height="52" rx="12" style="fill:color-mix(in srgb,' + b[2] + ' 22%,var(--card));stroke:' + b[2] + '" stroke-width="3"/>';
@@ -30,7 +31,7 @@
       if (i < 3) s += '<path d="M85 ' + (y + 54) + ' v16" style="stroke:var(--ink)" stroke-width="2.5"/><polygon points="79,' + (y + 64) + ' 91,' + (y + 64) + ' 85,' + (y + 72) + '" style="fill:var(--ink)"/>' +
         '<text x="300" y="' + (y + 70) + '" text-anchor="middle" font-size="18" class="tb" style="fill:var(--strand)">' + L[i] + '</text>';
     });
-    return A.svg(400, 304, s, 'Units from biggest to smallest: kilometre, metre, centimetre, millimetre. 1 km = 1000 m. 1 m = 100 cm. 1 cm = 10 mm.');
+    return A.svg(400, 304, s, up ? 'Units from smallest to biggest: millimetre, centimetre, metre, kilometre. 10 mm = 1 cm. 100 cm = 1 m. 1000 m = 1 km.' : 'Units from biggest to smallest: kilometre, metre, centimetre, millimetre. 1 km = 1000 m. 1 m = 100 cm. 1 cm = 10 mm.');
   }
   /* a ribbon len cm long, measured with units u cm long (16 px per cm) */
   function ribbon(len, u, label) {
@@ -153,7 +154,7 @@
   }
 
   /* drawings for the Watch and My turn clips: each takes the clip's state */
-  function ladderView(s) { return '<div>' + ladder() + '<div class="tbl"><table><tbody>' + s.rows.slice(0, s.k).map(function (r) { return '<tr><td class="l"><b>' + r[0] + '</b></td><td class="l">' + r[1] + '</td></tr>'; }).join('') + '</tbody></table></div></div>'; }
+  function ladderView(s) { return '<div>' + ladder(true) + '<div class="tbl"><table><tbody>' + s.rows.slice(0, s.k).map(function (r) { return '<tr><td class="l"><b>' + r[0] + '</b></td><td class="l">' + r[1] + '</td></tr>'; }).join('') + '</tbody></table></div></div>'; }
   function rulerView(s) { return '<div>' + ruler(s.mm) + cap(s.say) + '</div>'; }
   function convView(s) { return '<div>' + ladder() + cap(s.say) + '</div>'; }
   function countView(s) { return '<div>' + ribbon(s.len, s.u) + cap(s.len / s.u + ' ' + UNITN[s.u]) + '</div>'; }
@@ -171,7 +172,7 @@
       { id: 'ladder', title: 'From small to big', exp: ['E2.2'], skill: 'la-unit',
         body: '<p>From smallest to biggest: <b>millimetre</b> (mm), <b>centimetre</b> (cm), <b>metre</b> (m), <b>kilometre</b> (km). Bigger units are for longer things.</p>',
         watch: { mount: G3.view(ladderView, { rows: [['1 mm', 'the thickness of a dime'], ['1 cm', 'the width of your smallest fingernail'], ['1 m', 'one big step, or the width of a door'], ['1 km', 'a 15-minute walk']], k: 0 }), steps: [
-          { say: 'Four units, from biggest at the top to smallest at the bottom.', ms: 1600 },
+          { say: 'Four units, from smallest at the top to biggest at the bottom.', ms: 1600 },
           { say: 'A millimetre is tiny: the thickness of a dime.', act: function (t) { return t.set({ k: 1 }, 1400); } },
           { say: 'A centimetre: the width of your smallest fingernail.', act: function (t) { return t.set({ k: 2 }, 1400); } },
           { say: 'A metre: one big step. A kilometre: a 15-minute walk.', act: function (t) { return t.set({ k: 4 }, 2000); } }
@@ -413,8 +414,8 @@
     lessons: LESSONS,
     html:
 '<section class="sec"><h2><span class="n">1</span>Units of length</h2>' +
-'<p>We measure length in <b>metric units</b>. From smallest to biggest they are the <b>millimetre</b> (mm), <b>centimetre</b> (cm), <b>metre</b> (m) and <b>kilometre</b> (km). Each step up is a bigger unit, so you need fewer of them.</p>' +
-'<div class="fig">' + ladder() + '</div>' +
+'<p>We measure length in <b>metric units</b>. From smallest to biggest they are the <b>millimetre</b> (mm), <b>centimetre</b> (cm), <b>metre</b> (m) and <b>kilometre</b> (km). Each unit is bigger than the one before it, so you need fewer of them.</p>' +
+'<div class="fig">' + ladder(true) + '</div>' +
 '<div class="tbl"><table><thead><tr><th>Unit</th><th>About as long as</th></tr></thead><tbody>' +
 '<tr><td class="l">1 mm</td><td class="l">the thickness of a dime</td></tr><tr><td class="l">1 cm</td><td class="l">the width of your smallest fingernail</td></tr>' +
 '<tr><td class="l">1 m</td><td class="l">one big step, or the width of a door</td></tr><tr><td class="l">1 km</td><td class="l">a 15-minute walk</td></tr></tbody></table></div>' +
@@ -694,7 +695,7 @@
     var UNITS = ['mm', 'cm', 'm', 'km'];
     function rowsOf(r, c) { var rows = []; for (var i = 0; i < r; i++) rows.push([0, c]); return rows; }
     function sumArr(v) { return v.reduce(function (a, b) { return a + b; }, 0); }
-    function boxRows(r, c) { return r === 1 ? 'a row of ' + c + ' squares' : r + ' rows of ' + c + ' squares'; }
+    function boxRows(r, c) { return (r === 1 ? 'a row of ' : r + ' rows of ') + G3.pl(c, 'square'); }
 
     var WAYS = {
       'la-convert': [

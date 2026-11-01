@@ -1,7 +1,8 @@
 (function () {
   var A = Atlas, R = A.R;
   function clamp(v, a, b) { v = parseInt(v, 10); if (isNaN(v)) v = a; return Math.max(a, Math.min(b, v)); }
-  /* solids: 3D points, edges (h = hidden), visible faces. Facts are for flat faces. */
+  /* solids: 3D points, edges (h = hidden), visible faces. Facts are for flat faces.
+     Curved objects are described in words (flat faces, curved surface, point): edges and vertices are counted only on objects with flat faces. */
   var S = {
     cube: { name: 'cube', f: 6, e: 12, v: 8, faces: '6 squares', pts: [[0, 0, 0], [110, 0, 0], [110, 110, 0], [0, 110, 0], [0, 0, 110], [110, 0, 110], [110, 110, 110], [0, 110, 110]],
       edges: [[0, 1], [1, 2], [2, 3], [3, 0], [1, 5], [2, 6], [3, 7], [5, 6], [6, 7], [0, 4, 1], [4, 5, 1], [4, 7, 1]], vis: [[0, 1, 2, 3], [3, 2, 6, 7], [1, 5, 6, 2]] },
@@ -13,10 +14,10 @@
       edges: [[0, 1], [1, 2], [0, 4], [1, 4], [2, 4], [2, 3, 1], [3, 0, 1], [3, 4, 1]], vis: [[0, 1, 4], [1, 2, 4]] },
     tpyr: { name: 'triangular pyramid', f: 4, e: 6, v: 4, faces: '4 triangles', pts: [[0, 0, 0], [160, 0, 0], [70, 0, 130], [75, 150, 40]],
       edges: [[0, 1], [1, 2], [0, 3], [1, 3], [2, 3], [0, 2, 1]], vis: [[0, 1, 3], [1, 2, 3]] },
-    cyl: { name: 'cylinder', f: 2, e: 2, v: 0, faces: '2 circles and 1 curved surface', round: 'cyl' },
-    cone: { name: 'cone', f: 1, e: 1, v: 1, faces: '1 circle and 1 curved surface', round: 'cone' }
+    cyl: { name: 'cylinder', f: 2, faces: '2 circles and 1 curved surface', words: '2 flat faces (circles), 1 curved surface and no point', round: 'cyl' },
+    cone: { name: 'cone', f: 1, faces: '1 circle, 1 curved surface and 1 point', words: '1 flat face (a circle), 1 curved surface and 1 point', round: 'cone' }
   };
-  var ORDER = ['cube', 'rprism', 'tprism', 'spyr', 'tpyr', 'cyl', 'cone'];
+  var ORDER = ['cube', 'rprism', 'tprism', 'spyr', 'tpyr', 'cyl', 'cone'], POLY = ORDER.filter(function (k) { return !S[k].round; });
   function P(p, ox, oy) { return [ox + p[0] + p[2] * 0.5, oy - p[1] - p[2] * 0.36]; }
   function solid(key, hl, ox, oy, label) {
     var d = typeof key === 'string' ? S[key] : key, s = '', col = 'var(--strand)';
@@ -24,6 +25,7 @@
     var faceFill = hl === 'f' ? 'color-mix(in srgb,var(--hi) 70%,var(--card))' : 'color-mix(in srgb,' + col + ' 20%,var(--card))';
     var lineCol = hl === 'e' ? 'var(--bad)' : 'var(--ink)', lw = hl === 'e' ? 5 : 3;
     if (d.round) {
+      lineCol = 'var(--ink)'; lw = 3;
       var rx = d.rx || 80, cx = ox + 90, ry = Math.round(rx * 0.33);
       if (d.round === 'cyl') {
         var top = oy - (d.ht || 150);
@@ -38,7 +40,6 @@
         s += '<path d="M' + (cx - rx) + ' ' + oy + ' A' + rx + ' ' + ry + ' 0 0 0 ' + (cx + rx) + ' ' + oy + '" style="fill:' + (hl === 'f' ? faceFill : 'none') + ';stroke:' + lineCol + '" stroke-width="' + lw + '"/>';
         s += '<path d="M' + (cx - rx) + ' ' + oy + ' A' + rx + ' ' + ry + ' 0 0 1 ' + (cx + rx) + ' ' + oy + '" fill="none" style="stroke:' + lineCol + '" stroke-width="2" stroke-dasharray="6 5"/>';
         s += '<line x1="' + (cx - rx) + '" y1="' + oy + '" x2="' + cx + '" y2="' + ap + '" style="stroke:var(--ink)" stroke-width="3"/><line x1="' + (cx + rx) + '" y1="' + oy + '" x2="' + cx + '" y2="' + ap + '" style="stroke:var(--ink)" stroke-width="3"/>';
-        if (hl === 'v') s += '<circle cx="' + cx + '" cy="' + ap + '" r="9" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>';
       }
       return A.svg(ox + 200, oy + 34, s, label || 'A ' + d.name);
     }
@@ -97,7 +98,9 @@
   function SK(id, lv) { return G3.skill(CH, id, lv); }
   function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
   var HLN = { f: 'faces', e: 'edges', v: 'vertices' };
-  function solidInfo(k) { var d = S[k]; return '<b>' + d.name.charAt(0).toUpperCase() + d.name.slice(1) + '</b>: ' + d.f + ' flat face' + (d.f === 1 ? '' : 's') + ', ' + d.e + ' edge' + (d.e === 1 ? '' : 's') + ', ' + d.v + ' vert' + (d.v === 1 ? 'ex' : 'ices') + '.'; }
+  /* what an object has, in words: counts for flat-faced objects, words for curved ones */
+  function facts(k) { var d = S[k]; return d.round ? d.words : G3.pl(d.f, 'flat face') + ', ' + G3.pl(d.e, 'edge') + ' and ' + G3.pl(d.v, 'vertex', 'vertices'); }
+  function solidInfo(k) { return '<b>' + S[k].name.charAt(0).toUpperCase() + S[k].name.slice(1) + '</b>: ' + facts(k) + '.'; }
   function boxPair(a, b, c, show) {
     var u = 18, s = box(3, 2, 4, 20, 150, 2, u) + '<text x="60" y="180" text-anchor="middle" font-size="18" class="tb">A: 3 by 2 by 4</text>' + box(a, b, c, 230, 150, 3, u) + '<text x="' + (230 + a * u / 2 + 10) + '" y="180" text-anchor="middle" font-size="18" class="tb">B: ' + a + ' by ' + b + ' by ' + c + '</text>';
     return A.svg(440, 190, s, 'Box A is 3 by 2 by 4 cubes. Box B is ' + a + ' by ' + b + ' by ' + c + ' cubes.');
@@ -126,7 +129,7 @@
   var LESSONS = [
     { id: 'solids', title: '3D objects', sub: 'Faces, edges and vertices.', concepts: [
       { id: 'parts', title: 'Faces, edges and vertices', exp: ['E1.1'], skill: 'sh-count',
-        body: '<p>A <b>face</b> is a flat surface. An <b>edge</b> is where two faces meet. A <b>vertex</b> is a corner where edges meet. Dashed lines are edges hidden at the back.</p>',
+        body: '<p>A <b>face</b> is a flat surface. An <b>edge</b> is where two faces meet. A <b>vertex</b> is a corner where edges meet. Dashed lines are edges hidden at the back. A cone or cylinder has a <b>curved surface</b>, so we describe it in words.</p>',
         watch: { mount: G3.view(solidView, { k: 'cube', hl: '', say: 'A cube' }), steps: [
           { say: 'This is a cube.', ms: 1200 },
           { say: 'The flat surfaces are <b>faces</b>. A cube has 6.', act: function (t) { return t.set({ hl: 'f', say: '6 faces' }, 1800); } },
@@ -144,7 +147,7 @@
           buttons: ['f', 'e', 'v'].map(function (h) { return { label: 'Show ' + HLN[h], act: function (s) { s.hl = s.hl === h ? '' : h; } }; }),
           info: function (s) { return solidInfo(s.k); },
           tasks: [{ do: 'Show the <b>vertices</b> of a <b>triangular prism</b>. How many?', goal: function (s) { return s.k === 'tprism' && s.hl === 'v'; }, yes: '6 vertices: 3 on each triangle end.' },
-            { do: 'Find the object with <b>no vertices</b>.', goal: function (s) { return s.k === 'cyl'; }, yes: 'A cylinder has no corners.' }] }), do: '' },
+            { do: 'Find an object with a <b>curved surface</b> and <b>no point</b>.', goal: function (s) { return s.k === 'cyl'; }, yes: 'A cylinder: 2 flat circles and 1 curved surface.' }] }), do: '' },
         key: '<p>Face: <b>flat</b>. Edge: <b>where faces meet</b>. Vertex: <b>corner</b>.</p>',
         check: [TU('s1', 0), TU('s1', 1), SK('sh-count', 1)] },
 
@@ -185,7 +188,7 @@
         ways: [
           { label: 'Use the ends', html: '<p>A triangular prism has 2 triangle ends. Each has 3 vertices: 3 + 3 = <b>6</b>. Each has 3 edges, plus 3 joining them: 3 + 3 + 3 = <b>9 edges</b>.</p><div class="fig">' + solid('tprism', 'v') + '</div>' },
           { label: 'Hold a real box', html: '<p>Hold a cereal box. Put a finger on each corner as you count. Then run a finger along each edge.</p>' },
-          { label: 'Use the table', html: '<div class="tbl"><table><thead><tr><th class="l">Object</th><th>F</th><th>E</th><th>V</th></tr></thead><tbody>' + ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' + S[k].f + '</td><td>' + S[k].e + '</td><td>' + S[k].v + '</td></tr>'; }).join('') + '</tbody></table></div>' }
+          { label: 'Use the table', html: '<div class="tbl"><table><thead><tr><th class="l">Object</th><th>F</th><th>E</th><th>V</th></tr></thead><tbody>' + POLY.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' + S[k].f + '</td><td>' + S[k].e + '</td><td>' + S[k].v + '</td></tr>'; }).join('') + '</tbody></table></div>' }
         ],
         key: '<p>Count <b>in order</b>: top, bottom, then up.</p>',
         mistake: '<p>Forgetting the hidden (dashed) edges and vertices at the back. Point out the dashed lines every time.</p>',
@@ -219,7 +222,7 @@
         watch: { mount: G3.view(solidView, { hl: '', k: 'cyl', say: 'A can of soup' }), steps: [
           { say: 'A can of soup is a cylinder.', ms: 1600 },
           { say: 'A tent is a triangular prism.', act: function (t) { return t.set({ k: 'tprism', say: 'A tent' }, 1600); } },
-          { say: 'A traffic cone is a cone. A dice is a cube.', act: function (t) { return t.set({ k: 'cone', say: 'A traffic cone' }, 1400).then(function () { return t.set({ k: 'cube', say: 'A dice' }, 1600); }); } }
+          { say: 'A traffic cone is a cone. A number cube is a cube.', act: function (t) { return t.set({ k: 'cone', say: 'A traffic cone' }, 1400).then(function () { return t.set({ k: 'cube', say: 'A number cube' }, 1600); }); } }
         ] },
         example: { mount: G3.view(solidView, { k: 'rprism', hl: '', say: 'A cereal box' }), steps: [
           { say: 'My turn. A cereal box is a rectangular prism. Its faces are 6 rectangles.', ms: 1900 },
@@ -337,7 +340,8 @@
 '<div class="btnrow"><button type="button" class="btn alt" data-hl="f" aria-pressed="false">Show faces</button><button type="button" class="btn alt" data-hl="e" aria-pressed="false">Show edges</button><button type="button" class="btn alt" data-hl="v" aria-pressed="false">Show vertices</button></div>' +
 '<div class="fig" id="sofig"></div><div class="out" id="soout" aria-live="polite"></div></div>' +
 '<div class="tbl"><table><thead><tr><th class="l">Object</th><th>Faces</th><th>Edges</th><th>Vertices</th></tr></thead><tbody>' +
-ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' + S[k].f + '</td><td>' + S[k].e + '</td><td>' + S[k].v + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+POLY.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' + S[k].f + '</td><td>' + S[k].e + '</td><td>' + S[k].v + '</td></tr>'; }).join('') + '</tbody></table></div>' +
+'<p>Curved objects: a <b>cylinder</b> has ' + S.cyl.words + '. A <b>cone</b> has ' + S.cone.words + '.</p>' +
 '<div class="key"><b class="t">Key idea</b><p>A <b>prism</b> has two matching ends joined by rectangles. A <b>pyramid</b> has one base, and triangles that meet at a point. The base gives the object its name.</p></div>' +
 '<div class="eg"><b class="t">Watch first</b><p>Count the vertices of a triangular prism. Each triangle end has 3 corners. There are 2 ends. 3 + 3 = <b>6 vertices</b>.</p><div class="fig">' + solid('tprism', 'v') + '</div></div>' +
 '<div class="yt" data-yt="s1"></div>' +
@@ -378,7 +382,7 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
     turns: {
       s1: [
         { q: 'How many faces does a cube have?', fig: solid('cube', 'f', 40, 200), options: ['4', '6', '8'], answer: 1, why: 'Count the flat surfaces: top, bottom, front, back, left, right.' },
-        { q: 'Which object has no vertices?', options: ['cone', 'cylinder', 'pyramid'], answer: 1, why: 'A cylinder has no corners. A cone has 1 point at the top.' },
+        { q: 'Which object has a curved surface and no point?', options: ['cone', 'cylinder', 'pyramid'], answer: 1, why: 'A cylinder has 2 flat circles and 1 curved surface. A cone has a point at the top.' },
         { q: 'A pyramid has a square base. How many triangle faces does it have?', options: ['3', '4', '5'], answer: 1, why: 'One triangle goes up from each side of the square. A square has 4 sides.' }
       ],
       s2: [
@@ -404,8 +408,7 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
         var k = $('#sok', root).value, d = S[k];
         $('#sofig', root).innerHTML = solid(k, hl);
         root.querySelectorAll('[data-hl]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-hl') === hl)); });
-        $('#soout', root).innerHTML = '<p><span class="big">' + d.name.charAt(0).toUpperCase() + d.name.slice(1) + '</span></p><p><b>' + d.f + '</b> flat face' + (d.f === 1 ? '' : 's') + ' (' + d.faces + '), <b>' + d.e + '</b> edge' + (d.e === 1 ? '' : 's') + ', <b>' + d.v + '</b> vert' + (d.v === 1 ? 'ex' : 'ices') + '.' +
-          (d.round ? ' The curved surface is not a flat face, and its edges are curved.' : '') + '</p>';
+        $('#soout', root).innerHTML = '<p><span class="big">' + d.name.charAt(0).toUpperCase() + d.name.slice(1) + '</span></p><p>' + facts(k) + '.' + (d.round ? ' The curved surface is not a flat face.' : '') + '</p>';
       }
       root.querySelectorAll('[data-hl]').forEach(function (b) { b.addEventListener('click', function () { var h = b.getAttribute('data-hl'); hl = hl === h ? '' : h; so(); }); });
       A.bind(root, ['sok'], so);
@@ -453,8 +456,8 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
         hint: 'Count 4 edges around the top, 4 around the bottom, and 4 going up.', explain: '4 + 4 + 4 = 12 edges.' },
       { q: 'I have 5 faces: 1 square and 4 triangles. What am I?', type: 'mc', options: ['cube', 'square-based pyramid', 'triangular prism', 'cone'], answer: 1,
         hint: 'Triangles meeting at a point make a pyramid.', explain: 'A square-based pyramid has a square base and 4 triangle faces.' },
-      { q: 'How many vertices does a cone have?', type: 'num', answer: 1,
-        hint: 'Look for the pointed tip.', explain: 'A cone has 1 vertex, at its tip.' },
+      { q: 'How many flat faces does a cone have?', type: 'num', answer: 1,
+        hint: 'Look for the flat circle at the bottom.', explain: 'A cone has 1 flat face: the circle at the bottom. The rest is a curved surface.' },
       { q: 'Box A is 2 by 3 by 4 cubes. Which box is congruent to A?', type: 'mc', options: ['4 by 2 by 3', '2 by 3 by 3', '2 by 4 by 5', '3 by 3 by 4'], answer: 0,
         hint: 'Look for the box that uses the numbers 2, 3 and 4.', explain: '4 by 2 by 3 uses the same lengths, so it is A turned.' },
       { q: 'You face south. You make a quarter turn left. Which way do you face now?', type: 'mc', options: ['east', 'west', 'north', 'south'], answer: 0,
@@ -467,21 +470,21 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
 
     practice: [
       { id: 'sh-count', name: 'Faces, edges, vertices', code: 'E1.1', gen: function (lv) {
-        var k = lv === 1 ? R.pick(['cube', 'rprism']) : R.pick(ORDER), part = lv === 1 ? R.pick(['f', 'v']) : R.pick(['f', 'e', 'v']), d = S[k];
+        var k = lv === 1 ? R.pick(['cube', 'rprism']) : R.pick(ORDER), d = S[k], part = lv === 1 ? R.pick(['f', 'v']) : d.round ? 'f' : R.pick(['f', 'e', 'v']);
         var nm = { f: 'flat faces', e: 'edges', v: 'vertices' }[part], ans = d[part];
         return { q: 'How many <b>' + nm + '</b> does a ' + d.name + ' have?', type: 'num', answer: ans, fig: lv < 3 ? solid(k, part, 40, 210, 'A ' + d.name) : '',
           hint: part === 'f' ? 'Count the flat surfaces, even the ones you cannot see.' : part === 'e' ? 'Count where two faces meet. Remember the dashed edges at the back.' : 'Count the corners, front and back.',
-          steps: ['A ' + d.name + ' has ' + d.faces + '.', 'Count carefully, including the hidden back.<div class="fig">' + solid(k, part, 40, 210) + '</div>', 'It has ' + ans + ' ' + nm + '.'],
-          explain: 'A ' + d.name + ' has ' + d.f + ' flat faces, ' + d.e + ' edges and ' + d.v + ' vertices.' };
+          steps: ['A ' + d.name + ' has ' + d.faces + '.', 'Count carefully, including the hidden back.<div class="fig">' + solid(k, part, 40, 210) + '</div>', 'It has ' + G3.pl(ans, { f: 'flat face', e: 'edge', v: 'vertex' }[part], nm) + '.'],
+          explain: 'A ' + d.name + ' has ' + facts(k) + '.', meta: { k: 'solid-count', name: d.name, part: part } };
       } },
       { id: 'sh-name', name: 'Name the object', code: 'E1.1', gen: function (lv) {
-        var k = R.pick(ORDER), d = S[k], clue = lv === 1 ? 'I have ' + d.faces + '.' : lv === 2 ? 'I have ' + d.f + ' flat face' + (d.f === 1 ? '' : 's') + ', ' + d.e + ' edge' + (d.e === 1 ? '' : 's') + ' and ' + d.v + ' vert' + (d.v === 1 ? 'ex' : 'ices') + '.' : 'I have ' + d.v + ' vert' + (d.v === 1 ? 'ex' : 'ices') + ' and ' + d.e + ' edge' + (d.e === 1 ? '' : 's') + '.';
+        var k = R.pick(ORDER), d = S[k], clue = lv === 1 ? 'I have ' + d.faces + '.' : lv === 2 || d.round ? 'I have ' + facts(k) + '.' : 'I have ' + G3.pl(d.v, 'vertex', 'vertices') + ' and ' + G3.pl(d.e, 'edge') + '.';
         var others = ORDER.filter(function (x) { return x !== k; });
         if (lv === 3) others = others.filter(function (x) { return !(S[x].v === d.v && S[x].e === d.e); });
         if (lv === 2) others = others.filter(function (x) { return !(S[x].v === d.v && S[x].e === d.e && S[x].f === d.f); });
         var o = R.mc(d.name, R.shuffle(others).map(function (x) { return S[x].name; }));
         return { q: clue + ' What am I?', type: 'mc', options: o.options, answer: o.answer,
-          hint: 'Use the table of faces, edges and vertices.', steps: ['Check each object against the clue.', 'Only one object matches: a ' + d.name + '.<div class="fig">' + solid(k, '', 40, 210) + '</div>', 'A ' + d.name + ' has ' + d.f + ' flat faces, ' + d.e + ' edges and ' + d.v + ' vertices.'],
+          hint: 'Use the table of faces, edges and vertices.', steps: ['Check each object against the clue.', 'Only one object matches: a ' + d.name + '.<div class="fig">' + solid(k, '', 40, 210) + '</div>', 'A ' + d.name + ' has ' + facts(k) + '.'],
           explain: 'It is a ' + d.name + '.' };
       } },
       { id: 'sh-congruent', name: 'Congruent boxes', code: 'E1.3', gen: function (lv) {
@@ -538,11 +541,11 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
     /* solids that each have a different count of the chosen part */
     function distinctBy(part, n) {
       var seen = {}, out = [];
-      R.shuffle(ORDER).forEach(function (k) { if (out.length < n && !seen[S[k][part]]) { seen[S[k][part]] = 1; out.push(k); } });
+      R.shuffle(part === 'f' ? ORDER : POLY).forEach(function (k) { if (out.length < n && !seen[S[k][part]]) { seen[S[k][part]] = 1; out.push(k); } });
       return out;
     }
     var EVERYDAY = [['a soup can', 'cyl'], ['a number cube', 'cube'], ['a cereal box', 'rprism'], ['an ice cream cone', 'cone'], ['a tent', 'tprism'], ['a pyramid in Egypt', 'spyr']];
-    var CRIT = [['has a curved surface', function (k) { return !!S[k].round; }], ['has at least one triangle face', function (k) { return /triangle/.test(S[k].faces); }], ['has exactly 6 flat faces', function (k) { return S[k].f === 6; }], ['has fewer than 5 vertices', function (k) { return S[k].v < 5; }]];
+    var CRIT = [['has a curved surface', function (k) { return !!S[k].round; }], ['has at least one triangle face', function (k) { return /triangle/.test(S[k].faces); }], ['has exactly 6 flat faces', function (k) { return S[k].f === 6; }], ['has exactly 5 flat faces', function (k) { return S[k].f === 5; }]];
     function dims(d) { return d.join(' by '); }
     function sameBox(a, b) { return a.slice().sort().join() === b.slice().sort().join(); }
     function boxFig(d) { return A.svg(230, 190, box(d[0], d[1], d[2], 20, 170, 2, 18), dims(d) + ' box'); }
@@ -628,7 +631,7 @@ ORDER.map(function (k) { return '<tr><td class="l">' + S[k].name + '</td><td>' +
             explain: ans.map(function (j) { return S[opts[j]].name; }).join(' and ') + ' ' + (ans.length > 1 ? 'fit' : 'fits') + '.', meta: { k: 'name-pick', c: c[0] } };
         }],
         [2, 'mistake', function (lv) {
-          var k = R.pick(ORDER.slice(0, 5)), who = nm(), others = ORDER.filter(function (x) { return x !== k && S[x].v !== S[k].v; }), truth = !R.int(0, 2), sk = truth ? k : R.pick(others);
+          var k = R.pick(ORDER.slice(0, 5)), who = nm(), others = POLY.filter(function (x) { return x !== k && S[x].v !== S[k].v; }), truth = !R.int(0, 2), sk = truth ? k : R.pick(others);
           var right = 'A ' + S[k].name + ' has ' + S[k].v + ' vertices and ' + S[k].e + ' edges.';
           return { q: 'An object has <b>' + S[k].v + ' vertices</b> and <b>' + S[k].e + ' edges</b>. ' + who + ' says it is a <b>' + S[sk].name + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
             why: why(right, ['Any object with a point is a pyramid.', 'Edges and vertices are the same thing.', 'Every object with flat faces is a cube.']),

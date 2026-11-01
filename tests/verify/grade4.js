@@ -241,7 +241,7 @@
   /* ---- Money ---- */
   const dollars = t => H.num(H.strip(t).replace('$', ''));
   const PAYS_DO = [[/^Cash/, /Bills and coins/], [/^Debit/, /right away/], [/^Credit/, /Borrows/], [/^Gift/, /one store/], [/^Phone/, /linked/], [/^E-transfer/, /online/]];
-  const PAY_TRUE = { 'A debit card uses money that is already in your bank account.': true, 'A credit card borrows money that you pay back later.': true, 'A gift card works at any store.': false, 'Tapping a phone to pay is free money.': false, 'Paying a credit card late costs extra.': true, 'Cash comes out of your bank account each time you spend it.': false };
+  const PAY_TRUE = { 'A debit card uses money that is already in your bank account.': true, 'A credit card borrows money that you pay back later.': true, 'A store gift card works at any store.': false, 'Tapping a phone to pay is free money.': false, 'Paying a credit card late costs extra.': true, 'Cash comes out of your bank account each time you spend it.': false };
   /* the money word for an example, read from what happens to the money */
   const moneyWord = t => /so (his|her|their|the) .* can .* more/.test(t) ? 'investing' : /\bbuys\b/.test(t) ? 'spending' : /\bgives\b|\bsends\b/.test(t) ? 'donating' : /piggy bank|\bkeeps\b/.test(t) ? 'saving' : /\bgets\b|paid/.test(t) ? 'earning' : '?';
   set('mo4-pay-match', (q, m) => m.pairs.every(p => PAYS_DO.some(r => r[0].test(p[0]) && r[1].test(p[1]))) ? '' : 'pairs');

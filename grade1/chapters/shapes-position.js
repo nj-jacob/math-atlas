@@ -16,8 +16,8 @@
   function flatPic(k, z) { z = z || 70; return A.svg(z + 8, z + 8, flat(k, z / 2 + 4, z / 2 + 4, z), 'a ' + k); }
   /* solid shapes, drawn simply with a lit front */
   var SOLIDS = ['cube', 'sphere', 'cylinder', 'cone', 'rectangular prism', 'pyramid'];
-  var OBJ = { cube: 'a number cube (a die)', sphere: 'a ball', cylinder: 'a soup can', cone: 'an ice cream cone', 'rectangular prism': 'a cereal box', pyramid: 'a tent' };
-  var FACES = { cube: 'square', cylinder: 'circle', 'rectangular prism': 'rectangle', pyramid: 'triangle' };
+  var OBJ = { cube: 'a number cube (a die)', sphere: 'a ball', cylinder: 'a soup can', cone: 'an ice cream cone', 'rectangular prism': 'a cereal box', pyramid: 'the top of a tower' };
+  var FACES = { cube: 'square', cylinder: 'circle', 'rectangular prism': 'rectangle', pyramid: 'square' };
   function solid(k, x, y, z) {
     var r = z / 2, c = { cube: '#2c68cf', sphere: '#e04b3a', cylinder: '#2f9a4c', cone: '#f2bd24', 'rectangular prism': '#ee7d24', pyramid: '#8441bd' }[k];
     var S = 'stroke="rgba(0,0,0,.55)" stroke-width="2.5" stroke-linejoin="round"', lite = 'color-mix(in srgb,' + c + ' 55%,#fff)', dark = 'color-mix(in srgb,' + c + ' 70%,#000)';
@@ -98,16 +98,16 @@
     if (lv === 1) {
       var k = R.pick(SOLIDS), ch = R.shuffle([k].concat(R.shuffle(SOLIDS.filter(function (x) { return x !== k; })).slice(0, 2)));
       return { q: 'Which solid is shaped like <b>' + OBJ[k] + '</b>?', type: 'mc', options: ch.map(function (x) { return solidPic(x, 70); }), answer: ch.indexOf(k),
-        hint: 'Picture ' + OBJ[k] + ' in your hand. Is it round? Does it have flat faces?', steps: ['Think about the shape of ' + OBJ[k] + '.', 'Find the solid that looks the same.', OBJ[k].charAt(0).toUpperCase() + OBJ[k].slice(1) + ' is a ' + k + '.'], explain: OBJ[k].charAt(0).toUpperCase() + OBJ[k].slice(1) + ' is shaped like a ' + k + '.' };
+        hint: 'Picture ' + OBJ[k] + '. Is it round? Does it have flat faces?', steps: ['Think about the shape of ' + OBJ[k] + '.', 'Find the solid that looks the same.', OBJ[k].charAt(0).toUpperCase() + OBJ[k].slice(1) + ' is a ' + k + '.'], explain: OBJ[k].charAt(0).toUpperCase() + OBJ[k].slice(1) + ' is shaped like a ' + k + '.', meta: { k: 'g1-3d-like' } };
     }
     if (lv === 2) {
       var k2 = R.pick(SOLIDS), opts = R.shuffle([k2].concat(R.shuffle(SOLIDS.filter(function (x) { return x !== k2; })).slice(0, 2)));
       return { q: 'What is the name of this solid?', type: 'mc', options: opts, answer: opts.indexOf(k2), fig: solidPic(k2, 100), wide: true,
-        hint: 'Look for flat faces, curved parts and points.', steps: ['Does it roll? Does it have a point?', 'Count the flat faces you can see.', 'It is a ' + k2 + '.'], explain: 'This solid is a ' + k2 + ', shaped like ' + OBJ[k2] + '.' };
+        hint: 'Look for flat faces, curved parts and points.', steps: ['Does it roll? Does it have a point?', 'Count the flat faces you can see.', 'It is a ' + k2 + '.'], explain: 'This solid is a ' + k2 + ', shaped like ' + OBJ[k2] + '.', meta: { k: 'g1-3d-name' } };
     }
     var k3 = R.pick(Object.keys(FACES)), f = FACES[k3], o2 = R.shuffle([f].concat(R.shuffle(['circle', 'triangle', 'square', 'rectangle'].filter(function (x) { return x !== f; })).slice(0, 2)));
     return { q: 'If you trace around the bottom of a <b>' + k3 + '</b>, what flat shape do you get?', type: 'mc', options: o2.map(function (x) { return flatPic(x, 58); }), answer: o2.indexOf(f), fig: solidPic(k3, 90),
-      hint: 'Look at the flat face it stands on.', steps: ['A ' + k3 + ' stands on a flat face.', 'That face is a ' + f + '.', 'Tracing it makes a ' + f + '.'], explain: 'The bottom face of a ' + k3 + ' is a ' + f + '.' };
+      hint: 'Look at the flat face it stands on.', steps: ['A ' + k3 + ' stands on a flat face.', 'That face is a ' + f + '.', 'Tracing it makes a ' + f + '.'], explain: 'The bottom face of a ' + k3 + ' is a ' + f + '.', meta: { k: 'g1-3d-face' } };
   }
   function qSym(lv) {
     var list = lv === 1 ? SYM.filter(function (s) { return ['square', 'circle', 'heart'].indexOf(s[0]) >= 0; }) : SYM;
@@ -247,7 +247,7 @@
           { say: 'A cube gives a <b>square</b>.', act: function (t) { return t.show(solidPic('cube', 100) + flatPic('square', 90)); }, ms: 1800 }
         ] },
         example: { tool: 'g1stage', steps: [
-          { say: 'My turn. This pyramid is like a tent. I lay it on one side and trace around it.', act: function (t) { return t.show(solidPic('pyramid', 110)); }, ms: 1800 },
+          { say: 'My turn. I lay this pyramid on one side and trace around it.', act: function (t) { return t.show(solidPic('pyramid', 110)); }, ms: 1800 },
           { say: 'The tracing has 3 sides. It is a <b>triangle</b>.', act: function (t) { return t.show(flatPic('triangle', 100)); }, ms: 1600 },
           { say: 'The faces of solids are flat shapes.', ms: 1600 }
         ] },

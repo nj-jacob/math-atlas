@@ -126,6 +126,8 @@
   set('g1-half-match', q => q.pairs.every(p => equalParts(p[0]) && barParts(p[0]).length === den(p[1])) ? '' : 'pairs');
   set('g1-pname-match', q => q.pairs.every(p => slices(p[0]) === den(p[1])) ? '' : 'pairs');
   set('g1-pname-tap', q => { const d = den(bold(q)), hits = q.tiles.map(t => slices(t) === d && shaded(t) === 1); return hits.filter(Boolean).length === 1 && hits[q.answer] ? '' : 'tile'; });
+  set('g1-pname-whole', q => slices(q.fig) === q.answer && den(bold(q)) === q.answer ? '' : 'parts');
+  set('g1-pname-half', q => { const p = svgs(q.fig); return slices(p[0]) === 2 && shaded(p[0]) === 1 && shaded(p[1]) === q.answer && q.answer * 2 === slices(p[1]) ? '' : 'fourths in a half'; });
   set('g1-pname-fill', q => q.answers[0] === 2 && q.answers[1] === 4 && /^\[\[\]\] halves.*\[\[\]\] fourths/.test(q.fill) ? '' : 'wholes');
   set('g1-pcmp-tap', q => { const n = q.tiles.map(slices), big = /bigger/.test(q.q); return n[q.answer] === (big ? Math.min(...n) : Math.max(...n)) ? '' : 'piece'; });
   set('g1-pcmp-tf', q => { const b = [...q.q.matchAll(/<b>([^<]+)<\/b>/g)].map(x => den(x[1])); return tfWhy(q, b[0] < b[1]); });
@@ -164,8 +166,13 @@
   set('g1-2d-pick', q => { const n = nums(bold(q))[0]; return same(q.options.map((o, j) => flatOf(o)[1] === n ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks'; });
   set('g1-2d-tf', q => tfWhy(q, flatOf(q.fig)[1] === nums(bold(q))[0]));
   /* solids: named in the picture's label; what each one is like is listed here */
-  const SOLID = { cube: ['a number cube (a die)', 0], sphere: ['a ball', 1], cylinder: ['a soup can', 1], cone: ['an ice cream cone', 1], 'rectangular prism': ['a cereal box', 0], pyramid: ['a tent', 0] };
+  const SOLID = { cube: ['a number cube (a die)', 0], sphere: ['a ball', 1], cylinder: ['a soup can', 1], cone: ['an ice cream cone', 1], 'rectangular prism': ['a cereal box', 0], pyramid: ['the top of a tower', 0] };
   const solidOf = svg => (String(svg).match(/aria-label="a ([a-z ]+)"/) || [])[1];
+  /* the face a solid stands on: a pyramid stands on its square base */
+  const BASE = { cube: 'square', cylinder: 'circle', 'rectangular prism': 'rectangle', pyramid: 'square' };
+  set('g1-3d-like', q => SOLID[solidOf(q.options[q.answer])][0] === bold(q) ? '' : 'solid');
+  set('g1-3d-name', q => solidOf(q.fig) === q.options[q.answer] ? '' : 'name');
+  set('g1-3d-face', q => { const k = solidOf(q.fig), f = q.options.map(o => flatOf(o)[0]); return k === bold(q) && f[q.answer] === BASE[k] && f.filter(x => x === BASE[k]).length === 1 ? '' : 'face ' + k; });
   set('g1-3d-match', q => q.pairs.every(p => SOLID[solidOf(p[0])][0] === p[1]) ? '' : 'pairs');
   set('g1-3d-pick', q => same(q.options.map((o, j) => SOLID[solidOf(o)][1] ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
   set('g1-3d-tf', q => { const b = [...q.q.matchAll(/<b>([^<]+)<\/b>/g)].map(x => H.strip(x[1])); return tfWhy(q, SOLID[b[1]][0] === b[0]); });
@@ -219,7 +226,7 @@
   set('g1-cap-tf', q => { const c = jugCups(q.fig); return tfWhy(q, (c[0] > c[1] ? 'A' : 'B') === bold(q)); });
   const WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
   const SEASONS = { December: 'winter', January: 'winter', February: 'winter', March: 'spring', April: 'spring', May: 'spring', June: 'summer', July: 'summer', August: 'summer', September: 'fall', October: 'fall', November: 'fall' };
-  set('g1-cal-order', q => q.items.every((d, i) => !i || WEEK.indexOf(d) === (WEEK.indexOf(q.items[i - 1]) + 1) % 7) ? '' : 'order');
+  set('g1-cal-order', q => q.items[0] === bold(q) && q.items.every((d, i) => !i || WEEK.indexOf(d) === (WEEK.indexOf(q.items[i - 1]) + 1) % 7) ? '' : 'order');
   set('g1-cal-match', q => q.pairs.every(p => SEASONS[p[0]] === p[1]) ? '' : 'pairs');
   set('g1-cal-fill', (q, m) => { const last = new Date(m.yr, m.mo + 1, 0).getDate(), dn = WEEK.indexOf(q.fill.match(/are (\w+)s\./)[1]); let c = 0; for (let d = 1; d <= last; d++) if (new Date(m.yr, m.mo, d).getDay() === dn) c++; return q.answers[0] === last && q.answers[1] === c ? '' : 'calendar'; });
   set('g1-cal-tf', q => { const t = H.strip(q.q).match(/says (\w+) comes just (after|before) (\w+)/), i = WEEK.indexOf(t[3]), want = WEEK[(i + (t[2] === 'after' ? 1 : 6)) % 7]; return tfWhy(q, want === t[1]); });

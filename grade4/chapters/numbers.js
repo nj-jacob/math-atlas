@@ -461,7 +461,7 @@
           ['The parts changed, but the number did not. It is still <b>2415</b>.', disksFig([5, 11, 3, 2]), 2200]
         ]),
         key: '<p>Trading 1 of a place for 10 of the next smaller place <b>does not change the number</b>.</p>',
-        mistake: '<p>Thinking 13 hundreds is "13 hundred-dollar mistake" and not a real way to write 1300. Encourage trading with real or paper money.</p>',
+        mistake: '<p>Thinking 13 hundreds is a mistake and not a real way to show 1300. It is the same amount: 13 hundred-dollar bills are $1300. Practise trading with play money.</p>',
         check: [T('blocks', 2), T('value', 3)] }
     ] },
 
@@ -559,7 +559,7 @@
           ['The digit to its right is 5. 5 or more, so round up: <b>3700</b>.', hill(3650, 100, 'nmw3'), 2000],
           ['To the nearest thousand: the digit right of the 3 is 6. Round up: <b>4000</b>.', hill(3650, 1000, 'nmw3'), 2400]
         ]),
-        try: K.lab({ controls: [{ id: 'n', type: 'number', label: 'Number (0 to 10000)', min: 0, max: 10000, value: 4271 }, { id: 'p', type: 'select', label: 'Round to the nearest', options: [['10', 'ten'], ['100', 'hundred'], ['1000', 'thousand']] }],
+        try: K.lab({ controls: [{ id: 'n', type: 'number', label: 'Number (0 to 10 000)', min: 0, max: 10000, value: 4271 }, { id: 'p', type: 'select', label: 'Round to the nearest', options: [['10', 'ten'], ['100', 'hundred'], ['1000', 'thousand']] }],
           render: function (s) { var p = +s.p, lo = Math.floor(s.n / p) * p; s.r = s.n - lo >= p / 2 ? lo + p : lo; return { fig: hill(s.n, p, 'nmw4'), out: '<p class="big">' + A.fmt(s.n) + ' &#8776; ' + A.fmt(s.r) + '</p>' }; },
           tasks: [
             { do: 'Round <b>4271</b> to the nearest hundred.', goal: function (s) { return s.n === 4271 && s.p === '100'; }, yes: '7 is 5 or more, so 4271 rounds up to 4300.' },
@@ -581,7 +581,7 @@
           ['The tens digit is 7, so round up. 29 hundreds + 1 hundred = 30 hundreds = <b>3000</b>.', hill(2970, 100, 'nmw5'), 2600]
         ]),
         ways: [
-          { label: 'Count by hundreds', html: '<p>Count up by hundreds from 2900: <b>2900, 3000</b>. The next hundred after 2900 is 3000, not 2100 or 21000.</p>' },
+          { label: 'Count by hundreds', html: '<p>Count up by hundreds from 2900: <b>2900, 3000</b>. The next hundred after 2900 is 3000, not 2100 or 21 000.</p>' },
           { label: 'With disks', html: '<div class="fig">' + disksFig([0, 7, 9, 2]) + '</div><p>Rounding up adds 1 hundred to the 9 hundreds: 10 hundreds, which group into 1 more thousand. So 2 thousands become 3 thousands: <b>3000</b>.</p>' }
         ],
         example: K.watch([

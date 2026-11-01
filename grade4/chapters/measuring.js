@@ -81,7 +81,7 @@
     for (i = 1; i < 10; i++) s += '<line x1="' + (zx + i * 30) + '" y1="' + y2 + '" x2="' + (zx + i * 30) + '" y2="' + (y2 + 44) + '" style="stroke:var(--ink)" stroke-width="1.5"/>';
     for (i = 0; i <= 10; i += 2) s += '<text x="' + (zx + i * 30) + '" y="' + (y2 + 66) + '" text-anchor="middle" font-size="20">' + i + '</text>';
     s += '<text x="280" y="' + (y2 + 92) + '" text-anchor="middle" font-size="21" class="tb">10 centimetres = 100 millimetres</text>';
-    return A.svg(560, 290, s, 'A metre stick split into 10 parts of 10 centimetres. One part is zoomed in: 10 centimetres split into 10 centimetres, each 10 millimetres.');
+    return A.svg(560, 290, s, 'A metre stick split into 10 parts of 10 centimetres. One part is zoomed in: 10 centimetres split into 10 single centimetres, each 10 millimetres.');
   }
 
   /* ---------- time ---------- */

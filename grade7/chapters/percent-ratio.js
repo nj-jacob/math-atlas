@@ -582,7 +582,7 @@
       [2, 'mistake', function () {
         var who = K.name(), s = R.int(4, 6), b = s * 2, ps = cl(s * R.int(50, 90) / 100), pb = cl(ps * 2 + R.pick([-0.6, 0.6])), big = pb / b < ps / s;
         var right = 'Small: ' + money(ps) + ' &divide; ' + s + ' = ' + money(ps / s) + ' each. Big: ' + money(pb) + ' &divide; ' + b + ' = ' + money(pb / b) + ' each. The ' + (big ? 'big' : 'small') + ' pack is the better buy.';
-        return { q: 'A pack of ' + s + ' costs ' + money(ps) + '. A pack of ' + b + ' costs ' + money(pb) + '. ' + who + ' says the <b>big</b> pack is the better buy, because big packs always are. True or false?', type: 'tf', answer: big,
+        return { q: 'A pack of ' + s + ' costs ' + money(ps) + '. A pack of ' + b + ' costs ' + money(pb) + '. ' + who + ' says the <b>big</b> pack is the better buy. True or false?', type: 'tf', answer: big,
           why: K.why(right, ['Bigger packs are always the better buy.', 'The cheaper pack is always the better buy.']),
           hint: 'Find the price of one in each pack.', steps: [right], explain: right, meta: { k: 'pr-pack-tf', s: [s, ps], b: [b, pb] } };
       }]

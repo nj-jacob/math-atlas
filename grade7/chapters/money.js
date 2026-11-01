@@ -399,7 +399,7 @@
         var who = R.pick(['Ava', 'Jordan', 'Sam', 'Noor', 'Liam', 'Mei']), item = R.pick(['a bike', 'a guitar', 'a tablet', 'hockey skates', 'a school trip', 'headphones']);
         if (lv === 1) {
           var per = R.pick([5, 10, 15, 20, 25]), n = R.int(3, 15), goal = per * n;
-          return { q: who + ' saves ' + m0(per) + ' each week for ' + item + ' that costs ' + m0(goal) + '. How many weeks will it take?', type: 'num', answer: n, unit: 'weeks', fig: plan(goal, 0, per),
+          return { q: who + ' saves ' + m0(per) + ' each week for ' + item + ' that ' + (/^a /.test(item) ? 'costs ' : 'cost ') + m0(goal) + '. How many weeks will it take?', type: 'num', answer: n, unit: 'weeks', fig: plan(goal, 0, per),
             hint: 'Divide the cost by the savings per week.', steps: ['Cost: ' + m0(goal) + '. Savings: ' + m0(per) + ' a week.', m0(goal) + ' &divide; ' + m0(per) + ' = ' + n + '.', n + ' weeks.'], explain: goal + ' &divide; ' + per + ' = ' + n + ' weeks.' };
         }
         if (lv === 2) {

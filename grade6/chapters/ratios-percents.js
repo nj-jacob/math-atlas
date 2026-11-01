@@ -178,7 +178,7 @@
         example: G6.example([
           ['My turn. I find 35% of $80. I start with 10%: $80 &divide; 10 = $8.', pbar(80, 10), '10% = $8'],
           ['30% is 3 lots of 10%: 3 &times; $8 = $24.', pbar(80, 30), '30% = $24'],
-          ['5% is half of 10%: $4.', pbar(80, 35), '5% = $4'],
+          ['5% is half of 10%: $4.', pbar(80, 5), '5% = $4'],
           ['35% = 30% + 5% = $24 + $4 = $28.', pbar(80, 35), '35% of $80 = $28']
         ]),
         key: '<p>Start from 10%, 50% or 1%, then build.</p>',

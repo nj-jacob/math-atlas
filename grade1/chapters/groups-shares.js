@@ -5,19 +5,20 @@
   var PEOPLE = ['Mia', 'Leo', 'Ava', 'Noah', 'Zoe', 'Sam', 'Priya', 'Omar', 'Lily', 'Ben'];
   function cookie(x, y, r) { return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" style="fill:#c98a4b" stroke="rgba(0,0,0,.4)" stroke-width="1.5"/><circle cx="' + (x - r * .35) + '" cy="' + (y - r * .2) + '" r="' + r * .14 + '" style="fill:#5a3416"/><circle cx="' + (x + r * .3) + '" cy="' + (y + r * .3) + '" r="' + r * .14 + '" style="fill:#5a3416"/><circle cx="' + (x + r * .25) + '" cy="' + (y - r * .35) + '" r="' + r * .12 + '" style="fill:#5a3416"/>'; }
   function halfCookie(x, y, r) { return '<path d="M' + (x - r) + ' ' + y + 'A' + r + ' ' + r + ' 0 0 1 ' + (x + r) + ' ' + y + 'Z" style="fill:#c98a4b" stroke="rgba(0,0,0,.4)" stroke-width="1.5"/>'; }
-  /* g plates with k cookies each. o.half: each plate has half a cookie instead */
+  function halfSandwich(x, y, r) { return '<path d="M' + (x - r) + ' ' + (y + r * .7) + 'H' + (x + r) + 'L' + (x - r) + ' ' + (y - r * .7) + 'Z" style="fill:#e9c886;stroke:#b5762e" stroke-width="3" stroke-linejoin="round"/>'; }
+  /* g plates with k cookies each. o.half: each plate has half a sandwich instead */
   function plates(g, k, o) {
     o = o || {};
     var pw = 112, per = g === 4 ? 2 : Math.min(g, 3), s = '';
     for (var i = 0; i < g; i++) {
       var x = 6 + (i % per) * (pw + 10), y = 6 + Math.floor(i / per) * 92, cx = x + pw / 2;
       s += '<ellipse cx="' + cx + '" cy="' + (y + 42) + '" rx="' + pw / 2 + '" ry="38" style="fill:var(--card);stroke:var(--ink2)" stroke-width="2"/><ellipse cx="' + cx + '" cy="' + (y + 42) + '" rx="' + (pw / 2 - 10) + '" ry="28" style="fill:none;stroke:var(--line)" stroke-width="2"/>';
-      if (o.half) s += halfCookie(cx, y + 50, 18);
+      if (o.half) s += halfSandwich(cx, y + 42, 24);
       for (var j = 0; j < k; j++) { var cxx = cx + (j % 3 - (Math.min(k, 3) - 1) / 2) * 26, cyy = y + 42 + (k > 3 ? (j < 3 ? -12 : 12) : 0); s += cookie(cxx, cyy, 11); }
       if (o.lab) s += '<text x="' + cx + '" y="' + (y + 98) + '" text-anchor="middle" font-size="21" class="tb">' + o.lab[i] + '</text>';
     }
     var H = Math.ceil(g / per) * 92 + (o.lab ? 14 : 0);
-    return A.svg(per * (pw + 10) + 2, H, s, o.label || g + ' plates with ' + (o.half ? 'half a cookie' : k + ' cookie' + (k === 1 ? '' : 's')) + ' on each');
+    return A.svg(per * (pw + 10) + 2, H, s, o.label || g + ' plates with ' + (o.half ? 'half a sandwich' : k + ' cookie' + (k === 1 ? '' : 's')) + ' on each');
   }
   /* sharing n things among p people: dealt one at a time, leftovers off to the side, optional cut */
   function share(n, p, o) {
@@ -70,7 +71,7 @@
   function qGroups(lv) {
     if (lv === 3 && R.int(0, 1)) {
       var w = R.int(1, 4), h = 2 * w;
-      return { q: h + ' children each get <b>one half</b> of a sandwich. How many whole sandwiches are needed?', type: 'num', answer: w, fig: plates(h, 0, { half: true, label: h + ' plates, each with half a cookie' }).replace(/fill:#c98a4b/g, 'fill:#e9c886'),
+      return { q: h + ' children each get <b>one half</b> of a sandwich. How many whole sandwiches are needed?', type: 'num', answer: w, fig: plates(h, 0, { half: true }),
         hint: '2 halves make 1 whole. Put the children in pairs.', steps: ['2 halves make 1 whole sandwich.', 'Make pairs of children: ' + h + ' children make ' + w + ' pair' + (w > 1 ? 's' : '') + '.', 'Each pair shares 1 sandwich, so ' + w + ' sandwich' + (w > 1 ? 'es are' : ' is') + ' needed.'],
         explain: h + ' halves make ' + w + ' whole' + (w > 1 ? 's' : '') + '.' };
     }
@@ -115,9 +116,11 @@
       var n = R.pick([2, 4]);
       return { q: 'A pizza is cut into ' + n + ' equal parts. What is each part called?', type: 'mc', options: R.shuffle(['one half', 'one fourth', 'one third']).slice(0), answer: -1, fig: pizza(n, 1, { r: 56 }), _n: n };
     }
-    var p = R.pick([2, 4]), whole = R.int(1, 3), parts = p * whole;
-    return { q: 'How many <b>' + FRP[p] + '</b> make ' + (whole === 1 ? '1 whole' : whole + ' wholes') + '?', type: 'num', answer: parts, fig: '<div class="vrow">' + Array.apply(null, Array(whole)).map(function () { return '<figure>' + pizza(p, 0, { r: 36 }) + '</figure>'; }).join('') + '</div>',
-      hint: 'Count the ' + FRP[p] + ' in each whole: ' + p + '.', steps: ['Each whole has ' + p + ' ' + FRP[p] + '.', 'There ' + (whole === 1 ? 'is 1 whole' : 'are ' + whole + ' wholes') + '.', 'Count them all: ' + parts + ' ' + FRP[p] + '.'], explain: whole + ' whole' + (whole > 1 ? 's' : '') + ' is ' + parts + ' ' + FRP[p] + '.' };
+    if (lv === 3) return { q: 'How many <b>fourths</b> make one half?', type: 'num', answer: 2, fig: '<div class="vrow">' + pizza(2, 1, { r: 44 }) + pizza(4, 2, { r: 44 }) + '</div>',
+      hint: 'Cut one half in half again.', steps: ['One half is shaded on the first pizza.', 'Count the shaded fourths on the second pizza.'], explain: 'Two fourths make one half.', meta: { k: 'g1-pname-half' } };
+    var p = R.pick([2, 4]);
+    return { q: 'How many <b>' + FRP[p] + '</b> make 1 whole?', type: 'num', answer: p, fig: pizza(p, 0, { r: 44 }),
+      hint: 'Count the equal parts.', steps: ['The pizza is cut into ' + FRP[p] + '.', 'Count them: ' + p + ' ' + FRP[p] + '.'], explain: p + ' ' + FRP[p] + ' make 1 whole.', meta: { k: 'g1-pname-whole' } };
   }
   function fixFourth(q) {
     if (q.answer !== -1) return q;
@@ -203,13 +206,13 @@
           { say: '5 groups of 2 make <b>10</b>.', ms: 1800 }
         ] },
         example: { tool: 'g1stage', steps: [
-          { say: 'My turn. There are 3 plates. Each plate has 5 cookies. How many cookies?', act: function (t) { return t.show(plates(3, 5)); }, ms: 1700 },
+          { say: 'My turn. There are 2 plates. Each plate has 5 cookies. How many cookies?', act: function (t) { return t.show(plates(2, 5)); }, ms: 1700 },
           { say: 'The groups are equal, so I do not count by 1s. I skip count by 5s.', ms: 1600 },
-          { say: '5, 10, 15.', ms: 1300 },
-          { say: '3 groups of 5 make <b>15</b>. I counted equal groups by skip counting.', ms: 1900 }
+          { say: '5, 10.', ms: 1300 },
+          { say: '2 groups of 5 make <b>10</b>. I counted equal groups by skip counting.', ms: 1900 }
         ] },
-        try: { tool: 'counters', opts: { n: 20, arrange: 'tens', controls: ['tens'], max: 50 }, tasks: [
-          { do: 'Make <b>3 groups of 10</b>. Count by 10s.', goal: function (s) { return s.n === 30 && s.mode === 'tens'; }, yes: '10, 20, 30. 3 groups of 10 make 30.' }
+        try: { tool: 'counters', opts: { n: 6, arrange: 'pairs', controls: ['pairs'], max: 10 }, tasks: [
+          { do: 'Make <b>4 groups of 2</b>. Count by 2s.', goal: function (s) { return s.n === 8 && s.mode === 'pairs'; }, yes: '2, 4, 6, 8. 4 groups of 2 make 8.' }
         ] },
         key: '<p>Count equal groups by <b>skip counting</b>.</p>',
         check: [P('g-groups', 2), P('g-groups', 3)] }
@@ -527,7 +530,7 @@ A.stepHtml('hf1', 'Parts to colour', 1) + '<div class="fig" id="hffig"></div><di
           { hint: 'Deal them out one at a time.' });
       }],
       [2, 'fill', function (lv) {
-        var p = lv === 3 ? R.pick([2, 4]) : 2, each = R.int(1, 4), left = R.int(0, p - 1), n = p * each + left;
+        var p = lv === 3 ? R.pick([2, 4]) : 2, each = R.int(1, 4), left = R.int(0, Math.min(2, p - 1)), n = p * each + left;
         return { q: n + ' cookies are shared fairly by ' + p + ' friends. Fill in the blanks.', type: 'fill', fill: 'Each gets [[]] whole cookies. [[]] left over.', answers: [each, left],
           hint: 'Deal them out one at a time.', steps: ['Give one to each friend, round and round.', 'Each gets ' + each + '. ' + left + ' left over.'],
           explain: n + ' shared by ' + p + ' is ' + each + ' each, with ' + left + ' left over.', meta: { k: 'g1-share-fill' } };

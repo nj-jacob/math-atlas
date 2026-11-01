@@ -454,7 +454,7 @@
         var ks = Object.keys(OBJ), nm = function (k) { return THING[k][0]; };
         if (lv === 1) {
           var k = R.pick(ks), n = R.int(3, 16);
-          return { q: 'The balance is level. What is the mass of the ' + nm(k) + ' in cubes?', type: 'num', answer: n, unit: 'cubes', fig: balance(k, n, 0, 'A level pan balance. A ' + nm(k) + ' on the left and ' + n + ' cubes on the right.'),
+          return { q: 'The balance is level. What is the mass of the ' + nm(k) + ' in cubes?', type: 'num', answer: n, unit: 'cubes', fig: balance(k, n, 0, 'A level pan balance. ' + G3.an(nm(k)) + ' on the left and ' + n + ' cubes on the right.'),
             hint: 'Level means equal. Count the cubes in rows of 6.', steps: ['The balance is level, so both sides have the same mass.', 'Count the cubes: rows of 6, then the extras.', 'The ' + nm(k) + ' has a mass of ' + n + ' cubes.'], explain: 'Level means equal: ' + n + ' cubes.' };
         }
         if (lv === 2) {
@@ -462,7 +462,7 @@
           while (y === x) y = R.int(5, 20);
           var heavy = x > y ? p[0] : p[1], ask = R.int(0, 1) ? 'heavier' : 'lighter', ans = ask === 'heavier' ? heavy : (heavy === p[0] ? p[1] : p[0]);
           var o = R.mc('the ' + nm(ans), ['the ' + nm(ans === p[0] ? p[1] : p[0]), 'they are the same']);
-          return { q: 'A ' + nm(p[0]) + ' balances ' + x + ' cubes. A ' + nm(p[1]) + ' balances ' + y + ' cubes. Which is ' + ask + '?', type: 'mc', options: o.options, answer: o.answer,
+          return { q: G3.an(nm(p[0]), true) + ' balances ' + x + ' cubes. ' + G3.an(nm(p[1]), true) + ' balances ' + y + ' cubes. Which is ' + ask + '?', type: 'mc', options: o.options, answer: o.answer,
             hint: 'More cubes means more mass.', steps: ['Compare ' + x + ' and ' + y + '.', Math.max(x, y) + ' is more, so the ' + nm(heavy) + ' is heavier.', 'The ' + ask + ' one is the ' + nm(ans) + '.'], explain: 'The ' + nm(ans) + ' is ' + ask + '.' };
         }
         if (R.int(0, 1)) {
@@ -588,7 +588,7 @@
         }],
         [1, 'tf', function (lv) {
           var big = R.pick(['minute', 'hour']), small2 = big === 'minute' ? 'seconds' : 'minutes', a = lv === 1 ? 1 : R.int(2, 4), truth = !R.int(0, 1), said = truth ? a * 60 : a * 100;
-          var right = '1 ' + big + ' = 60 ' + small2 + ', so ' + a + ' ' + big + (a > 1 ? 's' : '') + ' = ' + a * 60 + ' ' + small2 + '.';
+          var right = '1 ' + big + ' = 60 ' + small2 + (a > 1 ? ', so ' + a + ' ' + big + 's = ' + a * 60 + ' ' + small2 : '') + '.';
           return { q: 'True or false: <b>' + a + ' ' + big + (a > 1 ? 's' : '') + ' = ' + said + ' ' + small2 + '</b>', type: 'tf', answer: truth,
             why: why(right, ['Time works like metres: 100 in each.', '1 ' + big + ' = 10 ' + small2 + '.', 'Time units cannot be changed.']),
             hint: 'How many ' + small2 + ' are in 1 ' + big + '?', steps: [right], explain: right, meta: { k: 'tunit-tf', a: a, big: big, small: small2, said: said } };
@@ -606,7 +606,7 @@
           if (c < 1) c = OBJ[k] + 3;
           var d = OBJ[k] - c, ask = R.pick(['heavier', 'lighter']), truth = ask === 'heavier' ? d > 0 : d < 0;
           var right = 'The side that goes down is heavier. ' + (d > 0 ? 'The ' + THING[k][0] + ' side is down, so the ' + THING[k][0] + ' is heavier.' : 'The cube side is down, so the cubes are heavier.');
-          return { q: 'True or false: the ' + THING[k][0] + ' is <b>' + ask + '</b> than the cubes.', type: 'tf', answer: truth, fig: balance(k, c, d > 0 ? Math.min(12, 3 + d) : Math.max(-12, d - 3), 'Pan balance: a ' + THING[k][0] + ' and ' + c + ' cubes'),
+          return { q: 'True or false: the ' + THING[k][0] + ' is <b>' + ask + '</b> than the cubes.', type: 'tf', answer: truth, fig: balance(k, c, d > 0 ? Math.min(12, 3 + d) : Math.max(-12, d - 3), 'Pan balance: ' + G3.an(THING[k][0]) + ' and ' + c + ' cubes'),
             why: why(right, ['The side that goes up is heavier.', 'A level balance means one side is heavier.', 'More cubes always means lighter.']),
             hint: 'Which side is lower?', steps: [right], explain: right, meta: { k: 'mass-tf', obj: k, c: c, ask: ask } };
         }],
@@ -638,7 +638,7 @@
             explain: 'That jug holds ' + f + ' cups of water.', meta: { k: 'cap-tap', f: f } };
         }],
         [1, 'story', function (lv) {
-          var who = nm(), a = R.int(5, 12), b = R.int(2, a - 1), c = R.pick([['water bottle', 'cup'], ['bucket', 'bowl'], ['watering can', 'mug']]);
+          var who = nm(), a = R.int(5, 12), b = R.int(2, a - 1), c = R.pick([['water bottle', 'small jar'], ['bucket', 'bowl'], ['watering can', 'mug']]);
           return { q: who + ' fills a ' + c[0] + ' with ' + a + ' cups of water and a ' + c[1] + ' with ' + b + ' cups. How many more cups does the ' + c[0] + ' hold?', type: 'num', answer: a - b, unit: 'cups',
             hint: 'Compare the cups. Subtract.', steps: [a + ' &minus; ' + b + ' = ' + (a - b) + '.'],
             explain: 'The ' + c[0] + ' holds ' + (a - b) + ' more cups.', meta: { k: 'cap-num', a: a, b: b } };

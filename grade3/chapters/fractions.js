@@ -334,7 +334,7 @@
       var c = nmCase(lv), w = {};
       w[c.d + ', ' + c.n] = 'Flipped: first the shaded parts, then all the parts.';
       return { q: 'Look at the picture. Fill in the blanks.', type: 'fill', fig: shape(c.kind, c.n, c.d), fill: 'Shaded: [[]] of [[]] equal parts', answers: [c.n, c.d], wrong: w,
-        hint: 'Count the shaded parts first. Then count all the parts.', steps: [c.n + ' parts are shaded.', 'There are ' + c.d + ' equal parts in all.'], explain: c.n + ' of ' + c.d + ': ' + fr(c.n, c.d) + '.', meta: { k: 'g3fr-nm-fill' } };
+        hint: 'Count the shaded parts first. Then count all the parts.', steps: [G3.pl(c.n, 'part is', 'parts are') + ' shaded.', 'There are ' + c.d + ' equal parts in all.'], explain: c.n + ' of ' + c.d + ': ' + fr(c.n, c.d) + '.', meta: { k: 'g3fr-nm-fill' } };
     }],
     [1, 'tap', function (lv) {
       var c = nmCase(lv), kind = c.kind === 'grid' ? 'bar' : c.kind, set = [[c.n, c.d]], w = {};

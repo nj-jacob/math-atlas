@@ -24,7 +24,7 @@
       rectangle: { p: [[cx - 1.5 * h, cy - 0.8 * h], [cx + 1.5 * h, cy - 0.8 * h], [cx + 1.5 * h, cy + 0.8 * h], [cx - 1.5 * h, cy + 0.8 * h]], sides: 4, sq: 4, eq: false, sym: 2, name: 'rectangle' },
       eqtri: { p: regular(3, cx, cy + 0.2 * h, 1.15 * h), sides: 3, sq: 0, eq: true, sym: 3, name: 'triangle with equal sides' },
       isotri: { p: [[cx, cy - 1.1 * h], [cx + 0.75 * h, cy + h], [cx - 0.75 * h, cy + h]], sides: 3, sq: 0, eq: false, sym: 1, name: 'tall triangle' },
-      righttri: { p: [[cx - h, cy - h], [cx - h, cy + h], [cx + 1.1 * h, cy + h]], sides: 3, sq: 1, eq: false, sym: 0, name: 'triangle with a square corner' },
+      righttri: { p: [[cx - h, cy - 0.5 * h], [cx - h, cy + h], [cx + 1.2 * h, cy + h]], sides: 3, sq: 1, eq: false, sym: 0, name: 'triangle with a square corner' },
       rhombus: { p: [[cx, cy - 1.2 * h], [cx + 0.8 * h, cy], [cx, cy + 1.2 * h], [cx - 0.8 * h, cy]], sides: 4, sq: 0, eq: true, sym: 2, name: 'rhombus' },
       trap: { p: [[cx - 0.6 * h, cy - 0.8 * h], [cx + 0.6 * h, cy - 0.8 * h], [cx + 1.3 * h, cy + 0.8 * h], [cx - 1.3 * h, cy + 0.8 * h]], sides: 4, sq: 0, eq: false, sym: 1, name: 'trapezoid' },
       pent: { p: regular(5, cx, cy + 0.08 * h, 1.1 * h), sides: 5, sq: 0, eq: true, sym: 5, name: 'pentagon' },
@@ -258,7 +258,7 @@
         mistake: '<p>Calling any pointy corner a square corner. Use a real page corner to check.</p>',
         check: [T('sort'), P('s2-sort', 2)] },
       { id: 'equal', title: 'Equal sides', exp: ['E1.1'], skill: 's2-sort',
-        body: '<p>Some shapes have all their sides the <b>same length</b>. A square does. A rectangle does not. A square is a special rectangle.</p><div class="vrow"><figure>' + one('square') + '<figcaption>4 equal sides, 4 square corners</figcaption></figure><figure>' + one('rectangle') + '<figcaption>4 square corners, sides not all equal</figcaption></figure></div>',
+        body: '<p>Some shapes have all their sides the <b>same length</b>. A square does. This rectangle does not.</p><div class="vrow"><figure>' + one('square') + '<figcaption>4 equal sides, 4 square corners</figcaption></figure><figure>' + one('rectangle') + '<figcaption>4 square corners, sides not all equal</figcaption></figure></div>',
         watch: K.clip([
           ['A square: all 4 sides the same length.', one('square')],
           ['A rectangle: 2 long sides and 2 short sides.', one('rectangle')],

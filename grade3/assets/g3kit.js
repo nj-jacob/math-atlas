@@ -2,7 +2,8 @@
    Works with the shared lesson engine (lesson.js) and does not change it.
    G3.view(draw, start)  -> a mount for watch or example: { mount: G3.view(...), steps: [{ say, act: function (t) { return t.set({...}); } }] }
    G3.play({ state, draw, buttons, sliders, selects, tap, info, tasks }) -> a mount for try: { mount: G3.play(...), do: '' }
-   G3.turn(item), G3.skill(chapter, skillId, level) -> quick-check generators. */
+   G3.turn(item), G3.skill(chapter, skillId, level) -> quick-check generators.
+   G3.pl(n, one, many) -> '1 vote', '3 votes', '2 vertices'; G3.an(word, capital) -> 'an apple', 'A pear'. */
 (function () {
   'use strict';
   var A = window.Atlas, G = (window.G3 = {});
@@ -107,6 +108,10 @@
       showTask(); render();
     };
   };
+
+  /* words that agree with their number */
+  G.pl = function (n, one, many) { return n + ' ' + (n === 1 ? one : many || one + 's'); };
+  G.an = function (w, cap) { var a = /^[aeiou]/i.test(w) ? 'an ' : 'a '; return (cap ? a.toUpperCase().charAt(0) + a.slice(1) : a) + w; };
 
   /* quick checks */
   G.turn = function (it) {

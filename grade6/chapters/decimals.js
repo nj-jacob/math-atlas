@@ -476,12 +476,12 @@ A.yt({ q: 'Which is greatest: ' + fr(2, 5) + ', 0.35 or 0.04?', type: 'mc', opti
         if (lv === 3 && R.int(0, 1)) {
           rep = R.pick([[1, 3], [2, 3], [1, 6], [5, 6], [1, 9], [4, 9], [7, 9], [5, 3], [7, 3]]);
           var v = rep[0] / rep[1], ans = p === 100 ? Math.round(v * 10) / 10 : Math.round(v * 100) / 100, nm = p === 100 ? 'tenth' : 'hundredth';
-          var str = v.toFixed(5) + '&hellip;';
+          var str = (Math.floor(v * 100000) / 100000).toFixed(5) + '&hellip;';
           var wrong = [p === 100 ? Math.floor(v * 10) / 10 + (Math.round(v * 10) / 10 === Math.floor(v * 10) / 10 ? 0.1 : 0) : Math.floor(v * 100) / 100 + (Math.round(v * 100) === Math.floor(v * 100) ? 0.01 : 0), Math.round(v * 1000) / 1000, Math.round(v)].map(function (x) { return String(Math.round(x * 1000) / 1000); });
           var dpN = p === 100 ? 1 : 2, o = R.mc(ans.toFixed(dpN), wrong.map(function (x) { return (+x).toFixed(x.split('.')[1] ? Math.min(3, x.split('.')[1].length) : 0); }));
           return { q: A.fr(rep[0], rep[1]) + ' = ' + str + ' Round it to the nearest <b>' + nm + '</b>.', type: 'mc', options: o.options, answer: o.answer, v: { n: rep[0], d: rep[1], p: p },
             hint: 'Look at the digit just to the right of the ' + nm + 's place.',
-            steps: ['Write the decimal: ' + str, 'The digit after the ' + nm + 's place is ' + v.toFixed(5).charAt(dpN + 3) + '.', (+v.toFixed(5).charAt(dpN + 3) >= 5 ? 'It is 5 or more, so round up' : 'It is less than 5, so round down') + ': ' + ans.toFixed(dpN) + '.'],
+            steps: ['Write the decimal: ' + str, 'The digit after the ' + nm + 's place is ' + Math.floor(v * Math.pow(10, dpN + 1)) % 10 + '.', (Math.floor(v * Math.pow(10, dpN + 1)) % 10 >= 5 ? 'It is 5 or more, so round up' : 'It is less than 5, so round down') + ': ' + ans.toFixed(dpN) + '.'],
             explain: str + ' rounds to ' + ans.toFixed(dpN) + '.' };
         }
         var r = roundK(k, p), dp = p === 1000 ? 0 : p === 100 ? 1 : 2, nm2 = ['whole number', 'tenth', 'hundredth'][dp], lo = Math.floor(k / p) * p;

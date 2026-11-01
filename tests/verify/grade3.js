@@ -281,15 +281,16 @@
   set('chance-mc', (q, m) => chanceWord(m.fav, m.tot) === q.options[q.answer] ? '' : 'word');
   set('chance-tf', (q, m) => (chanceWord(m.red, m.red + m.blue) === m.said) === q.answer ? '' : 'truth');
   /* ---- 3D objects and location ---- */
-  const FEV = { 'cube': [6, 12, 8], 'rectangular prism': [6, 12, 8], 'triangular prism': [5, 9, 6], 'square-based pyramid': [5, 8, 5], 'triangular pyramid': [4, 6, 4], 'cylinder': [2, 2, 0], 'cone': [1, 1, 1] };
+  const FEV = { 'cube': [6, 12, 8], 'rectangular prism': [6, 12, 8], 'triangular prism': [5, 9, 6], 'square-based pyramid': [5, 8, 5], 'triangular pyramid': [4, 6, 4], 'cylinder': [2], 'cone': [1] };
   const PARTI = { f: 0, e: 1, v: 2 };
   const LOOKS = { 'a soup can': 'cylinder', 'a number cube': 'cube', 'a cereal box': 'rectangular prism', 'an ice cream cone': 'cone', 'a tent': 'triangular prism', 'a pyramid in Egypt': 'square-based pyramid' };
-  const FITS = { 'has a curved surface': ['cylinder', 'cone'], 'has at least one triangle face': ['triangular prism', 'square-based pyramid', 'triangular pyramid'], 'has exactly 6 flat faces': ['cube', 'rectangular prism'], 'has fewer than 5 vertices': ['triangular pyramid', 'cylinder', 'cone'] };
+  const FITS = { 'has a curved surface': ['cylinder', 'cone'], 'has at least one triangle face': ['triangular prism', 'square-based pyramid', 'triangular pyramid'], 'has exactly 6 flat faces': ['cube', 'rectangular prism'], 'has exactly 5 flat faces': ['triangular prism', 'square-based pyramid'] };
   const DIR = ['north', 'east', 'south', 'west'], TURNS = { 'quarter turn right': 1, 'half turn': 2, 'quarter turn left': 3 };
   const sorted3 = d => d.slice().sort((a, b) => a - b).join();
   /* walks "forward 2" / "right" / "left" steps from a square, facing north */
   const go = (x, y, acts) => { let d = 0; acts.forEach(a => { if (a === 'right') d = (d + 1) % 4; else if (a === 'left') d = (d + 3) % 4; else { const f = +a.split(' ')[1]; x += [0, 1, 0, -1][d] * f; y += [1, 0, -1, 0][d] * f; } }); return 'ABCDEF'[x] + (y + 1); };
   const readActs = t => H.strip(t).split(', then ').map(s => s.replace('make a quarter turn ', '').replace('go ', ''));
+  set('solid-count', (q, m) => FEV[m.name][PARTI[m.part]] === q.answer && H.strip(q.q).includes(m.name) ? '' : 'count');
   set('solid-match', (q, m) => q.pairs.every(p => FEV[p[0]][PARTI[m.part]] === +p[1]) ? '' : 'pairs');
   set('solid-tap', (q, m) => { const hit = m.set.map((n, j) => FEV[n][PARTI[m.part]] === m.n ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'object'; });
   set('solid-fill', (q, m) => FEV[m.name].join() === q.answers.join() ? '' : 'counts');

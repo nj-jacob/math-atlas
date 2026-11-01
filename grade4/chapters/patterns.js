@@ -293,7 +293,7 @@
           ['Each step adds 3, so 7 steps add 7 &times; 3 = 21.', table(4, 3, 5), 2000],
           ['I add the start: 4 + 21 = <b>25</b>. Figure 8 has 25 tiles.', graph([4, 7, 10, 13, 16, 19, 22, 25]), 2400]
         ]),
-        key: '<p>Figure n = <b>start + (n &minus; 1) steps</b>.</p>',
+        key: '<p>Any figure = <b>start + (steps from figure 1) &times; the amount added each time</b>.</p>',
         mistake: '<p>Multiplying the figure number by the step (10 &times; 2 = 20), forgetting the start. Ask: "How many steps are there from figure 1 to figure 10?"</p>',
         check: [T('rule', 1), T('rule', 2), T('next', 3)] },
 

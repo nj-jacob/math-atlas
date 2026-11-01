@@ -493,7 +493,7 @@ A.yt({ gen: function () { return gen.value(2); } }) +
   /* ---------- More ways to ask (question shapes; see docs/QUESTIONS.md) ----------
      Whole dollars only. q.meta holds the facts that tests/verify/grade4.js uses to work each answer out again. */
   var why = K.why, who = A.Q && A.Q.name;
-  var PAYFACTS = [['A debit card uses money that is already in your bank account.', true], ['A credit card borrows money that you pay back later.', true], ['A gift card works at any store.', false],
+  var PAYFACTS = [['A debit card uses money that is already in your bank account.', true], ['A credit card borrows money that you pay back later.', true], ['A store gift card works at any store.', false],
     ['Tapping a phone to pay is free money.', false], ['Paying a credit card late costs extra.', true], ['Cash comes out of your bank account each time you spend it.', false]];
   var SHAPES = {
     'mo4-pay': [
@@ -504,7 +504,7 @@ A.yt({ gen: function () { return gen.value(2); } }) +
       }],
       [1, 'mistake', function () {
         var f = R.pick(PAYFACTS), p = who();
-        var right = f[1] ? 'That is right: ' + f[0].charAt(0).toLowerCase() + f[0].slice(1) : 'That is not right. ' + { 'A gift card works at any store.': 'A gift card only works at one store or company.', 'Tapping a phone to pay is free money.': 'Tapping uses real money from the card linked to the phone.', 'Cash comes out of your bank account each time you spend it.': 'Cash is bills and coins you already have in your hand.' }[f[0]];
+        var right = f[1] ? 'That is right: ' + f[0].charAt(0).toLowerCase() + f[0].slice(1) : 'That is not right. ' + { 'A store gift card works at any store.': 'A store gift card only works at that store or company.', 'Tapping a phone to pay is free money.': 'Tapping uses real money from the card linked to the phone.', 'Cash comes out of your bank account each time you spend it.': 'Cash is bills and coins you already have in your hand.' }[f[0]];
         return { q: p + ' says: "' + f[0] + '" True or false: ' + p + ' is right.', type: 'tf', answer: f[1],
           why: why(right, ['All ways to pay work the same way.', 'Cards never use real money.', 'You never have to pay for things bought with a card.']),
           hint: 'Think about where the money comes from.', steps: [right], explain: right, meta: { k: 'mo4-pay-tf', fact: f[0] } };

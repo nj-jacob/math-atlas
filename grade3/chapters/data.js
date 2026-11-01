@@ -245,7 +245,7 @@
         watch: { mount: G3.view(barView, { title: SETS.sport.t, d: SETS.sport.d, src: SETS.sport.src, c: 2, say: 'Scale counts by 2' }), steps: [
           { say: 'This scale counts by 2. Hockey reaches 12.', ms: 1800 },
           { say: 'Soccer stops halfway between 8 and 10. That is 9.', act: function (t) { return t.set({ say: 'Soccer: 9' }, 1800); } },
-          { say: 'Change the scale to count by 5. Same data, the bars look the same, but the lines change.', act: function (t) { return t.set({ c: 5, say: 'Scale counts by 5' }, 2000); } }
+          { say: 'Change the scale to count by 5. Same data. The lines change, so the bars look shorter.', act: function (t) { return t.set({ c: 5, say: 'Scale counts by 5' }, 2000); } }
         ] },
         example: { mount: G3.view(barView, { title: SETS.fruit.t, d: SETS.fruit.d, c: 2, src: SETS.fruit.src, say: 'Scale counts by 2' }), steps: [
           { say: 'My turn. I read the scale first. It counts by 2. Grapes reach 10.', ms: 1800 },
@@ -673,7 +673,7 @@
         [1, 'fill', function (lv) {
           var key = lv === 1 ? 2 : R.pick([2, 5, 10]), data = survey4(key, 6), i = R.int(0, 2), j = R.int(i + 1, 3);
           return { q: 'Use the key. Fill in the blanks.', type: 'fill', fig: picto('How we voted', data, key, 'Class survey'), fill: data[i][0] + ': [[]] votes<br>' + data[j][0] + ': [[]] votes', answers: [data[i][1], data[j][1]],
-            hint: 'Each picture means ' + key + '. Count by ' + key + 's.', steps: [data[i][0] + ' has ' + data[i][1] / key + ' pictures: ' + data[i][1] + '.', data[j][0] + ' has ' + data[j][1] / key + ' pictures: ' + data[j][1] + '.'],
+            hint: 'Each picture means ' + key + '. Count by ' + key + 's.', steps: [data[i][0] + ' has ' + G3.pl(data[i][1] / key, 'picture') + ': ' + data[i][1] + '.', data[j][0] + ' has ' + G3.pl(data[j][1] / key, 'picture') + ': ' + data[j][1] + '.'],
             explain: data[i][0] + ': ' + data[i][1] + '. ' + data[j][0] + ': ' + data[j][1] + '.', meta: { k: 'picto-fill' } };
         }],
         [1, 'order', function (lv) {
@@ -692,8 +692,8 @@
         }],
         [2, 'mistake', function (lv) {
           var key = R.pick([2, 5, 10]), data = survey4(key, 6), i = R.int(0, 3), who = nm(), truth = !R.int(0, 2), said = truth ? data[i][1] : data[i][1] / key;
-          var right = 'Each picture means ' + key + '. ' + data[i][0] + ' has ' + data[i][1] / key + ' pictures, so ' + data[i][1] + ' votes.';
-          return { q: who + ' says ' + data[i][0] + ' got <b>' + said + '</b> votes. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: picto('How we voted', data, key, 'Class survey'),
+          var right = 'Each picture means ' + key + '. ' + data[i][0] + ' has ' + G3.pl(data[i][1] / key, 'picture') + ', so ' + G3.pl(data[i][1], 'vote') + '.';
+          return { q: who + ' says ' + data[i][0] + ' got <b>' + G3.pl(said, 'vote') + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: picto('How we voted', data, key, 'Class survey'),
             why: why(right, ['Each picture means 1 vote.', 'Count the pictures and add ' + key + '.', 'The key only matters for the first row.']),
             hint: 'Read the key first.', steps: [right], explain: right, meta: { k: 'picto-tf', name: data[i][0], said: said } };
         }]

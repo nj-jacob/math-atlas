@@ -260,7 +260,10 @@
   set('g5mo-paypick', q => picks(q, o => H.strip(o) !== 'Credit card'));
   set('g5mo-paytf', (q, m) => (m.way === 'a debit card') === q.answer ? '' : 'truth');
   set('g5mo-taxfill', q => { const p = dollars(q.fill)[0], t = Math.round(p * 13) / 100; return H.close(q.answers[0], t, 1e-6) && H.close(q.answers[1], p + t, 1e-6) ? '' : 'receipt'; });
-  set('g5mo-taxstory', q => { const v = dollars(q.q); return H.close(q.answer, v[2] - v[0] - v[1], 1e-6) ? '' : 'change'; });
+  /* cash change: the total rounds to the nearest 5 cents first, so the change is always a multiple of 5 cents */
+  const cashChange = (given, total, answer) => { const want = given - cash5(total), got = Math.round(answer * 100); return got % 5 ? 'cash change ' + got + ' cents is not a multiple of 5 cents' : got === want ? '' : 'change'; };
+  set('g5mo-taxstory', q => { const v = dollars(q.q).map(x => Math.round(x * 100)); return cashChange(v[2], v[0] + v[1], q.answer); });
+  set('g5mo-taxchange', (q, m) => { const v = dollars(q.q).map(x => Math.round(x * 100)); return v[0] === m.p && v[1] === m.g ? cashChange(m.g, m.p, q.answer) : 'prices'; });
   set('g5mo-taxtf', (q, m) => (cash5(m.p) === m.said) === q.answer ? '' : 'truth');
   set('g5mo-taxbuild', (q, m) => q.tool === 'coins' && Math.abs(dollars(q.q)[0] * 100 - m.p) < 1e-6 && q.answer === cash5(m.p) ? '' : 'cash');
   set('g5mo-taxwhich', q => H.strip(q.options[q.answer]).startsWith('Find 13%') ? '' : 'method');
