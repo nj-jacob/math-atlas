@@ -3,7 +3,8 @@
    G3.view(draw, start)  -> a mount for watch or example: { mount: G3.view(...), steps: [{ say, act: function (t) { return t.set({...}); } }] }
    G3.play({ state, draw, buttons, sliders, selects, tap, info, tasks }) -> a mount for try: { mount: G3.play(...), do: '' }
    G3.turn(item), G3.skill(chapter, skillId, level) -> quick-check generators.
-   G3.pl(n, one, many) -> '1 vote', '3 votes', '2 vertices'; G3.an(word, capital) -> 'an apple', 'A pear'. */
+   G3.pl(n, one, many) -> '1 vote', '3 votes', '2 vertices'; G3.an(word, capital) -> 'an apple', 'A pear'.
+   G3.mc, G3.num, G3.tf, G3.clip -> question and clip builders for full chapters (see below). */
 (function () {
   'use strict';
   var A = window.Atlas, G = (window.G3 = {});
@@ -122,5 +123,31 @@
   };
   G.skill = function (ch, id, lv) {
     return function () { var s = A.chapters[ch].practice.filter(function (x) { return x.id === id; })[0], q = s.gen(lv || 1); q.skill = id; return q; };
+  };
+
+  /* question builders for full chapters (patterns, data). q.wrong maps a wrong answer, in plain words, to a short fix (Atlas.Q.diag).
+     G3.mc(q, right, [[wrong, fix], ...], extra): the right choice and up to 3 wrong ones, shuffled. G3.num(q, answer, { wrong: fix }, extra).
+     G3.tf(q, truth, reason, [wrong reasons], fix, extra): true or false, then why. G3.clip(draw, start, [[line, change, ms], ...]): a Watch or My turn clip. */
+  function plain(h) { var e = document.createElement('div'); e.innerHTML = h; return e.textContent.replace(/\s+/g, ' ').trim(); }
+  function put(o, x) { for (var k in x) o[k] = x[k]; return o; }
+  G.mc = function (q, right, wrongs, x) {
+    var seen = {}, opts = [right], fix = {};
+    seen[plain(right)] = 1;
+    wrongs.forEach(function (w) { var t = plain(w[0]); if (opts.length >= 4 || seen[t]) return; seen[t] = 1; opts.push(w[0]); if (w[1]) fix[t] = w[1]; });
+    var o = A.R.shuffle(opts);
+    return put({ q: q, type: 'mc', options: o, answer: o.indexOf(right), wrong: fix }, x || {});
+  };
+  G.num = function (q, ans, fixes, x) { var w = {}; Object.keys(fixes || {}).forEach(function (k) { if (+k !== ans) w[k] = fixes[k]; }); return put({ q: q, type: 'num', answer: ans, wrong: w }, x || {}); };
+  G.tf = function (q, truth, right, bad, fix, x) {
+    var o = A.R.mc(right, bad), w = {};
+    w[truth ? 'False' : 'True'] = fix;
+    return put({ q: q, type: 'tf', answer: truth, why: { options: o.options, answer: o.answer }, wrong: w, steps: [right], explain: right }, x || {});
+  };
+  G.clip = function (draw, start, list) {
+    return { mount: G.view(draw, start), steps: list.map(function (s) {
+      var st = { say: s[0], ms: s[2] || 1900 }, p = s[1];
+      if (p) st.act = function (t) { return Array.isArray(p) ? t.seq(p, 650) : t.set(p, 700); };
+      return st;
+    }) };
   };
 })();
