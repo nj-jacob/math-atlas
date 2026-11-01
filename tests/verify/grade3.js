@@ -101,32 +101,127 @@
   set('scale-story', q => { const n = nums(q.q); return n[1] * n[2] === q.answer ? '' : 'total'; });
   set('scale-match', (q, m) => q.pairs.every(p => nums(p[0])[0] * m.f === nums(p[1])[0]) ? '' : 'pairs');
   set('scale-tf', (q, m) => (m.f * m.n === m.said) === q.answer ? '' : 'truth');
-  /* ---- Fractions ---- */
-  /* reads a shaded bar or grid: [shaded parts, all parts] */
-  const shade = svg => { const d = document.createElement('div'); d.innerHTML = svg; const r = [...d.querySelectorAll('rect')]; return [r.filter(x => /fill:var\(--strand\)/.test(x.getAttribute('style'))).length, r.length]; };
+  /* ---- Fractions (a full chapter: every key starts with g3fr-) ---- */
+  /* reads a picture: [shaded parts, all parts], counting bars, grid cells and circle slices */
+  const shade = svg => { const d = document.createElement('div'); d.innerHTML = svg || ''; const r = [...d.querySelectorAll('rect, path')].filter(x => /stroke:var\(--ink\)/.test(x.getAttribute('style') || '')); return [r.filter(x => /fill:var\(--strand\)/.test(x.getAttribute('style'))).length, r.length]; };
   /* reads "2 and 1/3", "1/4" or "3" written with fraction markup */
   const amount = h => { const d = document.createElement('div'); d.innerHTML = h; const f = d.querySelector('.fr'); let v = 0; if (f) { const s = f.querySelectorAll('span'); v = +s[0].textContent / +s[1].textContent; f.remove(); } const w = d.textContent.match(/\d+/); return v + (w ? +w[0] : 0); };
   const fracs = h => { const d = document.createElement('div'); d.innerHTML = h; return [...d.querySelectorAll('.fr')].map(f => { const s = f.querySelectorAll('span'); return [+s[0].textContent, +s[1].textContent]; }); };
-  const PIECE = { halves: 2, thirds: 3, fourths: 4 };
-  set('frn-tap', (q, m) => { const hit = q.tiles.map(shade).map((s, j) => s[0] === m.n && s[1] === m.d ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer && fracs(q.q)[0].join() === m.n + ',' + m.d ? '' : 'picture'; });
-  set('frn-fill', q => shade(q.fig).join() === q.answers.join() ? '' : 'counts');
-  set('frn-line', (q, m) => H.close(q.answer, m.n / m.d, 1e-9) && fracs(q.q)[0].join() === m.n + ',' + m.d ? '' : 'point');
-  set('frn-tf', (q, m) => { const s = shade(q.fig); return (s[0] === m.sn && s[1] === m.sd) === q.answer ? '' : 'truth'; });
-  set('frs-fill', (q, m) => q.answers[0] * m.k2 + q.answers[1] === m.items && q.answers[1] < m.k2 ? '' : 'share');
-  set('frs-mc', (q, m) => H.close(amount(q.options[q.answer]) * m.k2, m.items, 1e-9) ? '' : 'share');
-  set('frs-match', q => q.pairs.every(p => { const n = nums(p[0]); return H.close(amount(p[1]), n[0] / n[1], 1e-9); }) ? '' : 'pairs');
-  set('frs-tf', (q, m) => (m.w * m.k2 + m.l === m.items) === q.answer ? '' : 'truth');
-  set('fru-line', (q, m) => H.close(q.answer, m.n / m.d, 1e-9) ? '' : 'landing');
-  set('fru-fill', (q, m) => fracs(q.fill).filter(f => f[0] === 1 && f[1] === m.d).length === q.answers[0] ? '' : 'count');
-  set('fru-order', q => { const v = q.items.map(amount); return v.every((x, i) => !i || x > v[i - 1]) ? '' : 'order'; });
-  set('fru-tf', (q, m) => { const f = fracs(q.q), parts = f.slice(0, -1), said = f[f.length - 1]; const total = parts.reduce((a, p) => a + p[0] / p[1], 0); return H.close(total, said[0] / said[1], 1e-9) === q.answer ? '' : 'truth'; });
-  set('fre-tap', (q, m) => { const hit = q.tiles.map(shade).map((s, j) => s[0] * m.a === m.n * s[1] ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'bar'; });
-  set('fre-tf', (q, m) => (m.n * m.b === m.m * m.a) === q.answer ? '' : 'truth');
-  set('fre-match', q => q.pairs.every(p => H.close(amount(p[0]), amount(p[1]), 1e-9)) && new Set(q.pairs.map(p => amount(p[0]))).size === q.pairs.length ? '' : 'pairs');
-  set('frg-num', (q, m) => q.answer * m.d === m.n && nums(q.q)[0] === m.n ? '' : 'wholes');
-  set('frg-match', q => q.pairs.every(p => { const d = PIECE[p[0].split(' ')[1]]; return nums(p[0])[0] === nums(p[1])[0] * d; }) ? '' : 'pairs');
-  set('frg-fill', q => { const d = PIECE[(q.fill.match(/halves|thirds|fourths/) || [])[0]]; const l = q.fill.split('<br>'); return nums(l[0])[0] === q.answers[0] * d && q.answers[1] === nums(l[1].replace('[[]]', ''))[0] * d ? '' : 'wholes'; });
-  set('frg-tf', (q, m) => (m.w * m.d === m.n) === q.answer ? '' : 'truth');
+  const PIECE = { half: 2, halves: 2, third: 3, thirds: 3, fourth: 4, fourths: 4, fifth: 5, fifths: 5, sixth: 6, sixths: 6, eighth: 8, eighths: 8, tenth: 10, tenths: 10 };
+  const WORD = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+  const pieceIn = t => { const w = (H.strip(t).toLowerCase().match(/\b(halves|half|thirds?|fourths?|fifths?|sixths?|eighths?|tenths?)\b/g) || []); return w.length ? PIECE[w[w.length - 1]] : NaN; };
+  const near = (a, b) => Math.abs(a - b) < 1e-9;
+  /* the right choice is the only one worth v */
+  const only = (q, v, of) => { of = of || amount; const hit = q.options.map((o, j) => near(of(o), v) ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer; };
+  const tiles = (q, ok) => { const hit = q.tiles.map((t, j) => ok(shade(t)) ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer; };
+  const ascending = vs => vs.every((x, i) => !i || x > vs[i - 1]);
+  const sumOf = h => fracs(h).reduce((a, f) => a + f[0] / f[1], 0);
+  const even = ws => ws.every(w => w === ws[0]);
+  const wholes = (n, d) => { let w = 0; while ((w + 1) * d <= n) w++; return w; };
+  const picked = q => H.strip(q.options[q.answer]);
+  /* equal parts */
+  set('g3fr-eq-name', (q, m) => { const t = picked(q), want = !even(m.ws) ? 'unequal' : m.ws.length !== m.d ? 'count' : 'yes'; const got = /^Yes/.test(t) ? 'yes' : /not equal/.test(t) ? 'unequal' : /does not have|there are not/.test(t) ? 'count' : '?'; return got === want && (!q.fig || shade(q.fig)[1] === m.ws.length) ? '' : 'equal parts'; });
+  set('g3fr-eq-count', (q, m) => q.answer === m.ws.length ? '' : 'count');
+  set('g3fr-eq-size', (q, m) => { const t = picked(q), mx = Math.max(...m.ws), mn = Math.min(...m.ws); const want = even(m.ws) ? /same size/ : m.ws.filter(w => w === mx).length === 1 ? /bigger/ : /smaller/; return want.test(t) ? '' : 'sizes'; });
+  set('g3fr-eq-tap', (q, m) => { const fit = m.sets.map((s, j) => even(s) && s.length === m.d && shade(q.tiles[j])[1] === s.length ? j : -1).filter(j => j >= 0); return fit.length === 1 && fit[0] === q.answer ? '' : 'tile'; });
+  set('g3fr-eq-tf', (q, m) => (even(m.ws) && m.ws.length === m.d) === q.answer && shade(q.fig)[1] === m.ws.length ? '' : 'truth');
+  /* naming pieces */
+  set('g3fr-pc-mc', (q, m) => { const t = q.options[q.answer], f = fracs(t); const ok = f.length ? f[0][0] === 1 && f[0][1] === m.d : pieceIn(t) === m.d; return ok && (!q.fig || shade(q.fig)[1] === m.d) ? '' : 'piece name'; });
+  set('g3fr-pc-count', (q, m) => q.answer === m.d ? '' : 'parts');
+  set('g3fr-pc-tap', q => { const d = pieceIn(q.q.match(/one (\w+)/)[1]); return tiles(q, s => s[0] === 1 && s[1] === d) ? '' : 'tile'; });
+  set('g3fr-pc-match', q => q.pairs.every(p => { const f = fracs(p[1])[0]; return f[0] === 1 && f[1] === pieceIn(p[0]); }) ? '' : 'pairs');
+  set('g3fr-pc-tf', q => (pieceIn(H.strip(q.q).match(/is one (\w+)/)[1]) === shade(q.fig)[1]) === q.answer ? '' : 'truth');
+  /* top and bottom numbers */
+  set('g3fr-nm-mc', (q, m) => { const s = q.fig ? shade(q.fig) : [m.n, m.d], f = fracs(q.options[q.answer])[0]; return f[0] === s[0] && f[1] === s[1] ? '' : 'fraction'; });
+  set('g3fr-nm-fill', q => shade(q.fig).join() === q.answers.join() ? '' : 'counts');
+  set('g3fr-nm-tap', q => { const f = fracs(q.q)[0]; return tiles(q, s => s[0] === f[0] && s[1] === f[1]) ? '' : 'tile'; });
+  set('g3fr-nm-not', q => { const s = shade(q.fig), f = fracs(q.options[q.answer])[0]; return f[0] === s[1] - s[0] && f[1] === s[1] ? '' : 'white parts'; });
+  set('g3fr-nm-match', q => q.pairs.every(p => { const w = H.strip(p[0]).split(' '), f = fracs(p[1])[0]; return WORD.indexOf(w[0]) === f[0] && PIECE[w[1]] === f[1]; }) ? '' : 'pairs');
+  set('g3fr-nm-tf', q => { const s = shade(q.fig), f = fracs(q.q)[0]; return (f[0] === s[0] && f[1] === s[1]) === q.answer ? '' : 'truth'; });
+  set('g3fr-nm-all', (q, m) => q.answer === m.d ? '' : 'all parts');
+  set('g3fr-nm-shaded', (q, m) => q.answer === m.n ? '' : 'shaded parts');
+  /* fair shares */
+  set('g3fr-dl-fill', (q, m) => q.answers[0] * m.k2 + q.answers[1] === m.items && q.answers[1] >= 0 && q.answers[1] < m.k2 ? '' : 'share');
+  set('g3fr-dl-whole', (q, m) => (q.type === 'mc' ? +picked(q) : q.answer) === wholes(m.items, m.k2) ? '' : 'wholes each');
+  set('g3fr-dl-left', (q, m) => q.answer === m.items - m.k2 * wholes(m.items, m.k2) ? '' : 'left over');
+  set('g3fr-dl-story', (q, m) => { const ok = o => { const n = nums(o); return n[0] * m.k2 + n[1] === m.items && n[1] < m.k2; }; const hit = q.options.map((o, j) => ok(o) ? j : -1).filter(j => j >= 0); return hit.length === 1 && hit[0] === q.answer ? '' : 'share'; });
+  set('g3fr-dl-tf', (q, m) => (m.w * m.k2 + m.l === m.items && m.l < m.k2) === q.answer ? '' : 'truth');
+  set('g3fr-dl-times', (q, m) => q.answers[0] * m.k2 === q.answers[1] && q.answers[1] + q.answers[2] === m.items && q.answers[2] < m.k2 ? '' : 'times');
+  set('g3fr-mul', (q, m) => q.answer === m.a * m.b ? '' : 'product');
+  set('g3fr-share', (q, m) => only(q, m.items / m.k2) ? '' : 'share');
+  set('g3fr-sh-cut', (q, m) => q.answer === m.k2 ? '' : 'pieces');
+  set('g3fr-sh-match', q => q.pairs.every(p => { const n = nums(p[0]); return near(amount(p[1]) * n[1], n[0]); }) ? '' : 'pairs');
+  set('g3fr-sh-tf', (q, m) => near((m.said[0] + m.said[1] / m.said[2]) * m.k2, m.items) === q.answer ? '' : 'truth');
+  set('g3fr-fw-fill', (q, m) => q.answers[0] === m.k2 && q.answers[1] === m.items ? '' : 'pieces');
+  set('g3fr-fw-tap', (q, m) => tiles(q, s => near(s[0] / s[1] * m.k2, m.items)) ? '' : 'tile');
+  set('g3fr-fw-tf', (q, m) => near(m.s[0] / m.s[1] * m.k2, m.items) === q.answer ? '' : 'truth');
+  set('g3fr-fw-count', (q, m) => q.answer === m.items ? '' : 'pieces each');
+  set('g3fr-cs-mc', (q, m) => { const x = m.a[0] * m.b[1], y = m.b[0] * m.a[1]; return q.options.length === 3 && q.answer === (x > y ? 0 : x < y ? 1 : 2) ? '' : 'who gets more'; });
+  set('g3fr-cs-which', (q, m) => { const va = m.a[0] / m.a[1], vb = m.b[0] / m.b[1], t = q.options[q.answer]; return (near(va, vb) ? /same/.test(H.strip(t)) : near(amount(t), Math.max(va, vb))) ? '' : 'bigger share'; });
+  set('g3fr-cs-tf', (q, m) => (m.x[0] * m.y[1] > m.y[0] * m.x[1]) === q.answer ? '' : 'truth');
+  set('g3fr-cs-order', q => ascending(q.items.map(t => { const n = nums(t); return n[0] / n[1]; })) ? '' : 'order');
+  /* unit fractions */
+  set('g3fr-ct-mc', (q, m) => { const f = fracs(q.q).filter(x => x[0] === 1); return (f.length < 2 || f.length === m.n) && only(q, m.n / m.d) ? '' : 'sum'; });
+  set('g3fr-ct-line', (q, m) => near(q.answer, m.n / m.d) ? '' : 'landing');
+  set('g3fr-ct-fill', (q, m) => fracs(q.fill).filter(f => f[0] === 1 && f[1] === m.d).length === q.answers[0] ? '' : 'count');
+  set('g3fr-ct-pic', q => { const s = shade(q.fig); return only(q, s[0] / s[1], sumOf) ? '' : 'sum'; });
+  set('g3fr-ct-tf', q => { const f = fracs(q.q), said = f[f.length - 1]; return near(f.slice(0, -1).reduce((a, p) => a + p[0] / p[1], 0), said[0] / said[1]) === q.answer ? '' : 'truth'; });
+  set('g3fr-ct-n', (q, m) => q.answer === m.n ? '' : 'pieces');
+  set('g3fr-tp-num', q => { const f = fracs(q.q); return near(q.answer * f[0][0] / f[0][1], f[1][0] / f[1][1]) && f[0][0] === 1 ? '' : 'pieces'; });
+  set('g3fr-tp-mc', (q, m) => only(q, m.n / m.d, sumOf) && fracs(q.options[q.answer]).every(f => f[0] === 1 && f[1] === m.d) ? '' : 'addition');
+  set('g3fr-tp-order', q => ascending(q.items.map(amount)) ? '' : 'order');
+  set('g3fr-tp-tf', (q, m) => (m.s === m.n) === q.answer ? '' : 'truth');
+  set('g3fr-tp-n', (q, m) => q.answer === m.n ? '' : 'top number');
+  set('g3fr-ps-mc', (q, m) => only(q, m.n / m.d) ? '' : 'mixed number');
+  set('g3fr-ps-fill', (q, m) => q.answers[0] * m.d + q.answers[1] === m.n && q.answers[1] < m.d ? '' : 'wholes');
+  set('g3fr-ps-line', (q, m) => near(q.answer, m.n / m.d) ? '' : 'point');
+  set('g3fr-ps-match', q => q.pairs.every(p => near(amount(p[0]), amount(p[1]))) ? '' : 'pairs');
+  set('g3fr-ps-tf', (q, m) => near(amount(m.said), m.n / m.d) === q.answer ? '' : 'truth');
+  set('g3fr-ps-one', (q, m) => q.answer === m.d ? '' : 'one whole');
+  set('g3fr-ps-w', q => { const f = fracs(q.q)[0]; return q.answer === wholes(f[0], f[1]) ? '' : 'wholes'; });
+  set('g3fr-ps-r', (q, m) => q.answer === m.n - m.d * wholes(m.n, m.d) ? '' : 'left');
+  /* equivalent fractions */
+  set('g3fr-eqv-fill', q => { const f = fracs(q.fill)[0], d = pieceIn(q.fill.split('[[]]')[1]); return q.answers[0] * f[1] === f[0] * d ? '' : 'equivalent'; });
+  set('g3fr-eqv-mc', (q, m) => only(q, m.w + m.n / m.a) ? '' : 'equivalent');
+  set('g3fr-eqv-tap', q => { const s = shade(q.fig); return tiles(q, t => t[0] * s[1] === s[0] * t[1]) ? '' : 'tile'; });
+  set('g3fr-eqv-tf', q => { const f = fracs(q.q); return (f[0][0] * f[1][1] === f[1][0] * f[0][1]) === q.answer ? '' : 'truth'; });
+  set('g3fr-eqv-match', q => q.pairs.every(p => near(amount(p[0]), amount(p[1]))) && new Set(q.pairs.map(p => amount(p[0]).toFixed(6))).size === q.pairs.length ? '' : 'pairs');
+  set('g3fr-eqv-story', q => { const f = fracs(q.q)[0], b = +H.strip(q.q).match(/into (\d+) equal pieces/)[1]; return q.answer * f[1] === f[0] * b ? '' : 'pieces'; });
+  set('g3fr-eqv-each', (q, m) => q.answer * m.a === m.b ? '' : 'small pieces');
+  set('g3fr-eqv-n', (q, m) => q.answer === m.n ? '' : 'shaded');
+  set('g3fr-eqv-step', q => { const f = fracs(q.q)[0], d = pieceIn(q.q.split('how many')[1]); return q.answer * f[1] === f[0] * d ? '' : 'equivalent'; });
+  set('g3fr-es-pick', (q, m) => same(q.options.map((o, j) => near(amount(o) * m.k2, m.items) ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('g3fr-es-mc', (q, m) => only(q, m.items / m.k2) ? '' : 'same share');
+  set('g3fr-es-fill', (q, m) => { const f = fracs(q.fill); return near(q.answers[0] / f[0][1], m.items / m.k2) && near(q.answers[1] / f[1][1], m.items / m.k2) ? '' : 'pieces'; });
+  set('g3fr-es-tf', (q, m) => near(amount(m.said) * m.k2, m.items) === q.answer ? '' : 'truth');
+  /* groups of pieces */
+  set('g3fr-gp-whole', q => { const n = nums(q.q)[0], d = pieceIn(q.q); return q.answer * d === n ? '' : 'wholes'; });
+  set('g3fr-gp-pic', q => { const d = pieceIn(q.q.split('these')[1]), n = shade(q.fig)[1]; return q.answer * d === n ? '' : 'wholes'; });
+  set('g3fr-gp-rev', q => { const w = nums(q.q)[0], d = pieceIn(q.q.split(' are in ')[0]); return q.answer === w * d ? '' : 'pieces'; });
+  set('g3fr-gp-match', q => q.pairs.every(p => nums(p[0])[0] === nums(p[1])[0] * pieceIn(p[0])) ? '' : 'pairs');
+  set('g3fr-gp-tf', (q, m) => (m.s * m.d === m.n) === q.answer ? '' : 'truth');
+  set('g3fr-gp-fill', q => { const n = +H.strip(q.fill).match(/(\d+) groups/)[1], d = fracs(q.fill)[0][1]; return q.answers[0] === n && q.answers[1] * d === n ? '' : 'groups'; });
+  set('g3fr-gp-groups', q => { const n = nums(q.q); return q.answer * n[0] === n[1] ? '' : 'groups'; });
+  set('g3fr-gl-mc', (q, m) => only(q, m.n / m.d) ? '' : 'wholes and leftover');
+  set('g3fr-gl-fill', (q, m) => q.answers[0] * m.d + q.answers[1] === m.n && q.answers[1] < m.d ? '' : 'wholes');
+  set('g3fr-gl-match', q => q.pairs.every(p => near(amount(p[1]), nums(p[0])[0] / pieceIn(p[0]))) ? '' : 'pairs');
+  set('g3fr-gl-tf', (q, m) => near(amount(m.said), m.n / m.d) === q.answer ? '' : 'truth');
+  set('g3fr-gl-full', (q, m) => q.answer * m.d <= m.n && (q.answer + 1) * m.d > m.n ? '' : 'full groups');
+  set('g3fr-gl-left', (q, m) => q.answer === m.n - m.d * wholes(m.n, m.d) ? '' : 'left over');
+  set('g3fr-gs-mc', (q, m) => only(q, m.n / m.d) ? '' : 'total');
+  set('g3fr-gs-num', q => { const d = fracs(q.q)[0][1], n = +H.strip(q.q).match(/skis (\d+) laps/)[1]; return q.answer * d === n ? '' : 'km'; });
+  set('g3fr-gs-scoops', q => { const w = +H.strip(q.q).match(/needs (\d+) cups/)[1], d = fracs(q.q)[0][1]; return q.answer === w * d ? '' : 'scoops'; });
+  set('g3fr-gs-tf', (q, m) => near(amount(m.said), m.n / m.d) === q.answer ? '' : 'truth');
+  set('g3fr-gs-fill', (q, m) => q.answers[0] * m.d + q.answers[1] === m.n && q.answers[1] < m.d ? '' : 'cups');
+  set('g3fr-gs-n', (q, m) => q.answer === m.n ? '' : 'pieces');
+  /* bigger piece or more pieces */
+  set('g3fr-mix-mc', (q, m) => { const va = m.a[0] / m.a[1], vb = m.b[0] / m.b[1], t = q.options[q.answer], f = fracs(t)[0]; return (near(va, vb) ? /same/.test(H.strip(t)) : !!f && near(f[0] / f[1], Math.max(va, vb))) ? '' : 'which is more'; });
+  set('g3fr-mix-tf', (q, m) => (m.x[0] * m.y[1] > m.y[0] * m.x[1]) === q.answer ? '' : 'truth');
+  set('g3fr-mix-order', q => ascending(q.items.map(amount)) ? '' : 'order');
+  set('g3fr-mix-pick', (q, m) => same(q.options.map((o, j) => amount(o) > m.t[0] / m.t[1] + 1e-9 ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
+  set('g3fr-mix-same', (q, m) => q.answer === (m.a[0] === m.b[0] ? 0 : m.a[1] === m.b[1] ? 1 : 2) ? '' : 'matching number');
+  set('g3fr-mix-big', (q, m) => pieceIn(q.options[q.answer]) === Math.min(m.a[1], m.b[1]) ? '' : 'bigger pieces');
+  set('g3fr-mix-more', (q, m) => { const f = fracs(q.options[q.answer])[0]; return f && f[0] === Math.max(m.a[0], m.b[0]) ? '' : 'more pieces'; });
   /* ---- Patterns and algebra ---- */
   const SHAPE = { A: 'circle', B: 'square', C: 'triangle', D: 'star' };
   /* works out one step such as "12 ÷ 3" or "4 × 5" */

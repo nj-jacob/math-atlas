@@ -8,7 +8,15 @@
    concept = { id: 'zero', title, exp: ['B1.1'], skill: 'n2-blocks', hard: true,
      body: html, watch: { tool, opts, steps } or { mount(el) -> tool, steps }, try: { tool, opts, tasks: [{ do, goal(state, tool), yes }] } or { mount(el, done) },
      example: { lead, mount or tool, opts, steps } (a worked example), ways: [{ label, html, tool, opts, watch }], key: html, mistake: html, check: function () -> question (or a list of them) }
-   Progress is saved under cn:<full concept id> = { seen, n, ok, got, t }. A concept is mastered when its practice skill is secure. */
+   Progress is saved under cn:<full concept id> = { seen, n, ok, got, t }. A concept is mastered when its practice skill is secure.
+
+   A "full" chapter (full: true in Atlas.register) is built to the full standard (docs/QUESTIONS.md, "Full chapters"):
+     together: [function () -> problem, ...]   a "Together" card (we do). problem = { q, fig, steps: [{ prompt, q: question }], done }.
+       The child answers one step at a time. Problem 1 shows the prompt on every step, problem 2 on the first step only,
+       problem 3 on none. A wrong step shows its fix at once (Atlas.Q.diag, else the step's hint), then the same step again.
+     "Your turn" needs 4 right on the first try (2 elsewhere) to mark "Got it".
+     Warm-up: ideas marked "Got it" come back for review 1, 3, 7 and 21 days later (#chapter/review). A miss sends the idea
+       back to "Seen" so it is practised again. Saved in cn: as gd (day it was got), rv (reviews passed), rd (last review day). */
 (function () {
   'use strict';
   var A = window.Atlas, M = window.Manip, $ = A.$, $$ = A.$$;
@@ -16,6 +24,11 @@
   var ST = ['Not started', 'Seen', 'Got it', 'Mastered'];
   L.labels = ST;
   var GOT = 2; /* right first try this many times to mark "Got it" */
+  var FULL_GOT = 4; /* the same, in a full chapter */
+  var REVIEW_DAYS = [1, 3, 7, 21]; /* days after "Got it" (or the last review) when an idea comes back in the warm-up */
+  function need(c) { return c.full ? FULL_GOT : GOT; }
+  function today() { var d = new Date(); return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2); }
+  function daysSince(day) { return Math.round((Date.parse(today() + 'T12:00:00') - Date.parse(day + 'T12:00:00')) / 864e5); }
 
   function load(k, d) { try { var v = A.store(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function save(k, v) { A.store(k, JSON.stringify(v)); }
@@ -30,7 +43,7 @@
       ls.concepts.forEach(function (c, ci) {
         c.slug = c.slug || c.id;
         c.id = grade() + '-' + chId + '-' + c.slug;
-        c.ch = chId; c.lesson = ls; c.n = ci + 1;
+        c.ch = chId; c.lesson = ls; c.n = ci + 1; c.full = !!ch.full;
       });
     });
     ch._prepped = true;
@@ -89,6 +102,7 @@
       }).join('') + '<a href="#check-up/' + id + '">Check-up</a><a href="#progress">My progress</a></nav>';
     var h = '<div class="wrap chapter" data-strand="' + ctx.m.strand + '"><p class="crumb"><a href="#home">All chapters</a></p>' + ctx.head + tabs;
     if (tab === 'learn' && parts[1]) return concept(app, id, parts[1], h, ctx);
+    if (tab === 'review') { review(app, id, h, ctx); return ''; }
     if (tab === 'practice') {
       app.innerHTML = h + '<div class="quiz prac" id="practice"></div>' + nextPrev(ctx) + '</div>';
       A.practice($('#practice', app), id, ch.practice, parts[1] || null);
@@ -109,7 +123,9 @@
   function overview(app, id, h, ctx) {
     var ch = A.chapters[id], all = flat(id), next = all.filter(function (c) { return L.status(c) < 2; })[0] || all[0];
     var anySeen = all.some(function (c) { return L.status(c) > 0; });
-    h += '<div class="ls-go"><a class="btn" href="#' + id + '/learn/' + next.slug + '">' + (anySeen ? 'Continue: ' + next.title : 'Start the first lesson') + '</a>' +
+    var due = dueForReview(id);
+    if (due.length) h += '<div class="ls-warm"><p><b>Warm-up first.</b> ' + due.length + ' idea' + (due.length > 1 ? 's' : '') + ' to look at again, so ' + (due.length > 1 ? 'they stay' : 'it stays') + ' fresh.</p><a class="btn" href="#' + id + '/review">Start the warm-up</a></div>';
+    h += '<div class="ls-go"><a class="btn' + (due.length ? ' alt' : '') + '" href="#' + id + '/learn/' + next.slug + '">' + (anySeen ? 'Continue: ' + next.title : 'Start the first lesson') + '</a>' +
       '<span class="t2">' + ch.lessons.length + ' lessons, ' + all.length + ' ideas. One idea at a time.</span></div>' + legend() +
       '<div class="ls-map">' + ch.lessons.map(function (ls) {
         return '<section class="ls-lesson"><h2><span class="n">' + ls.n + '</span>' + ls.title + '</h2>' + (ls.sub ? '<p class="t2">' + ls.sub + '</p>' : '') +
@@ -118,7 +134,7 @@
             return '<li><a href="#' + id + '/learn/' + c.slug + '" title="' + ST[k] + '">' + dot(k) + '<span>' + c.title + '</span><span class="sr"> (' + ST[k] + ')</span></a></li>';
           }).join('') + '</ul></section>';
       }).join('') + '</div>' +
-      '<div class="note"><p><b>How each idea works.</b> Read a short explanation, watch it happen, try it with blocks or counters, then answer a few quick questions. Getting ' + GOT + ' right on the first try marks the idea <b>Got it</b>. It becomes <b>Mastered</b> when the matching skill in Practise is secure.</p></div>' +
+      '<div class="note"><p><b>How each idea works.</b> Read a short explanation, watch it happen, try it with blocks or counters, then answer a few quick questions. Getting ' + (ch.full ? FULL_GOT : GOT) + ' right on the first try marks the idea <b>Got it</b>. It becomes <b>Mastered</b> when the matching skill in Practise is secure.</p></div>' +
       nextPrev(ctx) + '</div>';
     app.innerHTML = h;
   }
@@ -148,6 +164,7 @@
     if (c.example) mountWatch($('.ls-exclip', card), c.example);
     if (c.try) mountTry($('.ls-try', card), c);
     if (c.ways) mountWays($('.ls-ways', card), c.ways);
+    if (c.together) together($('.ls-tog', card), c, app);
     if (c.check) checks($('.ls-check', card), c, function () {
       $('.ls-badge', card).innerHTML = '<span class="ls-got">Got it</span>';
       var nb = $('.ls-next', app); if (nb) M.bump(nb, 'ls-next-ready');
@@ -170,6 +187,7 @@
     if (c.example) cards.push({ name: 'My turn', html: '<div class="ls-example"><p class="ls-exlead">' + (c.example.lead || 'Watch me do one, step by step. Then it is your turn.') + '</p><div class="ls-exclip"></div></div>' });
     if (c.try) cards.push({ name: 'Try it', html: '<div class="lab ls-try"><span class="lt">Try it</span><p class="ls-task"></p><div class="ls-tool"></div><p class="ls-done" aria-live="polite"></p><div class="ls-tnext"></div></div>' + key });
     else cards[0].html += key;
+    if (c.together) cards.push({ name: 'Together', html: '<div class="ls-tog"></div>' });
     if (c.check) cards.push({ name: 'Your turn', html: '<div class="yt ls-check"></div>' });
     cards[cards.length - 1].html += mistake;
     if (cards.length === 1) return cards[0].html;
@@ -307,13 +325,13 @@
         if (q.unit === '$') return '$' + Number(v).toFixed(2);
         return A.fmt(v) + (q.unit ? ' ' + q.unit : '');
       }
-      function result(ok, btn) {
+      function result(ok, btn, given) {
         tries++;
         if (ok) {
           done = true;
           var s = L.cstate(c), first = tries === 1, was = s.got;
           s = mark(c, { n: (s.n || 0) + 1, ok: (s.ok || 0) + (first ? 1 : 0) });
-          if (!s.got && s.ok >= GOT) { s = mark(c, { got: true }); }
+          if (!s.got && s.ok >= need(c)) { s = mark(c, { got: true, gd: today(), rv: 0 }); }
           fb.className = 'fb ok';
           fb.innerHTML = '<b>' + (first ? 'Yes.' : 'Yes, you fixed it.') + '</b> <span>' + (q.explain || '') + '</span>' + (!was && s.got ? '<p class="ls-got">Got it. This idea is marked on your progress page.</p>' : '');
           $$('button.opt, input, form .btn', box).forEach(function (b) { b.disabled = true; });
@@ -337,11 +355,11 @@
             '<p class="t2">Look at "Watch" again if you like, then try another one.</p>';
           $('.ytn', box).innerHTML = '<button type="button" class="btn">Try another one</button>';
           $('.ytn .btn', box).addEventListener('click', function () { show(); var f = $('.opt, input', box); if (f) f.focus(); });
-        } else fb.innerHTML = '<b>Not yet.</b> <span>' + (q.hint || 'Look at the example again.') + ' Try again.</span>';
+        } else fb.innerHTML = '<b>Not yet.</b> <span>' + (A.Q.diag(q, given) || q.hint || 'Look at the example again.') + ' Try again.</span>';
       }
-      if (isQK) { qk = A.Q.mount($('.qkbox', box), q, function (ok) { if (!done) result(ok); }); box._qk = qk; }
+      if (isQK) { qk = A.Q.mount($('.qkbox', box), q, function (ok, given) { if (!done) result(ok, null, given); }); box._qk = qk; }
       else if (q.type === 'mc') $$('.opt', box).forEach(function (b) {
-        b.addEventListener('click', function () { if (done) return; var j = +b.getAttribute('data-j'); if (j === q.answer) b.classList.add('yes'); result(j === q.answer, j === q.answer ? null : b); });
+        b.addEventListener('click', function () { if (done) return; var j = +b.getAttribute('data-j'); if (j === q.answer) b.classList.add('yes'); result(j === q.answer, j === q.answer ? null : b, q.options[j]); });
       });
       else $('form', box).addEventListener('submit', function (e) {
         e.preventDefault();
@@ -349,8 +367,128 @@
         var raw = $('input', box).value, v = parseNum(raw);
         if (isNaN(v)) { fb.className = 'fb bad'; fb.textContent = 'Type a number first.'; return; }
         /* a grade can judge answers its own way (accepted forms, units) with Atlas.judgeNum(q, value, raw) */
-        result(A.judgeNum ? A.judgeNum(q, v, raw) : Math.abs(v - q.answer) <= (q.tol || Math.max(1e-9, 1e-9 * Math.abs(q.answer))));
+        result(A.judgeNum ? A.judgeNum(q, v, raw) : Math.abs(v - q.answer) <= (q.tol || Math.max(1e-9, 1e-9 * Math.abs(q.answer))), null, raw);
       });
+    }
+    show();
+  }
+
+  /* One answer area for any question: the answer kit (qkit.js), picking one (mc) or typing a number.
+     cb(ok, given, button) runs when the child answers; it returns { lock, reveal }. */
+  function answerArea(host, q, uid, cb) {
+    var isQK = !!(A.Q && A.Q.has(q)), done = false;
+    if (isQK) { host.innerHTML = '<div class="qkbox"></div>'; var api = A.Q.mount($('.qkbox', host), q, function (ok, given) { cb(ok, given); }); return api; }
+    if (q.type === 'mc') host.innerHTML = '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
+    else host.innerHTML = '<form class="numrow"><label class="sr" for="' + uid + '">Your answer</label><input type="text" inputmode="' + (q.kb || 'decimal') + '" autocomplete="off" id="' + uid + '" placeholder="Type your answer">' + (q.unit && q.unit !== '$' ? '<span class="unit">' + q.unit + '</span>' : '') + '<button class="btn" type="submit">Check</button></form>';
+    var area = { lock: function () { done = true; $$('button, input', host).forEach(function (b) { b.disabled = true; }); },
+      reveal: function () { if (q.type === 'mc') $$('.opt', host)[q.answer].classList.add('yes'); } };
+    if (q.type === 'mc') $$('.opt', host).forEach(function (b) {
+      b.addEventListener('click', function () { if (done) return; var j = +b.getAttribute('data-j'), ok = j === q.answer; b.classList.add(ok ? 'yes' : 'no'); if (!ok) b.disabled = true; cb(ok, q.options[j], b); });
+    });
+    else $('form', host).addEventListener('submit', function (e) {
+      e.preventDefault();
+      if (done) return;
+      var raw = $('input', host).value, v = parseNum(raw);
+      if (isNaN(v)) return;
+      cb(A.judgeNum ? A.judgeNum(q, v, raw) : Math.abs(v - q.answer) <= (q.tol || Math.max(1e-9, 1e-9 * Math.abs(q.answer))), raw);
+    });
+    return area;
+  }
+  function answerText(q) {
+    if (A.Q && A.Q.has(q)) return A.Q.text(q);
+    if (q.type === 'mc') return q.options[q.answer];
+    return A.fmt(q.answer) + (q.unit && q.unit !== '$' ? ' ' + q.unit : '');
+  }
+
+  /* ---------- "Together" (we do): one problem, one step at a time, with prompts that fade ---------- */
+  function together(box, c, app) {
+    var gens = c.together, p = 0;
+    function cue(s) { return p === 0 || (p === 1 && s === 0); }
+    function problem() {
+      var P = gens[p](), s = 0, done = [];
+      function draw() {
+        var st = P.steps[s];
+        box.innerHTML = '<p class="ytl">Together <span class="t2">Problem ' + (p + 1) + ' of ' + gens.length + '</span></p><p class="qtext">' + P.q + '</p>' +
+          (P.fig ? '<div class="fig">' + P.fig + '</div>' : '') +
+          (done.length ? '<ol class="tg-done">' + done.map(function (d) { return '<li>' + d + '</li>'; }).join('') + '</ol>' : '') +
+          (st ? '<div class="tg-step">' + (cue(s) && st.prompt ? '<p class="tg-cue">' + st.prompt + '</p>' : '') + '<p class="tg-ask">' + st.q.q + '</p>' +
+            (st.q.fig ? '<div class="fig">' + st.q.fig + '</div>' : '') + '<div class="tg-ans"></div><div class="fb" aria-live="polite"></div><div class="ytn"></div></div>'
+            : '<div class="fb ok"><b>' + (P.done || 'Done.') + '</b></div><div class="ytn"></div>');
+        var nx = $('.ytn', box);
+        if (!st) {
+          if (p + 1 < gens.length) {
+            nx.innerHTML = '<button type="button" class="btn">Next problem</button>';
+            $('.btn', nx).addEventListener('click', function () { p++; problem(); var f = $('.tg-ans button, .tg-ans input', box); if (f) f.focus(); });
+          } else {
+            mark(c, { together: 1 });
+            nx.innerHTML = '<button type="button" class="btn">Now your turn &rarr;</button>';
+            $('.btn', nx).addEventListener('click', function () { var n = $('.ls-nav .ls-next', app); if (n) n.click(); });
+          }
+          box._tg = null;
+          return;
+        }
+        var fb = $('.fb', box), tries = 0;
+        var area = answerArea($('.tg-ans', box), st.q, 'tg-' + c.slug + p + s, function (ok, given) {
+          tries++;
+          if (ok) {
+            area.lock();
+            done.push(st.q.q + ' <b>' + answerText(st.q) + '</b>');
+            s++;
+            draw();
+            var f = $('.tg-ans button, .tg-ans input, .ytn .btn', box); if (f) f.focus();
+            return;
+          }
+          fb.className = 'fb bad';
+          if (tries < 2) { fb.innerHTML = '<b>Not quite.</b> <span>' + (A.Q.diag(st.q, given) || st.q.hint || '') + ' Try again.</span>'; return; }
+          area.lock(); if (area.reveal) area.reveal();
+          fb.innerHTML = '<b>It is ' + answerText(st.q) + '.</b> <span>' + (A.Q.diag(st.q, given) || st.q.explain || st.q.hint || '') + '</span>';
+          $('.ytn', box).innerHTML = '<button type="button" class="btn">Do this step again</button>';
+          $('.ytn .btn', box).addEventListener('click', function () { draw(); var f = $('.tg-ans button, .tg-ans input', box); if (f) f.focus(); });
+        });
+        box._tg = { q: st.q, root: $('.tg-ans', box), qk: area }; /* for the automatic checks */
+      }
+      draw();
+    }
+    problem();
+  }
+
+  /* ---------- Warm-up: ideas that are due for review ---------- */
+  function dueForReview(chId) {
+    var ch = A.chapters[chId];
+    if (!ch || !ch.full) return [];
+    return flat(chId).filter(function (c) {
+      var s = L.cstate(c);
+      if (!s.got || !c.check || !s.gd) return false;
+      var rv = s.rv || 0;
+      return rv < REVIEW_DAYS.length && daysSince(s.rd || s.gd) >= REVIEW_DAYS[rv];
+    });
+  }
+  L.due = dueForReview;
+  function review(app, id, h, ctx) {
+    var list = dueForReview(id).slice(0, 3), k = 0, right = 0;
+    app.innerHTML = h + '<article class="sec ls-card"><h2>Warm-up</h2><div class="yt ls-check" id="warm"></div></article>' + nextPrev(ctx) + '</div>';
+    var box = $('#warm', app);
+    function show() {
+      if (k >= list.length) {
+        box.innerHTML = '<p class="ytl">Warm-up done</p><p>' + (list.length ? right + ' of ' + list.length + ' right.' : 'Nothing to review today.') + '</p><div class="btnrow"><a class="btn" href="#' + id + '">Back to the lessons</a></div>';
+        return;
+      }
+      var c = list[k], gens = [].concat(c.check), q = gens[Math.floor(Math.random() * gens.length)]();
+      box.innerHTML = '<p class="ytl">Warm-up ' + (k + 1) + ' of ' + list.length + ' <span class="t2">' + c.title + '</span></p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '') + '<div class="wu-ans"></div><div class="fb" aria-live="polite"></div><div class="ytn"></div>';
+      var fb = $('.fb', box);
+      var area = answerArea($('.wu-ans', box), q, 'wu-' + k, function (ok) {
+        area.lock();
+        var s = L.cstate(c);
+        if (ok) { right++; mark(c, { rv: (s.rv || 0) + 1, rd: today() }); fb.className = 'fb ok'; fb.innerHTML = '<b>Yes.</b> <span>' + (q.explain || '') + '</span>'; }
+        else {
+          if (area.reveal) area.reveal();
+          mark(c, { got: false, ok: 0, rv: 0, rd: today() });
+          fb.className = 'fb bad'; fb.innerHTML = '<b>The answer is ' + answerText(q) + '.</b> <span>' + (q.explain || '') + '</span><p class="t2">"' + c.title + '" goes back to practise. Look at it again in the lessons.</p>';
+        }
+        $('.ytn', box).innerHTML = '<button type="button" class="btn">Next</button>';
+        $('.ytn .btn', box).addEventListener('click', function () { k++; show(); });
+      });
+      box._q = q; box._qk = area; /* for the automatic checks */
     }
     show();
   }

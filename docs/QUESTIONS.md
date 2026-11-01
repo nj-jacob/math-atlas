@@ -64,3 +64,15 @@ set('round-tf', (q, m) => (H.roundTo(m.n, 100) === m.said) === q.answer ? '' : '
 ```
 
 The check must work the answer out again **in its own way**, without calling the site's code. It returns `''` when the answer is right, or a short message when it is wrong. Helpers are in `tests/validate.js` (`H.roundTo`, `H.fromWords`, `H.placeVal` and more).
+
+## Full chapters
+
+A chapter registered with `full: true` is built to the full teaching standard. Grade 3 Fractions is the first one. The checks hold a full chapter to these rules:
+
+- **Every idea** has a Watch clip, a "My turn" example, a common mistake for grown-ups, its own practice skill, 3 **Together** problems and 5 **Your turn** questions about that idea only.
+- **Together** (`together: [function () -> problem]`) is the guided "we do" step. A problem is `{ q, fig, steps: [{ prompt, q }], done }`. The child answers one step at a time. Problem 1 shows the prompt on every step, problem 2 on the first step only, and problem 3 on none. A wrong step gets its fix straight away, then the same step again.
+- **Your turn** needs 4 right on the first try to mark the idea "Got it" (2 in other chapters).
+- **Mistake fixes:** a question can set `wrong: { 'wrong answer in plain words': 'short fix that names the mistake' }`. The fix shows after that wrong answer, in Together, Your turn and practice, in place of the general hint (`Atlas.Q.diag`).
+- **Warm-up:** an idea marked "Got it" comes back 1, 3, 7 and 21 days later in a short warm-up on the chapter page (`#chapter/review`). A miss sends it back to "Seen".
+- **Practice skills:** every question, including the plain one, sets `meta.k` and has an answer check. Each skill makes 30 or more different questions. Level 3 must not mostly repeat level 1. True/false must be true between 25% and 75% of the time. The right choice must not usually be the longest, or nearly always in the same place.
+- **Secure:** a skill in a full chapter is secure only after 3 right in a row at level 3 on two different days, and a later miss takes "secure" away.
