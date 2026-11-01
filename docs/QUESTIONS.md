@@ -55,6 +55,8 @@ Each skill keeps its first way of asking as `plain`. Don't copy this loop into a
 
 Grade kits may add small helpers for writing shapes, such as `G6.why(right, wrong)` in `grade6/assets/g6lessons.js`, which builds the "why" choices for a `tf` question. In Grade 3, `G3.pl(n, 'vote')` gives "1 vote" or "3 votes" and `G3.an('apple')` gives "an apple" (`grade3/assets/g3kit.js`), so generated sentences stay grammatical.
 
+`G3.mc(q, right, [[wrong, fix], ...])`, `G3.num(q, answer, { wrong: fix })` and `G3.tf(q, truth, reason, [wrong reasons], fix)` build questions with their mistake fixes (`q.wrong`), and `G3.clip(draw, start, [[line, change], ...])` builds a Watch or My turn clip. `grade3/chapters/patterns.js` and `grade3/chapters/data.js` use them.
+
 ## Answer checks (required)
 
 Every new shape sets `meta.k` and the facts behind the question, for example `meta: { k: 'round-tf', n: 349, said: 400 }`. Add a check with the same key to `tests/verify/gradeN.js`:

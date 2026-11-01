@@ -147,16 +147,23 @@ async function checkGrade(browser, base, g) {
         const w = id + ' skill ' + sk.id + ' (full chapter)', byLv = [null, new Set(), new Set(), new Set()];
         let tf = 0, tfTrue = 0, mc = 0, longest = 0, unchecked = 0;
         const pos = {};
-        for (let lv = 1; lv <= 3; lv++) for (let i = 0; i < 150; i++) {
-          const q = sk.gen(lv);
-          byLv[lv].add(txt(q));
-          if (!(q.meta && q.meta.k)) unchecked++;
+        const tally = q => {
           if (q.type === 'tf') { tf++; if (q.answer) tfTrue++; }
           if (q.type === 'mc' && q.options.length >= 3) {
             mc++; pos[q.answer] = (pos[q.answer] || 0) + 1;
             const len = q.options.map(o => window.__H.strip(o).length), mx = Math.max(...len);
             if (len[q.answer] === mx && len.filter(x => x === mx).length === 1) longest++;
           }
+        };
+        for (let lv = 1; lv <= 3; lv++) for (let i = 0; i < 150; i++) {
+          const q = sk.gen(lv);
+          byLv[lv].add(txt(q));
+          if (!(q.meta && q.meta.k)) unchecked++;
+          tally(q);
+        }
+        /* a few dozen true/false or choice questions is too few to judge a 25%-75% share fairly, so draw more of them */
+        for (let i = 0; i < 3000 && ((tf && tf < 300) || (mc && mc < 300)); i++) {
+          tally(sk.gen(1 + i % 3));
         }
         if (unchecked) out.problems.push(w + ': ' + unchecked + ' of 450 questions have no answer check (meta.k), including plain ones');
         const all = new Set([...byLv[1], ...byLv[2], ...byLv[3]]);

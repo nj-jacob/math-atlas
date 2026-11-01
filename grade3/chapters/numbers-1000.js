@@ -1,49 +1,93 @@
+/* Grade 3 Numbers to 1000: a full chapter (docs/QUESTIONS.md, "Full chapters"). 5 lessons, 17 ideas, one practice skill per idea.
+   Ontario 2020: B1.1 read, represent, compose and decompose numbers to 1000, B1.2 compare and order, B1.3 round to the nearest ten or hundred,
+   B1.4 count to 1000 by 50s, 100s and 200s, B1.5 place value with base ten materials.
+   Every question sets meta.k; the answer checks are in tests/verify/grade3.js (keys start with g3n-). */
 (function () {
-  var A = Atlas, R = A.R;
-  var ones = ['zero','one','two','three','four','five','six','seven','eight','nine','ten','eleven','twelve','thirteen','fourteen','fifteen','sixteen','seventeen','eighteen','nineteen'];
-  var tens = ['','','twenty','thirty','forty','fifty','sixty','seventy','eighty','ninety'];
+  var A = Atlas, R = A.R, Q = A.Q, CH = 'numbers-1000';
+  var ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  var TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
   function words(n) {
     if (n === 1000) return 'one thousand';
     if (n === 0) return 'zero';
     var s = '';
-    if (n >= 100) { s += ones[Math.floor(n / 100)] + ' hundred'; n %= 100; if (n) s += ' '; }
-    if (n >= 20) { s += tens[Math.floor(n / 10)]; if (n % 10) s += '-' + ones[n % 10]; }
-    else if (n > 0) s += ones[n];
+    if (n >= 100) { s += ONES[Math.floor(n / 100)] + ' hundred'; n %= 100; if (n) s += ' '; }
+    if (n >= 20) { s += TENS[Math.floor(n / 10)]; if (n % 10) s += '-' + ONES[n % 10]; } else if (n > 0) s += ONES[n];
     return s;
   }
-  var heads = ['Ones', 'Tens', 'Hundreds', 'Thousands'];
-  var uid = 0;
-  function mid(base) { uid++; return base + uid; }
-  function plural(k, p) { return k + ' ' + (k === 1 ? A.PLACE1[p] : A.PLACES[p]); }
-  function digitsOf(n) { return [n % 10, Math.floor(n / 10) % 10, Math.floor(n / 100) % 10, Math.floor(n / 1000)]; }
 
+  /* ---------- words and numbers ---------- */
+  function put(o, x) { for (var k in x) o[k] = x[k]; return o; }
+  function plain(h) { var e = document.createElement('div'); e.innerHTML = String(h); return e.textContent.replace(/\s+/g, ' ').trim(); }
+  function coin() { return Math.random() < 0.5; }
+  function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+  function placeN(k, p) { return k + ' ' + (k === 1 ? A.PLACE1[p] : A.PLACES[p]); }
+  function hto(h, t, o) { return placeN(h, 2) + ', ' + placeN(t, 1) + ' and ' + placeN(o, 0); }
+  function dig(n) { return [n % 10, Math.floor(n / 10) % 10, Math.floor(n / 100) % 10]; }
+  function math(t) { return '<span class="math">' + t + '</span>'; }
+  function u(n, i) { var s = String(n); return s.slice(0, i) + '<u>' + s.charAt(i) + '</u>' + s.slice(i + 1); }
+  function others(list, not) { return R.shuffle(list.filter(function (x) { return x !== not; })); }
+  function roundTo(n, p) { return Math.floor(n / p) * p + (n % p >= p / 2 ? p : 0); }
+  var PNAME = ['ones', 'tens', 'hundreds'];
+
+  /* ---------- question builders ---------- */
+  /* pick one: the right answer and up to 3 wrong ones; wrongs = [[html, fix], ...]. q.wrong holds the fixes (Atlas.Q.diag). */
+  function mc(q, right, wrongs, x) {
+    right = String(right);
+    var seen = {}, opts = [right], fix = {};
+    seen[plain(right)] = 1;
+    wrongs.forEach(function (w) {
+      if (!Array.isArray(w)) w = [w];
+      var h = String(w[0]), t = plain(h);
+      if (opts.length >= 4 || seen[t]) return;
+      seen[t] = 1; opts.push(h); if (w[1]) fix[t] = w[1];
+    });
+    var o = R.shuffle(opts);
+    return put({ q: q, type: 'mc', options: o, answer: o.indexOf(right), wrong: fix }, x || {});
+  }
+  /* pick one, in a fixed order (for "A, B or the same") */
+  function fixed(q, opts, ans, fixes, x) { var w = {}; opts.forEach(function (o, j) { if (j !== ans && fixes[j]) w[plain(o)] = fixes[j]; }); return put({ q: q, type: 'mc', options: opts, answer: ans, wrong: w }, x || {}); }
+  function num(q, ans, fixes, x) { var w = {}; Object.keys(fixes || {}).forEach(function (k) { if (+k !== ans && fixes[k]) w[k] = fixes[k]; }); return put({ q: q, type: 'num', answer: ans, wrong: w }, x || {}); }
+  function fill(q, text, answers, x) { return put({ q: q, type: 'fill', fill: text, answers: answers }, x || {}); }
+  function tf(q, truth, right, bad, fix, x) {
+    var o = R.mc(right, bad), w = {};
+    w[truth ? 'False' : 'True'] = fix;
+    return put({ q: q, type: 'tf', answer: truth, why: { options: o.options, answer: o.answer }, wrong: w, steps: [right], explain: right }, x || {});
+  }
+
+  /* ---------- pictures ---------- */
+  function blk(n, u0) { return A.draw.blocks(n, 'Base-ten blocks: ' + hto(Math.floor(n / 100), Math.floor(n / 10) % 10, n % 10), 520, u0 || 5); }
+  /* blocks from counts that may be 10 or more; mixed shuffles them */
+  function pileOf(h, t, o, mixed) {
+    var items = [], k;
+    for (k = 0; k < h; k++) items.push(2);
+    for (k = 0; k < t; k++) items.push(1);
+    for (k = 0; k < o; k++) items.push(0);
+    return A.draw.pile(mixed ? R.shuffle(items) : items, 'Base-ten blocks: ' + hto(h, t, o) + (mixed ? ', mixed up' : ''), 520, 5);
+  }
   /* a tiny picture of d blocks of one place, for inside a chart column */
   function mini(d, p) {
     if (!d) return '';
     var s = '', col = A.pc(p), i;
-    if (p === 3) s = A.draw.prism(6, 36, 26, 22, 26, 3, 3, 3, 3);
-    else if (p === 2) for (i = 0; i < d; i++) s += '<rect x="' + (2 + (i % 3) * 13) + '" y="' + (2 + Math.floor(i / 3) * 13) + '" width="11" height="11" rx="1" style="fill:' + col + '" stroke="rgba(0,0,0,.45)"/>';
+    if (p === 2) for (i = 0; i < d; i++) s += '<rect x="' + (2 + (i % 3) * 13) + '" y="' + (2 + Math.floor(i / 3) * 13) + '" width="11" height="11" rx="1" style="fill:' + col + '" stroke="rgba(0,0,0,.45)"/>';
     else if (p === 1) for (i = 0; i < d; i++) s += '<rect x="' + (1 + i * 4.3) + '" y="2" width="3.4" height="36" style="fill:' + col + '" stroke="rgba(0,0,0,.45)" stroke-width=".8"/>';
     else for (i = 0; i < d; i++) s += '<rect x="' + (5 + (i % 3) * 11) + '" y="' + (5 + Math.floor(i / 3) * 11) + '" width="8" height="8" style="fill:' + col + '" stroke="rgba(0,0,0,.45)"/>';
-    return A.svg(40, 40, s, plural(d, p));
+    return A.svg(40, 40, s, placeN(d, p));
   }
-  /* place value chart: coloured headings, the digit, small blocks, and its value. o.cols, o.hl (column index), o.vals */
+  /* place value chart: headings, the digit, small blocks and (o.vals) its value. o.hl lights one column (0 = hundreds) */
   function chart(n, o) {
     o = o || {};
-    var s = String(n), cols = o.cols || Math.max(3, s.length);
-    while (s.length < cols) s = '0' + s;
-    var lead = cols - String(n).length, h = '<div class="pv" style="max-width:' + (cols * 104) + 'px;margin:8px auto">';
+    var s = String(n), cols = s.length, h = '<div class="pv" style="max-width:' + (cols * 104) + 'px;margin:8px auto">', heads = ['Ones', 'Tens', 'Hundreds', 'Thousands'];
     for (var i = 0; i < cols; i++) {
-      var p = cols - 1 - i, d = +s.charAt(i), dim = i < lead && !(i === cols - 1);
-      h += '<div' + (i === o.hl ? ' class="on"' : '') + '><span class="h c' + p + '"><span class="lg">' + heads[p] + '</span><span class="sm">' + heads[p] + '</span></span><span class="d' + (dim ? ' dim' : '') + '">' + d + '</span>' +
-        (o.dots === false ? '' : '<span class="dk">' + (dim ? '' : mini(d, p)) + '</span>') +
-        (o.vals ? '<span class="v">' + (dim || !d ? '' : A.fmt(d * Math.pow(10, p))) + '</span>' : '') + '</div>';
+      var p = cols - 1 - i, d = +s.charAt(i);
+      h += '<div' + (i === o.hl ? ' class="on"' : '') + '><span class="h c' + p + '"><span class="lg">' + heads[p] + '</span><span class="sm">' + heads[p] + '</span></span><span class="d">' + d + '</span>' +
+        (o.dots === false ? '' : '<span class="dk">' + mini(d, p) + '</span>') + (o.vals ? '<span class="v">' + (d ? A.fmt(d * Math.pow(10, p)) : '0') + '</span>' : '') + '</div>';
     }
     return h + '</div>';
   }
   /* each coloured digit drops down to the value it stands for */
+  var uid = 0;
   function expanded(n) {
-    var s = String(n), len = s.length, cw = Math.min(130, 520 / len), x0 = 280 - cw * len / 2, id = mid('exa'), out = '';
+    var s = String(n), len = s.length, cw = Math.min(130, 520 / len), x0 = 280 - cw * len / 2, id = 'exa' + (++uid), out = '';
     out += '<defs><marker id="' + id + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--ink2)"/></marker></defs>';
     for (var i = 0; i < len; i++) {
       var p = len - 1 - i, d = +s.charAt(i), cx = x0 + cw * (i + 0.5), val = d * Math.pow(10, p);
@@ -51,70 +95,47 @@
         '<line x1="' + cx + '" y1="56" x2="' + cx + '" y2="84" style="stroke:var(--ink2)" stroke-width="2" marker-end="url(#' + id + ')"/>' +
         '<rect x="' + (cx - cw / 2 + 10) + '" y="90" width="' + (cw - 20) + '" height="38" rx="8" style="fill:' + (d ? 'color-mix(in srgb,var(--p' + p + ') 16%,var(--card))' : 'var(--card)') + ';stroke:var(--p' + p + ')" stroke-width="2.5"' + (d ? '' : ' stroke-dasharray="5 4"') + '/>' +
         '<text x="' + cx + '" y="118" text-anchor="middle" font-size="24" font-weight="700"' + (d ? '' : ' class="t2"') + '>' + A.fmt(val) + '</text>' +
-        '<text x="' + cx + '" y="154" text-anchor="middle" font-size="18" class="t2">' + plural(d, p) + '</text>';
+        '<text x="' + cx + '" y="154" text-anchor="middle" font-size="18" class="t2">' + placeN(d, p) + '</text>';
       if (i < len - 1) out += '<text x="' + (cx + cw / 2) + '" y="118" text-anchor="middle" font-size="24" font-weight="700">+</text>';
     }
     return A.svg(560, 164, out, A.fmt(n) + ' in expanded form');
   }
   /* a hill over a number line: halfway is the top, and the number rolls to the side it is on */
   function hill(n, p) {
-    var lo = Math.floor(n / p) * p, hi = lo + p, t = (n - lo) / p, up = n - lo >= p / 2, id = mid('rha');
+    var lo = Math.floor(n / p) * p, hi = lo + p, t = (n - lo) / p, up = n - lo >= p / 2, id = 'rha' + (++uid);
     var x = 40 + 480 * t, y = 100 - 150 * t * (1 - t), s = '';
     s += '<path d="M40 100 Q280 -50 520 100" fill="none" style="stroke:var(--line)" stroke-width="10" stroke-linecap="round"/>';
     s += '<line x1="280" y1="25" x2="280" y2="132" style="stroke:var(--ink2)" stroke-dasharray="4 4" stroke-width="1.5"/>';
     s += '<line x1="40" y1="132" x2="520" y2="132" style="stroke:var(--ink)" stroke-width="3"/>';
-    for (var i = 0; i <= 10; i++) {
-      var tx = 40 + 48 * i;
-      s += '<line x1="' + tx + '" y1="' + (i % 5 ? 126 : 122) + '" x2="' + tx + '" y2="' + (i % 5 ? 138 : 142) + '" style="stroke:var(--ink)" stroke-width="2"/>';
-    }
+    for (var i = 0; i <= 10; i++) { var tx = 40 + 48 * i; s += '<line x1="' + tx + '" y1="' + (i % 5 ? 126 : 122) + '" x2="' + tx + '" y2="' + (i % 5 ? 138 : 142) + '" style="stroke:var(--ink)" stroke-width="2"/>'; }
     [[40, lo, 'lower'], [280, lo + p / 2, 'halfway'], [520, hi, 'upper']].forEach(function (k) {
       s += '<text x="' + k[0] + '" y="166" text-anchor="middle" font-size="21" class="tb">' + A.fmt(k[1]) + '</text><text x="' + k[0] + '" y="186" text-anchor="middle" class="t2" font-size="16">' + k[2] + '</text>';
     });
-    if (n !== lo) {
-      var ex = up ? 500 : 60;
-      s += '<path d="M' + x + ' ' + (y - 16) + ' Q' + ((x + ex) / 2) + ' ' + (Math.min(y, 80) - 30) + ' ' + ex + ' 86" fill="none" style="stroke:var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#' + id + ')"/>';
-    }
+    if (n !== lo) { var ex = up ? 500 : 60; s += '<path d="M' + x + ' ' + (y - 16) + ' Q' + ((x + ex) / 2) + ' ' + (Math.min(y, 80) - 30) + ' ' + ex + ' 86" fill="none" style="stroke:var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" marker-end="url(#' + id + ')"/>'; }
     s = '<defs><marker id="' + id + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--accent)"/></marker></defs>' + s;
-    s += '<circle cx="' + (n === lo ? 40 : up ? 520 : 40) + '" cy="132" r="11" style="fill:none;stroke:var(--accent)" stroke-width="4"/>';
+    s += '<circle cx="' + (n === lo || !up ? 40 : 520) + '" cy="132" r="11" style="fill:none;stroke:var(--accent)" stroke-width="4"/>';
     s += '<circle cx="' + x + '" cy="' + (y - 9) + '" r="9" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>';
     s += '<text x="' + Math.min(Math.max(x, 60), 500) + '" y="' + (y - 26) + '" text-anchor="middle" font-size="21" class="tb">' + A.fmt(n) + '</text>';
-    return A.svg(560, 194, s, A.fmt(n) + ' on a hill between ' + lo + ' and ' + hi + '. It rounds to ' + (n === lo ? lo : up ? hi : lo) + '.');
+    return A.svg(560, 194, s, A.fmt(n) + ' on a hill between ' + lo + ' and ' + hi + '. It rounds to ' + (up ? hi : lo) + '.');
+  }
+  /* a plain hill with no number on it yet (for questions, so the picture does not give the answer) */
+  function hillBare(lo, p) {
+    var s = '<path d="M40 100 Q280 -50 520 100" fill="none" style="stroke:var(--line)" stroke-width="10" stroke-linecap="round"/><line x1="40" y1="132" x2="520" y2="132" style="stroke:var(--ink)" stroke-width="3"/>';
+    for (var i = 0; i <= 10; i++) { var tx = 40 + 48 * i; s += '<line x1="' + tx + '" y1="' + (i % 5 ? 126 : 122) + '" x2="' + tx + '" y2="' + (i % 5 ? 138 : 142) + '" style="stroke:var(--ink)" stroke-width="2"/>'; }
+    [[40, lo], [280, lo + p / 2], [520, lo + p]].forEach(function (k) { s += '<text x="' + k[0] + '" y="166" text-anchor="middle" font-size="21" class="tb">' + A.fmt(k[1]) + '</text>'; });
+    return A.svg(560, 176, s, 'A hill from ' + lo + ' to ' + (lo + p) + ', with halfway at the top');
   }
   /* 1 cube, 10 make a rod, 10 rods make a flat, 10 flats make a big cube */
   function stairs() {
-    var P = A.draw.prism, s = '', u = 8, base = 150, id = mid('sta');
+    var P = A.draw.prism, s = '', u0 = 8, base = 150, id = 'sta' + (++uid);
     s += '<defs><marker id="' + id + '" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0 0L10 5L0 10z" style="fill:var(--ink2)"/></marker></defs>';
-    function arrow(x1, x2, y) {
-      return '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" style="stroke:var(--ink2)" stroke-width="2" marker-end="url(#' + id + ')"/>' +
-        '<text x="' + ((x1 + x2) / 2) + '" y="' + (y - 8) + '" text-anchor="middle" font-size="18" class="tb">10 make</text>';
-    }
-    function lab(x, y, a, b, p) {
-      return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="26" font-weight="800" style="fill:var(--p' + p + ')">' + a + '</text>' +
-        '<text x="' + x + '" y="' + (y + 24) + '" text-anchor="middle" font-size="19" class="t2">' + b + '</text>';
-    }
-    s += P(34, base, u, u, u, 1, 1, 1, 0) + lab(40, base + 30, '1', 'one', 0) + arrow(56, 104, base - 40);
-    s += P(120, base, u, u, 10 * u, 1, 1, 10, 1) + lab(126, base + 30, '10', 'ten', 1) + arrow(140, 196, base - 40);
-    s += P(206, base, 10 * u, u, 10 * u, 10, 1, 10, 2) + lab(248, base + 30, '100', 'hundred', 2) + arrow(298, 352, base - 40);
-    s += P(366, base, 10 * u, 10 * u, 10 * u, 10, 10, 10, 3) + lab(422, base + 30, '1000', 'thousand', 3);
-    return A.svg(560, 214, s, 'Base-ten blocks. A small cube is one. 10 cubes make a rod, which is ten. 10 rods make a flat, which is one hundred. 10 flats make a big cube, which is one thousand.');
-  }
-  /* the blocks for a number, one coloured column per place. c = [ones, tens, hundreds] */
-  function columns(c) {
-    var B = A.draw.block, s = '', u = 5, colW = [180, 160, 90], x0 = [0, 180, 340], top = 34, maxY = 0;
-    for (var q = 2; q >= 0; q--) {
-      var x = x0[2 - q], w = colW[2 - q];
-      s += '<rect x="' + (x + 2) + '" y="2" width="' + (w - 8) + '" height="26" rx="6" style="fill:var(--p' + q + ')"/>' +
-        '<text x="' + (x + 2 + (w - 8) / 2) + '" y="20" text-anchor="middle" font-size="16" font-weight="700" style="fill:' + (q ? '#fff' : '#13203a') + '">' + plural(c[q], q) + '</text>';
-      for (var i = 0; i < c[q]; i++) {
-        var bx, by;
-        if (q === 2) { bx = x + 4 + (i % 3) * 58; by = top + 54 + Math.floor(i / 3) * 59; }
-        else if (q === 1) { bx = x + 4 + (i % 10) * 15; by = top + 54 + Math.floor(i / 10) * 60; }
-        else { bx = x + 6 + (i % 5) * 15; by = top + 10 + Math.floor(i / 5) * 15; }
-        s += B(bx, by, q, u).svg;
-        maxY = Math.max(maxY, by);
-      }
-    }
-    return A.svg(430, Math.max(80, maxY + 8), s, plural(c[2], 2) + ', ' + plural(c[1], 1) + ' and ' + plural(c[0], 0));
+    function arrow(x1, x2, y) { return '<line x1="' + x1 + '" y1="' + y + '" x2="' + x2 + '" y2="' + y + '" style="stroke:var(--ink2)" stroke-width="2" marker-end="url(#' + id + ')"/><text x="' + ((x1 + x2) / 2) + '" y="' + (y - 8) + '" text-anchor="middle" font-size="18" class="tb">10</text>'; }
+    function lab(x, y, a, p) { return '<text x="' + x + '" y="' + y + '" text-anchor="middle" font-size="26" font-weight="800" style="fill:var(--p' + p + ')">' + a + '</text>'; }
+    s += P(34, base, u0, u0, u0, 1, 1, 1, 0) + lab(40, base + 30, '1', 0) + arrow(56, 104, base - 40);
+    s += P(120, base, u0, u0, 10 * u0, 1, 1, 10, 1) + lab(126, base + 30, '10', 1) + arrow(140, 196, base - 40);
+    s += P(206, base, 10 * u0, u0, 10 * u0, 10, 1, 10, 2) + lab(248, base + 30, '100', 2) + arrow(298, 352, base - 40);
+    s += P(366, base, 10 * u0, 10 * u0, 10 * u0, 10, 10, 10, 3) + lab(422, base + 30, '1000', 3);
+    return A.svg(560, 190, s, 'Base-ten blocks: a cube is 1, 10 cubes make a rod (10), 10 rods make a flat (100), 10 flats make a big cube (1000)');
   }
   /* hops on a number line. vals: the numbers landed on, in order. miss: index shown as a question mark */
   function hops(vals, miss) {
@@ -128,1237 +149,1165 @@
       else s += '<text x="' + x + '" y="114" text-anchor="middle" font-size="' + (vals.length > 8 ? 17 : 21) + '" class="tb">' + vals[i] + '</text>';
       if (i) {
         var xa = X(vals[i - 1]), d = vals[i] - vals[i - 1], top = 80 - Math.min(46, Math.abs(x - xa) * 0.55 + 10);
-        s += '<path d="M' + xa + ' 76 Q' + ((xa + x) / 2) + ' ' + top + ' ' + x + ' 76" fill="none" style="stroke:var(--strand)" stroke-width="2.5"/>' +
-          '<circle cx="' + x + '" cy="80" r="5" style="fill:var(--strand)"/>';
-        if (vals.length <= 11) s += '<text x="' + ((xa + x) / 2) + '" y="' + ((top + 76) / 2 - 6) + '" text-anchor="middle" font-size="' + (vals.length > 8 ? 14 : 17) + '" class="t2">' + (d > 0 ? '+' : '&minus;') + Math.abs(d) + '</text>';
+        s += '<path d="M' + xa + ' 76 Q' + ((xa + x) / 2) + ' ' + top + ' ' + x + ' 76" fill="none" style="stroke:var(--strand)" stroke-width="2.5"/><circle cx="' + x + '" cy="80" r="5" style="fill:var(--strand)"/>';
+        if (vals.length <= 11) s += '<text x="' + ((xa + x) / 2) + '" y="' + ((top + 76) / 2 - 6) + '" text-anchor="middle" font-size="17" class="t2">' + (d > 0 ? '+' : '&minus;') + Math.abs(d) + '</text>';
       }
     }
     s += '<circle cx="' + X(vals[0]) + '" cy="80" r="6" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>';
-    return A.svg(560, 128, s, 'Number line counting ' + vals.map(function (v, i) { return i === miss ? 'a missing number' : v; }).join(', '));
+    return A.svg(560, 128, s, 'Number line: ' + vals.map(function (v, i) { return i === miss ? 'a missing number' : v; }).join(', '));
   }
   /* 100 squares, each worth 10, filled up to n */
   function thousand(n) {
-    var sz = 26, s = '', full = Math.floor(n / 10), part = (n % 10) / 10;
+    var sz = 26, s = '', full = Math.floor(n / 10);
     for (var i = 0; i < 100; i++) {
       var x = 50 + (i % 10) * sz, y = 6 + Math.floor(i / 10) * sz;
       s += '<rect x="' + x + '" y="' + y + '" width="' + sz + '" height="' + sz + '" style="fill:var(--card);stroke:var(--line)" stroke-width="1"/>';
       if (i < full) s += '<rect x="' + (x + 1.5) + '" y="' + (y + 1.5) + '" width="' + (sz - 3) + '" height="' + (sz - 3) + '" rx="2" style="fill:var(--p1)"/>';
-      else if (i === full && part > 0) s += '<rect x="' + (x + 1.5) + '" y="' + (y + 1.5) + '" width="' + ((sz - 3) * part).toFixed(1) + '" height="' + (sz - 3) + '" rx="2" style="fill:var(--p1);opacity:.55"/>';
     }
     for (var r = 1; r <= 10; r++) s += '<text x="46" y="' + (6 + r * sz - 7) + '" text-anchor="end" font-size="16" class="t2">' + r * 100 + '</text>';
-    s += '<rect x="330" y="10" width="20" height="20" rx="2" style="fill:var(--p1)"/><text x="358" y="25" font-size="15">= 10</text>' +
-      '<text x="330" y="58" font-size="15">1 row = 100</text><text x="330" y="80" font-size="15">100 squares = 1000</text>';
-    return A.svg(480, 270, s, n + ' shown as ' + full + (part ? ' and a part' : '') + ' of 100 squares, each worth 10');
+    s += '<rect x="330" y="10" width="20" height="20" rx="2" style="fill:var(--p1)"/><text x="358" y="25" font-size="16">= 10</text><text x="330" y="58" font-size="16">1 row = 100</text>';
+    return A.svg(450, 270, s, A.fmt(n) + ' filled in a grid of 100 squares, each worth 10');
   }
-  var icons = {
-    cal: '<svg viewBox="0 0 44 44" aria-hidden="true"><rect x="5" y="8" width="34" height="30" rx="4" style="fill:var(--card);stroke:var(--strand)" stroke-width="2.5"/><rect x="5" y="8" width="34" height="9" rx="3" style="fill:var(--strand)"/><g style="fill:var(--strand)"><rect x="11" y="22" width="5" height="5"/><rect x="20" y="22" width="5" height="5"/><rect x="29" y="22" width="5" height="5"/><rect x="11" y="30" width="5" height="5"/><rect x="20" y="30" width="5" height="5"/></g></svg>',
-    paper: '<svg viewBox="0 0 44 44" aria-hidden="true"><g style="fill:var(--card);stroke:var(--strand)" stroke-width="2"><rect x="10" y="16" width="26" height="22" rx="2"/><rect x="8" y="12" width="26" height="22" rx="2"/><rect x="6" y="8" width="26" height="22" rx="2"/></g></svg>',
-    path: '<svg viewBox="0 0 44 44" aria-hidden="true"><path d="M6 38 C14 30 30 32 24 22 S28 8 38 6" fill="none" style="stroke:var(--strand)" stroke-width="3" stroke-dasharray="4 3"/><circle cx="6" cy="38" r="4" style="fill:var(--hi);stroke:var(--ink)"/><circle cx="38" cy="6" r="4" style="fill:var(--strand)"/></svg>'
-  };
-  function clamp(v, a, b) { v = parseInt(v, 10); if (isNaN(v)) v = a; return Math.max(a, Math.min(b, v)); }
+  /* big digits in boxes; each box can be tapped */
+  function digitPic(n) {
+    var s = String(n), w = 84, h = '';
+    for (var i = 0; i < s.length; i++) {
+      var x = 4 + i * w;
+      h += '<g data-hit="' + i + '" aria-label="the ' + s.charAt(i) + ' in the ' + A.PLACES[s.length - 1 - i] + ' place"><rect x="' + x + '" y="4" width="' + (w - 10) + '" height="92" rx="14" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
+        '<text x="' + (x + (w - 10) / 2) + '" y="70" text-anchor="middle" font-size="58" font-weight="700" style="fill:var(--ink);font-family:var(--display)">' + s.charAt(i) + '</text></g>';
+    }
+    return A.svg(s.length * w, 100, h, 'The number ' + n + ' in big digits');
+  }
+  /* a short number line from lo to hi with a marker at n; the two ends can be tapped */
+  function twoEnds(n, lo, hi) {
+    var x0 = 56, x1 = 364, X = function (v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); }, s = '';
+    s += '<line x1="' + x0 + '" y1="70" x2="' + x1 + '" y2="70" style="stroke:var(--ink)" stroke-width="3"/>';
+    for (var i = 0; i <= 10; i++) { var x = x0 + (x1 - x0) * i / 10; s += '<line x1="' + x + '" y1="' + (i === 5 ? 58 : 63) + '" x2="' + x + '" y2="' + (i === 5 ? 82 : 77) + '" style="stroke:var(--ink)" stroke-width="2"/>'; }
+    s += '<circle cx="' + X(n) + '" cy="70" r="9" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="' + X(n) + '" y="46" text-anchor="middle" font-size="24" font-weight="700" style="fill:var(--ink)">' + n + '</text>';
+    [[lo, x0], [hi, x1]].forEach(function (e) {
+      s += '<g data-hit="' + e[0] + '" aria-label="' + e[0] + '"><rect x="' + (e[1] - 50) + '" y="94" width="100" height="50" rx="10" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/><text x="' + e[1] + '" y="124" text-anchor="middle" font-size="26" font-weight="700" style="fill:var(--ink)">' + e[0] + '</text></g>';
+    });
+    return A.svg(420, 150, s, n + ' on a number line from ' + lo + ' to ' + hi);
+  }
+  /* numbers marked on one number line, to see their order */
+  function marks(vals, show) {
+    var lo = Math.floor(Math.min.apply(null, vals) / 10) * 10 - 10, hi = Math.ceil(Math.max.apply(null, vals) / 10) * 10 + 10, x0 = 30, x1 = 530, s = '';
+    var X = function (v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); };
+    s += '<line x1="' + x0 + '" y1="70" x2="' + x1 + '" y2="70" style="stroke:var(--ink)" stroke-width="2.5"/>';
+    [lo, hi].forEach(function (v) { s += '<line x1="' + X(v) + '" y1="60" x2="' + X(v) + '" y2="80" style="stroke:var(--ink)" stroke-width="2"/><text x="' + X(v) + '" y="104" text-anchor="middle" font-size="18" class="t2">' + v + '</text>'; });
+    vals.forEach(function (v, i) {
+      if (show && show.indexOf(v) < 0) return;
+      s += '<circle cx="' + X(v) + '" cy="70" r="8" style="fill:var(--strand)"/><text x="' + X(v) + '" y="' + (i % 2 ? 104 : 46) + '" text-anchor="middle" font-size="20" class="tb">' + v + '</text>';
+    });
+    return A.svg(560, 116, s, 'A number line from ' + lo + ' to ' + hi + ' with ' + (show || vals).join(', ') + ' marked');
+  }
+  /* two place value charts, one above the other; the column that decides is lit */
+  function twoCharts(s) { return '<div>' + chart(s.a, { hl: s.hl, dots: false }) + '<p class="g3-sym">' + (s.sym ? '<b>' + s.a + ' ' + s.sym + ' ' + s.b + '</b>' : '&nbsp;') + '</p>' + chart(s.b, { hl: s.hl, dots: false }) + '</div>'; }
 
-  /* ---------- Lessons: one idea per screen (assets/lesson.js, assets/g3kit.js) ---------- */
-  var CH = 'numbers-1000';
-  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
-  function SK(id, lv) { return G3.skill(CH, id, lv); }
+  /* a Watch or My turn clip on a drawing: list = [[line, change to the picture (or a list of changes), ms], ...] */
+  function view(draw) { return function (s) { return '<div>' + draw(s) + (s.sym ? '<p class="g3-sym">' + s.sym + '</p>' : '') + '</div>'; }; }
+  function clip(draw, start, list) {
+    return { mount: G3.view(view(draw), start), steps: list.map(function (s) {
+      var st = { say: s[0], ms: s[2] || 1900 }, p = s[1];
+      if (p) st.act = function (t) { return Array.isArray(p) ? t.seq(p, 650) : t.set(p, 700); };
+      return st;
+    }) };
+  }
+  /* a Watch or My turn clip on a toolbox tool: list = [[line, function (tool) -> promise, ms], ...] */
+  function tool(name, opts, list) { return { tool: name, opts: opts, steps: list.map(function (s) { var st = { say: s[0], ms: s[2] || 1600 }; if (s[1]) st.act = s[1]; return st; }) }; }
   function b10(extra) { var o = { words: words, max: { h: 9, t: 19, o: 19 } }; for (var k in extra) o[k] = extra[k]; return o; }
-  function nb(n) { return '<span class="math big">' + A.fmt(n) + '</span>'; }
-  /* two numbers in place value charts, one above the other, with the column that decides lit */
-  function twoCharts(s) {
-    return '<div>' + chart(s.a, { hl: s.hl, dots: false }) + '<p class="g3-sym">' + (s.sym ? '<b>' + A.fmt(s.a) + ' ' + s.sym + ' ' + A.fmt(s.b) + '</b>' : '&nbsp;') + '</p>' + chart(s.b, { hl: s.hl, dots: false }) + '</div>';
-  }
-  function hillView(s) { return hill(s.n, s.p); }
-  function grid1000(s) { return thousand(s.n); }
-  function chartView(s) { return chart(s.n, { hl: s.hl, vals: s.vals }); }
-  function formView(s) { return s.show ? expanded(s.n) : chart(s.n, {}); }
 
+  /* ---------- skills: one per idea. DEF[id] = [[minLevel, shape, fn(lv), maxLevel], ...], the first is "plain" ---------- */
+  var DEF = {}, SKILLS = [];
+  function skill(id, name, code, list) { DEF[id] = list; SKILLS.push({ id: id, name: name, code: code }); }
+  /* a "Your turn" question: one shape of the idea's own skill, at one level */
+  function ck(id, shape, lv) { return function () { var s = DEF[id].filter(function (x) { return x[1] === shape; })[0], q = s[2](lv); q.shape = shape; return q; }; }
+  /* small step questions for Together */
+  function sumQ(q, a, b, hint) { return num(q, a + b, {}, { hint: hint || a + ' + ' + b + '.', meta: { k: 'g3n-sum', a: a, b: b } }); }
+  function subQ(q, a, b, hint) { return num(q, a - b, {}, { hint: hint || a + ' &minus; ' + b + '.', meta: { k: 'g3n-sub', a: a, b: b } }); }
+  function digQ(q, n, p, hint) { return num(q, dig(n)[p], {}, { hint: hint, meta: { k: 'g3n-digit', n: n, p: p } }); }
+
+  /* ======================= Lesson 1: Place value ======================= */
+  /* ---------- Ten tens make one hundred ---------- */
+  function hCase(lv) { return lv === 1 ? R.int(1, 4) * 100 : lv === 2 ? R.int(1, 9) * 100 : R.int(1, 9) * 100 + R.int(1, 9) * 10; }
+  skill('n3-hundred', 'Tens in hundreds', 'B1.5', [
+    [1, 'plain', function (lv) {
+      var n = hCase(lv), h = Math.floor(n / 100), t = n / 10, r = t % 10, fx = {};
+      fx[h] = 'That counts the flats. Each flat is 10 tens.'; fx[n] = 'That is the number. Count it in tens instead.'; fx[r] = 'Each flat holds 10 tens too.';
+      return num('How many tens make <b>' + n + '</b>?', t, fx, { fig: blk(n),
+        hint: 'Each flat is 10 tens. Count the tens in the flats, then add the rods.', steps: [placeN(h, 2) + ' = ' + h * 10 + ' tens.', r ? h * 10 + ' tens + ' + r + ' tens = ' + t + ' tens.' : 'There are no rods.'], explain: n + ' is ' + t + ' tens.', meta: { k: 'g3n-tens', n: n } });
+    }],
+    [1, 'rods', function (lv) {
+      var t = lv === 1 ? R.int(10, 14) : lv === 2 ? R.int(10, 25) : R.int(26, 40), fx = {};
+      fx[t] = 'Each rod is 10, not 1. Count by tens.'; fx[t * 100] = 'A rod is 10. Ten rods make 100.';
+      return num('All these blocks are tens. What number do they make?', t * 10, fx, { fig: pileOf(0, t, 0),
+        hint: 'Count by tens. 10 rods make 100.', steps: ['There are ' + t + ' rods.', '10 rods make 100.', t + ' tens = ' + t * 10 + '.'], explain: t + ' tens make ' + t * 10 + '.', meta: { k: 'g3n-rods', t: t } });
+    }],
+    [2, 'fill', function (lv) {
+      var n = hCase(lv), t = n / 10, back = lv === 3 || coin();
+      return fill('Fill in the blank.', back ? t + ' tens = [[]]' : '[[]] tens = ' + n, [back ? n : t], { fig: lv < 3 ? blk(n) : '',
+        hint: '10 tens make 100.', steps: ['Count in tens: 10 tens for each hundred.', t + ' tens = ' + n + '.'], explain: t + ' tens = ' + n + '.', meta: { k: 'g3n-tensfill' } });
+    }],
+    [2, 'mc', function (lv) {
+      var h = lv === 3 ? R.int(4, 9) : R.int(1, 5);
+      return mc('Which is the same as <b>' + placeN(h, 2) + '</b>?', h * 10 + ' tens', [[h + ' ' + (h === 1 ? 'ten' : 'tens'), 'One hundred is 10 tens, not 1 ten.'], [h * 100 + ' tens', 'Too many. 10 tens make one hundred.'], [h * 10 + ' ones', 'Ones are smaller than tens. Look at the rods.']], {
+        fig: blk(h * 100), hint: 'How many rods fit in one flat?', steps: ['1 hundred = 10 tens.', placeN(h, 2) + ' = ' + h * 10 + ' tens.'], explain: placeN(h, 2) + ' = ' + h * 10 + ' tens.', meta: { k: 'g3n-hmc', h: h } });
+    }],
+    [2, 'tf', function (lv) {
+      var t = lv === 3 ? R.int(11, 59) : R.int(1, 9) * 10, who = Q.name(), truth = coin(), said = truth ? t * 10 : R.pick([t, t * 100]);
+      return tf(who + ' says <b>' + t + ' tens</b> make <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, t + ' tens = ' + t * 10 + '. Each ten is 10.',
+        ['A ten is worth 1.', 'A ten is worth 100.', 'Tens and hundreds are the same.'], 'Each ten is worth 10. Count by tens.', { hint: 'Count by tens: 10, 20, 30...', meta: { k: 'g3n-tenstf', t: t, said: said } });
+    }]
+  ]);
+  function tgHundred(lv) {
+    return function () {
+      var n = hCase(lv), h = Math.floor(n / 100), r = (n / 10) % 10, fx = {};
+      fx[h] = 'That is the hundreds. Now count them as tens.';
+      var steps = [
+        { prompt: 'Count the flats first.', q: num('How many hundreds?', h, {}, { hint: 'Count the big squares.', meta: { k: 'g3n-hund', n: n } }) },
+        { prompt: 'Each flat is 10 tens.', q: num(placeN(h, 2) + ' is how many tens?', h * 10, fx, { hint: 'Count by tens for each flat: 10, 20...', meta: { k: 'g3n-tens', n: h * 100 } }) }
+      ];
+      if (r) steps.push({ prompt: 'Add the rods.', q: sumQ(h * 10 + ' tens + ' + r + ' tens = how many tens?', h * 10, r) });
+      return { q: 'How many tens make <b>' + n + '</b>?', fig: blk(n), done: n + ' = ' + n / 10 + ' tens.', steps: steps };
+    };
+  }
+
+  /* ---------- Read and build with blocks ---------- */
+  function bCase(lv) { var h = lv === 1 ? R.int(1, 4) : lv === 2 ? R.int(1, 9) : R.int(5, 9), t = R.int(1, lv === 1 ? 5 : 9), o = R.int(1, 9); return { h: h, t: t, o: o, n: h * 100 + t * 10 + o }; }
+  function blkFig(c, lv) { return lv === 3 ? pileOf(c.h, c.t, c.o, true) : blk(c.n); }
+  skill('n3-blocks', 'Read and build with blocks', 'B1.1', [
+    [1, 'plain', function (lv) {
+      var c = bCase(lv), fx = {};
+      fx[c.h + c.t + c.o] = 'That counts every block as 1. A flat is 100 and a rod is 10.'; fx[c.h * 100 + c.o * 10 + c.t] = 'Rods are tens and small cubes are ones. Check which is which.';
+      return num('What number do the blocks show?' + (lv === 3 ? ' They are mixed up.' : ''), c.n, fx, { fig: blkFig(c, lv),
+        hint: 'Flats are hundreds, rods are tens, small cubes are ones.', steps: ['Flats: ' + c.h + '. Rods: ' + c.t + '. Cubes: ' + c.o + '.', 'One digit for each place: ' + c.n + '.'], explain: hto(c.h, c.t, c.o) + ' make ' + c.n + '.', meta: { k: 'g3n-read', h: c.h, t: c.t, o: c.o } });
+    }],
+    [1, 'fill', function (lv) {
+      var c = bCase(lv);
+      return fill('Count each kind of block.', '[[]] hundreds &nbsp; [[]] tens &nbsp; [[]] ones', [c.h, c.t, c.o], { fig: blkFig(c, lv),
+        hint: 'Flats, then rods, then small cubes.', steps: ['Flats: ' + c.h + '.', 'Rods: ' + c.t + '.', 'Small cubes: ' + c.o + '.'], explain: c.n + ' is ' + hto(c.h, c.t, c.o) + '.', meta: { k: 'g3n-count3', n: c.n } });
+    }],
+    [1, 'build', function (lv) {
+      var c = bCase(lv);
+      return { q: 'Build <b>' + c.n + '</b> with blocks.', type: 'build', tool: 'base10', answer: c.n, opts: { max: { h: 9, t: 19, o: 19 } },
+        hint: 'The first digit tells the flats, the next the rods, the last the small cubes.', steps: [hto(c.h, c.t, c.o) + '.'], explain: hto(c.h, c.t, c.o) + ' make ' + c.n + '.', meta: { k: 'g3n-build', n: c.n } };
+    }],
+    [2, 'tap', function (lv) {
+      var c = bCase(lv), set = [c.n, c.t * 100 + c.h * 10 + c.o, c.h * 100 + c.o * 10 + c.t, c.n + (c.t < 9 ? 10 : -10)].filter(function (v, i, a) { return a.indexOf(v) === i && v < 1000; }).slice(0, 3);
+      set = R.shuffle(set);
+      var w = {};
+      set.forEach(function (v, i) { if (v !== c.n) w[String(i)] = 'Those blocks show ' + v + '. Count the flats, rods and cubes.'; });
+      return { q: 'Tap the blocks that show <b>' + c.n + '</b>.', type: 'tap', tiles: set.map(function (v) { return blk(v, 4); }), answer: set.indexOf(c.n), answerText: 'the one with ' + hto(c.h, c.t, c.o), wrong: w,
+        hint: c.n + ' needs ' + hto(c.h, c.t, c.o) + '.', steps: ['Look for ' + c.h + ' flats.', 'Then ' + c.t + ' rods and ' + c.o + ' cubes.'], explain: hto(c.h, c.t, c.o) + ' make ' + c.n + '.', meta: { k: 'g3n-btap', set: set, n: c.n } };
+    }],
+    [2, 'story', function (lv) {
+      var c = bCase(lv), who = Q.name(), th = R.pick([['pencils', 'boxes of 100', 'packs of 10', 'single pencils'], ['beads', 'jars of 100', 'strings of 10', 'loose beads'], ['maple candies', 'tins of 100', 'bags of 10', 'single candies']]);
+      return num(who + ' has ' + c.h + ' ' + th[1] + ' ' + th[0] + ', ' + c.t + ' ' + th[2] + ' and ' + c.o + ' ' + th[3] + '. How many ' + th[0] + ' is that?', c.n, {}, { fig: blkFig(c, lv),
+        hint: 'Hundreds, then tens, then ones.', steps: [c.h + ' hundreds = ' + c.h * 100 + '. ' + c.t + ' tens = ' + c.t * 10 + '.', c.h * 100 + ' + ' + c.t * 10 + ' + ' + c.o + ' = ' + c.n + '.'], explain: c.n + ' ' + th[0] + '.', meta: { k: 'g3n-read', h: c.h, t: c.t, o: c.o } });
+    }],
+    [2, 'tf', function (lv) {
+      var c = bCase(lv), who = Q.name(), truth = coin(), said = truth ? c.n : R.pick([c.t * 100 + c.h * 10 + c.o, c.h * 100 + c.o * 10 + c.t].filter(function (v) { return v !== c.n; }).concat([c.n + 100 <= 999 ? c.n + 100 : c.n - 100]));
+      return tf(who + ' says these blocks show <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, hto(c.h, c.t, c.o) + ' make ' + c.n + '.',
+        ['Every block counts as 1.', 'Rods are ones and cubes are tens.', 'Count the cubes first, then put them on the left.'], 'Count flats, rods and cubes, in that order.', { fig: blkFig(c, lv), hint: 'Flats are hundreds, rods are tens.', meta: { k: 'g3n-btf', n: c.n, said: said } });
+    }]
+  ]);
+  function tgBuild(lv) {
+    return function () {
+      var c = bCase(lv);
+      return { q: 'What number do the blocks show?', fig: blkFig(c, lv), done: hto(c.h, c.t, c.o) + ' make ' + c.n + '.', steps: [
+        { prompt: 'Count the flats. Each is a hundred.', q: digQ('How many hundreds?', c.n, 2, 'Count the big squares.') },
+        { prompt: 'Now the rods. Each is a ten.', q: digQ('How many tens?', c.n, 1, 'Count the long sticks.') },
+        { prompt: 'Then the small cubes.', q: digQ('How many ones?', c.n, 0, 'Count the little cubes.') },
+        { prompt: 'Write the digits: hundreds, tens, ones.', q: num('What number is it?', c.n, {}, { hint: c.h + ', then ' + c.t + ', then ' + c.o + '.', meta: { k: 'g3n-read', h: c.h, t: c.t, o: c.o } }) }
+      ] };
+    };
+  }
+
+  /* ---------- A digit's place gives its value ---------- */
+  function distinct3() { var d; do { d = [R.int(1, 9), R.int(1, 9), R.int(1, 9)]; } while (d[0] === d[1] || d[1] === d[2] || d[0] === d[2]); return d; }
+  function vCase(lv) {
+    var d = distinct3(), i = R.int(0, 2);
+    if (lv === 3) { var j = (i + R.int(1, 2)) % 3; d[j] = d[i]; }
+    return { n: d[0] * 100 + d[1] * 10 + d[2], i: i, d: d[i], p: 2 - i, val: d[i] * Math.pow(10, 2 - i) };
+  }
+  function valFix(c) {
+    var f = {};
+    if (c.p) f[c.d] = 'That is the digit alone. Its place makes it worth more.';
+    [c.d * 10, c.d * 100].forEach(function (v) { if (v !== c.val) f[v] = 'Count the places from the right: ones, tens, hundreds.'; });
+    return f;
+  }
+  skill('n3-value', 'Value of a digit', 'B1.5', [
+    [1, 'plain', function (lv) {
+      var c = vCase(lv);
+      return num('What is the underlined digit worth? ' + math(u(c.n, c.i)), c.val, valFix(c), { fig: lv === 1 ? chart(c.n, { hl: c.i }) : lv === 2 ? blk(c.n) : '',
+        hint: 'Name the place first: ones, tens or hundreds?', steps: ['The ' + c.d + ' is in the ' + PNAME[c.p] + ' place.', c.d + ' ' + PNAME[c.p] + ' = ' + c.val + '.'], explain: 'It is worth ' + c.val + '.', meta: { k: 'g3n-val', n: c.n, i: c.i } });
+    }],
+    [1, 'tap', function (lv) {
+      var c = vCase(lv === 3 ? 2 : lv);
+      return { q: 'Tap the digit that is worth <b>' + c.val + '</b>.', type: 'tap', pic: digitPic(c.n), answer: String(c.i), answerText: 'the ' + c.d + ' in the ' + PNAME[c.p] + ' place',
+        hint: c.val + ' is ' + placeN(c.d, c.p) + '. Which place is that?', steps: [c.val + ' = ' + placeN(c.d, c.p) + '.', 'Tap the ' + c.d + ' in the ' + PNAME[c.p] + ' place.'], explain: 'The ' + c.d + ' in the ' + PNAME[c.p] + ' place is worth ' + c.val + '.', meta: { k: 'g3n-valtap', n: c.n, val: c.val } };
+    }],
+    [1, 'story', function (lv) {
+      var c = vCase(lv), t = R.pick([['The arena has', 'seats'], ['The library has', 'books'], ['The school collected', 'cans of food'], ['The trail is', 'metres long'], ['The farm has', 'apple trees']]);
+      return num(t[0] + ' ' + c.n + ' ' + t[1] + '. What is the <b>' + c.d + '</b> in ' + math(u(c.n, c.i)) + ' worth?', c.val, valFix(c), {
+        hint: 'Which place is the ' + c.d + ' in?', steps: ['The ' + c.d + ' is in the ' + PNAME[c.p] + ' place.', c.d + ' ' + PNAME[c.p] + ' = ' + c.val + '.'], explain: 'It stands for ' + c.val + '.', meta: { k: 'g3n-val', n: c.n, i: c.i } });
+    }],
+    [2, 'mc', function (lv) {
+      var dg = R.int(1, 9), p = R.int(lv === 3 ? 0 : 1, 2), seen = {};
+      function make(pl) {
+        var d, n;
+        do { d = [R.int(1, 9), R.int(0, 9), R.int(0, 9)].map(function (x) { return x === dg ? (dg % 9) + 1 : x; }); d[2 - pl] = dg; n = d[0] * 100 + d[1] * 10 + d[2]; } while (seen[n]);
+        seen[n] = 1; return n;
+      }
+      var right = make(p), rest = [0, 1, 2].filter(function (x) { return x !== p; }), wrongs = [make(rest[0]), make(rest[1]), make(R.pick(rest))];
+      return mc('Which number has a <b>' + dg + '</b> worth <b>' + dg * Math.pow(10, p) + '</b>?', right, wrongs.map(function (n) { return [n, 'In ' + n + ', the ' + dg + ' is in a different place.']; }), {
+        hint: dg * Math.pow(10, p) + ' means the ' + dg + ' is in the ' + PNAME[p] + ' place.', steps: ['Look for a ' + dg + ' in the ' + PNAME[p] + ' place.'], explain: 'In ' + right + ', the ' + dg + ' is in the ' + PNAME[p] + ' place.', meta: { k: 'g3n-valmc', dg: dg, p: p } });
+    }],
+    [2, 'tf', function (lv) {
+      var c = vCase(lv), who = Q.name(), truth = coin(), said = truth ? c.val : R.pick([c.d, c.d * 10, c.d * 100].filter(function (v) { return v !== c.val; }));
+      return tf(who + ' says the underlined <b>' + c.d + '</b> in ' + math(u(c.n, c.i)) + ' is worth <b>' + said + '</b>. True or false: ' + who + ' is right.', truth, 'The ' + c.d + ' is in the ' + PNAME[c.p] + ' place, so it is worth ' + c.val + '.',
+        ['A digit is always worth just itself.', 'The biggest digit is always worth the most.', 'Places are counted from the left: ones, tens, hundreds.'], 'Find the place of the underlined digit first.', { hint: 'Ones, tens, hundreds: count from the right.', meta: { k: 'g3n-valtf', n: c.n, i: c.i, said: said } });
+    }],
+    [3, 'total', function () {
+      var c = vCase(3), s = String(c.n), both = [0, 1, 2].filter(function (j) { return +s.charAt(j) === c.d; }), tot = both.reduce(function (a, j) { return a + c.d * Math.pow(10, 2 - j); }, 0);
+      var fx = {}; fx[c.d * 2] = 'Each ' + c.d + ' has its own place. Find what each one is worth.';
+      return num('What are the two <b>' + c.d + 's</b> in ' + math(c.n) + ' worth together?', tot, fx, { fig: chart(c.n, { vals: false }),
+        hint: 'Find the value of each ' + c.d + ', then add.', steps: both.map(function (j) { return 'The ' + c.d + ' in the ' + PNAME[2 - j] + ' place is ' + c.d * Math.pow(10, 2 - j) + '.'; }).concat(['Add them: ' + tot + '.']), explain: 'Together they are worth ' + tot + '.', meta: { k: 'g3n-valsum', n: c.n, d: c.d } });
+    }]
+  ]);
+  function tgValue(lv) {
+    return function () {
+      var c = vCase(lv), f1 = {}, f3 = valFix(c);
+      return { q: 'What is the <b>' + c.d + '</b> in ' + math(u(c.n, c.i)) + ' worth?', fig: chart(c.n, { hl: c.i }), done: 'The ' + c.d + ' is worth ' + c.val + '.', steps: [
+        { prompt: 'Name the place first.', q: fixed('Which place is the ' + c.d + ' in?', ['ones', 'tens', 'hundreds'], c.p, ['Count from the right. The ones are last.', 'Count from the right: ones, then tens.', 'Count from the right: ones, tens, then hundreds.'], { hint: 'Count places from the right.', meta: { k: 'g3n-place', n: c.n, i: c.i } }) },
+        { prompt: 'One of that place is worth how much?', q: num('One ' + A.PLACE1[c.p] + ' is worth how much?', Math.pow(10, c.p), f1, { hint: 'A cube is 1, a rod is 10, a flat is 100.', meta: { k: 'g3n-pow', p: c.p } }) },
+        { prompt: c.d + ' of them.', q: num('So ' + placeN(c.d, c.p) + ' = ?', c.val, f3, { hint: 'Count ' + c.d + ' ' + PNAME[c.p] + '.', meta: { k: 'g3n-val', n: c.n, i: c.i } }) }
+      ] };
+    };
+  }
+
+  /* ---------- Zero holds a place ---------- */
+  function zCase(lv) {
+    var h = lv === 1 ? R.int(1, 5) : lv === 2 ? R.int(1, 9) : R.int(5, 9), t = R.int(1, 9), o = R.int(1, 9), k = lv === 1 ? 't' : lv === 2 ? R.pick(['t', 'o']) : R.pick(['t', 'o', 'both']);
+    if (k !== 'o') t = 0;
+    if (k !== 't') o = 0;
+    return { h: h, t: t, o: o, n: h * 100 + t * 10 + o };
+  }
+  function drop0(n) { return +String(n).replace(/0/g, ''); }
+  function zFix(c) { var f = {}; f[drop0(c.n)] = 'A place with nothing still needs a digit: write 0 there.'; return f; }
+  skill('n3-zero', 'Zero holds a place', 'B1.1', [
+    [1, 'plain', function (lv) {
+      var c = zCase(lv);
+      return num('What number do the blocks show?', c.n, zFix(c), { fig: blk(c.n),
+        hint: 'A kind of block that is missing gets a 0.', steps: [hto(c.h, c.t, c.o) + '.', 'Write a 0 for the empty place: ' + c.n + '.'], explain: hto(c.h, c.t, c.o) + ' make ' + c.n + '.', meta: { k: 'g3n-read', h: c.h, t: c.t, o: c.o } });
+    }],
+    [1, 'words', function (lv) {
+      var c = zCase(lv);
+      return num('Write <b>' + words(c.n) + '</b> as a number.', c.n, zFix(c), { fig: lv === 1 ? chart(c.n, { dots: false }) : '',
+        hint: 'How many hundreds, tens and ones? Write 0 for a place with none.', steps: [hto(c.h, c.t, c.o) + '.', 'The number is ' + c.n + '.'], explain: words(c.n) + ' is ' + c.n + '.', meta: { k: 'g3n-words', w: words(c.n) } });
+    }],
+    [2, 'chart', function (lv) {
+      var c = zCase(lv);
+      return fill('Fill the place value chart for these blocks.', 'Hundreds [[]] &nbsp; Tens [[]] &nbsp; Ones [[]]', [c.h, c.t, c.o], { fig: blk(c.n),
+        hint: 'No rods means 0 tens. No cubes means 0 ones.', steps: [hto(c.h, c.t, c.o) + '.'], explain: c.n + ': ' + hto(c.h, c.t, c.o) + '.', meta: { k: 'g3n-count3', n: c.n } });
+    }],
+    [2, 'mc', function (lv) {
+      var c = zCase(lv), s = String(c.n), sw = +(s.charAt(0) + s.charAt(2) + s.charAt(1));
+      return mc('Which number is <b>' + words(c.n) + '</b>?', c.n, [[drop0(c.n), 'The 0 is missing. Each place needs a digit.'], [sw, 'The tens and ones are swapped.'], [c.n * 10, 'That has 4 digits: too many places.']], {
+        hint: 'Hundreds first, then tens, then ones. Use 0 for an empty place.', steps: [hto(c.h, c.t, c.o) + '.'], explain: words(c.n) + ' is ' + c.n + '.', meta: { k: 'g3n-zmc' } });
+    }],
+    [2, 'tf', function (lv) {
+      var c = zCase(lv), who = Q.name(), truth = coin(), said = truth ? c.n : drop0(c.n);
+      return tf(who + ' writes <b>' + words(c.n) + '</b> as ' + math(said) + '. True or false: ' + who + ' is right.', truth, words(c.n) + ' is ' + hto(c.h, c.t, c.o) + ': ' + c.n + '.',
+        ['Zeros are never written.', 'You only write the digits you say.', 'The number gets bigger without the 0.'], 'Check each place. An empty place needs a 0.', { hint: 'How many tens? How many ones?', meta: { k: 'g3n-ztf', said: said } });
+    }]
+  ]);
+  function tgZero(lv) {
+    return function () {
+      var c = zCase(lv);
+      return { q: 'Write <b>' + words(c.n) + '</b> as a number.', fig: blk(c.n), done: words(c.n) + ' is ' + c.n + '.', steps: [
+        { prompt: 'How many flats?', q: digQ('How many hundreds?', c.n, 2, 'Count the flats.') },
+        { prompt: 'Any rods? None means 0.', q: digQ('How many tens?', c.n, 1, 'Count the rods. None is 0.') },
+        { prompt: 'Any small cubes?', q: digQ('How many ones?', c.n, 0, 'Count the cubes. None is 0.') },
+        { prompt: 'Write all three digits.', q: num('What number is it?', c.n, zFix(c), { hint: 'Keep the 0.', meta: { k: 'g3n-read', h: c.h, t: c.t, o: c.o } }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 2: Writing numbers ======================= */
+  /* ---------- Standard and expanded form ---------- */
+  function fCase(lv) {
+    var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9);
+    if (lv === 2 && coin()) { if (coin()) t = 0; else o = 0; }
+    if (lv === 3) { var z = R.int(0, 2); if (z === 1) t = 0; if (z === 2) o = 0; }
+    var parts = [h * 100, t * 10, o].filter(function (v) { return v; });
+    return { h: h, t: t, o: o, n: h * 100 + t * 10 + o, parts: lv === 3 ? R.shuffle(parts) : parts };
+  }
+  skill('n3-forms', 'Expanded and standard form', 'B1.1', [
+    [1, 'plain', function (lv) {
+      var c = fCase(lv), fx = {}; fx[c.parts.join('')] = 'Each part is a value to add, not digits to join.';
+      return num('Write as one number: ' + math(c.parts.join(' + ')), c.n, fx, { fig: lv === 1 ? blk(c.n) : '',
+        hint: lv === 3 ? 'The parts are mixed up. Put each in its place.' : 'Put each part in its place. A place with nothing gets 0.', steps: ['Hundreds: ' + c.h + '. Tens: ' + c.t + '. Ones: ' + c.o + '.', 'The number is ' + c.n + '.'], explain: c.parts.join(' + ') + ' = ' + c.n + '.', meta: { k: 'g3n-std', parts: c.parts } });
+    }],
+    [1, 'fill', function (lv) {
+      var c = fCase(lv === 3 ? 2 : lv), ps = [c.h * 100, c.t * 10, c.o].filter(function (v) { return v; });
+      return fill('Write ' + c.n + ' in expanded form.', c.n + ' = ' + ps.map(function () { return '[[]]'; }).join(' + '), ps, { fig: chart(c.n, { dots: lv === 1 }),
+        hint: 'What is each digit worth?', steps: ps.map(function (v) { return v + '.'; }), explain: c.n + ' = ' + ps.join(' + ') + '.', meta: { k: 'g3n-expfill', n: c.n } });
+    }],
+    [1, 'story', function (lv) {
+      var c = fCase(lv), who = Q.name();
+      return num(who + ' has ' + G3.pl(c.h, '$100 bill') + ', ' + G3.pl(c.t, '$10 bill') + ' and ' + G3.pl(c.o, 'loonie') + '. How many dollars is that?', c.n, {}, {
+        hint: 'Hundreds, tens, ones.', steps: [c.h * 100 + ' + ' + c.t * 10 + ' + ' + c.o + '.', '$' + c.n + '.'], explain: '$' + c.n + '.', meta: { k: 'g3n-read', h: c.h, t: c.t, o: c.o } });
+    }],
+    [2, 'match', function (lv) {
+      var pairs = [], seen = {};
+      while (pairs.length < 3) { var c = fCase(lv); if (seen[c.n]) continue; seen[c.n] = 1; pairs.push([math(c.parts.join(' + ')), String(c.n)]); }
+      return { q: 'Match each expanded form to its number.', type: 'match', pairs: pairs, hint: 'Add the parts.', steps: ['300 + 4 is 304: no tens.'], explain: pairs.map(function (p) { return plain(p[0]) + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'g3n-expmatch' } };
+    }],
+    [2, 'tf', function (lv) {
+      var c = fCase(lv), who = Q.name(), truth = coin(), s = String(c.n), said = truth ? c.n : R.pick([drop0(c.n) !== c.n ? drop0(c.n) : +(s.charAt(0) + s.charAt(2) + s.charAt(1)), +(s.charAt(1) + s.charAt(0) + s.charAt(2))]);
+      if (!truth && (said === c.n || said < 100)) said = c.n + 10 * (c.t < 9 ? 1 : -1);
+      return tf(who + ' says ' + math(c.parts.join(' + ') + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, c.parts.join(' + ') + ' = ' + c.n + '.',
+        ['Write the parts in the order they are given.', 'Leave out any zeros.', 'Join the digits of each part.'], 'Put each part in its own place.', { hint: 'Hundreds, tens, ones.', meta: { k: 'g3n-partstf', parts: c.parts, said: said } });
+    }]
+  ]);
+  function tgForms(lv) {
+    return function () {
+      var c = fCase(lv), steps = [];
+      if (lv < 3) {
+        [0, 1, 2].forEach(function (i) { steps.push({ prompt: ['Hundreds first.', 'Then the tens.', 'Then the ones.'][i], q: num('What is the ' + PNAME[2 - i] + ' digit worth?', String(c.n).charAt(i) * Math.pow(10, 2 - i), {}, { hint: 'Digit times its place.', meta: { k: 'g3n-val', n: c.n, i: i } }) }); });
+        return { q: 'Write <b>' + c.n + '</b> in expanded form.', fig: chart(c.n, {}), done: c.n + ' = ' + [c.h * 100, c.t * 10, c.o].filter(function (v) { return v; }).join(' + ') + '.', steps: steps };
+      }
+      return { q: 'Write ' + math(c.parts.join(' + ')) + ' as one number.', fig: '', done: c.parts.join(' + ') + ' = ' + c.n + '.', steps: [
+        { prompt: 'Find the hundreds.', q: digQ('What is the hundreds digit?', c.n, 2, 'Which part is hundreds?') },
+        { prompt: 'Now the tens. None means 0.', q: digQ('What is the tens digit?', c.n, 1, 'Which part is tens?') },
+        { prompt: 'Then the ones.', q: digQ('What is the ones digit?', c.n, 0, 'Which part is ones?') },
+        { prompt: 'Write the number.', q: num('What is the number?', c.n, {}, { hint: 'Hundreds, tens, ones.', meta: { k: 'g3n-std', parts: c.parts } }) }
+      ] };
+    };
+  }
+
+  /* ---------- Numbers in words ---------- */
+  function wCase(lv) {
+    var h = lv === 3 ? R.int(5, 9) : R.int(1, 9), t = R.int(2, 9), o = R.int(1, 9);
+    if (lv >= 2) { var k = R.int(0, 2); if (k === 1) t = 1; if (k === 2) t = 0; }
+    return h * 100 + t * 10 + o;
+  }
+  skill('n3-words', 'Numbers in words', 'B1.1', [
+    [1, 'plain', function (lv) {
+      var n = wCase(lv), fx = zFix({ n: n });
+      return num('Write <b>' + words(n) + '</b> as a number.', n, fx, { fig: lv === 1 ? chart(n, { dots: false }) : '',
+        hint: 'Say the hundreds first. Then the last two digits.', steps: ['"' + ONES[Math.floor(n / 100)] + ' hundred" is ' + Math.floor(n / 100) * 100 + '.', '"' + words(n % 100) + '" is ' + n % 100 + '.', 'Together: ' + n + '.'], explain: words(n) + ' is ' + n + '.', meta: { k: 'g3n-words', w: words(n) } });
+    }],
+    [1, 'sign', function (lv) {
+      var n = wCase(lv), t = R.pick([['A trail sign says the lake is', 'metres away'], ['A cheque says', 'dollars'], ['The poster says the arena holds', 'people'], ['The map says the portage is', 'metres long']]);
+      return num(t[0] + ' <b>' + words(n) + '</b> ' + t[1] + '. Write the number.', n, zFix({ n: n }), {
+        hint: 'Hundreds first, then the last two digits.', steps: ['Hundreds: ' + Math.floor(n / 100) + '.', 'Then ' + words(n % 100) + ': ' + n % 100 + '.'], explain: words(n) + ' is ' + n + '.', meta: { k: 'g3n-words', w: words(n) } });
+    }],
+    [1, 'mc', function (lv) {
+      var n = wCase(lv), s = String(n), alt = [+(s.charAt(0) + s.charAt(2) + s.charAt(1)), n + (n % 100 >= 90 ? -10 : 10), (Math.floor(n / 100) % 9 + 1) * 100 + n % 100].filter(function (v) { return v !== n && v >= 100; });
+      return mc('Which words say <b>' + n + '</b>?', words(n), alt.map(function (v) { return [words(v), 'That is ' + v + '. Check each place.']; }), { fig: chart(n, { dots: false }),
+        hint: 'Say the hundreds, then the last two digits.', steps: [Math.floor(n / 100) + ' hundreds: "' + ONES[Math.floor(n / 100)] + ' hundred".', n % 100 + ': "' + words(n % 100) + '".'], explain: n + ' is ' + words(n) + '.', meta: { k: 'g3n-wmc', n: n } });
+    }],
+    [2, 'match', function (lv) {
+      var pairs = [], seen = {};
+      while (pairs.length < 3) { var n = wCase(lv); if (seen[n]) continue; seen[n] = 1; pairs.push([words(n), String(n)]); }
+      return { q: 'Match the words to the number.', type: 'match', pairs: pairs, hint: 'Hundreds first, then the last two digits.', steps: ['"Four hundred twelve" is 412.'], explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join(', ') + '.', meta: { k: 'g3n-wmatch' } };
+    }],
+    [2, 'order', function (lv) {
+      var a = []; while (a.length < 3) { var n = lv === 3 ? Math.floor(wCase(3) / 100) * 100 + R.int(0, 99) : wCase(lv); if (a.indexOf(n) < 0 && a.every(function (x) { return Math.abs(x - n) > 4; })) a.push(n); }
+      a.sort(function (x, y) { return x - y; });
+      return { q: 'Put these in order, least to greatest.', type: 'order', items: a.map(words), first: 'least', last: 'greatest',
+        hint: 'Write each as a number first.', steps: ['As numbers: ' + R.shuffle(a).join(', ') + '.', 'Least to greatest: ' + a.join(', ') + '.'], explain: a.join(', ') + '.', meta: { k: 'g3n-worder' } };
+    }],
+    [2, 'tf', function (lv) {
+      var n = wCase(lv), who = Q.name(), truth = coin(), s = String(n), said = truth ? n : drop0(n) !== n ? drop0(n) : +(s.charAt(0) + s.charAt(2) + s.charAt(1));
+      if (said === n && !truth) said = n + 1;
+      return tf(who + ' writes <b>' + words(n) + '</b> as ' + math(said) + '. True or false: ' + who + ' is right.', truth, words(n) + ' is ' + n + '.',
+        ['Write the digits in the order you hear the words.', 'Zeros are never written.', 'Teen numbers start with the ones.'], 'Hundreds, then tens, then ones. Use 0 for an empty place.', { hint: 'Write it yourself, then compare.', meta: { k: 'g3n-wtf', said: said } });
+    }]
+  ]);
+  function tgWords(lv) {
+    return function () {
+      var n = wCase(lv), h = Math.floor(n / 100), r = n % 100;
+      return { q: 'Write <b>' + words(n) + '</b> as a number.', fig: blk(n), done: words(n) + ' is ' + n + '.', steps: [
+        { prompt: 'Read the hundreds part.', q: num('"' + ONES[h] + ' hundred" is what number?', h * 100, {}, { hint: h + ' flats.', meta: { k: 'g3n-words', w: ONES[h] + ' hundred' } }) },
+        { prompt: 'Now the rest of the words.', q: num('"' + words(r) + '" is what number?', r, {}, { hint: 'Tens and ones.', meta: { k: 'g3n-words', w: words(r) } }) },
+        { prompt: 'Put them together.', q: sumQ(h * 100 + ' + ' + r + ' = ?', h * 100, r) }
+      ] };
+    };
+  }
+
+  /* ---------- One number, many ways (trading) ---------- */
+  function trCase(lv) {
+    var k = lv === 1 ? 'h' : lv === 2 ? R.pick(['h', 't']) : R.pick(['ht', 'all']), h = k === 'all' ? R.int(1, 4) : R.int(2, 9), t = R.int(1, 8), o = R.int(1, 8), n = h * 100 + t * 10 + o;
+    var s = k === 'h' ? [h - 1, t + 10, o] : k === 't' ? [h, t - 1, o + 10] : k === 'ht' ? [h - 1, t + 9, o + 10] : [0, h * 10 + t, o];
+    return { n: n, h: h, t: t, o: o, k: k, s: s };
+  }
+  function trText(s) { return hto(s[0], s[1], s[2]); }
+  skill('n3-trade', 'One number, many ways', 'B1.5', [
+    [1, 'plain', function (lv) {
+      var c = trCase(lv), fx = {}; fx[c.s[0] * 100 + (c.s[1] % 10) * 10 + c.s[2] % 10] = 'Ten of one place make one of the next place. Trade them first.';
+      return num('What number is <b>' + trText(c.s) + '</b>?', c.n, fx, { fig: pileOf(c.s[0], c.s[1], c.s[2]),
+        hint: 'Find the value of each part, then add.', steps: [c.s[0] * 100 + ' + ' + c.s[1] * 10 + ' + ' + c.s[2] + '.', '= ' + c.n + '.'], explain: trText(c.s) + ' = ' + c.n + '.', meta: { k: 'g3n-read', h: c.s[0], t: c.s[1], o: c.s[2] } });
+    }],
+    [1, 'fill', function (lv) {
+      var c = trCase(lv), f, a;
+      if (c.k === 'h') { f = c.n + ' = ' + placeN(c.s[0], 2) + ', [[]] tens and ' + placeN(c.s[2], 0); a = [c.s[1]]; }
+      else if (c.k === 't') { f = c.n + ' = ' + placeN(c.s[0], 2) + ', ' + placeN(c.s[1], 1) + ' and [[]] ones'; a = [c.s[2]]; }
+      else if (c.k === 'ht') { f = c.n + ' = ' + placeN(c.s[0], 2) + ', [[]] tens and ' + placeN(c.s[2], 0); a = [c.s[1]]; }
+      else { f = c.n + ' = [[]] tens and ' + placeN(c.s[2], 0); a = [c.s[1]]; }
+      return fill('Fill in the blank.', f, a, { fig: blk(c.n),
+        hint: 'Break a bigger block into 10 smaller ones.', steps: ['1 hundred = 10 tens. 1 ten = 10 ones.', c.n + ' = ' + trText(c.s) + '.'], explain: c.n + ' = ' + trText(c.s) + '.', meta: { k: 'g3n-tradefill' } });
+    }],
+    [2, 'tens', function (lv) {
+      var c = trCase(lv), all = Math.floor(c.n / 10), fx = {}; fx[c.t] = 'That is only the tens digit. The hundreds hold tens too.'; fx[c.h] = 'Each hundred is 10 tens.';
+      return num('How many tens are in ' + math(c.n) + ' in all?', all, fx, { fig: lv < 3 ? blk(c.n) : '',
+        hint: 'Each flat is 10 tens. Add the rods.', steps: [placeN(c.h, 2) + ' = ' + c.h * 10 + ' tens.', c.h * 10 + ' + ' + c.t + ' = ' + all + ' tens.'], explain: c.n + ' has ' + all + ' tens in all.', meta: { k: 'g3n-tens', n: c.n } });
+    }],
+    [2, 'mc', function (lv) {
+      var c = trCase(lv);
+      var W = [[[c.h - 1, c.t, c.o], 'One hundred was taken away and not traded.'], [[c.h, c.t + 10, c.o], 'That adds 10 tens without taking a hundred away.'], [[c.h - 1, c.t + 1, c.o], '1 hundred is 10 tens, not 1 ten.'], [[c.h, c.t - 1, c.o + 1], '1 ten is 10 ones, not 1 one.']];
+      return mc('Which is another way to make <b>' + c.n + '</b>?', trText(c.s), R.shuffle(W).map(function (w) { return [trText(w[0]), w[1]]; }), { fig: blk(c.n),
+        hint: 'Add up the value of each choice.', steps: ['A trade keeps the total the same.', trText(c.s) + ' = ' + c.n + '.'], explain: trText(c.s) + ' is ' + c.n + '.', meta: { k: 'g3n-trademc', n: c.n } });
+    }],
+    [2, 'tf', function (lv) {
+      var c = trCase(lv), who = Q.name(), truth = coin(), said = truth ? c.h * 10 + c.t : c.h + c.t;
+      return tf(who + ' says <b>' + placeN(c.h, 2) + ' and ' + placeN(c.t, 1) + '</b> is the same as <b>' + said + ' tens</b>. True or false: ' + who + ' is right.', truth, 'Each hundred is 10 tens: ' + c.h * 10 + ' + ' + c.t + ' = ' + (c.h * 10 + c.t) + ' tens.',
+        ['A hundred is 1 ten.', 'Hundreds and tens can be added like ones.', 'You cannot trade hundreds.'], 'Each hundred is 10 tens.', { hint: 'How many tens is one hundred?', meta: { k: 'g3n-tradetf', h: c.h, t: c.t, said: said } });
+    }]
+  ]);
+  function tgTrade(lv) {
+    return function () {
+      var c = trCase(lv === 3 ? 1 : lv), ten = c.k === 't';
+      var steps = ten ? [
+        { prompt: 'Break one ten into ones.', q: subQ('How many tens are left?', c.t, 1) },
+        { prompt: '1 ten is 10 ones.', q: sumQ(placeN(c.o, 0) + ' + 10 ones = how many ones?', c.o, 10) },
+        { prompt: 'The hundreds stay.', q: digQ('How many hundreds?', c.n, 2, 'Nothing changed there.') }
+      ] : [
+        { prompt: 'Break one hundred into tens.', q: subQ('How many hundreds are left?', c.h, 1) },
+        { prompt: '1 hundred is 10 tens.', q: sumQ(placeN(c.t, 1) + ' + 10 tens = how many tens?', c.t, 10) },
+        { prompt: 'The ones stay.', q: digQ('How many ones?', c.n, 0, 'Nothing changed there.') }
+      ];
+      if (lv === 3) steps = steps.slice(0, 2).concat([{ prompt: 'Check the total.', q: num('What number is ' + trText(c.s) + '?', c.n, {}, { hint: 'Add the values.', meta: { k: 'g3n-read', h: c.s[0], t: c.s[1], o: c.s[2] } }) }]);
+      return { q: 'Show <b>' + c.n + '</b> another way: ' + (ten ? 'break a ten.' : 'break a hundred.'), fig: blk(c.n), done: c.n + ' = ' + trText(c.s) + '.', steps: steps };
+    };
+  }
+
+  /* ======================= Lesson 3: Counting to 1000 ======================= */
+  /* ---------- Ten hundreds make 1000 ---------- */
+  function kCase(lv) { var n; do { n = lv === 1 ? R.int(1, 9) * 100 : lv === 2 ? R.int(1, 19) * 50 : R.int(1, 99) * 10; } while ((lv === 2 && n % 100 === 0) || (lv === 3 && n % 50 === 0)); return n; }
+  skill('n3-1000', 'Make 1000', 'B1.4', [
+    [1, 'plain', function (lv) {
+      var n = kCase(lv), fx = {}; if (n % 100 === 0) fx[10 - n / 100] = 'Count in hundreds: that many hundreds is ' + (10 - n / 100) * 100 + '.'; fx[100 - n / 10] = 'Each square is worth 10. Count the empty squares by tens.';
+      return num(math(n) + ' + ? = 1000. How many more make 1000?', 1000 - n, fx, { fig: thousand(n),
+        hint: 'Count on to the next hundred, then by hundreds to 1000.', steps: n % 100 ? [n + ' + ' + (100 - n % 100) + ' = ' + (n + 100 - n % 100) + '.', 'Then ' + (1000 - n - 100 + n % 100) + ' more to 1000.', 'In all: ' + (1000 - n) + '.'] : [n + ' is ' + n / 100 + ' hundreds.', '10 hundreds make 1000, so ' + (10 - n / 100) + ' more hundreds.'], explain: n + ' + ' + (1000 - n) + ' = 1000.', meta: { k: 'g3n-to1000', n: n } });
+    }],
+    [1, 'fill', function (lv) {
+      var n = kCase(lv), back = coin();
+      return fill('Fill in the blank.', back ? '[[]] + ' + n + ' = 1000' : n + ' + [[]] = 1000', [1000 - n], {
+        hint: '10 hundreds make 1000.', steps: ['Count up from ' + n + ' to 1000.'], explain: n + ' + ' + (1000 - n) + ' = 1000.', meta: { k: 'g3n-eq' } });
+    }],
+    [1, 'jumps', function (lv) {
+      var by = lv === 1 ? 100 : lv === 2 ? 50 : R.pick([50, 200]), n = by === 200 ? R.int(0, 3) * 200 : lv === 1 ? R.int(1, 8) * 100 : R.int(lv === 2 ? 10 : 2, 18) * 50, vals = [];
+      for (var v = n; v <= 1000; v += by) vals.push(v);
+      return num('Count by ' + by + 's from ' + n + ' to 1000. How many jumps is that?', vals.length - 1, {}, { fig: lv < 3 ? hops(vals) : '',
+        hint: 'Count each jump, not each number.', steps: [vals.join(', ') + '.', 'That is ' + (vals.length - 1) + ' jumps.'], explain: (vals.length - 1) + ' jumps of ' + by + '.', meta: { k: 'g3n-jumps', from: n, to: 1000, by: by } });
+    }],
+    [2, 'mc', function (lv) {
+      var right = R.pick(['10 hundreds', '100 tens', '1000 ones']), bad = [['100 hundreds', '1 hundred is 100. 100 hundreds is far more.'], ['10 tens', '10 tens make 100, not 1000.'], ['100 ones', '100 ones make 100.'], ['1000 tens', '100 tens make 1000.'], ['10 ones', '10 ones make 10.']];
+      return mc('Which is the same as <b>1000</b>?', right, R.shuffle(bad), { fig: lv === 2 ? stairs() : '',
+        hint: '10 ones = 1 ten. 10 tens = 1 hundred. 10 hundreds = 1000.', steps: ['1000 = 10 hundreds = 100 tens = 1000 ones.'], explain: '1000 = ' + right + '.', meta: { k: 'g3n-1000mc' } });
+    }],
+    [2, 'tf', function (lv) {
+      var n = kCase(lv), who = Q.name(), truth = coin(), m = truth ? 1000 - n : 1000 - n + R.pick([100, -100, 10, -10].filter(function (x) { return 1000 - n + x > 0; }));
+      return tf(who + ' says ' + math(n + ' + ' + m + ' = 1000') + '. True or false: ' + who + ' is right.', truth, n + ' + ' + (1000 - n) + ' = 1000.',
+        ['1000 is 10 tens.', 'Any two hundreds make 1000.', 'Add the first digits only.'], 'Count up from ' + n + ' to 1000.', { fig: lv === 1 ? thousand(n) : '', hint: 'Count on to the next hundred first.', meta: { k: 'g3n-sumtf', a: n, b: m, said: 1000 } });
+    }]
+  ]);
+  function tgThousand(lv) {
+    return function () {
+      var n = kCase(lv), up = Math.ceil(n / 100) * 100;
+      var steps = n % 100 ? [
+        { prompt: 'Count on to the next hundred.', q: subQ(n + ' + ? = ' + up, up, n, 'How many tens to fill the row?') },
+        { prompt: 'Then count hundreds to 1000.', q: subQ(up + ' + ? = 1000', 1000, up, 'Count the empty rows.') },
+        { prompt: 'Add the two jumps.', q: sumQ((up - n) + ' + ' + (1000 - up) + ' = ?', up - n, 1000 - up) }
+      ] : [
+        { prompt: 'Count the full rows.', q: num('How many hundreds are filled?', n / 100, {}, { hint: 'One row is 100.', meta: { k: 'g3n-hund', n: n } }) },
+        { prompt: 'Ten rows make 1000.', q: subQ('10 &minus; ' + n / 100 + ' = ?', 10, n / 100) },
+        { prompt: 'So how many more make 1000?', q: num('How many more make 1000?', 1000 - n, {}, { hint: (10 - n / 100) + ' hundreds.', meta: { k: 'g3n-to1000', n: n } }) }
+      ];
+      return { q: 'How many more make 1000? ' + math(n + ' + ? = 1000'), fig: thousand(n), done: n + ' + ' + (1000 - n) + ' = 1000.', steps: steps };
+    };
+  }
+
+  /* ---------- Count by 100s, 50s and 200s ---------- */
+  var SKIPS = {
+    100: { 1: function () { return [R.int(0, 5) * 100, 1]; }, 2: function () { var s; do { s = R.int(1, 59) * 10; } while (s % 100 === 0); return [s, 1]; }, 3: function () { return [R.int(50, 100) * 10, -1]; } },
+    50: { 1: function () { return [R.int(0, 12) * 50, 1]; }, 2: function () { var s; do { s = R.int(1, 79) * 10; } while (s % 50 === 0); return [s, 1]; }, 3: function () { return [R.int(25, 100) * 10, -1]; } },
+    200: { 1: function () { return [R.pick([0, 200, 400]), 1]; }, 2: function () { return [R.pick([100, 150, 250, 300, 350, 50]), 1]; }, 3: function () { return [R.int(60, 100) * 10, -1]; } }
+  };
+  var STUFF = { 100: [['boxes', 'pencils'], ['packs', 'sheets of paper'], ['bags', 'marbles']], 50: [['rolls', 'stickers'], ['jars', 'buttons'], ['bags', 'beads']], 200: [['cartons', 'crayons'], ['crates', 'apples'], ['bundles', 'craft sticks']] };
+  function seq(by, lv, len) { var p = SKIPS[by][lv](), out = []; for (var i = 0; i < len; i++) out.push(p[0] + p[1] * by * i); return { vals: out, dir: p[1], start: p[0] }; }
+  function skipSkill(by, id, name) {
+    var len = by === 200 ? 4 : 5;
+    skill(id, name, 'B1.4', [
+      [1, 'plain', function (lv) {
+        var s = seq(by, lv, len), ans = s.vals[len - 1], fx = {}; fx[s.vals[len - 2] + s.dir * 10] = 'That jump is only 10. Each jump is ' + by + '.';
+        return num('Count by ' + by + 's' + (s.dir < 0 ? ' backward' : '') + '. What comes next? ' + math(s.vals.slice(0, len - 1).join(', ') + ', ___'), ans, fx, { fig: lv < 3 ? hops(s.vals, len - 1) : '',
+          hint: (s.dir < 0 ? 'Take away ' : 'Add ') + by + '.', steps: [s.vals[len - 2] + (s.dir < 0 ? ' &minus; ' : ' + ') + by + ' = ' + ans + '.'], explain: s.vals.join(', ') + '.', meta: { k: 'g3n-skipnext', start: s.start, by: by, dir: s.dir, j: len - 1 } });
+      }],
+      [1, 'missing', function (lv) {
+        var s = seq(by, lv, len), miss = len === 5 ? [1, 3] : [1, 2], t = s.vals.map(function (v, i) { return miss.indexOf(i) >= 0 ? '[[]]' : v; }).join(', ');
+        return fill('Count by ' + by + 's' + (s.dir < 0 ? ' backward' : '') + '. Fill in the missing numbers.', t, miss.map(function (i) { return s.vals[i]; }), { fig: lv === 1 ? hops(s.vals, miss[0]) : '',
+          hint: 'Each jump is ' + (s.dir < 0 ? 'back ' : '') + by + '.', steps: [s.vals.join(', ') + '.'], explain: s.vals.join(', ') + '.', meta: { k: 'g3n-skipfill', by: by } });
+      }],
+      [1, 'story', function (lv) {
+        var t = R.pick(STUFF[by]), k = lv === 1 ? R.int(2, 4) : lv === 2 ? R.int(3, 1000 / by > 6 ? 6 : 5) : R.int(Math.min(6, 1000 / by - 1), 1000 / by), who = Q.name();
+        return num(who + ' has ' + k + ' ' + t[0] + ' of ' + t[1] + '. Each holds ' + by + '. How many ' + t[1] + ' in all?', by * k, {}, { fig: k <= 10 ? hops(Array.apply(null, Array(k + 1)).map(function (_, i) { return i * by; })) : '',
+          hint: 'Count by ' + by + 's, ' + k + ' times.', steps: [Array.apply(null, Array(k)).map(function (_, i) { return (i + 1) * by; }).join(', ') + '.'], explain: k + ' ' + t[0] + ' of ' + by + ' make ' + by * k + '.', meta: { k: 'g3n-groups', by: by, n: k } });
+      }],
+      [2, 'line', function (lv) {
+        var s = seq(by, lv, len), k = R.int(2, len - 1), land = s.start + s.dir * by * k, lo = Math.min(s.start, land), hi = Math.max(s.start, land), mn = Math.max(0, Math.floor(lo / 100) * 100 - 100), mx = Math.min(1000, Math.ceil(hi / 100) * 100 + 100);
+        return { q: 'Start at ' + s.start + '. Jump ' + (s.dir < 0 ? 'back ' : '') + by + ', ' + k + ' times. Where do you land?', type: 'line', min: mn, max: mx, tick: 10, every: mx - mn > 500 ? 100 : 50, snap: 10, answer: land,
+          hint: 'Count ' + k + ' jumps of ' + by + '.', steps: [s.vals.slice(0, k + 1).join(', ') + '.'], explain: 'You land on ' + land + '.', meta: { k: 'g3n-skipline', start: s.start, by: by, dir: s.dir, j: k } };
+      }],
+      [2, 'jumps', function (lv) {
+        var s = seq(by, lv, len), a = s.vals[0], b = s.vals[len - 1], fx = {}; fx[Math.abs(b - a)] = 'That is the distance. Count the jumps of ' + by + '.';
+        return num('How many jumps of ' + by + ' go from ' + a + ' to ' + b + '?', len - 1, fx, { fig: lv === 2 ? hops(s.vals) : '',
+          hint: 'Count by ' + by + 's from ' + a + '.', steps: [s.vals.join(', ') + '.', (len - 1) + ' jumps.'], explain: (len - 1) + ' jumps of ' + by + '.', meta: { k: 'g3n-jumps', from: a, to: b, by: by } });
+      }],
+      [2, 'tf', function (lv) {
+        var s = seq(by, lv, len), who = Q.name(), truth = coin(), shown = s.vals.slice();
+        if (!truth) { var j = R.int(1, len - 2); shown[j] += s.dir * R.pick([10, by === 50 ? 100 : 50]); }
+        return tf(who + ' counts by ' + by + 's' + (s.dir < 0 ? ' backward' : '') + ': ' + math(shown.join(', ')) + '. True or false: every jump is ' + by + '.', truth, s.vals.join(', ') + '.',
+          ['Skip counts can change size.', 'Only the last digit changes.', 'Every number ends in 0, so it is right.'], 'Check each jump.', { hint: 'Check the jump between each pair.', meta: { k: 'g3n-skiptf', vals: shown, by: by } });
+      }]
+    ]);
+  }
+  skipSkill(100, 'n3-by100', 'Count by 100s');
+  skipSkill(50, 'n3-by50', 'Count by 50s');
+  skipSkill(200, 'n3-by200', 'Count by 200s');
+  function tgSkip(by, lv) {
+    return function () {
+      var s = seq(by, lv, 4), back = s.dir < 0, steps = [];
+      for (var i = 1; i < 4; i++) {
+        var a = s.vals[i - 1];
+        steps.push({ prompt: [back ? 'Take away ' + by + '.' : 'Add ' + by + '.', 'Again.', 'One more jump.'][i - 1], q: back ? subQ(a + ' &minus; ' + by + ' = ?', a, by) : sumQ(a + ' + ' + by + ' = ?', a, by) });
+      }
+      return { q: 'Count by ' + by + 's' + (back ? ' backward' : '') + ' from <b>' + s.start + '</b>.', fig: hops(s.vals, 3), done: s.vals.join(', ') + '.', steps: steps };
+    };
+  }
+
+  /* ======================= Lesson 4: Compare and order ======================= */
+  /* ---------- Compare from the left ---------- */
+  function gCase(lv) {
+    var a, b;
+    if (lv === 1) { do { a = R.int(100, 999); b = R.int(100, 999); } while (Math.floor(a / 100) === Math.floor(b / 100)); }
+    else if (lv === 2) { var h = R.int(1, 9); do { a = h * 100 + R.int(0, 99); b = h * 100 + R.int(0, 99); } while (Math.floor(a / 10) % 10 === Math.floor(b / 10) % 10); }
+    else if (coin()) { var hh = R.int(1, 8); a = hh * 100 + R.int(5, 9) * 10 + R.int(5, 9); b = (hh + 1) * 100 + R.int(0, 3) * 10 + R.int(0, 4); }
+    else { var x = R.int(10, 99); do { a = x * 10 + R.int(0, 9); b = x * 10 + R.int(0, 9); } while (a === b); }
+    return coin() ? [a, b] : [b, a];
+  }
+  skill('n3-greater', 'Which is greater?', 'B1.2', [
+    [1, 'plain', function (lv) {
+      var p = gCase(lv), big = Math.max(p[0], p[1]), fx = {}; fx[Math.min(p[0], p[1])] = 'Start at the left. The first place that differs decides.';
+      return num('Which is greater, ' + math(p[0]) + ' or ' + math(p[1]) + '? Type it.', big, fx, { fig: lv < 3 ? chart(p[0], { dots: false }) + chart(p[1], { dots: false }) : '',
+        hint: 'Compare the hundreds first. If they match, the tens.', steps: ['Line them up by place.', 'The first different digits decide: ' + big + ' is greater.'], explain: big + ' is greater.', meta: { k: 'g3n-max', a: p[0], b: p[1] } });
+    }],
+    [1, 'mc', function (lv) {
+      var opts = []; while (opts.length < 4) { var p = gCase(lv), v = opts.length ? (lv === 1 ? R.int(100, 999) : Math.floor(opts[0] / (lv === 2 ? 100 : 10)) * (lv === 2 ? 100 : 10) + R.int(0, lv === 2 ? 99 : 9)) : p[0]; if (opts.indexOf(v) < 0 && v < 1000) opts.push(v); }
+      var big = Math.max.apply(null, opts);
+      return mc('Which number is the greatest?', big, opts.filter(function (v) { return v !== big; }).map(function (v) { return [v, 'Compare ' + v + ' with ' + big + ' from the left.']; }), {
+        hint: 'Find the most hundreds. Then the most tens.', steps: ['Look at the hundreds first.', 'The greatest is ' + big + '.'], explain: big + ' is the greatest.', meta: { k: 'g3n-maxmc' } });
+    }],
+    [1, 'story', function (lv) {
+      var p = gCase(lv), t = R.pick([['Two trails in the park are', 'm and', 'm long. How long is the longer trail, in metres?'], ['Two schools collected', 'and', 'cans. What is the greater number of cans?'], ['Two canoe trips are', 'km and', 'km. How long is the longer trip, in kilometres?']]);
+      return num(t[0] + ' ' + p[0] + ' ' + t[1] + ' ' + p[1] + ' ' + t[2], Math.max(p[0], p[1]), {}, {
+        hint: 'Compare from the left.', steps: ['The first different digits decide.'], explain: Math.max(p[0], p[1]) + ' is greater.', meta: { k: 'g3n-max', a: p[0], b: p[1] } });
+    }],
+    [2, 'digits', function (lv) {
+      var d = distinct3(), big = lv < 3 || coin();
+      if (lv === 3 && !big) d[R.int(1, 2)] = 0;
+      var s = d.slice().sort(function (x, y) { return big ? y - x : x - y; });
+      if (!big && s[0] === 0) { var k = s[1]; s[1] = 0; s[0] = k; }
+      var ans = +s.join(''), fx = {}; fx[+s.slice().reverse().join('')] = big ? 'That is the least. Put the biggest digit in the hundreds.' : '';
+      return num('Use the digits ' + d.join(', ') + ' once each. Make the <b>' + (big ? 'greatest' : 'least') + '</b> number.', ans, fx, {
+        hint: big ? 'The biggest digit goes in the hundreds place.' : 'The smallest digit that is not 0 goes in the hundreds place.', steps: ['Hundreds: ' + s[0] + '. Tens: ' + s[1] + '. Ones: ' + s[2] + '.'], explain: 'The ' + (big ? 'greatest' : 'least') + ' is ' + ans + '.', meta: { k: 'g3n-dig', d: d, big: big } });
+    }],
+    [2, 'tf', function (lv) {
+      var p = gCase(lv), who = Q.name(), truth = p[0] > p[1];
+      return tf(who + ' says ' + math(p[0]) + ' is greater than ' + math(p[1]) + '. True or false: ' + who + ' is right.', truth, 'Compare from the left: ' + Math.max(p[0], p[1]) + ' is greater.',
+        ['The number with the biggest ones digit is greater.', 'Count all the digits and add them.', 'Look at the right side first.'], 'Start with the hundreds, on the left.', { hint: 'Which place differs first, from the left?', meta: { k: 'g3n-gtf', a: p[0], b: p[1] } });
+    }]
+  ]);
+  function tgGreater(lv) {
+    return function () {
+      var p = gCase(lv), a = p[0], b = p[1], dh = Math.floor(a / 100) !== Math.floor(b / 100);
+      var cmp = function (place) { return fixed('Which has more ' + PNAME[place] + '?', [String(a), String(b), 'The same'], dig(a)[place] > dig(b)[place] ? 0 : dig(a)[place] < dig(b)[place] ? 1 : 2, ['Look at the ' + PNAME[place] + ' digit of each.', 'Look at the ' + PNAME[place] + ' digit of each.', 'Look again: the digits are different.'], { hint: 'Compare the ' + PNAME[place] + ' digits.', meta: { k: 'g3n-cmpplace', a: a, b: b, p: place } }); };
+      var steps = [{ prompt: 'Start with the hundreds.', q: cmp(2) }];
+      if (!dh) steps.push({ prompt: 'Same hundreds. Look at the tens.', q: cmp(1) });
+      if (!dh && Math.floor(a / 10) === Math.floor(b / 10)) steps.push({ prompt: 'Same tens too. The ones decide.', q: cmp(0) });
+      steps.push({ prompt: 'That place decides.', q: num('Type the greater number.', Math.max(a, b), {}, { hint: 'The one with more in that place.', meta: { k: 'g3n-max', a: a, b: b } }) });
+      return { q: 'Which is greater, ' + math(a) + ' or ' + math(b) + '?', fig: chart(a, { dots: false }) + chart(b, { dots: false }), done: Math.max(a, b) + ' is greater.', steps: steps };
+    };
+  }
+
+  /* ---------- The symbols < and > ---------- */
+  var SYM = ['&lt;', '&gt;', '='];
+  function symOf(a, b) { return a < b ? 0 : a > b ? 1 : 2; }
+  function sCase(lv) {
+    var p = gCase(lv === 3 ? 2 : lv), l = [p[0]], r = [p[1]];
+    if (lv === 3) { var d = dig(p[0]), parts = [d[2] * 100, d[1] * 10, d[0]].filter(function (v) { return v; }); l = R.shuffle(parts); if (Math.random() < 0.3) r = [p[0]]; }
+    return { l: l, r: r, a: l.reduce(function (x, y) { return x + y; }, 0), b: r[0] };
+  }
+  skill('n3-symbols', 'The symbols < and >', 'B1.2', [
+    [1, 'plain', function (lv) {
+      var c = sCase(lv), k = symOf(c.a, c.b);
+      return fixed('Which symbol goes in the box? ' + math(c.l.join(' + ') + ' &#9633; ' + c.b), SYM, k, ['The small point faces the smaller number.', 'The open side faces the greater number.', 'The two sides are not the same.'], { fig: lv < 3 ? chart(c.a, { dots: false }) + chart(c.b, { dots: false }) : '',
+        hint: 'Find the greater number first. The open side faces it.', steps: [c.a === c.b ? 'Both are ' + c.b + '.' : Math.max(c.a, c.b) + ' is greater.', 'So: ' + c.l.join(' + ') + ' ' + SYM[k] + ' ' + c.b + '.'], explain: c.l.join(' + ') + ' ' + SYM[k] + ' ' + c.b + '.', meta: { k: 'g3n-sym', l: c.l, r: c.r } });
+    }],
+    [1, 'tf', function (lv) {
+      var c = sCase(lv), k = symOf(c.a, c.b), sym = coin() ? k : R.pick([0, 1, 2].filter(function (x) { return x !== k; }));
+      var said = c.l.join(' + ') + ' ' + SYM[sym] + ' ' + c.b;
+      return tf('True or false: ' + math(said), sym === k, c.l.join(' + ') + ' ' + SYM[k] + ' ' + c.b + '.', ['The open side faces the smaller number.', 'The symbol points to the greater number.', 'Read it from right to left.'], 'Say it in words, left to right.', {
+        hint: '&lt; means "is less than". &gt; means "is greater than".', meta: { k: 'g3n-symtf', l: c.l, r: c.r, sym: sym } });
+    }],
+    [2, 'read', function (lv) {
+      var p = gCase(lv), a = p[0], b = p[1], rel = a < b ? '&lt;' : '&gt;', other = a < b ? '&gt;' : '&lt;', w = a < b ? 'less than' : 'greater than';
+      return mc('Which says "' + a + ' is ' + w + ' ' + b + '"?', math(a + ' ' + rel + ' ' + b), [[math(a + ' ' + other + ' ' + b), 'That says ' + a + ' is ' + (a < b ? 'greater' : 'less') + ' than ' + b + '.'], [math(b + ' ' + rel + ' ' + a), 'The numbers swapped places.']], {
+        hint: 'Read left to right: ' + a + ', then the symbol, then ' + b + '.', steps: ['&lt; is "less than". &gt; is "greater than".'], explain: a + ' ' + rel + ' ' + b + '.', meta: { k: 'g3n-symread', a: a, b: b } });
+    }],
+    [2, 'pick', function (lv) {
+      var x = R.int(2, 8) * 100 + R.int(1, 8) * 10 + R.int(1, 8), less = coin(), opts = [];
+      while (opts.length < 5) { var v = x + R.pick([-1, 1]) * R.pick(lv === 3 ? [1, 2, 9, 10, 11] : [10, 20, 100, 90, 110]); if (opts.indexOf(v) < 0 && v !== x) opts.push(v); }
+      var ans = opts.map(function (v, j) { return (less ? v < x : v > x) ? j : -1; }).filter(function (j) { return j >= 0; });
+      if (!ans.length || ans.length === 5) return DEF['n3-symbols'][3][2](lv);
+      return { q: 'Pick every number that makes this true: ' + math('___ ' + (less ? '&lt;' : '&gt;') + ' ' + x), type: 'pick', options: opts.map(String), answer: ans,
+        hint: 'The blank must be ' + (less ? 'less' : 'greater') + ' than ' + x + '.', steps: ['Compare each with ' + x + ' from the left.'], explain: 'The ' + (less ? 'smaller' : 'greater') + ' numbers fit.', meta: { k: 'g3n-sympick', x: x, less: less, opts: opts } };
+    }]
+  ]);
+  function tgSym(lv) {
+    return function () {
+      var c = sCase(lv === 3 ? 2 : lv), k = symOf(c.a, c.b);
+      return { q: 'Which symbol goes in the box? ' + math(c.a + ' &#9633; ' + c.b), fig: twoCharts({ a: c.a, b: c.b, hl: -1 }), done: c.a + ' ' + SYM[k] + ' ' + c.b + '.', steps: [
+        { prompt: 'Find the greater number.', q: num('Type the greater number.', Math.max(c.a, c.b), {}, { hint: 'Compare from the left.', meta: { k: 'g3n-max', a: c.a, b: c.b } }) },
+        { prompt: 'The open side faces it.', q: fixed(math(c.a + ' &#9633; ' + c.b), SYM, k, ['The open side faces the greater number.', 'The open side faces the greater number.', 'They are not the same.'], { hint: 'Open towards ' + Math.max(c.a, c.b) + '.', meta: { k: 'g3n-sym', l: [c.a], r: [c.b] } }) }
+      ] };
+    };
+  }
+
+  /* ---------- Put numbers in order ---------- */
+  function oCase(lv) {
+    var n = lv === 1 ? 3 : lv === 2 ? 4 : 5, out = [], h = R.int(1, 8);
+    while (out.length < n) {
+      var v = lv === 1 ? R.int(1, 9) * 100 + R.int(0, 99) : lv === 2 ? h * 100 + R.int(0, 99) : R.pick([h * 100 + R.int(0, 9) * 10 + R.int(0, 9), (h + 1) * 100 + R.int(0, 9), h * 100 + 90 + R.int(0, 9), +(String(h) + String(R.int(0, 9)) + String(h))]);
+      if (out.indexOf(v) < 0 && (lv > 1 || out.every(function (x) { return Math.floor(x / 100) !== Math.floor(v / 100); }))) out.push(v);
+    }
+    return out;
+  }
+  skill('n3-order', 'Put numbers in order', 'B1.2', [
+    [1, 'plain', function (lv) {
+      var v = oCase(lv), big = lv > 1 && coin(), s = v.slice().sort(function (x, y) { return big ? y - x : x - y; });
+      return { q: 'Put these in order, ' + (big ? 'greatest to least' : 'least to greatest') + '.', type: 'order', items: s.map(String), first: big ? 'greatest' : 'least', last: big ? 'least' : 'greatest',
+        hint: 'Compare the hundreds, then the tens, then the ones.', steps: ['Look at the hundreds first.', s.join(', ') + '.'], explain: s.join(', ') + '.', meta: { k: 'g3n-order', big: big } };
+    }],
+    [1, 'least', function (lv) {
+      var v = oCase(lv), big = lv === 3 && coin(), ans = big ? Math.max.apply(null, v) : Math.min.apply(null, v), fx = {}; fx[big ? Math.min.apply(null, v) : Math.max.apply(null, v)] = big ? 'That is the least.' : 'That is the greatest.';
+      return num('Type the <b>' + (big ? 'greatest' : 'least') + '</b> number: ' + math(v.join(', ')), ans, fx, { fig: lv === 1 ? marks(v) : '',
+        hint: 'Compare from the left.', steps: ['Compare the hundreds first.', 'The ' + (big ? 'greatest' : 'least') + ' is ' + ans + '.'], explain: ans + '.', meta: { k: 'g3n-pickone', opts: v, big: big } });
+    }],
+    [2, 'line', function (lv) {
+      var lo = R.int(1, 8) * 100, n = lo + R.int(1, 19) * 5;
+      return { q: 'Put ' + math(n) + ' on the number line.', type: 'line', min: lo, max: lo + 100, tick: 10, every: 50, snap: 5, answer: n,
+        hint: n + ' is ' + (n - lo) + ' more than ' + lo + '.', steps: ['Count by tens from ' + lo + '.'], explain: n + ' is between ' + Math.floor(n / 10) * 10 + ' and ' + (Math.floor(n / 10) * 10 + 10) + '.', meta: { k: 'g3n-line', n: n } };
+    }],
+    [2, 'between', function (lv) {
+      var lo = R.int(1, 8) * 100 + R.int(0, 5) * 10 + R.int(0, 9), hi = lo + (lv === 3 ? R.int(8, 20) : R.int(30, 60)), inside = R.int(lo + 1, hi - 1);
+      var w = [lo - R.int(1, 9), hi + R.int(1, 9), lo + 100 > 999 ? lo - 100 : lo + 100, +String(inside).split('').reverse().join('')].filter(function (v) { return (v <= lo || v >= hi) && v >= 100 && v < 1000; });
+      return mc('Which number is between ' + math(lo) + ' and ' + math(hi) + '?', inside, w.map(function (v) { return [v, v + ' is ' + (v < lo ? 'less than ' + lo : 'greater than ' + hi) + '.']; }), { fig: lv === 2 ? marks([lo, hi]) : '',
+        hint: 'It must be greater than ' + lo + ' and less than ' + hi + '.', steps: [inside + ' is greater than ' + lo + ' and less than ' + hi + '.'], explain: inside + ' is between them.', meta: { k: 'g3n-between', lo: lo, hi: hi } });
+    }],
+    [2, 'tf', function (lv) {
+      var v = oCase(lv), who = Q.name(), s = v.slice().sort(function (x, y) { return x - y; }), truth = coin(), shown = s.slice();
+      if (!truth) { var j = R.int(0, s.length - 2); shown[j] = s[j + 1]; shown[j + 1] = s[j]; }
+      return tf(who + ' put these in order, least to greatest: ' + math(shown.join(', ')) + '. True or false: ' + who + ' is right.', truth, 'Least to greatest: ' + s.join(', ') + '.',
+        ['Order by the ones digits.', 'Bigger digits on the right mean bigger numbers.', 'Order by how many digits are the same.'], 'Compare each pair from the left.', { hint: 'Check each pair from the left.', meta: { k: 'g3n-ordtf', vals: shown } });
+    }]
+  ]);
+  function tgOrder(lv) {
+    return function () {
+      var v = oCase(1).slice(0, 3);
+      if (lv > 1) { var h = R.int(1, 8); v = []; while (v.length < 3) { var x = h * 100 + (lv === 3 ? R.pick([R.int(0, 9), 90 + R.int(0, 9), R.int(1, 9) * 10]) : R.int(0, 99)); if (v.indexOf(x) < 0) v.push(x); } }
+      var s = v.slice().sort(function (a, b) { return a - b; });
+      return { q: 'Put ' + math(v.join(', ')) + ' in order, least to greatest.', fig: marks(v), done: s.join(', ') + '.', steps: [
+        { prompt: 'Find the least.', q: num('Which is the least?', s[0], {}, { hint: 'It is furthest left.', meta: { k: 'g3n-pickone', opts: v, big: false } }) },
+        { prompt: 'Then the greatest.', q: num('Which is the greatest?', s[2], {}, { hint: 'It is furthest right.', meta: { k: 'g3n-pickone', opts: v, big: true } }) },
+        { prompt: 'The other one goes in the middle.', q: num('Which goes in the middle?', s[1], {}, { hint: 'The one left over.', meta: { k: 'g3n-mid', opts: v } }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 5: Rounding ======================= */
+  function rCase(p, lv) {
+    var n;
+    if (p === 10) {
+      if (lv === 1) do { n = R.int(11, 99); } while (n % 10 === 0 || n % 10 === 5);
+      else if (lv === 2) do { n = R.int(101, 989); } while (n % 10 === 0 || n % 10 === 5);
+      else n = coin() ? R.int(10, 99) * 10 + 5 : R.int(1, 9) * 100 + R.int(95, 99);
+    } else {
+      if (lv === 1) do { n = R.int(101, 899); } while (n % 100 === 0 || Math.floor(n / 10) % 10 === 5);
+      else if (lv === 2) do { n = R.int(101, 999); } while (n % 100 === 0 || n % 100 === 50);
+      else n = R.pick([R.int(1, 9) * 100 + 50, R.int(1, 9) * 100 + R.pick([49, 51, 48, 52]), R.int(951, 999)]);
+    }
+    return n;
+  }
+  function rWrongFix(n, p) {
+    var lo = Math.floor(n / p) * p, r = roundTo(n, p), f = {}, nm = p === 10 ? 'ones' : 'tens';
+    f[r === lo ? lo + p : lo] = 'Look at the ' + nm + ' digit. ' + (n % p === p / 2 ? 'Halfway rounds up.' : '5 or more rounds up.');
+    f[roundTo(n, p === 10 ? 100 : 10)] = 'That is rounded to the nearest ' + (p === 10 ? 'hundred' : 'ten') + '.';
+    return f;
+  }
+  function roundSkill(p, id, name) {
+    var nm = p === 10 ? 'ten' : 'hundred', look = p === 10 ? 'ones' : 'tens';
+    skill(id, name, 'B1.3', [
+      [1, 'plain', function (lv) {
+        var n = rCase(p, lv), r = roundTo(n, p), lo = Math.floor(n / p) * p;
+        return num('Round ' + math(n) + ' to the nearest ' + nm + '.', r, rWrongFix(n, p), { fig: lv < 3 ? hill(n, p) : '',
+          hint: 'Find the ' + nm + 's on each side. Is it before or past halfway?', steps: [n + ' is between ' + lo + ' and ' + (lo + p) + '.', 'Halfway is ' + (lo + p / 2) + '. ' + n + (n >= lo + p / 2 ? ' is at or past it: round up.' : ' is before it: round down.'), n + ' rounds to ' + r + '.'], explain: n + ' rounds to ' + r + '.', meta: { k: 'g3n-round', n: n, p: p } });
+      }],
+      [1, 'tap', function (lv) {
+        var n; do { n = rCase(p, lv); } while (n % p === p / 2);
+        var lo = Math.floor(n / p) * p, r = roundTo(n, p);
+        return { q: 'Tap the ' + nm + ' that ' + math(n) + ' is closer to.', type: 'tap', pic: twoEnds(n, lo, lo + p), answer: String(r), answerText: String(r),
+          hint: 'Is it before or past the middle mark?', steps: [n + ' is ' + (n - lo) + ' from ' + lo + ' and ' + (lo + p - n) + ' from ' + (lo + p) + '.'], explain: n + ' is closer to ' + r + '.', meta: { k: 'g3n-roundtap', n: n, lo: lo, hi: lo + p } };
+      }],
+      [1, 'fill', function (lv) {
+        var n = rCase(p, lv), lo = Math.floor(n / p) * p, r = roundTo(n, p);
+        return fill('Round ' + n + ' to the nearest ' + nm + '.', n + ' is between [[]] and [[]]. It rounds to [[]].', [lo, lo + p, r], { fig: lv === 1 ? hillBare(lo, p) : '',
+          hint: 'The ' + nm + 's on each side, then the ' + look + ' digit.', steps: ['Between ' + lo + ' and ' + (lo + p) + '.', 'It rounds to ' + r + '.'], explain: n + ' rounds to ' + r + '.', meta: { k: 'g3n-roundfill', n: n, p: p } });
+      }],
+      [2, 'story', function (lv) {
+        var n = rCase(p, lv === 1 ? 2 : lv), r = roundTo(n, p), t = R.pick([['A hiking trail is', 'm long. About how long is it'], ['A school has', 'students. About how many students'], ['The arena sold', 'tickets. About how many tickets'], ['A pumpkin farm grew', 'pumpkins. About how many pumpkins']]);
+        return num(t[0] + ' ' + n + ' ' + t[1] + ', to the nearest ' + nm + '?', r, rWrongFix(n, p), {
+          hint: 'Look at the ' + look + ' digit.', steps: [n + ' is between ' + Math.floor(n / p) * p + ' and ' + (Math.floor(n / p) * p + p) + '.', 'It rounds to ' + r + '.'], explain: 'About ' + r + '.', meta: { k: 'g3n-round', n: n, p: p } });
+      }],
+      [2, 'tf', function (lv) {
+        var n = rCase(p, lv), r = roundTo(n, p), lo = Math.floor(n / p) * p, who = Q.name(), truth = coin(), said = truth ? r : (r === lo ? lo + p : lo);
+        return tf(who + ' says ' + math(n) + ' rounds to <b>' + said + '</b> (nearest ' + nm + '). True or false: ' + who + ' is right.', truth, 'The ' + look + ' digit is ' + Math.floor((n % p) / (p / 10)) + ', so ' + n + ' rounds to ' + r + '.',
+          ['Always round down.', 'Halfway rounds down.', 'Look at the first digit only.'], 'Check the ' + look + ' digit.', { hint: '5 or more rounds up.', meta: { k: 'g3n-roundtf', n: n, p: p, said: said } });
+      }],
+      [2, 'pick', function (lv) {
+        var t = (p === 10 ? R.int(11, 98) : R.int(2, 9)) * p, opts = [];
+        while (opts.length < 5) { var v = t + R.int(-p, p - 1); if (v > 0 && v !== t && opts.indexOf(v) < 0) opts.push(v); }
+        var ans = opts.map(function (v, j) { return roundTo(v, p) === t ? j : -1; }).filter(function (j) { return j >= 0; });
+        if (!ans.length || ans.length === 5) return DEF[id][5][2](lv);
+        return { q: 'Pick every number that rounds to <b>' + t + '</b> (nearest ' + nm + ').', type: 'pick', options: opts.map(String), answer: ans,
+          hint: 'From halfway below ' + t + ' up to just before halfway above it.', steps: ['From ' + (t - p / 2) + ' to ' + (t + p / 2 - 1) + ' rounds to ' + t + '.'], explain: 'They are from ' + (t - p / 2) + ' to ' + (t + p / 2 - 1) + '.', meta: { k: 'g3n-roundpick', p: p, t: t, opts: opts } };
+      }]
+    ]);
+  }
+  roundSkill(10, 'n3-round10', 'Round to the nearest ten');
+  roundSkill(100, 'n3-round100', 'Round to the nearest hundred');
+  function tgRound(p, lv) {
+    return function () {
+      var n = rCase(p, lv), lo = Math.floor(n / p) * p, nm = p === 10 ? 'ten' : 'hundred';
+      return { q: 'Round ' + math(n) + ' to the nearest ' + nm + '.', fig: hillBare(lo, p), done: n + ' rounds to ' + roundTo(n, p) + '.', steps: [
+        { prompt: 'Find the ' + nm + 's on each side.', q: fill('Which ' + nm + 's is ' + n + ' between?', '[[]] and [[]]', [lo, lo + p], { hint: 'The ' + nm + ' just below and just above.', meta: { k: 'g3n-sides', n: n, p: p } }) },
+        { prompt: 'Find halfway: the top of the hill.', q: num('What is halfway between ' + lo + ' and ' + (lo + p) + '?', lo + p / 2, {}, { hint: 'Half of ' + p + ' is ' + p / 2 + '.', meta: { k: 'g3n-half', lo: lo, p: p } }) },
+        { prompt: 'Before halfway rounds down. At or past rounds up.', q: num('So ' + n + ' rounds to?', roundTo(n, p), rWrongFix(n, p), { hint: n + ' is ' + (n >= lo + p / 2 ? 'at or past' : 'before') + ' halfway.', meta: { k: 'g3n-round', n: n, p: p } }) }
+      ] };
+    };
+  }
+
+  /* ---------- Ten or hundred? (the two kinds of rounding, mixed) ---------- */
+  function mxCase(lv) { var n; do { n = lv === 1 ? R.int(101, 899) : lv === 2 ? R.int(101, 999) : R.pick([R.int(1, 9) * 100 + R.int(45, 54), R.int(950, 999), R.int(1, 9) * 100 + R.pick([5, 95, 46, 54])]); } while (roundTo(n, 10) === roundTo(n, 100) || n % 10 === 0); return n; }
+  skill('n3-roundmix', 'Ten or hundred?', 'B1.3', [
+    [1, 'plain', function (lv) {
+      var n = mxCase(lv), r1 = roundTo(n, 10), r2 = roundTo(n, 100);
+      return fill('Round ' + math(n) + ' two ways.', 'Nearest ten: [[]] &nbsp; Nearest hundred: [[]]', [r1, r2], { fig: lv === 1 ? hill(n, 10) : '',
+        hint: 'Nearest ten: look at the ones. Nearest hundred: look at the tens.', steps: ['Ones digit ' + n % 10 + ': nearest ten is ' + r1 + '.', 'Tens digit ' + Math.floor(n / 10) % 10 + ': nearest hundred is ' + r2 + '.'], explain: r1 + ' and ' + r2 + '.', meta: { k: 'g3n-roundboth', n: n } });
+    }],
+    [1, 'num', function (lv) {
+      var n = mxCase(lv), p = coin() ? 10 : 100;
+      return num('Round ' + math(n) + ' to the nearest <b>' + (p === 10 ? 'ten' : 'hundred') + '</b>.', roundTo(n, p), rWrongFix(n, p), {
+        hint: 'Nearest ' + (p === 10 ? 'ten: look at the ones' : 'hundred: look at the tens') + '.', steps: [n + ' rounds to ' + roundTo(n, p) + '.'], explain: n + ' rounds to ' + roundTo(n, p) + '.', meta: { k: 'g3n-round', n: n, p: p } });
+    }],
+    [2, 'which', function (lv) {
+      var n = mxCase(lv), k = R.int(0, 2), r = k === 0 ? roundTo(n, 10) : k === 1 ? roundTo(n, 100) : (roundTo(n, 10) === Math.floor(n / 10) * 10 ? Math.floor(n / 10) * 10 + 10 : Math.floor(n / 10) * 10);
+      if (k === 2 && (r === roundTo(n, 100))) r = roundTo(n, 100) + 100;
+      return fixed(math(n) + ' was rounded to <b>' + r + '</b>. Which way was it rounded?', ['nearest ten', 'nearest hundred', 'neither'], k, ['Check: ' + n + ' to the nearest ten is ' + roundTo(n, 10) + '.', 'Check: ' + n + ' to the nearest hundred is ' + roundTo(n, 100) + '.', 'Round it both ways and compare.'], {
+        hint: 'Round it both ways. Which one gives ' + r + '?', steps: ['Nearest ten: ' + roundTo(n, 10) + '.', 'Nearest hundred: ' + roundTo(n, 100) + '.'], explain: k === 2 ? r + ' is neither.' : 'It was rounded to the ' + ['nearest ten', 'nearest hundred'][k] + '.', meta: { k: 'g3n-roundwhich', n: n, r: r } });
+    }],
+    [2, 'tf', function (lv) {
+      var n = mxCase(lv), who = Q.name(), truth = coin(), said = truth ? roundTo(n, 100) : roundTo(n, 10);
+      return tf(who + ' rounds ' + math(n) + ' to the nearest <b>hundred</b> and gets ' + said + '. True or false: ' + who + ' is right.', truth, 'Nearest hundred: the tens digit is ' + Math.floor(n / 10) % 10 + ', so ' + roundTo(n, 100) + '.',
+        ['Look at the ones digit for hundreds.', 'Rounding to a hundred and a ten give the same answer.', 'Round to the ten first, then to the hundred.'], 'For the nearest hundred, look at the tens digit.', { hint: 'Hundreds: look at the tens.', meta: { k: 'g3n-roundtf', n: n, p: 100, said: said } });
+    }],
+    [2, 'story', function (lv) {
+      var n = mxCase(lv), p = coin() ? 10 : 100, t = R.pick([['At the powwow,', 'people danced. About how many is that, to the nearest '], ['A bike trail is', 'm long. About how long is it, to the nearest '], ['The class read', 'pages. About how many pages is that, to the nearest ']]);
+      var q = t[0] + ' ' + n + ' ' + t[1] + (p === 10 ? 'ten' : 'hundred') + '?';
+      return num(q, roundTo(n, p), rWrongFix(n, p), { hint: 'Which place are you rounding to?', steps: ['Nearest ' + (p === 10 ? 'ten' : 'hundred') + ': ' + roundTo(n, p) + '.'], explain: 'About ' + roundTo(n, p) + '.', meta: { k: 'g3n-round', n: n, p: p } });
+    }]
+  ]);
+  function tgMix(lv) {
+    return function () {
+      var n = mxCase(lv);
+      return { q: 'Round ' + math(n) + ' to the nearest ten, then to the nearest hundred.', fig: hill(n, 10), done: n + ': ' + roundTo(n, 10) + ' (ten), ' + roundTo(n, 100) + ' (hundred).', steps: [
+        { prompt: 'Nearest ten: look at the ones digit.', q: num('Nearest ten?', roundTo(n, 10), rWrongFix(n, 10), { hint: 'Ones digit ' + n % 10 + '.', meta: { k: 'g3n-round', n: n, p: 10 } }) },
+        { prompt: 'Nearest hundred: look at the tens digit.', q: num('Nearest hundred?', roundTo(n, 100), rWrongFix(n, 100), { hint: 'Tens digit ' + Math.floor(n / 10) % 10 + '.', meta: { k: 'g3n-round', n: n, p: 100 } }) }
+      ] };
+    };
+  }
+
+  /* ======================= Watch and My turn pictures ======================= */
+  function chartV(s) { return chart(s.n, { hl: s.hl, vals: s.vals }); }
+  function formV(s) { return s.show ? expanded(s.n) : chart(s.n, {}); }
+  function gridV(s) { return thousand(s.n); }
+  function hillV(s) { return hill(s.n, s.p); }
+  function marksV(s) { return marks(s.vals, s.show); }
+  function hopsV(s) { return hops(s.vals.slice(0, s.k)); }
+  function hopsTo(start, by, n) { var v = []; for (var i = 0; i < n; i++) v.push(start + by * i); return v; }
+  function wordsV(s) { return '<div>' + chart(s.n, { dots: false }) + '<p class="g3-sym">' + (s.w || '&nbsp;') + '</p></div>'; }
+
+  /* ======================= The lessons ======================= */
   var LESSONS = [
-    { id: 'place', title: 'Hundreds, tens and ones', sub: 'Every digit has a place, and the place gives its value.', concepts: [
-      { id: 'hundred', title: 'Ten tens make one hundred', exp: ['B1.5'], skill: 'n3-blocks',
-        body: '<p>Ten ones make <b>1 ten</b>. In the same way, ten tens make <b>1 hundred</b>. A hundred flat is 10 rods side by side.</p><div class="fig">' + stairs() + '</div>',
-        watch: { tool: 'base10', opts: b10({ t: 7 }), steps: [
-          { say: 'Here are 7 tens. Count by tens: 10, 20 ... 70.', act: function (t) { return t.countAll(240); }, ms: 500 },
-          { say: 'Add 3 more tens: 80, 90, 100.', act: function (t) { t.clearLit(); return t.add('t', 3, 420); } },
-          { say: 'Now there are 10 tens. They slide together into <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
-          { say: '1 hundred is the same amount as 10 tens, or 100 ones.', act: function (t) { return t.pulseCol('h'); }, ms: 1600 }
-        ] },
-        example: { tool: 'base10', opts: b10({ t: 6 }), steps: [
-          { say: 'My turn. I have 6 tens. I count by tens: 10, 20 ... 60.', act: function (t) { return t.countAll(240); }, ms: 500 },
-          { say: 'I add 4 more tens: 70, 80, 90, 100.', act: function (t) { t.clearLit(); return t.add('t', 4, 420); } },
-          { say: 'Now I have 10 tens. I group them into <b>1 hundred</b>.', act: function (t) { return t.group('t'); } },
-          { say: '10 ones make 1 ten. 10 tens make 1 hundred.', act: function (t) { return t.pulseCol('h'); }, ms: 1600 }
-        ] },
+    { id: 'place', title: 'Place value', sub: 'Hundreds, tens and ones.', concepts: [
+      { id: 'hundred', title: 'Ten tens make one hundred', exp: ['B1.5'], skill: 'n3-hundred',
+        watch: tool('base10', b10({ t: 7 }), [
+          ['7 tens: 10, 20 ... 70.', function (t) { return t.countAll(240); }],
+          ['3 more tens: 80, 90, 100.', function (t) { t.clearLit(); return t.add('t', 3, 420); }],
+          ['They slide into one flat.', function (t) { return t.group('t'); }],
+          ['1 flat = 10 rods = 100 cubes.', function (t) { return t.pulseCol('h'); }]
+        ]),
+        example: tool('base10', b10({ h: 3 }), [
+          ['My turn. 3 flats: 300.'],
+          ['I break one into rods: 10 tens.', function (t) { return t.split('h'); }],
+          ['I break the others too.', function (t) { return t.split('h').then(function () { return t.split('h'); }); }],
+          ['30 tens. Not 3 tens: still 300.', function (t) { return t.pulseCol('t'); }]
+        ]),
         try: { tool: 'base10', opts: b10({ controls: true, t: 8 }), tasks: [
           { do: 'Add tens until you have 10. Then press <b>Group 10 tens</b>.', goal: function (s) { return s.h >= 1; }, yes: '10 tens became 1 hundred.' },
-          { do: 'Now press <b>Break a hundred</b>. How many tens come back?', reset: false, goal: function (s) { return s.last === 'split-h'; }, yes: '10 tens. It is still worth 100.' }
+          { do: 'Now press <b>Break a hundred</b>. How many tens come back?', reset: false, goal: function (s) { return s.last === 'split-h'; }, yes: '10 tens. Still 100.' }
         ] },
-        key: '<p><b>10 ones = 1 ten. 10 tens = 1 hundred.</b></p>',
-        check: [TU('s2', 2), SK('n3-value', 1)] },
+        together: [tgHundred(1), tgHundred(2), tgHundred(3)],
+        mistake: '<p>Saying 300 is "3 tens" (counting flats as tens), or counting rods by ones. Break a flat into 10 rods together and count by tens.</p>',
+        check: [ck('n3-hundred', 'plain', 1), ck('n3-hundred', 'rods', 1), ck('n3-hundred', 'fill', 2), ck('n3-hundred', 'mc', 2), ck('n3-hundred', 'plain', 3)] },
 
-      { id: 'build', title: 'Build numbers to 999', exp: ['B1.1', 'B1.5'], skill: 'n3-blocks',
-        body: '<p>Any number up to 999 can be built from <b>hundred flats</b>, <b>ten rods</b> and <b>one cubes</b>. Count the hundreds first, then the tens, then the ones.</p>',
-        watch: { tool: 'base10', opts: b10({}), steps: [
-          { say: 'Let\'s build 243. First, 2 hundreds: 100, 200.', act: function (t) { return t.add('h', 2, 500); } },
-          { say: 'Then 4 tens: 210, 220, 230, 240.', act: function (t) { return t.add('t', 4, 380); } },
-          { say: 'Then 3 ones: 241, 242, 243.', act: function (t) { return t.add('o', 3, 320); } },
-          { say: 'Count it all to check.', act: function (t) { return t.countAll(200); } },
-          { say: '2 hundreds, 4 tens and 3 ones make <b>243</b>.', ms: 1800 }
-        ] },
-        example: { tool: 'base10', opts: b10({}), steps: [
-          { say: 'My turn. I will build 527. First I put 5 hundreds: 100, 200, 300, 400, 500.', act: function (t) { return t.add('h', 5, 500); } },
-          { say: 'Next I put 2 tens: 510, 520.', act: function (t) { return t.add('t', 2, 380); } },
-          { say: 'Then I put 7 ones: 521, 522 ... 527.', act: function (t) { return t.add('o', 7, 320); } },
-          { say: 'I count it all to check.', act: function (t) { return t.countAll(200); } },
-          { say: '5 hundreds, 2 tens and 7 ones make <b>527</b>.', ms: 1800 }
-        ] },
+      { id: 'build', title: 'Read and build with blocks', exp: ['B1.1', 'B1.5'], skill: 'n3-blocks',
+        watch: tool('base10', b10({}), [
+          ['2 flats: 100, 200.', function (t) { return t.add('h', 2, 500); }],
+          ['4 rods: 210, 220, 230, 240.', function (t) { return t.add('t', 4, 380); }],
+          ['3 cubes: 241, 242, 243.', function (t) { return t.add('o', 3, 320); }],
+          ['<b>243</b>.', function (t) { return t.countAll(200); }]
+        ]),
+        example: tool('base10', b10({}), [
+          ['My turn. I build 527.'],
+          ['5 flats first: 500.', function (t) { return t.add('h', 5, 400); }],
+          ['2 rods: 510, 520.', function (t) { return t.add('t', 2, 380); }],
+          ['7 cubes: 521 ... 527. Not 5 + 2 + 7.', function (t) { return t.add('o', 7, 260); }]
+        ]),
         try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
-          { do: 'Build <b>352</b>.', goal: function (s) { return s.value === 352 && s.t < 10 && s.o < 10; }, yes: '3 hundreds, 5 tens and 2 ones make 352.' },
-          { do: 'Build <b>608</b>. There are no tens.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 608 && s.o < 10; }, yes: '6 hundreds, 0 tens and 8 ones make 608.' },
-          { do: '<b>Tap each block</b> to count what you built. Start with the hundreds.', reset: false, goal: function (s) { return s.allLit; }, yes: 'You counted every block.' }
+          { do: 'Build <b>352</b>.', goal: function (s) { return s.value === 352 && s.t < 10 && s.o < 10; }, yes: '3 hundreds, 5 tens and 2 ones.' },
+          { do: 'Build <b>871</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 871 && s.t < 10 && s.o < 10; }, yes: '8 hundreds, 7 tens and 1 one.' }
         ] },
-        mistake: '<p>Counting each rod or flat as 1. A rod is worth <b>10</b> and a flat is worth <b>100</b>, so count flats by hundreds and rods by tens.</p>',
-        check: [SK('n3-blocks', 1), SK('n3-blocks', 2)] },
+        together: [tgBuild(1), tgBuild(2), tgBuild(3)],
+        mistake: '<p>Counting every block as 1 (5 flats, 2 rods and 7 cubes = 14), or writing the cubes before the rods. Count flats by hundreds, rods by tens, then cubes.</p>',
+        check: [ck('n3-blocks', 'plain', 1), ck('n3-blocks', 'fill', 1), ck('n3-blocks', 'tap', 2), ck('n3-blocks', 'story', 2), ck('n3-blocks', 'plain', 3)] },
 
-      { id: 'value', title: 'A digit\'s place gives its value', exp: ['B1.5'], skill: 'n3-value', hard: true,
-        body: '<p>The same digit can be worth very different amounts. In <b>555</b>, the first 5 is worth 500, the next is worth 50, and the last is worth 5. Its <b>place</b> decides.</p>',
-        watch: { mount: G3.view(chartView, { n: 555, hl: -1, vals: false }), steps: [
-          { say: 'Here is 555 in a place value chart.', ms: 1200 },
-          { say: 'The 5 in the ones place is worth <b>5</b>.', act: function (t) { return t.set({ hl: 2, vals: true }, 1300); } },
-          { say: 'The 5 in the tens place is worth <b>50</b>: 5 tens.', act: function (t) { return t.set({ hl: 1 }, 1300); } },
-          { say: 'The 5 in the hundreds place is worth <b>500</b>: 5 hundreds.', act: function (t) { return t.set({ hl: 0 }, 1300); } },
-          { say: 'Same digit, three different values.', act: function (t) { return t.set({ hl: -1 }, 1500); } }
-        ] },
-        example: { mount: G3.view(chartView, { n: 333, hl: -1, vals: false }), steps: [
-          { say: 'My turn. Here is 333. All three digits are 3.', ms: 1300 },
-          { say: 'I start on the right. This 3 is in the ones place. It is worth <b>3</b>.', act: function (t) { return t.set({ hl: 2, vals: true }, 1400); } },
-          { say: 'This 3 is in the tens place. It is worth 3 tens: <b>30</b>.', act: function (t) { return t.set({ hl: 1 }, 1400); } },
-          { say: 'This 3 is in the hundreds place. It is worth 3 hundreds: <b>300</b>.', act: function (t) { return t.set({ hl: 0 }, 1400); } },
-          { say: 'The place tells me what each digit is worth: 300 + 30 + 3 = 333.', act: function (t) { return t.set({ hl: -1 }, 1800); } }
-        ] },
-        try: { mount: G3.play({ state: { n: 352, hl: 1 }, sliders: [{ key: 'n', label: 'Number', min: 100, max: 999 }],
-          selects: [{ key: 'hl', label: 'Light up the', options: [[0, 'hundreds digit'], [1, 'tens digit'], [2, 'ones digit']] }],
-          draw: function (s) { return chart(s.n, { hl: s.hl, vals: true }); },
-          info: function (s) { var d = String(s.n).charAt(s.hl), p = 2 - s.hl; return 'The ' + d + ' is worth <b>' + A.fmt(+d * Math.pow(10, p)) + '</b>'; },
-          tasks: [
-            { do: 'Make a number where the <b>tens digit</b> is worth <b>70</b>.', goal: function (s) { return Math.floor(s.n / 10) % 10 === 7; }, yes: '7 tens is 70.' },
-            { do: 'Make a number where the <b>hundreds digit</b> is worth <b>400</b>.', goal: function (s) { return Math.floor(s.n / 100) === 4; }, yes: '4 hundreds is 400.' }
-          ] }), do: '' },
-        ways: [
-          { label: 'With money', html: '<p>Think of <b>$555</b> as bills: five $100 bills, five $10 bills and five loonies. The $100 bills are worth far more, even though each pile has 5.</p>' },
-          { label: 'Cover the digits', html: '<p>Cover all the digits to the right with your finger and count what is left. In 352, cover the 2: you see <b>35</b> tens. Cover 52: you see <b>3</b> hundreds.</p>' }
-        ],
-        key: '<p>A digit\'s <b>place</b> tells you what it is worth. Ones, tens, hundreds, from right to left.</p>',
-        mistake: '<p>Saying the 5 in 352 is worth 5. Ask the child to name the place first ("tens"), then say the value ("5 tens, which is 50").</p>',
-        check: [SK('n3-value', 1), TU('s1', 0)] },
+      { id: 'value', title: 'A digit\'s place gives its value', exp: ['B1.5'], skill: 'n3-value',
+        watch: clip(chartV, { n: 555, hl: -1, vals: false }, [
+          ['Three 5s.'],
+          ['Ones: worth <b>5</b>.', { hl: 2, vals: true }],
+          ['Tens: worth <b>50</b>.', { hl: 1 }],
+          ['Hundreds: worth <b>500</b>.', { hl: 0 }]
+        ]),
+        example: clip(chartV, { n: 382, hl: -1, vals: false }, [
+          ['My turn. What is the 8 worth?'],
+          ['I name its place: tens.', { hl: 1 }],
+          ['8 tens is <b>80</b>. Not 8.', { vals: true }]
+        ]),
+        together: [tgValue(1), tgValue(2), tgValue(3)],
+        mistake: '<p>Saying the 8 in 382 is worth 8. Ask for the place first ("tens"), then the value ("8 tens, 80").</p>',
+        check: [ck('n3-value', 'plain', 1), ck('n3-value', 'tap', 1), ck('n3-value', 'story', 2), ck('n3-value', 'mc', 2), ck('n3-value', 'plain', 3)] },
 
-      { id: 'thousand', title: 'How big is 1000?', exp: ['B1.1', 'B1.4'], skill: 'n3-value',
-        body: '<p>Ten hundreds make <b>1000</b>, one thousand. Each square below is worth 10. One row is 100. All ten rows make 1000.</p>',
-        watch: { mount: G3.view(grid1000, { n: 0 }), steps: [
-          { say: 'Each square is a ten. Fill one row: 100.', act: function (t) { return t.set({ n: 100 }, 900); } },
-          { say: 'Count by hundreds: 200, 300, 400, 500.', act: function (t) { return t.seq([{ n: 200 }, { n: 300 }, { n: 400 }, { n: 500 }], 500); } },
-          { say: '600, 700, 800, 900.', act: function (t) { return t.seq([{ n: 600 }, { n: 700 }, { n: 800 }, { n: 900 }], 500); } },
-          { say: 'One more hundred makes <b>1000</b>: 10 hundreds, or 100 tens.', act: function (t) { return t.set({ n: 1000 }, 1800); } }
-        ] },
-        example: { mount: G3.view(grid1000, { n: 0 }), steps: [
-          { say: 'My turn. I fill 6 rows of 100: 600.', act: function (t) { return t.seq([{ n: 100 }, { n: 200 }, { n: 300 }, { n: 400 }, { n: 500 }, { n: 600 }], 350); } },
-          { say: 'How many more make 1000? I count on by hundreds: 700, 800, 900, 1000.', act: function (t) { return t.seq([{ n: 700 }, { n: 800 }, { n: 900 }, { n: 1000 }], 600); } },
-          { say: 'That is 4 more hundreds. 600 + 400 = <b>1000</b>.', ms: 1700 },
-          { say: '1000 is 10 hundreds, or 100 tens.', ms: 1700 }
-        ] },
-        try: { mount: G3.play({ state: { n: 350 }, sliders: [{ key: 'n', label: 'Fill to', min: 0, max: 1000, step: 10 }], draw: grid1000,
-          info: function (s) { return A.fmt(s.n) + ' is ' + (s.n / 10) + ' tens. It needs ' + A.fmt(1000 - s.n) + ' more to make 1000.'; },
-          tasks: [
-            { do: 'Fill the grid to <b>700</b>.', goal: function (s) { return s.n === 700; }, yes: '7 rows of 100 make 700.' },
-            { do: 'Fill it to <b>1000</b>. How many rows is that?', goal: function (s) { return s.n === 1000; }, yes: '10 rows of 100 make 1000.' }
-          ] }), do: '' },
-        key: '<p><b>1000 = 10 hundreds = 100 tens.</b></p>',
-        check: [TU('s6', 0), TU('s6', 1), TU('s6', 2)] }
+      { id: 'zero', title: 'Zero holds a place', exp: ['B1.1'], skill: 'n3-zero',
+        watch: tool('base10', b10({}), [
+          ['3 flats.', function (t) { return t.add('h', 3, 400); }],
+          ['No rods. 5 cubes.', function (t) { return t.add('o', 5, 300); }],
+          ['0 tens: <b>305</b>, not 35.', function (t) { return t.pulseCol('t'); }]
+        ]),
+        example: clip(chartV, { n: 350, hl: -1, vals: true }, [
+          ['My turn. Three hundred fifty.'],
+          ['5 tens, no ones: <b>350</b>.', { hl: 2 }],
+          ['Three hundred five has no tens: <b>305</b>.', { n: 305, hl: 1 }]
+        ]),
+        together: [tgZero(1), tgZero(2), tgZero(3)],
+        mistake: '<p>Writing three hundred five as 35 or 3005. Use a place value chart and write a digit in every place, 0 for an empty one.</p>',
+        check: [ck('n3-zero', 'plain', 1), ck('n3-zero', 'words', 1), ck('n3-zero', 'chart', 2), ck('n3-zero', 'mc', 2), ck('n3-zero', 'words', 3)] }
     ] },
 
-    { id: 'write', title: 'Writing numbers', sub: 'Standard form, expanded form and words.', concepts: [
+    { id: 'write', title: 'Writing numbers', sub: 'Expanded form, words, and trading.', concepts: [
       { id: 'expanded', title: 'Standard and expanded form', exp: ['B1.1'], skill: 'n3-forms',
-        body: '<p><b>Standard form</b> is how we usually write a number: 352. <b>Expanded form</b> shows what each digit is worth: 300 + 50 + 2.</p>',
-        watch: { mount: G3.view(formView, { n: 352, show: false }), steps: [
-          { say: '352 has 3 hundreds, 5 tens and 2 ones.', ms: 1400 },
-          { say: 'Each digit drops down to show its value.', act: function (t) { return t.set({ show: true }, 1600); } },
-          { say: 'So 352 = <b>300 + 50 + 2</b>.', ms: 1800 },
-          { say: 'For 407, there are no tens: 407 = <b>400 + 7</b>.', act: function (t) { return t.set({ n: 407 }, 2000); } }
-        ] },
-        example: { mount: G3.view(formView, { n: 629, show: false }), steps: [
-          { say: 'My turn. 629 has 6 hundreds, 2 tens and 9 ones.', ms: 1500 },
-          { say: 'I write the value of each digit.', act: function (t) { return t.set({ show: true }, 1600); } },
-          { say: 'So 629 = <b>600 + 20 + 9</b>.', ms: 1800 },
-          { say: 'Now 850. It has 0 ones, so I leave the 0 out: 850 = <b>800 + 50</b>.', act: function (t) { return t.set({ n: 850 }, 2000); } }
-        ] },
+        watch: clip(formV, { n: 352, show: false }, [
+          ['352: 3 hundreds, 5 tens, 2 ones.'],
+          ['Each digit drops to its value.', { show: true }],
+          ['352 = <b>300 + 50 + 2</b>.']
+        ]),
+        example: clip(formV, { n: 607, show: false }, [
+          ['My turn. 607.'],
+          ['I write each value.', { show: true }],
+          ['No tens, so I leave that part out: <b>600 + 7</b>.']
+        ]),
         try: { tool: 'base10', opts: b10({ controls: true, expanded: true }), tasks: [
-          { do: 'Build the number that is <b>500 + 30 + 6</b>.', goal: function (s) { return s.value === 536 && s.t < 10 && s.o < 10; }, yes: '500 + 30 + 6 = 536.' },
-          { do: 'Build <b>900 + 4</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 904 && s.o < 10; }, yes: '900 + 4 = 904. The 0 holds the tens place.' }
+          { do: 'Build <b>500 + 30 + 6</b>.', goal: function (s) { return s.value === 536 && s.t < 10 && s.o < 10; }, yes: '536.' },
+          { do: 'Build <b>900 + 4</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 904 && s.o < 10; }, yes: '904. The 0 holds the tens place.' }
         ] },
-        key: '<p>Expanded form adds up the value of each digit.</p>',
-        mistake: '<p>Writing 300 + 50 + 2 as "30052". Show that each part is a value to add, not digits to stick together.</p>',
-        check: [SK('n3-forms', 1), TU('s2', 0)] },
+        together: [tgForms(1), tgForms(2), tgForms(3)],
+        mistake: '<p>Writing 300 + 50 + 2 as "300502". Each part is a value to add. Build it with blocks and read the number.</p>',
+        check: [ck('n3-forms', 'plain', 1), ck('n3-forms', 'fill', 1), ck('n3-forms', 'story', 2), ck('n3-forms', 'match', 2), ck('n3-forms', 'plain', 3)] },
 
       { id: 'words', title: 'Numbers in words', exp: ['B1.1'], skill: 'n3-words',
-        body: '<p>To read a number like 640, say the <b>hundreds</b> first, then the last two digits: "six hundred forty". We do not say "and".</p>',
-        watch: { tool: 'base10', opts: b10({}), steps: [
-          { say: 'Build 6 hundreds: "six hundred".', act: function (t) { return t.add('h', 6, 260); } },
-          { say: 'Add 4 tens: "six hundred forty".', act: function (t) { return t.add('t', 4, 300); } },
-          { say: 'Add 5 ones: "six hundred forty-five".', act: function (t) { return t.add('o', 5, 260); }, ms: 2000 }
-        ] },
-        example: { tool: 'base10', opts: b10({}), steps: [
-          { say: 'My turn. I build 4 hundreds and say "four hundred".', act: function (t) { return t.add('h', 4, 260); } },
-          { say: 'I add 7 tens and say "four hundred seventy".', act: function (t) { return t.add('t', 7, 300); } },
-          { say: 'I add 3 ones and say "four hundred seventy-three".', act: function (t) { return t.add('o', 3, 260); } },
-          { say: 'I say the hundreds, then the last two digits. 473 is <b>four hundred seventy-three</b>.', ms: 2000 }
-        ] },
-        try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
-          { do: 'Build <b>seven hundred twelve</b>.', goal: function (s) { return s.value === 712 && s.t < 10 && s.o < 10; }, yes: 'Seven hundred twelve is 712.' },
-          { do: 'Build <b>three hundred five</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value === 305 && s.o < 10; }, yes: 'Three hundred five is 305.' }
-        ] },
-        key: '<p>Say the hundreds, then the last two digits.</p>',
-        mistake: '<p>Leaving out the zero. Three hundred five is <b>305</b>, not 35. The 0 keeps the tens place open.</p>',
-        check: [SK('n3-words', 1), TU('s2', 1)] },
+        watch: clip(wordsV, { n: 645, w: '' }, [
+          ['645.'],
+          ['Hundreds: "six hundred".', { w: 'six hundred' }],
+          ['Then 45: "six hundred forty-five".', { w: 'six hundred forty-five' }]
+        ]),
+        example: clip(wordsV, { n: 413, w: '' }, [
+          ['My turn. 413.'],
+          ['"Four hundred", then 13.', { w: 'four hundred' }],
+          ['"Four hundred thirteen". No "and".', { w: 'four hundred thirteen' }]
+        ]),
+        together: [tgWords(1), tgWords(2), tgWords(3)],
+        mistake: '<p>Writing the digits in the order they are heard ("four hundred thirteen" as 4013), or saying "and". Split the words into the hundreds part and the rest.</p>',
+        check: [ck('n3-words', 'plain', 1), ck('n3-words', 'mc', 1), ck('n3-words', 'sign', 2), ck('n3-words', 'match', 2), ck('n3-words', 'plain', 3)] },
 
-      { id: 'trade', title: 'One number, many ways', exp: ['B1.5'], skill: 'n3-forms', hard: true,
-        body: '<p>We can trade blocks and the number stays the same. 243 is 2 hundreds, 4 tens, 3 ones. It is also <b>24 tens and 3 ones</b>.</p>',
-        watch: { tool: 'base10', opts: b10({ h: 2, t: 4, o: 3 }), steps: [
-          { say: 'This is 243.', ms: 1200 },
-          { say: 'Break a hundred into 10 tens.', act: function (t) { return t.split('h'); } },
-          { say: 'Now it is 1 hundred, 14 tens and 3 ones. Still 243.', ms: 1500 },
-          { say: 'Break the other hundred too.', act: function (t) { return t.split('h'); } },
-          { say: '24 tens and 3 ones. The blocks moved, but the number is still <b>243</b>.', ms: 2000 }
-        ] },
-        example: { tool: 'base10', opts: b10({ h: 1, t: 6, o: 8 }), steps: [
-          { say: 'My turn. This is 168: 1 hundred, 6 tens and 8 ones.', ms: 1400 },
-          { say: 'I break the hundred into 10 tens.', act: function (t) { return t.split('h'); } },
-          { say: 'Now there are 16 tens and 8 ones. That is still 168.', ms: 1600 },
-          { say: 'Next I break a ten into 10 ones.', act: function (t) { return t.split('t'); } },
-          { say: '15 tens and 18 ones. The blocks changed, but the number is still <b>168</b>.', ms: 2000 }
-        ] },
-        ways: [
-          { label: 'With numbers', html: '<p class="math">200 + 40 + 3 = 243</p><p class="math">100 + 140 + 3 = 243</p><p class="math">240 + 3 = 243</p><p>Every way adds to the same total.</p>' },
-          { label: 'With money', html: '<p>A $100 bill buys the same as ten $10 bills. Trading does not change how much you have.</p>' }
-        ],
+      { id: 'trade', title: 'One number, many ways', exp: ['B1.5', 'B1.1'], skill: 'n3-trade',
+        watch: tool('base10', b10({ h: 2, t: 4, o: 3 }), [
+          ['243.'],
+          ['Break a flat into 10 rods.', function (t) { return t.split('h'); }],
+          ['1 hundred, 14 tens, 3 ones.'],
+          ['Still <b>243</b>.', function (t) { return t.countAll(160); }]
+        ]),
+        example: tool('base10', b10({ h: 1, t: 6, o: 8 }), [
+          ['My turn. 168.'],
+          ['I break a rod into 10 cubes.', function (t) { return t.split('t'); }],
+          ['1 hundred, 5 tens, 18 ones.'],
+          ['More blocks, same number: 168.', function (t) { return t.countAll(140); }]
+        ]),
         try: { tool: 'base10', opts: b10({ controls: true, h: 3, t: 1, o: 5 }), tasks: [
-          { do: 'Show <b>315</b> with <b>no hundred flats</b>.', goal: function (s) { return s.value === 315 && s.h === 0; }, yes: '31 tens and 5 ones is still 315.' },
-          { do: 'Show <b>315</b> with <b>more than 9 ones</b>.', setup: function (t) { t.set(3, 1, 5); }, reset: false, goal: function (s) { return s.value === 315 && s.o > 9; }, yes: function (s) { return s.h + ' hundreds, ' + s.t + ' tens and ' + s.o + ' ones is still 315.'; } }
+          { do: 'Show <b>315</b> with <b>no flats</b>.', goal: function (s) { return s.value === 315 && s.h === 0; }, yes: '31 tens and 5 ones.' },
+          { do: 'Show <b>315</b> with <b>more than 9 ones</b>.', setup: function (t) { t.set(3, 1, 5); }, reset: false, goal: function (s) { return s.value === 315 && s.o > 9; }, yes: function (s) { return hto(s.h, s.t, s.o) + ': still 315.'; } }
         ] },
-        key: '<p>Trading 1 hundred for 10 tens, or 1 ten for 10 ones, <b>does not change the number</b>.</p>',
-        check: [SK('n3-forms', 2), TU('s2', 2)] }
+        together: [tgTrade(1), tgTrade(2), tgTrade(3)],
+        mistake: '<p>Answering "4" to "How many tens are in 243?" (the tens digit, not all the tens), or thinking a trade changes the number. Break a flat and count the rods: 24 tens.</p>',
+        check: [ck('n3-trade', 'plain', 1), ck('n3-trade', 'fill', 1), ck('n3-trade', 'tens', 2), ck('n3-trade', 'mc', 2), ck('n3-trade', 'plain', 3)] }
     ] },
 
-    { id: 'skip', title: 'Skip counting to 1000', sub: 'By 50s, 100s and 200s.', concepts: [
-      { id: 'by100', title: 'Count by 100s', exp: ['B1.4'], skill: 'n3-skip',
-        body: '<p>Counting by 100s, only the <b>hundreds digit</b> changes: 300, 400, 500.</p>',
-        watch: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 0 }, steps: [
-          { say: 'Start at 0. Jump by 100.', act: function (t) { return t.jumps(100, 3, 300); } },
-          { say: '100, 200, 300. Keep going.', act: function (t) { return t.jumps(100, 4, 300); } },
-          { say: '400, 500, 600, 700 ... all the way to <b>1000</b>.', act: function (t) { return t.jumps(100, 3, 300); }, ms: 1600 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 150 }, steps: [
-          { say: 'My turn. I start at 150 and count by 100s.', ms: 1200 },
-          { say: 'I jump 100 three times: 250, 350, 450.', act: function (t) { return t.jumps(100, 3, 350); } },
-          { say: 'Two more jumps: 550, 650.', act: function (t) { return t.jumps(100, 2, 350); } },
-          { say: 'Only the hundreds digit changed: 1, 2, 3, 4, 5, 6. The 50 stayed the same.', ms: 2000 }
-        ] },
+    { id: 'skip', title: 'Counting to 1000', sub: 'By 100s, 50s and 200s.', concepts: [
+      { id: 'thousand', title: 'Ten hundreds make 1000', exp: ['B1.1', 'B1.4'], skill: 'n3-1000',
+        watch: clip(gridV, { n: 0 }, [
+          ['Each square is 10. One row: 100.', { n: 100 }],
+          ['200, 300, 400, 500.', [{ n: 200 }, { n: 300 }, { n: 400 }, { n: 500 }]],
+          ['600, 700, 800, 900.', [{ n: 600 }, { n: 700 }, { n: 800 }, { n: 900 }]],
+          ['One more row: <b>1000</b>.', { n: 1000 }]
+        ]),
+        example: clip(gridV, { n: 650 }, [
+          ['My turn. 650. How many more to 1000?'],
+          ['50 fills the row: 700.', { n: 700 }],
+          ['3 more rows: 1000.', [{ n: 800 }, { n: 900 }, { n: 1000 }]],
+          ['50 + 300 = <b>350</b> more.']
+        ]),
+        try: { mount: G3.play({ state: { n: 350 }, sliders: [{ key: 'n', label: 'Fill to', min: 0, max: 1000, step: 10 }], draw: gridV,
+          info: function (s) { return A.fmt(s.n) + ' needs <b>' + A.fmt(1000 - s.n) + '</b> more to make 1000.'; },
+          tasks: [{ do: 'Fill the grid to <b>700</b>.', goal: function (s) { return s.n === 700; }, yes: '7 rows of 100.' },
+            { do: 'Fill it to <b>1000</b>.', goal: function (s) { return s.n === 1000; }, yes: '10 rows of 100.' }] }), do: '' },
+        together: [tgThousand(1), tgThousand(2), tgThousand(3)],
+        mistake: '<p>Saying 1000 is 10 tens, or that 650 needs 450 more (counting 6 hundreds to 10 and ignoring the 50). Fill the row first, then count rows.</p>',
+        check: [ck('n3-1000', 'plain', 1), ck('n3-1000', 'jumps', 1), ck('n3-1000', 'fill', 2), ck('n3-1000', 'mc', 2), ck('n3-1000', 'plain', 3)] },
+
+      { id: 'by100', title: 'Count by 100s', exp: ['B1.4'], skill: 'n3-by100',
+        watch: clip(hopsV, { vals: hopsTo(130, 100, 6), k: 1 }, [
+          ['Start at 130.'],
+          ['Jump 100: 230, 330.', [{ k: 2 }, { k: 3 }]],
+          ['430, 530, 630.', [{ k: 4 }, { k: 5 }, { k: 6 }]],
+          ['Only the hundreds digit changes.']
+        ]),
+        example: clip(hopsV, { vals: hopsTo(940, -100, 5), k: 1 }, [
+          ['My turn. Back from 940.'],
+          ['840, 740.', [{ k: 2 }, { k: 3 }]],
+          ['640, 540. The 40 stays.', [{ k: 4 }, { k: 5 }]]
+        ]),
         try: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 200, step: 100 }, tasks: [
-          { do: 'Start at 200. Jump by 100 to land on <b>700</b>.', goal: function (s) { return s.at === 700; }, yes: '200, 300, 400, 500, 600, 700. Five jumps.' }
+          { do: 'Start at 200. Jump by 100 to land on <b>700</b>.', goal: function (s) { return s.at === 700; }, yes: 'Five jumps.' }
         ] },
-        key: '<p>By 100s, only the hundreds digit changes.</p>',
-        check: [TU('s3', 0), SK('n3-skip', 1)] },
+        together: [tgSkip(100, 1), tgSkip(100, 2), tgSkip(100, 3)],
+        mistake: '<p>Changing the tens digit too (130, 240, 350), or only counting by 100s from a hundred. Point at the hundreds digit as it goes up by one each jump.</p>',
+        check: [ck('n3-by100', 'plain', 1), ck('n3-by100', 'missing', 1), ck('n3-by100', 'story', 2), ck('n3-by100', 'jumps', 2), ck('n3-by100', 'plain', 3)] },
 
-      { id: 'by50', title: 'Count by 50s', exp: ['B1.4'], skill: 'n3-skip',
-        body: '<p>Two 50s make 100. So counting by 50s, you land on a hundred <b>every second jump</b>: 300, 350, 400, 450.</p>',
-        watch: { tool: 'numberline', opts: { min: 200, max: 700, tick: 10, every: 50, start: 200 }, steps: [
-          { say: 'Start at 200. Jump by 50.', act: function (t) { return t.jumps(50, 2, 350); } },
-          { say: '250, 300. Two jumps make 100.', ms: 900 },
-          { say: '350, 400, 450, 500.', act: function (t) { return t.jumps(50, 4, 350); } },
-          { say: 'The numbers end in 50, then 00, then 50, then 00.', ms: 1800 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 500, max: 1000, tick: 10, every: 50, start: 650 }, steps: [
-          { say: 'My turn. I start at 650 and count by 50s.', ms: 1200 },
-          { say: 'I jump 50 twice: 700, 750. Two jumps of 50 make 100.', act: function (t) { return t.jumps(50, 2, 350); } },
-          { say: 'I keep going: 800, 850, 900, 950.', act: function (t) { return t.jumps(50, 4, 350); } },
-          { say: '6 jumps of 50 took me from 650 to 950. Every two jumps made 100.', ms: 2000 }
-        ] },
+      { id: 'by50', title: 'Count by 50s', exp: ['B1.4'], skill: 'n3-by50',
+        watch: clip(hopsV, { vals: hopsTo(200, 50, 7), k: 1 }, [
+          ['Start at 200.'],
+          ['250, 300: two jumps make 100.', [{ k: 2 }, { k: 3 }]],
+          ['350, 400, 450, 500.', [{ k: 4 }, { k: 5 }, { k: 6 }, { k: 7 }]]
+        ]),
+        example: clip(hopsV, { vals: hopsTo(620, 50, 6), k: 1 }, [
+          ['My turn. From 620.'],
+          ['670, 720.', [{ k: 2 }, { k: 3 }]],
+          ['770, 820, 870. Not 680: each jump is 50.', [{ k: 4 }, { k: 5 }, { k: 6 }]]
+        ]),
         try: { tool: 'numberline', opts: { min: 0, max: 500, tick: 10, every: 50, start: 0, step: 50 }, tasks: [
-          { do: 'Jump by 50 to reach <b>350</b>.', goal: function (s) { return s.at === 350; }, yes: '7 jumps of 50 make 350.' }
+          { do: 'Jump by 50 to reach <b>350</b>.', goal: function (s) { return s.at === 350; }, yes: '7 jumps of 50.' }
         ] },
-        key: '<p>Two jumps of 50 make 100.</p>',
-        check: [TU('s3', 1), SK('n3-skip', 2)] },
+        together: [tgSkip(50, 1), tgSkip(50, 2), tgSkip(50, 3)],
+        mistake: '<p>Adding 5 or 10 instead of 50 (620, 625, 630), or getting lost after a hundred. Two jumps of 50 make 100: say "fifty, hundred" as you go.</p>',
+        check: [ck('n3-by50', 'plain', 1), ck('n3-by50', 'missing', 1), ck('n3-by50', 'story', 2), ck('n3-by50', 'tf', 2), ck('n3-by50', 'plain', 3)] },
 
-      { id: 'by200', title: 'Count by 200s, forward and back', exp: ['B1.4'], skill: 'n3-skip',
-        body: '<p>A jump of 200 is two hundreds. Forward, add 200. Backward, take away 200: 1000, 800, 600.</p>',
-        watch: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 1000 }, steps: [
-          { say: 'Start at 1000. Jump back by 200.', act: function (t) { return t.jumps(-200, 1, 300); } },
-          { say: '800. Keep jumping back.', act: function (t) { return t.jumps(-200, 2, 400); } },
-          { say: '600, 400. Two more: 200, 0.', act: function (t) { return t.jumps(-200, 2, 400); }, ms: 1600 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 100 }, steps: [
-          { say: 'My turn. I start at 100 and count forward by 200s.', ms: 1200 },
-          { say: 'I jump 200: 300. Then 500.', act: function (t) { return t.jumps(200, 2, 400); } },
-          { say: 'Two more jumps: 700, 900.', act: function (t) { return t.jumps(200, 2, 400); } },
-          { say: 'Each jump adds 2 hundreds: 100, 300, 500, 700, 900.', ms: 2000 }
-        ] },
+      { id: 'by200', title: 'Count by 200s', exp: ['B1.4'], skill: 'n3-by200',
+        watch: clip(hopsV, { vals: hopsTo(0, 200, 6), k: 1 }, [
+          ['Start at 0.'],
+          ['200, 400.', [{ k: 2 }, { k: 3 }]],
+          ['600, 800, 1000.', [{ k: 4 }, { k: 5 }, { k: 6 }]],
+          ['Each jump is 2 hundreds.']
+        ]),
+        example: clip(hopsV, { vals: hopsTo(950, -200, 5), k: 1 }, [
+          ['My turn. Back from 950.'],
+          ['750, 550.', [{ k: 2 }, { k: 3 }]],
+          ['350, 150. Not 930: the hundreds drop by 2.', [{ k: 4 }, { k: 5 }]]
+        ]),
         try: { tool: 'numberline', opts: { min: 0, max: 1000, tick: 50, every: 100, start: 0, step: 200 }, tasks: [
-          { do: 'Jump by 200 from 0 to <b>1000</b>. Count your jumps.', goal: function (s) { return s.at === 1000; }, yes: '5 jumps of 200 make 1000.' }
+          { do: 'Jump by 200 from 0 to <b>1000</b>. Count your jumps.', goal: function (s) { return s.at === 1000; }, yes: '5 jumps of 200.' }
         ] },
-        key: '<p>By 200s: 200, 400, 600, 800, 1000.</p>',
-        check: [TU('s3', 2), SK('n3-skip', 3)] }
+        together: [tgSkip(200, 1), tgSkip(200, 2), tgSkip(200, 3)],
+        mistake: '<p>Changing the hundreds digit by 1 instead of 2 (100, 200, 300), or losing the 50 in 150, 350, 550. Count the hundreds on the blocks: two flats each jump.</p>',
+        check: [ck('n3-by200', 'plain', 1), ck('n3-by200', 'missing', 1), ck('n3-by200', 'story', 2), ck('n3-by200', 'jumps', 2), ck('n3-by200', 'plain', 3)] }
     ] },
 
     { id: 'compare', title: 'Compare and order', sub: 'Which is greater, and how to show it.', concepts: [
-      { id: 'biggest', title: 'Compare from the left', exp: ['B1.2'], skill: 'n3-compare',
-        body: '<p>To compare two numbers, start with the <b>biggest place</b>: the hundreds. Only if they are the same do you look at the tens, then the ones.</p>',
-        watch: { mount: G3.view(twoCharts, { a: 601, b: 598, hl: -1, sym: '' }), steps: [
-          { say: 'Which is greater, 601 or 598?', ms: 1300 },
-          { say: 'Look at the hundreds first: 6 hundreds and 5 hundreds.', act: function (t) { return t.set({ hl: 0 }, 1500); } },
-          { say: '6 hundreds is more, so <b>601 is greater</b>. We do not need to look any further.', act: function (t) { return t.set({ sym: '&gt;' }, 2000); } },
-          { say: 'Now 472 and 438. The hundreds are the same.', act: function (t) { return t.set({ a: 472, b: 438, hl: 0, sym: '' }, 1600); } },
-          { say: 'So compare the tens: 7 tens and 3 tens. <b>472 is greater</b>.', act: function (t) { return t.set({ hl: 1, sym: '&gt;' }, 2000); } }
-        ] },
-        example: { mount: G3.view(twoCharts, { a: 739, b: 793, hl: -1, sym: '' }), steps: [
-          { say: 'My turn. Which is greater, 739 or 793?', ms: 1300 },
-          { say: 'I look at the hundreds first: 7 and 7. They are the same.', act: function (t) { return t.set({ hl: 0 }, 1500); } },
-          { say: 'So I look at the tens: 3 tens and 9 tens. <b>793 is greater</b>.', act: function (t) { return t.set({ hl: 1, sym: '&lt;' }, 2000); } },
-          { say: 'Now 264 and 261. The hundreds and the tens are the same.', act: function (t) { return t.set({ a: 264, b: 261, hl: 1, sym: '' }, 1600); } },
-          { say: 'So the ones decide: 4 is more than 1. <b>264 is greater</b>.', act: function (t) { return t.set({ hl: 2, sym: '&gt;' }, 2000); } }
-        ] },
-        try: { tool: 'base10', opts: b10({ controls: true }), tasks: [
-          { do: 'Build a number that is <b>greater than 452</b> but <b>less than 460</b>.', goal: function (s) { return s.value > 452 && s.value < 460; }, yes: function (s) { return s.value + ' is between 452 and 460.'; } },
-          { do: 'Build a number <b>greater than 899</b>.', setup: function (t) { t.set(0, 0, 0); }, reset: false, goal: function (s) { return s.value > 899; }, yes: function (s) { return s.value + ' has 9 hundreds or more, so it is greater than 899.'; } }
-        ] },
-        mistake: '<p>Looking at the ones first. 601 is greater than 598 even though 1 is less than 8. The hundreds decide first.</p>',
-        check: [TU('s4', 0), SK('n3-compare', 1)] },
+      { id: 'greater', title: 'Compare from the left', exp: ['B1.2'], skill: 'n3-greater',
+        watch: clip(twoCharts, { a: 601, b: 598, hl: -1, sym: '' }, [
+          ['601 or 598?'],
+          ['Hundreds: 6 and 5.', { hl: 0 }],
+          ['6 is more: <b>601</b> is greater. Stop there.', { sym: '&gt;' }]
+        ]),
+        example: clip(twoCharts, { a: 739, b: 793, hl: -1, sym: '' }, [
+          ['My turn. 739 or 793?'],
+          ['Hundreds: 7 and 7. The same.', { hl: 0 }],
+          ['Tens: 3 and 9. <b>793</b> is greater.', { hl: 1, sym: '&lt;' }]
+        ]),
+        together: [tgGreater(1), tgGreater(2), tgGreater(3)],
+        mistake: '<p>Comparing the ones first (saying 598 is greater than 601 because 8 is more than 1). Line the numbers up in a chart and start at the hundreds.</p>',
+        check: [ck('n3-greater', 'plain', 1), ck('n3-greater', 'mc', 1), ck('n3-greater', 'story', 2), ck('n3-greater', 'digits', 2), ck('n3-greater', 'plain', 3)] },
 
-      { id: 'symbols', title: 'The symbols &lt; and &gt;', exp: ['B1.2'], skill: 'n3-compare', hard: true,
-        body: '<p><b>&gt;</b> means "is greater than". <b>&lt;</b> means "is less than". The open side always faces the <b>greater</b> number.</p><div class="vs"><div><b class="t">&gt; greater than</b><p class="math big">8 &gt; 3</p></div><div><b class="t">&lt; less than</b><p class="math big">3 &lt; 8</p></div></div>',
-        watch: { mount: G3.view(twoCharts, { a: 406, b: 460, hl: -1, sym: '' }), steps: [
-          { say: 'Compare 406 and 460.', ms: 1200 },
-          { say: 'Same hundreds. The tens decide: 0 tens and 6 tens.', act: function (t) { return t.set({ hl: 1 }, 1500); } },
-          { say: '406 is less than 460. The open side faces 460: <b>406 &lt; 460</b>.', act: function (t) { return t.set({ sym: '&lt;' }, 2200); } }
-        ] },
-        example: { mount: G3.view(twoCharts, { a: 582, b: 528, hl: -1, sym: '' }), steps: [
-          { say: 'My turn. I compare 582 and 528.', ms: 1200 },
-          { say: 'The hundreds are the same. The tens decide: 8 tens and 2 tens.', act: function (t) { return t.set({ hl: 1 }, 1500); } },
-          { say: '582 is greater. The open side faces 582: <b>582 &gt; 528</b>.', act: function (t) { return t.set({ sym: '&gt;' }, 2000); } },
-          { say: 'I read it left to right: "582 is greater than 528."', ms: 1800 }
-        ] },
-        ways: [
-          { label: 'Read it left to right', html: '<p>Read the first number, then the symbol, then the second number. <b>406 &lt; 460</b> says "406 is less than 460". <b>460 &gt; 406</b> says the same thing turned around.</p>' },
-          { label: 'The small end points to the small number', html: '<p>The symbol has a big open end and a small pointed end. The <b>pointed end</b> points to the <b>smaller</b> number: 3 &lt; 8.</p>' },
-          { label: 'On a number line', html: '<p>On a number line, numbers get greater as you go right. 460 is to the right of 406, so 460 is greater.</p>', tool: 'numberline', opts: { min: 400, max: 470, tick: 2, every: 10, start: 406, marks: [{ v: 460, t: '460' }] } }
-        ],
-        try: { mount: G3.play({ state: { a: 529, b: 592, pick: '' }, buttons: [{ label: '&lt;', act: function (s) { s.pick = '<'; } }, { label: '&gt;', act: function (s) { s.pick = '>'; } }, { label: '=', act: function (s) { s.pick = '='; } }],
-          draw: function (s) { return '<p class="math big" style="text-align:center;font-size:2.2rem">' + s.a + ' <b style="color:var(--strand)">' + (s.pick ? s.pick.replace('<', '&lt;').replace('>', '&gt;') : '?') + '</b> ' + s.b + '</p>'; },
-          tasks: [
-            { do: 'Pick the symbol that makes this true.', goal: function (s) { return s.pick === '<'; }, yes: '529 &lt; 592. The tens decide: 2 tens is less than 9 tens.' },
-            { do: 'And this one?', setup: function (s) { s.a = 810; s.b = 801; }, goal: function (s) { return s.pick === '>'; }, yes: '810 &gt; 801. 1 ten is more than 0 tens.' }
-          ] }), do: '' },
-        key: '<p>The open side faces the greater number.</p>',
-        mistake: '<p>Reading &lt; and &gt; backward. Have the child say the sentence out loud, left to right, and check it on a number line.</p>',
-        check: [TU('s4', 1), SK('n3-compare', 2)] },
+      { id: 'symbols', title: 'The symbols < and >', exp: ['B1.2'], skill: 'n3-symbols',
+        watch: clip(twoCharts, { a: 406, b: 460, hl: -1, sym: '' }, [
+          ['406 and 460.'],
+          ['Tens decide: 0 and 6.', { hl: 1 }],
+          ['The open side faces 460: <b>406 &lt; 460</b>.', { sym: '&lt;' }]
+        ]),
+        example: clip(twoCharts, { a: 582, b: 528, hl: -1, sym: '' }, [
+          ['My turn. 582 and 528.'],
+          ['Tens: 8 and 2. 582 is greater.', { hl: 1 }],
+          ['Open towards 582: <b>582 &gt; 528</b>. Read it: "is greater than".', { sym: '&gt;' }]
+        ]),
+        together: [tgSym(1), tgSym(2), tgSym(3)],
+        mistake: '<p>Reading &lt; and &gt; backwards. Have the child read the sentence aloud, left to right ("406 is less than 460"), and check that it is true.</p>',
+        check: [ck('n3-symbols', 'plain', 1), ck('n3-symbols', 'tf', 1), ck('n3-symbols', 'read', 2), ck('n3-symbols', 'pick', 2), ck('n3-symbols', 'plain', 3)] },
 
-      { id: 'order', title: 'Put numbers in order', exp: ['B1.2'], skill: 'n3-compare',
-        body: '<p>To order numbers from least to greatest, compare them the same way: hundreds first, then tens, then ones.</p>',
-        watch: { tool: 'numberline', opts: { min: 280, max: 320, tick: 2, every: 10, start: 280 }, steps: [
-          { say: 'Order 299, 302 and 290.', ms: 1200 },
-          { say: '290 is furthest left.', act: function (t) { return t.mark(290, '290'); } },
-          { say: 'Then 299.', act: function (t) { return t.mark(299, '299'); } },
-          { say: '302 is furthest right, so it is the greatest. <b>290, 299, 302</b>.', act: function (t) { return t.mark(302, '302'); }, ms: 2000 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 480, max: 520, tick: 2, every: 10, start: 480 }, steps: [
-          { say: 'My turn. I will order 515, 490 and 509 from least to greatest.', ms: 1400 },
-          { say: 'I find each one on the number line. 490 is furthest left.', act: function (t) { return t.mark(490, '490'); } },
-          { say: '509 comes next.', act: function (t) { return t.mark(509, '509'); } },
-          { say: '515 is furthest right, so it is the greatest.', act: function (t) { return t.mark(515, '515'); } },
-          { say: 'Least to greatest, left to right: <b>490, 509, 515</b>.', ms: 2000 }
-        ] },
-        key: '<p>Least to greatest: left to right on a number line.</p>',
-        check: [TU('s4', 2), SK('n3-compare', 3)] }
+      { id: 'order', title: 'Put numbers in order', exp: ['B1.2'], skill: 'n3-order',
+        watch: clip(marksV, { vals: [299, 302, 290], show: [] }, [
+          ['299, 302, 290.'],
+          ['290 is furthest left: least.', { show: [290] }],
+          ['Then 299.', { show: [290, 299] }],
+          ['302 is greatest: <b>290, 299, 302</b>.', { show: [290, 299, 302] }]
+        ]),
+        example: clip(marksV, { vals: [515, 490, 509], show: [] }, [
+          ['My turn. 515, 490, 509.'],
+          ['490 has 4 hundreds: least.', { show: [490] }],
+          ['509 then 515: <b>490, 509, 515</b>.', { show: [490, 509, 515] }]
+        ]),
+        together: [tgOrder(1), tgOrder(2), tgOrder(3)],
+        mistake: '<p>Ordering by the last digit, or thinking 490 is more than 509 because 9 is big. Mark the numbers on a number line and read them left to right.</p>',
+        check: [ck('n3-order', 'plain', 1), ck('n3-order', 'least', 1), ck('n3-order', 'line', 2), ck('n3-order', 'between', 2), ck('n3-order', 'plain', 3)] }
     ] },
 
-    { id: 'round', title: 'Rounding', sub: 'Find the closest ten or hundred.', concepts: [
-      { id: 'ten', title: 'Round to the nearest ten', exp: ['B1.3'], skill: 'n3-round',
-        body: '<p>Rounding finds the closest friendly number. To round <b>74</b> to the nearest ten, find the tens on each side: 70 and 80. 74 is closer to <b>70</b>.</p>',
-        watch: { mount: G3.view(hillView, { n: 70, p: 10 }), steps: [
-          { say: 'Picture a hill from 70 to 80. The top is 75, halfway.', ms: 1400 },
-          { say: 'Put 74 on the hill. It is before the top.', act: function (t) { return t.set({ n: 74 }, 1500); } },
-          { say: 'It rolls back down to <b>70</b>.', ms: 1400 },
-          { say: 'Now 77. It is past the top, so it rolls to <b>80</b>.', act: function (t) { return t.set({ n: 77 }, 1800); } },
-          { say: 'Exactly halfway, 75, always rounds <b>up</b> to 80.', act: function (t) { return t.set({ n: 75 }, 1800); } }
-        ] },
-        example: { mount: G3.view(hillView, { n: 30, p: 10 }), steps: [
-          { say: 'My turn. I will round 36. It is between 30 and 40. The top of the hill is 35.', ms: 1700 },
-          { say: 'I put 36 on the hill. It is past the top.', act: function (t) { return t.set({ n: 36 }, 1500); } },
-          { say: 'So it rolls down to <b>40</b>. 36 rounds to 40.', ms: 1500 },
-          { say: 'Now 32. It is before the top, so it rolls back to <b>30</b>.', act: function (t) { return t.set({ n: 32 }, 1800); } },
-          { say: 'I look at the ones digit. 0 to 4 rounds down. 5 to 9 rounds up.', ms: 1800 }
-        ] },
-        try: { tool: 'numberline', opts: { min: 60, max: 80, tick: 1, every: 5, start: 74 }, tasks: [
-          { do: 'The marker is on <b>74</b>. Tap the ten it is closest to.', goal: function (s) { return s.at === 70; }, yes: '74 is 4 away from 70 and 6 away from 80. It rounds to 70.' },
-          { do: 'Now tap <b>67</b>, then the ten it rounds to.', setup: function (t) { t.moveTo(67); }, reset: false, goal: function (s) { return s.at === 70; }, yes: '67 is 3 away from 70. It rounds to 70.' }
-        ] },
-        key: '<p>Look at the ones digit. 0 to 4 rounds down. 5 to 9 rounds up.</p>',
-        check: [TU('s5', 0), SK('n3-round', 1)] },
+    { id: 'round', title: 'Rounding', sub: 'The closest ten or hundred.', concepts: [
+      { id: 'nearest10', title: 'Round to the nearest ten', exp: ['B1.3'], skill: 'n3-round10',
+        watch: clip(hillV, { n: 70, p: 10 }, [
+          ['A hill from 70 to 80. The top is 75.'],
+          ['74 is before the top: it rolls to <b>70</b>.', { n: 74 }],
+          ['77 is past the top: <b>80</b>.', { n: 77 }],
+          ['75, the top, rounds up: <b>80</b>.', { n: 75 }]
+        ]),
+        example: clip(hillV, { n: 340, p: 10 }, [
+          ['My turn. 346: between 340 and 350.'],
+          ['Past 345: <b>350</b>.', { n: 346 }],
+          ['342 is before it: <b>340</b>. Not 300.', { n: 342 }]
+        ]),
+        together: [tgRound(10, 1), tgRound(10, 2), tgRound(10, 3)],
+        mistake: '<p>Rounding 75 down, or rounding 346 to 300 (the nearest hundred). Find the two tens first, then ask: before or past halfway?</p>',
+        check: [ck('n3-round10', 'plain', 1), ck('n3-round10', 'tap', 1), ck('n3-round10', 'fill', 2), ck('n3-round10', 'story', 2), ck('n3-round10', 'plain', 3)] },
 
-      { id: 'round-hundred', title: 'Round to the nearest hundred', exp: ['B1.3'], skill: 'n3-round', hard: true,
-        body: '<p>To round to the nearest hundred, find the hundreds on each side, then look at the <b>tens digit</b>. 451 is between 400 and 500. The tens digit is 5, so it rounds <b>up to 500</b>.</p>',
-        watch: { mount: G3.view(hillView, { n: 400, p: 100 }), steps: [
-          { say: 'A hill from 400 to 500. The top is 450.', ms: 1400 },
-          { say: '432 is before the top. It rounds to <b>400</b>.', act: function (t) { return t.set({ n: 432 }, 1700); } },
-          { say: '451 is past the top. It rounds to <b>500</b>.', act: function (t) { return t.set({ n: 451 }, 1700); } },
-          { say: '450, exactly halfway, also rounds up to 500.', act: function (t) { return t.set({ n: 450 }, 1800); } }
-        ] },
-        example: { mount: G3.view(hillView, { n: 200, p: 100 }), steps: [
-          { say: 'My turn. I will round 268 to the nearest hundred. It is between 200 and 300. The top is 250.', ms: 1800 },
-          { say: 'I put 268 on the hill. It is past the top, so it rounds to <b>300</b>.', act: function (t) { return t.set({ n: 268 }, 1800); } },
-          { say: 'Now 249. It is just before the top, so it rounds to <b>200</b>.', act: function (t) { return t.set({ n: 249 }, 1800); } },
-          { say: 'I look at the tens digit, to the right of the hundreds. 5 or more rounds up.', ms: 1800 }
-        ] },
-        ways: [
-          { label: 'Look at one digit', html: '<p>Underline the place you round to, then look at the digit just to its <b>right</b>. For the nearest hundred, look at the tens: 4<u>5</u>1. 5 or more, round up.</p>' },
-          { label: 'Count the distance', html: '<p>451 is 51 away from 400 and 49 away from 500. 49 is less, so 500 is closer.</p>', tool: 'numberline', opts: { min: 400, max: 500, tick: 10, every: 50, start: 451 } },
-          { label: 'With money', html: '<p>Is $451 closer to four $100 bills or five? You only need $49 more to make $500, so it is closer to $500.</p>' }
-        ],
+      { id: 'nearest100', title: 'Round to the nearest hundred', exp: ['B1.3'], skill: 'n3-round100',
+        watch: clip(hillV, { n: 400, p: 100 }, [
+          ['A hill from 400 to 500. The top is 450.'],
+          ['432: before the top. <b>400</b>.', { n: 432 }],
+          ['451: past the top. <b>500</b>.', { n: 451 }],
+          ['450 rounds up too: <b>500</b>.', { n: 450 }]
+        ]),
+        example: clip(hillV, { n: 900, p: 100 }, [
+          ['My turn. 962: between 900 and 1000.'],
+          ['Past 950: <b>1000</b>.', { n: 962 }],
+          ['949 is just before: <b>900</b>.', { n: 949 }]
+        ]),
         try: { mount: G3.play({ state: { n: 632, p: 100 }, sliders: [{ key: 'n', label: 'Number', min: 100, max: 999 }],
-          selects: [{ key: 'p', label: 'Round to the nearest', options: [[100, 'hundred'], [10, 'ten']] }],
-          draw: hillView, info: function (s) { var r = Math.round(s.n / s.p) * s.p; return A.fmt(s.n) + ' rounds to <b>' + A.fmt(r) + '</b>'; },
-          tasks: [
-            { do: 'Find a number that rounds to <b>700</b> but is <b>less than</b> 700.', goal: function (s) { return s.p === 100 && s.n < 700 && s.n >= 650; }, yes: function (s) { return s.n + ' is past the top of the 600 to 700 hill.'; } },
-            { do: 'Find a number that rounds <b>down</b> to 300.', goal: function (s) { return s.p === 100 && s.n > 300 && s.n < 350; }, yes: function (s) { return s.n + ' is before the top, so it rolls back to 300.'; } }
-          ] }), do: '' },
-        key: '<p>Look at the digit to the right of the place you round to. 5 or more rounds up.</p>',
-        mistake: '<p>Rounding 950 to 900. 950 is exactly halfway between 900 and 1000, and halfway rounds up, so the answer is <b>1000</b>.</p>',
-        check: [TU('s5', 1), TU('s5', 2), SK('n3-round', 2)] }
+          draw: hillV, info: function (s) { return A.fmt(s.n) + ' rounds to <b>' + A.fmt(roundTo(s.n, 100)) + '</b>'; },
+          tasks: [{ do: 'Find a number <b>less than 700</b> that rounds to 700.', goal: function (s) { return s.n < 700 && s.n >= 650; }, yes: function (s) { return s.n + ' is past the top of the hill.'; } },
+            { do: 'Find a number that rounds <b>down</b> to 300.', goal: function (s) { return s.n > 300 && s.n < 350; }, yes: function (s) { return s.n + ' rolls back to 300.'; } }] }), do: '' },
+        together: [tgRound(100, 1), tgRound(100, 2), tgRound(100, 3)],
+        mistake: '<p>Looking at the ones digit (rounding 449 up because of the 9), or rounding 950 to 900. For hundreds, look only at the tens digit. Halfway rounds up.</p>',
+        check: [ck('n3-round100', 'plain', 1), ck('n3-round100', 'tap', 1), ck('n3-round100', 'fill', 2), ck('n3-round100', 'tf', 2), ck('n3-round100', 'plain', 3)] },
+
+      { id: 'mix', title: 'Ten or hundred?', exp: ['B1.3'], skill: 'n3-roundmix',
+        watch: clip(hillV, { n: 347, p: 10 }, [
+          ['347 to the nearest ten: <b>350</b>.'],
+          ['To the nearest hundred: <b>300</b>.', { p: 100 }],
+          ['Same number, two answers. Check which one is asked.']
+        ]),
+        example: clip(hillV, { n: 862, p: 100 }, [
+          ['My turn. 862 to the nearest hundred: <b>900</b>.'],
+          ['To the nearest ten: <b>860</b>. Not 900.', { p: 10 }]
+        ]),
+        together: [tgMix(1), tgMix(2), tgMix(3)],
+        mistake: '<p>Using the same digit for both kinds of rounding. Nearest ten: look at the ones. Nearest hundred: look at the tens. Underline the place you round to first.</p>',
+        check: [ck('n3-roundmix', 'plain', 1), ck('n3-roundmix', 'num', 1), ck('n3-roundmix', 'which', 2), ck('n3-roundmix', 'tf', 2), ck('n3-roundmix', 'plain', 3)] }
     ] }
   ];
 
-  A.register('numbers-1000', {
+  A.register(CH, {
+    full: true,
     lessons: LESSONS,
-    html:
-'<section class="sec"><h2><span class="n">1</span>Ones, tens and hundreds</h2>' +
-'<p>We count things in groups of ten. Ten small cubes make one <b>rod</b>. Ten rods make one <b>flat</b>. Ten flats make one <b>big cube</b>.</p>' +
-'<div class="fig">' + stairs() + '</div>' +
-'<p>Each place has its own colour. Follow the colour from the blocks to the chart to the digit.</p>' +
-'<div class="legend"><span><i style="background:var(--p3)"></i>thousands</span><span><i style="background:var(--p2)"></i>hundreds</span><span><i style="background:var(--p1)"></i>tens</span><span><i style="background:var(--p0)"></i>ones</span></div>' +
-'<div class="lab"><span class="lt">Try it: build a number</span>' +
-'<div class="steprow">' +
-'<div class="stepper"><span class="sl c2t">Hundreds</span><button type="button" class="btn alt" data-sub="2" aria-label="Take away one hundred">&minus;</button><output id="bh">0</output><button type="button" class="btn alt" data-add="2" aria-label="Add one hundred">+</button></div>' +
-'<div class="stepper"><span class="sl c1t">Tens</span><button type="button" class="btn alt" data-sub="1" aria-label="Take away one ten">&minus;</button><output id="bt">0</output><button type="button" class="btn alt" data-add="1" aria-label="Add one ten">+</button></div>' +
-'<div class="stepper"><span class="sl c0t">Ones</span><button type="button" class="btn alt" data-sub="0" aria-label="Take away one">&minus;</button><output id="bo">0</output><button type="button" class="btn alt" data-add="0" aria-label="Add one">+</button></div>' +
-'</div>' +
-'<div class="ctrl"><label for="bn">Or type a number (0 to 1000)<input type="number" id="bn" min="0" max="1000" value="243"></label></div>' +
-'<div class="fig" id="bfig"></div><div id="bchart"></div><div class="out" id="bout" aria-live="polite"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>A digit\'s <b>place</b> tells you what it is worth. In 243, the 2 means 2 hundreds, the 4 means 4 tens, and the 3 means 3 ones.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>What number is 5 flats, 0 rods and 7 cubes?</p><div class="fig">' + A.draw.blocks(507, '5 flats and 7 small cubes', 540, 6) + '</div>' +
-'<p>5 hundreds, 0 tens, 7 ones. There are no tens, so write 0 in the tens place: <b>507</b>.</p></div>' +
-'<div class="yt" data-yt="s1"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Three ways to write a number</h2>' +
-'<p>You can write the same number in three ways. Follow each coloured digit down to what it is worth.</p>' +
-'<div class="fig">' + expanded(386) + '</div>' +
-'<div class="tbl"><table><thead><tr><th class="l">Way</th><th class="l">Example</th></tr></thead><tbody>' +
-'<tr><td class="l">Standard form</td><td class="l math">386</td></tr>' +
-'<tr><td class="l">Expanded form</td><td class="l math">300 + 80 + 6</td></tr>' +
-'<tr><td class="l">Word form</td><td class="l">three hundred eighty-six</td></tr></tbody></table></div>' +
-'<p>To <b>decompose</b> a number means to break it into parts. You can trade 1 flat for 10 rods, or 1 rod for 10 cubes. The number stays the same.</p>' +
-'<div class="lab"><span class="lt">Try it: trade blocks</span>' +
-'<div class="ctrl"><label for="trn">Start number (100 to 999)<input type="number" id="trn" min="100" max="999" value="234"></label></div>' +
-'<div class="btnrow"><button type="button" class="btn alt" data-tr="2">Trade 1 hundred for 10 tens</button><button type="button" class="btn alt" data-tr="1">Trade 1 ten for 10 ones</button></div>' +
-'<div class="btnrow"><button type="button" class="btn alt" data-gr="1">Trade 10 tens for 1 hundred</button><button type="button" class="btn alt" data-gr="0">Trade 10 ones for 1 ten</button></div>' +
-'<div class="fig" id="trfig"></div><div class="out" id="trout" aria-live="polite"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Leaving out the zero. Three hundred five is <b>305</b>, not 35. The 0 keeps the tens place open, so the 3 stays in the hundreds place.</p>' +
-'<div class="fig">' + chart(305, { vals: true, hl: 1 }) + '</div></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>Write 400 + 20 + 9 in standard form. 4 hundreds, 2 tens, 9 ones: <b>429</b>.</p></div>' +
-'<div class="yt" data-yt="s2"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Skip counting to 1000</h2>' +
-'<p>Skip counting means jumping by the same amount each time. Counting by 50s, 100s and 200s gets you to 1000 fast.</p>' +
-'<div class="lab"><span class="lt">Try it: jump along the number line</span>' +
-'<div class="ctrl"><label for="skb">Count by<select id="skb"><option value="10">10s</option><option value="50" selected>50s</option><option value="100">100s</option><option value="200">200s</option></select></label>' +
-'<label for="sks">Start at<input type="number" id="sks" min="0" max="1000" step="10" value="0"></label>' +
-'<label for="skd">Direction<select id="skd"><option value="1">Forward</option><option value="-1">Backward</option></select></label></div>' +
-'<div class="fig" id="skfig"></div><div class="out" id="skout" aria-live="polite"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>By 100s, only the hundreds digit changes: 300, 400, 500. By 50s, you land on a hundred every second jump: 300, 350, 400, 450.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>Count by 200s from 0. Five jumps reach 1000.</p><div class="fig">' + hops([0, 200, 400, 600, 800, 1000]) + '</div></div>' +
-'<div class="yt" data-yt="s3"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Comparing and ordering</h2>' +
-'<p>To compare two numbers, line them up by place. Start at the <b>left</b>, with the hundreds. The first place where the digits are different tells you which number is greater.</p>' +
-'<p>The symbol opens toward the greater number. <span class="math">452 &gt; 425</span> means "452 is greater than 425". <span class="math">425 &lt; 452</span> means "425 is less than 452".</p>' +
-'<div class="lab"><span class="lt">Try it: compare place by place</span>' +
-'<div class="ctrl"><label for="cpa">First number<input type="number" id="cpa" min="0" max="1000" value="452"></label>' +
-'<label for="cpb">Second number<input type="number" id="cpb" min="0" max="1000" value="425"></label></div>' +
-'<div class="vrow" id="cpblocks"></div><div id="cpchart"></div><div class="fig" id="cpline"></div><div class="out" id="cpout" aria-live="polite"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Looking at the ones first. 601 is greater than 598, even though 1 is less than 8. The hundreds decide first: 6 hundreds is more than 5 hundreds.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>Put 318, 381, 138 in order from least to greatest. Compare the hundreds: 1, 3, 3. Then compare the tens of 318 and 381: 1 ten is less than 8 tens.</p><div class="fig" id="ordfig"></div>' +
-'<p>Least to greatest: <b>138, 318, 381</b>.</p></div>' +
-'<div class="yt" data-yt="s4"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Rounding to the nearest ten or hundred</h2>' +
-'<p>Rounding finds a nearby "friendly" number that is easy to use. Picture a hill between two friendly numbers. The top of the hill is halfway. Past the top, the number rolls <b>up</b>. Before the top, it rolls back <b>down</b>. Right on the top, it rolls up.</p>' +
-'<div class="lab"><span class="lt">Try it: roll over the hill</span>' +
-'<div class="ctrl"><label for="rn">Number (0 to 1000)<input type="number" id="rn" min="0" max="1000" value="267"></label>' +
-'<label for="rp">Round to the nearest<select id="rp"><option value="10">ten</option><option value="100" selected>hundred</option></select></label></div>' +
-'<div class="fig" id="rline"></div><div class="out" id="rout" aria-live="polite"></div></div>' +
-'<p>Without the hill, look at the digit just to the <b>right</b> of the place you round to. 5 or more: round up. Less than 5: round down.</p>' +
-'<div class="eg"><b class="t">Watch first</b><p>Round 267 to the nearest hundred. It is between 200 and 300. The tens digit is 6, so round up: <b>300</b>.</p></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Rounding 950 to the nearest hundred and getting 900. 950 is exactly halfway between 900 and 1000, and halfway rounds up, so the answer is <b>1000</b>.</p>' +
-'<div class="fig">' + hill(950, 100) + '</div></div>' +
-'<div class="yt" data-yt="s5"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>How big is 1000?</h2>' +
-'<p>Numbers to 1000 are all around us. They count days, pages, people and steps.</p>' +
-'<div class="facts"><div>' + icons.cal + '<span><b>365</b><small>days in a year</small></span></div>' +
-'<div>' + icons.paper + '<span><b>500</b><small>sheets in a pack of printer paper</small></span></div>' +
-'<div>' + icons.path + '<span><b>1000</b><small>metres in 1 kilometre</small></span></div></div>' +
-'<div class="lab"><span class="lt">Try it: fill the thousand grid</span>' +
-'<div class="ctrl"><label for="hkp">Pick one<select id="hkp"><option value="365">Days in a year: 365</option><option value="500">Sheets in a pack: 500</option><option value="250">A school with 250 students</option><option value="1000">Metres in a kilometre: 1000</option></select></label>' +
-'<label for="hkn">Or type a number (0 to 1000)<input type="number" id="hkn" min="0" max="1000" value="365"></label></div>' +
-'<div class="fig" id="hkfig"></div><div class="out" id="hkout" aria-live="polite"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>1000 is 10 hundreds. It is also 100 tens, and 1000 ones.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>A year has 365 days. That fills 3 rows of the grid (300) and 6 and a half more squares (65). It is a bit more than one third of 1000.</p></div>' +
-'<div class="yt" data-yt="s6"></div>' +
-'</section>',
-
-    turns: {
-      s1: [
-        { q: 'What does the 5 in <span class="math">352</span> mean?', options: ['5 ones', '5 tens', '5 hundreds'], answer: 1, why: 'The 5 is the middle digit. The middle place is the tens.' },
-        { q: 'What number do these blocks show?', fig: A.draw.blocks(240, '2 flats and 4 rods', 540, 5), options: ['24', '204', '240'], answer: 2, why: '2 flats are 2 hundreds and 4 rods are 4 tens. There are no small cubes, so the ones digit is 0.' },
-        { q: 'Do these blocks show 325?', fig: A.draw.blocks(352, '3 flats, 5 rods and 2 small cubes', 540, 5), options: ['Yes', 'No'], answer: 1, why: 'Count the rods. There are 5 rods, which is 5 tens. 325 would have only 2 rods. These blocks show 352.' }
-      ],
-      s2: [
-        { q: 'Write <span class="math">500 + 7</span> in standard form.', options: ['57', '507', '570'], answer: 1, why: '5 hundreds, 0 tens, 7 ones. The 0 holds the tens place.' },
-        { q: 'Which is the word form of <span class="math">640</span>?', options: ['six hundred four', 'six hundred forty', 'sixty-four'], answer: 1, why: 'Say the hundreds: six hundred. Then the last two digits, 40: forty.' },
-        { q: '1 hundred can be traded for how many tens?', options: ['1', '10', '100'], answer: 1, why: 'A flat is made of 10 rods. Each rod is a ten.' }
-      ],
-      s3: [
-        { q: 'Count by 100s. <span class="math">300, 400, 500, ___</span>', options: ['501', '510', '600'], answer: 2, why: 'Each jump adds 1 hundred. Only the hundreds digit changes.' },
-        { q: 'Count by 50s. <span class="math">650, 700, ___</span>', options: ['705', '750', '800'], answer: 1, why: 'Each jump adds 50. 700 + 50 = 750.' },
-        { q: 'Count by 200s backward. <span class="math">1000, 800, ___</span>', options: ['600', '700', '780'], answer: 0, why: 'Each jump takes away 200. 800 &minus; 200 = 600.' }
-      ],
-      s4: [
-        { q: 'Which is greater: <span class="math">719</span> or <span class="math">791</span>?', options: ['719', '791'], answer: 1, why: 'The hundreds are the same. Compare the tens: 1 ten and 9 tens.' },
-        { q: 'Which symbol goes in the box? <span class="math">406 &#9633; 460</span>', options: ['&lt;', '&gt;', '='], answer: 0, why: 'Same hundreds. Compare the tens: 0 tens is less than 6 tens. The symbol opens toward the greater number.' },
-        { q: 'Which number is the least?', options: ['299', '302', '290'], answer: 2, why: 'Compare the hundreds first. 302 has 3 hundreds, so it is not least. Then compare 299 and 290 by the ones.' }
-      ],
-      s5: [
-        { q: 'Round <span class="math">74</span> to the nearest ten.', options: ['70', '75', '80'], answer: 0, why: '74 is between 70 and 80. The ones digit is 4, which is less than 5.' },
-        { q: 'Round <span class="math">451</span> to the nearest hundred.', options: ['400', '450', '500'], answer: 2, why: '451 is between 400 and 500. Look at the tens digit. It is 5, and 5 or more rounds up.' },
-        { q: 'Round <span class="math">995</span> to the nearest ten.', options: ['990', '1000', '900'], answer: 1, why: '995 is between 990 and 1000. The ones digit is 5, so round up.' }
-      ],
-      s6: [
-        { q: 'How many hundreds make 1000?', options: ['10', '100', '1000'], answer: 0, why: '10 flats make the big cube. Each flat is a hundred.' },
-        { q: 'How many tens make 1000?', options: ['10', '100', '1000'], answer: 1, why: 'Each square on the grid is a ten, and there are 100 squares.' },
-        { q: 'Which is closer to 1000?', options: ['365', '900'], answer: 1, why: '900 needs only 100 more to reach 1000. 365 needs 635 more.' }
-      ]
-    },
-
-    init: function (root) {
-      var $ = A.$;
-      /* section 1: build a number. c = [ones, tens, hundreds, thousands] */
-      var c = digitsOf(243), msg = '';
-      function total() { return c[0] + c[1] * 10 + c[2] * 100 + c[3] * 1000; }
-      function build() {
-        var n = total();
-        $('#bh', root).textContent = c[2]; $('#bt', root).textContent = c[1]; $('#bo', root).textContent = c[0];
-        $('#bn', root).value = n;
-        $('#bfig', root).innerHTML = A.draw.blocks(n, 'Base-ten blocks showing ' + n, 540, 6);
-        $('#bchart', root).innerHTML = chart(n, { cols: n === 1000 ? 4 : 3, vals: true });
-        var parts = [];
-        for (var p = 3; p >= 0; p--) if (c[p]) parts.push('<b class="c' + p + 't">' + c[p] * Math.pow(10, p) + '</b>');
-        $('#bout', root).innerHTML = '<p><span class="big">' + n + '</span> &nbsp;' + words(n) + '</p><p><b>Expanded form:</b> <span class="math">' + (parts.join(' + ') || '0') + '</span></p>' + (msg ? '<p class="lvmsg">' + msg + '</p>' : '');
-        root.querySelectorAll('[data-add]').forEach(function (b) { b.disabled = n + Math.pow(10, +b.getAttribute('data-add')) > 1000; });
-        root.querySelectorAll('[data-sub]').forEach(function (b) { b.disabled = n - Math.pow(10, +b.getAttribute('data-sub')) < 0; });
-        msg = '';
-      }
-      root.querySelectorAll('[data-add]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          var p = +b.getAttribute('data-add');
-          if (total() + Math.pow(10, p) > 1000) return;
-          c[p]++;
-          var said = [];
-          for (var q = 0; q < 3; q++) if (c[q] >= 10) { c[q] -= 10; c[q + 1]++; said.push('10 ' + A.PLACES[q] + ' were grouped into 1 ' + A.PLACE1[q + 1]); }
-          if (said.length) msg = said.join(', then ') + '.';
-          build();
-        });
-      });
-      root.querySelectorAll('[data-sub]').forEach(function (b) {
-        b.addEventListener('click', function () {
-          var p = +b.getAttribute('data-sub');
-          if (total() - Math.pow(10, p) < 0) return;
-          if (!c[p]) {
-            var q = p;
-            while (!c[q]) q++;
-            var said2 = [];
-            while (q > p) { c[q]--; c[q - 1] += 10; said2.push('1 ' + A.PLACE1[q] + ' was broken into 10 ' + A.PLACES[q - 1]); q--; }
-            msg = 'There were no ' + A.PLACES[p] + ' to take away, so ' + said2.join(', then ') + '.';
-          }
-          c[p]--;
-          build();
-        });
-      });
-      $('#bn', root).addEventListener('input', function () { c = digitsOf(clamp(this.value, 0, 1000)); build(); });
-      build();
-
-      /* section 2: trade blocks. t = [ones, tens, hundreds] */
-      var t = [0, 0, 0], MAX = 30;
-      function trStart() { t = digitsOf(clamp($('#trn', root).value, 100, 999)).slice(0, 3); tr(); }
-      function tr() {
-        var n = t[0] + t[1] * 10 + t[2] * 100;
-        $('#trfig', root).innerHTML = columns(t);
-        var parts = [];
-        for (var k = 2; k >= 0; k--) if (t[k]) parts.push('<b class="c' + k + 't">' + plural(t[k], k) + '</b>');
-        $('#trout', root).innerHTML = '<p>' + parts.join(' + ') + ' = <span class="big">' + n + '</span></p><p class="t2">Same number, different blocks.</p>';
-        root.querySelectorAll('[data-tr]').forEach(function (b) { var p = +b.getAttribute('data-tr'); b.disabled = t[p] < 1 || t[p - 1] + 10 > MAX; });
-        root.querySelectorAll('[data-gr]').forEach(function (b) { b.disabled = t[+b.getAttribute('data-gr')] < 10; });
-      }
-      root.querySelectorAll('[data-tr]').forEach(function (b) { b.addEventListener('click', function () { var p = +b.getAttribute('data-tr'); if (t[p] > 0 && t[p - 1] + 10 <= MAX) { t[p]--; t[p - 1] += 10; tr(); } }); });
-      root.querySelectorAll('[data-gr]').forEach(function (b) { b.addEventListener('click', function () { var p = +b.getAttribute('data-gr'); if (t[p] >= 10) { t[p] -= 10; t[p + 1]++; tr(); } }); });
-      A.bind(root, ['trn'], trStart);
-
-      /* section 3: skip counting */
-      function sk() {
-        var by = +$('#skb', root).value, dir = +$('#skd', root).value, st = clamp($('#sks', root).value, 0, 1000);
-        var vals = [st];
-        while (vals.length < 11) { var nx = vals[vals.length - 1] + dir * by; if (nx < 0 || nx > 1000) break; vals.push(nx); }
-        if (vals.length < 2) {
-          $('#skfig', root).innerHTML = '';
-          $('#skout', root).innerHTML = '<p>From ' + st + ' there is no room to jump ' + (dir > 0 ? 'forward' : 'backward') + ' by ' + by + ' and stay between 0 and 1000. Try another start.</p>';
-          return;
-        }
-        $('#skfig', root).innerHTML = hops(vals);
-        $('#skout', root).innerHTML = '<p><span class="big">' + vals.join(', ') + '</span></p><p>' + (vals.length - 1) + ' jumps of ' + by + ' ' + (dir > 0 ? 'forward' : 'backward') + ' from ' + st + ' land on ' + vals[vals.length - 1] + '.</p>';
-      }
-      A.bind(root, ['skb', 'sks', 'skd'], sk);
-
-      /* section 4: compare */
-      function cp() {
-        var a = clamp($('#cpa', root).value, 0, 1000), b = clamp($('#cpb', root).value, 0, 1000);
-        var cols = a === 1000 || b === 1000 ? 4 : 3, sa = String(a), sb = String(b);
-        while (sa.length < cols) sa = '0' + sa;
-        while (sb.length < cols) sb = '0' + sb;
-        var diff = -1;
-        for (var i = 0; i < cols; i++) if (sa.charAt(i) !== sb.charAt(i)) { diff = i; break; }
-        $('#cpblocks', root).innerHTML = '<figure><figcaption>First: ' + a + '</figcaption>' + A.draw.blocks(a, 'Blocks for ' + a, 330, 4) + '</figure>' +
-          '<figure><figcaption>Second: ' + b + '</figcaption>' + A.draw.blocks(b, 'Blocks for ' + b, 330, 4) + '</figure>';
-        $('#cpchart', root).innerHTML = '<p class="t2" style="margin:.3em 0 0;font-size:.9rem">First number</p>' + chart(a, { cols: cols, hl: diff, dots: false }) +
-          '<p class="t2" style="margin:.3em 0 0;font-size:.9rem">Second number</p>' + chart(b, { cols: cols, hl: diff, dots: false });
-        var lo = Math.min(a, b), hi = Math.max(a, b), step = hi - lo > 200 ? 100 : hi - lo > 20 ? 10 : 1;
-        var L = Math.floor(lo / step) * step, H = Math.ceil(hi / step) * step;
-        if (H === L) H = L + step;
-        while ((H - L) / step > 10) { step *= 2; L = Math.floor(lo / step) * step; H = Math.ceil(hi / step) * step; if (H === L) H = L + step; }
-        var x0 = 30, x1 = 530, s = '<line x1="' + x0 + '" y1="44" x2="' + x1 + '" y2="44" style="stroke:var(--ink)" stroke-width="2"/>';
-        for (var v = L; v <= H; v += step) {
-          var x = x0 + (x1 - x0) * (v - L) / (H - L);
-          s += '<line x1="' + x + '" y1="37" x2="' + x + '" y2="51" style="stroke:var(--ink)" stroke-width="2"/><text x="' + x + '" y="70" text-anchor="middle" font-size="13">' + v + '</text>';
-        }
-        [[a, 'var(--strand)', 'first'], [b, 'var(--hi)', 'second']].forEach(function (pt, k) {
-          var x = x0 + (x1 - x0) * (pt[0] - L) / (H - L);
-          s += '<circle cx="' + x + '" cy="44" r="8" style="fill:' + pt[1] + ';stroke:var(--ink)" stroke-width="2"/><text x="' + x + '" y="' + (k ? 14 : 28) + '" text-anchor="middle" class="tb" font-size="13">' + pt[2] + '</text>';
-        });
-        $('#cpline', root).innerHTML = A.svg(560, 78, s, 'Number line showing ' + a + ' and ' + b);
-        var sym = a > b ? '&gt;' : a < b ? '&lt;' : '=', said = a > b ? 'is greater than' : a < b ? 'is less than' : 'is equal to';
-        var pn = ['thousands', 'hundreds', 'tens', 'ones'].slice(4 - cols);
-        $('#cpout', root).innerHTML = '<p><span class="big">' + a + ' ' + sym + ' ' + b + '</span> &nbsp;' + a + ' ' + said + ' ' + b + '.</p><p>' +
-          (diff < 0 ? 'Every digit matches, so the numbers are equal.' : 'The first different place is the <b>' + pn[diff] + '</b>: ' + sa.charAt(diff) + ' and ' + sb.charAt(diff) + '. On the number line, the greater number is further right.') + '</p>';
-      }
-      A.bind(root, ['cpa', 'cpb'], cp);
-      (function () {
-        var pts = [318, 381, 138], s = '<line x1="30" y1="46" x2="530" y2="46" style="stroke:var(--ink)" stroke-width="2"/>';
-        for (var v = 100; v <= 400; v += 50) {
-          var x = 30 + 500 * (v - 100) / 300;
-          s += '<line x1="' + x + '" y1="38" x2="' + x + '" y2="54" style="stroke:var(--ink)" stroke-width="2"/><text x="' + x + '" y="74" text-anchor="middle" font-size="13">' + v + '</text>';
-        }
-        pts.forEach(function (p) {
-          var x = 30 + 500 * (p - 100) / 300;
-          s += '<circle cx="' + x + '" cy="46" r="7" style="fill:var(--strand);stroke:var(--ink)" stroke-width="2"/><text x="' + x + '" y="26" text-anchor="middle" font-size="14" class="tb">' + p + '</text>';
-        });
-        $('#ordfig', root).innerHTML = A.svg(560, 82, s, 'Number line from 100 to 400 with 138, 318 and 381 marked from left to right');
-      })();
-
-      /* section 5: rounding */
-      function rd() {
-        var n = clamp($('#rn', root).value, 0, 1000), p = +$('#rp', root).value;
-        var lo = Math.floor(n / p) * p, hi = lo + p, res = n - lo >= p / 2 ? hi : lo, dg = Math.floor((n % p) / (p / 10));
-        $('#rline', root).innerHTML = hill(n, p);
-        var s = String(n), pi = s.length - 1 - (p === 100 ? 2 : 1), shown = '';
-        for (var i = 0; i < s.length; i++) {
-          var ch = s.charAt(i);
-          shown += i === pi ? '<span style="outline:2px solid var(--accent);border-radius:3px;padding:0 2px">' + ch + '</span>' :
-            i === pi + 1 ? '<span style="text-decoration:underline 3px var(--hi);text-underline-offset:4px">' + ch + '</span>' : ch;
-        }
-        var nm = p === 10 ? 'ten' : 'hundred';
-        var why = n === lo ? n + ' is already a ' + nm + ' number, so it stays ' + n + '.' :
-          n + ' is between ' + lo + ' and ' + hi + '. The digit to the right of the ' + nm + 's place is <b>' + dg + '</b>, which is ' + (dg >= 5 ? '5 or more, so round <b>up</b> to ' + hi + '.' : 'less than 5, so round <b>down</b> to ' + lo + '.');
-        $('#rout', root).innerHTML = '<p><span class="big">' + (pi >= 0 ? shown : n) + ' &#8776; ' + res + '</span></p><p>' + why + '</p>' +
-          (pi >= 0 ? '<p class="t2" style="font-size:.9rem">Boxed: the place you round to. Underlined: the digit that decides.</p>' : '');
-      }
-      A.bind(root, ['rn', 'rp'], rd);
-
-      /* section 6: thousand grid */
-      function hk(fromSelect) {
-        if (fromSelect) $('#hkn', root).value = $('#hkp', root).value;
-        var n = clamp($('#hkn', root).value, 0, 1000), full = Math.floor(n / 10), part = n % 10;
-        $('#hkfig', root).innerHTML = thousand(n);
-        var size = n === 1000 ? 'all of 1000' : n >= 900 ? 'almost all of 1000' : n >= 450 && n <= 550 ? 'about half of 1000' : n >= 230 && n <= 270 ? 'about a quarter of 1000' : n >= 90 && n <= 110 ? 'about a tenth of 1000' : '';
-        $('#hkout', root).innerHTML = '<p><span class="big">' + n + '</span> fills ' + full + ' square' + (full === 1 ? '' : 's') + (part ? ' and part of one more' : '') + (size ? ': ' + size : '') + '.</p>';
-      }
-      $('#hkp', root).addEventListener('change', function () { hk(true); });
-      $('#hkn', root).addEventListener('input', function () { hk(false); });
-      hk(false);
-    },
-
     quiz: [
-      { q: 'What is the value of the digit 4 in <span class="math">482</span>?', type: 'mc', options: ['4', '40', '400', '482'], answer: 2, fig: chart(482, { hl: 0 }),
-        hint: 'Look at the chart. Which place is the 4 in?', explain: 'The 4 is in the hundreds place, so it is worth 400.' },
-      { q: 'What number do these blocks show?', type: 'num', answer: 365, fig: A.draw.blocks(365, '3 flats, 6 rods and 5 small cubes', 540, 6),
-        hint: 'Flats are hundreds, rods are tens, small cubes are ones. Count each kind.', explain: '3 hundreds, 6 tens and 5 ones make 365.' },
-      { q: 'Which number is <b>six hundred seven</b>?', type: 'mc', options: ['67', '607', '670', '6007'], answer: 1,
-        hint: 'There are no tens. What digit goes in the tens place?', explain: '6 hundreds, 0 tens, 7 ones: 607.' },
-      { q: 'Count by 50s. What comes next? <span class="math">350, 400, 450, ___</span>', type: 'num', answer: 500, fig: hops([350, 400, 450, 500], 3),
-        hint: 'Add 50 to 450.', explain: '450 + 50 = 500.' },
-      { q: 'Which number is greater: <span class="math">509</span> or <span class="math">590</span>?', type: 'mc', options: ['509', '590', 'They are equal'], answer: 1, fig: chart(509, { hl: 1, dots: false }) + chart(590, { hl: 1, dots: false }),
-        hint: 'The hundreds are the same. Compare the tens next.', explain: 'Both have 5 hundreds. 590 has 9 tens and 509 has 0 tens, so 590 is greater.' },
-      { q: 'Round <span class="math">247</span> to the nearest hundred.', type: 'mc', options: ['200', '240', '250', '300'], answer: 0, fig: hill(247, 100),
-        hint: 'Is the yellow ball before or past the top of the hill?', explain: '247 is between 200 and 300. The tens digit is 4, which is less than 5, so round down to 200.' },
-      { q: 'What number is 3 hundreds, 14 tens and 2 ones?', type: 'num', answer: 442, fig: A.draw.pile([2, 2, 2, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0], '3 flats, 14 rods and 2 small cubes', 540, 5),
-        hint: '10 of the 14 tens make 1 more hundred.', explain: '14 tens is 140. 300 + 140 + 2 = 442.' }
+      { q: 'What is the underlined digit worth? ' + math(u(482, 0)), type: 'num', answer: 400, fig: chart(482, { hl: 0 }),
+        hint: 'Which place is the 4 in?', explain: '4 hundreds: 400.', meta: { k: 'g3n-val', n: 482, i: 0 } },
+      { q: 'What number do the blocks show?', type: 'num', answer: 365, fig: blk(365),
+        hint: 'Flats are hundreds, rods are tens, cubes are ones.', explain: '3 hundreds, 6 tens and 5 ones: 365.', meta: { k: 'g3n-read', h: 3, t: 6, o: 5 } },
+      { q: 'Write <b>six hundred seven</b> as a number.', type: 'num', answer: 607,
+        hint: 'There are no tens. What digit goes there?', explain: '6 hundreds, 0 tens, 7 ones: 607.', meta: { k: 'g3n-words', w: 'six hundred seven' } },
+      { q: 'Count by 50s. What comes next? ' + math('350, 400, 450, ___'), type: 'num', answer: 500, fig: hops([350, 400, 450, 500], 3),
+        hint: 'Add 50 to 450.', explain: '450 + 50 = 500.', meta: { k: 'g3n-skipnext', start: 350, by: 50, dir: 1, j: 3 } },
+      { q: 'Which is greater, ' + math(509) + ' or ' + math(590) + '? Type it.', type: 'num', answer: 590, fig: chart(509, { dots: false }) + chart(590, { dots: false }),
+        hint: 'The hundreds are the same. Compare the tens.', explain: '9 tens is more than 0 tens: 590.', meta: { k: 'g3n-max', a: 509, b: 590 } },
+      { q: 'Round ' + math(247) + ' to the nearest hundred.', type: 'num', answer: 200, fig: hill(247, 100),
+        hint: 'Before or past the top of the hill?', explain: 'The tens digit is 4: round down to 200.', meta: { k: 'g3n-round', n: 247, p: 100 } },
+      { q: 'What number is <b>3 hundreds, 14 tens and 2 ones</b>?', type: 'num', answer: 442, fig: pileOf(3, 14, 2),
+        hint: '14 tens is 140.', explain: '300 + 140 + 2 = 442.', meta: { k: 'g3n-read', h: 3, t: 14, o: 2 } }
     ],
-
-    practice: [
-      { id: 'n3-value', name: 'Value of a digit', code: 'B1.5', gen: function (lv) {
-        var n = R.int(101, 999), s = String(n), i = R.int(0, 2);
-        while (s.charAt(i) === '0') i = R.int(0, 2);
-        var dgt = +s.charAt(i), place = 2 - i, val = dgt * Math.pow(10, place);
-        if (lv === 3) {
-          var k = R.pick([1, 2]), tot = Math.floor(n / Math.pow(10, k));
-          return { q: 'How many <b>' + A.PLACES[k] + '</b> are in <span class="math">' + n + '</span> in all?', type: 'num', answer: tot,
-            fig: A.draw.blocks(n, 'Base-ten blocks showing ' + n, 540, 5),
-            hint: k === 1 ? 'Each flat is 10 tens. Count the tens in the flats, then add the rods.' : 'Each flat is 1 hundred. Count the flats.',
-            steps: k === 1 ? ['There are ' + plural(Math.floor(n / 100), 2) + '. Each hundred is 10 tens, so that is ' + Math.floor(n / 100) * 10 + ' tens.', 'Add the ' + plural(Math.floor(n / 10) % 10, 1) + ' from the rods.', Math.floor(n / 100) * 10 + ' + ' + (Math.floor(n / 10) % 10) + ' = ' + tot + ' tens. A quick way: cover the ones digit and read ' + tot + '.'] :
-              ['Count the flats. Each flat is 1 hundred.', 'There are ' + tot + ' flats.', 'So there are ' + tot + ' hundreds in ' + n + '.'],
-            explain: n + ' = ' + tot + ' ' + A.PLACES[k] + ' + ' + (n % Math.pow(10, k)) + '.' };
-        }
-        var wrong = [dgt, dgt * Math.pow(10, place + 1), dgt * Math.pow(10, Math.max(0, place - 1)), n].filter(function (v) { return v !== val; });
-        var o = R.mc(val, wrong);
-        return { q: 'What is the value of the <b>' + dgt + '</b> in <span class="math">' + s.slice(0, i) + '<u>' + dgt + '</u>' + s.slice(i + 1) + '</span>?',
-          type: 'mc', options: o.options, answer: o.answer, fig: lv === 1 ? chart(n, { hl: i }) : A.draw.blocks(n, 'Base-ten blocks showing ' + n, 540, 5),
-          hint: lv === 1 ? 'Find the underlined digit in the chart. Read the name of its place.' : 'Is the underlined digit counting flats, rods or small cubes?',
-          steps: ['The underlined ' + dgt + ' is in the <b>' + A.PLACES[place] + '</b> place.', (place ? 'One ' + A.PLACE1[place] + ' is ' + Math.pow(10, place) + '.' : 'Each one is worth 1.'), dgt + ' ' + A.PLACES[place] + ' = ' + val + '.<div class="fig">' + chart(n, { hl: i, vals: true }) + '</div>'],
-          explain: 'The ' + dgt + ' is in the ' + A.PLACES[place] + ' place, so it is worth ' + val + '.' };
-      } },
-      { id: 'n3-blocks', name: 'Read base-ten blocks', code: 'B1.1', gen: function (lv) {
-        var c = [R.int(0, 9), R.int(0, 9), R.int(1, lv === 1 ? 5 : 9)];
-        if (lv === 2) c[R.int(0, 1)] = 0;
-        var n = c[0] + c[1] * 10 + c[2] * 100;
-        if (lv < 3) {
-          var miss = [];
-          if (!c[1]) miss.push('rods');
-          if (!c[0]) miss.push('small cubes');
-          return { q: 'What number do these blocks show?', type: 'num', answer: n, fig: A.draw.blocks(n, plural(c[2], 2) + ', ' + plural(c[1], 1) + ', ' + plural(c[0], 0), 540, 6),
-            hint: 'Flats are hundreds, rods are tens, small cubes are ones.' + (miss.length ? ' A kind of block that is missing gets a 0.' : ''),
-            steps: ['Count the flats: ' + c[2] + '. That is ' + plural(c[2], 2) + '.', 'Count the rods: ' + c[1] + '. Count the small cubes: ' + c[0] + '.' + (miss.length ? ' There are no ' + miss.join(' and no ') + ', so write 0 there.' : ''), 'Write one digit for each place: ' + n + '.<div class="fig">' + chart(n, { vals: true }) + '</div>'],
-            explain: plural(c[2], 2) + ', ' + plural(c[1], 1) + ' and ' + plural(c[0], 0) + ' make ' + n + '.' };
-        }
-        /* level 3: one place has 10 or more, and the blocks are mixed up */
-        var k = R.pick([0, 1]), cc = c.slice();
-        if (cc[k + 1] < 1) cc[k + 1] = 1;
-        n = cc[0] + cc[1] * 10 + cc[2] * 100;
-        cc[k + 1]--; cc[k] += 10;
-        var items = [];
-        for (var p = 0; p < 3; p++) for (var j = 0; j < cc[p]; j++) items.push(p);
-        items = R.shuffle(items);
-        return { q: 'What number do these blocks show? They are mixed up, and one kind has 10 or more.', type: 'num', answer: n,
-          fig: A.draw.pile(items, plural(cc[2], 2) + ', ' + plural(cc[1], 1) + ' and ' + plural(cc[0], 0) + ', mixed up', 540, 5),
-          hint: 'Count each kind of block. Ten ' + A.PLACES[k] + ' make 1 ' + A.PLACE1[k + 1] + '.',
-          steps: ['Count each kind: ' + plural(cc[2], 2) + ', ' + plural(cc[1], 1) + ', ' + plural(cc[0], 0) + '.', 'Trade 10 ' + A.PLACES[k] + ' for 1 ' + A.PLACE1[k + 1] + '. Now there are ' + plural(Math.floor(n / 100), 2) + ', ' + plural(Math.floor(n / 10) % 10, 1) + ', ' + plural(n % 10, 0) + '.', 'Write the digits: ' + n + '.'],
-          explain: cc[2] * 100 + ' + ' + cc[1] * 10 + ' + ' + cc[0] + ' = ' + n + '.' };
-      } },
-      { id: 'n3-forms', name: 'Expanded and standard form', code: 'B1.1', gen: function (lv) {
-        var h = R.int(1, 9), t = R.int(lv === 1 ? 1 : 0, 9), o = R.int(lv === 1 ? 1 : 0, 9);
-        if (lv === 2 && t && o) R.pick([function () { t = 0; }, function () { o = 0; }])();
-        var n = h * 100 + t * 10 + o;
-        if (lv === 3 && R.int(0, 1)) {
-          /* more than 9 tens or ones, written as place names */
-          var t2 = t + 10, extra = h > 1 ? 1 : 0, h2 = h - extra;
-          if (!extra) { t2 = t; }
-          var o2 = o, nn = h2 * 100 + t2 * 10 + o2;
-          if (!extra) { o2 = o + 10 > 19 ? o : o + 10; nn = h2 * 100 + t2 * 10 + o2; }
-          return { q: 'What number is <b>' + plural(h2, 2) + ', ' + plural(t2, 1) + ' and ' + plural(o2, 0) + '</b>?', type: 'num', answer: nn,
-            hint: 'Find the value of each part, then add. Ten of a place make 1 of the next place.',
-            steps: [plural(h2, 2) + ' = ' + h2 * 100 + '. ' + plural(t2, 1) + ' = ' + t2 * 10 + '. ' + plural(o2, 0) + ' = ' + o2 + '.', 'Add: ' + h2 * 100 + ' + ' + t2 * 10 + ' + ' + o2 + '.', 'The number is ' + nn + '.'],
-            explain: h2 * 100 + ' + ' + t2 * 10 + ' + ' + o2 + ' = ' + nn + '.' };
-        }
-        var parts = [h * 100, t * 10, o].filter(function (v) { return v; });
-        if (lv === 3) parts = R.shuffle(parts);
-        return { q: 'Write in standard form: <span class="math">' + parts.join(' + ') + '</span>', type: 'num', answer: n,
-          fig: lv < 3 ? A.draw.blocks(n, 'Base-ten blocks showing ' + n, 540, 5) : '',
-          hint: lv === 3 ? 'The parts are mixed up. Put the hundreds first, then tens, then ones.' : 'Put each part in its place. A place with nothing gets a 0.',
-          steps: ['Sort the parts from biggest to smallest: ' + [h * 100, t * 10, o].filter(function (v) { return v; }).join(' + ') + '.', 'Write a digit for hundreds, tens and ones. Write 0 for a missing place.', 'The number is ' + n + '.<div class="fig">' + expanded(n) + '</div>'],
-          explain: parts.join(' + ') + ' = ' + n + '.' };
-      } },
-      { id: 'n3-words', name: 'Numbers in words', code: 'B1.1', gen: function (lv) {
-        var h = R.int(1, 9), t = R.int(0, 9), o = R.int(0, 9);
-        if (lv >= 2 && R.int(0, 1)) t = 0;
-        if (lv === 1 && !t) t = R.int(2, 9);
-        var n = h * 100 + t * 10 + o;
-        var wrong = [h * 10 + o, h * 100 + o * 10 + t, h * 1000 + t * 10 + o, h * 100 + (t + 1) % 10 * 10 + o].filter(function (w) { return w !== n && w > 0 && w <= 9999; });
-        var steps = ['The hundreds part: "' + ones[h] + ' hundred" is ' + h * 100 + '.', 'The rest: ' + (n % 100 ? '"' + words(n % 100) + '" is ' + (n % 100) + (t === 0 ? '. There are no tens, so the tens digit is 0.' : '.') : 'nothing, so the tens and ones are 0.'), 'Together: ' + words(n) + ' is ' + n + '.<div class="fig">' + chart(n, { vals: true }) + '</div>'];
-        if (lv === 3) {
-          var o2 = R.mc(words(n), wrong.filter(function (w) { return w <= 1000; }).concat([h * 100 + t]).filter(function (w) { return w !== n; }).map(words));
-          return { q: 'Which is the word form of <span class="math">' + n + '</span>?', type: 'mc', options: o2.options, answer: o2.answer,
-            fig: chart(n, { dots: false }), hint: 'Say the hundreds first. Then say the last two digits.', steps: steps, explain: n + ' is ' + words(n) + '.' };
-        }
-        var oo = R.mc(A.fmt(n), wrong.map(A.fmt));
-        return { q: 'Which number is <b>' + words(n) + '</b>?', type: 'mc', options: oo.options, answer: oo.answer,
-          hint: 'Write the hundreds digit first. Then the tens, then the ones. Use 0 for an empty place.', steps: steps, explain: words(n) + ' is ' + n + '.' };
-      } },
-      { id: 'n3-skip', name: 'Skip counting', code: 'B1.4', gen: function (lv) {
-        var by = lv === 1 ? R.pick([10, 100]) : R.pick([50, 100, 200]), dir = lv === 3 && R.int(0, 1) ? -1 : 1;
-        var start = lv === 1 ? R.int(0, 5) * by : lv === 2 ? R.int(0, 6) * 50 : R.int(1, 40) * 10;
-        if (dir < 0) start = R.int(5, 10) * 100 - (by === 200 ? 0 : R.pick([0, 50]));
-        var vals = [start];
-        for (var i = 0; i < 4; i++) vals.push(vals[vals.length - 1] + dir * by);
-        if (vals[4] > 1000 || vals[4] < 0) { dir = 1; start = 0; vals = [0, by, 2 * by, 3 * by, 4 * by]; }
-        var miss = lv === 3 ? R.int(1, 3) : 4, ans = vals[miss];
-        var shownList = vals.map(function (v, k) { return k === miss ? '___' : v; }).join(', ');
-        return { q: (lv === 3 ? 'Find the missing number. ' : 'What comes next? ') + 'Count by ' + by + 's' + (dir < 0 ? ' backward' : '') + ': <span class="math">' + shownList + '</span>', type: 'num', answer: ans,
-          fig: lv < 3 ? hops(vals, miss) : '',
-          hint: (dir < 0 ? 'Take away ' : 'Add ') + by + ' to the number ' + (miss === 4 ? 'before the blank.' : 'before the blank. Check it with the number after.'),
-          steps: ['Each jump is ' + (dir < 0 ? 'back ' : '') + by + '.', 'The number before the blank is ' + vals[miss - 1] + '. ' + vals[miss - 1] + (dir < 0 ? ' &minus; ' : ' + ') + by + ' = ' + ans + '.', 'The answer is ' + ans + '.<div class="fig">' + hops(vals) + '</div>'],
-          explain: vals.join(', ') + '.' };
-      } },
-      { id: 'n3-compare', name: 'Compare and order', code: 'B1.2', gen: function (lv) {
-        if (lv < 3) {
-          var a = R.int(100, 999), b;
-          if (lv === 1) { do { b = R.int(100, 999); } while (Math.floor(b / 100) === Math.floor(a / 100)); }
-          else { do { b = Math.floor(a / 100) * 100 + R.int(0, 99); } while (b === a); }
-          var sym = a > b ? '&gt;' : '&lt;', o = R.mc(sym, ['&gt;', '&lt;', '=']);
-          var sa = String(a), sb = String(b), d0 = 0;
-          while (sa.charAt(d0) === sb.charAt(d0)) d0++;
-          var pn = ['hundreds', 'tens', 'ones'][d0];
-          return { q: 'Which symbol goes in the box? <span class="math">' + a + ' &#9633; ' + b + '</span>', type: 'mc', options: o.options, answer: o.answer,
-            fig: '<div class="vrow"><figure><figcaption>' + a + '</figcaption>' + A.draw.blocks(a, 'Blocks for ' + a, 330, 4) + '</figure><figure><figcaption>' + b + '</figcaption>' + A.draw.blocks(b, 'Blocks for ' + b, 330, 4) + '</figure></div>',
-            hint: 'Compare the hundreds first. If they match, compare the tens.',
-            steps: ['Line the numbers up by place.', 'Start at the left. The first different digits are in the ' + pn + ' place: ' + sa.charAt(d0) + ' and ' + sb.charAt(d0) + '.<div class="fig">' + chart(a, { hl: d0, dots: false }) + chart(b, { hl: d0, dots: false }) + '</div>', 'The bigger digit wins, so ' + a + ' ' + sym + ' ' + b + '.'],
-            explain: a + ' ' + sym + ' ' + b + '. The symbol opens toward the greater number.' };
-        }
-        var hd = R.int(1, 8), nums = [];
-        while (nums.length < 3) { var v = (hd + R.int(0, 1)) * 100 + R.int(0, 9) * 10 + R.int(0, 9); if (nums.indexOf(v) < 0) nums.push(v); }
-        var big = R.int(0, 1);
-        var sorted = nums.slice().sort(function (x, y) { return big ? y - x : x - y; });
-        var right = sorted.join(', ');
-        var w = [[sorted[1], sorted[0], sorted[2]], [sorted[0], sorted[2], sorted[1]], sorted.slice().reverse()].map(function (l) { return l.join(', '); });
-        var o2 = R.mc(right, w);
-        return { q: 'Put <span class="math">' + R.shuffle(nums).join(', ') + '</span> in order from <b>' + (big ? 'greatest to least' : 'least to greatest') + '</b>.', type: 'mc', options: o2.options, answer: o2.answer,
-          hint: 'Compare the hundreds first, then the tens, then the ones.',
-          steps: ['Look at the hundreds digits first.', 'If two numbers have the same hundreds, compare their tens.', (big ? 'Greatest to least: ' : 'Least to greatest: ') + right + '.'],
-          explain: 'In order: ' + right + '.' };
-      } },
-      { id: 'n3-round', name: 'Round to the nearest ten or hundred', code: 'B1.3', gen: function (lv) {
-        var p = lv === 1 ? 10 : lv === 2 ? 100 : R.pick([10, 100]), n;
-        if (lv === 1) n = R.int(11, 99);
-        else n = R.int(101, 999);
-        if (lv === 3) n = p === 100 ? R.pick([R.int(90, 99) * 10 + R.int(0, 9), R.int(1, 9) * 100 + 50, R.int(951, 999)]) : R.int(10, 99) * 10 + R.pick([5, R.int(1, 9)]);
-        if (n % p === 0) n += p === 10 ? 3 : 30;
-        n = Math.min(n, 999);
-        var lo = Math.floor(n / p) * p, hi = lo + p, ans = n - lo >= p / 2 ? hi : lo, dg = Math.floor((n % p) / (p / 10)), nm = p === 10 ? 'ten' : 'hundred';
-        var o = R.mc(ans, [ans === hi ? lo : hi, Math.round(n / (p / 10)) * (p / 10), ans + p].filter(function (v) { return v !== ans && v >= 0; }));
-        return { q: 'Round <span class="math">' + n + '</span> to the nearest <b>' + nm + '</b>.', type: 'mc', options: o.options, answer: o.answer,
-          fig: lv < 3 ? hill(n, p) : '', hint: lv < 3 ? 'Is the yellow ball before or past the top of the hill?' : 'Find the ' + nm + 's on either side. Then look at the digit to the right of the ' + nm + 's place.',
-          steps: [n + ' is between ' + lo + ' and ' + hi + '.', 'The digit to the right of the ' + nm + 's place is ' + dg + '.', (dg >= 5 ? '5 or more rounds up, to ' + hi + '.' : 'Less than 5 rounds down, to ' + lo + '.') + '<div class="fig">' + hill(n, p) + '</div>'],
-          explain: n + ' rounds to ' + ans + '.' };
-      } }
-    ]
+    practice: SKILLS.map(function (s) { return { id: s.id, name: s.name, code: s.code, gen: DEF[s.id][0][2] }; })
   });
 
-  /* ---------- More ways to ask (question shapes, see ../assets/qkit.js) ----------
-     Every practice skill keeps its first way of asking ("plain") and adds new shapes:
-     a picture to tap, a story, a reverse question, a mistake to find, cards to order or match.
-     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automated answer checks. */
-  var Q = A.Q;
-  if (Q) (function () {
-    var nm = Q.name;
-    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
-    function distinct3(nonzero) {
-      var d;
-      do { d = [R.int(1, 9), R.int(nonzero ? 1 : 0, 9), R.int(nonzero ? 1 : 0, 9)]; } while (d[0] === d[1] || d[1] === d[2] || d[0] === d[2]);
-      return d;
-    }
-    function num3(d) { return d[0] * 100 + d[1] * 10 + d[2]; }
-    function u(n, i) { var s = String(n); return s.slice(0, i) + '<u>' + s.charAt(i) + '</u>' + s.slice(i + 1); }
-    /* big digits in boxes; each box can be tapped */
-    function digitPic(n) {
-      var s = String(n), w = 84, h = '';
-      for (var i = 0; i < s.length; i++) {
-        var x = 4 + i * w;
-        h += '<g data-hit="' + i + '" aria-label="the ' + s.charAt(i) + ' in the ' + A.PLACES[s.length - 1 - i] + ' place"><rect x="' + x + '" y="4" width="' + (w - 10) + '" height="92" rx="14" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
-          '<text x="' + (x + (w - 10) / 2) + '" y="70" text-anchor="middle" font-size="58" font-weight="700" style="fill:var(--ink);font-family:var(--display)">' + s.charAt(i) + '</text></g>';
-      }
-      return A.svg(s.length * w, 100, h, 'The number ' + n + ' in big digits');
-    }
-    /* a short number line from lo to hi with a marker at n; the two ends can be tapped */
-    function twoEnds(n, lo, hi) {
-      var x0 = 56, x1 = 364, X = function (v) { return x0 + (x1 - x0) * (v - lo) / (hi - lo); }, s = '';
-      s += '<line x1="' + x0 + '" y1="70" x2="' + x1 + '" y2="70" style="stroke:var(--ink)" stroke-width="3"/>';
-      for (var i = 0; i <= 10; i++) { var x = x0 + (x1 - x0) * i / 10; s += '<line x1="' + x + '" y1="' + (i === 5 ? 58 : 63) + '" x2="' + x + '" y2="' + (i === 5 ? 82 : 77) + '" style="stroke:var(--ink)" stroke-width="2"/>'; }
-      s += '<circle cx="' + X(n) + '" cy="70" r="9" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/><text x="' + X(n) + '" y="46" text-anchor="middle" font-size="24" font-weight="700" style="fill:var(--ink)">' + n + '</text>';
-      [[lo, x0], [hi, x1]].forEach(function (e) {
-        s += '<g data-hit="' + e[0] + '" aria-label="' + e[0] + '"><rect x="' + (e[1] - 50) + '" y="94" width="100" height="50" rx="10" style="fill:var(--card);stroke:var(--line)" stroke-width="2.5"/>' +
-          '<text x="' + e[1] + '" y="124" text-anchor="middle" font-size="26" font-weight="700" style="fill:var(--ink)">' + e[0] + '</text></g>';
-      });
-      return A.svg(420, 150, s, n + ' on a number line from ' + lo + ' to ' + hi);
-    }
-    function placeOf(p) { return A.PLACES[p]; }
-
-    var SHAPES = {
-      'n3-value': [
-        [1, 'tap', function (lv) {
-          var d = distinct3(true), n = num3(d), i = R.int(0, 2), p = 2 - i, val = d[i] * Math.pow(10, p);
-          return { q: 'Tap the digit that is worth <b>' + val + '</b>.', type: 'tap', pic: digitPic(n), answer: String(i), answerText: 'the ' + d[i] + ' in the ' + placeOf(p) + ' place',
-            hint: 'Which place is worth ' + (p === 2 ? 'hundreds' : p === 1 ? 'tens' : 'ones') + '? Count places from the right: ones, tens, hundreds.',
-            steps: [val + ' is ' + d[i] + ' ' + placeOf(p) + '.', 'The ' + placeOf(p) + ' place is ' + ['the last digit', 'the middle digit', 'the first digit'][p] + '.', 'So tap the ' + d[i] + '.'],
-            explain: 'In ' + n + ', the ' + d[i] + ' is in the ' + placeOf(p) + ' place, so it is worth ' + val + '.', meta: { k: 'value-tap', n: n, val: val } };
-        }],
-        [1, 'story', function (lv) {
-          var c = R.pick([['students', 'A school has', 'students'], ['books', 'The library has', 'books'], ['seats', 'The hockey arena has', 'seats in one section'], ['cans', 'The class collected', 'cans of food']]);
-          var d = distinct3(true), n = num3(d), i = lv === 1 ? R.int(0, 1) : R.int(0, 2), p = 2 - i, val = d[i] * Math.pow(10, p);
-          return { q: c[1] + ' ' + n + ' ' + c[2] + '. The <b>' + d[i] + '</b> in ' + n + ' stands for how many ' + c[0] + '?', type: 'num', answer: val,
-            hint: 'Which place is the ' + d[i] + ' in?', steps: ['The ' + d[i] + ' is in the ' + placeOf(p) + ' place.', d[i] + ' ' + placeOf(p) + ' = ' + val + '.'],
-            explain: 'The ' + d[i] + ' stands for ' + val + ' ' + c[0] + '.', meta: { k: 'value-num', n: n, i: i } };
-        }],
-        [1, 'mistake', function (lv) {
-          var d = distinct3(true), n = num3(d), i = R.int(0, 1), p = 2 - i, val = d[i] * Math.pow(10, p), who = nm();
-          var truth = !R.int(0, 2), said = truth ? val : R.pick([d[i], d[i] * Math.pow(10, p === 2 ? 1 : 2)]);
-          var right = 'The ' + d[i] + ' is in the ' + placeOf(p) + ' place, so it is worth ' + val + '.';
-          return { q: who + ' says the <b>' + d[i] + '</b> in <span class="math">' + u(n, i) + '</span> is worth <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
-            why: why(right, ['A digit is always worth just itself.', 'The ' + d[i] + ' is in the ' + placeOf(p === 2 ? 1 : 2) + ' place, so it is worth ' + d[i] * Math.pow(10, p === 2 ? 1 : 2) + '.', 'The biggest digit is always worth the most.']),
-            hint: 'Find the place of the underlined digit first.', steps: [right], explain: right, meta: { k: 'value-tf', n: n, i: i, said: said } };
-        }],
-        [2, 'pick', function (lv) {
-          var dg = R.int(1, 9), p = R.int(1, 2), opts = [], vals = {};
-          while (opts.length < 5) {
-            var pp = opts.length < 2 ? p : R.int(0, 2), dd = [R.int(1, 9), R.int(0, 9), R.int(0, 9)];
-            dd[2 - pp] = dg; for (var k = 0; k < 3; k++) if (k !== 2 - pp && dd[k] === dg) dd[k] = (dg % 9) + 1;
-            var n = num3(dd); if (!vals[n]) { vals[n] = 1; opts.push(n); }
-          }
-          opts = R.shuffle(opts);
-          var ans = [], target = dg * Math.pow(10, p);
-          opts.forEach(function (n, j) { if (Math.floor(n / Math.pow(10, p)) % 10 === dg) ans.push(j); });
-          if (ans.length === 5) return SHAPES['n3-value'][3][2](lv);
-          return { q: 'Pick every number where the <b>' + dg + '</b> is worth <b>' + target + '</b>.', type: 'pick', options: opts.map(String), answer: ans,
-            hint: target + ' means the ' + dg + ' must be in the ' + placeOf(p) + ' place.', steps: ['The ' + placeOf(p) + ' place is ' + (p === 2 ? 'the first digit' : 'the middle digit') + '.', 'Pick each number with a ' + dg + ' there.'],
-            explain: 'The ' + dg + ' is worth ' + target + ' only when it is in the ' + placeOf(p) + ' place.', meta: { k: 'value-pick', dg: dg, p: p, opts: opts } };
-        }],
-        [3, 'match', function (lv) {
-          var pairs = [], seen = {};
-          while (pairs.length < 3) {
-            var d = distinct3(true), n = num3(d), i = R.int(0, 2), val = d[i] * Math.pow(10, 2 - i);
-            if (seen[val] || seen['n' + n]) continue; seen[val] = 1; seen['n' + n] = 1;
-            pairs.push(['<span class="math">' + u(n, i) + '</span>', String(val)]);
-          }
-          return { q: 'Match each underlined digit to the value it stands for.', type: 'match', pairs: pairs,
-            hint: 'For each number, find the place of the underlined digit.', steps: ['Ones are worth 1 each, tens 10 each, hundreds 100 each.'],
-            explain: pairs.map(function (p) { return p[0].replace(/<[^>]+>/g, '') + ': ' + p[1]; }).join('. ') + '.', meta: { k: 'value-match', pairs: pairs } };
-        }]
-      ],
-      'n3-blocks': [
-        [1, 'build', function (lv) {
-          var h = R.int(1, lv === 1 ? 4 : 9), t = R.int(lv === 1 ? 1 : 0, lv === 1 ? 6 : 9), o = R.int(lv === 1 ? 1 : 0, 9), n = h * 100 + t * 10 + o;
-          return { q: 'Show <b>' + n + '</b> with base-ten blocks. Then press Check.', type: 'build', tool: 'base10', answer: n,
-            hint: 'A flat is 100, a rod is 10, a small cube is 1. ' + n + ' needs ' + h + ' flats.',
-            steps: [n + ' is ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + '.', 'Add ' + h + ' flats, ' + t + ' rods and ' + o + ' small cubes.'],
-            explain: plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + ' make ' + n + '.', meta: { k: 'blocks-build', n: n } };
-        }],
-        [1, 'story', function (lv) {
-          var c = R.pick([['crayons', 'boxes of 100', 'packs of 10', 'loose crayons', 'A shop has'], ['stickers', 'sheets of 100', 'strips of 10', 'single stickers', 'Mei has'], ['beads', 'bags of 100', 'strings of 10', 'loose beads', 'The art room has']]);
-          var h = R.int(1, 9), t = R.int(lv === 1 ? 1 : 0, 9), o = R.int(lv === 1 ? 1 : 0, 9), n = h * 100 + t * 10 + o;
-          return { q: c[4] + ' ' + h + ' ' + c[1] + ', ' + t + ' ' + c[2] + ' and ' + o + ' ' + c[3] + '. How many ' + c[0] + ' is that in all?', type: 'num', answer: n,
-            hint: 'Each ' + c[1].split(' ')[0].replace(/s$/, '') + ' is a hundred. Each ' + c[2].split(' ')[0].replace(/s$/, '') + ' is a ten.',
-            steps: [h + ' hundreds = ' + h * 100 + '. ' + t + ' tens = ' + t * 10 + '.', h * 100 + ' + ' + t * 10 + ' + ' + o + ' = ' + n + '.'],
-            explain: h * 100 + ' + ' + t * 10 + ' + ' + o + ' = ' + n + ' ' + c[0] + '.', meta: { k: 'blocks-story', h: h, t: t, o: o } };
-        }],
-        [1, 'tap', function (lv) {
-          var d = distinct3(lv === 1), n = num3(d), alts = [d[2] * 100 + d[1] * 10 + d[0], d[0] * 100 + d[2] * 10 + d[1], d[1] * 100 + d[0] * 10 + d[2]].filter(function (v) { return v !== n && v >= 100; });
-          var set = R.shuffle([n].concat(alts.slice(0, 2)));
-          return { q: 'Which blocks show <b>' + n + '</b>? Tap them.', type: 'tap', tiles: set.map(function (v) { return A.draw.blocks(v, 'Base-ten blocks', 260, 3); }), answer: set.indexOf(n), answerText: 'the blocks with ' + plural(d[0], 2) + ', ' + plural(d[1], 1) + ' and ' + plural(d[2], 0),
-            hint: n + ' has ' + d[0] + ' hundreds. Look for ' + d[0] + ' flats first.', steps: ['Count the flats in each picture. You need ' + d[0] + '.', 'Then check the rods (' + d[1] + ') and the small cubes (' + d[2] + ').'],
-            explain: n + ' is ' + plural(d[0], 2) + ', ' + plural(d[1], 1) + ' and ' + plural(d[2], 0) + '.', meta: { k: 'blocks-tap', n: n, set: set } };
-        }],
-        [2, 'mistake', function (lv) {
-          var h = R.int(1, 9), t = R.int(0, 9), o = R.int(1, 9), n = h * 100 + t * 10 + o, who = nm();
-          if (t === o) t = (t + 3) % 10;
-          n = h * 100 + t * 10 + o;
-          var truth = !R.int(0, 2), said = truth ? n : (t === 0 ? h * 10 + o : h * 100 + o * 10 + t);
-          var right = 'There are ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + ', so the blocks show ' + n + '.';
-          return { q: who + ' says these blocks show <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: A.draw.blocks(n, 'Base-ten blocks', 540, 5),
-            why: why(right, [t === 0 ? 'There are no rods, so you can skip the tens place.' : 'Count the small cubes before the rods.', 'Every block is worth 1, so just count them.', 'Rods are worth 100 each.']),
-            hint: 'Count flats, then rods, then small cubes.', steps: [right], explain: right, meta: { k: 'blocks-tf', n: n, said: said } };
-        }],
-        [2, 'fill', function (lv) {
-          var h = R.int(1, 9), t = R.int(0, 9), o = R.int(0, 9), n = h * 100 + t * 10 + o;
-          if (lv === 3) {
-            /* trade: show it with one less hundred */
-            var t2 = t + 10;
-            return { q: 'There are no flats left, so use rods instead. Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] hundreds, [[]] tens and [[]] ones', answers: [h - 1, t2, o],
-              hint: 'Trade 1 flat for 10 rods. One less hundred, ten more tens.', steps: [n + ' is ' + plural(h, 2) + ', ' + plural(t, 1) + ', ' + plural(o, 0) + '.', 'Trade 1 hundred for 10 tens: ' + (h - 1) + ' hundreds and ' + t2 + ' tens.'],
-              explain: (h - 1) * 100 + ' + ' + t2 * 10 + ' + ' + o + ' = ' + n + '.', meta: { k: 'blocks-trade', n: n } };
-          }
-          return { q: 'Fill in the blanks.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] hundreds, [[]] tens and [[]] ones', answers: [h, t, o],
-            hint: 'The first digit is the hundreds. A place with 0 gets 0.', steps: ['Read the digits from left to right: ' + h + ', ' + t + ', ' + o + '.'],
-            explain: n + ' = ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + '.', meta: { k: 'blocks-fill', n: n } };
-        }]
-      ],
-      'n3-forms': [
-        [1, 'fill', function (lv) {
-          var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9), n = h * 100 + t * 10 + o;
-          if (lv >= 2 && R.int(0, 1)) {
-            var z = R.int(0, 1); if (z) t = 0; else o = 0; n = h * 100 + t * 10 + o;
-            return { q: 'Write <b>' + n + '</b> in expanded form. A place with 0 is left out.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] + [[]]', answers: [h * 100, t ? t * 10 : o],
-              hint: 'Write the value of each digit that is not 0.', steps: ['The ' + h + ' is worth ' + h * 100 + '.', (t ? 'The ' + t + ' is worth ' + t * 10 : 'The ' + o + ' is worth ' + o) + '. The 0 adds nothing.'],
-              explain: n + ' = ' + h * 100 + ' + ' + (t ? t * 10 : o) + '.', meta: { k: 'forms-fill', n: n, parts: 2 } };
-          }
-          return { q: 'Write <b>' + n + '</b> in expanded form.', type: 'fill', fill: '<span class="math">' + n + '</span> = [[]] + [[]] + [[]]', answers: [h * 100, t * 10, o],
-            hint: 'Write the value of each digit: hundreds, then tens, then ones.', steps: ['The ' + h + ' is worth ' + h * 100 + '.', 'The ' + t + ' is worth ' + t * 10 + '. The ' + o + ' is worth ' + o + '.'],
-            explain: n + ' = ' + h * 100 + ' + ' + t * 10 + ' + ' + o + '.', meta: { k: 'forms-fill', n: n, parts: 3 } };
-        }],
-        [1, 'match', function (lv) {
-          var d = distinct3(lv === 1), base = [num3(d), d[0] * 100 + d[2] * 10 + d[1], d[1] * 100 + d[0] * 10 + d[2]].filter(function (v) { return v >= 100; });
-          while (base.length < 3) { var x = R.int(101, 999); if (base.indexOf(x) < 0) base.push(x); }
-          var pairs = base.slice(0, 3).map(function (n) { var parts = [Math.floor(n / 100) * 100, Math.floor(n / 10) % 10 * 10, n % 10].filter(function (v) { return v; }); return [parts.join(' + '), String(n)]; });
-          return { q: 'Match each expanded form to its number.', type: 'match', pairs: pairs,
-            hint: 'Look at the tens part and the ones part. They can look alike.', steps: ['Add the parts of each one: hundreds + tens + ones.'],
-            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'forms-match', pairs: pairs } };
-        }],
-        [1, 'story', function (lv) {
-          var c = R.pick([['birds', 'A farm has', 'hens', 'ducks', 'geese'], ['pieces of fruit', 'A fruit stand has', 'apples', 'pears', 'plums'], ['books', 'A school library has', 'novels', 'comics', 'atlases']]);
-          var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9), n = h * 100 + t * 10 + o;
-          var parts = [[h * 100, c[2]], [t * 10, c[3]], [o, c[4]]];
-          if (lv >= 2) parts = R.shuffle(parts);
-          return { q: c[1] + ' ' + parts[0][0] + ' ' + parts[0][1] + ', ' + parts[1][0] + ' ' + parts[1][1] + ' and ' + parts[2][0] + ' ' + parts[2][1] + '. How many ' + c[0] + ' in all?', type: 'num', answer: n,
-            hint: 'Put the hundreds, tens and ones together.', steps: ['Sort the parts: ' + h * 100 + ' + ' + t * 10 + ' + ' + o + '.', 'Write one digit for each place: ' + n + '.'],
-            explain: h * 100 + ' + ' + t * 10 + ' + ' + o + ' = ' + n + '.', meta: { k: 'forms-story', parts: [h * 100, t * 10, o] } };
-        }],
-        [2, 'mistake', function (lv) {
-          var h = R.int(1, 9), t = R.int(1, 9), o = R.int(1, 9), who = nm(), kind = R.int(0, 2), parts, n, said;
-          if (kind === 0) { parts = [h * 100, t * 10, o]; n = h * 100 + t * 10 + o; said = n; }
-          else if (kind === 1) { parts = [h * 100, t * 10, o]; n = h * 100 + t * 10 + o; said = +(h + '' + t + '0' + o); }
-          else { parts = [h * 100, o]; n = h * 100 + o; said = +(h + '' + o); }
-          var truth = said === n, right = parts.join(' + ') + ' is ' + n + '.' + (parts.length === 2 ? ' There are no tens, so the tens digit is 0.' : '');
-          return { q: who + ' wrote <span class="math">' + parts.join(' + ') + '</span> as <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
-            why: why(right, ['Write down each part just as it looks.', 'You can leave out a place that has nothing in it.', 'The ones always go first.']),
-            hint: 'Each part goes in its own place: hundreds, tens, ones.', steps: [right], explain: right, meta: { k: 'forms-tf', parts: parts, said: said } };
-        }],
-        [3, 'pick', function (lv) {
-          var h = R.int(2, 9), t = R.int(0, 8), o = R.int(1, 9), n = h * 100 + t * 10 + o;
-          var good = [plural(h, 2) + ', ' + plural(t, 1) + ', ' + plural(o, 0), (h * 100) + (t ? ' + ' + t * 10 : '') + ' + ' + o, plural(h - 1, 2) + ', ' + plural(t + 10, 1) + ', ' + plural(o, 0)];
-          var bad = [plural(h, 2) + ', ' + plural(o, 1) + ', ' + plural(t, 0), (h * 10) + ' + ' + (t * 10) + ' + ' + o, plural(h + 1, 2) + ', ' + plural(t, 1) + ', ' + plural(o, 0)];
-          if (t === o) bad[0] = plural(h, 2) + ', ' + plural(t + 1, 1) + ', ' + plural(o, 0);
-          var all = R.shuffle(good.slice(0, 2 + R.int(0, 1)).map(function (g) { return [g, 1]; }).concat(bad.slice(0, 2).map(function (b) { return [b, 0]; })));
-          var ans = []; all.forEach(function (x, j) { if (x[1]) ans.push(j); });
-          return { q: 'Pick every way to show <b>' + n + '</b>.', type: 'pick', options: all.map(function (x) { return x[0]; }), answer: ans,
-            hint: 'Work out the value of each one. More than one can be right.', steps: ['Turn each one into a number by adding its parts.', 'Ten tens make one hundred, so ' + plural(h - 1, 2) + ' and ' + plural(t + 10, 1) + ' is also ' + n + '.'],
-            explain: 'The right ones all add up to ' + n + '.', meta: { k: 'forms-pick', n: n, opts: all.map(function (x) { return x[0]; }) } };
-        }]
-      ],
-      'n3-words': [
-        [1, 'tap', function (lv) {
-          var h = R.int(1, 9), t = lv === 1 ? R.int(2, 9) : R.pick([0, R.int(1, 9)]), o = R.int(1, 9), n = h * 100 + t * 10 + o;
-          var set = [n, h * 100 + o * 10 + t, h * 10 + o, h * 100 + ((t + 2) % 10) * 10 + o].filter(function (v, i, a) { return a.indexOf(v) === i && (i === 0 || v !== n); }).slice(0, 3);
-          set = R.shuffle(set);
-          return { q: 'Tap the number <b>' + words(n) + '</b>.', type: 'tap', tiles: set.map(function (v) { return '<span class="math big">' + v + '</span>'; }), answer: set.indexOf(n), answerText: String(n),
-            hint: 'Hundreds first, then tens, then ones. Use 0 for an empty place.', steps: ['"' + ones[h] + ' hundred" is ' + h * 100 + '.', 'The rest is ' + (n % 100) + ', so the number is ' + n + '.'],
-            explain: words(n) + ' is ' + n + '.', meta: { k: 'words-tap', n: n, set: set } };
-        }],
-        [1, 'match', function (lv) {
-          var h = R.int(1, 9), t = R.int(2, 9), o = R.int(1, 9);
-          if (t === o) o = (o % 9) + 1;
-          var set = [h * 100 + t * 10 + o, h * 100 + o * 10 + t, h * 100 + o];
-          if (o * 10 + t < 20) set[1] = h * 100 + t * 10;
-          if (lv >= 2) set[2] = t * 100 + h * 10 + o;
-          var uniq = []; set.forEach(function (v) { if (uniq.indexOf(v) < 0 && v >= 100 && v <= 999) uniq.push(v); });
-          while (uniq.length < 3) { var x = R.int(101, 999); if (uniq.indexOf(x) < 0) uniq.push(x); }
-          var pairs = uniq.map(function (n) { return [words(n), String(n)]; });
-          return { q: 'Match each number name to its number.', type: 'match', pairs: pairs,
-            hint: 'Read the hundreds part first. Is there a tens part?', steps: ['"' + ones[h] + ' hundred" means a ' + h + ' in the hundreds place.'],
-            explain: pairs.map(function (p) { return p[0] + ' is ' + p[1]; }).join('. ') + '.', meta: { k: 'words-match', pairs: pairs } };
-        }],
-        [1, 'story', function (lv) {
-          var c = R.pick(['The class collected <b>W</b> cans of food.', 'The hockey arena has <b>W</b> seats in one section.', 'The walking trail is <b>W</b> metres long.', 'The school has <b>W</b> students.']);
-          var h = R.int(1, 9), t = lv === 1 ? R.int(2, 9) : R.pick([0, R.int(1, 9)]), o = R.int(1, 9), n = h * 100 + t * 10 + o;
-          var wrong = [h * 10 + o, h * 100 + o * 10 + t, h * 1000 + t * 10 + o, h * 100 + ((t + 1) % 10) * 10 + o].filter(function (w) { return w !== n; });
-          var oo = R.mc(n, wrong);
-          return { q: c.replace('W', words(n)) + ' Which number is that?', type: 'mc', options: oo.options, answer: oo.answer,
-            hint: 'Write the hundreds digit first, then the tens, then the ones. Use 0 for an empty place.', steps: ['"' + ones[h] + ' hundred" is ' + h * 100 + '.', 'The rest is ' + (n % 100) + '.', 'Together: ' + n + '.'],
-            explain: words(n) + ' is ' + n + '.', meta: { k: 'words-mc', n: n } };
-        }],
-        [2, 'mistake', function (lv) {
-          var h = R.int(1, 9), t = R.pick([0, 1, R.int(2, 9)]), o = R.int(1, 9), n = h * 100 + t * 10 + o, who = nm();
-          var truth = !R.int(0, 2), said = truth ? n : +(h + '00' + String(n % 100));
-          var right = words(n) + ' is ' + n + ': ' + plural(h, 2) + ', ' + plural(t, 1) + ' and ' + plural(o, 0) + '.';
-          return { q: who + ' wrote <b>' + words(n) + '</b> as <span class="math">' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
-            why: why(right, ['Write "hundred" as 00, then write the rest.', 'Write each word as its own number, side by side.', 'Numbers with "hundred" always have four digits.']),
-            hint: 'A number in the hundreds has 3 digits.', steps: [right], explain: right, meta: { k: 'words-tf', n: n, said: said } };
-        }],
-        [2, 'order', function (lv) {
-          var k = lv === 3 ? 4 : 3, nums = [], hd = R.int(1, 8);
-          while (nums.length < k) { var v = (hd + R.int(0, 1)) * 100 + R.int(0, 9) * 10 + R.int(1, 9); if (nums.indexOf(v) < 0) nums.push(v); }
-          nums.sort(function (a, b) { return a - b; });
-          return { q: 'Put these numbers in order from <b>least to greatest</b>.', type: 'order', items: nums.map(words), first: 'least', last: 'greatest',
-            hint: 'Find the hundreds in each name first. Then the tens.', steps: ['As numbers: ' + R.shuffle(nums).join(', ') + '.', 'In order: ' + nums.join(', ') + '.'],
-            explain: 'Least to greatest: ' + nums.join(', ') + '.', meta: { k: 'words-order', nums: nums } };
-        }]
-      ],
-      'n3-skip': [
-        [1, 'line', function (lv) {
-          var by = lv === 1 ? R.pick([10, 100]) : lv === 2 ? 50 : R.pick([50, 100]), max = by === 10 ? 100 : 1000, j = R.int(2, 4);
-          var start = R.int(0, (max - by * j) / by) * by, ans = start + by * j;
-          return { q: 'Start at <b>' + start + '</b>. Count on by ' + by + 's, ' + j + ' times. Where do you land? Put the marker there.', type: 'line', min: 0, max: max, tick: by, every: by === 50 ? 100 : by, snap: by, answer: ans,
-            hint: 'Each jump adds ' + by + '. Jump ' + j + ' times from ' + start + '.', steps: ['Start at ' + start + '.', 'Jumps: ' + [1, 2, 3, 4].slice(0, j).map(function (x) { return start + by * x; }).join(', ') + '.', 'You land on ' + ans + '.'],
-            explain: start + ' and ' + j + ' jumps of ' + by + ' lands on ' + ans + '.', meta: { k: 'skip-line', start: start, by: by, j: j } };
-        }],
-        [1, 'order', function (lv) {
-          var by = lv === 1 ? 10 : R.pick([50, 100, 25 * 2]), k = lv === 1 ? 4 : 5, start = R.int(1, 40) * 10, back = lv === 3 && R.int(0, 1);
-          if (start + by * (k - 1) > 1000) start = 1000 - by * (k - 1);
-          var seq = []; for (var i = 0; i < k; i++) seq.push(start + by * i);
-          if (back) seq.reverse();
-          return { q: 'Put these in counting order. Count ' + (back ? 'backward ' : '') + 'by ' + by + 's.', type: 'order', items: seq.map(String), first: 'start',
-            hint: back ? 'Start with the biggest. Each next number is ' + by + ' less.' : 'Start with the smallest. Each next number is ' + by + ' more.', steps: ['Find the ' + (back ? 'biggest' : 'smallest') + ' number: ' + seq[0] + '.', 'Then ' + (back ? 'take away ' : 'add ') + by + ' each time.'],
-            explain: seq.join(', ') + '.', meta: { k: 'skip-order', seq: seq } };
-        }],
-        [1, 'story', function (lv) {
-          var c = lv === 1 ? R.pick([[10, 'Pencils come in packs of 10.', 'packs', 'pencils'], [100, 'A roll has 100 tickets.', 'rolls', 'tickets']]) : R.pick([[50, 'A box holds 50 crayons.', 'boxes', 'crayons'], [100, 'A sheet has 100 stickers.', 'sheets', 'stickers'], [50, 'A bag holds 50 marbles.', 'bags', 'marbles']]);
-          var k = R.int(3, Math.min(9, Math.floor(1000 / c[0]))), ans = c[0] * k;
-          return { q: c[1] + ' Count by ' + c[0] + 's. How many ' + c[3] + ' are in <b>' + k + ' ' + c[2] + '</b>?', type: 'num', answer: ans,
-            hint: 'Count by ' + c[0] + 's, ' + k + ' times.', steps: ['Count: ' + [1, 2, 3, 4, 5, 6, 7, 8, 9].slice(0, k).map(function (x) { return x * c[0]; }).join(', ') + '.', 'That is ' + ans + ' ' + c[3] + '.'],
-            explain: k + ' ' + c[2] + ' of ' + c[0] + ' is ' + ans + ' ' + c[3] + '.', meta: { k: 'skip-story', by: c[0], n: k } };
-        }],
-        [2, 'tap', function (lv) {
-          var by = R.pick([10, 50, 100]), start = by === 10 ? R.int(10, 80) * 10 : R.int(0, 4) * by, seq = [], who = nm();
-          for (var i = 0; i < 5; i++) seq.push(start + by * i);
-          var bad = R.int(1, 4), wrongV = seq[bad] + R.pick([by === 10 ? 1 : 10, by === 10 ? -100 : -by / 2 > 0 ? -5 : 5, by === 10 ? 100 : 10]);
-          if (by === 10 && seq[bad] % 100 === 0) wrongV = seq[bad] - 100 + 10;
-          if (wrongV === seq[bad] || wrongV < 0) wrongV = seq[bad] + (by === 10 ? 1 : 10);
-          var shown = seq.slice(); shown[bad] = wrongV;
-          return { q: who + ' counted by ' + by + 's. One number is wrong. Tap it.', type: 'tap', tiles: shown.map(function (v) { return '<span class="math big">' + v + '</span>'; }), answer: bad, answerText: wrongV + ' (it should be ' + seq[bad] + ')',
-            hint: 'Check each jump. Is it ' + by + ' more every time?', steps: ['Start at ' + seq[0] + ' and add ' + by + ' each time: ' + seq.join(', ') + '.', wrongV + ' should be ' + seq[bad] + '.'],
-            explain: 'Counting by ' + by + 's: ' + seq.join(', ') + '. ' + wrongV + ' is wrong.', meta: { k: 'skip-tap', shown: shown, by: by } };
-        }],
-        [2, 'fill', function (lv) {
-          var by = R.pick([50, 100, 10]), start = R.int(1, 30) * 10;
-          if (start + by * 4 > 1000) start = 1000 - by * 4;
-          var seq = [0, 1, 2, 3, 4].map(function (i) { return start + by * i; });
-          var back = lv === 3 && R.int(0, 1); if (back) seq.reverse();
-          return { q: 'Fill in the missing numbers. Count ' + (back ? 'backward ' : '') + 'by ' + by + 's.', type: 'fill', fill: seq[0] + ', [[]], ' + seq[2] + ', [[]], ' + seq[4], answers: [seq[1], seq[3]],
-            hint: (back ? 'Take away ' : 'Add ') + by + ' to the number before each blank.', steps: [seq[0] + (back ? ' &minus; ' : ' + ') + by + ' = ' + seq[1] + '.', seq[2] + (back ? ' &minus; ' : ' + ') + by + ' = ' + seq[3] + '.'],
-            explain: seq.join(', ') + '.', meta: { k: 'skip-fill', seq: seq } };
-        }]
-      ],
-      'n3-compare': [
-        [1, 'order', function (lv) {
-          var k = lv === 1 ? 3 : 4, nums = [], hd = R.int(1, 8), big = lv === 3 && R.int(0, 1);
-          while (nums.length < k) { var v = lv === 1 ? R.int(1, 9) * 100 + R.int(0, 99) : (hd + R.int(0, 1)) * 100 + R.int(0, 9) * 10 + R.int(0, 9); if (nums.every(function (x) { return Math.floor(x / 100) !== Math.floor(v / 100) || lv > 1; }) && nums.indexOf(v) < 0) nums.push(v); }
-          nums.sort(function (a, b) { return big ? b - a : a - b; });
-          return { q: 'Put these numbers in order from <b>' + (big ? 'greatest to least' : 'least to greatest') + '</b>.', type: 'order', items: nums.map(String), first: big ? 'greatest' : 'least', last: big ? 'least' : 'greatest',
-            hint: 'Compare the hundreds first. If they match, compare the tens.', steps: ['Look at the hundreds digits.', 'For numbers with the same hundreds, look at the tens.'],
-            explain: nums.join(', ') + '.', meta: { k: 'cmp-order', nums: nums, big: big } };
-        }],
-        [1, 'story', function (lv) {
-          var two = Q.two(), a = R.int(100, 999), b, thing = R.pick(['bottle caps', 'hockey cards', 'stickers', 'stamps']);
-          if (lv === 1) { do { b = R.int(100, 999); } while (Math.floor(b / 100) === Math.floor(a / 100)); }
-          else { do { b = Math.floor(a / 100) * 100 + R.int(0, 99); } while (b === a); }
-          var less = lv === 3 && R.int(0, 1), win = less ? (a < b ? 0 : 1) : (a > b ? 0 : 1);
-          return { q: two[0] + ' has ' + a + ' ' + thing + '. ' + two[1] + ' has ' + b + '. Who has <b>' + (less ? 'fewer' : 'more') + '</b>?', type: 'mc', options: [two[0], two[1]], answer: win,
-            hint: 'Compare the hundreds first. If they are the same, compare the tens.', steps: ['Line up ' + a + ' and ' + b + ' by place.', 'Find the first place where the digits are different.'],
-            explain: (a > b ? a + ' is more than ' + b : a + ' is less than ' + b) + ', so ' + two[win] + ' has ' + (less ? 'fewer' : 'more') + '.', meta: { k: 'cmp-story', a: a, b: b, less: less } };
-        }],
-        [1, 'tf', function (lv) {
-          var a = R.int(100, 999), b; do { b = lv === 1 ? R.int(100, 999) : Math.floor(a / 100) * 100 + R.int(0, 99); } while (b === a);
-          var sym = R.int(0, 1) ? '&gt;' : '&lt;', truth = sym === '&gt;' ? a > b : a < b;
-          var sa = String(a), sb = String(b), d0 = 0; while (sa.charAt(d0) === sb.charAt(d0)) d0++;
-          var pn = ['hundreds', 'tens', 'ones'][d0], right = 'Compare the ' + pn + ': ' + sa.charAt(d0) + ' is ' + (+sa.charAt(d0) > +sb.charAt(d0) ? 'more' : 'less') + ' than ' + sb.charAt(d0) + ', so ' + a + ' is ' + (a > b ? 'greater' : 'less') + '.';
-          return { q: 'True or false? <span class="math">' + a + ' ' + sym + ' ' + b + '</span>', type: 'tf', answer: truth,
-            why: lv === 1 ? null : why(right, ['The number with the bigger ones digit is greater.', 'Add up the digits. The bigger total is greater.', 'They have the same hundreds, so they are equal.']),
-            hint: 'The symbol opens toward the greater number. Compare the hundreds first.', steps: [right], explain: right, meta: { k: 'cmp-tf', a: a, b: b, sym: sym } };
-        }],
-        [2, 'pick', function (lv) {
-          var x = R.int(3, 8) * 100 + R.int(1, 9) * 10, opts = [], less = R.int(0, 1);
-          while (opts.length < 5) { var v = x + R.pick([-1, 1]) * R.pick([1, 5, 9, 10, 40, 60, 90, 100]); if (v !== x && opts.indexOf(v) < 0 && v > 99 && v < 1000) opts.push(v); }
-          var ans = []; opts.forEach(function (v, j) { if (less ? v < x : v > x) ans.push(j); });
-          if (!ans.length || ans.length === 5) return SHAPES['n3-compare'][3][2](lv);
-          return { q: 'Pick every number ' + (less ? 'less' : 'greater') + ' than <b>' + x + '</b>.', type: 'pick', options: opts.map(String), answer: ans,
-            hint: 'Compare each number with ' + x + ', hundreds first.', steps: ['Look at the hundreds of each number. Then the tens.'],
-            explain: 'The numbers ' + (less ? 'less' : 'greater') + ' than ' + x + ' are ' + ans.map(function (j) { return opts[j]; }).join(', ') + '.', meta: { k: 'cmp-pick', x: x, less: less, opts: opts } };
-        }],
-        [2, 'line', function (lv) {
-          var h = R.int(1, 8) * 100, n = h + R.int(1, 9) * 10 + R.pick([0, 5]);
-          return { q: 'Put <b>' + n + '</b> on the number line.', type: 'line', min: h, max: h + 100, tick: 10, every: 50, snap: 5, answer: n, tol: lv === 3 ? 0 : 5, place: n, hideValue: true,
-            hint: 'Halfway is ' + (h + 50) + '. Is ' + n + ' before or after halfway?', steps: [n + ' is between ' + (h + Math.floor((n - h) / 10) * 10) + ' and ' + (h + Math.floor((n - h) / 10) * 10 + 10) + '.', 'Each small mark is 10 more.'],
-            explain: n + ' is ' + (n - h) + ' past ' + h + '.', meta: { k: 'cmp-line', n: n } };
-        }],
-        [3, 'mistake', function (lv) {
-          var who = nm(), h = R.int(2, 8), a = (h - 1) * 100 + R.int(8, 9) * 10 + R.int(5, 9), b = h * 100 + R.int(0, 1) * 10 + R.int(0, 4);
-          var right = 'Compare the hundreds first: ' + (h - 1) + ' hundreds is less than ' + h + ' hundreds, so ' + a + ' is less than ' + b + '.';
-          return { q: who + ' says <span class="math">' + a + '</span> is greater than <span class="math">' + b + '</span> because ' + a + ' has bigger digits. True or false: ' + who + ' is right.', type: 'tf', answer: false,
-            why: why(right, ['Big digits always make a bigger number.', 'Compare the ones first.', 'Add the digits: the bigger total wins.']),
-            hint: 'Which place do you compare first?', steps: [right], explain: right, meta: { k: 'cmp-mistake', a: a, b: b } };
-        }]
-      ],
-      'n3-round': [
-        [1, 'tap', function (lv) {
-          var p = lv === 1 ? 10 : 100, n, lo;
-          do { n = p === 10 ? R.int(11, 99) : R.int(101, 999); lo = Math.floor(n / p) * p; } while (n === lo || n - lo === p / 2);
-          var hi = lo + p, ans = n - lo > p / 2 ? hi : lo;
-          return { q: 'Is <b>' + n + '</b> closer to ' + lo + ' or ' + hi + '? Tap the closer one.', type: 'tap', pic: twoEnds(n, lo, hi), answer: String(ans), answerText: String(ans),
-            hint: 'Halfway between them is ' + (lo + p / 2) + '. Which side is ' + n + ' on?', steps: ['Halfway is ' + (lo + p / 2) + '.', n + ' is ' + (ans === hi ? 'past' : 'before') + ' halfway, so it is closer to ' + ans + '.'],
-            explain: n + ' is closer to ' + ans + '. So ' + n + ' rounds to ' + ans + '.', meta: { k: 'round-tap', n: n, lo: lo, hi: hi } };
-        }],
-        [1, 'story', function (lv) {
-          var p = lv === 1 ? 10 : R.pick([10, 100]), c = R.pick(['A jar has N marbles.', 'The school has N students.', 'N people came to the fair.', 'The trail is N metres long.']);
-          var n = p === 10 ? R.int(12, 98) * (lv === 1 ? 1 : 1) + (lv > 1 ? R.int(1, 9) * 100 : 0) : R.int(101, 999);
-          if (n % p === 0) n += 3;
-          var lo = Math.floor(n / p) * p, hi = lo + p, ans = n - lo >= p / 2 ? hi : lo;
-          var o = R.mc(ans, [ans === hi ? lo : hi, Math.round(n / (p / 10)) * (p / 10), ans + p].filter(function (v) { return v !== ans && v >= 0; }));
-          return { q: c.replace('N', n) + ' About how many is that, to the nearest <b>' + (p === 10 ? 'ten' : 'hundred') + '</b>?', type: 'mc', options: o.options, answer: o.answer,
-            hint: 'Find the ' + (p === 10 ? 'tens' : 'hundreds') + ' on each side of ' + n + '. Which is closer?', steps: [n + ' is between ' + lo + ' and ' + hi + '.', 'The digit to the right is ' + Math.floor((n % p) / (p / 10)) + '. ' + (ans === hi ? '5 or more rounds up.' : 'Less than 5 rounds down.')],
-            explain: n + ' rounds to ' + ans + '.', meta: { k: 'round-mc', n: n, p: p } };
-        }],
-        [1, 'pick', function (lv) {
-          var p = lv === 1 ? 10 : R.pick([10, 100]), target = p === 100 ? R.int(2, 8) * 100 : R.int(12, 88) * 10, opts = [];
-          while (opts.length < 5) {
-            var v = target + R.int(p === 100 ? -70 : -8, p === 100 ? 70 : 8);
-            if (opts.indexOf(v) < 0 && v !== target && v > 0) opts.push(v);
-          }
-          var ans = []; opts.forEach(function (v, j) { var lo = Math.floor(v / p) * p, r = v - lo >= p / 2 ? lo + p : lo; if (r === target) ans.push(j); });
-          if (!ans.length || ans.length === 5) return SHAPES['n3-round'][2][2](lv);
-          return { q: 'Pick every number that rounds to <b>' + target + '</b> (nearest ' + (p === 10 ? 'ten' : 'hundred') + ').', type: 'pick', options: opts.map(String), answer: ans,
-            hint: 'Numbers from ' + (target - p / 2) + ' up to ' + (target + p / 2 - 1) + ' round to ' + target + '.', steps: ['Round each number. Keep the ones that land on ' + target + '.', 'Halfway numbers, like ' + (target - p / 2) + ', round up.'],
-            explain: ans.map(function (j) { return opts[j]; }).join(', ') + ' round to ' + target + '.', meta: { k: 'round-pick', target: target, p: p, opts: opts } };
-        }],
-        [2, 'mistake', function (lv) {
-          var who = nm(), h = R.int(1, 8), t, o, truth = R.int(0, 1), n, said, right;
-          if (truth) { t = R.int(5, 9); o = R.int(0, 9); n = h * 100 + t * 10 + o; said = (h + 1) * 100; right = 'The tens digit is ' + t + ', which is 5 or more, so ' + n + ' rounds up to ' + said + '.'; }
-          else { t = R.int(1, 4); o = R.int(6, 9); n = h * 100 + t * 10 + o; said = (h + 1) * 100; right = 'To round to the nearest hundred, look at the tens digit. It is ' + t + ', less than 5, so ' + n + ' rounds down to ' + h * 100 + '.'; }
-          return { q: who + ' rounded <span class="math">' + n + '</span> to the nearest hundred and got <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: !!truth,
-            why: why(right, ['Look at the ones digit: ' + o + ' tells you which way to round.', 'Always round up.', 'Round to the hundred that comes first.']),
-            hint: 'To round to the nearest hundred, look at the tens digit.', steps: [right], explain: right, meta: { k: 'round-tf', n: n, said: said } };
-        }],
-        [3, 'match', function (lv) {
-          var base = R.int(1, 6) * 100, pairs = [];
-          [[base + R.int(1, 4) * 10 + R.int(0, 9), base], [base + R.int(5, 9) * 10 + R.int(0, 9), base + 100], [base + 100 + R.int(5, 9) * 10 + R.int(0, 9), base + 200]].forEach(function (x) { pairs.push([String(x[0]), String(x[1])]); });
-          return { q: 'Match each number to the nearest hundred.', type: 'match', pairs: R.shuffle(pairs),
-            hint: 'Look at the tens digit of each number.', steps: ['Tens digit 5 or more: round up. Less than 5: round down.'],
-            explain: pairs.map(function (p) { return p[0] + ' rounds to ' + p[1]; }).join('. ') + '.', meta: { k: 'round-match', pairs: pairs } };
-        }]
-      ]
-    };
-    Q.shapes(CH, SHAPES);
-  })();
+  /* every skill's other shapes (docs/QUESTIONS.md); each skill keeps its first way of asking as "plain" */
+  var SHAPES = {};
+  SKILLS.forEach(function (s) { SHAPES[s.id] = DEF[s.id].slice(1); });
+  Q.shapes(CH, SHAPES);
 })();

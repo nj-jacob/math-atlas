@@ -1,918 +1,1412 @@
+/* Grade 3 Multiplying and Dividing: a full chapter (docs/QUESTIONS.md, "Full chapters"). 7 lessons, 19 ideas, one practice skill per idea.
+   Ontario 2020: B2.1 properties and the link between multiplying and dividing, B2.2 facts of 2, 5 and 10 and their division facts,
+   B2.6 multiplying to 10 × 10 and dividing to 100 ÷ 10 with tools and arrays, B2.9 ratios of 1 to 2, 1 to 5 and 1 to 10.
+   One meaning of × everywhere: 3 × 4 is 3 groups of 4 (3 plates of 4, 3 rows of 4, 3 jumps of 4). The turn-around (3 × 4 = 4 × 3) is taught as its own idea.
+   Every question sets meta.k; the answer checks are in tests/verify/grade3.js (keys start with g3md-). */
 (function () {
-  var A = Atlas, R = A.R;
-  function clamp(v, a, b) { v = parseInt(v, 10); if (isNaN(v)) v = a; return Math.max(a, Math.min(b, v)); }
-  var DOT = 'var(--strand)', DOT2 = 'var(--hi)';
+  var A = Atlas, R = A.R, Q = A.Q, CH = 'multiply-divide';
+  var X = ' &times; ', DV = ' &divide; ', MI = ' &minus; ';
 
-  /* g plates with n counters on each */
-  function groups(g, n, label) {
-    var per = g > 5 ? 5 : g, rows = Math.ceil(g / per), pw = 104, ph = 104, s = '';
-    for (var i = 0; i < g; i++) {
-      var cx = 8 + (i % per) * (pw + 6) + pw / 2, cy = 8 + Math.floor(i / per) * (ph + 6) + ph / 2;
-      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + (pw / 2) + '" style="fill:color-mix(in srgb,var(--strand) 8%,var(--card));stroke:var(--strand)" stroke-width="2.5"/>';
-      var cols = n <= 4 ? 2 : n <= 9 ? 3 : 4, r = n <= 4 ? 13 : n <= 9 ? 11 : 9, gap = r * 2.4, w = (Math.min(n, cols) - 1) * gap, hh = (Math.ceil(n / cols) - 1) * gap;
-      for (var k = 0; k < n; k++) s += '<circle cx="' + (cx - w / 2 + (k % cols) * gap) + '" cy="' + (cy - hh / 2 + Math.floor(k / cols) * gap) + '" r="' + r + '" style="fill:' + DOT2 + ';stroke:var(--ink)" stroke-width="1.5"/>';
-    }
-    return A.svg(per * (pw + 6) + 10, rows * (ph + 6) + 10, s, label || g + ' groups of ' + n);
+  /* ---------- words and numbers ---------- */
+  function put(o, x) { for (var k in x) o[k] = x[k]; return o; }
+  function plain(h) { var e = document.createElement('div'); e.innerHTML = h; return e.textContent.replace(/\s+/g, ' ').trim(); }
+  function coin() { return Math.random() < 0.5; }
+  function m(t) { return '<span class="math">' + t + '</span>'; }
+  function pl(n, one, many) { return G3.pl(n, one, many); }
+  function rng(lv, t) { return R.int(t[lv][0], t[lv][1]); }
+  function skips(k, n, from) { var l = []; for (var i = 1; i <= n; i++) l.push((from || 0) + k * i); return l.join(', '); }
+  function adds(g, n) { var a = []; for (var i = 0; i < g; i++) a.push(n); return a.join(' + '); }
+  function same(g, n) { var a = []; for (var i = 0; i < g; i++) a.push(n); return a; }
+  function cap(t) { return t.charAt(0).toUpperCase() + t.slice(1); }
+  /* number of groups (GR) and how many in each (EA): level 1 small, level 3 the big facts to 10 × 10 */
+  var GR = { 1: [2, 5], 2: [2, 7], 3: [6, 10] }, EA = { 1: [2, 5], 2: [3, 7], 3: [6, 10] }, K1 = { 1: [2, 10], 2: [2, 5, 10], 3: [5, 2, 10, 5] };
+  /* a pair of different numbers from a table of levels */
+  function two(lv, ta, tb) { var a = rng(lv, ta), b = rng(lv, tb), guard = 0; while (b === a && guard++ < 20) b = rng(lv, tb); if (b === a) b = a === 2 ? 3 : a - 1; return [a, b]; }
+
+  /* ---------- question builders ---------- */
+  /* fixes for known wrong answers: [[wrong value, fix], ...] -> { 'value': fix } (Atlas.Q.diag) */
+  function fx(list) { var o = {}; list.forEach(function (p) { var k = String(p[0]); if (!(k in o) && p[0] >= 0) o[k] = p[1]; }); return o; }
+  function num(q, ans, fixes, x) { var w = {}; Object.keys(fixes || {}).forEach(function (k) { if (+k !== ans) w[k] = fixes[k]; }); return put({ q: q, type: 'num', answer: ans, wrong: w }, x || {}); }
+  function fill(q, f, answers, x) { return put({ q: q, type: 'fill', fill: f, answers: answers }, x || {}); }
+  /* pick one: the right answer and up to 3 wrong ones, each with the fix for that mistake: wrongs = [[html, fix], ...] */
+  function mc(q, right, wrongs, x) {
+    var seen = {}, opts = [right], fix = {};
+    seen[plain(right)] = 1;
+    wrongs.forEach(function (w) { var t = plain(w[0]); if (opts.length >= 4 || seen[t]) return; seen[t] = 1; opts.push(w[0]); if (w[1]) fix[t] = w[1]; });
+    var o = R.shuffle(opts);
+    return put({ q: q, type: 'mc', options: o, answer: o.indexOf(right), wrong: fix }, x || {});
   }
-  /* r rows by c columns of dots. split: draw a line after that many rows */
-  function array(r, c, split, label) {
-    var gap = Math.min(38, 360 / Math.max(r, c)), rad = gap * 0.36, s = '', top = 30, left = 40;
-    for (var i = 0; i < r; i++) for (var j = 0; j < c; j++) s += '<circle cx="' + (left + j * gap + gap / 2) + '" cy="' + (top + i * gap + gap / 2) + '" r="' + rad + '" style="fill:' + (split && i >= split ? DOT2 : DOT) + ';stroke:var(--ink)" stroke-width="1"/>';
-    s += '<text x="' + (left + c * gap / 2) + '" y="20" text-anchor="middle" font-size="18" class="tb">' + c + ' in each row</text>';
-    s += '<text x="' + (left - 10) + '" y="' + (top + r * gap / 2 + 6) + '" text-anchor="end" font-size="18" class="tb">' + r + '</text>';
-    if (split && split < r) s += '<line x1="' + (left - 4) + '" y1="' + (top + split * gap) + '" x2="' + (left + c * gap + 4) + '" y2="' + (top + split * gap) + '" style="stroke:var(--bad)" stroke-width="3" stroke-dasharray="6 4"/>';
-    return A.svg(Math.max(240, left + c * gap + 10), top + r * gap + 8, s, label || r + ' rows of ' + c);
+  /* pick one, in a fixed order */
+  function fixed(q, opts, ans, fixes, x) { var w = {}; opts.forEach(function (o, j) { if (j !== ans && fixes[j]) w[plain(o)] = fixes[j]; }); return put({ q: q, type: 'mc', options: opts, answer: ans, wrong: w }, x || {}); }
+  function tf(q, truth, right, bad, fix, x) {
+    var o = R.mc(right, bad), w = {};
+    w[truth ? 'False' : 'True'] = fix;
+    return put({ q: q, type: 'tf', answer: truth, why: { options: o.options, answer: o.answer }, wrong: w, steps: [right], explain: right }, x || {});
   }
-  /* 1 to 100 with the multiples of k shaded */
-  function chart100(k) {
-    var sz = 46, s = '';
-    for (var i = 1; i <= 100; i++) {
-      var x = 4 + ((i - 1) % 10) * sz, y = 4 + Math.floor((i - 1) / 10) * sz, on = i % k === 0;
-      s += '<rect x="' + x + '" y="' + y + '" width="' + sz + '" height="' + sz + '" style="fill:' + (on ? 'color-mix(in srgb,var(--strand) 70%,var(--card))' : 'var(--card)') + ';stroke:var(--line)" stroke-width="1.5"/>' +
-        '<text x="' + (x + sz / 2) + '" y="' + (y + sz / 2 + 7) + '" text-anchor="middle" font-size="19"' + (on ? ' font-weight="700" style="fill:#fff"' : ' class="t2"') + '>' + i + '</text>';
-    }
-    return A.svg(sz * 10 + 8, sz * 10 + 8, s, 'Hundred chart with the multiples of ' + k + ' shaded');
+  function prodFix(a, b) {
+    return fx([[a + b, 'You added. ' + a + X + b + ' is ' + a + ' groups of ' + b + '.'], [a * b - b, 'One group short. Count ' + a + ' groups of ' + b + '.'], [a * b + b, 'One group too many. Count ' + a + ' groups of ' + b + '.'], [b, 'That is just one group.']]);
   }
-  /* deal total counters onto k plates; leftovers below */
-  function share(total, k) {
-    var each = Math.floor(total / k), left = total - each * k;
-    var s = groups(k, each, 'Share ' + total + ' among ' + k + ': ' + each + ' each' + (left ? ', ' + left + ' left over' : ''));
-    if (left) {
-      var t = '';
-      for (var i = 0; i < left; i++) t += '<circle cx="' + (20 + i * 30) + '" cy="20" r="11" style="fill:var(--bad);stroke:var(--ink)" stroke-width="1.5"/>';
-      s += '<p class="t2" style="text-align:center;margin:.3em 0 0">Left over:</p>' + A.svg(Math.max(60, left * 30 + 10), 40, t, left + ' left over');
+  function divFix(n, d) {
+    return fx([[n - d, 'You took ' + d + ' away once. Count how many ' + d + 's make ' + n + '.'], [d, 'That is the number you divide by.'], [n * d, 'You multiplied. Dividing splits ' + n + ' into equal groups.'], [n, 'That is the total. Split it into equal groups.']]);
+  }
+  /* a match: three different pairs made by fn(), no card twice */
+  function pairs3(fn) {
+    var out = [], L = {}, Rt = {}, guard = 0;
+    while (out.length < 3 && guard++ < 200) { var p = fn(), l = plain(p[0]), r = plain(p[1]); if (L[l] || Rt[r]) continue; L[l] = Rt[r] = 1; out.push(p); }
+    return out;
+  }
+
+  /* ---------- pictures ---------- */
+  var DOT = 'var(--strand)', HI = 'var(--hi)', PLATE = 'color-mix(in srgb,var(--strand) 8%,var(--card))';
+  function r1(v) { return Math.round(v * 10) / 10; }
+  function txt(x, y, t, size, anchor, cls) { return '<text x="' + r1(x) + '" y="' + r1(y) + '" font-size="' + size + '" text-anchor="' + (anchor || 'middle') + '" class="' + (cls || 'tb') + '">' + t + '</text>'; }
+  function dot(x, y, r, fill, tag) { return '<circle' + (tag || '') + ' cx="' + r1(x) + '" cy="' + r1(y) + '" r="' + r + '" style="fill:' + fill + ';stroke:var(--ink)" stroke-width="1.5"/>'; }
+  /* counters in one group, centred on (cx, cy) */
+  function cluster(cx, cy, n, i) {
+    var cols = n <= 4 ? 2 : n <= 6 ? 3 : n <= 9 ? 3 : 4, r = n <= 4 ? 11 : n <= 6 ? 10 : 8, gap = r * 2.5, rows = Math.ceil(n / cols), s = '';
+    for (var k = 0; k < n; k++) {
+      var row = Math.floor(k / cols), inRow = Math.min(cols, n - row * cols);
+      s += dot(cx + (k % cols - (inRow - 1) / 2) * gap, cy + (row - (rows - 1) / 2) * gap, r, HI, ' data-on="' + i + '"');
     }
     return s;
   }
-  var THINGS = {
-    2: [['bike', 'bikes', 'wheel', 'wheels'], ['pair of socks', 'pairs of socks', 'sock', 'socks'], ['person', 'people', 'eye', 'eyes']],
-    5: [['hand', 'hands', 'finger', 'fingers'], ['star', 'stars', 'point', 'points'], ['nickel', 'nickels', 'cent', 'cents']],
-    10: [['dime', 'dimes', 'cent', 'cents'], ['ten-pack of pencils', 'ten-packs of pencils', 'pencil', 'pencils'], ['row of a hundred chart', 'rows of a hundred chart', 'square', 'squares']]
-  };
-  function ratioFig(k, n, label) {
-    var s = '', w = 110;
-    for (var i = 0; i < n; i++) {
-      var x = 6 + (i % 5) * w, y = 6 + Math.floor(i / 5) * 72;
-      s += '<rect x="' + x + '" y="' + y + '" width="' + (w - 10) + '" height="62" rx="10" style="fill:color-mix(in srgb,var(--strand) 10%,var(--card));stroke:var(--strand)" stroke-width="2"/>';
-      for (var j = 0; j < k; j++) s += '<circle cx="' + (x + 14 + (j % 5) * 18) + '" cy="' + (y + 20 + Math.floor(j / 5) * 22) + '" r="7" style="fill:var(--hi);stroke:var(--ink)" stroke-width="1"/>';
-    }
-    return A.svg(5 * w + 8, Math.ceil(n / 5) * 72 + 8, s, label);
-  }
-
-  /* ---------- Lessons: one idea per screen ---------- */
-  var CH = 'multiply-divide';
-  function TU(s, i) { return function () { return G3.turn(A.chapters[CH].turns[s][i])(); }; }
-  function SK(id, lv) { return G3.skill(CH, id, lv); }
-  function cap(t) { return t ? '<p class="g3-sym" style="font-size:1.1rem;color:var(--ink)">' + t + '</p>' : ''; }
-  /* plates that can hold different amounts while dealing, with a pile still to share */
-  function plates(counts, pile, label) {
-    var k = counts.length, per = k > 5 ? 5 : k, pw = 96, s = '';
+  /* plates (or bags) with counters on each; o.pile: counters still to share, drawn in rows of 10 below */
+  function platesFig(counts, o) {
+    o = o || {};
+    var k = counts.length, per = Math.min(Math.max(k, 1), 5), CW = 100, s = '', W = Math.max(k ? per * CW + 12 : 0, o.pile ? 244 : 0), y = k ? 6 + Math.ceil(k / per) * CW : 0;
     for (var i = 0; i < k; i++) {
-      var cx = 8 + (i % per) * (pw + 6) + pw / 2, cy = 8 + Math.floor(i / per) * (pw + 6) + pw / 2, n = counts[i];
-      s += '<circle cx="' + cx + '" cy="' + cy + '" r="' + pw / 2 + '" style="fill:color-mix(in srgb,var(--strand) 8%,var(--card));stroke:var(--strand)" stroke-width="2.5"/>';
-      var cols = n <= 4 ? 2 : n <= 9 ? 3 : 4, r = n <= 4 ? 12 : n <= 9 ? 10 : 8, gap = r * 2.4, w = (Math.min(n, cols) - 1) * gap, hh = (Math.ceil(n / cols) - 1) * gap;
-      for (var j = 0; j < n; j++) s += '<circle cx="' + (cx - w / 2 + (j % cols) * gap) + '" cy="' + (cy - hh / 2 + Math.floor(j / cols) * gap) + '" r="' + r + '" style="fill:' + DOT2 + ';stroke:var(--ink)" stroke-width="1.5"/>';
+      var cx = 6 + (i % per) * CW + CW / 2, cy = 6 + Math.floor(i / per) * CW + CW / 2;
+      s += o.bags ? '<rect data-p="g" x="' + (cx - 44) + '" y="' + (cy - 42) + '" width="88" height="84" rx="18" style="fill:' + PLATE + ';stroke:var(--strand)" stroke-width="2.5"/>'
+        : '<circle data-p="g" cx="' + cx + '" cy="' + cy + '" r="46" style="fill:' + PLATE + ';stroke:var(--strand)" stroke-width="2.5"/>';
+      s += cluster(cx, cy, counts[i], i);
     }
-    var rows = k ? Math.ceil(k / per) : 0, top = rows * (pw + 6) + 14, W = per * (pw + 6) + 10, pr = Math.max(1, Math.ceil(pile / 12));
-    if (pile) {
-      s += '<text x="8" y="' + (top + 16) + '" font-size="17" class="t2">Still to share: ' + pile + '</text>';
-      for (var q = 0; q < pile; q++) s += '<circle cx="' + (18 + (q % 12) * 26) + '" cy="' + (top + 36 + Math.floor(q / 12) * 26) + '" r="10" style="fill:' + DOT2 + ';stroke:var(--ink)" stroke-width="1.5" opacity=".75"/>';
+    if (o.pile) {
+      if (k) { s += '<line x1="8" y1="' + (y + 6) + '" x2="' + (W - 8) + '" y2="' + (y + 6) + '" style="stroke:var(--line)" stroke-width="2" stroke-dasharray="6 5"/>'; y += 12; }
+      for (var p = 0; p < o.pile; p++) s += dot(18 + (p % 10) * 22, y + 14 + Math.floor(p / 10) * 22, 8, HI, ' data-p="pile"');
+      y += 8 + Math.ceil(o.pile / 10) * 22;
     }
-    return A.svg(Math.max(W, pile ? 330 : 0), top + (pile ? 30 + pr * 26 : 0), s, label || k + ' plates');
+    return A.svg(W, y + 6, s, o.label || (k ? k + (o.bags ? ' bags' : ' plates') + ' with ' + counts.join(', ') : '') + (o.pile ? (k ? ', and ' : '') + o.pile + ' counters to share' : ''));
   }
+  /* r rows of c dots. o.labels: row numbers and "c in a row"; o.split: colour the rows from there on; o.parts: the fact for each part; o.off: rows from there on are taken away */
+  function arrayFig(r, c, o) {
+    o = o || {};
+    var gap = Math.min(34, Math.floor(300 / Math.max(r, c))), rad = r1(gap * 0.34), L = o.labels ? 34 : 8, T = o.labels ? 30 : 8, PW = o.parts ? 128 : 0, s = '';
+    for (var i = 0; i < r; i++) {
+      for (var j = 0; j < c; j++) {
+        var x = L + j * gap + gap / 2, y = T + i * gap + gap / 2;
+        s += o.off != null && i >= o.off ? '<circle data-a="x" cx="' + r1(x) + '" cy="' + r1(y) + '" r="' + rad + '" style="fill:none;stroke:var(--ink2)" stroke-width="1.5" stroke-dasharray="3 3"/>'
+          : '<circle data-a="d" cx="' + r1(x) + '" cy="' + r1(y) + '" r="' + rad + '" style="fill:' + (o.split && i >= o.split ? HI : DOT) + ';stroke:var(--ink)" stroke-width="1"/>';
+      }
+      if (o.labels) s += txt(L - 8, T + i * gap + gap / 2 + 5, i + 1, 14, 'end', 't2');
+    }
+    if (o.labels) s += txt(L + c * gap / 2, 20, c + ' in a row', 17);
+    var cut = o.split || o.off;
+    if (cut && cut < r) s += '<line x1="' + (L - 4) + '" y1="' + (T + cut * gap) + '" x2="' + (L + c * gap + 4) + '" y2="' + (T + cut * gap) + '" style="stroke:var(--ink)" stroke-width="2.5" stroke-dasharray="7 5"/>';
+    if (o.parts && o.split) {
+      s += txt(L + c * gap + 12, T + o.split * gap / 2 + 6, o.split + ' &times; ' + c + ' = ' + o.split * c, 17, 'start');
+      s += txt(L + c * gap + 12, T + o.split * gap + (r - o.split) * gap / 2 + 6, (r - o.split) + ' &times; ' + c + ' = ' + (r - o.split) * c, 17, 'start');
+    }
+    return A.svg(Math.max(160, L + c * gap + 8 + PW), T + r * gap + 8, s, o.label || r + ' rows of ' + c + ' dots');
+  }
+  /* jumps of k on a number line from 0. o.max: the end; o.show(v): which tick numbers to write (default all);
+     o.count: number each jump; o.cap: a caption above the line; o.dot: mark where the jumps land */
+  function lineFig(k, n, o) {
+    o = o || {};
+    var max = o.max || k * 10, x0 = 22, x1 = 538, top = o.cap ? 22 : 0, base = 86 + top, s = '';
+    function X(v) { return r1(x0 + (x1 - x0) * v / max); }
+    var steps = Math.round(max / k), every = steps > 10 ? 2 : 1, show = o.show || function () { return true; };
+    if (o.cap) s += txt(4, 16, o.cap, 16, 'start');
+    s += '<line x1="' + x0 + '" y1="' + base + '" x2="' + x1 + '" y2="' + base + '" style="stroke:var(--ink)" stroke-width="2.5"/>';
+    for (var i = 0; i <= steps; i++) {
+      var v = i * k;
+      s += '<line x1="' + X(v) + '" y1="' + (base - 8) + '" x2="' + X(v) + '" y2="' + (base + 8) + '" style="stroke:var(--ink)" stroke-width="2"/>';
+      if (show(v) && (i % every === 0 || v === max)) s += txt(X(v), base + 30, v, 18);
+    }
+    var h = Math.min(44, (X(k) - X(0)) * 0.7);
+    for (var j = 0; j < n; j++) {
+      var a = X(j * k), b = X((j + 1) * k);
+      s += '<path d="M' + a + ' ' + (base - 4) + ' Q' + r1((a + b) / 2) + ' ' + r1(base - 4 - 2 * h) + ' ' + b + ' ' + (base - 4) + '" fill="none" style="stroke:var(--strand)" stroke-width="3"/>';
+      if (o.count) s += txt((a + b) / 2, base - h - 10, j + 1, 14, 'middle', 't2');
+    }
+    if (n && o.dot !== false) s += '<circle cx="' + X(n * k) + '" cy="' + base + '" r="8" style="fill:var(--hi);stroke:var(--ink)" stroke-width="2"/>';
+    return A.svg(560, base + 40, s, n + ' jumps of ' + k + ' on a number line');
+  }
+  /* a × b and b × a on two lines of the same length: they land in the same place */
+  function twoLine(a, b, top, bot, hide) {
+    var p = a * b;
+    return '<div>' + lineFig(b, top, { max: p, cap: a + ' jumps of ' + b, show: function (v) { return v === 0 || (!hide && v === p && top === a); } }) +
+      lineFig(a, bot, { max: p, cap: b + ' jumps of ' + a, show: function (v) { return !hide || v < p; } }) + '</div>';
+  }
+  /* 1 to 100 with the facts of k shaded; o.mark: one number outlined */
+  function chart100(k, o) {
+    o = o || {};
+    var sz = 34, s = '';
+    for (var i = 1; i <= 100; i++) {
+      var x = 4 + ((i - 1) % 10) * sz, y = 4 + Math.floor((i - 1) / 10) * sz, on = k && i % k === 0, mk = i === o.mark;
+      s += '<rect x="' + x + '" y="' + y + '" width="' + sz + '" height="' + sz + '" style="fill:' + (on ? 'color-mix(in srgb,var(--strand) 70%,var(--card))' : 'var(--card)') + ';stroke:' + (mk ? 'var(--ink)' : 'var(--line)') + '" stroke-width="' + (mk ? 4 : 1.5) + '"/>' +
+        '<text x="' + (x + sz / 2) + '" y="' + (y + sz / 2 + 6) + '" text-anchor="middle" font-size="15"' + (on ? ' font-weight="700" style="fill:#fff"' : ' class="t2"') + '>' + i + '</text>';
+    }
+    return A.svg(sz * 10 + 8, sz * 10 + 8, s, 'Hundred chart' + (k ? ' with the facts of ' + k + ' shaded' : ''));
+  }
+  /* the facts of k, 1 to 10, shown up to n */
+  function strip(k, n) {
+    var s = '', W = 66;
+    for (var i = 1; i <= 10; i++) {
+      var x = 4 + ((i - 1) % 5) * W, y = 4 + Math.floor((i - 1) / 5) * 62, on = i <= n;
+      s += '<rect x="' + x + '" y="' + y + '" width="' + (W - 6) + '" height="56" rx="8" style="fill:' + (on ? PLATE : 'var(--card)') + ';stroke:' + (on ? 'var(--strand)' : 'var(--line)') + '" stroke-width="2"/>';
+      s += txt(x + (W - 6) / 2, y + 18, i + ' &times; ' + k, 13, 'middle', 't2');
+      if (on) s += txt(x + (W - 6) / 2, y + 45, i * k, 22);
+    }
+    return A.svg(5 * W + 4, 130, s, 'The facts of ' + k + (n ? ', up to ' + n + ' times ' + k : ''));
+  }
+  /* a times chart: row r (the number of groups) meets column c (how many in each) */
+  function chart(r, c, show) {
+    var sz = 30, s = '';
+    for (var i = 0; i <= 10; i++) for (var j = 0; j <= 10; j++) {
+      if (!i && !j) continue;
+      var x = 4 + j * sz, y = 4 + i * sz, head = !i || !j, hit = i === r && j === c, lane = (i === r && j <= c) || (j === c && i <= r);
+      s += '<rect x="' + x + '" y="' + y + '" width="' + sz + '" height="' + sz + '" style="fill:' + (hit ? 'var(--hi)' : head ? 'color-mix(in srgb,var(--strand) 18%,var(--card))' : lane && r ? 'color-mix(in srgb,var(--strand) 9%,var(--card))' : 'var(--card)') + ';stroke:var(--line)" stroke-width="1.2"/>';
+      if (head) s += txt(x + sz / 2, y + 20, i || j, 14);
+      else if (hit && show) s += txt(x + sz / 2, y + 20, i * j, 14);
+    }
+    return A.svg(11 * sz + 8, 11 * sz + 8, s, r ? 'Times chart: row ' + r + ' meets column ' + c : 'Times chart');
+  }
+
+  /* things that always come in 2s, 5s or 10s */
+  var THINGS = {
+    2: [{ one: 'bike', many: 'bikes', part: 'wheel', parts: 'wheels', ic: 'bike' }, { one: 'pair of mittens', many: 'pairs of mittens', part: 'mitten', parts: 'mittens', ic: 'mitt' }, { one: 'canoe', many: 'canoes', part: 'paddle', parts: 'paddles', ic: 'canoe' }],
+    5: [{ one: 'star', many: 'stars', part: 'point', parts: 'points', ic: 'star' }, { one: 'nickel', many: 'nickels', part: 'cent', parts: 'cents', ic: 'nickel', coin: 1 }],
+    10: [{ one: 'dime', many: 'dimes', part: 'cent', parts: 'cents', ic: 'dime', coin: 1 }, { one: 'box of crayons', many: 'boxes of crayons', part: 'crayon', parts: 'crayons', ic: 'box' }]
+  };
+  function kOf(th) { for (var k in THINGS) if (THINGS[k].indexOf(th) >= 0) return +k; return 0; }
+  function icon(ic, x, y) {
+    var ink = ';stroke:var(--ink)" stroke-width="2"';
+    if (ic === 'bike') return '<circle cx="' + (x + 15) + '" cy="' + (y + 40) + '" r="13" style="fill:var(--card);stroke:var(--strand)" stroke-width="3.5"/><circle cx="' + (x + 45) + '" cy="' + (y + 40) + '" r="13" style="fill:var(--card);stroke:var(--strand)" stroke-width="3.5"/>' +
+      '<path d="M' + (x + 15) + ' ' + (y + 40) + ' L' + (x + 26) + ' ' + (y + 22) + ' L' + (x + 40) + ' ' + (y + 22) + ' L' + (x + 45) + ' ' + (y + 40) + ' M' + (x + 26) + ' ' + (y + 22) + ' L' + (x + 31) + ' ' + (y + 40) + ' L' + (x + 40) + ' ' + (y + 22) + ' M' + (x + 22) + ' ' + (y + 16) + ' L' + (x + 30) + ' ' + (y + 16) + '" fill="none" style="stroke:var(--ink)" stroke-width="2.5" stroke-linecap="round"/>';
+    if (ic === 'mitt') return [0, 1].map(function (i) { var mx = x + 8 + i * 26; return '<rect x="' + mx + '" y="' + (y + 16) + '" width="18" height="32" rx="9" style="fill:var(--hi)' + ink + '/><ellipse cx="' + (i ? mx + 1 : mx + 17) + '" cy="' + (y + 30) + '" rx="5" ry="8" style="fill:var(--hi)' + ink + '/><rect x="' + mx + '" y="' + (y + 44) + '" width="18" height="7" rx="2" style="fill:var(--strand)' + ink + '/>'; }).join('');
+    if (ic === 'canoe') return '<path d="M' + (x + 2) + ' ' + (y + 38) + ' Q' + (x + 30) + ' ' + (y + 58) + ' ' + (x + 58) + ' ' + (y + 38) + ' Z" style="fill:var(--strand)' + ink + '/>' +
+      [16, 42].map(function (px) { return '<line x1="' + (x + px - 6) + '" y1="' + (y + 10) + '" x2="' + (x + px + 4) + '" y2="' + (y + 44) + '" style="stroke:var(--ink)" stroke-width="2.5"/><ellipse cx="' + (x + px + 4) + '" cy="' + (y + 46) + '" rx="4" ry="8" style="fill:var(--hi)' + ink + '/>'; }).join('');
+    if (ic === 'star') { var p = []; for (var i = 0; i < 10; i++) { var a = -Math.PI / 2 + i * Math.PI / 5, rr = i % 2 ? 11 : 26; p.push(r1(x + 30 + rr * Math.cos(a)) + ',' + r1(y + 32 + rr * Math.sin(a))); } return '<polygon points="' + p.join(' ') + '" style="fill:var(--hi)' + ink + ' stroke-linejoin="round"/>'; }
+    if (ic === 'nickel' || ic === 'dime') { var big = ic === 'nickel'; return '<circle cx="' + (x + 30) + '" cy="' + (y + 32) + '" r="' + (big ? 23 : 19) + '" style="fill:color-mix(in srgb,var(--ink2) 22%,var(--card))' + ink + '/>' + txt(x + 30, y + 38, big ? '5&cent;' : '10&cent;', big ? 17 : 15); }
+    var cr = ['var(--sb)', 'var(--sd)', 'var(--se)', 'var(--sc)', 'var(--hi)'], s = '';
+    for (var c = 0; c < 10; c++) s += '<rect x="' + r1(x + 10 + c * 4.1) + '" y="' + (y + 12) + '" width="3.4" height="22" rx="1.5" style="fill:' + cr[c % 5] + '"/>';
+    return s + '<rect x="' + (x + 7) + '" y="' + (y + 28) + '" width="46" height="24" rx="3" style="fill:var(--strand)' + ink + '/>';
+  }
+  function ratioFig(th, n) {
+    var s = '', per = Math.min(n, 5);
+    for (var i = 0; i < n; i++) s += icon(th.ic, 4 + (i % 5) * 68, 4 + Math.floor(i / 5) * 64);
+    return A.svg(Math.max(per * 68 + 8, 140), Math.ceil(n / 5) * 64 + 8, s, pl(n, th.one, th.many));
+  }
+  function ratioTable(th, n, k) {
+    var h = '<div class="tbl"><table><tbody><tr><th class="l">' + cap(th.many) + '</th>', h2 = '<tr><th class="l">' + cap(th.parts) + '</th>';
+    for (var i = 1; i <= n; i++) { var on = i === n ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : ''; h += '<td' + on + '>' + i + '</td>'; h2 += '<td' + on + '>' + i * k + '</td>'; }
+    return h + '</tr>' + h2 + '</tr></tbody></table></div>';
+  }
+  function hasOne(th, k) { return '1 ' + th.one + (th.coin ? ' is worth ' : ' has ') + k + ' ' + th.parts; }
+  function askMany(th, n) { return th.coin ? 'How many cents are ' + n + ' ' + th.many + ' worth?' : 'How many ' + th.parts + ' do ' + n + ' ' + th.many + ' have?'; }
+
+  /* ---------- Watch and My turn clips ---------- */
+  function sym(s) { return s.sym ? '<p class="g3-sym">' + s.sym + '</p>' : ''; }
+  function view(fig) { return function (s) { return '<div>' + fig(s) + sym(s) + '</div>'; }; }
+  /* list = [[line, change to the picture (or a list of changes), ms], ...] */
+  function clip(draw, start, list) {
+    return { mount: G3.view(view(draw), start), steps: list.map(function (s) {
+      var st = { say: s[0], ms: s[2] || 1900 }, p = s[1];
+      if (p) st.act = function (t) { return Array.isArray(p) ? t.seq(p, 420) : t.set(p, 700); };
+      return st;
+    }) };
+  }
+  function count(key, from, to, extra) { var p = []; for (var i = from; i <= to; i++) { var o = {}; o[key] = i; p.push(put(o, extra ? extra(i) : {})); } return p; }
   function dealCounts(total, k, dealt) { var c = []; for (var i = 0; i < k; i++) c.push(Math.floor(dealt / k) + (i < dealt % k ? 1 : 0)); return c; }
-  function dealView(s) { return '<div>' + plates(dealCounts(s.total, s.k, s.dealt), s.total - s.dealt) + cap(s.say) + '</div>'; }
-  function bagView(s) { return '<div>' + (s.bags ? groups(s.bags, s.size, s.bags + ' bags of ' + s.size) : '') + (s.total - s.bags * s.size ? plates([], s.total - s.bags * s.size) : '') + cap(s.say) + '</div>'; }
-  function groupView(s) { return '<div>' + groups(s.g, s.n) + cap(s.say) + '</div>'; }
-  function factView(s) { return '<div>' + chart100(s.k) + cap(s.say) + '</div>'; }
-  function arrView(s) { return '<div>' + array(s.r, s.c, s.sp || 0) + cap(s.say) + '</div>'; }
-  function famView(s) {
-    var f = [s.a + ' &times; ' + s.b + ' = ' + s.a * s.b, s.b + ' &times; ' + s.a + ' = ' + s.a * s.b, s.a * s.b + ' &divide; ' + s.a + ' = ' + s.b, s.a * s.b + ' &divide; ' + s.b + ' = ' + s.a];
-    return '<div>' + array(s.a, s.b, 0, s.a + ' rows of ' + s.b) + '<div class="tbl"><table><tbody><tr>' + f.map(function (x, i) { return '<td class="math"' + (i < s.k ? '' : ' style="opacity:.15"') + '>' + x + '</td>'; }).slice(0, 2).join('') + '</tr><tr>' + f.map(function (x, i) { return '<td class="math"' + (i < s.k ? '' : ' style="opacity:.15"') + '>' + x + '</td>'; }).slice(2).join('') + '</tr></tbody></table></div>' + cap(s.say) + '</div>';
-  }
-  function ratioView(s) {
-    var th = THINGS[s.k][s.t || 0], h = '<table><tbody><tr><th class="l">' + th[1].charAt(0).toUpperCase() + th[1].slice(1) + '</th>', h2 = '<tr><th class="l">' + th[3].charAt(0).toUpperCase() + th[3].slice(1) + '</th>';
-    for (var i = 1; i <= s.n; i++) { var on = i === s.n ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : ''; h += '<td' + on + '>' + i + '</td>'; h2 += '<td' + on + '>' + i * s.k + '</td>'; }
-    return '<div>' + ratioFig(s.k, s.n, s.n + ' ' + (s.n === 1 ? th[0] : th[1]) + ', ' + s.k + ' ' + th[3] + ' each') + '<div class="tbl">' + h + '</tr>' + h2 + '</tr></tbody></table></div>' + cap(s.say) + '</div>';
-  }
-  function addList(g, n) { var a = []; for (var i = 0; i < g; i++) a.push(n); return a.join(' + '); }
-  function chartOf(k) { var l = []; for (var i = 1; i <= 10; i++) l.push(k * i); return l; }
+  var platesV = function (s) { return platesFig(s.counts, { pile: s.pile, bags: s.bags }); };
+  var dealV = function (s) { return platesFig(dealCounts(s.total, s.k, s.dealt), { pile: s.total - s.dealt }); };
+  var bagV = function (s) { return platesFig(same(s.bags, s.size), { bags: true, pile: s.total - s.bags * s.size }); };
+  var arrayV = function (s) { return arrayFig(s.r, s.c, { labels: true, split: s.split, parts: s.parts, off: s.off }); };
+  var lineV = function (s) { return lineFig(s.k, s.n, { max: s.max, count: s.count }); };
+  var twoV = function (s) { return twoLine(s.a, s.b, s.top, s.bot); };
+  var chartV = function (s) { return chart100(s.k, { mark: s.mark }); };
+  var ratioV = function (s) { var th = THINGS[s.k][s.t || 0]; return ratioFig(th, s.n) + ratioTable(th, s.n, s.k); };
+  var stripV = function (s) { return strip(s.k, s.n); };
+  var chartXV = function (s) { return chart(s.r, s.c, s.show); };
+  function famLines(a, b, k) { var p = a * b, f = [a + X + b + ' = ' + p, b + X + a + ' = ' + p, p + DV + a + ' = ' + b, p + DV + b + ' = ' + a]; return f.slice(0, k).join('<br>'); }
+  var famV = function (s) { return arrayFig(s.a, s.b, { labels: true }); };
 
+  /* ---------- skills: one per idea. DEF[id] = [[minLevel, shape, fn(lv), maxLevel], ...], the first is "plain" ---------- */
+  var DEF = {}, SKILLS = [];
+  function skill(id, name, code, list) { DEF[id] = list; SKILLS.push({ id: id, name: name, code: code }); }
+  /* a "Your turn" question: one shape of the idea's own skill, at one level */
+  function ck(id, shape, lv) { return function () { var s = DEF[id].filter(function (x) { return x[1] === shape; })[0], q = s[2](lv); q.shape = shape; return q; }; }
+  /* meta for an answer worked out from two numbers: op x (times), d (divide), a or b (one of the numbers) */
+  function mt(a, b, op, more) { return put({ k: 'g3md-num', a: a, b: b, op: op }, more || {}); }
+
+  /* ======================= Lesson 1: Equal groups ======================= */
+  var GOODS = [['bags', 'apples'], ['boxes', 'crayons'], ['vases', 'flowers'], ['plates', 'pieces of bannock'], ['jars', 'paintbrushes'], ['nests', 'eggs'], ['packs', 'hockey cards'], ['bowls', 'blueberries'], ['strings', 'beads']];
+  function oddCounts(g, n, d) { var a = same(g, n); a[R.int(0, g - 1)] += d; return a; }
+  skill('md-groups', 'Count equal groups', 'B2.6', [
+    [1, 'plain', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      return num('How many counters in all?', g * n, prodFix(g, n), { fig: platesFig(same(g, n)), hint: pl(g, 'plate') + ', ' + n + ' on each. Skip count by ' + n + '.',
+        steps: [g + ' equal groups of ' + n + '.', 'Count by ' + n + 's: ' + skips(n, g) + '.'], explain: g + ' groups of ' + n + ' make ' + g * n + '.', meta: { k: 'g3md-fig-total' } });
+    }],
+    [1, 'story', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA), c = R.pick(GOODS), who = Q.name();
+      return num(who + ' has ' + g + ' ' + c[0] + ' with ' + n + ' ' + c[1] + ' in each. How many ' + c[1] + ' in all?', g * n, prodFix(g, n), {
+        hint: g + ' groups of ' + n + '. Skip count by ' + n + '.', steps: [g + ' equal groups of ' + n + '.', 'Count by ' + n + 's: ' + skips(n, g) + '.'], explain: g + ' groups of ' + n + ' make ' + g * n + '.', meta: mt(g, n, 'x') });
+    }],
+    [1, 'fill', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      return fill('Fill in the blanks.', '[[]] groups of [[]] make [[]]', [g, n, g * n], { fig: platesFig(same(g, n)), hint: 'Count the plates, then one plate, then all of them.',
+        steps: [pl(g, 'plate') + '.', n + ' on each plate.', 'Count by ' + n + 's: ' + skips(n, g) + '.'], explain: g + ' groups of ' + n + ' make ' + g * n + '.', meta: { k: 'g3md-fig-fill' } });
+    }],
+    [1, 'tap', function (lv) {
+      var g = rng(lv, { 1: [2, 3], 2: [3, 4], 3: [4, 4] }), n = rng(lv, EA), sets = R.shuffle([same(g, n), oddCounts(g, n, 1), oddCounts(g, n, -1)]), ans = 0, w = {};
+      sets.forEach(function (s, i) { if (s.every(function (x) { return x === s[0]; })) ans = i; else w[String(i)] = 'Count each plate in that one. They are not all the same.'; });
+      return { q: 'Tap the picture with <b>equal groups</b>.', type: 'tap', tiles: sets.map(function (s) { return platesFig(s); }), answer: ans, answerText: pl(g, 'plate') + ' with ' + n + ' on each', wrong: w,
+        hint: 'Count the counters on every plate.', steps: ['Count each plate.', 'Equal groups: every plate has ' + n + '.'], explain: 'Every plate has ' + n + '.', meta: { k: 'g3md-tap-equal' } };
+    }],
+    [2, 'tf', function (lv) {
+      var g = rng(lv, { 2: [3, 4], 3: [4, 5] }), n = rng(lv, EA), truth = coin(), cs = truth ? same(g, n) : oddCounts(g, n, R.pick([1, -1])), who = Q.name();
+      return tf(who + ' says these are ' + g + ' equal groups of ' + n + '. True or false: ' + who + ' is right.', truth, truth ? 'Every plate has ' + n + '.' : 'One plate does not have ' + n + '.',
+        ['Groups only need the same number of plates.', 'Any ' + g + ' plates make equal groups.', 'Only the first plate counts.'], truth ? 'Count every plate: each has ' + n + '.' : 'Count every plate. One is different.',
+        { fig: platesFig(cs), hint: 'Count each plate.', meta: { k: 'g3md-tf-equal', n: n } });
+    }]
+  ]);
+  function tgGroups(lv) {
+    return function () {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      return { q: 'How many counters in all?', fig: platesFig(same(g, n)), done: g + ' groups of ' + n + ' make ' + g * n + '.', steps: [
+        { prompt: 'Count the plates first.', q: num('How many plates?', g, fx([[n, 'That is one plate. Count the plates.']]), { hint: 'Touch each plate as you count.', meta: mt(g, n, 'a') }) },
+        { prompt: 'Now count one plate.', q: num('How many on each plate?', n, fx([[g, 'That is the number of plates. Count one plate.']]), { hint: 'Every plate has the same number.', meta: mt(g, n, 'b') }) },
+        { prompt: 'Skip count by ' + n + ', once for each plate.', q: num('How many in all?', g * n, prodFix(g, n), { hint: 'Count by ' + n + 's: ' + skips(n, 2) + ', and on.', meta: mt(g, n, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- 3 × 4 means 3 groups of 4 ---------- */
+  skill('md-times', 'Write it with ×', 'B2.6', [
+    [1, 'plain', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      return fill('Write the times fact for the picture.', m('[[]]' + X + '[[]] = [[]]'), [g, n, g * n], { fig: platesFig(same(g, n)), hint: 'The first number is how many groups.',
+        steps: [pl(g, 'group') + ' of ' + n + '.', g + X + n + ' = ' + g * n + '.'], explain: g + X + n + ' = ' + g * n + '.', meta: { k: 'g3md-fig-fact' } });
+    }],
+    [1, 'calc', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      return num('What is ' + m(g + X + n) + '?', g * n, prodFix(g, n), { fig: lv < 3 ? platesFig(same(g, n)) : '', hint: g + X + n + ' is ' + g + ' groups of ' + n + '.',
+        steps: [g + ' groups of ' + n + '.', 'Count by ' + n + 's: ' + skips(n, g) + '.'], explain: g + X + n + ' = ' + g * n + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'add', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      var W = [[g + ' + ' + n, 'That adds the two numbers. ' + g + X + n + ' is ' + g + ' groups of ' + n + '.'], [adds(g + 1, n), 'Count the ' + n + 's: there must be ' + g + '.']];
+      if (g > 2) W.push([adds(g - 1, n), 'Count the ' + n + 's: there must be ' + g + '.']);
+      return mc('Which addition matches ' + m(g + X + n) + '?', adds(g, n), W, { hint: g + ' groups of ' + n + ': add ' + n + ', ' + g + ' times.', steps: [g + X + n + ' is ' + g + ' groups of ' + n + '.', 'Add ' + n + ' ' + g + ' times.'], explain: adds(g, n) + ' = ' + g * n + '.', meta: { k: 'g3md-add-mc', g: g, n: n } });
+    }],
+    [1, 'tap', function (lv) {
+      var p = two(lv, { 1: [2, 4], 2: [2, 5], 3: [3, 5] }, EA), g = p[0], n = p[1], sets = R.shuffle([[g, n], [n, g], [g, n + 1]]), ans = 0, w = {};
+      sets.forEach(function (s, i) { if (s[0] === g && s[1] === n) ans = i; else w[String(i)] = 'That one is ' + pl(s[0], 'group') + ' of ' + s[1] + ': ' + s[0] + X + s[1] + '.'; });
+      return { q: 'Tap the picture of ' + m(g + X + n) + '.', type: 'tap', tiles: sets.map(function (s) { return platesFig(same(s[0], s[1])); }), answer: ans, answerText: g + ' plates with ' + n + ' on each', wrong: w,
+        hint: 'The first number counts the plates.', steps: [g + ' plates.', n + ' on each plate.'], explain: g + X + n + ': ' + g + ' groups of ' + n + '.', meta: { k: 'g3md-tap-plates', g: g, n: n } };
+    }],
+    [1, 'groups', function (lv) {
+      var g = rng(lv, GR), n = rng(lv, EA);
+      return fill('How many groups?', m(adds(g, n) + ' = [[]]' + X + n), [g], { hint: 'Count the ' + n + 's.', steps: ['There are ' + g + ' of them.', adds(g, n) + ' = ' + g + X + n + '.'], explain: g + ' groups of ' + n + ': ' + g + X + n + '.', meta: { k: 'g3md-eqs' } });
+    }]
+  ]);
+  function tgTimes(lv) {
+    return function () {
+      var g = rng(lv, GR), n = rng(lv, EA), W = [[n + X + g + ' = ' + g * n, 'That is ' + n + ' groups of ' + g + '. Count the plates first.'], [g + ' + ' + n + ' = ' + (g + n), 'That adds. The picture shows groups.'], [g + X + (n + 1) + ' = ' + g * (n + 1), 'Count one plate again: ' + n + '.']];
+      if (g === n) W[0] = [(g + 1) + X + n + ' = ' + (g + 1) * n, 'Count the plates again: ' + g + '.'];
+      return { q: 'Which times fact matches the picture?', fig: platesFig(same(g, n)), done: g + X + n + ' = ' + g * n + ': ' + g + ' groups of ' + n + '.', steps: [
+        { prompt: 'The first number counts the groups.', q: num('How many groups?', g, fx([[n, 'That is how many in one group.']]), { hint: 'Count the plates.', meta: mt(g, n, 'a') }) },
+        { prompt: 'The second number is how many in each.', q: num('How many in each group?', n, fx([[g, 'That is the number of plates.']]), { hint: 'Count one plate.', meta: mt(g, n, 'b') }) },
+        { prompt: 'Groups first, then how many in each.', q: mc('So which fact is it?', g + X + n + ' = ' + g * n, W, { hint: g + ' groups of ' + n + '.', meta: { k: 'g3md-fact-mc', g: g, n: n } }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 2: Arrays ======================= */
+  var ROWS = [['A muffin tin has', 'cups'], ['The gym has', 'chairs'], ['A garden in Saskatoon has', 'carrot plants'], ['A window has', 'panes'], ['A box of chocolates has', 'chocolates'], ['The bus has', 'seats']];
+  function arrSets(r, c) { var s = [[r, c]]; if (r !== c) s.push([c, r]); s.push([r, c + 1]); if (s.length < 3) s.push([r + 1, c]); return R.shuffle(s); }
+  skill('md-array', 'Arrays', 'B2.6', [
+    [1, 'plain', function (lv) {
+      var r = rng(lv, GR), c = rng(lv, EA);
+      return num('How many dots?', r * c, prodFix(r, c), { fig: arrayFig(r, c, { labels: lv === 1 }), hint: 'Count the rows. Count one row. Then skip count.',
+        steps: [r + ' rows of ' + c + ': ' + r + X + c + '.', 'Count by ' + c + 's: ' + skips(c, r) + '.'], explain: r + X + c + ' = ' + r * c + '.', meta: { k: 'g3md-arr-total' } });
+    }],
+    [1, 'fill', function (lv) {
+      var r = rng(lv, GR), c = rng(lv, EA);
+      return fill('Fill in the blanks.', '[[]] rows of [[]] make [[]]', [r, c, r * c], { fig: arrayFig(r, c), hint: 'Rows go across. Count them going down.',
+        steps: [r + ' rows.', c + ' in each row.', r + X + c + ' = ' + r * c + '.'], explain: r + ' rows of ' + c + ' make ' + r * c + '.', meta: { k: 'g3md-arr-fill' } });
+    }],
+    [1, 'story', function (lv) {
+      var r = rng(lv, GR), c = rng(lv, EA), t = R.pick(ROWS);
+      return num(t[0] + ' ' + r + ' rows of ' + c + ' ' + t[1] + '. How many ' + t[1] + ' in all?', r * c, prodFix(r, c), { hint: r + ' rows of ' + c + ': ' + r + X + c + '.',
+        steps: [r + ' rows of ' + c + '.', 'Count by ' + c + 's: ' + skips(c, r) + '.'], explain: r + X + c + ' = ' + r * c + '.', meta: mt(r, c, 'x') });
+    }],
+    [1, 'tap', function (lv) {
+      var p = two(lv, { 1: [2, 4], 2: [3, 6], 3: [5, 8] }, { 1: [2, 5], 2: [3, 7], 3: [5, 9] }), r = p[0], c = p[1], sets = arrSets(r, c), ans = 0, w = {};
+      sets.forEach(function (s, i) { if (s[0] === r && s[1] === c) ans = i; else w[String(i)] = 'That one has ' + s[0] + ' rows of ' + s[1] + '.'; });
+      return { q: 'Tap the array for ' + m(r + X + c) + '.', type: 'tap', tiles: sets.map(function (s) { return arrayFig(s[0], s[1]); }), answer: ans, answerText: r + ' rows of ' + c, wrong: w,
+        hint: 'The first number is the number of rows.', steps: ['Count the rows going down: ' + r + '.', 'Count one row: ' + c + '.'], explain: r + X + c + ': ' + r + ' rows of ' + c + '.', meta: { k: 'g3md-tap-arr', a: r, b: c } };
+    }],
+    [2, 'tf', function (lv) {
+      var r = rng(lv, GR), c = rng(lv, EA), who = Q.name(), truth = coin(), s = truth ? [r, c] : R.pick([[r, c + 1], [r + 1, c], [r - 1, c]]);
+      return tf(who + ' says this array shows ' + m(s[0] + X + s[1]) + '. True or false: ' + who + ' is right.', truth, 'It has ' + r + ' rows of ' + c + ': ' + r + X + c + '.',
+        ['Any array with about that many dots matches.', 'Count the dots in one row only.', 'The rows do not matter.'], 'Count the rows, then one row.', { fig: arrayFig(r, c), hint: 'Count the rows going down.', meta: { k: 'g3md-tf-arr', a: s[0], b: s[1] } });
+    }]
+  ]);
+  function tgArray(lv) {
+    return function () {
+      var r = rng(lv, GR), c = rng(lv, EA);
+      return { q: 'How many dots in the array?', fig: arrayFig(r, c, { labels: lv === 1 }), done: r + ' rows of ' + c + ': ' + r + X + c + ' = ' + r * c + '.', steps: [
+        { prompt: 'Rows go across. Count them going down.', q: num('How many rows?', r, fx([[c, 'That is how many in one row. Count the rows.']]), { hint: 'Point to each row.', meta: mt(r, c, 'a') }) },
+        { prompt: 'Count the dots in one row.', q: num('How many in each row?', c, fx([[r, 'That is the number of rows.']]), { hint: 'Count across the top row.', meta: mt(r, c, 'b') }) },
+        { prompt: 'Skip count by ' + c + ', once for each row.', q: num(m(r + X + c) + ' = ?', r * c, prodFix(r, c), { hint: 'Count by ' + c + 's.', meta: mt(r, c, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- turn-around facts ---------- */
+  skill('md-turn', 'Turn-around facts', 'B2.1', [
+    [1, 'plain', function (lv) {
+      var p = two(lv, GR, EA), a = p[0], b = p[1];
+      return num(m(a + X + b + ' = ' + a * b) + '. What is ' + m(b + X + a) + '?', a * b, fx([[a * b + a, 'Turn it around: the dots stay the same.'], [a * b - a, 'Turn it around: the dots stay the same.'], [a + b, 'You added. Turn the array: same dots.']]), {
+        hint: 'Turn the array on its side.', steps: [b + X + a + ' is the same array, turned.', 'Same dots: ' + a * b + '.'], explain: b + X + a + ' = ' + a * b + '.', meta: mt(b, a, 'x') });
+    }],
+    [1, 'fill', function (lv) {
+      var p = two(lv, GR, EA), a = p[0], b = p[1];
+      return fill('Fill in the blanks.', m(a + X + b + ' = [[]]' + X + a + ' = [[]]'), [b, a * b], { hint: 'Turn it around: swap the numbers.', steps: [a + X + b + ' = ' + b + X + a + '.', 'Both are ' + a * b + '.'], explain: a + X + b + ' = ' + b + X + a + ' = ' + a * b + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'picture', function (lv) {
+      var p = two(lv, GR, EA), a = p[0], b = p[1];
+      return num('This is ' + m(a + X + b) + '. Turn it on its side: ' + b + ' rows of ' + a + '. How many dots?', a * b, fx([[a + b, 'Turning does not change the dots. Count them.']]), { fig: arrayFig(a, b), hint: 'Turning it does not add or take away dots.',
+        steps: ['The dots stay the same.', a + X + b + ' = ' + a * b + ', so ' + b + X + a + ' = ' + a * b + '.'], explain: b + X + a + ' = ' + a * b + '.', meta: { k: 'g3md-arr-total' } });
+    }],
+    [2, 'tf', function (lv) {
+      var p = two(lv, GR, EA), a = p[0], b = p[1], who = Q.name(), truth = coin(), said = truth ? a * b : a * b + R.pick([a, -a, b]);
+      return tf(who + ' knows ' + m(a + X + b + ' = ' + a * b) + '. ' + who + ' says ' + m(b + X + a + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, 'Turn-around facts have the same answer: ' + a * b + '.',
+        ['Turn-around facts are always one group more.', 'The bigger number first makes more.', 'You cannot turn a fact around.'], 'Turn the array: the dots stay the same.', { hint: 'Picture the array turned.', meta: { k: 'g3md-tf', a: b, b: a, op: 'x', said: said } });
+    }],
+    [2, 'match', function (lv) {
+      var P = pairs3(function () { var q = two(lv, GR, EA); return [q[0] + X + q[1], q[1] + X + q[0]]; });
+      return { q: 'Match each fact to its turn-around fact.', type: 'match', pairs: P, hint: 'Swap the two numbers.', steps: ['3 &times; 7 turns around to 7 &times; 3.'], explain: P.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'g3md-match-turn' } };
+    }]
+  ]);
+  function tgTurn(lv) {
+    return function () {
+      var p = two(lv, GR, EA), a = p[0], b = p[1];
+      return { q: m(a + X + b + ' = ' + a * b) + '. Find ' + m(b + X + a) + '.', fig: arrayFig(a, b, { labels: true }), done: b + X + a + ' = ' + a * b + ': the same dots, turned.', steps: [
+        { prompt: 'Turn the array on its side. The columns become rows.', q: num('How many rows now?', b, fx([[a, 'That was before the turn. Now there are ' + b + ' rows.']]), { hint: 'Each column becomes a row.', meta: mt(a, b, 'b') }) },
+        { prompt: 'Each new row has one dot from each old row.', q: num('How many in each row now?', a, fx([[b, 'That is the number of rows now.']]), { hint: 'Count the old rows.', meta: mt(a, b, 'a') }) },
+        { prompt: 'The dots did not change.', q: num(m(b + X + a) + ' = ?', a * b, fx([[a + b, 'You added. The dots stay the same.']]), { hint: a + X + b + ' = ' + a * b + '.', meta: mt(b, a, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- split a hard fact ---------- */
+  var SP = { 1: [6, 7], 2: [6, 8], 3: [7, 9] }, SPC = { 1: [2, 5], 2: [3, 7], 3: [6, 10] };
+  skill('md-split', 'Split a hard fact', 'B2.1, B2.6', [
+    [1, 'plain', function (lv) {
+      var r = rng(lv, SP), c = rng(lv, SPC), s = 5;
+      return fill('Find each part, then add.', m('[[]] + [[]] = [[]]'), [s * c, (r - s) * c, r * c], { fig: arrayFig(r, c, { labels: true, split: s }), hint: 'Top part first, then the bottom part.',
+        steps: ['Top: ' + s + X + c + ' = ' + s * c + '.', 'Bottom: ' + (r - s) + X + c + ' = ' + (r - s) * c + '.', s * c + ' + ' + (r - s) * c + ' = ' + r * c + '.'], explain: r + X + c + ' = ' + r * c + '.', meta: { k: 'g3md-split-fill' } });
+    }],
+    [1, 'num', function (lv) {
+      var r = rng(lv, SP), c = rng(lv, SPC), s = 5;
+      return num('Use ' + m(s + X + c + ' = ' + s * c) + ' and ' + m((r - s) + X + c + ' = ' + (r - s) * c) + ' to find ' + m(r + X + c) + '.', r * c, fx([[s * c, 'That is only the top part. Add the bottom part.'], [(r - s) * c, 'That is only the bottom part. Add the top part.'], [s * c + r - s, 'Add the whole bottom part: ' + (r - s) * c + '.']]), {
+        hint: 'Add the two parts.', steps: [s * c + ' + ' + (r - s) * c + '.', '= ' + r * c + '.'], explain: r + X + c + ' = ' + r * c + '.', meta: mt(r, c, 'x') });
+    }],
+    [1, 'parts', function (lv) {
+      var r = rng(lv, SP), c = rng(lv, SPC), s = 5;
+      return fill('Fill in the blanks.', m(r + X + c + ' = ' + s + X + c + ' + [[]]' + X + c + ' = [[]]'), [r - s, r * c], { fig: lv < 3 ? arrayFig(r, c, { split: s }) : '', hint: r + ' rows is ' + s + ' rows and ' + (r - s) + ' more.',
+        steps: [r + ' = ' + s + ' + ' + (r - s) + '.', s * c + ' + ' + (r - s) * c + ' = ' + r * c + '.'], explain: r + X + c + ' = ' + r * c + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [2, 'mc', function (lv) {
+      var r = rng(lv, SP), c = rng(lv, SPC), s = 5;
+      return mc('Split ' + m(r + X + c) + ' after ' + s + ' rows. What is the other part?', (r - s) + X + c, [[(r - s + 1) + X + c, 'Count the rows below the line: ' + (r - s) + '.'], [r + X + c, 'That is the whole array, not the part.'], [(r - s) + ' + ' + c, 'The part is ' + (r - s) + ' rows of ' + c + '.']], {
+        fig: arrayFig(r, c, { split: s }), hint: 'How many rows are below the line?', steps: [r + ' rows = ' + s + ' rows + ' + (r - s) + ' rows.'], explain: 'The other part is ' + (r - s) + X + c + '.', meta: { k: 'g3md-split-mc', r: r, c: c, s: s } });
+    }],
+    [2, 'tf', function (lv) {
+      var r = rng(lv, SP), c = rng(lv, SPC), s = 5, who = Q.name(), kind = R.pick([0, 0, 1, 2]), bottom = kind === 1 ? r - s : (r - s) * c, said = s * c + bottom + (kind === 2 ? c : 0);
+      return tf(who + ' splits ' + m(r + X + c) + ' into ' + m(s + X + c) + ' and ' + m((r - s) + X + c) + '. ' + who + ' says ' + m(r + X + c + ' = ' + said) + '. True or false: ' + who + ' is right.', said === r * c,
+        s * c + ' + ' + (r - s) * c + ' = ' + r * c + '.', ['Splitting changes the answer.', 'You only need the top part.', 'Add the row numbers.'], 'Work out each part again: ' + s + X + c + ' and ' + (r - s) + X + c + '.', { hint: 'Check both parts.', meta: { k: 'g3md-tf', a: r, b: c, op: 'x', said: said } });
+    }]
+  ]);
+  function tgSplit(lv) {
+    return function () {
+      var r = rng(lv, SP), c = rng(lv, SPC), s = 5;
+      return { q: 'Find ' + m(r + X + c) + ' by splitting it.', fig: arrayFig(r, c, { labels: true, split: s }), done: s * c + ' + ' + (r - s) * c + ' = ' + r * c + '. So ' + r + X + c + ' = ' + r * c + '.', steps: [
+        { prompt: 'Start with the top part: a fact of 5.', q: num(m(s + X + c) + ' = ?', s * c, prodFix(s, c), { hint: 'Count by ' + c + 's five times.', meta: mt(s, c, 'x') }) },
+        { prompt: 'Now the rows below the line.', q: num(m((r - s) + X + c) + ' = ?', (r - s) * c, prodFix(r - s, c), { hint: (r - s) + ' rows of ' + c + '.', meta: mt(r - s, c, 'x') }) },
+        { prompt: 'Add the two parts.', q: num(m(r + X + c) + ' = ?', r * c, fx([[s * c, 'Add the bottom part too.'], [(r - s) * c, 'Add the top part too.']]), { hint: s * c + ' + ' + (r - s) * c + '.', meta: mt(r, c, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 3: Facts of 2, 5 and 10 ======================= */
+  var NJ = { 1: [2, 5], 2: [2, 7], 3: [6, 10] };
+  function edge(k) { return function (v) { return v === 0 || v === k; }; }
+  var HOPS = [
+    function (w, n, k) { return w + ' saves ' + k + '&cent; each day for ' + n + ' days. How many cents is that?'; },
+    function (w, n, k) { return w + ' reads ' + k + ' pages each night for ' + n + ' nights. How many pages?'; },
+    function (w, n, k) { return w + ' walks ' + k + ' blocks each day for ' + n + ' days. How many blocks?'; },
+    function (w, n, k) { return w + ' plants ' + n + ' rows of beans with ' + k + ' in each row. How many beans?'; },
+    function (w, n, k) { return w + ' stacks ' + n + ' towers of ' + k + ' cubes. How many cubes?'; }
+  ];
+  skill('md-skip', 'Jump to multiply', 'B2.2', [
+    [1, 'plain', function (lv) {
+      var k = R.pick(K1[lv]), n = rng(lv, NJ);
+      return num(m(n + X + k) + ' is ' + n + ' jumps of ' + k + '. Where do you land?', n * k, prodFix(n, k), { fig: lineFig(k, n, { show: edge(k), dot: false }), hint: 'Count by ' + k + 's, one for each jump.',
+        steps: ['Count by ' + k + 's: ' + skips(k, n) + '.', 'You land on ' + n * k + '.'], explain: n + X + k + ' = ' + n * k + '.', meta: mt(n, k, 'x') });
+    }],
+    [1, 'line', function (lv) {
+      var k = R.pick(K1[lv]), n = rng(lv, NJ);
+      return { q: 'Show ' + m(n + X + k) + ': ' + n + ' jumps of ' + k + ' from 0. Put the marker where you land.', type: 'line', min: 0, max: k * 10, tick: k, every: k * 2, snap: k, answer: n * k,
+        hint: 'Each jump is ' + k + '. Make ' + n + ' jumps.', steps: ['Count by ' + k + 's: ' + skips(k, n) + '.'], explain: n + X + k + ' = ' + n * k + '.', meta: { k: 'g3md-line', a: n, b: k, op: 'x' } };
+    }],
+    [1, 'count', function (lv) {
+      var k = R.pick(K1[lv]), s0 = lv === 1 ? 1 : R.int(lv === 2 ? 1 : 3, 6), gaps = lv === 1 ? [2, 4] : lv === 2 ? [1, 3] : [0, 3], seq = [];
+      for (var i = 0; i < 5; i++) seq.push(k * (s0 + i));
+      return fill('Count by ' + k + 's. Fill in the missing numbers.', m(seq.map(function (v, i) { return gaps.indexOf(i) >= 0 ? '[[]]' : String(v); }).join(', ')), gaps.map(function (i) { return seq[i]; }), {
+        hint: 'Each number is ' + k + ' more than the one before.', steps: ['Add ' + k + ' each time.', seq.join(', ') + '.'], explain: seq.join(', ') + '.', meta: { k: 'g3md-skipfill', f: k } });
+    }],
+    [1, 'story', function (lv) {
+      var k = R.pick(K1[lv]), n = rng(lv, NJ);
+      return num(R.pick(HOPS)(Q.name(), n, k), n * k, prodFix(n, k), { hint: n + ' groups of ' + k + ': count by ' + k + 's.', steps: [n + X + k + '.', 'Count by ' + k + 's: ' + skips(k, n) + '.'], explain: n + X + k + ' = ' + n * k + '.', meta: mt(n, k, 'x') });
+    }],
+    [2, 'tf', function (lv) {
+      var k = R.pick(K1[lv]), n = rng(lv, NJ), who = Q.name(), truth = coin(), said = truth ? n * k : R.pick([n * k + k, n * k - k, n + k]);
+      return tf(who + ' says ' + m(n + X + k + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, n + ' jumps of ' + k + ': ' + skips(k, n) + '.', ['Add ' + n + ' and ' + k + '.', 'Stop one jump early.', 'Any number that ends in 0 is right.'],
+        'Count the jumps: ' + n + ' jumps of ' + k + '.', { fig: lv === 2 ? lineFig(k, n, { show: edge(k), dot: false }) : '', hint: 'Count by ' + k + 's and keep track of the jumps.', meta: { k: 'g3md-tf', a: n, b: k, op: 'x', said: said } });
+    }]
+  ]);
+  function tgSkip(lv) {
+    return function () {
+      var k = R.pick(K1[lv]), n = rng(lv, NJ);
+      return { q: 'Find ' + m(n + X + k) + ' on the number line.', fig: lineFig(k, 0, { show: edge(k) }), done: n + ' jumps of ' + k + ' land on ' + n * k + '.', steps: [
+        { prompt: 'The second number is the size of each jump.', q: num('How big is each jump?', k, fx([[n, 'That is how many jumps.']]), { hint: n + X + k + ': jumps of ' + k + '.', meta: mt(n, k, 'b') }) },
+        { prompt: 'The first number is how many jumps.', q: num('How many jumps?', n, fx([[k, 'That is the size of each jump.']]), { hint: n + ' groups of ' + k + '.', meta: mt(n, k, 'a') }) },
+        { prompt: 'Count by ' + k + 's, ' + n + ' times.', q: num('Where do you land?', n * k, prodFix(n, k), { hint: skips(k, 2) + ', and on.', meta: mt(n, k, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- turn it to use 2s, 5s or 10s ---------- */
+  var TN = { 1: [3, 5], 2: [3, 7], 3: [6, 9] };
+  function tcase(lv) { var k = R.pick(K1[lv]), n = rng(lv, TN); if (n === k) n++; return [k, n]; }
+  skill('md-useturn', 'Turn it to use 2s, 5s or 10s', 'B2.2, B2.1', [
+    [1, 'plain', function (lv) {
+      var t = tcase(lv), k = t[0], n = t[1];
+      return num('What is ' + m(k + X + n) + '?', k * n, prodFix(k, n), { hint: 'Turn it around: ' + n + X + k + '. Count by ' + k + 's.', steps: [k + X + n + ' = ' + n + X + k + '.', 'Count by ' + k + 's, ' + n + ' times: ' + skips(k, n) + '.'], explain: k + X + n + ' = ' + k * n + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'fill', function (lv) {
+      var t = tcase(lv), k = t[0], n = t[1];
+      return fill('Turn it around, then find it.', m(k + X + n + ' = ' + n + X + '[[]] = [[]]'), [k, k * n], { hint: 'Swap the numbers. Then count by ' + k + 's.', steps: [k + X + n + ' = ' + n + X + k + '.', skips(k, n) + '.'], explain: k + X + n + ' = ' + k * n + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'picture', function (lv) {
+      var t = tcase(lv), k = t[0], n = t[1];
+      return num(m(k + X + n) + ' and ' + m(n + X + k) + ' land in the same place. Where?', k * n, prodFix(n, k), { fig: twoLine(k, n, k, n, true), hint: 'Count the jumps of ' + k + ' on the bottom line.', steps: ['Bottom line: ' + skips(k, n) + '.', 'Both land on ' + k * n + '.'], explain: k + X + n + ' = ' + n + X + k + ' = ' + k * n + '.', meta: mt(k, n, 'x') });
+    }],
+    [1, 'which', function (lv) {
+      var t = tcase(lv), k = t[0], n = t[1];
+      return mc(m(k + X + n + ' = ' + n + X + k) + '. Which is the easy way to find it?', 'Count by ' + k + 's, ' + n + ' times', [['Count by ' + k + 's, ' + k + ' times', 'Count by ' + k + 's once for each group: ' + n + ' groups.'], ['Count by ' + n + 's, ' + n + ' times', 'That makes ' + n + X + n + '.'], ['Count by 1s, ' + n + ' times', 'That only reaches ' + n + '.']], {
+        hint: n + X + k + ' is ' + n + ' jumps of ' + k + '.', steps: ['Turn it: ' + n + X + k + '.', 'Count by ' + k + 's, ' + n + ' times.'], explain: 'Count by ' + k + 's, ' + n + ' times: ' + k * n + '.', meta: { k: 'g3md-useturn-mc', f: k, n: n } });
+    }],
+    [2, 'tf', function (lv) {
+      var t = tcase(lv), k = t[0], n = t[1], who = Q.name(), truth = coin(), said = truth ? k * n : R.pick([k * n + k, k * n - k, k * n + n]);
+      return tf(who + ' turns ' + m(k + X + n) + ' into ' + m(n + X + k) + ' and gets ' + said + '. True or false: ' + who + ' is right.', truth, n + ' jumps of ' + k + ': ' + skips(k, n) + '.', ['Turning a fact changes the answer.', 'Count by ' + n + 's, ' + k + ' times, then add 1.', 'Add the two numbers.'],
+        'Count by ' + k + 's, ' + n + ' times.', { hint: 'Count by ' + k + 's and keep track.', meta: { k: 'g3md-tf', a: k, b: n, op: 'x', said: said } });
+    }]
+  ]);
+  function tgUseturn(lv) {
+    return function () {
+      var t = tcase(lv), k = t[0], n = t[1];
+      return { q: 'Find ' + m(k + X + n) + '.', fig: twoLine(k, n, 0, 0, true), done: k + X + n + ' = ' + n + X + k + ' = ' + k * n + '.', steps: [
+        { prompt: k + ' jumps of ' + n + ' is hard. Turn it around.', q: mc('Which fact has the same answer?', n + X + k, [[k + ' + ' + n, 'That adds. Turn the numbers around.'], [k + X + k, 'Swap the two numbers.'], [n + X + n, 'Swap the two numbers.']], { hint: 'Swap the two numbers.', meta: { k: 'g3md-turn-mc', a: k, b: n } }) },
+        { prompt: 'Now it is ' + n + ' jumps of ' + k + '.', q: num('How many jumps of ' + k + '?', n, fx([[k, 'That is the size of each jump.']]), { hint: n + X + k + '.', meta: mt(k, n, 'b') }) },
+        { prompt: 'Count by ' + k + 's, ' + n + ' times.', q: num(m(k + X + n) + ' = ?', k * n, prodFix(n, k), { hint: skips(k, 2) + ', and on.', meta: mt(k, n, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- patterns in the facts ---------- */
+  var ENDS = ['0 or 5', '0, 2, 4, 6 or 8', '0 only'], ENDK = { 5: 0, 2: 1, 10: 2 };
+  function notFact(k) { var v; do { v = R.int(3, k * 10); } while (v % k === 0); return v; }
+  skill('md-pattern', 'Patterns in the facts', 'B2.2', [
+    [1, 'plain', function (lv) {
+      var k = R.pick([2, 5, 10]), down = lv === 3, i0 = down ? R.int(5, 10) : R.int(1, lv === 1 ? 5 : 7), d = down ? -1 : 1, a = [i0, i0 + d, i0 + 2 * d].map(function (i) { return i * k; }), nx = (i0 + 3 * d) * k;
+      return num('The facts of ' + k + ' go ' + m(a.join(', ')) + '. What comes next?', nx, fx([[nx - d * k + d, 'Facts of ' + k + ' go ' + (down ? 'down' : 'up') + ' by ' + k + ', not by 1.']]), { hint: (down ? 'Take away ' : 'Add ') + k + '.', steps: [a.join(', ') + ' go ' + (down ? 'down' : 'up') + ' by ' + k + '.', 'Next: ' + nx + '.'], explain: a.join(', ') + ', ' + nx + '.', meta: { k: 'g3md-next' } });
+    }],
+    [1, 'tens', function (lv) {
+      var n = rng(lv, { 1: [2, 9], 2: [2, 9], 3: [3, 9] }), k = lv === 3 ? R.pick([5, 2]) : 10;
+      var f = lv === 1 ? [n + X + '10 = [[]]', [10 * n]] : [ '[[]]' + X + k + ' = ' + n * k, [n]];
+      return fill('Fill in the blank.', m(f[0]), f[1], { hint: k === 10 ? 'Facts of 10 end in 0: ' + n + ' tens.' : 'Count by ' + k + 's to ' + n * k + '.', steps: [skips(k, n) + '.', n + X + k + ' = ' + n * k + '.'], explain: n + X + k + ' = ' + n * k + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'double', function (lv) {
+      var n = rng(lv, { 1: [2, 5], 2: [3, 7], 3: [6, 10] });
+      return fill('Facts of 2 are doubles.', m('2' + X + n + ' = ' + n + ' + ' + n + ' = [[]]'), [2 * n], { hint: 'Double ' + n + '.', steps: ['2 groups of ' + n + ': ' + n + ' + ' + n + '.', '= ' + 2 * n + '.'], explain: '2' + X + n + ' = ' + 2 * n + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'pick', function (lv) {
+      var k = lv === 1 ? R.pick([2, 10]) : R.pick([5, 2, 10]), seen = {}, opts = [];
+      while (opts.length < 5) { var v = opts.length < 2 ? k * R.int(lv === 3 ? 4 : 1, 10) : notFact(k); if (!seen[v]) { seen[v] = 1; opts.push(v); } }
+      opts = R.shuffle(opts);
+      var ans = []; opts.forEach(function (v, j) { if (v % k === 0) ans.push(j); });
+      return { q: 'Pick <b>every</b> fact of ' + k + '.', type: 'pick', options: opts.map(String), answer: ans, hint: 'Facts of ' + k + ' end in ' + ENDS[ENDK[k]] + '.', steps: ['Facts of ' + k + ': ' + skips(k, 10) + '.'],
+        explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' are facts of ' + k + '.', meta: { k: 'g3md-pick-mult', f: k } };
+    }],
+    [2, 'tf', function (lv) {
+      var k = R.pick([2, 5, 10]), truth = coin(), v = truth ? k * R.int(lv === 3 ? 6 : 2, 10) : notFact(k), who = Q.name();
+      return tf(who + ' says ' + v + ' is a fact of ' + k + '. True or false: ' + who + ' is right.', truth, 'Facts of ' + k + ' end in ' + ENDS[ENDK[k]] + '. ' + v + (truth ? ' does.' : ' does not.'),
+        ['Every number under ' + (10 * k + 1) + ' is a fact of ' + k + '.', 'Only odd numbers are facts.', 'Look at the first digit only.'], 'Look at the last digit of ' + v + '.', { hint: 'Look at the last digit.', meta: { k: 'g3md-tf-mult', f: k, v: v } });
+    }]
+  ]);
+  function tgPattern(k) {
+    return function () {
+      var truth = coin(), v = truth ? k * R.int(2, 10) : notFact(k);
+      return { q: 'Is ' + v + ' a fact of ' + k + '?', fig: chart100(0, { mark: v }), done: v + (truth ? ' is' : ' is not') + ' a fact of ' + k + '.', steps: [
+        { prompt: 'Look at the last digit.', q: num('What is the last digit of ' + v + '?', v % 10, {}, { hint: 'The ones digit.', meta: mt(v, 10, '%') }) },
+        { prompt: 'Each set of facts ends the same way.', q: fixed('Facts of ' + k + ' end in…', ENDS, ENDK[k], ['Facts of 5 go 5, 10, 15, 20.', 'Facts of 2 go 2, 4, 6, 8, 10.', 'Facts of 10 go 10, 20, 30.'], { hint: 'Say the first few: ' + skips(k, 4) + '.', meta: { k: 'g3md-ends', f: k } }) },
+        { prompt: 'Does ' + v + ' end that way?', q: fixed('So is ' + v + ' a fact of ' + k + '?', ['Yes', 'No'], truth ? 0 : 1, ['Check the last digit again.', 'Check the last digit again.'], { hint: 'Compare the last digit.', meta: { k: 'g3md-yn-mult', f: k, v: v } }) }
+      ] };
+    };
+  }
+
+  /* ---------- one group more or less ---------- */
+  function ncase(lv) { var o = R.pick({ 1: [[2, 3], [5, 6]], 2: [[5, 4], [5, 6], [2, 3]], 3: [[10, 9], [5, 6], [5, 4], [10, 9]] }[lv]); return { base: o[0], r: o[1], c: rng(lv, EA), up: o[1] > o[0] }; }
+  function nearFig(n) { return n.up ? arrayFig(n.r, n.c, { labels: true, split: n.base }) : arrayFig(n.base, n.c, { labels: true, off: n.r }); }
+  skill('md-near', 'One group more or less', 'B2.2, B2.1', [
+    [1, 'plain', function (lv) {
+      var n = ncase(lv), bc = n.base * n.c, d = n.up ? 1 : -1;
+      return num('You know ' + m(n.base + X + n.c + ' = ' + bc) + '. What is ' + m(n.r + X + n.c) + '?', n.r * n.c, fx([[bc + d, (n.up ? 'Add' : 'Take away') + ' a whole group of ' + n.c + ', not 1.'], [bc, 'That is ' + n.base + X + n.c + '. ' + n.r + ' groups is one ' + (n.up ? 'more' : 'less') + '.']]), {
+        hint: n.r + ' groups is one group ' + (n.up ? 'more' : 'less') + ' than ' + n.base + '.', steps: [bc + (n.up ? ' + ' : MI) + n.c + '.', '= ' + n.r * n.c + '.'], explain: n.r + X + n.c + ' = ' + n.r * n.c + '.', meta: mt(n.r, n.c, 'x') });
+    }],
+    [1, 'fill', function (lv) {
+      var n = ncase(lv);
+      return fill('Fill in the blanks.', m(n.r + X + n.c + ' = ' + n.base + X + n.c + (n.up ? ' + ' : MI) + '[[]] = [[]]'), [n.c, n.r * n.c], { hint: 'One group of ' + n.c + (n.up ? ' more.' : ' less.'),
+        steps: [n.base + X + n.c + ' = ' + n.base * n.c + '.', n.base * n.c + (n.up ? ' + ' : MI) + n.c + ' = ' + n.r * n.c + '.'], explain: n.r + X + n.c + ' = ' + n.r * n.c + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'picture', function (lv) {
+      var n = ncase(lv);
+      return num(m(n.base + X + n.c + ' = ' + n.base * n.c) + '. ' + (n.up ? 'Add one more row of ' + n.c + '. How many dots?' : 'Take away the dashed row. How many dots are left?'), n.r * n.c, fx([[n.base * n.c + (n.up ? 1 : -1), 'A row is ' + n.c + ' dots, not 1.']]), {
+        fig: nearFig(n), hint: 'One row is ' + n.c + ' dots.', steps: [n.base * n.c + (n.up ? ' + ' : MI) + n.c + '.', '= ' + n.r * n.c + '.'], explain: n.r + X + n.c + ' = ' + n.r * n.c + '.', meta: { k: 'g3md-arr-total' } });
+    }],
+    [2, 'mc', function (lv) {
+      var n = ncase(lv), dir = n.up ? 'add ' : 'take away ', other = n.up ? 'take away ' : 'add ', F = m(n.base + X + n.c) + ', then ';
+      return mc('Which helps you find ' + m(n.r + X + n.c) + '?', F + dir + n.c, [[F + dir + '1', 'Each group is ' + n.c + ', not 1.'], [F + other + n.c, n.r + ' is one ' + (n.up ? 'more' : 'less') + ' than ' + n.base + '.'], [F + dir + n.base, 'One group is ' + n.c + '.']], {
+        fig: nearFig(n), hint: n.r + ' groups is one group ' + (n.up ? 'more' : 'less') + ' than ' + n.base + '.', steps: [n.base + X + n.c + ' = ' + n.base * n.c + '.', (n.up ? 'Add ' : 'Take away ') + n.c + ': ' + n.r * n.c + '.'], explain: n.r + X + n.c + ' = ' + n.r * n.c + '.', meta: { k: 'g3md-near-mc', r: n.r, c: n.c } });
+    }],
+    [2, 'tf', function (lv) {
+      var n = ncase(lv), who = Q.name(), truth = coin(), bc = n.base * n.c, said = truth ? n.r * n.c : R.pick([bc + (n.up ? 1 : -1), bc + (n.up ? -n.c : n.c)]);
+      return tf(who + ' knows ' + m(n.base + X + n.c + ' = ' + bc) + '. ' + who + ' says ' + m(n.r + X + n.c + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, bc + (n.up ? ' + ' : MI) + n.c + ' = ' + n.r * n.c + '.',
+        ['Add or take away 1.', 'The answer stays ' + bc + '.', 'Add the two numbers.'], (n.up ? 'Add' : 'Take away') + ' one whole group of ' + n.c + '.', { hint: 'One group is ' + n.c + '.', meta: { k: 'g3md-tf', a: n.r, b: n.c, op: 'x', said: said } });
+    }]
+  ]);
+  function tgNear(lv) {
+    return function () {
+      var n = ncase(lv), bc = n.base * n.c;
+      return { q: 'Find ' + m(n.r + X + n.c) + ' from a fact you know.', fig: nearFig(n), done: bc + (n.up ? ' + ' : MI) + n.c + ' = ' + n.r * n.c + '.', steps: [
+        { prompt: 'Start with a fact of ' + n.base + '.', q: num(m(n.base + X + n.c) + ' = ?', bc, prodFix(n.base, n.c), { hint: 'Count by ' + n.c + 's, ' + n.base + ' times.', meta: mt(n.base, n.c, 'x') }) },
+        { prompt: 'Compare ' + n.r + ' groups with ' + n.base + ' groups.', q: fixed('Is ' + m(n.r + X + n.c) + ' one group more or one group less?', ['One group of ' + n.c + ' more', 'One group of ' + n.c + ' less'], n.up ? 0 : 1, ['Is ' + n.r + ' more or less than ' + n.base + '?', 'Is ' + n.r + ' more or less than ' + n.base + '?'], { hint: n.r + ' or ' + n.base + ': which is more?', meta: { k: 'g3md-near-dir', r: n.r, base: n.base } }) },
+        { prompt: (n.up ? 'Add' : 'Take away') + ' one group of ' + n.c + '.', q: num(m(n.r + X + n.c) + ' = ?', n.r * n.c, fx([[bc + (n.up ? 1 : -1), 'One group is ' + n.c + ', not 1.']]), { hint: bc + (n.up ? ' + ' : MI) + n.c + '.', meta: mt(n.r, n.c, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 4: Dividing ======================= */
+  var SK = { 1: [2, 5], 2: [2, 6], 3: [6, 10] }, SE = { 1: [2, 5], 2: [3, 7], 3: [4, 10] };
+  var SHARES = [
+    function (w, n, k) { return w + ' shares ' + n + ' hockey cards equally among ' + k + ' friends. How many cards does each friend get?'; },
+    function (w, n, k) { return w + ' puts ' + n + ' strawberries into ' + k + ' bowls, the same number in each. How many in each bowl?'; },
+    function (w, n, k) { return w + ' has ' + n + ' beads for ' + k + ' bracelets. Each bracelet gets the same number. How many beads on each?'; },
+    function (w, n, k) { return w + ' shares ' + n + ' pieces of maple taffy equally among ' + k + ' cousins. How many pieces each?'; }
+  ];
+  function unfair(k, e) { var a = same(k, e); a[0] += 1; a[1] -= 1; return R.shuffle(a); }
+  skill('md-share', 'Share fairly', 'B2.6', [
+    [1, 'plain', function (lv) {
+      var k = rng(lv, SK), e = rng(lv, SE), n = k * e;
+      return num('Share ' + n + ' counters on ' + k + ' plates. How many on each plate?', e, divFix(n, k), { fig: platesFig(same(k, 0), { pile: n }), hint: 'Deal one to each plate, again and again.',
+        steps: ['Deal them out: one to each plate each round.', 'Each plate gets ' + e + '.', 'Check: ' + k + X + e + ' = ' + n + '.'], explain: n + DV + k + ' = ' + e + '.', meta: { k: 'g3md-share-fig' } });
+    }],
+    [1, 'story', function (lv) {
+      var k = rng(lv, SK), e = rng(lv, SE), n = k * e;
+      return num(R.pick(SHARES)(Q.name(), n, k), e, divFix(n, k), { hint: k + ' groups of how many make ' + n + '?', steps: ['Think: ' + k + X + '? = ' + n + '.', k + X + e + ' = ' + n + '.'], explain: n + DV + k + ' = ' + e + '.', meta: mt(n, k, 'd') });
+    }],
+    [1, 'bare', function (lv) {
+      var k = rng(lv, SK), e = rng(lv, SE), n = k * e;
+      return num('What is ' + m(n + DV + k) + '?', e, divFix(n, k), { fig: lv === 1 ? platesFig(same(k, 0)) : '', hint: 'Share ' + n + ' into ' + k + ' equal groups.', steps: ['Think: ' + k + ' groups of what make ' + n + '?', k + X + e + ' = ' + n + '.'], explain: n + DV + k + ' = ' + e + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'tap', function (lv) {
+      var k = rng(lv, { 1: [2, 3], 2: [3, 4], 3: [4, 5] }), e = rng(lv, SE), n = k * e, sets = R.shuffle([same(k, e), unfair(k, e), same(k, e + 1)]), ans = 0, w = {};
+      sets.forEach(function (s, i) { var t = s.reduce(function (a, b) { return a + b; }, 0); if (t === n && s.every(function (x) { return x === e; })) ans = i; else w[String(i)] = t !== n ? 'That one has ' + t + ' in all, not ' + n + '.' : 'Not fair: the plates are not the same.'; });
+      return { q: 'Tap the fair share of <b>' + n + '</b> on <b>' + k + '</b> plates.', type: 'tap', tiles: sets.map(function (s) { return platesFig(s); }), answer: ans, answerText: k + ' plates with ' + e + ' on each', wrong: w,
+        hint: 'Fair: every plate the same, and ' + n + ' in all.', steps: [n + DV + k + ' = ' + e + '.', 'Each plate has ' + e + '.'], explain: n + ' shared on ' + k + ' plates is ' + e + ' on each.', meta: { k: 'g3md-tap-share', n: n, g: k } };
+    }],
+    [2, 'tf', function (lv) {
+      var k = rng(lv, { 2: [3, 4], 3: [4, 5] }), e = rng(lv, SE), n = k * e, truth = coin(), cs = truth ? same(k, e) : unfair(k, e), who = Q.name();
+      return tf(who + ' shared ' + n + ' on ' + k + ' plates like this. True or false: it is a fair share.', truth, truth ? 'Every plate has ' + e + '.' : 'The plates are not all the same.',
+        ['Fair means every counter is used.', 'Fair means the first plate gets the most.', 'Any sharing is fair.'], 'Count each plate.', { fig: platesFig(cs), hint: 'Count each plate.', meta: { k: 'g3md-tf-fair' } });
+    }]
+  ]);
+  function tgShare(lv) {
+    return function () {
+      var k = rng(lv, SK), e = rng(lv, SE), n = k * e;
+      return { q: 'Share ' + n + ' counters on ' + k + ' plates.', fig: platesFig(same(k, 0), { pile: n }), done: n + DV + k + ' = ' + e + '. Each plate has ' + e + '.', steps: [
+        { prompt: 'How many groups do you need?', q: num('How many plates?', k, fx([[n, 'That is how many counters.']]), { hint: 'Count the plates.', meta: mt(n, k, 'b') }) },
+        { prompt: 'Deal one to each plate, round and round, until none are left.', q: num('How many on each plate?', e, divFix(n, k), { hint: 'Think: ' + k + ' groups of what make ' + n + '?', meta: mt(n, k, 'd') }) },
+        { prompt: 'Check with a times fact.', q: num(m(k + X + e) + ' = ?', n, prodFix(k, e), { hint: k + ' groups of ' + e + '.', meta: mt(k, e, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- how many groups? ---------- */
+  var GK = { 1: [2, 5], 2: [2, 6], 3: [3, 10] }, GE = { 1: [2, 5], 2: [3, 7], 3: [5, 10] };
+  var GROUPS = [
+    function (n, k) { return n + ' players make teams of ' + k + '. How many teams?'; },
+    function (n, k) { return n + ' chairs go in rows of ' + k + '. How many rows?'; },
+    function (n, k) { return n + ' cookies go on trays, ' + k + ' on each tray. How many trays?'; },
+    function (n, k) { return n + ' pencils come in packs of ' + k + '. How many packs?'; },
+    function (n, k) { return n + ' bannock pieces go in bags of ' + k + '. How many bags?'; }
+  ];
+  skill('md-groupdiv', 'Make groups to divide', 'B2.6', [
+    [1, 'plain', function (lv) {
+      var k = rng(lv, GK), e = rng(lv, GE), n = k * e;
+      return num('Put ' + n + ' counters in bags of ' + k + '. How many bags?', e, divFix(n, k), { fig: platesFig([], { pile: n }), hint: 'Take out ' + k + ' at a time.',
+        steps: ['Count by ' + k + 's to ' + n + ': ' + skips(k, e) + '.', 'That is ' + pl(e, 'bag') + '.'], explain: n + DV + k + ' = ' + e + '.', meta: { k: 'g3md-group-fig', s: k } });
+    }],
+    [1, 'story', function (lv) {
+      var k = rng(lv, GK), e = rng(lv, GE), n = k * e;
+      return num(R.pick(GROUPS)(n, k), e, divFix(n, k), { hint: 'How many groups of ' + k + ' make ' + n + '?', steps: ['Count by ' + k + 's to ' + n + '.', skips(k, e) + ': ' + e + ' groups.'], explain: n + DV + k + ' = ' + e + '.', meta: mt(n, k, 'd') });
+    }],
+    [1, 'line', function (lv) {
+      var k = rng(lv, GK), e = rng(lv, GE), n = k * e;
+      return num('How many jumps of ' + k + ' go from 0 to ' + n + '?', e, divFix(n, k), { fig: lineFig(k, e, { max: n, show: function (v) { return v === 0 || v === n; }, dot: false }), hint: 'Count the jumps.',
+        steps: ['Count by ' + k + 's: ' + skips(k, e) + '.', pl(e, 'jump') + '.'], explain: n + DV + k + ' = ' + e + '.', meta: mt(n, k, 'd') });
+    }],
+    [1, 'tap', function (lv) {
+      var k = rng(lv, { 1: [2, 4], 2: [3, 5], 3: [4, 6] }), e = rng(lv, { 1: [2, 3], 2: [2, 4], 3: [3, 5] }), n = k * e, sets = R.shuffle([[e, k], e !== k ? [k, e] : [e + 1, k], [e, k + 1]]), ans = 0, w = {};
+      sets.forEach(function (s, i) { if (s[0] === e && s[1] === k) ans = i; else w[String(i)] = 'That one has ' + s[1] + ' in each bag. You need bags of ' + k + '.'; });
+      return { q: 'Tap the picture of <b>' + n + '</b> in bags of <b>' + k + '</b>.', type: 'tap', tiles: sets.map(function (s) { return platesFig(same(s[0], s[1]), { bags: true }); }), answer: ans, answerText: pl(e, 'bag') + ' of ' + k, wrong: w,
+        hint: 'Every bag must hold ' + k + '.', steps: ['Bags of ' + k + ': ' + skips(k, e) + '.', pl(e, 'bag') + '.'], explain: n + DV + k + ' = ' + e + ' bags.', meta: { k: 'g3md-tap-plates', g: e, n: k } };
+    }],
+    [2, 'tf', function (lv) {
+      var k = rng(lv, GK), e = rng(lv, GE), n = k * e, who = Q.name(), truth = coin(), said = truth ? e : e + R.pick([1, -1]);
+      return tf(who + ' puts ' + n + ' stickers in bags of ' + k + ' and fills ' + pl(said, 'bag') + '. True or false: that is right.', truth, said + X + k + ' = ' + said * k + (truth ? '.' : ', not ' + n + '.'),
+        ['Bags of ' + k + ' always make ' + k + ' bags.', 'Take away ' + k + ' once.', 'The number of bags is the total.'], 'Check: ' + said + ' bags of ' + k + ' hold ' + said * k + '.', { hint: 'Multiply to check.', meta: { k: 'g3md-tf', a: n, b: k, op: 'd', said: said } });
+    }]
+  ]);
+  function tgGroupdiv(lv) {
+    return function () {
+      var k = rng(lv, GK), e = rng(lv, GE), n = k * e;
+      return { q: 'How many bags of ' + k + ' can you fill from ' + n + '?', fig: platesFig([], { pile: n }), done: n + DV + k + ' = ' + e + ': ' + pl(e, 'bag') + ' of ' + k + '.', steps: [
+        { prompt: 'This time you know the size of each group.', q: num('How many go in each bag?', k, fx([[n, 'That is the total.']]), { hint: 'Bags of ' + k + '.', meta: mt(n, k, 'b') }) },
+        { prompt: 'Count by ' + k + 's to ' + n + '. Each count is a bag.', q: num('How many bags?', e, divFix(n, k), { hint: skips(k, 2) + ', and on.', meta: mt(n, k, 'd') }) },
+        { prompt: 'Check with a times fact.', q: num(m(e + X + k) + ' = ?', n, prodFix(e, k), { hint: e + ' groups of ' + k + '.', meta: mt(e, k, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- multiply or divide? ---------- */
+  var MIXC = [{ g: 'teams', g1: 'team', it: 'players' }, { g: 'bags', g1: 'bag', it: 'apples' }, { g: 'boxes', g1: 'box', it: 'muffins' }, { g: 'rows', g1: 'row', it: 'chairs' }, { g: 'packs', g1: 'pack', it: 'juice boxes' }, { g: 'canoes', g1: 'canoe', it: 'campers' }];
+  function story3(kind, lv) {
+    var p = two(lv, GR, EA), a = p[0], b = p[1], c = R.pick(MIXC), who = Q.name();
+    if (kind === 'times') return { kind: kind, t: 'There are ' + a + ' ' + c.g + ' with ' + b + ' ' + c.it + ' in each. How many ' + c.it + ' in all?', ans: a * b, x: a, y: b, op: 'x' };
+    if (kind === 'share') return { kind: kind, t: who + ' puts ' + a * b + ' ' + c.it + ' into ' + a + ' ' + c.g + ', the same number in each. How many ' + c.it + ' in each ' + c.g1 + '?', ans: b, x: a * b, y: a, op: 'd' };
+    return { kind: kind, t: who + ' has ' + a * b + ' ' + c.it + '. Each ' + c.g1 + ' holds ' + b + '. How many ' + c.g + '?', ans: a, x: a * b, y: b, op: 'd' };
+  }
+  var KINDS = ['times', 'share', 'group'], MEAN = ['How many in each group', 'How many groups', 'How many in all'], MEANK = { share: 0, group: 1, times: 2 };
+  var KNOW = ['How many groups, and how many in each', 'The total, and how many groups', 'The total, and how many in each group'], KNOWK = { times: 0, share: 1, group: 2 };
+  function opSym(op) { return op === 'x' ? X : op === 'd' ? DV : op === '+' ? ' + ' : MI; }
+  function mixFix(s) { return s.op === 'x' ? fx([[s.x + s.y, 'You added. Equal groups put together: multiply.']]) : fx([[s.x * s.y, 'You multiplied. A total split into equal groups: divide.'], [s.x - s.y, 'You took away once. Split the total into equal groups.']]); }
+  skill('md-mixop', 'Multiply or divide?', 'B2.6', [
+    [1, 'plain', function (lv) {
+      var s = story3(R.pick(KINDS), lv);
+      return num(s.t, s.ans, mixFix(s), { hint: s.op === 'x' ? 'Equal groups put together: multiply.' : 'A total split into equal groups: divide.', steps: [s.op === 'x' ? 'Multiply.' : 'Divide.', s.x + opSym(s.op) + s.y + ' = ' + s.ans + '.'], explain: s.x + opSym(s.op) + s.y + ' = ' + s.ans + '.', meta: mt(s.x, s.y, s.op) });
+    }],
+    [1, 'calc', function (lv) {
+      var p = two(lv, GR, EA), a = p[0], b = p[1], op = R.pick(['x', 'd', 'x', 'd', '+']), x = op === 'd' ? a * b : a, y = op === 'd' ? a : b, ans = op === 'x' ? a * b : op === 'd' ? b : a + b;
+      return num('Watch the sign. ' + m(x + opSym(op) + y) + ' = ?', ans, op === '+' ? fx([[a * b, 'That sign is +. Add.']]) : op === 'x' ? fx([[a + b, 'That sign is &times;. Multiply.']]) : divFix(x, y), {
+        hint: op === 'x' ? x + ' groups of ' + y + '.' : op === 'd' ? x + ' split into ' + y + ' equal groups.' : 'Add.', steps: [op === 'x' ? '&times; means groups of.' : op === 'd' ? '&divide; means split into equal groups.' : '+ means add.', x + opSym(op) + y + ' = ' + ans + '.'], explain: x + opSym(op) + y + ' = ' + ans + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'which', function (lv) {
+      var s = story3(R.pick(KINDS), lv), right = s.x + opSym(s.op) + s.y, W = s.op === 'x' ? [[s.x + ' + ' + s.y, 'Adding the two numbers does not count the groups.'], [(s.x + 1) + X + s.y, 'There are ' + s.x + ' groups.']] : [[s.x + X + s.y, 'You know the total. Split it: divide.'], [s.x + MI + s.y, 'Taking away once does not split it.'], [s.x + ' + ' + s.y, 'You know the total. Split it: divide.']];
+      return mc(s.t + ' <b>Which number sentence solves it?</b>', right, W, { hint: s.op === 'x' ? 'You know the groups. You want the total.' : 'You know the total. You split it.', steps: [right + ' = ' + s.ans + '.'], explain: right + ' = ' + s.ans + '.', meta: { k: 'g3md-mc-expr', a: s.x, b: s.y, op: s.op } });
+    }],
+    [1, 'mean', function (lv) {
+      var s = story3(R.pick(KINDS), lv);
+      return fixed(s.t + ' <b>What will the answer tell you?</b>', MEAN, MEANK[s.kind], ['Read the question again: what does it ask for?', 'Read the question again: what does it ask for?', 'Read the question again: what does it ask for?'], { hint: 'Read the last sentence.', steps: ['It asks: ' + MEAN[MEANK[s.kind]].toLowerCase() + '.'], explain: MEAN[MEANK[s.kind]] + ': ' + s.ans + '.', meta: { k: 'g3md-mean', kind: s.kind } });
+    }],
+    [1, 'two', function (lv) {
+      var T = { 1: [[2, 3], [2, 5], [2, 3]], 2: [[2, 5], [2, 6], [2, 5]], 3: [[3, 6], [4, 10], [2, 6]] }[lv], g, n, d, guard = 0;
+      do { g = R.int(T[0][0], T[0][1]); n = R.int(T[1][0], T[1][1]); d = R.int(T[2][0], T[2][1]); } while (((g * n) % d || g * n / d > 10 || g * n / d < 2) && guard++ < 200);
+      if ((g * n) % d) { g = 2; n = 4; d = 2; }
+      var who = Q.name(), e = g * n / d;
+      return num(who + ' has ' + g + ' packs of ' + n + ' juice boxes. ' + who + ' shares them equally among ' + d + ' tables. How many juice boxes on each table?', e, fx([[g * n, 'That is the total. Now share it among ' + d + ' tables.'], [g * n * d, 'Share the total: divide.']]), {
+        hint: 'First find the total. Then share it.', steps: [g + X + n + ' = ' + g * n + ' juice boxes.', g * n + DV + d + ' = ' + e + '.'], explain: e + ' on each table.', meta: { k: 'g3md-two', g: g, n: n, d: d } });
+    }]
+  ]);
+  function tgMix(kind) {
+    return function () {
+      var s = story3(kind, 2);
+      return { q: s.t, done: s.x + opSym(s.op) + s.y + ' = ' + s.ans + '.', steps: [
+        { prompt: 'Find the numbers in the story. What are they?', q: fixed('What do you know?', KNOW, KNOWK[kind], ['Is ' + s.x + ' a total, or a number of groups?', 'Is there a total in the story?', 'Is there a total in the story?'], { hint: 'Look at each number in the story.', meta: { k: 'g3md-know', kind: kind } }) },
+        { prompt: 'Equal groups put together: multiply. A total split up: divide.', q: fixed('So do you multiply or divide?', ['Multiply', 'Divide'], s.op === 'x' ? 0 : 1, ['You know the total. Split it: divide.', 'You know the groups. Put them together: multiply.'], { hint: 'Do you know the total?', meta: { k: 'g3md-op', kind: kind } }) },
+        { prompt: 'Now work it out.', q: num(m(s.x + opSym(s.op) + s.y) + ' = ?', s.ans, mixFix(s), { hint: s.op === 'x' ? s.x + ' groups of ' + s.y + '.' : s.op === 'd' ? 'Think of a times fact.' : '', meta: mt(s.x, s.y, s.op) }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 5: Fact families ======================= */
+  var FB = { 1: [2, 5, 10], 2: [2, 3, 4, 5, 6, 7], 3: [3, 4, 6, 7, 8, 9, 10] };
+  function fcase(lv) { var a = rng(lv, GR), b = R.pick(FB[lv]), guard = 0; while (b === a && guard++ < 20) b = R.pick(FB[lv]); if (b === a) a = a === 10 ? 9 : a + 1; return [a, b, a * b]; }
+  skill('md-family', 'Fact families', 'B2.1', [
+    [1, 'plain', function (lv) {
+      var f = fcase(lv), a = f[0], b = f[1], p = f[2];
+      return fill('Complete the fact family of ' + a + ', ' + b + ' and ' + p + '.', m(a + X + b + ' = ' + p) + '<br>' + m(b + X + a + ' = [[]]') + '<br>' + m(p + DV + a + ' = [[]]') + '<br>' + m(p + DV + b + ' = [[]]'), [p, b, a], {
+        hint: 'Every fact uses ' + a + ', ' + b + ' and ' + p + '.', steps: ['Turn it: ' + b + X + a + ' = ' + p + '.', p + DV + a + ' = ' + b + ' and ' + p + DV + b + ' = ' + a + '.'], explain: famLines(a, b, 4).replace(/<br>/g, ', ') + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'array', function (lv) {
+      var f = fcase(lv), a = f[0], b = f[1], p = f[2];
+      return fill('The array shows ' + m(a + X + b + ' = ' + p) + '. Fill in the division facts.', m(p + DV + a + ' = [[]]') + '<br>' + m(p + DV + b + ' = [[]]'), [b, a], { fig: arrayFig(a, b, { labels: lv === 1 }),
+        hint: p + ' in ' + a + ' rows: how many in each row?', steps: [p + ' in ' + a + ' rows: ' + b + ' in each.', p + ' in rows of ' + b + ': ' + a + ' rows.'], explain: p + DV + a + ' = ' + b + ', ' + p + DV + b + ' = ' + a + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'missing', function (lv) {
+      var f = fcase(lv), a = f[0], b = f[1], p = f[2], t = lv === 3 ? m(p + DV + '[[]] = ' + a) : m('[[]]' + X + b + ' = ' + p);
+      return fill('Use the fact family. Fill in the blank.', t, [lv === 3 ? b : a], { hint: 'The family of ' + a + ', ' + b + ' and ' + p + '.', steps: [a + X + b + ' = ' + p + '.', p + DV + b + ' = ' + a + '.'], explain: famLines(a, b, 4).replace(/<br>/g, ', ') + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [2, 'pick', function (lv) {
+      var f = fcase(lv), a = f[0], b = f[1], p = f[2];
+      var good = R.shuffle([a + X + b + ' = ' + p, b + X + a + ' = ' + p, p + DV + a + ' = ' + b, p + DV + b + ' = ' + a]).slice(0, 3);
+      var bad = R.shuffle([a + ' + ' + b + ' = ' + (a + b), p + DV + a + ' = ' + (b + 1), a + X + (b + 1) + ' = ' + a * (b + 1)]).slice(0, 2);
+      var opts = R.shuffle(good.concat(bad)), ans = []; opts.forEach(function (o, j) { if (good.indexOf(o) >= 0) ans.push(j); });
+      return { q: 'Pick <b>every</b> fact in the family of ' + m(a + X + b + ' = ' + p) + '.', type: 'pick', options: opts, answer: ans, hint: 'Family facts use ' + a + ', ' + b + ' and ' + p + ', with &times; or &divide;. They are all true.',
+        steps: ['Each one must use ' + a + ', ' + b + ' and ' + p + '.'], explain: famLines(a, b, 4).replace(/<br>/g, ', ') + '.', meta: { k: 'g3md-pick-fam', a: a, b: b } };
+    }],
+    [2, 'odd', function (lv) {
+      var f = fcase(lv), a = f[0], b = f[1], p = f[2], right = R.pick([p + MI + a + ' = ' + (p - a), a + ' + ' + b + ' = ' + (a + b)]);
+      var fam = R.shuffle([a + X + b + ' = ' + p, b + X + a + ' = ' + p, p + DV + a + ' = ' + b, p + DV + b + ' = ' + a]).slice(0, 3).map(function (t) { return [t, 'That one uses ' + a + ', ' + b + ' and ' + p + ' with &times; or &divide;. It is in the family.']; });
+      return mc('Which fact is <b>not</b> in the family of ' + a + ', ' + b + ' and ' + p + '?', right, fam, { hint: 'The family uses only &times; and &divide;.', steps: ['Family facts use ' + a + ', ' + b + ' and ' + p + ' with &times; or &divide;.'], explain: right + ' is not in the family.', meta: { k: 'g3md-fam-odd', a: a, b: b } });
+    }]
+  ]);
+  function tgFamily(lv) {
+    return function () {
+      var f = fcase(lv), a = f[0], b = f[1], p = f[2];
+      return { q: 'Write the fact family for this array.', fig: arrayFig(a, b, { labels: true }), done: famLines(a, b, 4).replace(/<br>/g, ', ') + '.', steps: [
+        { prompt: 'Rows times how many in each row.', q: num(m(a + X + b) + ' = ?', p, prodFix(a, b), { hint: a + ' rows of ' + b + '.', meta: mt(a, b, 'x') }) },
+        { prompt: 'Turn it around.', q: num(m(b + X + a) + ' = ?', p, fx([[a + b, 'Turn it around: same dots.']]), { hint: 'Same dots.', meta: mt(b, a, 'x') }) },
+        { prompt: 'Now split the ' + p + ' dots into ' + a + ' rows.', q: num(m(p + DV + a) + ' = ?', b, divFix(p, a), { hint: 'How many in each row?', meta: mt(p, a, 'd') }) }
+      ] };
+    };
+  }
+
+  /* ---------- check a division ---------- */
+  var CD = { 1: [2, 5], 2: [2, 7], 3: [6, 10] }, CQ = { 1: [2, 5], 2: [3, 7], 3: [6, 10] };
+  function cOff(q) { return q + R.pick(q > 2 ? [1, -1] : [1]); }
+  skill('md-check', 'Check a division', 'B2.1', [
+    [1, 'plain', function (lv) {
+      var d = rng(lv, CD), q = rng(lv, CQ), n = d * q, who = Q.name(), truth = coin(), said = truth ? q : cOff(q);
+      return tf(who + ' says ' + m(n + DV + d + ' = ' + said) + '. Check with a times fact. True or false: ' + who + ' is right.', truth, said + X + d + ' = ' + said * d + (truth ? '.' : ', not ' + n + '.'),
+        ['Check by adding ' + said + ' and ' + d + '.', 'Division answers are always small.', 'Check by taking ' + d + ' from ' + n + '.'], 'Multiply: ' + said + X + d + '. Is it ' + n + '?', { hint: said + ' groups of ' + d + ' should make ' + n + '.', meta: { k: 'g3md-tf', a: n, b: d, op: 'd', said: said } });
+    }],
+    [1, 'fix', function (lv) {
+      var d = rng(lv, CD), q = rng(lv, CQ), n = d * q, who = Q.name(), said = cOff(q);
+      return num(who + ' says ' + m(n + DV + d + ' = ' + said) + '. But ' + m(said + X + d + ' = ' + said * d) + '. What is ' + m(n + DV + d) + '?', q, fx([[said, 'That is the answer that did not check.'], [n - d, 'Find how many groups of ' + d + ' make ' + n + '.']]), {
+        hint: said * d < n ? 'Too small: try one more group.' : 'Too big: try one less group.', steps: ['? ' + X + d + ' = ' + n + '.', q + X + d + ' = ' + n + '.'], explain: n + DV + d + ' = ' + q + '.', meta: mt(n, d, 'd') });
+    }],
+    [1, 'fill', function (lv) {
+      var d = rng(lv, CD), q = rng(lv, CQ), n = d * q;
+      return fill('Divide, then check.', m(n + DV + d + ' = [[]]') + ' because ' + m('[[]]' + X + d + ' = ' + n), [q, q], { hint: 'How many groups of ' + d + ' make ' + n + '?', steps: [q + X + d + ' = ' + n + '.', 'So ' + n + DV + d + ' = ' + q + '.'], explain: n + DV + d + ' = ' + q + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [2, 'which', function (lv) {
+      var d = rng(lv, CD), q = rng(lv, CQ), n = d * q, W = [[q + ' + ' + d + ' = ' + (q + d), 'Check a division with a times fact.'], [n + MI + d + ' = ' + (n - d), 'Check a division with a times fact.']];
+      W.push(d !== q ? [d + X + d + ' = ' + d * d, 'Use the answer, ' + q + ', and ' + d + '.'] : [(q + 1) + X + d + ' = ' + (q + 1) * d, 'Use the answer, ' + q + '.']);
+      return mc('Which times fact checks ' + m(n + DV + d + ' = ' + q) + '?', q + X + d + ' = ' + n, W, { hint: 'Answer times the number you divided by.', steps: [q + X + d + ' = ' + n + '.'], explain: q + X + d + ' = ' + n + ', so it checks.', meta: { k: 'g3md-check-mc', n: n, d: d } });
+    }],
+    [2, 'story', function (lv) {
+      var d = rng(lv, CD), q = rng(lv, CQ), n = d * q, who = Q.name(), said = coin() ? q : cOff(q);
+      return num(who + ' puts ' + n + ' stickers in bags of ' + d + ' and counts ' + pl(said, 'bag') + '. Check: how many stickers do ' + pl(said, 'bag') + ' of ' + d + ' hold?', said * d, prodFix(said, d), { hint: said + ' groups of ' + d + '.',
+        steps: [said + X + d + ' = ' + said * d + '.', said * d === n ? 'That is ' + n + ': it checks.' : 'That is not ' + n + ': it does not check.'], explain: said + X + d + ' = ' + said * d + '.', meta: mt(said, d, 'x') });
+    }]
+  ]);
+  function tgCheck(lv) {
+    return function () {
+      var d = rng(lv, CD), q = rng(lv, CQ), n = d * q, who = Q.name(), ok = coin(), said = ok ? q : cOff(q);
+      return { q: who + ' says ' + m(n + DV + d + ' = ' + said) + '. Check it.', fig: platesFig(same(said, d), { bags: true }), done: n + DV + d + ' = ' + q + ', because ' + q + X + d + ' = ' + n + '.', steps: [
+        { prompt: 'Multiply the answer by the number you divided by.', q: num(m(said + X + d) + ' = ?', said * d, prodFix(said, d), { hint: said + ' bags of ' + d + '.', meta: mt(said, d, 'x') }) },
+        { prompt: 'Is it the total, ' + n + '?', q: fixed('So is ' + who + ' right?', ['Yes, it checks', 'No, it does not check'], ok ? 0 : 1, ['Compare ' + said * d + ' with ' + n + '.', 'Compare ' + said * d + ' with ' + n + '.'], { hint: said * d + ' and ' + n + ': the same?', meta: { k: 'g3md-yn-check', n: n, d: d, said: said } }) },
+        { prompt: 'Now find the real answer.', q: num(m(n + DV + d) + ' = ?', q, divFix(n, d), { hint: '? ' + X + d + ' = ' + n + '.', meta: mt(n, d, 'd') }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 6: Scaling up ======================= */
+  var RK = { 1: [2], 2: [2, 5, 10], 3: [5, 10, 2] }, RN = { 1: [2, 5], 2: [3, 8], 3: [6, 10] };
+  function rcase(lv) { var k = R.pick(RK[lv]); return { k: k, th: R.pick(THINGS[k]), n: rng(lv, RN) }; }
+  skill('md-scale', 'Scale up by 2, 5 or 10', 'B2.9', [
+    [1, 'plain', function (lv) {
+      var c = rcase(lv);
+      return num(hasOne(c.th, c.k) + '. ' + askMany(c.th, c.n), c.n * c.k, prodFix(c.n, c.k), { fig: lv < 3 ? ratioFig(c.th, c.n) : '', hint: 'Each ' + c.th.one + ' adds ' + c.k + ' more. Count by ' + c.k + 's.',
+        steps: ['1 &rarr; ' + c.k + '.', c.n + ' &rarr; ' + c.n + X + c.k + ' = ' + c.n * c.k + '.'], explain: c.n + X + c.k + ' = ' + c.n * c.k + ' ' + c.th.parts + '.', meta: mt(c.n, c.k, 'x') });
+    }],
+    [1, 'table', function (lv) {
+      var c = rcase(lv), ns = lv === 1 ? [2, 3, 4] : lv === 2 ? [2, R.int(3, 5), R.int(6, 8)] : [R.int(4, 5), R.int(6, 8), R.int(9, 10)];
+      return fill('Fill in the table.', '1 ' + c.th.one + ' &rarr; ' + c.k + ' ' + c.th.parts + ns.map(function (n) { return '<br>' + n + ' ' + c.th.many + ' &rarr; [[]] ' + c.th.parts; }).join(''), ns.map(function (n) { return n * c.k; }), {
+        hint: 'For every 1 ' + c.th.one + ', there are ' + c.k + '. Count by ' + c.k + 's.', steps: ns.map(function (n) { return n + X + c.k + ' = ' + n * c.k + '.'; }), explain: 'Each ' + c.th.one + ' adds ' + c.k + '.', meta: { k: 'g3md-fill', ops: ns.map(function (n) { return [n, c.k, 'x']; }) } });
+    }],
+    [1, 'story', function (lv) {
+      var c = rcase(lv), n1 = lv === 1 ? 2 : R.int(2, 4), n2 = c.n === n1 ? n1 + 2 : c.n;
+      return num(n1 + ' ' + c.th.many + (c.th.coin ? ' are worth ' + n1 * c.k + '&cent;. ' : ' have ' + n1 * c.k + ' ' + c.th.parts + '. ') + askMany(c.th, n2), n2 * c.k, fx([[n2 * n1 * c.k, 'First find 1 ' + c.th.one + ': ' + n1 * c.k + DV + n1 + ' = ' + c.k + '.'], [n1 * c.k + n2 - n1, 'Each ' + c.th.one + ' adds ' + c.k + ', not 1.']]), {
+        hint: 'How many for 1 ' + c.th.one + '?', steps: ['1 ' + c.th.one + ': ' + n1 * c.k + DV + n1 + ' = ' + c.k + '.', n2 + X + c.k + ' = ' + n2 * c.k + '.'], explain: n2 * c.k + ' ' + c.th.parts + '.', meta: { k: 'g3md-scale-from', a: n1, t: n1 * c.k, b: n2 } });
+    }],
+    [2, 'match', function (lv) {
+      var c = rcase(lv), P = pairs3(function () { var n = rng(lv, RN); return [n + ' ' + c.th.many, n * c.k + ' ' + c.th.parts]; });
+      return { q: hasOne(c.th, c.k) + '. Match each one.', type: 'match', pairs: P, hint: 'Count by ' + c.k + 's for each one.', steps: ['Multiply by ' + c.k + '.'], explain: P.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'g3md-match-ratio', f: c.k } };
+    }],
+    [2, 'tf', function (lv) {
+      var c = rcase(lv), who = Q.name(), truth = coin(), said = truth ? c.n * c.k : R.pick([c.n + c.k, c.n * c.k + c.k, c.n * c.k - c.k]);
+      return tf(hasOne(c.th, c.k) + '. ' + who + ' says ' + c.n + ' ' + c.th.many + (c.th.coin ? ' are worth ' : ' have ') + said + ' ' + c.th.parts + '. True or false: ' + who + ' is right.', truth, c.n + X + c.k + ' = ' + c.n * c.k + '.',
+        ['Add ' + c.n + ' and ' + c.k + '.', 'Each new ' + c.th.one + ' adds 1 more.', 'The number stays the same.'], 'Count by ' + c.k + 's, ' + c.n + ' times.', { hint: 'Count by ' + c.k + 's.', meta: { k: 'g3md-tf', a: c.n, b: c.k, op: 'x', said: said } });
+    }]
+  ]);
+  function tgRatio(lv) {
+    return function () {
+      var c = rcase(lv); if (c.n < 3) c.n = 3;
+      return { q: hasOne(c.th, c.k) + '. ' + askMany(c.th, c.n), fig: ratioFig(c.th, c.n), done: c.n + X + c.k + ' = ' + c.n * c.k + ' ' + c.th.parts + '.', steps: [
+        { prompt: 'Start with one.', q: num('How many ' + c.th.parts + ' for 1 ' + c.th.one + '?', c.k, {}, { hint: 'Read the first sentence.', meta: mt(c.n, c.k, 'b') }) },
+        { prompt: 'Each new one adds ' + c.k + ' more.', q: num('How many for 2 ' + c.th.many + '?', 2 * c.k, fx([[c.k + 1, 'Add ' + c.k + ', not 1.']]), { hint: c.k + ' + ' + c.k + '.', meta: mt(2, c.k, 'x') }) },
+        { prompt: 'Count by ' + c.k + 's, ' + c.n + ' times.', q: num('How many for ' + c.n + ' ' + c.th.many + '?', c.n * c.k, prodFix(c.n, c.k), { hint: skips(c.k, 3) + ', and on.', meta: mt(c.n, c.k, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- work back from the total ---------- */
+  function askHow(th, t) { return th.coin ? 'How many ' + th.many + ' make ' + t + '&cent;?' : 'How many ' + th.many + ' have ' + t + ' ' + th.parts + '?'; }
+  skill('md-back', 'Work back from the total', 'B2.9', [
+    [1, 'plain', function (lv) {
+      var c = rcase(lv), t = c.n * c.k;
+      return num(hasOne(c.th, c.k) + '. ' + askHow(c.th, t), c.n, divFix(t, c.k), { fig: lv === 1 ? lineFig(c.k, c.n, { max: t, show: function (v) { return v === 0 || v === t; }, dot: false }) : '', hint: 'Count by ' + c.k + 's to ' + t + '. Count the jumps.',
+        steps: ['Count by ' + c.k + 's: ' + skips(c.k, c.n) + '.', pl(c.n, 'jump') + ': ' + pl(c.n, c.th.one, c.th.many) + '.'], explain: t + DV + c.k + ' = ' + c.n + '.', meta: mt(t, c.k, 'd') });
+    }],
+    [1, 'table', function (lv) {
+      var c = rcase(lv), ns = lv === 1 ? [2, 3, 5] : lv === 2 ? [R.int(2, 3), R.int(4, 6), R.int(7, 8)] : [R.int(4, 6), R.int(7, 8), R.int(9, 10)];
+      return fill('Fill in the table.', '1 ' + c.th.one + ' &rarr; ' + c.k + ' ' + c.th.parts + ns.map(function (n) { return '<br>[[]] ' + c.th.many + ' &rarr; ' + n * c.k + ' ' + c.th.parts; }).join(''), ns, {
+        hint: 'How many ' + c.k + 's make each number?', steps: ns.map(function (n) { return n * c.k + DV + c.k + ' = ' + n + '.'; }), explain: 'Count by ' + c.k + 's to each total.', meta: { k: 'g3md-fill', ops: ns.map(function (n) { return [n * c.k, c.k, 'd']; }) } });
+    }],
+    [1, 'coins', function (lv) {
+      var c = R.pick(lv === 1 ? [[10, 'dimes', '&cent;'], [2, 'toonies', '$']] : [[10, 'dimes', '&cent;'], [5, 'nickels', '&cent;'], [2, 'toonies', '$']]), n = rng(lv, RN), t = n * c[0];
+      return num('How many ' + c[1] + ' make ' + (c[2] === '$' ? '$' + t : t + '&cent;') + '?', n, divFix(t, c[0]), { hint: (c[1] === 'toonies' ? 'A toonie is $2' : 'Each one is ' + c[0] + '&cent;') + '. Count by ' + c[0] + 's.', steps: ['Count by ' + c[0] + 's to ' + t + ': ' + skips(c[0], n) + '.', n + ' ' + c[1] + '.'], explain: t + DV + c[0] + ' = ' + n + '.', meta: mt(t, c[0], 'd') });
+    }],
+    [2, 'tf', function (lv) {
+      var c = rcase(lv), t = c.n * c.k, who = Q.name(), truth = coin(), said = truth ? c.n : R.pick([c.n + 1, c.n - 1, t - c.k]);
+      return tf(hasOne(c.th, c.k) + '. ' + who + ' says ' + (c.th.coin ? t + '&cent; is ' : t + ' ' + c.th.parts + ' means ') + said + ' ' + c.th.many + '. True or false: ' + who + ' is right.', truth, said + X + c.k + ' = ' + said * c.k + (truth ? '.' : ', not ' + t + '.'),
+        ['Take ' + c.k + ' away once.', 'The total is the number of ' + c.th.many + '.', 'Add ' + c.k + '.'], 'Check: ' + said + X + c.k + '.', { hint: 'Multiply to check.', meta: { k: 'g3md-tf', a: t, b: c.k, op: 'd', said: said } });
+    }],
+    [2, 'mc', function (lv) {
+      var c = rcase(lv), t = c.n * c.k;
+      return mc(hasOne(c.th, c.k) + '. ' + askHow(c.th, t), String(c.n), [[String(t - c.k), 'You took ' + c.k + ' away once. Count how many ' + c.k + 's make ' + t + '.'], [String(t + c.k), 'You added. Count how many ' + c.k + 's make ' + t + '.'], [String(c.n + 1), 'Check: ' + (c.n + 1) + X + c.k + ' = ' + (c.n + 1) * c.k + '.']], {
+        hint: 'Count by ' + c.k + 's to ' + t + '.', steps: [skips(c.k, c.n) + '.', pl(c.n, 'jump') + '.'], explain: t + DV + c.k + ' = ' + c.n + '.', meta: { k: 'g3md-mc', a: t, b: c.k, op: 'd' } });
+    }]
+  ]);
+  function tgBack(lv) {
+    return function () {
+      var c = rcase(lv), t = c.n * c.k;
+      return { q: hasOne(c.th, c.k) + '. ' + askHow(c.th, t), fig: lineFig(c.k, 0, { max: t, show: function (v) { return v === 0 || v === t; } }), done: t + DV + c.k + ' = ' + c.n + ': ' + pl(c.n, c.th.one, c.th.many) + '.', steps: [
+        { prompt: 'Find the size of one group.', q: num('How many for 1 ' + c.th.one + '?', c.k, fx([[t, 'That is the total.']]), { hint: 'Read the first sentence.', meta: mt(t, c.k, 'b') }) },
+        { prompt: 'Count by ' + c.k + 's to ' + t + '. Count the jumps.', q: num('How many ' + c.th.many + '?', c.n, divFix(t, c.k), { hint: skips(c.k, 2) + ', and on.', meta: mt(t, c.k, 'd') }) },
+        { prompt: 'Check with a times fact.', q: num(m(c.n + X + c.k) + ' = ?', t, prodFix(c.n, c.k), { hint: c.n + ' groups of ' + c.k + '.', meta: mt(c.n, c.k, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ======================= Lesson 7: Fact fluency ======================= */
+  function kfact(lv) { var k = R.pick(K1[lv]), n = R.int(lv === 3 ? 6 : 1, 10), turn = lv > 1 && coin(); return { k: k, n: n, a: turn ? k : n, b: turn ? n : k }; }
+  skill('md-facts', 'Facts of 2, 5 and 10', 'B2.2', [
+    [1, 'plain', function (lv) {
+      var f = kfact(lv);
+      return num(m(f.a + X + f.b) + ' = ?', f.a * f.b, prodFix(f.a, f.b), { hint: 'Count by ' + f.k + 's' + (f.a === f.k && f.a !== f.b ? ': ' + f.a + X + f.b + ' = ' + f.b + X + f.a + '.' : '.'), steps: ['Count by ' + f.k + 's, ' + f.n + ' times: ' + skips(f.k, f.n) + '.'], explain: f.a + X + f.b + ' = ' + f.a * f.b + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'missing', function (lv) {
+      var f = kfact(lv), t = lv === 3 && coin() ? m(f.k + X + '[[]] = ' + f.k * f.n) : m('[[]]' + X + f.k + ' = ' + f.k * f.n);
+      return fill('Fill in the missing number.', t, [f.n], { hint: 'Count by ' + f.k + 's to ' + f.k * f.n + '. Count the jumps.', steps: [skips(f.k, f.n) + '.', pl(f.n, 'jump') + '.'], explain: f.n + X + f.k + ' = ' + f.k * f.n + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'row', function (lv) {
+      var k = R.pick(K1[lv]), ns = R.shuffle(lv === 3 ? [6, 7, 8, 9, 10] : lv === 2 ? [2, 3, 4, 5, 6, 7, 8, 9] : [1, 2, 3, 4, 5, 6]).slice(0, 3), turn = lv === 3;
+      return fill('Facts of ' + k + '. Fill in the answers.', ns.map(function (n) { return m((turn && n % 2 ? k + X + n : n + X + k) + ' = [[]]'); }).join('<br>'), ns.map(function (n) { return n * k; }), {
+        hint: 'Count by ' + k + 's.', steps: ['Facts of ' + k + ': ' + skips(k, 10) + '.'], explain: ns.map(function (n) { return n + X + k + ' = ' + n * k; }).join(', ') + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'match', function (lv) {
+      var P = pairs3(function () { var f = kfact(lv); return [f.a + X + f.b, String(f.a * f.b)]; });
+      return { q: 'Match each fact to its answer.', type: 'match', pairs: P, hint: 'Count by 2s, 5s or 10s.', steps: ['Turn a fact around if it helps.'], explain: P.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'g3md-match-eval' } };
+    }]
+  ]);
+  function tgFacts(k) {
+    return function () {
+      var n = R.int(6, 9);
+      return { q: 'Find ' + m(n + X + k) + ' fast.', fig: strip(k, 5), done: n + X + k + ' = ' + k + X + n + ' = ' + n * k + '.', steps: [
+        { prompt: 'Start from a fact you know well.', q: num(m('5' + X + k) + ' = ?', 5 * k, prodFix(5, k), { hint: '5 groups of ' + k + '.', meta: mt(5, k, 'x') }) },
+        { prompt: 'Count on ' + (n - 5) + ' more ' + k + 's.', q: num(m(n + X + k) + ' = ?', n * k, fx([[5 * k + n - 5, 'Count on by ' + k + 's, not by 1s.']]), { hint: 5 * k + ', then add ' + k + ' each time.', meta: mt(n, k, 'x') }) },
+        { prompt: 'Turn it around: same answer.', q: num(m(k + X + n) + ' = ?', n * k, fx([[n + k, 'You added. Turn it around: same answer.']]), { hint: k + X + n + ' = ' + n + X + k + '.', meta: mt(k, n, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- division facts ---------- */
+  function dfact(lv) { var k = R.pick(K1[lv]), q = R.int(lv === 3 ? 4 : 2, 10), p = k * q, flip = lv === 3 && coin() && q !== k; return { p: p, d: flip ? q : k, q: flip ? k : q, k: k }; }
+  skill('md-divfacts', 'Division facts of 2, 5 and 10', 'B2.2', [
+    [1, 'plain', function (lv) {
+      var f = dfact(lv);
+      return num(m(f.p + DV + f.d) + ' = ?', f.q, divFix(f.p, f.d), { hint: 'Think: ? ' + X + f.d + ' = ' + f.p + '.', steps: ['Which times fact has ' + f.d + ' and ' + f.p + '?', f.q + X + f.d + ' = ' + f.p + '.'], explain: f.p + DV + f.d + ' = ' + f.q + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'think', function (lv) {
+      var f = dfact(lv);
+      return fill('Divide. Use the times fact.', m(f.p + DV + f.d + ' = [[]]') + ' because ' + m('[[]]' + X + f.d + ' = ' + f.p), [f.q, f.q], { hint: 'How many ' + f.d + 's make ' + f.p + '?', steps: [f.q + X + f.d + ' = ' + f.p + '.'], explain: f.p + DV + f.d + ' = ' + f.q + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'row', function (lv) {
+      var k = R.pick(K1[lv]), qs = R.shuffle(lv === 3 ? [5, 6, 7, 8, 9, 10] : lv === 2 ? [2, 3, 4, 5, 6, 7, 8] : [1, 2, 3, 4, 5]).slice(0, 3);
+      return fill('Divide by ' + k + '.', qs.map(function (q) { return m(q * k + DV + k + ' = [[]]'); }).join('<br>'), qs, { hint: 'Count by ' + k + 's to each number.', steps: ['Facts of ' + k + ': ' + skips(k, 10) + '.'], explain: qs.map(function (q) { return q * k + DV + k + ' = ' + q; }).join(', ') + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'match', function (lv) {
+      var P = pairs3(function () { var f = dfact(lv); return [f.p + DV + f.d, String(f.q)]; });
+      return { q: 'Match each division to its answer.', type: 'match', pairs: P, hint: 'Think of the times fact.', steps: ['20 &divide; 5: think ? &times; 5 = 20.'], explain: P.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'g3md-match-eval' } };
+    }]
+  ]);
+  function tgDiv(lv) {
+    return function () {
+      var f = dfact(lv);
+      return { q: 'Find ' + m(f.p + DV + f.d) + '.', fig: lineFig(f.d, 0, { max: f.p, show: function (v) { return v === 0 || v === f.p; } }), done: f.p + DV + f.d + ' = ' + f.q + ', because ' + f.q + X + f.d + ' = ' + f.p + '.', steps: [
+        { prompt: f.p + DV + f.d + ' asks: how many ' + f.d + 's make ' + f.p + '?', q: num('Count by which number?', f.d, fx([[f.p, 'That is the total. Count by the number you divide by.']]), { hint: 'The number after &divide;.', meta: mt(f.p, f.d, 'b') }) },
+        { prompt: 'Count by ' + f.d + 's to ' + f.p + '. Keep track of the jumps.', q: num('How many ' + f.d + 's make ' + f.p + '?', f.q, divFix(f.p, f.d), { hint: skips(f.d, 2) + ', and on.', meta: mt(f.p, f.d, 'd') }) },
+        { prompt: 'Check with the times fact.', q: num(m(f.q + X + f.d) + ' = ?', f.p, prodFix(f.q, f.d), { hint: f.q + ' groups of ' + f.d + '.', meta: mt(f.q, f.d, 'x') }) }
+      ] };
+    };
+  }
+
+  /* ---------- all the facts to 10 × 10 ---------- */
+  var MX = { 1: [2, 5], 2: [2, 7], 3: [6, 10] };
+  function mfact(lv) { var a = rng(lv, MX), b = R.int(lv === 3 ? 3 : 2, lv === 1 ? 5 : 10); return { a: a, b: b, p: a * b }; }
+  skill('md-mixed', 'All the facts to 10 × 10', 'B2.6, B2.2', [
+    [1, 'plain', function (lv) {
+      var f = mfact(lv), div = coin();
+      return div ? num(m(f.p + DV + f.b) + ' = ?', f.a, divFix(f.p, f.b), { hint: 'Think: ? ' + X + f.b + ' = ' + f.p + '.', steps: [f.a + X + f.b + ' = ' + f.p + '.', f.p + DV + f.b + ' = ' + f.a + '.'], explain: f.p + DV + f.b + ' = ' + f.a + '.', meta: { k: 'g3md-bare' } })
+        : num(m(f.a + X + f.b) + ' = ?', f.p, prodFix(f.a, f.b), { hint: f.a + ' groups of ' + f.b + '. Split it if it is hard: ' + Math.min(5, f.a) + X + f.b + ' and the rest.', steps: [f.a + ' groups of ' + f.b + '.', f.a + X + f.b + ' = ' + f.p + '.'], explain: f.a + X + f.b + ' = ' + f.p + '.', meta: { k: 'g3md-bare' } });
+    }],
+    [1, 'pair', function (lv) {
+      var f = mfact(lv);
+      return fill('Multiply, then divide.', m(f.a + X + f.b + ' = [[]]') + ', so ' + m(f.p + DV + f.b + ' = [[]]'), [f.p, f.a], { hint: 'The division uses the same three numbers.', steps: [f.a + X + f.b + ' = ' + f.p + '.', f.p + DV + f.b + ' = ' + f.a + '.'], explain: f.a + X + f.b + ' = ' + f.p + ', ' + f.p + DV + f.b + ' = ' + f.a + '.', meta: { k: 'g3md-eqs' } });
+    }],
+    [1, 'story', function (lv) {
+      var s = story3(R.pick(KINDS), lv);
+      return num(s.t, s.ans, mixFix(s), { hint: s.op === 'x' ? 'Equal groups put together: multiply.' : 'A total split into equal groups: divide.', steps: [s.x + opSym(s.op) + s.y + ' = ' + s.ans + '.'], explain: s.x + opSym(s.op) + s.y + ' = ' + s.ans + '.', meta: mt(s.x, s.y, s.op) });
+    }],
+    [1, 'match', function (lv) {
+      var P = pairs3(function () { var f = mfact(lv); return coin() ? [f.a + X + f.b, String(f.p)] : [f.p + DV + f.b, String(f.a)]; });
+      return { q: 'Match each fact to its answer.', type: 'match', pairs: P, hint: 'Look at the sign first.', steps: ['&times;: groups of. &divide;: split into equal groups.'], explain: P.map(function (x) { return x[0] + ' = ' + x[1]; }).join('. ') + '.', meta: { k: 'g3md-match-eval' } };
+    }]
+  ]);
+  function tgMixed(lv) {
+    return function () {
+      var a = R.int(6, 9), b = R.int(lv === 1 ? 3 : 4, lv === 3 ? 10 : 8), p = a * b;
+      return { q: 'Find ' + m(a + X + b) + ', then ' + m(p + DV + b) + '.', fig: arrayFig(a, b, { labels: true, split: 5 }), done: a + X + b + ' = ' + p + ', so ' + p + DV + b + ' = ' + a + '.', steps: [
+        { prompt: 'Split it: 5 rows first.', q: num(m('5' + X + b) + ' = ?', 5 * b, prodFix(5, b), { hint: '5 groups of ' + b + '.', meta: mt(5, b, 'x') }) },
+        { prompt: 'Add the other ' + (a - 5) + ' rows of ' + b + '.', q: num(m(a + X + b) + ' = ?', p, fx([[5 * b, 'Add the rows below the line too.']]), { hint: 5 * b + ' + ' + (a - 5) * b + '.', meta: mt(a, b, 'x') }) },
+        { prompt: 'Use the same three numbers to divide.', q: num(m(p + DV + b) + ' = ?', a, divFix(p, b), { hint: '? ' + X + b + ' = ' + p + '.', meta: mt(p, b, 'd') }) }
+      ] };
+    };
+  }
+
+  /* ======================= The lessons ======================= */
   var LESSONS = [
-    { id: 'groups', title: 'Equal groups', sub: 'Multiplying is adding equal groups.', concepts: [
-      { id: 'equal', title: 'What equal groups are', exp: ['B2.6'], skill: 'md-groups',
-        body: '<p>Groups are <b>equal</b> when each one has the same number. 3 plates with 4 grapes on each is 3 equal groups of 4.</p>',
-        watch: { mount: G3.view(groupView, { g: 1, n: 4, say: '1 group of 4' }), steps: [
-          { say: 'One plate with 4 grapes.', ms: 1200 },
-          { say: 'Add another plate of 4. Each plate has the same number.', act: function (t) { return t.set({ g: 2, say: '2 groups of 4: 4 + 4 = 8' }, 1500); } },
-          { say: 'One more plate of 4.', act: function (t) { return t.set({ g: 3, say: '3 groups of 4: 4 + 4 + 4 = 12' }, 1500); } },
-          { say: '3 equal groups of 4 make <b>12</b>.', ms: 1800 }
-        ] },
-        example: { mount: G3.view(groupView, { g: 1, n: 5, say: '1 group of 5' }), steps: [
-          { say: 'My turn. I put 5 grapes on one plate.', ms: 1300 },
-          { say: 'I add another plate of 5. Each plate has the same number.', act: function (t) { return t.set({ g: 2, say: '2 groups of 5: 5 + 5 = 10' }, 1500); } },
-          { say: 'I add two more plates of 5.', act: function (t) { return t.set({ g: 4, say: '4 groups of 5: 5 + 5 + 5 + 5 = 20' }, 1600); } },
-          { say: '4 equal groups of 5 make <b>20</b>. Every group has the same number.', ms: 2000 }
-        ] },
-        try: { mount: G3.play({ state: { g: 2, n: 2 }, draw: function (s) { return groups(s.g, s.n); },
-          sliders: [{ key: 'g', label: 'Number of groups', min: 1, max: 10 }, { key: 'n', label: 'In each group', min: 1, max: 10 }],
-          info: function (s) { return s.g + ' group' + (s.g > 1 ? 's' : '') + ' of ' + s.n + ': ' + addList(s.g, s.n) + ' = <b>' + s.g * s.n + '</b>'; },
-          tasks: [{ do: 'Make <b>4 groups of 3</b>.', goal: function (s) { return s.g === 4 && s.n === 3; }, yes: '4 groups of 3 is 12.' },
-            { do: 'Make <b>12</b> again, with a different number of groups.', goal: function (s) { return s.g * s.n === 12 && !(s.g === 4 && s.n === 3); }, yes: function (s) { return s.g + ' groups of ' + s.n + ' is also 12.'; } }] }), do: '' },
-        key: '<p>Equal groups: <b>every group has the same number</b>.</p>',
-        check: [TU('s1', 0), SK('md-groups', 1)] },
+    { id: 'groups', title: 'Equal groups', sub: 'Multiplying puts equal groups together.', concepts: [
+      { id: 'equal', title: 'Equal groups have the same number', exp: ['B2.6'], skill: 'md-groups',
+        watch: clip(platesV, { counts: [4] }, [
+          ['One plate with 4.'],
+          ['Another plate with 4.', { counts: [4, 4] }],
+          ['A third plate with 4.', { counts: [4, 4, 4] }],
+          ['3 groups of 4: 4, 8, 12.', { sym: '4 + 4 + 4 = 12' }]
+        ]),
+        example: clip(platesV, { counts: [5, 6, 5] }, [
+          ['My turn. Are these equal groups?'],
+          ['I count each plate: 5, 6, 5. Not equal.'],
+          ['I move one off. Now each plate has 5.', { counts: [5, 5, 5], pile: 1 }],
+          ['3 groups of 5: 5, 10, 15.', { sym: '5 + 5 + 5 = 15' }]
+        ]),
+        try: { mount: G3.play({ state: { g: 3, n: 4 }, draw: function (s) { return platesFig(same(s.g, s.n)); },
+          sliders: [{ key: 'g', label: 'Groups', min: 1, max: 10 }, { key: 'n', label: 'In each group', min: 1, max: 10 }],
+          info: function (s) { return pl(s.g, 'group') + ' of ' + s.n + ': <b>' + s.g * s.n + '</b>'; },
+          tasks: [{ do: 'Make <b>4 groups of 3</b>.', goal: function (s) { return s.g === 4 && s.n === 3; }, yes: '4 groups of 3 make 12.' },
+            { do: 'Make <b>12</b> again, with a different number of groups.', goal: function (s) { return s.g * s.n === 12 && s.g !== 4; }, yes: function (s) { return s.g + ' groups of ' + s.n + ' also make 12.'; } }] }), do: '' },
+        together: [tgGroups(1), tgGroups(2), tgGroups(3)],
+        mistake: '<p>Counting only the plates, or only one plate, or calling groups "equal" when one has more. Ask: "Does every plate have the same number?" Then skip count together, one plate at a time.</p>',
+        check: [ck('md-groups', 'plain', 1), ck('md-groups', 'tap', 1), ck('md-groups', 'story', 2), ck('md-groups', 'tf', 2), ck('md-groups', 'fill', 3)] },
 
-      { id: 'times', title: 'The times sign', exp: ['B2.6'], skill: 'md-groups',
-        body: '<p><span class="math">3 &times; 4</span> means "3 groups of 4". The first number is how many groups. The second is how many in each group.</p>',
-        watch: { mount: G3.view(groupView, { g: 5, n: 2, say: '5 groups of 2' }), steps: [
-          { say: '5 plates with 2 on each.', ms: 1300 },
-          { say: 'Add them: 2 + 2 + 2 + 2 + 2 = 10.', act: function (t) { return t.set({ say: '2 + 2 + 2 + 2 + 2 = 10' }, 1800); } },
-          { say: 'A short way to write it: <b>5 &times; 2 = 10</b>.', act: function (t) { return t.set({ say: '5 &times; 2 = 10' }, 2000); } }
-        ] },
-        example: { mount: G3.view(groupView, { g: 4, n: 3, say: '4 groups of 3' }), steps: [
-          { say: 'My turn. I see 4 plates with 3 on each.', ms: 1300 },
-          { say: 'I add them: 3 + 3 + 3 + 3 = 12.', act: function (t) { return t.set({ say: '3 + 3 + 3 + 3 = 12' }, 1800); } },
-          { say: 'The short way to write it is <b>4 &times; 3 = 12</b>. That means 4 groups of 3.', act: function (t) { return t.set({ say: '4 &times; 3 = 12' }, 2200); } }
-        ] },
-        try: { tool: 'counters', opts: { n: 6, controls: ['pairs'], arrange: 'scatter' }, tasks: [
-          { do: 'Show <b>5 &times; 2</b>: make 10 counters, then pair them up.', goal: function (s) { return s.n === 10 && s.mode === 'pairs'; }, yes: '5 pairs: 5 groups of 2 is 10.' }
-        ] },
-        key: '<p><b>3 &times; 4 means 3 groups of 4.</b></p>',
-        mistake: '<p>Adding the two numbers (3 &times; 4 = 7). Ask: "How many groups? How many in each?" and have the child draw it.</p>',
-        check: [TU('s1', 1), TU('s1', 2), SK('md-groups', 2)] }
+      { id: 'times', title: '3 &times; 4 means 3 groups of 4', exp: ['B2.6'], skill: 'md-times',
+        watch: clip(platesV, { counts: same(5, 2) }, [
+          ['5 plates, 2 on each.'],
+          ['Add them up.', { sym: '2 + 2 + 2 + 2 + 2 = 10' }],
+          ['A short way to write it.', { sym: '5 &times; 2 = 10' }],
+          ['The first number counts the plates.', { sym: '<b>5</b> plates of 2' }]
+        ]),
+        example: clip(platesV, { counts: same(4, 3) }, [
+          ['My turn. I see 4 plates of 3.'],
+          ['I add: 3 + 3 + 3 + 3.', { sym: '3 + 3 + 3 + 3 = 12' }],
+          ['4 groups, 3 in each.', { sym: '4 &times; 3 = 12' }],
+          ['Is it 4 + 3? No: that is only 7.']
+        ]),
+        try: { mount: G3.play({ state: { g: 2, n: 4 }, draw: function (s) { return platesFig(same(s.g, s.n)); },
+          sliders: [{ key: 'g', label: 'Groups', min: 1, max: 10 }, { key: 'n', label: 'In each group', min: 1, max: 10 }],
+          info: function (s) { return '<span class="big">' + s.g + X + s.n + ' = ' + s.g * s.n + '</span>'; },
+          tasks: [{ do: 'Show <b>3 &times; 5</b>.', goal: function (s) { return s.g === 3 && s.n === 5; }, yes: '3 groups of 5.' },
+            { do: 'Now show <b>5 &times; 3</b>.', goal: function (s) { return s.g === 5 && s.n === 3; }, yes: '5 groups of 3. A new picture, the same total.' }] }), do: '' },
+        together: [tgTimes(1), tgTimes(2), tgTimes(3)],
+        mistake: '<p>Adding the two numbers (3 &times; 4 = 7), or reading 3 &times; 4 as "4 groups of 3" before the turn-around fact is taught. Ask: "How many groups? How many in each?" and have the child draw the plates.</p>',
+        check: [ck('md-times', 'calc', 1), ck('md-times', 'plain', 1), ck('md-times', 'add', 2), ck('md-times', 'tap', 2), ck('md-times', 'groups', 3)] }
     ] },
 
     { id: 'arrays', title: 'Arrays', sub: 'Equal rows make multiplying easy to see.', concepts: [
-      { id: 'rows', title: 'Rows and columns', exp: ['B2.6'], skill: 'md-array',
-        body: '<p>An <b>array</b> puts things in equal rows. 3 rows of 5 is <span class="math">3 &times; 5</span>. Count by 5s, one row at a time.</p>',
-        watch: { mount: G3.view(arrView, { r: 1, c: 5, say: '5' }), steps: [
-          { say: 'One row of 5.', ms: 1200 },
-          { say: 'Another row of 5: 10.', act: function (t) { return t.set({ r: 2, say: '5, 10' }, 1300); } },
-          { say: 'A third row: 15.', act: function (t) { return t.set({ r: 3, say: '5, 10, 15' }, 1300); } },
-          { say: '3 rows of 5: <b>3 &times; 5 = 15</b>.', act: function (t) { return t.set({ say: '3 &times; 5 = 15' }, 2000); } }
-        ] },
-        example: { mount: G3.view(arrView, { r: 1, c: 6, say: '6' }), steps: [
-          { say: 'My turn. I make one row of 6.', ms: 1200 },
-          { say: 'I add a second row: 12.', act: function (t) { return t.set({ r: 2, say: '6, 12' }, 1300); } },
-          { say: 'Two more rows: 18, 24.', act: function (t) { return t.seq([{ r: 3, say: '6, 12, 18' }, { r: 4, say: '6, 12, 18, 24' }], 900); } },
-          { say: '4 rows with 6 in each row: <b>4 &times; 6 = 24</b>.', act: function (t) { return t.set({ say: '4 &times; 6 = 24' }, 2000); } }
-        ] },
-        try: { mount: G3.play({ state: { r: 2, c: 3 }, draw: function (s) { return array(s.r, s.c); },
+      { id: 'rows', title: 'Rows &times; how many in a row', exp: ['B2.6'], skill: 'md-array',
+        watch: clip(arrayV, { r: 1, c: 5 }, [
+          ['One row of 5.'],
+          ['Two rows: 5, 10.', { r: 2, sym: '5, 10' }],
+          ['Three rows: 5, 10, 15.', { r: 3, sym: '5, 10, 15' }],
+          ['3 rows of 5.', { sym: '3 &times; 5 = 15' }]
+        ]),
+        example: clip(arrayV, { r: 1, c: 6 }, [
+          ['My turn. I make a row of 6.'],
+          ['I add rows and count by 6s.', [{ r: 2, sym: '6, 12' }, { r: 3, sym: '6, 12, 18' }, { r: 4, sym: '6, 12, 18, 24' }]],
+          ['4 rows of 6.', { sym: '4 &times; 6 = 24' }],
+          ['Not 4 + 6: I count every row.']
+        ]),
+        try: { mount: G3.play({ state: { r: 2, c: 3 }, draw: function (s) { return arrayFig(s.r, s.c, { labels: true }); },
           sliders: [{ key: 'r', label: 'Rows', min: 1, max: 10 }, { key: 'c', label: 'In each row', min: 1, max: 10 }],
-          info: function (s) { return s.r + ' rows of ' + s.c + ': <b>' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</b>'; },
-          tasks: [{ do: 'Build an array for <b>4 &times; 6</b>.', goal: function (s) { return s.r === 4 && s.c === 6; }, yes: '4 rows of 6 is 24.' },
-            { do: 'Build an array with <b>20</b> dots.', goal: function (s) { return s.r * s.c === 20; }, yes: function (s) { return s.r + ' &times; ' + s.c + ' = 20.'; } }] }), do: '' },
-        key: '<p>Rows &times; how many in each row.</p>',
-        check: [TU('s2', 0), SK('md-array', 1)] },
+          info: function (s) { return '<b>' + s.r + X + s.c + ' = ' + s.r * s.c + '</b>'; },
+          tasks: [{ do: 'Build <b>4 &times; 6</b>.', goal: function (s) { return s.r === 4 && s.c === 6; }, yes: '4 rows of 6 make 24.' },
+            { do: 'Build an array with <b>20</b> dots.', goal: function (s) { return s.r * s.c === 20; }, yes: function (s) { return s.r + X + s.c + ' = 20.'; } }] }), do: '' },
+        together: [tgArray(1), tgArray(2), tgArray(3)],
+        mistake: '<p>Counting a row and a column and adding them (4 + 6), or mixing up rows and columns. Rows go across. Run a finger along each row while counting by the number in a row.</p>',
+        check: [ck('md-array', 'plain', 1), ck('md-array', 'tap', 1), ck('md-array', 'fill', 2), ck('md-array', 'story', 2), ck('md-array', 'plain', 3)] },
 
-      { id: 'turn', title: 'Turn-around facts', exp: ['B2.1', 'B2.6'], skill: 'md-array',
-        body: '<p>Turn an array on its side. 4 rows of 6 becomes 6 rows of 4. It is the <b>same dots</b>, so <span class="math">4 &times; 6 = 6 &times; 4</span>.</p>',
-        watch: { mount: G3.view(arrView, { r: 2, c: 5, say: '2 &times; 5 = 10' }), steps: [
-          { say: '2 rows of 5 is 10.', ms: 1500 },
-          { say: 'Turn it on its side.', act: function (t) { return t.set({ r: 5, c: 2, say: '5 &times; 2 = 10' }, 1600); } },
-          { say: 'Now it is 5 rows of 2. Still 10 dots. <b>2 &times; 5 = 5 &times; 2</b>.', ms: 2000 }
-        ] },
-        example: { mount: G3.view(arrView, { r: 3, c: 6, say: '3 &times; 6 = 18' }), steps: [
-          { say: 'My turn. 3 rows of 6 is 18.', ms: 1500 },
-          { say: 'I turn it on its side.', act: function (t) { return t.set({ r: 6, c: 3, say: '6 &times; 3 = 18' }, 1600); } },
-          { say: 'Now it is 6 rows of 3. Still 18 dots. <b>3 &times; 6 = 6 &times; 3</b>. Same answer.', ms: 2200 }
-        ] },
-        try: { mount: G3.play({ state: { r: 3, c: 7 }, draw: function (s) { return array(s.r, s.c); },
-          buttons: [{ label: 'Turn it on its side', act: function (s) { var x = s.r; s.r = s.c; s.c = x; s.turned = (s.turned || 0) + 1; } }],
-          info: function (s) { return '<b>' + s.r + ' &times; ' + s.c + ' = ' + s.r * s.c + '</b>'; },
-          tasks: [{ do: 'This is 3 &times; 7. <b>Turn it</b> to see 7 &times; 3.', goal: function (s) { return s.r === 7 && s.c === 3; }, yes: 'Same 21 dots. 3 &times; 7 = 7 &times; 3 = 21.' }] }), do: '' },
-        key: '<p>Turn it around: <b>same answer</b>.</p>',
-        check: [TU('s2', 1), SK('md-array', 1)] },
+      { id: 'turn', title: 'Turn it around: same answer', exp: ['B2.1', 'B2.6'], skill: 'md-turn',
+        watch: clip(arrayV, { r: 2, c: 5, sym: '2 &times; 5 = 10' }, [
+          ['2 rows of 5: 10 dots.'],
+          ['Turn it on its side.', { r: 5, c: 2, sym: '5 &times; 2 = 10' }],
+          ['5 rows of 2. Still 10 dots.'],
+          ['The order changed. The dots did not.', { sym: '2 &times; 5 = 5 &times; 2' }]
+        ]),
+        example: clip(arrayV, { r: 3, c: 6, sym: '3 &times; 6 = 18' }, [
+          ['My turn. 3 rows of 6 is 18.'],
+          ['I turn it: 6 rows of 3.', { r: 6, c: 3, sym: '6 &times; 3 = ?' }],
+          ['I count by 3s: 18 again.', { sym: '6 &times; 3 = 18' }],
+          ['So I can use either fact.', { sym: '3 &times; 6 = 6 &times; 3' }]
+        ]),
+        try: { mount: G3.play({ state: { r: 3, c: 7 }, draw: function (s) { return arrayFig(s.r, s.c, { labels: true }); },
+          buttons: [{ label: 'Turn it on its side', act: function (s) { var x = s.r; s.r = s.c; s.c = x; } }],
+          info: function (s) { return '<b>' + s.r + X + s.c + ' = ' + s.r * s.c + '</b>'; },
+          tasks: [{ do: 'This is 3 &times; 7. <b>Turn it</b> to see 7 &times; 3.', goal: function (s) { return s.r === 7 && s.c === 3; }, yes: 'The same 21 dots. 3 &times; 7 = 7 &times; 3.' }] }), do: '' },
+        together: [tgTurn(1), tgTurn(2), tgTurn(3)],
+        mistake: '<p>Thinking 6 &times; 4 must be bigger than 4 &times; 6 because the bigger number comes first. Build one array, count it, turn the paper, and count again.</p>',
+        check: [ck('md-turn', 'plain', 1), ck('md-turn', 'picture', 1), ck('md-turn', 'fill', 2), ck('md-turn', 'tf', 2), ck('md-turn', 'plain', 3)] },
 
-      { id: 'split', title: 'Split a hard fact', exp: ['B2.1', 'B2.6'], skill: 'md-array', hard: true,
-        body: '<p>A big array can be <b>split</b> into two smaller ones you know. 7 &times; 4 is 5 &times; 4 and 2 &times; 4. Add the parts: 20 + 8 = 28.</p>',
-        watch: { mount: G3.view(arrView, { r: 7, c: 4, sp: 0, say: '7 &times; 4 = ?' }), steps: [
-          { say: '7 rows of 4. That is a hard fact.', ms: 1300 },
-          { say: 'Split after 5 rows.', act: function (t) { return t.set({ sp: 5, say: '5 &times; 4 and 2 &times; 4' }, 1600); } },
-          { say: 'The top is 5 &times; 4 = 20. The bottom is 2 &times; 4 = 8.', act: function (t) { return t.set({ say: '20 and 8' }, 1800); } },
-          { say: 'Add the parts: 20 + 8 = <b>28</b>. So 7 &times; 4 = 28.', act: function (t) { return t.set({ say: '7 &times; 4 = 28' }, 2000); } }
-        ] },
-        example: { mount: G3.view(arrView, { r: 8, c: 3, sp: 0, say: '8 &times; 3 = ?' }), steps: [
-          { say: 'My turn. 8 rows of 3. That is a hard fact for me.', ms: 1400 },
-          { say: 'I split it after 5 rows.', act: function (t) { return t.set({ sp: 5, say: '5 &times; 3 and 3 &times; 3' }, 1600); } },
-          { say: 'The top is 5 &times; 3 = 15. The bottom is 3 &times; 3 = 9.', act: function (t) { return t.set({ say: '15 and 9' }, 1800); } },
-          { say: 'I add the parts: 15 + 9 = <b>24</b>. So 8 &times; 3 = 24.', act: function (t) { return t.set({ say: '8 &times; 3 = 24' }, 2000); } }
-        ] },
-        ways: [
-          { label: 'Add one more group', html: '<p>Know 5 &times; 6 = 30? Then 6 &times; 6 is one more group of 6: 30 + 6 = <b>36</b>.</p><div class="fig">' + array(6, 6, 5, '6 rows of 6, split after 5') + '</div>' },
-          { label: 'Double a fact', html: '<p>4 &times; 7 is double 2 &times; 7. 2 &times; 7 = 14, and 14 + 14 = <b>28</b>.</p><div class="fig">' + array(4, 7, 2, '4 rows of 7, split in half') + '</div>' },
-          { label: 'With groups', html: '<p>7 groups of 4 is 5 groups of 4 plus 2 groups of 4.</p><div class="fig">' + groups(7, 4) + '</div>' }
-        ],
-        try: { mount: G3.play({ state: { r: 8, c: 5, sp: 0 }, draw: function (s) { return array(s.r, s.c, s.sp); },
-          sliders: [{ key: 'sp', label: 'Split after row', min: 0, max: 7 }],
-          info: function (s) { return s.sp ? 'Top: ' + s.sp + ' &times; 5 = ' + s.sp * 5 + '. Bottom: ' + (8 - s.sp) + ' &times; 5 = ' + (8 - s.sp) * 5 + '. Together: <b>' + 40 + '</b>' : 'Move the slider to split 8 &times; 5.'; },
-          tasks: [{ do: 'Split <b>8 &times; 5</b> into two facts you know.', goal: function (s) { return s.sp > 0; }, yes: function (s) { return s.sp * 5 + ' + ' + (8 - s.sp) * 5 + ' = 40. Any split gives the same total.'; } },
-            { do: 'Now split it into <b>two equal halves</b>.', reset: false, goal: function (s) { return s.sp === 4; }, yes: '4 &times; 5 = 20, twice: 20 + 20 = 40.' }] }), do: '' },
-        key: '<p><b>Split it, find each part, add the parts.</b></p>',
-        mistake: '<p>Finding only one part and forgetting the other, or adding the row numbers instead of the parts. Point to each part and say its fact aloud together.</p>',
-        check: [TU('s2', 2), SK('md-array', 3)] }
+      { id: 'split', title: 'Split a hard fact into two easy ones', exp: ['B2.1', 'B2.6'], skill: 'md-split',
+        watch: clip(arrayV, { r: 7, c: 4 }, [
+          ['7 rows of 4. A hard one.'],
+          ['Cut it after 5 rows.', { split: 5 }],
+          ['Two facts I know.', { parts: true }],
+          ['20 + 8 = 28.', { sym: '7 &times; 4 = 28' }]
+        ]),
+        example: clip(arrayV, { r: 8, c: 3 }, [
+          ['My turn. 8 &times; 3.'],
+          ['I cut after 5 rows.', { split: 5 }],
+          ['5 &times; 3 = 15 and 3 &times; 3 = 9.', { parts: true }],
+          ['I add: 15 + 9 = 24.', { sym: '8 &times; 3 = 24' }]
+        ]),
+        try: { mount: G3.play({ state: { r: 8, c: 5, sp: 0 }, draw: function (s) { return arrayFig(s.r, s.c, { labels: true, split: s.sp, parts: s.sp > 0 }); },
+          sliders: [{ key: 'sp', label: 'Cut after row', min: 0, max: 7 }],
+          info: function (s) { return s.sp ? s.sp * 5 + ' + ' + (8 - s.sp) * 5 + ' = <b>40</b>' : 'Move the slider to cut 8 &times; 5.'; },
+          tasks: [{ do: 'Cut <b>8 &times; 5</b> into two facts you know.', goal: function (s) { return s.sp > 0; }, yes: function (s) { return s.sp * 5 + ' + ' + (8 - s.sp) * 5 + ' = 40. Any cut gives 40.'; } },
+            { do: 'Now cut it into <b>two equal halves</b>.', reset: false, goal: function (s) { return s.sp === 4; }, yes: '4 &times; 5 = 20, twice: 40.' }] }), do: '' },
+        together: [tgSplit(1), tgSplit(2), tgSplit(3)],
+        mistake: '<p>Finding only one part, or adding the row numbers (5 + 2) instead of the parts. Cover the bottom part, say its fact, then cover the top part and say that one.</p>',
+        check: [ck('md-split', 'plain', 1), ck('md-split', 'num', 1), ck('md-split', 'parts', 2), ck('md-split', 'mc', 2), ck('md-split', 'plain', 3)] }
     ] },
 
-    { id: 'facts', title: 'Facts of 2, 5 and 10', sub: 'Skip count to learn them by heart.', concepts: [
-      { id: 'skip', title: 'Skip count to multiply', exp: ['B2.2'], skill: 'md-facts',
-        body: '<p><span class="math">5 &times; 7 = 7 &times; 5</span>, so count by 5s seven times: 5, 10, 15, 20, 25, 30, 35.</p>',
-        watch: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0 }, steps: [
-          { say: '5 &times; 7 is the same as 7 &times; 5. Start at 0 and jump by 5, seven times.', ms: 1600 },
-          { say: '5, 10, 15, 20, 25, 30, 35.', act: function (t) { return t.jumps(5, 7, 280); } },
-          { say: '7 jumps of 5 land on <b>35</b>. So 5 &times; 7 = 35.', act: function (t) { return t.mark(35, '35'); }, ms: 2000 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0 }, steps: [
-          { say: 'My turn. 4 &times; 6 is the same as 6 &times; 4. I start at 0 and jump by 4, six times.', ms: 1700 },
-          { say: '4, 8, 12, 16, 20, 24.', act: function (t) { return t.jumps(4, 6, 300); } },
-          { say: '6 jumps of 4 land on <b>24</b>. So 4 &times; 6 = 24.', act: function (t) { return t.mark(24, '24'); }, ms: 2000 }
-        ] },
+    { id: 'facts', title: 'Facts of 2, 5 and 10', sub: 'Jump, turn and use the facts you know.', concepts: [
+      { id: 'skip', title: 'Jump on a number line to multiply', exp: ['B2.2'], skill: 'md-skip',
+        watch: clip(lineV, { k: 5, n: 0, max: 50, count: true }, [
+          ['Start at 0. Each jump is 5.'],
+          ['4 jumps: 5, 10, 15, 20.', count('n', 1, 4)],
+          ['4 jumps of 5 land on 20.', { sym: '4 &times; 5 = 20' }]
+        ]),
+        example: clip(lineV, { k: 2, n: 0, max: 20, count: true }, [
+          ['My turn. 7 &times; 2 is 7 jumps of 2.'],
+          ['I count: 2, 4, 6, 8, 10, 12, 14.', count('n', 1, 7)],
+          ['I land on 14.', { sym: '7 &times; 2 = 14' }],
+          ['Not 7 + 2 = 9: I count all 7 jumps.']
+        ]),
         try: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 10, start: 0, step: [2, 5, 10] }, tasks: [
-          { do: 'Find <b>2 &times; 8</b>. It is the same as 8 &times; 2: jump by 2, eight times.', goal: function (s) { return s.at === 16; }, yes: '8 jumps of 2: 16.' },
-          { do: 'Now find <b>10 &times; 6</b>. Start again from 0.', goal: function (s) { return s.at === 60; }, yes: '6 jumps of 10: 6 &times; 10 = 10 &times; 6 = 60.' }
+          { do: 'Show <b>8 &times; 2</b>: 8 jumps of 2.', goal: function (s) { return s.at === 16; }, yes: '8 jumps of 2 land on 16.' },
+          { do: 'Start again from 0. Show <b>6 &times; 10</b>.', goal: function (s) { return s.at === 60; }, yes: '6 jumps of 10 land on 60.' }
         ] },
-        key: '<p>Turn it around if it helps. Count by one number, <b>the other number of times</b>.</p>',
-        check: [TU('s3', 0), TU('s3', 1), SK('md-facts', 1)] },
+        together: [tgSkip(1), tgSkip(2), tgSkip(3)],
+        mistake: '<p>Losing count of the jumps, or answering with the number of jumps instead of the landing spot. Hold up one finger for each jump.</p>',
+        check: [ck('md-skip', 'plain', 1), ck('md-skip', 'count', 1), ck('md-skip', 'line', 2), ck('md-skip', 'story', 2), ck('md-skip', 'tf', 3)] },
 
-      { id: 'patterns', title: 'Patterns in the facts', exp: ['B2.2'], skill: 'md-facts',
-        body: '<p>Each set of facts has a pattern. Facts of 2 are <b>even</b>. Facts of 5 end in <b>5 or 0</b>. Facts of 10 end in <b>0</b>.</p>',
-        watch: { mount: G3.view(factView, { k: 2, say: 'Facts of 2' }), steps: [
-          { say: 'Facts of 2: every second number. They are the even numbers.', ms: 2000 },
-          { say: 'Facts of 5: two columns, ending in 5 or 0.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 2000); } },
-          { say: 'Facts of 10: only the last column. They all end in 0.', act: function (t) { return t.set({ k: 10, say: 'Facts of 10' }, 2000); } }
-        ] },
-        example: { mount: G3.view(factView, { k: 2, say: 'Facts of 2' }), steps: [
-          { say: 'My turn. Is 70 a fact of 2, of 5 or of 10? 70 is even, so it is a fact of 2.', ms: 2200 },
-          { say: '70 ends in 0, so it is a fact of 5.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 1800); } },
-          { say: 'It ends in 0, so it is a fact of 10 too.', act: function (t) { return t.set({ k: 10, say: 'Facts of 10' }, 1800); } },
-          { say: 'Now 35. It ends in 5, so it is a fact of 5. It is odd, so it is not a fact of 2 or 10.', act: function (t) { return t.set({ k: 5, say: 'Facts of 5' }, 2200); } }
-        ] },
+      { id: 'turnfacts', title: 'Turn it to count by 2s, 5s or 10s', exp: ['B2.2', 'B2.1'], skill: 'md-useturn',
+        watch: clip(twoV, { a: 5, b: 7, top: 0, bot: 0 }, [
+          ['5 &times; 7 is 5 jumps of 7. Hard to count.', count('top', 1, 5)],
+          ['Turn it: 7 jumps of 5.', { sym: '5 &times; 7 = 7 &times; 5' }],
+          ['Count by 5s: 5, 10, 15 and on.', count('bot', 1, 7)],
+          ['Both land on 35.', { sym: '5 &times; 7 = 35' }]
+        ]),
+        example: clip(twoV, { a: 2, b: 9, top: 0, bot: 0 }, [
+          ['My turn. 2 &times; 9 is 2 jumps of 9.', count('top', 1, 2)],
+          ['I turn it: 9 &times; 2. I know my 2s.', { sym: '2 &times; 9 = 9 &times; 2' }],
+          ['I count by 2s, 9 times.', count('bot', 1, 9)],
+          ['The same landing: 18.', { sym: '2 &times; 9 = 18' }]
+        ]),
+        together: [tgUseturn(1), tgUseturn(2), tgUseturn(3)],
+        mistake: '<p>Counting by the wrong number the wrong number of times (for 5 &times; 7, counting by 5s five times). Say the turned fact aloud first: "5 &times; 7 is the same as 7 &times; 5: seven 5s."</p>',
+        check: [ck('md-useturn', 'plain', 1), ck('md-useturn', 'picture', 1), ck('md-useturn', 'which', 2), ck('md-useturn', 'fill', 2), ck('md-useturn', 'plain', 3)] },
+
+      { id: 'patterns', title: 'Each set of facts has a pattern', exp: ['B2.2'], skill: 'md-pattern',
+        watch: clip(chartV, { k: 2 }, [
+          ['Facts of 2: every second number. All even.'],
+          ['Facts of 5 end in 5 or 0.', { k: 5 }],
+          ['Facts of 10 end in 0.', { k: 10 }]
+        ]),
+        example: clip(chartV, { k: 5, mark: 45 }, [
+          ['My turn. Is 45 a fact of 5? It ends in 5: yes.'],
+          ['Is 45 a fact of 2? It is odd: no.', { k: 2 }],
+          ['Is 60 a fact of 10? It ends in 0: yes.', { k: 10, mark: 60 }]
+        ]),
         try: { tool: 'hundred', opts: {}, tasks: [
-          { do: 'Tap all the facts of 10 on the chart: 10, 20, 30 and on to 100.', goal: function (s) { return s.lit.length === 10 && s.lit.every(function (n) { return n % 10 === 0; }); }, yes: 'They make one straight column. Every one ends in 0.' }
+          { do: 'Tap all the facts of 10 on the chart.', goal: function (s) { return s.lit.length === 10 && s.lit.every(function (n) { return n % 10 === 0; }); }, yes: 'One straight column. Every one ends in 0.' }
         ] },
-        key: '<p>2s: even. 5s: end in 5 or 0. 10s: end in 0.</p>',
-        check: [TU('s3', 2), SK('md-facts', 2)] },
+        together: [tgPattern(5), tgPattern(2), tgPattern(10)],
+        mistake: '<p>Thinking any number ending in 5 is a fact of 2, or that 52 is a fact of 5 because it has a 5 in it. Point to the last digit only.</p>',
+        check: [ck('md-pattern', 'plain', 1), ck('md-pattern', 'pick', 1), ck('md-pattern', 'tens', 2), ck('md-pattern', 'tf', 2), ck('md-pattern', 'double', 3)] },
 
-      { id: 'missing', title: 'Find the missing number', exp: ['B2.2'], skill: 'md-facts', hard: true,
-        body: '<p>In <span class="math">5 &times; ___ = 30</span>, count by 5s until you reach 30. <b>Count the jumps.</b> That is the missing number.</p>',
-        watch: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
-          { say: '5 &times; ___ = 30. Count by 5s to 30.', ms: 1300 },
-          { say: '5, 10, 15, 20, 25, 30.', act: function (t) { return t.jumps(5, 6, 300); } },
-          { say: 'That was 6 jumps of 5: 6 &times; 5 = 30. Turn it around: <b>5 &times; 6 = 30</b>.', ms: 2200 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
-          { say: 'My turn. 4 &times; ___ = 32. I count by 4s to 32.', ms: 1400 },
-          { say: '4, 8, 12, 16, 20, 24, 28, 32.', act: function (t) { return t.jumps(4, 8, 280); } },
-          { say: 'I count my jumps: 8 jumps of 4. 8 &times; 4 = 4 &times; 8, so <b>4 &times; 8 = 32</b>.', ms: 2200 }
-        ] },
-        ways: [
-          { label: 'Use the chart', html: '<p>Read across the row of 5s until you find 30. It is under the 6.</p><div class="tbl"><table><thead><tr><th>&times;</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<th>' + i + '</th>'; }).join('') + '</tr></thead><tbody><tr><th>5</th>' + [1, 2, 3, 4, 5, 6, 7].map(function (i) { return '<td' + (i === 6 ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : '') + '>' + 5 * i + '</td>'; }).join('') + '</tr></tbody></table></div>' },
-          { label: 'Make groups', html: '<p>Put 30 counters into groups of 5. How many groups? 6.</p><div class="fig">' + groups(6, 5) + '</div>' },
-          { label: 'Think of division', html: '<p>5 &times; ___ = 30 asks the same thing as <span class="math">30 &divide; 5</span>. Both are <b>6</b>.</p>' }
-        ],
-        try: { tool: 'numberline', opts: { min: 0, max: 100, tick: 5, every: 10, start: 0, step: [2, 5, 10] }, tasks: [
-          { do: 'Find the missing number: <span class="math">10 &times; ___ = 70</span>. Jump to 70 by 10s and count the jumps.', goal: function (s) { return s.at === 70; }, yes: '7 jumps. 10 &times; 7 = 70.' }
-        ] },
-        key: '<p>Count by the number to the answer. <b>The number of jumps is missing.</b></p>',
-        mistake: '<p>Writing the last number said (30) instead of the number of jumps (6). Have the child hold up one finger for each jump.</p>',
-        check: [SK('md-facts', 3), SK('md-facts', 3)] }
+      { id: 'near', title: 'Add or take away one group', exp: ['B2.2', 'B2.1'], skill: 'md-near',
+        watch: clip(arrayV, { r: 5, c: 6, sym: '5 &times; 6 = 30' }, [
+          ['I know 5 &times; 6 = 30.'],
+          ['6 &times; 6 is one more row of 6.', { r: 6, split: 5, sym: '30 + 6' }],
+          ['30 + 6 = 36.', { sym: '6 &times; 6 = 36' }]
+        ]),
+        example: clip(arrayV, { r: 10, c: 4, sym: '10 &times; 4 = 40' }, [
+          ['My turn. 9 &times; 4. I know 10 &times; 4 = 40.'],
+          ['9 rows is one row less.', { off: 9, sym: '40 &minus; 4' }],
+          ['40 &minus; 4 = 36.', { sym: '9 &times; 4 = 36' }],
+          ['Not 40 &minus; 1: a row is 4.']
+        ]),
+        together: [tgNear(1), tgNear(2), tgNear(3)],
+        mistake: '<p>Adding or taking away 1 instead of a whole group (9 &times; 4 = 40 &minus; 1). Draw the extra or missing row and count its dots.</p>',
+        check: [ck('md-near', 'plain', 1), ck('md-near', 'picture', 1), ck('md-near', 'fill', 2), ck('md-near', 'mc', 2), ck('md-near', 'plain', 3)] }
     ] },
 
     { id: 'divide', title: 'Dividing', sub: 'Share fairly, or make groups.', concepts: [
-      { id: 'share', title: 'Share fairly', exp: ['B2.6'], skill: 'md-divide',
-        body: '<p><b>Dividing</b> can mean sharing fairly. To share 12 among 3, deal them out one at a time until none are left. <span class="math">12 &divide; 3 = 4</span>.</p>',
-        watch: { mount: G3.view(dealView, { total: 12, k: 3, dealt: 0, say: '' }), steps: [
-          { say: '12 grapes to share among 3 plates.', ms: 1300 },
-          { say: 'Deal one to each plate, round and round.', act: function (t) { var p = []; for (var i = 1; i <= 12; i++) p.push({ dealt: i }); return t.seq(p, 260); } },
-          { say: 'Each plate has 4. <b>12 &divide; 3 = 4</b>.', act: function (t) { return t.set({ say: '12 &divide; 3 = 4' }, 2000); } }
-        ] },
-        example: { mount: G3.view(dealView, { total: 15, k: 5, dealt: 0, say: '' }), steps: [
-          { say: 'My turn. I share 15 grapes among 5 plates.', ms: 1300 },
-          { say: 'I deal one to each plate, round and round, until none are left.', act: function (t) { var p = []; for (var i = 1; i <= 15; i++) p.push({ dealt: i }); return t.seq(p, 220); } },
-          { say: 'Each plate has 3. <b>15 &divide; 5 = 3</b>.', act: function (t) { return t.set({ say: '15 &divide; 5 = 3' }, 2000); } }
-        ] },
-        try: { mount: G3.play({ state: { total: 15, k: 3, dealt: 0 }, draw: function (s) { return plates(dealCounts(s.total, s.k, s.dealt), s.total - s.dealt); },
+      { id: 'share', title: 'Share out one at a time', exp: ['B2.6'], skill: 'md-share',
+        watch: clip(dealV, { total: 12, k: 3, dealt: 0 }, [
+          ['12 counters, 3 plates.'],
+          ['One to each plate, again and again.', count('dealt', 1, 12)],
+          ['4 on each plate.', { sym: '12 &divide; 3 = 4' }]
+        ]),
+        example: clip(dealV, { total: 15, k: 5, dealt: 0 }, [
+          ['My turn. 15 grapes, 5 plates.'],
+          ['I deal one to each, round and round.', count('dealt', 1, 15)],
+          ['3 on each plate.', { sym: '15 &divide; 5 = 3' }],
+          ['I check: 5 groups of 3 is 15.', { sym: '5 &times; 3 = 15' }]
+        ]),
+        try: { mount: G3.play({ state: { total: 15, k: 3, dealt: 0 }, draw: function (s) { return platesFig(dealCounts(s.total, s.k, s.dealt), { pile: s.total - s.dealt }); },
           buttons: [{ label: 'Deal one to each', act: function (s) { s.dealt = Math.min(s.total, s.dealt + s.k); } }, { label: 'Start over', act: function (s) { s.dealt = 0; } }],
-          info: function (s) { return s.dealt < s.total ? 'Each plate has ' + Math.floor(s.dealt / s.k) + ' so far.' : '<b>' + s.total + ' &divide; ' + s.k + ' = ' + s.total / s.k + '</b>'; },
-          tasks: [{ do: 'Share <b>15</b> among <b>3</b> plates. Deal until none are left.', goal: function (s) { return s.dealt === 15; }, yes: 'Each plate has 5. 15 &divide; 3 = 5.' },
-            { do: 'Now share <b>20</b> among <b>4</b>.', setup: function (s) { s.total = 20; s.k = 4; }, goal: function (s) { return s.dealt === 20; }, yes: 'Each plate has 5. 20 &divide; 4 = 5.' }] }), do: '' },
-        key: '<p>Share fairly: <b>deal one to each until none are left.</b></p>',
-        mistake: '<p>Groups that are not equal. When you share 12 among 3, each group must get the same number: 4, 4 and 4. 5, 4 and 3 is not fair.</p>',
-        check: [TU('s4', 0), SK('md-divide', 1)] },
+          info: function (s) { return s.dealt < s.total ? Math.floor(s.dealt / s.k) + ' on each so far.' : '<b>' + s.total + DV + s.k + ' = ' + s.total / s.k + '</b>'; },
+          tasks: [{ do: 'Share <b>15</b> on <b>3</b> plates.', goal: function (s) { return s.dealt === 15; }, yes: '5 on each. 15 &divide; 3 = 5.' },
+            { do: 'Now share <b>20</b> on <b>4</b> plates.', setup: function (s) { s.total = 20; s.k = 4; }, goal: function (s) { return s.dealt === 20; }, yes: '5 on each. 20 &divide; 4 = 5.' }] }), do: '' },
+        together: [tgShare(1), tgShare(2), tgShare(3)],
+        mistake: '<p>Giving some plates more than others, or answering with the number of plates. Deal one at a time, then check that every plate matches.</p>',
+        check: [ck('md-share', 'plain', 1), ck('md-share', 'tap', 1), ck('md-share', 'story', 2), ck('md-share', 'tf', 2), ck('md-share', 'bare', 3)] },
 
-      { id: 'group', title: 'How many groups?', exp: ['B2.6'], skill: 'md-divide',
-        body: '<p>Dividing can also mean making groups. "How many bags of 5 in 20?" Take away 5 at a time and count the bags. <span class="math">20 &divide; 5 = 4</span>.</p>',
-        watch: { mount: G3.view(bagView, { total: 20, size: 5, bags: 0, say: '' }), steps: [
-          { say: '20 stickers. Each bag holds 5.', ms: 1300 },
-          { say: 'Fill bags of 5 until none are left.', act: function (t) { return t.seq([{ bags: 1 }, { bags: 2 }, { bags: 3 }, { bags: 4 }], 650); } },
-          { say: '4 bags. <b>20 &divide; 5 = 4</b>.', act: function (t) { return t.set({ say: '20 &divide; 5 = 4' }, 2000); } }
-        ] },
-        example: { mount: G3.view(bagView, { total: 24, size: 6, bags: 0, say: '' }), steps: [
-          { say: 'My turn. I have 24 stickers. Each bag holds 6.', ms: 1300 },
-          { say: 'I fill bags of 6 until none are left.', act: function (t) { return t.seq([{ bags: 1 }, { bags: 2 }, { bags: 3 }, { bags: 4 }], 650); } },
-          { say: 'I count the bags: 4. <b>24 &divide; 6 = 4</b>.', act: function (t) { return t.set({ say: '24 &divide; 6 = 4' }, 2000); } }
-        ] },
-        try: { mount: G3.play({ state: { total: 18, size: 2, bags: 0 }, draw: function (s) { return bagView(s); },
+      { id: 'group', title: 'Make groups to divide', exp: ['B2.6'], skill: 'md-groupdiv',
+        watch: clip(bagV, { total: 20, size: 5, bags: 0 }, [
+          ['20 stickers. Bags of 5.'],
+          ['Fill a bag of 5, then another.', count('bags', 1, 4)],
+          ['4 bags.', { sym: '20 &divide; 5 = 4' }]
+        ]),
+        example: clip(bagV, { total: 18, size: 3, bags: 0 }, [
+          ['My turn. 18 crayons, boxes of 3.'],
+          ['I fill boxes of 3 until none are left.', count('bags', 1, 6)],
+          ['6 boxes.', { sym: '18 &divide; 3 = 6' }],
+          ['Not 3 boxes: 3 is how many in each.']
+        ]),
+        try: { mount: G3.play({ state: { total: 18, size: 2, bags: 0 }, draw: bagV,
           buttons: [{ label: 'Fill a bag', act: function (s) { if ((s.bags + 1) * s.size <= s.total) s.bags++; } }, { label: 'Start over', act: function (s) { s.bags = 0; } }],
-          info: function (s) { return s.bags + ' bag' + (s.bags === 1 ? '' : 's') + ' of ' + s.size + (s.bags * s.size === s.total ? '. <b>' + s.total + ' &divide; ' + s.size + ' = ' + s.bags + '</b>' : ''); },
-          tasks: [{ do: 'How many bags of <b>2</b> can you fill from <b>18</b>?', goal: function (s) { return s.bags * s.size === s.total; }, yes: '9 bags. 18 &divide; 2 = 9.' },
+          info: function (s) { return pl(s.bags, 'bag') + ' of ' + s.size + (s.bags * s.size === s.total ? ': <b>' + s.total + DV + s.size + ' = ' + s.bags + '</b>' : ''); },
+          tasks: [{ do: 'How many bags of <b>2</b> from <b>18</b>?', goal: function (s) { return s.bags * s.size === s.total; }, yes: '9 bags. 18 &divide; 2 = 9.' },
             { do: 'How many bags of <b>10</b> from <b>50</b>?', setup: function (s) { s.total = 50; s.size = 10; }, goal: function (s) { return s.bags * s.size === s.total; }, yes: '5 bags. 50 &divide; 10 = 5.' }] }), do: '' },
-        key: '<p>Make groups: <b>take away the group size until none are left, then count the groups.</b></p>',
-        check: [TU('s4', 1), SK('md-divide', 3)] },
+        together: [tgGroupdiv(1), tgGroupdiv(2), tgGroupdiv(3)],
+        mistake: '<p>Answering with the group size (5) instead of the number of groups (4). Ask: "How many bags did you fill?"</p>',
+        check: [ck('md-groupdiv', 'plain', 1), ck('md-groupdiv', 'tap', 1), ck('md-groupdiv', 'line', 2), ck('md-groupdiv', 'story', 2), ck('md-groupdiv', 'story', 3)] },
 
-      { id: 'think', title: 'Think multiplication', exp: ['B2.1', 'B2.2'], skill: 'md-divide', hard: true,
-        body: '<p>To divide, think of a times fact. <span class="math">40 &divide; 10</span> asks: <b>10 times what is 40?</b> 10 &times; 4 = 40, so the answer is 4.</p>',
-        watch: { tool: 'numberline', opts: { min: 0, max: 50, tick: 5, every: 10, start: 0 }, steps: [
-          { say: '40 &divide; 10. Think: 10 times what is 40?', ms: 1500 },
-          { say: 'Count by 10s to 40.', act: function (t) { return t.jumps(10, 4, 320); } },
-          { say: '4 jumps. 10 &times; 4 = 40, so <b>40 &divide; 10 = 4</b>.', ms: 2000 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 0, max: 50, tick: 5, every: 10, start: 0 }, steps: [
-          { say: 'My turn. 30 &divide; 5. I think: 5 times what is 30?', ms: 1500 },
-          { say: 'I count by 5s to 30.', act: function (t) { return t.jumps(5, 6, 300); } },
-          { say: '6 jumps. 5 &times; 6 = 30, so <b>30 &divide; 5 = 6</b>.', ms: 2000 }
-        ] },
-        ways: [
-          { label: 'Share it', html: '<p>Share 40 among 10 people. Each gets 4.</p><div class="fig">' + groups(10, 4) + '</div>' },
-          { label: 'With dimes', html: '<p>How many dimes make 40&cent;? 10&cent;, 20&cent;, 30&cent;, 40&cent;: <b>4 dimes</b>.</p>' },
-          { label: 'In an array', html: '<p>40 dots in rows of 10 make 4 rows.</p><div class="fig">' + array(4, 10) + '</div>' }
-        ],
-        key: '<p>Divide: <b>ask "times what?"</b></p>',
-        mistake: '<p>Subtracting instead of dividing (40 &divide; 10 = 30). Read it as "how many 10s are in 40?"</p>',
-        check: [TU('s4', 2), SK('md-divide', 2)] }
+      { id: 'which', title: 'Multiply or divide?', exp: ['B2.6'], skill: 'md-mixop',
+        watch: clip(platesV, { counts: [4, 4, 4] }, [
+          ['3 plates of 4. How many in all? Multiply.', { sym: '3 &times; 4 = 12' }],
+          ['12 on 3 plates. How many on each? Divide.', { sym: '12 &divide; 3 = 4' }],
+          ['12 in bags of 4. How many bags? Divide.', { bags: true, sym: '12 &divide; 4 = 3' }]
+        ]),
+        example: clip(platesV, { counts: same(5, 6) }, [
+          ['My turn. 5 teams of 6. How many players? I multiply.', { sym: '5 &times; 6 = 30' }],
+          ['30 players, 5 teams. How many on each? I divide.', { sym: '30 &divide; 5 = 6' }],
+          ['30 players, teams of 6. How many teams? I divide.', { bags: true, sym: '30 &divide; 6 = 5' }]
+        ]),
+        together: [tgMix('times'), tgMix('share'), tgMix('group')],
+        mistake: '<p>Grabbing the two numbers and adding or multiplying them without reading the question. Ask: "Do you know the total? Then you are splitting it: divide."</p>',
+        check: [ck('md-mixop', 'mean', 1), ck('md-mixop', 'plain', 1), ck('md-mixop', 'which', 2), ck('md-mixop', 'calc', 2), ck('md-mixop', 'two', 3)] }
     ] },
 
-    { id: 'family', title: 'Fact families', sub: 'Multiplying and dividing are linked.', concepts: [
-      { id: 'four', title: 'One array, four facts', exp: ['B2.1'], skill: 'md-family',
-        body: '<p>One array gives <b>four facts</b>: two times facts and two division facts. They use the same three numbers.</p>',
-        watch: { mount: G3.view(famView, { a: 4, b: 5, k: 0, say: '4 rows of 5' }), steps: [
-          { say: '4 rows of 5: 20 dots.', ms: 1300 },
-          { say: '4 &times; 5 = 20.', act: function (t) { return t.set({ k: 1, say: '' }, 1300); } },
-          { say: 'Turned around: 5 &times; 4 = 20.', act: function (t) { return t.set({ k: 2 }, 1300); } },
-          { say: 'Share 20 into 4 rows: 5 in each. 20 &divide; 4 = 5.', act: function (t) { return t.set({ k: 3 }, 1500); } },
-          { say: 'Share 20 into 5 columns: 4 in each. 20 &divide; 5 = 4.', act: function (t) { return t.set({ k: 4, say: 'The fact family of 4, 5 and 20' }, 2200); } }
-        ] },
-        example: { mount: G3.view(famView, { a: 3, b: 6, k: 0, say: '3 rows of 6' }), steps: [
-          { say: 'My turn. 3 rows of 6 make 18 dots.', ms: 1300 },
-          { say: 'My first fact: 3 &times; 6 = 18.', act: function (t) { return t.set({ k: 1, say: '' }, 1300); } },
-          { say: 'I turn it around: 6 &times; 3 = 18.', act: function (t) { return t.set({ k: 2 }, 1300); } },
-          { say: 'I share 18 into 3 rows: 6 in each. 18 &divide; 3 = 6.', act: function (t) { return t.set({ k: 3 }, 1500); } },
-          { say: 'I share 18 into 6 columns: 3 in each. 18 &divide; 6 = 3. Same three numbers, four facts.', act: function (t) { return t.set({ k: 4, say: 'The fact family of 3, 6 and 18' }, 2200); } }
-        ] },
-        try: { mount: G3.play({ state: { a: 3, b: 10, k: 4 }, draw: famView,
+    { id: 'family', title: 'Fact families', sub: 'Multiplying and dividing use the same facts.', concepts: [
+      { id: 'four', title: 'Same three numbers, four facts', exp: ['B2.1'], skill: 'md-family',
+        watch: clip(famV, { a: 4, b: 5 }, [
+          ['4 rows of 5.', { sym: famLines(4, 5, 1) }],
+          ['Turn it around.', { sym: famLines(4, 5, 2) }],
+          ['20 in 4 rows: 5 in each.', { sym: famLines(4, 5, 3) }],
+          ['20 in rows of 5: 4 rows.', { sym: famLines(4, 5, 4) }]
+        ]),
+        example: clip(famV, { a: 3, b: 6 }, [
+          ['My turn. 3 rows of 6.', { sym: famLines(3, 6, 1) }],
+          ['I turn it around.', { sym: famLines(3, 6, 2) }],
+          ['18 in 3 rows: 6 in each.', { sym: famLines(3, 6, 3) }],
+          ['18 in rows of 6: 3 rows.', { sym: famLines(3, 6, 4) }]
+        ]),
+        try: { mount: G3.play({ state: { a: 3, b: 10 }, draw: function (s) { return arrayFig(s.a, s.b, { labels: true }) + '<p class="g3-sym">' + famLines(s.a, s.b, 4) + '</p>'; },
           sliders: [{ key: 'a', label: 'Rows', min: 2, max: 10 }, { key: 'b', label: 'In each row', min: 2, max: 10 }],
-          tasks: [{ do: 'Show the fact family for <b>2, 5 and 10</b>.', goal: function (s) { return (s.a === 2 && s.b === 5) || (s.a === 5 && s.b === 2); }, yes: '2 &times; 5 = 10, 5 &times; 2 = 10, 10 &divide; 2 = 5, 10 &divide; 5 = 2.' }] }), do: '' },
-        key: '<p>Same three numbers, <b>four facts</b>.</p>',
-        check: [TU('s5', 0), SK('md-family', 1)] },
+          tasks: [{ do: 'Show the fact family of <b>2, 5 and 10</b>.', goal: function (s) { return s.a * s.b === 10 && s.a !== 1 && s.b !== 1; }, yes: '2 &times; 5, 5 &times; 2, 10 &divide; 2, 10 &divide; 5.' }] }), do: '' },
+        together: [tgFamily(1), tgFamily(2), tgFamily(3)],
+        mistake: '<p>Putting a fact with a new number into the family (20 &divide; 4 = 6), or adding a plus fact. Every fact uses the same three numbers, with &times; or &divide;.</p>',
+        check: [ck('md-family', 'plain', 1), ck('md-family', 'array', 1), ck('md-family', 'missing', 2), ck('md-family', 'pick', 2), ck('md-family', 'odd', 3)] },
 
-      { id: 'check', title: 'Check a division', exp: ['B2.1'], skill: 'md-family', hard: true,
-        body: '<p>Use a times fact to <b>check</b> a division. If <span class="math">30 &divide; 5 = 6</span>, then 6 &times; 5 should be 30. It is, so the answer is right.</p>',
-        watch: { mount: G3.view(groupView, { g: 6, n: 5, say: 'Jo says 35 &divide; 5 = 6' }), steps: [
-          { say: 'Jo says 35 &divide; 5 = 6. Check it.', ms: 1500 },
-          { say: '6 groups of 5 is 30, not 35. Jo is wrong.', act: function (t) { return t.set({ say: '6 &times; 5 = 30' }, 1800); } },
-          { say: 'Add one more group: 7 groups of 5 is 35. <b>35 &divide; 5 = 7</b>.', act: function (t) { return t.set({ g: 7, say: '7 &times; 5 = 35' }, 2000); } }
-        ] },
-        example: { mount: G3.view(groupView, { g: 5, n: 4, say: 'Ali says 24 &divide; 4 = 5' }), steps: [
-          { say: 'My turn. Ali says 24 &divide; 4 = 5. I check: answer &times; divisor = total.', ms: 1800 },
-          { say: '5 groups of 4 is 20, not 24. So Ali is wrong.', act: function (t) { return t.set({ say: '5 &times; 4 = 20' }, 1800); } },
-          { say: 'I add one more group: 6 groups of 4 is 24. <b>24 &divide; 4 = 6</b>.', act: function (t) { return t.set({ g: 6, say: '6 &times; 4 = 24' }, 2000); } }
-        ] },
-        ways: [
-          { label: 'Count by the divisor', html: '<p>Count by 5s: 5, 10, 15, 20, 25, 30, 35. That is 7, not 6.</p>' },
-          { label: 'Turn it around', html: '<p>Read the division backwards as a times fact: answer &times; 5 = 35? 6 &times; 5 = 30. 7 &times; 5 = 35. The answer is 7.</p>' }
-        ],
-        key: '<p>Check: <b>answer &times; divisor = total</b>.</p>',
-        mistake: '<p>Checking with the wrong operation (adding 6 + 5). The check is always a times fact using the same three numbers.</p>',
-        check: [TU('s5', 1), TU('s5', 2), SK('md-family', 3)] }
+      { id: 'check', title: 'Check a division with &times;', exp: ['B2.1'], skill: 'md-check',
+        watch: clip(platesV, { counts: same(6, 5), bags: true, sym: '35 &divide; 5 = 6?' }, [
+          ['Jo says 35 &divide; 5 = 6. Check: 6 bags of 5.'],
+          ['6 &times; 5 = 30, not 35.', { sym: '6 &times; 5 = 30' }],
+          ['One more bag: 7 &times; 5 = 35.', { counts: same(7, 5), sym: '35 &divide; 5 = 7' }]
+        ]),
+        example: clip(platesV, { counts: same(5, 4), bags: true, sym: '24 &divide; 4 = 5?' }, [
+          ['My turn. Ali says 24 &divide; 4 = 5.'],
+          ['I multiply: 5 &times; 4 = 20. Too small.', { sym: '5 &times; 4 = 20' }],
+          ['One more bag: 6 &times; 4 = 24.', { counts: same(6, 4), sym: '24 &divide; 4 = 6' }]
+        ]),
+        together: [tgCheck(1), tgCheck(2), tgCheck(3)],
+        mistake: '<p>Checking with the wrong operation (6 + 5), or multiplying the total (35 &times; 5). The check is always: answer &times; the number you divided by.</p>',
+        check: [ck('md-check', 'plain', 1), ck('md-check', 'fill', 1), ck('md-check', 'fix', 2), ck('md-check', 'which', 2), ck('md-check', 'story', 3)] }
     ] },
 
     { id: 'scale', title: 'Scaling up', sub: 'For every 1, there are 2, 5 or 10.', concepts: [
-      { id: 'ratio', title: 'For every 1, there are...', exp: ['B2.9'], skill: 'md-scale',
-        body: '<p>Some things always come in the same amounts. 1 bike has 2 wheels. 1 hand has 5 fingers. 1 dime is 10 cents. Each new one adds the same amount again.</p>',
-        watch: { mount: G3.view(ratioView, { k: 5, n: 1, say: '1 hand, 5 fingers' }), steps: [
-          { say: '1 hand has 5 fingers.', ms: 1300 },
-          { say: 'Each new hand adds 5 more fingers.', act: function (t) { return t.seq([{ n: 2, say: '2 hands: 10' }, { n: 3, say: '3 hands: 15' }, { n: 4, say: '4 hands: 20' }], 900); } },
-          { say: '4 hands have <b>20 fingers</b>. 4 &times; 5 = 20.', act: function (t) { return t.set({ say: '4 &times; 5 = 20' }, 2000); } }
-        ] },
-        example: { mount: G3.view(ratioView, { k: 2, n: 1, say: '1 bike, 2 wheels' }), steps: [
-          { say: 'My turn. 1 bike has 2 wheels.', ms: 1300 },
-          { say: 'Each new bike adds 2 more wheels.', act: function (t) { return t.seq([{ n: 2, say: '2 bikes: 4' }, { n: 3, say: '3 bikes: 6' }, { n: 4, say: '4 bikes: 8' }, { n: 5, say: '5 bikes: 10' }], 800); } },
-          { say: '5 bikes have <b>10 wheels</b>. For every 1 bike there are 2 wheels, so I multiply by 2: 5 &times; 2 = 10.', act: function (t) { return t.set({ say: '5 &times; 2 = 10' }, 2200); } }
-        ] },
-        try: { mount: G3.play({ state: { k: 2, n: 1 }, draw: ratioView,
-          selects: [{ key: 'k', label: 'For every 1, there are', options: [[2, '2 (bikes and wheels)'], [5, '5 (hands and fingers)'], [10, '10 (dimes and cents)']] }],
+      { id: 'ratio', title: 'For every 1, there are 2, 5 or 10', exp: ['B2.9'], skill: 'md-scale',
+        watch: clip(ratioV, { k: 5, n: 1 }, [
+          ['1 star has 5 points.'],
+          ['Each new star adds 5 more.', [{ n: 2 }, { n: 3 }, { n: 4 }]],
+          ['4 stars: 20 points.', { sym: '4 &times; 5 = 20' }]
+        ]),
+        example: clip(ratioV, { k: 2, n: 1 }, [
+          ['My turn. 1 bike has 2 wheels.'],
+          ['I add bikes: 2 more wheels each time.', [{ n: 2 }, { n: 3 }, { n: 4 }, { n: 5 }]],
+          ['5 bikes: 10 wheels.', { sym: '5 &times; 2 = 10' }],
+          ['Not 5 + 2: each bike brings 2.']
+        ]),
+        try: { mount: G3.play({ state: { k: 2, n: 1 }, draw: ratioV,
+          selects: [{ key: 'k', label: 'For every 1, there are', options: [[2, '2 (bikes and wheels)'], [5, '5 (stars and points)'], [10, '10 (dimes and cents)']] }],
           sliders: [{ key: 'n', label: 'How many', min: 1, max: 10 }],
-          info: function (s) { var th = THINGS[s.k][0]; return '<b>' + s.n + ' ' + (s.n === 1 ? th[0] : th[1]) + ' &rarr; ' + s.n * s.k + ' ' + th[3] + '</b>'; },
-          tasks: [{ do: 'How many wheels do <b>6 bikes</b> have? Show it.', goal: function (s) { return s.k === 2 && s.n === 6; }, yes: '6 &times; 2 = 12 wheels.' },
-            { do: 'Show <b>8 dimes</b>. How many cents?', goal: function (s) { return s.k === 10 && s.n === 8; }, yes: '8 &times; 10 = 80 cents.' }] }), do: '' },
-        key: '<p>For every 1 there are k: <b>multiply by k</b>.</p>',
-        check: [TU('s6', 0), TU('s6', 1), SK('md-scale', 1)] },
+          tasks: [{ do: 'How many wheels on <b>6 bikes</b>?', goal: function (s) { return s.k === 2 && s.n === 6; }, yes: '6 &times; 2 = 12 wheels.' },
+            { do: 'How many cents are <b>8 dimes</b> worth?', goal: function (s) { return s.k === 10 && s.n === 8; }, yes: '8 &times; 10 = 80 cents.' }] }), do: '' },
+        together: [tgRatio(1), tgRatio(2), tgRatio(3)],
+        mistake: '<p>Adding instead of multiplying (5 bikes have 7 wheels), or adding 1 each time. Fill in the table one column at a time: "One more bike, how many more wheels?"</p>',
+        check: [ck('md-scale', 'plain', 1), ck('md-scale', 'table', 1), ck('md-scale', 'story', 2), ck('md-scale', 'tf', 2), ck('md-scale', 'plain', 3)] },
 
-      { id: 'back', title: 'Work backwards', exp: ['B2.9'], skill: 'md-scale', hard: true,
-        body: '<p>Sometimes you know the big amount. 70 cents in dimes: how many dimes? Count by 10s to 70 and <b>count the jumps</b>.</p>',
-        watch: { tool: 'numberline', opts: { min: 0, max: 80, tick: 10, every: 10, start: 0 }, steps: [
-          { say: '70 cents in dimes. How many dimes?', ms: 1300 },
-          { say: 'Each dime is 10 cents. Count by 10s to 70.', act: function (t) { return t.jumps(10, 7, 280); } },
-          { say: '7 jumps, so <b>7 dimes</b>. 70 &divide; 10 = 7.', ms: 2000 }
-        ] },
-        example: { tool: 'numberline', opts: { min: 0, max: 40, tick: 1, every: 5, start: 0 }, steps: [
-          { say: 'My turn. I have 35 cents in nickels. How many nickels?', ms: 1400 },
-          { say: 'Each nickel is 5 cents. I count by 5s to 35.', act: function (t) { return t.jumps(5, 7, 280); } },
-          { say: 'I count the jumps: 7. So I have <b>7 nickels</b>. 35 &divide; 5 = 7.', ms: 2000 }
-        ] },
-        ways: [
-          { label: 'Use a table', html: '<div class="tbl"><table><tbody><tr><th class="l">Dimes</th><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td><td>6</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">7</td></tr><tr><th class="l">Cents</th><td>10</td><td>20</td><td>30</td><td>40</td><td>50</td><td>60</td><td style="background:color-mix(in srgb,var(--hi) 45%,var(--card))">70</td></tr></tbody></table></div><p>Find 70 in the cents row. Look up: <b>7</b> dimes.</p>' },
-          { label: 'Make groups', html: '<p>Put 15 fingers into hands of 5: 3 hands.</p><div class="fig">' + groups(3, 5) + '</div>' }
-        ],
+      { id: 'back', title: 'Work back from the total', exp: ['B2.9'], skill: 'md-back',
+        watch: clip(lineV, { k: 10, n: 0, max: 70, count: true }, [
+          ['70&cent; in dimes. How many dimes?'],
+          ['Count by 10s to 70.', count('n', 1, 7)],
+          ['7 jumps: 7 dimes.', { sym: '70 &divide; 10 = 7' }]
+        ]),
+        example: clip(lineV, { k: 5, n: 0, max: 35, count: true }, [
+          ['My turn. 35&cent; in nickels.'],
+          ['I count by 5s to 35.', count('n', 1, 7)],
+          ['I count the jumps: 7 nickels.', { sym: '35 &divide; 5 = 7' }],
+          ['Not 35 nickels: each one is 5&cent;.']
+        ]),
         try: { tool: 'numberline', opts: { min: 0, max: 50, tick: 1, every: 5, start: 0, step: [2, 5, 10] }, tasks: [
-          { do: '16 wheels. How many bikes? Jump by 2s to 16 and count the jumps.', goal: function (s) { return s.at === 16; }, yes: '8 jumps, so 8 bikes.' }
+          { do: '16 wheels. How many bikes? Jump by 2s to 16 and count the jumps.', goal: function (s) { return s.at === 16; }, yes: '8 jumps: 8 bikes.' }
         ] },
-        key: '<p>Know the total? <b>Count by k to it and count the jumps.</b></p>',
-        mistake: '<p>Multiplying again (70 &times; 10) when the question asks how many groups. Ask: "Do we know one group, or the total?"</p>',
-        check: [TU('s6', 2), SK('md-scale', 3)] }
+        together: [tgBack(1), tgBack(2), tgBack(3)],
+        mistake: '<p>Multiplying again (70 &times; 10) when the total is already known. Ask: "Do we know one, or all of them?"</p>',
+        check: [ck('md-back', 'plain', 1), ck('md-back', 'coins', 1), ck('md-back', 'table', 2), ck('md-back', 'mc', 2), ck('md-back', 'tf', 3)] }
+    ] },
+
+    { id: 'fluency', title: 'Fact fluency', sub: 'Know the facts quickly.', concepts: [
+      { id: 'facts', title: 'The 2, 5 and 10 facts by heart', exp: ['B2.2'], skill: 'md-facts',
+        watch: clip(stripV, { k: 2, n: 0 }, [
+          ['The 2s: double each number.', count('n', 1, 10)],
+          ['The 5s: 5, 10, 15 and on to 50.', [{ k: 5, n: 0 }].concat(count('n', 1, 10))],
+          ['The 10s: 10, 20, 30 and on to 100.', [{ k: 10, n: 0 }].concat(count('n', 1, 10))]
+        ]),
+        example: clip(stripV, { k: 5, n: 5 }, [
+          ['My turn. 8 &times; 5. I know 5 &times; 5 = 25.'],
+          ['I count on: 30, 35, 40.', count('n', 6, 8)],
+          ['8 &times; 5 = 40.', { sym: '8 &times; 5 = 40' }],
+          ['5 &times; 8 is the same: 40.', { sym: '5 &times; 8 = 40' }]
+        ]),
+        together: [tgFacts(2), tgFacts(5), tgFacts(10)],
+        mistake: '<p>Counting from 0 every time. Anchor on 5 &times; and 10 &times; facts, then count on or back. A few minutes of practice each day works better than one long session.</p>',
+        check: [ck('md-facts', 'plain', 1), ck('md-facts', 'missing', 1), ck('md-facts', 'row', 2), ck('md-facts', 'plain', 2), ck('md-facts', 'plain', 3)] },
+
+      { id: 'divfacts', title: 'Divide: think of the times fact', exp: ['B2.2'], skill: 'md-divfacts',
+        watch: clip(lineV, { k: 5, n: 0, max: 50, count: true }, [
+          ['40 &divide; 5: how many 5s make 40?'],
+          ['Count by 5s to 40.', count('n', 1, 8)],
+          ['8 jumps.', { sym: '40 &divide; 5 = 8' }],
+          ['Because 8 &times; 5 = 40.', { sym: '8 &times; 5 = 40' }]
+        ]),
+        example: clip(lineV, { k: 2, n: 0, max: 20, count: true }, [
+          ['My turn. 18 &divide; 2.'],
+          ['I count by 2s to 18.', count('n', 1, 9)],
+          ['9 twos.', { sym: '18 &divide; 2 = 9' }],
+          ['I check: 9 &times; 2 = 18.', { sym: '9 &times; 2 = 18' }]
+        ]),
+        together: [tgDiv(1), tgDiv(2), tgDiv(3)],
+        mistake: '<p>Subtracting instead of dividing (40 &divide; 5 = 35). Read it as "how many 5s make 40?" and find the times fact.</p>',
+        check: [ck('md-divfacts', 'plain', 1), ck('md-divfacts', 'think', 1), ck('md-divfacts', 'row', 2), ck('md-divfacts', 'plain', 2), ck('md-divfacts', 'plain', 3)] },
+
+      { id: 'mixed', title: 'All the facts to 10 &times; 10', exp: ['B2.6', 'B2.2'], skill: 'md-mixed',
+        watch: clip(chartXV, { r: 0, c: 0 }, [
+          ['Row 6: 6 groups. Column 7: 7 in each.', { r: 6, c: 7 }],
+          ['They meet at 42.', { show: true, sym: '6 &times; 7 = 42' }],
+          ['Back the other way: 42 in row 6 is under 7.', { sym: '42 &divide; 6 = 7' }]
+        ]),
+        example: clip(chartXV, { r: 0, c: 0 }, [
+          ['My turn. 8 &times; 4: row 8, column 4.', { r: 8, c: 4 }],
+          ['They meet at 32.', { show: true, sym: '8 &times; 4 = 32' }],
+          ['32 &divide; 4: 32 is in column 4, row 8.', { sym: '32 &divide; 4 = 8' }]
+        ]),
+        together: [tgMixed(1), tgMixed(2), tgMixed(3)],
+        mistake: '<p>Mixing up &times; and &divide; when they come mixed together. Have the child say the sign aloud before answering: "times" or "divided by".</p>',
+        check: [ck('md-mixed', 'plain', 1), ck('md-mixed', 'pair', 1), ck('md-mixed', 'story', 2), ck('md-mixed', 'plain', 2), ck('md-mixed', 'plain', 3)] }
     ] }
   ];
 
-  A.register('multiply-divide', {
+  A.register(CH, {
+    full: true,
     lessons: LESSONS,
-    html:
-'<section class="sec"><h2><span class="n">1</span>Equal groups</h2>' +
-'<p><b>Multiplying</b> is a fast way to add equal groups. <span class="math">3 &times; 4</span> means "3 groups of 4". You can add 4 + 4 + 4, or say 3 &times; 4 = 12.</p>' +
-'<div class="lab"><span class="lt">Try it: make equal groups</span>' +
-'<div class="ctrl"><label for="egg">Number of groups: <output id="eggo"></output><input type="range" id="egg" min="1" max="10" value="3"></label>' +
-'<label for="egn">In each group: <output id="egno"></output><input type="range" id="egn" min="1" max="10" value="4"></label></div>' +
-'<div class="fig" id="egfig"></div><div class="out" id="egout" aria-live="polite"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>The groups must be <b>equal</b>. 3 groups of 4 is 12. If one group had 5, it would not be 3 &times; 4.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>There are 5 plates with 2 grapes on each. 5 groups of 2: 2 + 2 + 2 + 2 + 2 = 10, so <b>5 &times; 2 = 10</b>.</p><div class="fig">' + groups(5, 2) + '</div></div>' +
-'<div class="yt" data-yt="s1"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">2</span>Arrays and turn-around facts</h2>' +
-'<p>An <b>array</b> puts things in equal rows. 4 rows of 6 is <span class="math">4 &times; 6 = 24</span>. Turn the array on its side and you get 6 rows of 4. It is the same number of dots, so <span class="math">6 &times; 4 = 24</span> too.</p>' +
-'<div class="lab"><span class="lt">Try it: build and split an array</span>' +
-'<div class="ctrl"><label for="arr">Rows: <output id="arro"></output><input type="range" id="arr" min="1" max="10" value="4"></label>' +
-'<label for="arc">In each row: <output id="arco"></output><input type="range" id="arc" min="1" max="10" value="6"></label>' +
-'<label for="ars">Split after row: <output id="arso"></output><input type="range" id="ars" min="0" max="9" value="0"></label></div>' +
-'<div class="btnrow"><button type="button" class="btn alt" id="arturn">Turn it on its side</button></div>' +
-'<div class="fig" id="arfig"></div><div class="out" id="arout" aria-live="polite"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>You can split a hard fact into two easier ones. 7 &times; 4 is 5 &times; 4 plus 2 &times; 4. That is 20 + 8 = 28.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>How many dots? 3 rows of 5. Count by 5s: 5, 10, 15. <b>3 &times; 5 = 15</b>.</p><div class="fig">' + array(3, 5) + '</div></div>' +
-'<div class="yt" data-yt="s2"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">3</span>Facts of 2, 5 and 10</h2>' +
-'<p>Learn these facts by heart. Skip counting helps: count by 2s, by 5s or by 10s.</p>' +
-'<div class="lab"><span class="lt">Try it: find the pattern</span>' +
-'<div class="ctrl"><label for="hck">Show the multiples of<select id="hck"><option value="2">2</option><option value="5" selected>5</option><option value="10">10</option></select></label></div>' +
-'<div class="fig" id="hcfig"></div><div class="out" id="hcout" aria-live="polite"></div></div>' +
-'<div class="tbl"><table><thead><tr><th>&times;</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th><th>8</th><th>9</th><th>10</th></tr></thead><tbody>' +
-[2, 5, 10].map(function (k) { var r = '<tr><th>' + k + '</th>'; for (var i = 1; i <= 10; i++) r += '<td>' + k * i + '</td>'; return r + '</tr>'; }).join('') + '</tbody></table></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Facts of 2 are all even. Facts of 5 end in 5 or 0. Facts of 10 end in 0.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>Find 5 &times; 7. It is the same as 7 &times; 5, so count by 5s seven times: 5, 10, 15, 20, 25, 30, 35. <b>5 &times; 7 = 35</b>.</p></div>' +
-'<div class="yt" data-yt="s3"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">4</span>Dividing: sharing and grouping</h2>' +
-'<p><b>Dividing</b> splits a total into equal groups. <span class="math">12 &divide; 3</span> can mean "share 12 among 3" (each gets 4). It can also mean "how many groups of 3 are in 12?" (4 groups).</p>' +
-'<div class="lab"><span class="lt">Try it: share fairly</span>' +
-'<div class="ctrl"><label for="shn">Things to share<input type="number" id="shn" min="0" max="100" value="12"></label>' +
-'<label for="shk">Number of groups: <output id="shko"></output><input type="range" id="shk" min="1" max="10" value="3"></label></div>' +
-'<div class="fig" id="shfig"></div><div class="out" id="shout" aria-live="polite"></div></div>' +
-'<div class="mistake"><b class="t">Common mistake</b><p>Groups that are not equal. When you share 12 among 3, each group must get the same number: 4, 4 and 4. 5, 4 and 3 is not fair.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>20 stickers go into bags of 5. How many bags? Take away 5 at a time: 20, 15, 10, 5, 0. That is 4 bags, so <b>20 &divide; 5 = 4</b>.</p></div>' +
-'<div class="yt" data-yt="s4"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">5</span>Fact families</h2>' +
-'<p>Multiplying and dividing are linked. One array gives four facts. This is a <b>fact family</b>.</p>' +
-'<div class="fig">' + array(4, 5, 0, '4 rows of 5 dots: 4 times 5 is 20') + '</div>' +
-'<div class="tbl"><table><tbody><tr><td class="math">4 &times; 5 = 20</td><td class="math">5 &times; 4 = 20</td></tr><tr><td class="math">20 &divide; 4 = 5</td><td class="math">20 &divide; 5 = 4</td></tr></tbody></table></div>' +
-'<div class="key"><b class="t">Key idea</b><p>Use a multiplication fact to check a division. If 30 &divide; 5 = 6, then 6 &times; 5 should be 30. It is, so the answer is right.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>Find 40 &divide; 10. Think: 10 times what is 40? 10 &times; 4 = 40, so <b>40 &divide; 10 = 4</b>.</p></div>' +
-'<div class="yt" data-yt="s5"></div>' +
-'</section>' +
-
-'<section class="sec"><h2><span class="n">6</span>Scaling up: 1 to 2, 1 to 5, 1 to 10</h2>' +
-'<p>Some things always come in the same amounts. 1 bike has 2 wheels. 1 hand has 5 fingers. 1 dime is worth 10 cents. If you know one, you can find many.</p>' +
-'<div class="lab"><span class="lt">Try it: scale up</span>' +
-'<div class="ctrl"><label for="rtk">For every 1, there are<select id="rtk"><option value="2">2 (bikes and wheels)</option><option value="5" selected>5 (hands and fingers)</option><option value="10">10 (dimes and cents)</option></select></label>' +
-'<label for="rtn">How many: <output id="rtno"></output><input type="range" id="rtn" min="1" max="10" value="4"></label></div>' +
-'<div class="fig" id="rtfig"></div><div class="tbl" id="rttbl"></div><div class="out" id="rtout" aria-live="polite"></div></div>' +
-'<div class="key"><b class="t">Key idea</b><p>When the first amount goes up by 1, the second goes up by 2, 5 or 10 each time. It is skip counting.</p></div>' +
-'<div class="eg"><b class="t">Watch first</b><p>A box has 6 dimes. How many cents? 1 dime is 10 cents, so 6 dimes are 6 &times; 10 = <b>60 cents</b>.</p></div>' +
-'<div class="yt" data-yt="s6"></div>' +
-'</section>',
-
-    turns: {
-      s1: [
-        { q: 'Which picture shows <span class="math">2 &times; 3</span>?', options: ['2 groups of 3', '3 groups of 3', '2 groups of 2'], answer: 0, why: 'The first number tells how many groups. The second tells how many in each group.' },
-        { q: 'Which addition matches <span class="math">4 &times; 5</span>?', options: ['4 + 5', '5 + 5 + 5 + 5', '4 + 4 + 4'], answer: 1, why: '4 &times; 5 means 4 groups of 5. Add 5 four times.' },
-        { q: 'There are 3 boxes with 10 crayons in each. How many crayons?', options: ['13', '30', '310'], answer: 1, why: '3 groups of 10: 10, 20, 30.' }
-      ],
-      s2: [
-        { q: 'An array has 2 rows of 7. How many dots?', fig: array(2, 7), options: ['9', '14', '27'], answer: 1, why: 'Count by 7s twice: 7, 14. Or 2 &times; 7.' },
-        { q: '<span class="math">3 &times; 8 = 24</span>. What is <span class="math">8 &times; 3</span>?', options: ['11', '24', '38'], answer: 1, why: 'Turn the array on its side. It is the same number of dots.' },
-        { q: 'Split 6 &times; 5 into 5 &times; 5 and 1 &times; 5. What is 6 &times; 5?', options: ['25', '30', '11'], answer: 1, why: '5 &times; 5 = 25 and 1 &times; 5 = 5. 25 + 5 = 30.' }
-      ],
-      s3: [
-        { q: 'What is <span class="math">2 &times; 9</span>?', options: ['11', '18', '29'], answer: 1, why: 'Double 9: 9 + 9.' },
-        { q: 'What is <span class="math">10 &times; 7</span>?', options: ['17', '70', '107'], answer: 1, why: '7 tens make 70. Facts of 10 end in 0.' },
-        { q: 'Which number can be a fact of 5?', options: ['32', '45', '51'], answer: 1, why: 'Facts of 5 end in 5 or 0.' }
-      ],
-      s4: [
-        { q: 'Share 15 crackers among 3 friends. How many does each get?', options: ['3', '5', '12'], answer: 1, why: 'Deal them out one at a time. Or think: 3 times what is 15?' },
-        { q: 'How many groups of 2 are in 16?', options: ['8', '14', '18'], answer: 0, why: 'Count by 2s to 16: that is 8 jumps.' },
-        { q: 'What is <span class="math">50 &divide; 10</span>?', options: ['5', '40', '500'], answer: 0, why: '10 times what is 50? 10 &times; 5 = 50.' }
-      ],
-      s5: [
-        { q: 'Which fact is in the family of <span class="math">2 &times; 6 = 12</span>?', options: ['12 &divide; 6 = 2', '12 &minus; 6 = 6', '6 + 2 = 8'], answer: 0, why: 'A fact family uses the same three numbers with &times; and &divide;.' },
-        { q: '<span class="math">5 &times; 9 = 45</span>. What is <span class="math">45 &divide; 5</span>?', options: ['9', '40', '50'], answer: 0, why: 'Use the multiplication fact: 5 times 9 is 45.' },
-        { q: 'Jo says <span class="math">35 &divide; 5 = 6</span>. Check: what is 6 &times; 5?', options: ['30, so Jo is wrong', '35, so Jo is right'], answer: 0, why: '6 &times; 5 = 30, not 35. The answer is 7, because 7 &times; 5 = 35.' }
-      ],
-      s6: [
-        { q: '1 bike has 2 wheels. How many wheels do 6 bikes have?', options: ['8', '12', '62'], answer: 1, why: 'Count by 2s six times: 6 &times; 2 = 12.' },
-        { q: '1 star has 5 points. How many points do 3 stars have?', options: ['8', '15', '35'], answer: 1, why: 'Count by 5s three times: 5, 10, 15.' },
-        { q: 'You have 70 cents in dimes. How many dimes?', options: ['7', '60', '70'], answer: 0, why: 'Each dime is 10 cents. 10, 20, 30, 40, 50, 60, 70 is 7 dimes.' }
-      ]
-    },
-
-    init: function (root) {
-      var $ = A.$;
-      function eg() {
-        var g = +$('#egg', root).value, n = +$('#egn', root).value;
-        $('#eggo', root).textContent = g; $('#egno', root).textContent = n;
-        $('#egfig', root).innerHTML = groups(g, n);
-        var add = []; for (var i = 0; i < g; i++) add.push(n);
-        $('#egout', root).innerHTML = '<p><span class="big">' + g + ' &times; ' + n + ' = ' + g * n + '</span></p><p>' + g + ' group' + (g > 1 ? 's' : '') + ' of ' + n + ': ' + add.join(' + ') + ' = ' + g * n + '</p>';
-      }
-      A.bind(root, ['egg', 'egn'], eg);
-      function ar() {
-        var r = +$('#arr', root).value, c = +$('#arc', root).value, sp = +$('#ars', root).value;
-        $('#ars', root).max = Math.max(0, r - 1);
-        if (sp >= r) { sp = 0; $('#ars', root).value = 0; }
-        $('#arro', root).textContent = r; $('#arco', root).textContent = c; $('#arso', root).textContent = sp ? sp : 'no split';
-        $('#arfig', root).innerHTML = array(r, c, sp);
-        $('#arout', root).innerHTML = '<p><span class="big">' + r + ' &times; ' + c + ' = ' + r * c + '</span> &nbsp; and ' + c + ' &times; ' + r + ' = ' + r * c + '</p>' +
-          (sp ? '<p>Split: <b>' + sp + ' &times; ' + c + '</b> = ' + sp * c + ' and <b>' + (r - sp) + ' &times; ' + c + '</b> = ' + (r - sp) * c + '. ' + sp * c + ' + ' + (r - sp) * c + ' = ' + r * c + '.</p>' : '<p class="t2">Move the split slider to break the array into two easier facts.</p>');
-      }
-      A.bind(root, ['arr', 'arc', 'ars'], ar);
-      $('#arturn', root).addEventListener('click', function () { var r = $('#arr', root).value; $('#arr', root).value = $('#arc', root).value; $('#arc', root).value = r; $('#ars', root).value = 0; ar(); });
-      function hc() {
-        var k = +$('#hck', root).value;
-        $('#hcfig', root).innerHTML = chart100(k);
-        var first = []; for (var i = 1; i <= 10; i++) first.push(k * i);
-        $('#hcout', root).innerHTML = '<p><b>Facts of ' + k + ':</b> ' + first.join(', ') + '</p><p>' +
-          (k === 2 ? 'Every second number is shaded. They are the even numbers. They end in 0, 2, 4, 6 or 8.' : k === 5 ? 'Two columns are shaded. Every multiple of 5 ends in 5 or 0.' : 'Only the last column is shaded. Every multiple of 10 ends in 0.') + '</p>';
-      }
-      A.bind(root, ['hck'], hc);
-      function sh() {
-        var n = clamp($('#shn', root).value, 0, 100), k = +$('#shk', root).value, each = Math.floor(n / k), left = n - each * k;
-        $('#shko', root).textContent = k;
-        $('#shfig', root).innerHTML = share(n, k);
-        $('#shout', root).innerHTML = left ? '<p><span class="big">' + n + ' shared among ' + k + ': ' + each + ' each, ' + left + ' left over</span></p><p>' + n + ' does not split into ' + k + ' equal groups with nothing left. ' + each + ' &times; ' + k + ' = ' + each * k + ', and ' + left + ' more ' + (left === 1 ? 'is' : 'are') + ' left.</p>' :
-          '<p><span class="big">' + n + ' &divide; ' + k + ' = ' + each + '</span></p><p>Each group gets ' + each + '. Check: ' + each + ' &times; ' + k + ' = ' + n + '.</p>';
-      }
-      A.bind(root, ['shn', 'shk'], sh);
-      function rt() {
-        var k = +$('#rtk', root).value, n = +$('#rtn', root).value, th = THINGS[k][0];
-        $('#rtno', root).textContent = n;
-        $('#rtfig', root).innerHTML = ratioFig(k, n, n + ' ' + (n === 1 ? th[0] : th[1]) + ', ' + k + ' ' + th[3] + ' each');
-        var h = '<table><tbody><tr><th class="l">' + th[1].charAt(0).toUpperCase() + th[1].slice(1) + '</th>', h2 = '<tr><th class="l">' + th[3].charAt(0).toUpperCase() + th[3].slice(1) + '</th>';
-        for (var i = 1; i <= n; i++) { h += '<td' + (i === n ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : '') + '>' + i + '</td>'; h2 += '<td' + (i === n ? ' style="background:color-mix(in srgb,var(--hi) 45%,var(--card))"' : '') + '>' + i * k + '</td>'; }
-        $('#rttbl', root).innerHTML = h + '</tr>' + h2 + '</tr></tbody></table>';
-        $('#rtout', root).innerHTML = '<p><span class="big">' + n + ' ' + (n === 1 ? th[0] : th[1]) + ' &rarr; ' + n * k + ' ' + th[3] + '</span></p><p>1 ' + th[0] + ' has ' + k + ' ' + th[3] + ', so ' + n + ' &times; ' + k + ' = ' + n * k + '.</p>';
-      }
-      A.bind(root, ['rtk', 'rtn'], rt);
-    },
-
     quiz: [
-      { q: 'How many counters are there?', type: 'num', answer: 18, fig: groups(3, 6, '3 groups of 6'),
-        hint: 'Count the groups and how many are in each one.', explain: '3 groups of 6: 6 + 6 + 6 = 18. 3 &times; 6 = 18.' },
-      { q: 'Which multiplication matches this array?', type: 'mc', options: ['4 &times; 7', '4 + 7', '3 &times; 7', '7 &times; 7'], answer: 0, fig: array(4, 7),
-        hint: 'Count the rows. Count how many are in each row.', explain: '4 rows with 7 in each row: 4 &times; 7 = 28.' },
-      { q: 'What is <span class="math">5 &times; 8</span>?', type: 'num', answer: 40,
-        hint: 'Count by 5s eight times.', explain: '5, 10, 15, 20, 25, 30, 35, 40. 5 &times; 8 = 40.' },
-      { q: 'Share 24 muffins equally on 4 plates. How many muffins go on each plate?', type: 'num', answer: 6,
-        hint: 'Think: 4 times what is 24?', explain: '24 &divide; 4 = 6, because 4 &times; 6 = 24.' },
-      { q: 'Which fact is <b>not</b> in the same family as <span class="math">3 &times; 10 = 30</span>?', type: 'mc', options: ['10 &times; 3 = 30', '30 &divide; 3 = 10', '30 &divide; 10 = 3', '30 &minus; 10 = 20'], answer: 3,
-        hint: 'A fact family uses only &times; and &divide; with 3, 10 and 30.', explain: '30 &minus; 10 = 20 uses subtraction and the number 20, so it is not in the family.' },
-      { q: '1 hand has 5 fingers. How many fingers are on 9 hands?', type: 'num', answer: 45,
-        hint: 'Count by 5s nine times, or think 9 &times; 5.', explain: '9 &times; 5 = 45.' },
-      { q: 'Use <span class="math">5 &times; 6 = 30</span> and <span class="math">2 &times; 6 = 12</span> to find <span class="math">7 &times; 6</span>.', type: 'num', answer: 42, fig: array(7, 6, 5, '7 rows of 6, split after 5 rows'),
-        hint: '7 rows is 5 rows plus 2 rows. Add the two parts.', explain: '30 + 12 = 42, so 7 &times; 6 = 42.' }
+      num('How many counters in all?', 18, prodFix(3, 6), { fig: platesFig(same(3, 6)), hint: 'Count the plates, then one plate.', explain: '3 groups of 6: 6, 12, 18.', meta: { k: 'g3md-fig-total' } }),
+      mc('Which fact matches this array?', '4' + X + '7', [['4 + 7', 'Rows times how many in a row.'], ['3' + X + '7', 'Count the rows again.'], ['7' + X + '7', 'Count the rows again.']], { fig: arrayFig(4, 7), hint: 'Count the rows. Count one row.', explain: '4 rows of 7: 4 &times; 7 = 28.', meta: { k: 'g3md-arr-mc' } }),
+      num(m('7' + X + '5') + ' = ?', 35, prodFix(7, 5), { hint: 'Count by 5s, 7 times.', explain: '7 &times; 5 = 35.', meta: { k: 'g3md-bare' } }),
+      num(m('24' + DV + '4') + ' = ?', 6, divFix(24, 4), { hint: 'Think: ? &times; 4 = 24.', explain: '6 &times; 4 = 24, so 24 &divide; 4 = 6.', meta: { k: 'g3md-bare' } }),
+      fill('Use ' + m('3' + X + '10 = 30') + '. Fill in the blanks.', m('30' + DV + '10 = [[]]') + '<br>' + m('30' + DV + '3 = [[]]'), [3, 10], { hint: 'The same three numbers.', explain: '30 &divide; 10 = 3 and 30 &divide; 3 = 10.', meta: { k: 'g3md-eqs' } }),
+      num('1 star has 5 points. How many points do 9 stars have?', 45, prodFix(9, 5), { hint: 'Count by 5s, 9 times.', explain: '9 &times; 5 = 45.', meta: mt(9, 5, 'x') }),
+      num('Use ' + m('5' + X + '6 = 30') + ' and ' + m('2' + X + '6 = 12') + ' to find ' + m('7' + X + '6') + '.', 42, fx([[30, 'Add the bottom part too.']]), { fig: arrayFig(7, 6, { split: 5 }), hint: '7 rows is 5 rows and 2 rows.', explain: '30 + 12 = 42.', meta: mt(7, 6, 'x') }),
+      num('How many dimes make 80&cent;?', 8, divFix(80, 10), { hint: 'Count by 10s to 80.', explain: '80 &divide; 10 = 8.', meta: mt(80, 10, 'd') })
     ],
-
-    practice: [
-      { id: 'md-groups', name: 'Equal groups', code: 'B2.6', gen: function (lv) {
-        var g = R.int(2, lv === 1 ? 5 : lv === 2 ? 6 : 9), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, lv === 2 ? 6 : 9);
-        var add = []; for (var i = 0; i < g; i++) add.push(n);
-        return { q: lv === 3 ? 'What is <b>' + g + ' groups of ' + n + '</b>?' : 'How many counters are there?', type: 'num', answer: g * n,
-          fig: lv === 3 ? '' : groups(g, n, g + ' groups of ' + n),
-          hint: 'There are ' + g + ' groups with ' + n + ' in each. Skip count by ' + n + '.',
-          steps: [g + ' groups of ' + n + ' is ' + g + ' &times; ' + n + '.', 'Add ' + n + ' ' + g + ' times: ' + add.join(' + ') + '.', 'That is ' + g * n + '.' + (lv === 3 ? '<div class="fig">' + groups(g, n) + '</div>' : '')],
-          explain: g + ' &times; ' + n + ' = ' + g * n + '.' };
-      } },
-      { id: 'md-facts', name: 'Facts of 2, 5 and 10', code: 'B2.2', gen: function (lv) {
-        var k = lv === 1 ? R.pick([2, 10]) : R.pick([2, 5, 10, 5]), n = R.int(1, 10), first = R.int(0, 1);
-        var a = first ? k : n, b = first ? n : k, list = []; for (var i = 1; i <= n; i++) list.push(k * i);
-        if (lv === 3) {
-          return { q: 'Find the missing number: <span class="math">' + a + ' &times; ___ = ' + a * b + '</span>', type: 'num', answer: b,
-            hint: 'Count by ' + a + 's until you reach ' + a * b + '. How many jumps?', steps: ['Count by ' + a + 's: ' + (function () { var l = []; for (var j = 1; j <= b; j++) l.push(a * j); return l.join(', '); })() + '.', 'That is ' + b + ' jumps of ' + a + ': ' + b + ' &times; ' + a + ' = ' + a * b + '.', 'Turn it around: ' + a + ' &times; ' + b + ' = ' + a * b + ', so the missing number is ' + b + '.'],
-            explain: a + ' &times; ' + b + ' = ' + a * b + '.' };
-        }
-        return { q: 'What is <span class="math">' + a + ' &times; ' + b + '</span>?', type: 'num', answer: a * b,
-          hint: 'Skip count by ' + k + ', ' + n + ' time' + (n > 1 ? 's' : '') + '.',
-          steps: ['This is a fact of ' + k + '.' + (a === k && a !== b ? ' ' + a + ' &times; ' + b + ' = ' + b + ' &times; ' + a + '.' : ''), 'Count by ' + k + 's ' + n + ' time' + (n > 1 ? 's' : '') + ': ' + list.join(', ') + '.', a + ' &times; ' + b + ' = ' + a * b + '.'],
-          explain: a + ' &times; ' + b + ' = ' + a * b + '.' };
-      } },
-      { id: 'md-array', name: 'Arrays', code: 'B2.6', gen: function (lv) {
-        var r = R.int(2, lv === 1 ? 5 : 9), c = lv === 1 ? R.pick([2, 5, 10]) : R.int(3, 9);
-        if (lv === 3) {
-          var sp = R.int(1, r - 1 || 1); if (r < 2) r = 2;
-          sp = Math.min(sp, r - 1);
-          return { q: 'Split the array to find <span class="math">' + r + ' &times; ' + c + '</span>. What is ' + r + ' &times; ' + c + '?', type: 'num', answer: r * c, fig: array(r, c, sp, r + ' rows of ' + c + ', split after ' + sp + ' rows'),
-            hint: 'Find the top part and the bottom part, then add.',
-            steps: ['Top part: ' + sp + ' &times; ' + c + ' = ' + sp * c + '.', 'Bottom part: ' + (r - sp) + ' &times; ' + c + ' = ' + (r - sp) * c + '.', sp * c + ' + ' + (r - sp) * c + ' = ' + r * c + '.'],
-            explain: r + ' &times; ' + c + ' = ' + r * c + '.' };
-        }
-        return { q: 'How many dots are in this array?', type: 'num', answer: r * c, fig: array(r, c, 0, r + ' rows of ' + c),
-          hint: 'Count the rows. Then count by the number in each row.',
-          steps: ['There are ' + r + ' rows with ' + c + ' in each row.', 'That is ' + r + ' &times; ' + c + '.', 'Count by ' + c + 's ' + r + ' times: ' + r * c + '.'],
-          explain: r + ' &times; ' + c + ' = ' + r * c + '.' };
-      } },
-      { id: 'md-divide', name: 'Divide by sharing or grouping', code: 'B2.6', gen: function (lv) {
-        var k = lv === 1 ? R.int(2, 5) : R.int(2, 10), each = R.int(2, lv === 1 ? 5 : 10), n = k * each;
-        if (lv === 1) return { q: 'Share ' + n + ' marbles equally among ' + k + ' friends. How many does each friend get?', type: 'num', answer: each,
-          fig: groups(k, 0, k + ' empty plates'), hint: 'Deal the marbles out one at a time onto the ' + k + ' plates.',
-          steps: ['Give each friend 1, then 1 more, and so on.', 'Stop when all ' + n + ' are used.', 'Each friend gets ' + each + '.<div class="fig">' + groups(k, each) + '</div>'],
-          explain: n + ' &divide; ' + k + ' = ' + each + ', because ' + k + ' &times; ' + each + ' = ' + n + '.' };
-        if (lv === 2) return { q: 'What is <span class="math">' + n + ' &divide; ' + k + '</span>?', type: 'num', answer: each,
-          hint: 'Think of the times fact: ' + k + ' times what is ' + n + '?',
-          steps: ['Ask: ' + k + ' &times; ? = ' + n + '.', 'Count by ' + k + 's to ' + n + '. Count the jumps.', k + ' &times; ' + each + ' = ' + n + ', so ' + n + ' &divide; ' + k + ' = ' + each + '.'],
-          explain: n + ' &divide; ' + k + ' = ' + each + '.' };
-        return { q: 'There are ' + n + ' cookies. Each bag holds ' + k + ' cookies. How many bags can be filled?', type: 'num', answer: each,
-          hint: 'How many groups of ' + k + ' are in ' + n + '?',
-          steps: ['This is grouping: take away ' + k + ' at a time.', 'Count by ' + k + 's to ' + n + ': that is ' + each + ' jumps.', n + ' &divide; ' + k + ' = ' + each + ' bags.'],
-          explain: n + ' &divide; ' + k + ' = ' + each + '. Check: ' + each + ' &times; ' + k + ' = ' + n + '.' };
-      } },
-      { id: 'md-family', name: 'Fact families', code: 'B2.1', gen: function (lv) {
-        var a = R.int(2, lv === 1 ? 5 : 10), b = R.pick([2, 5, 10]), p = a * b;
-        if (a === b) a = a === 10 ? 5 : a + 1, p = a * b;
-        if (lv < 3) {
-          var o = R.mc(p + ' &divide; ' + a + ' = ' + b, [p + ' &minus; ' + a + ' = ' + (p - a), a + ' + ' + b + ' = ' + (a + b), p + ' &divide; ' + b + ' = ' + (a + 1)]);
-          return { q: 'Which fact is in the same family as <span class="math">' + a + ' &times; ' + b + ' = ' + p + '</span>?', type: 'mc', options: o.options, answer: o.answer,
-            hint: 'A fact family uses the same three numbers, with &times; and &divide;.',
-            steps: ['The numbers are ' + a + ', ' + b + ' and ' + p + '.', 'The family: ' + a + ' &times; ' + b + ' = ' + p + ', ' + b + ' &times; ' + a + ' = ' + p + ', ' + p + ' &divide; ' + a + ' = ' + b + ', ' + p + ' &divide; ' + b + ' = ' + a + '.', 'The matching choice is ' + p + ' &divide; ' + a + ' = ' + b + '.'],
-            explain: p + ' &divide; ' + a + ' = ' + b + ' uses the same three numbers.' };
-        }
-        return { q: 'Use <span class="math">' + a + ' &times; ' + b + ' = ' + p + '</span> to find <span class="math">' + p + ' &divide; ' + b + '</span>.', type: 'num', answer: a,
-          hint: b + ' times what is ' + p + '?',
-          steps: ['Division asks: ' + b + ' &times; ? = ' + p + '.', 'You know ' + a + ' &times; ' + b + ' = ' + p + '.', 'So ' + p + ' &divide; ' + b + ' = ' + a + '.'],
-          explain: p + ' &divide; ' + b + ' = ' + a + '.' };
-      } },
-      { id: 'md-scale', name: 'Scale up by 2, 5 or 10', code: 'B2.9', gen: function (lv) {
-        var k = lv === 1 ? 2 : lv === 2 ? 5 : R.pick([2, 5, 10]), th = R.pick(THINGS[k]), n = R.int(2, 10);
-        if (lv === 3 && R.int(0, 1)) {
-          return { q: 'You have ' + n * k + ' ' + th[3] + '. 1 ' + th[0] + ' has ' + k + ' ' + th[3] + '. How many ' + th[1] + ' is that?', type: 'num', answer: n,
-            hint: 'Count by ' + k + 's until you reach ' + n * k + '.',
-            steps: ['Each ' + th[0] + ' has ' + k + ' ' + th[3] + '.', 'Count by ' + k + 's to ' + n * k + ': that is ' + n + ' jumps.', 'So there are ' + n + ' ' + th[1] + '.'],
-            explain: n * k + ' &divide; ' + k + ' = ' + n + '.' };
-        }
-        return { q: '1 ' + th[0] + ' has ' + k + ' ' + th[3] + '. How many ' + th[3] + ' do ' + n + ' ' + th[1] + ' have?', type: 'num', answer: n * k,
-          fig: lv === 1 ? ratioFig(k, n, n + ' ' + th[1] + ' with ' + k + ' each') : '',
-          hint: 'Each ' + th[0] + ' adds ' + k + ' more. Skip count by ' + k + '.',
-          steps: ['1 ' + th[0] + ' &rarr; ' + k + ' ' + th[3] + '.', n + ' ' + th[1] + ' &rarr; ' + n + ' &times; ' + k + '.', n + ' &times; ' + k + ' = ' + n * k + '.'],
-          explain: n + ' &times; ' + k + ' = ' + n * k + ' ' + th[3] + '.' };
-      } }
-    ]
+    practice: SKILLS.map(function (s) { return { id: s.id, name: s.name, code: s.code, gen: DEF[s.id][0][2] }; })
   });
 
-  /* ---------- More ways to ask (question shapes, see docs/QUESTIONS.md) ----------
-     Each practice skill keeps its first way of asking ("plain") and adds new shapes.
-     Shapes unlock with the level, so level 1 stays gentle. q.meta is read by the automatic answer checks. */
-  var Q = A.Q;
-  if (Q) (function () {
-    var nm = Q.name, X = ' &times; ', D = ' &divide; ';
-    function why(right, wrong) { var o = R.mc(right, wrong); return { options: o.options, answer: o.answer }; }
-    /* three different [rows, per] pairs: the right one first, then near misses */
-    function nearSets(a, b) {
-      var out = [[a, b]], cand = R.shuffle([[a, b + 1], [a + 1, b], [a, b - 1], [a - 1, b], [b, a]]);
-      cand.forEach(function (p) { if (out.length < 3 && p[0] >= 1 && p[1] >= 1 && !out.some(function (o) { return o[0] === p[0] && o[1] === p[1]; })) out.push(p); });
-      return R.shuffle(out);
-    }
-    function idx(set, a, b) { for (var i = 0; i < set.length; i++) if (set[i][0] === a && set[i][1] === b) return i; return -1; }
-    function skips(k, n) { var l = []; for (var i = 1; i <= n; i++) l.push(k * i); return l.join(', '); }
-
-    var SHAPES = {
-      'md-groups': [
-        [1, 'tap', function (lv) {
-          var g = R.int(2, lv === 1 ? 4 : 5), n = R.int(2, lv === 1 ? 5 : 6), set = nearSets(g, n);
-          return { q: 'Tap the picture that shows <b>' + g + ' groups of ' + n + '</b>.', type: 'tap', tiles: set.map(function (p) { return groups(p[0], p[1]); }), answer: idx(set, g, n), answerText: 'the ' + g + ' plates with ' + n + ' on each',
-            hint: 'Count the plates first. You need ' + g + '. Then check there are ' + n + ' on each.', steps: [g + ' groups means ' + g + ' plates.', 'Each plate must have ' + n + '.'],
-            explain: g + ' plates with ' + n + ' on each is ' + g + X + n + ' = ' + g * n + '.', meta: { k: 'grp-tap', g: g, n: n, set: set } };
-        }],
-        [1, 'story', function (lv) {
-          var who = nm(), g = R.int(2, lv === 1 ? 5 : 9), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 9);
-          var c = R.pick([['boxes', 'crayons'], ['bags', 'apples'], ['vases', 'flowers'], ['shelves', 'books'], ['teams', 'players']]);
-          return { q: who + ' has ' + g + ' ' + c[0] + '. Each one has ' + n + ' ' + c[1] + '. How many ' + c[1] + ' are there in all?', type: 'num', answer: g * n,
-            hint: 'There are ' + g + ' equal groups of ' + n + '. Skip count by ' + n + '.', steps: [g + ' groups of ' + n + ' is ' + g + X + n + '.', 'Count by ' + n + 's: ' + skips(n, g) + '.'],
-            explain: g + X + n + ' = ' + g * n + ' ' + c[1] + '.', meta: { k: 'grp-story', g: g, n: n } };
-        }],
-        [1, 'match', function (lv) {
-          var pairs = [], seen = {};
-          while (pairs.length < 3) {
-            var g = R.int(2, lv === 1 ? 5 : 7), n = lv === 1 ? R.pick([2, 5, 10]) : R.int(2, 7);
-            if (seen[g * n] || seen[g + ',' + n]) continue; seen[g * n] = 1; seen[g + ',' + n] = 1;
-            pairs.push([g + ' groups of ' + n, String(g * n)]);
-          }
-          return { q: 'Match each set of equal groups to its total.', type: 'match', pairs: pairs,
-            hint: 'Skip count by the number in each group.', steps: ['3 groups of 5 is 5, 10, 15.'],
-            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'grp-match', pairs: pairs } };
-        }],
-        [2, 'mistake', function (lv) {
-          var g = R.int(3, 6), n = R.int(3, 7), who = nm(), truth = !R.int(0, 2), said = truth ? g * n : g + n;
-          var right = g + ' groups of ' + n + ' means ' + n + ' added ' + g + ' times: ' + g + X + n + ' = ' + g * n + '.';
-          return { q: who + ' says ' + g + ' groups of ' + n + ' make <b>' + said + '</b>. True or false: ' + who + ' is right.', type: 'tf', answer: truth, fig: groups(g, n),
-            why: why(right, ['Groups of means add the two numbers.', 'Count only the plates.', 'Count one plate and stop.']),
-            hint: 'Count the counters on all the plates.', steps: [right], explain: right, meta: { k: 'grp-tf', g: g, n: n, said: said } };
-        }]
-      ],
-      'md-facts': [
-        [1, 'line', function (lv) {
-          var k = lv === 1 ? R.pick([2, 10]) : R.pick([2, 5, 10]), n = R.int(2, lv === 1 ? 6 : 10);
-          return { q: 'Count by ' + k + 's, <b>' + n + ' times</b>, starting at 0. Put the marker where you land. That shows ' + n + X + k + '.', type: 'line', min: 0, max: k * 10, tick: k, every: k === 2 ? 4 : k === 5 ? 10 : 20, snap: k, answer: k * n,
-            hint: 'Each jump is ' + k + '. Make ' + n + ' jumps.', steps: ['Count: ' + skips(k, n) + '.', 'You land on ' + k * n + '.'],
-            explain: n + X + k + ' = ' + k * n + '.', meta: { k: 'fact-line', f: k, n: n } };
-        }],
-        [1, 'fill', function (lv) {
-          var k = lv === 1 ? R.pick([2, 5, 10]) : R.pick([2, 5, 10]), start = lv === 1 ? 1 : R.int(1, 5), seq = [];
-          for (var i = 0; i < 5; i++) seq.push(k * (start + i));
-          var gaps = lv === 1 ? [2, 4] : [1, 3], txt = seq.map(function (v, i) { return gaps.indexOf(i) >= 0 ? '[[]]' : String(v); }).join(', ');
-          return { q: 'Count by ' + k + 's. Fill in the missing numbers.', type: 'fill', fill: '<span class="math">' + txt + '</span>', answers: gaps.map(function (i) { return seq[i]; }),
-            hint: 'Add ' + k + ' each time.', steps: ['The numbers go up by ' + k + '.', 'The full count is ' + seq.join(', ') + '.'],
-            explain: seq.join(', ') + '.', meta: { k: 'fact-fill', f: k } };
-        }],
-        [1, 'match', function (lv) {
-          var k = lv === 1 ? R.pick([2, 10]) : R.pick([2, 5, 10]), ns = R.shuffle([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]).slice(0, 3);
-          var pairs = ns.map(function (n) { return [n + X + k, String(n * k)]; });
-          return { q: 'Match each fact to its answer.', type: 'match', pairs: pairs,
-            hint: 'Skip count by ' + k + '.', steps: ['Count by ' + k + 's: ' + skips(k, 10) + '.'],
-            explain: pairs.map(function (p) { return p[0] + ' = ' + p[1]; }).join('. ') + '.', meta: { k: 'fact-match', pairs: pairs } };
-        }],
-        [2, 'pick', function (lv) {
-          var k = R.pick([2, 5, 10]), opts = [], seen = {};
-          while (opts.length < 5) {
-            var good = opts.length < 2, v = good ? k * R.int(1, 10) : R.int(3, k * 10);
-            if (!good && v % k === 0) continue;
-            if (seen[v]) continue; seen[v] = 1; opts.push(v);
-          }
-          opts = R.shuffle(opts);
-          var ans = []; opts.forEach(function (v, j) { if (v % k === 0) ans.push(j); });
-          return { q: 'Pick every number you say when you count by <b>' + k + 's</b>.', type: 'pick', options: opts.map(String), answer: ans,
-            hint: k === 2 ? 'Counting by 2s gives even numbers.' : k === 5 ? 'Counting by 5s ends in 0 or 5.' : 'Counting by 10s ends in 0.', steps: ['Count: ' + skips(k, 10) + '.'],
-            explain: ans.map(function (j) { return opts[j]; }).join(' and ') + ' are in the count by ' + k + 's.', meta: { k: 'fact-pick', f: k } };
-        }],
-        [2, 'mistake', function (lv) {
-          var k = R.pick([2, 5, 10]), n = R.int(3, 10), who = nm(), truth = !R.int(0, 2), said = truth ? k * n : k * n + R.pick([k, -k]);
-          var right = 'Count by ' + k + 's, ' + n + ' times: ' + skips(k, n) + '. So ' + n + X + k + ' = ' + k * n + '.';
-          return { q: who + ' says <span class="math">' + n + X + k + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
-            why: why(right, ['Add ' + n + ' and ' + k + '.', 'Count by ' + k + 's and stop one early.', 'Any number that ends in 0 is right.']),
-            hint: 'Skip count by ' + k + ', and keep track of how many jumps.', steps: [right], explain: right, meta: { k: 'fact-tf', a: n, b: k, said: said } };
-        }]
-      ],
-      'md-array': [
-        [1, 'tap', function (lv) {
-          var r = R.int(2, lv === 1 ? 4 : 6), c = R.int(3, lv === 1 ? 5 : 7), set = nearSets(r, c);
-          return { q: 'Tap the array with <b>' + r + ' rows of ' + c + '</b>.', type: 'tap', tiles: set.map(function (p) { return array(p[0], p[1], 0, p[0] + ' rows of ' + p[1]).replace(/<text[^>]*>[^<]*<\/text>/g, ''); }), answer: idx(set, r, c), answerText: 'the array with ' + r + ' rows and ' + c + ' in each row',
-            hint: 'Rows go across. Count the rows first.', steps: ['Count the rows going down. You need ' + r + '.', 'Then count the dots in one row. You need ' + c + '.'],
-            explain: r + ' rows of ' + c + ' is ' + r + X + c + ' = ' + r * c + '.', meta: { k: 'arr-tap', r: r, c: c, set: set } };
-        }],
-        [1, 'fill', function (lv) {
-          var r = R.int(2, lv === 1 ? 5 : 8), c = lv === 1 ? R.pick([2, 5, 10]) : R.int(3, 9);
-          return { q: 'Look at the array. Fill in the blanks.', type: 'fill', fig: array(r, c, 0, r + ' rows of ' + c).replace(/<text[^>]*>[^<]*<\/text>/g, ''), fill: '[[]] rows of [[]] is <span class="math">' + r + X + c + ' = [[]]</span>', answers: [r, c, r * c],
-            hint: 'Count the rows going down. Count the dots in one row.', steps: ['There are ' + r + ' rows.', 'Each row has ' + c + ' dots.', r + X + c + ' = ' + r * c + '.'],
-            explain: r + ' rows of ' + c + ' = ' + r * c + '.', meta: { k: 'arr-fill', r: r, c: c } };
-        }],
-        [1, 'story', function (lv) {
-          var r = R.int(2, lv === 1 ? 5 : 9), c = lv === 1 ? R.pick([2, 5, 10]) : R.int(3, 9), who = nm();
-          var t = R.pick(['The gym has ' + r + ' rows of chairs with ' + c + ' chairs in each row. How many chairs are there?',
-            who + ' plants a garden with ' + r + ' rows of ' + c + ' carrots. How many carrots are planted?',
-            'A muffin tray has ' + r + ' rows with ' + c + ' muffins in each row. How many muffins fit?']);
-          return { q: t, type: 'num', answer: r * c,
-            hint: 'Rows of the same size make an array. Multiply rows by the number in each row.', steps: [r + ' rows of ' + c + ' is ' + r + X + c + '.', 'Count by ' + c + 's: ' + skips(c, r) + '.'],
-            explain: r + X + c + ' = ' + r * c + '.', meta: { k: 'arr-story', r: r, c: c } };
-        }],
-        [2, 'mistake', function (lv) {
-          var r = R.int(3, 6), c = R.int(4, 8), who = nm(), kind = R.int(0, 2), said = kind === 0 ? r * c : kind === 1 ? r + c : r * (c - 1);
-          var right = 'There are ' + r + ' rows with ' + c + ' in each, so ' + r + X + c + ' = ' + r * c + '.';
-          return { q: who + ' says this array has <b>' + said + '</b> dots. True or false: ' + who + ' is right.', type: 'tf', answer: said === r * c, fig: array(r, c, 0),
-            why: why(right, ['Add the number of rows and the number in each row.', 'Count one row and one column, then add.', 'Arrays always have 10 in a row.']),
-            hint: 'Multiply the number of rows by the number in each row.', steps: [right], explain: right, meta: { k: 'arr-tf', r: r, c: c, said: said } };
-        }]
-      ],
-      'md-divide': [
-        [1, 'story', function (lv) {
-          var who = nm(), k = R.int(2, lv === 1 ? 5 : 9), each = R.int(2, lv === 1 ? 5 : 9), n = k * each;
-          var c = R.pick(['grapes', 'stickers', 'crackers', 'marbles']);
-          return { q: who + ' shares ' + n + ' ' + c + ' equally among ' + k + ' friends. How many ' + c + ' does each friend get?', type: 'num', answer: each,
-            hint: 'Deal them out one at a time, or think: ' + k + ' times what is ' + n + '?', steps: ['Ask: ' + k + X + '? = ' + n + '.', k + X + each + ' = ' + n + '.', 'Each friend gets ' + each + '.'],
-            explain: n + D + k + ' = ' + each + '.', meta: { k: 'div-story', n: n, k2: k } };
-        }],
-        [1, 'tap', function (lv) {
-          var k = R.int(2, lv === 1 ? 4 : 5), each = R.int(2, lv === 1 ? 4 : 6), n = k * each;
-          var set = R.shuffle([[k, each], [k, each + 1], [k + 1, each]]);
-          return { q: '<b>' + n + '</b> counters are shared fairly on <b>' + k + '</b> plates. Tap the picture that shows it.', type: 'tap', tiles: set.map(function (p) { return groups(p[0], p[1]); }), answer: idx(set, k, each), answerText: k + ' plates with ' + each + ' on each',
-            hint: 'Look for ' + k + ' plates first. Then check the total is ' + n + '.', steps: [n + D + k + ' = ' + each + '.', 'So each of the ' + k + ' plates has ' + each + '.'],
-            explain: n + ' shared on ' + k + ' plates is ' + each + ' on each.', meta: { k: 'div-tap', n: n, k2: k, set: set } };
-        }],
-        [1, 'which', function (lv) {
-          var who = nm(), a = R.int(2, lv === 1 ? 5 : 9), b = R.int(2, lv === 1 ? 5 : 9), kind = R.pick(['share', 'group', 'times']);
-          var t = { share: who + ' puts ' + a * b + ' pencils into ' + a + ' cups, the same number in each. How many pencils go in each cup?',
-            group: 'There are ' + a * b + ' players. Each team has ' + b + ' players. How many teams are there?',
-            times: who + ' buys ' + a + ' packs of yogurt. Each pack has ' + b + ' cups. How many cups is that?' }[kind];
-          var d = kind === 'group' ? b : a, ans = kind === 'times' ? 0 : 1;
-          var opts = kind === 'times' ? ['Multiply: ' + a + X + b, 'Add: ' + a + ' + ' + b] : ['Multiply: ' + a * b + X + d, 'Divide: ' + a * b + D + d];
-          return { q: t + ' <b>Which way solves it?</b>', type: 'mc', options: opts, answer: ans,
-            hint: kind === 'times' ? 'You know how many groups and how many in each. You want the total.' : 'You know the total. You want ' + (kind === 'share' ? 'how many in each group.' : 'how many groups.'),
-            steps: [kind === 'times' ? 'Equal groups put together: multiply.' : 'Split a total into equal groups: divide.', opts[ans].split(': ')[1] + ' = ' + (kind === 'times' ? a * b : kind === 'group' ? a : b) + '.'],
-            explain: opts[ans] + '.', meta: { k: 'div-which', kind: kind } };
-        }],
-        [2, 'mistake', function (lv) {
-          var k = R.int(2, 9), each = R.int(2, 9), n = k * each, who = nm(), truth = !R.int(0, 2), said = truth ? each : each + R.pick([1, -1, 2]);
-          var right = 'Check with multiplication: ' + k + X + said + ' = ' + k * said + (truth ? '. That is ' + n + '.' : ', not ' + n + '.');
-          return { q: who + ' says <span class="math">' + n + D + k + ' = ' + said + '</span>. Check it with multiplication. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
-            why: why(right, ['Division answers are always smaller than 10.', 'Check by adding ' + k + ' and ' + said + '.', 'Check by subtracting ' + k + ' from ' + n + '.']),
-            hint: k + ' times ' + said + ' should make ' + n + '.', steps: [right], explain: right, meta: { k: 'div-tf', n: n, k2: k, said: said } };
-        }]
-      ],
-      'md-family': [
-        [1, 'pick', function (lv) {
-          var a = R.int(2, lv === 1 ? 5 : 9), b = R.pick([2, 5, 10]);
-          if (a === b) a = a === 2 ? 3 : a - 1;
-          var p = a * b, good = R.shuffle([a + X + b + ' = ' + p, b + X + a + ' = ' + p, p + D + a + ' = ' + b, p + D + b + ' = ' + a]).slice(0, 3);
-          var bad = R.shuffle([a + ' + ' + b + ' = ' + (a + b), p + D + a + ' = ' + (b + 1), a + X + (b + 1) + ' = ' + a * (b + 1)]).slice(0, 2);
-          var opts = R.shuffle(good.concat(bad)), ans = []; opts.forEach(function (o, j) { if (good.indexOf(o) >= 0) ans.push(j); });
-          return { q: 'Pick every fact in the same family as <span class="math">' + a + X + b + ' = ' + p + '</span>.', type: 'pick', options: opts, answer: ans,
-            hint: 'Family facts use the same three numbers: ' + a + ', ' + b + ' and ' + p + '. They are all true.', steps: ['Each one must use ' + a + ', ' + b + ' and ' + p + ', with &times; or &divide;.'],
-            explain: 'The family of ' + a + ', ' + b + ' and ' + p + ': ' + a + X + b + ', ' + b + X + a + ', ' + p + D + a + ', ' + p + D + b + '.', meta: { k: 'fam-pick', a: a, b: b, opts: opts } };
-        }],
-        [1, 'fill', function (lv) {
-          var a = R.int(2, lv === 1 ? 5 : 9), b = R.pick([2, 5, 10]); if (a === b) a++;
-          var p = a * b;
-          return { q: 'Complete the fact family for ' + a + ', ' + b + ' and ' + p + '.', type: 'fill', fill: '<span class="math">' + b + X + a + ' = [[]]</span><br><span class="math">' + p + D + a + ' = [[]]</span><br><span class="math">' + p + D + b + ' = [[]]</span>', answers: [p, b, a],
-            hint: 'Start with the multiplication you know: ' + a + X + b + ' = ' + p + '.', steps: ['Turn it around: ' + b + X + a + ' = ' + p + '.', 'Divide the total by one number to get the other.'],
-            explain: b + X + a + ' = ' + p + ', ' + p + D + a + ' = ' + b + ', ' + p + D + b + ' = ' + a + '.', meta: { k: 'fam-fill', a: a, b: b } };
-        }],
-        [1, 'match', function (lv) {
-          var pairs = [], seen = {};
-          while (pairs.length < 3) {
-            var a = R.int(2, lv === 1 ? 5 : 9), b = R.pick([2, 5, 10]), p = a * b;
-            if (a === b || seen[p]) continue; seen[p] = 1;
-            pairs.push([p + D + b, b + X + a + ' = ' + p]);
-          }
-          return { q: 'Match each division to the times fact that helps you solve it.', type: 'match', pairs: pairs,
-            hint: 'Find the times fact with the same total and the same number you divide by.', steps: ['To find 20 &divide; 5, think: 5 &times; ? = 20.'],
-            explain: pairs.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'fam-match', pairs: pairs } };
-        }],
-        [2, 'mistake', function (lv) {
-          var a = R.int(3, 9), b = R.pick([2, 5, 10]); if (a === b) a++;
-          var p = a * b, who = nm(), truth = !R.int(0, 2), said = truth ? a : b;
-          var right = 'Think ' + b + X + '? = ' + p + '. The answer is ' + a + ', because ' + b + X + a + ' = ' + p + '.';
-          return { q: who + ' knows <span class="math">' + a + X + b + ' = ' + p + '</span>. ' + who + ' says <span class="math">' + p + D + b + ' = ' + said + '</span>. True or false: ' + who + ' is right.', type: 'tf', answer: said * b === p,
-            why: why(right, ['The answer to a division is the number you divide by.', 'Dividing by ' + b + ' gives ' + b + '.', 'The biggest number is always the answer.']),
-            hint: b + ' times what makes ' + p + '?', steps: [right], explain: right, meta: { k: 'fam-tf', p: p, d: b, said: said } };
-        }]
-      ],
-      'md-scale': [
-        [1, 'fill', function (lv) {
-          var k = lv === 1 ? 2 : R.pick([2, 5, 10]), th = R.pick(THINGS[k]), ns = lv === 1 ? [2, 3, 4] : [2, R.int(3, 5), R.int(6, 10)];
-          var rows = '1 ' + th[0] + ' &rarr; ' + k + ' ' + th[3] + ns.map(function (n) { return '<br>' + n + ' ' + th[1] + ' &rarr; [[]] ' + th[3]; }).join('');
-          return { q: 'Fill in the table.', type: 'fill', fill: rows, answers: ns.map(function (n) { return n * k; }),
-            hint: 'For every 1 ' + th[0] + ', there are ' + k + ' ' + th[3] + '. Count by ' + k + 's.', steps: ns.map(function (n) { return n + X + k + ' = ' + n * k + '.'; }),
-            explain: 'Each ' + th[0] + ' adds ' + k + ' more ' + th[3] + '.', meta: { k: 'scale-fill', f: k, ns: ns } };
-        }],
-        [1, 'story', function (lv) {
-          var who = nm(), k = lv === 1 ? R.pick([2, 5]) : R.pick([2, 5, 10]), n = R.int(2, lv === 1 ? 6 : 10);
-          var c = R.pick([['pack', 'packs', 'juice boxes'], ['box', 'boxes', 'markers'], ['bag', 'bags', 'buns']]);
-          return { q: 'For every 1 ' + c[0] + ', there are ' + k + ' ' + c[2] + '. ' + who + ' buys ' + n + ' ' + c[1] + '. How many ' + c[2] + ' is that?', type: 'num', answer: n * k,
-            hint: 'Each ' + c[0] + ' adds ' + k + '. Count by ' + k + 's, ' + n + ' times.', steps: ['Count by ' + k + 's: ' + skips(k, n) + '.'],
-            explain: n + X + k + ' = ' + n * k + ' ' + c[2] + '.', meta: { k: 'scale-story', f: k, n: n } };
-        }],
-        [1, 'match', function (lv) {
-          var k = lv === 1 ? 2 : R.pick([5, 10]), th = R.pick(THINGS[k]), ns = R.shuffle([2, 3, 4, 5, 6, 7]).slice(0, 3);
-          var pairs = ns.map(function (n) { return [n + ' ' + th[1], n * k + ' ' + th[3]]; });
-          return { q: '1 ' + th[0] + ' has ' + k + ' ' + th[3] + '. Match each one.', type: 'match', pairs: pairs,
-            hint: 'Count by ' + k + 's for each one.', steps: ['3 ' + th[1] + ' have 3' + X + k + ' = ' + 3 * k + ' ' + th[3] + '.'],
-            explain: pairs.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'scale-match', f: k, pairs: pairs } };
-        }],
-        [2, 'mistake', function (lv) {
-          var k = R.pick([2, 5, 10]), th = R.pick(THINGS[k]), n = R.int(3, 9), who = nm(), truth = !R.int(0, 2), said = truth ? n * k : n + k;
-          var right = 'Each ' + th[0] + ' has ' + k + ' ' + th[3] + ', so ' + n + ' ' + th[1] + ' have ' + n + X + k + ' = ' + n * k + '.';
-          return { q: '1 ' + th[0] + ' has ' + k + ' ' + th[3] + '. ' + who + ' says ' + n + ' ' + th[1] + ' have <b>' + said + '</b> ' + th[3] + '. True or false: ' + who + ' is right.', type: 'tf', answer: truth,
-            why: why(right, ['Add ' + n + ' and ' + k + '.', 'Each new ' + th[0] + ' adds 1 more.', 'The number stays the same.']),
-            hint: 'Count by ' + k + 's, ' + n + ' times.', steps: [right], explain: right, meta: { k: 'scale-tf', f: k, n: n, said: said } };
-        }]
-      ]
-    };
-    Q.shapes(CH, SHAPES);
-  })();
+  /* every skill's other shapes (docs/QUESTIONS.md); each skill keeps its first way of asking as "plain" */
+  var SHAPES = {};
+  SKILLS.forEach(function (s) { SHAPES[s.id] = DEF[s.id].slice(1); });
+  Q.shapes(CH, SHAPES);
 })();
