@@ -1,6 +1,7 @@
 /* Atlas top bar and home page, loaded by index.html and curriculum.html: the sign-in pop-over, the account menu,
    the Math plan and Language panels (home page only) and the "Your grade" tag on the curriculum list (curriculum page only).
    Both pages are plain HTML that works even if this file cannot load. */
+import { placeState, placeLine } from './langplace.js';
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -170,9 +171,11 @@ async function showKids(F, me) {
   const rows = await Promise.all(kids.map(async (k) => {
     const snap = await F.getDoc(F.doc(F.db, 'students', k.id, 'progress', 'plan')).catch(() => null);
     const data = snap && snap.exists() ? snap.data() : null;
-    return { k, S: summary(parse(data && data.data ? data.data.state : null, null)), upd: data && data.updated, lang: await langProgress(F, k.id) };
+    const lp = await F.getDoc(F.doc(F.db, 'students', k.id, 'progress', 'lplace')).catch(() => null);
+    return { k, S: summary(parse(data && data.data ? data.data.state : null, null)), upd: data && data.updated, lang: await langProgress(F, k.id),
+      place: placeState(lp && lp.exists() ? lp.data().data : null) };
   }));
-  body().innerHTML = '<ul class="kids">' + rows.map(({ k, S, upd, lang }) => {
+  body().innerHTML = '<ul class="kids">' + rows.map(({ k, S, upd, lang, place }) => {
     let status = '', chips = '';
     if (S.kind === 'none') status = 'Math: has not taken the placement check yet.';
     else if (S.kind === 'placing') status = 'Math: placement check in progress, ' + plural(S.n, 'question') + ' answered.';
@@ -182,7 +185,7 @@ async function showKids(F, me) {
     }
     const seen = upd && upd.toDate ? ' Last plan activity ' + upd.toDate().toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + '.' : '';
     return '<li class="kid"><div class="kh"><span class="av" aria-hidden="true">' + initial(k.name) + '</span><div><h3>' + esc(k.name) + '</h3>' +
-      '<p class="ks">' + status + seen + '</p><p class="ks">' + esc(langLine(lang)) + '</p></div></div>' + chips +
+      '<p class="ks">' + status + seen + '</p><p class="ks">' + esc(langLine(lang)) + '</p><p class="ks">' + esc(placeLine(place)) + '</p></div></div>' + chips +
       '<div class="acts"><a class="hbtn sm" href="plan/?sid=' + encodeURIComponent(k.id) + '">' + (S.kind === 'plan' ? 'Open plan' : 'Go to Math Plan') + '</a>' +
       '<a class="hbtn ghost sm" href="family.html#s/' + encodeURIComponent(k.id) + '">Progress and notes</a></div></li>';
   }).join('') + '</ul><div class="acts"><a class="hbtn ghost sm" href="family.html#add">Add a student</a></div>';

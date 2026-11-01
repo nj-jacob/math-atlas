@@ -60,7 +60,7 @@ export async function makeStudentLogin(username, password, name, sid) {
 }
 
 /* Saved practice on this device belongs to whoever is signed in. Clear it on sign-out so the next person starts fresh. */
-const PROGRESS = /^(g\d+atlas:|lang-g\d+:|atlasSync:|mathplan:)/, DEVICE = /:(theme|big)$/;
+const PROGRESS = /^(g\d+atlas:|lang-g\d+:|lang-place:|atlasSync:|mathplan:)/, DEVICE = /:(theme|big)$/;
 export function clearDeviceProgress() {
   try {
     const drop = [];

@@ -5,6 +5,7 @@ import {
   sendPasswordResetEmail, updateProfile, doc, collection, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
   query, where, orderBy, limit, serverTimestamp
 } from './fb.js';
+import { placeState, placeSection } from './langplace.js';
 
 const app = document.getElementById('app');
 const $ = (s, r) => (r || document).querySelector(s);
@@ -518,6 +519,7 @@ async function studentDetail(sid) {
   }
   const kid = Object.assign({ id: sid }, snap.data()), owner = kid.ownerUid === me.user.uid;
   const { prog, days } = await loadKid(sid);
+  const lp = await getDoc(doc(db, 'students', sid, 'progress', 'lplace')).catch(() => null);
   const notes = await getDocs(query(collection(db, 'students', sid, 'notes'), orderBy('at', 'desc'), limit(20))).catch(() => ({ docs: [] }));
   const assigned = kid.assigned || [];
   const isAssigned = (site, id) => assigned.some((a) => a.site === site && a.sk === id);
@@ -533,6 +535,7 @@ async function studentDetail(sid) {
   /* only grades the student has actually used */
   const sites = Object.keys(SITES).filter((k) => prog[k] && (Object.keys(prog[k].data || {}).length || days.some((d) => d.site === k)));
   h += '<section class="sec" data-strand="C"><h2>Recent activity</h2>' + activityList(days, 12) + '</section>';
+  h += placeSection(placeState(lp && lp.exists() ? lp.data().data : null), kid.name);
   if (!sites.length) {
     h += '<div class="start"><p>No practice saved yet. ' + esc(kid.name) + ' signs in at <b>' + esc(HOME) + '</b> with the username <b>' + esc(kid.username) + '</b>, then opens a grade and starts practising.</p></div>';
   }
