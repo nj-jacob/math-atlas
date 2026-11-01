@@ -1,60 +1,76 @@
-/* Grade 4 Math Atlas: tiny hash router, chapter registry, practice questions, adaptive practice and check-up. No dependencies. */
+/* Math Atlas grade app, shared by every grade: chapter registry, router, home page, practice, chapter quiz, check-up,
+   progress and reading settings. It creates the Atlas object. No dependencies.
+   Each grade's assets/grade.js calls Atlas.setup({ grade, tools, meta, home, ... }) with that grade's own settings
+   (the defaults are in S below; see "One grade site" in docs/ARCHITECTURE.md). Saved progress uses gNatlas: keys. */
 (function () {
   'use strict';
+  /* grade settings: Atlas.setup replaces any of these */
+  var S = {
+    grade: 0,
+    tools: [],
+    meta: [],
+    home: { hero: '', start: '', notes: '' },
+    right: 'Correct.',                       /* first-try feedback in quiz and practice */
+    right2: 'Correct on the second try.',
+    input: { mode: 'decimal', placeholder: 'Type a number', pad: false }, /* typed answers; pad: a big number pad under each box */
+    parseNum: null,                          /* function (text) -> number, for a grade that reads typed answers its own way */
+    judge: null,                             /* function (q, value, text) -> true when a typed answer is right */
+    wholeDollars: false,                     /* show $5 rather than $5.00 for a whole-dollar answer */
+    groupDecimals: false,                    /* also space long decimals in groups of three: 0.333 333 */
+    svgScale: 1,                             /* draw pictures this many times bigger on wide screens */
+    svgLabelText: false,                     /* turn html in picture labels into plain text (3/4) for screen readers */
+    diskLabel: { x: 120, y: 5, size: 13 },   /* place names beside Atlas.draw.disks */
+    checkup: {
+      steps: [
+        'Each question is new. There are no hints and no time limit.',
+        'Questions start easy, with pictures. A chapter check-up asks one easy question for every skill, then a few a step harder.',
+        'If you do not know, choose <b>"I\'m not sure yet"</b>. That is more useful than a guess.',
+        'At the end you see every answer, what each question checked, and a plan for what to practise.',
+        'Your practice levels change to match your results.'
+      ],
+      /* whole-grade check-ups: #check-up/<scope>, per easy questions from every chapter. label is saved with the result. */
+      whole: [{ scope: 'all', per: 1, label: 'Quick whole-grade check-up', button: 'Quick whole-grade check-up: one easy question from every chapter' }],
+      note: ''
+    },
+    afterRoute: null                         /* function (app), run after each page is drawn */
+  };
   var Atlas = (window.Atlas = {
-    grade: 4,
-    tools: ['base10', 'disks', 'clock', 'areagrid', 'scale', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard'],
     chapters: {},
-    strands: { B: 'Number', C: 'Algebra', D: 'Data', E: 'Spatial Sense', F: 'Financial Literacy' },
-    meta: [
-      { id: 'numbers', title: 'Numbers to 10 000', sub: 'read, build, compare and round', strand: 'B', codes: 'B1.1, B1.2, B1.3',
-        desc: 'Place value to 10 000 with blocks and charts. Compare, order, and round to 10, 100 or 1000.' },
-      { id: 'add-subtract', title: 'Adding and Subtracting', sub: 'regrouping and checking', strand: 'B', codes: 'B2.1, B2.4',
-        desc: 'Add and subtract to 10 000 with blocks, number lines and the column method. Estimate and check.' },
-      { id: 'multiply-divide', title: 'Multiplying and Dividing', sub: 'facts, arrays and sharing', strand: 'B', codes: 'B2.1, B2.2, B2.3, B2.5, B2.6, B2.8',
-        desc: 'Facts to 10 &times; 10, times 10, 100 and 1000, area models, sharing with remainders, and rates.' },
-      { id: 'fractions', title: 'Fractions', sub: 'halves to tenths', strand: 'B', codes: 'B1.4, B1.5, B1.6, B2.7',
-        desc: 'Numerator and denominator, fair shares, comparing, counting by fractions, and groups of unit fractions.' },
-      { id: 'decimals', title: 'Decimal Tenths', sub: 'one tenth is 0.1', strand: 'B', codes: 'B1.7, B1.8, B1.9, B2.3, B2.4',
-        desc: 'Read, compare and round tenths, link tenths to fractions, and add and subtract them.' },
-      { id: 'patterns', title: 'Patterns, Equations and Code', sub: 'rules, missing numbers, loops', strand: 'C', codes: 'C1.1 to C3.2',
-        desc: 'Repeating and growing patterns, tables and graphs, solving for a symbol, inequalities, and code with loops.' },
-      { id: 'data', title: 'Data and Chance', sub: 'collect, graph, describe, predict', strand: 'D', codes: 'D1.1 to D2.2',
-        desc: 'Kinds of data, stem-and-leaf plots, double bar graphs, mean, median, mode, and the probability line.' },
-      { id: 'shapes', title: 'Shapes, Angles and Grids', sub: 'rectangles, angles, slides and flips', strand: 'E', codes: 'E1.1, E1.2, E1.3, E2.4',
-        desc: 'Properties of rectangles, kinds of angles, coordinates, translations and reflections.' },
-      { id: 'measuring', title: 'Measuring', sub: 'mass, capacity, time and area', strand: 'E', codes: 'E2.1, E2.2, E2.3, E2.5, E2.6',
-        desc: 'Grams and kilograms, litres and millilitres, metric prefixes, elapsed time, and area of rectangles.' },
-      { id: 'money', title: 'Money and Smart Choices', sub: 'pay, save, spend, give', strand: 'F', codes: 'F1.1 to F1.5',
-        desc: 'Ways to pay, totals and change in whole dollars, spending and saving, and spotting a good price.' },
-      { id: 'fact-sheet', title: 'Fact Sheet', sub: 'the key facts on one page', strand: 'B', ref: true,
-        desc: 'Place value, facts, fractions and decimals, units, time, angles and area.' }
-    ]
+    strands: { B: 'Number', C: 'Algebra', D: 'Data', E: 'Spatial Sense', F: 'Financial Literacy' }
   });
+  Atlas.setup = function (cfg) {
+    Object.keys(cfg).forEach(function (k) { S[k] = cfg[k]; });
+    Atlas.grade = S.grade;
+    Atlas.tools = S.tools;
+    Atlas.meta = S.meta;
+  };
 
   var $ = (Atlas.$ = function (s, r) { return (r || document).querySelector(s); });
   Atlas.$$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
-  Atlas.register = function (id, ch) { Atlas.chapters[id] = ch; };
+  Atlas.register = function (id, ch) { Atlas.chapters[id] = ch; if (ch.full) (ch.practice || []).forEach(function (sk) { sk.full = true; }); };
+  /* The chapters' older one-page lessons call Atlas.yt for a "Your turn" box. Those pages are no longer shown
+     (every chapter now teaches through Atlas.lessons), so the box is left out. */
+  Atlas.yt = function () { return ''; };
 
   /* Canadian number style: a space groups numbers of 5 or more digits. */
   Atlas.fmt = function (n) {
     var s = String(n), neg = '';
     if (s.charAt(0) === '-') { neg = '-'; s = s.slice(1); }
-    var p = s.split('.'), i = p[0];
+    var p = s.split('.'), i = p[0], f = p.length > 1 ? p[1] : '';
     if (i.length > 4) i = i.replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-    return neg + i + (p.length > 1 ? '.' + p[1] : '');
+    if (S.groupDecimals && f.length > 4) f = f.replace(/(\d{3})(?=\d)/g, '$1 ');
+    return neg + i + (p.length > 1 ? '.' + f : '');
   };
   Atlas.gcd = function (a, b) { a = Math.abs(a); b = Math.abs(b); while (b) { var t = b; b = a % b; a = t; } return a; };
   Atlas.money = function (c) { return '$' + (c / 100).toFixed(2); };
   /* round away floating point noise: 0.1 + 0.2 -> 0.3 */
-  /* a stacked fraction in html, and a mixed number like 2 3/4 */
-  Atlas.fr = function (n, d) { return '<span class="fr" aria-label="' + n + ' over ' + d + '"><sup>' + n + '</sup><sub>' + d + '</sub></span>'; };
-  Atlas.mixed = function (w, n, d) { return (w ? w + ' ' : '') + (n ? Atlas.fr(n, d) : ''); };
   Atlas.clean = function (x) { return Math.round(x * 1e6) / 1e6; };
 
+  /* saved progress for this grade: localStorage keys gNatlas:<key> */
   function store(k, v) {
-    try { if (v === undefined) return localStorage.getItem('g4atlas:' + k); localStorage.setItem('g4atlas:' + k, v); } catch (e) { return null; }
+    var key = 'g' + S.grade + 'atlas:' + k;
+    try { if (v === undefined) return localStorage.getItem(key); localStorage.setItem(key, v); } catch (e) { return null; }
   }
   function load(k, d) { try { var v = store(k); return v ? JSON.parse(v) : d; } catch (e) { return d; } }
   function save(k, v) { store(k, JSON.stringify(v)); }
@@ -81,7 +97,10 @@
 
   /* drawings shared by chapters and practice questions */
   Atlas.svg = function (w, h, inner, label) {
-    return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + w + '" role="img" aria-label="' + String(label || '').replace(/<sup>(\d+)<\/sup><sub>(\d+)<\/sub>/g, '$1/$2').replace(/<[^>]*>/g, '').replace(/"/g, '') + '">' + inner + '</svg>';
+    label = String(label || '');
+    if (S.svgLabelText) label = label.replace(/<sup>(\d+)<\/sup><sub>(\d+)<\/sub>/g, '$1/$2').replace(/<[^>]*>/g, '').replace(/"/g, '');
+    /* svgScale > 1 draws it bigger on wide screens; .fig svg shrinks it to fit a phone */
+    return '<svg viewBox="0 0 ' + w + ' ' + h + '" width="' + Math.round(w * S.svgScale) + '" role="img" aria-label="' + label + '">' + inner + '</svg>';
   };
   Atlas.draw = {
     /* a bar split into d parts with n shaded */
@@ -125,25 +144,25 @@
   };
 
   /* ---- place value pictures. One colour per place, used for disks and base-ten blocks.
-     Place index p: 0 ones, 1 tens, 2 hundreds, 3 thousands, 4 ten thousands, 5 hundred thousands. ---- */
-  Atlas.PLACES = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands'];
-  Atlas.PLACE1 = ['one', 'ten', 'hundred', 'thousand', 'ten thousand', 'hundred thousand'];
+     Place index p: 0 ones, 1 tens, 2 hundreds, 3 thousands, 4 ten thousands, 5 hundred thousands, 6 millions. ---- */
+  Atlas.PLACES = ['ones', 'tens', 'hundreds', 'thousands', 'ten thousands', 'hundred thousands', 'millions'];
+  Atlas.PLACE1 = ['one', 'ten', 'hundred', 'thousand', 'ten thousand', 'hundred thousand', 'million'];
   Atlas.pc = function (p) { return 'var(--p' + p + ')'; };
   /* a single place value disk; small disks (r < 12) have no label */
   Atlas.draw.disk = function (x, y, r, p) {
-    var lab = Atlas.fmt(Math.pow(10, p)), fs = lab.length <= 3 ? r * 0.8 : lab.length === 4 ? r * 0.62 : r * 0.48;
+    var lab = Atlas.fmt(Math.pow(10, p)), fs = lab.length <= 3 ? r * 0.8 : lab.length === 4 ? r * 0.62 : lab.length <= 7 ? r * 0.48 : r * 0.36;
     return '<circle cx="' + x + '" cy="' + y + '" r="' + r + '" style="fill:' + Atlas.pc(p) + '" stroke="rgba(0,0,0,.45)" stroke-width="1.5"/>' +
       (r >= 12 ? '<text x="' + x + '" y="' + (y + fs * 0.36) + '" text-anchor="middle" font-size="' + fs.toFixed(1) + '" font-weight="700" style="fill:' + (p ? '#fff' : '#13203a') + '">' + lab + '</text>' : '');
   };
   /* labelled disks for a list of groups [{p, n}], one row per group, in the order given */
   Atlas.draw.disks = function (groups, label) {
-    var r = 17, gap = 38, s = '', y = 22, maxN = 1;
+    var r = 17, gap = 38, s = '', y = 22, maxN = 1, L = S.diskLabel;
     groups.forEach(function (g) { maxN = Math.max(maxN, Math.min(g.n, 10)); });
-    var W = Math.max(150, 130 + maxN * gap);
+    var W = Math.max(150, L.x + maxN * gap);
     groups.forEach(function (g) {
       var rows = Math.ceil(g.n / 10) || 1;
-      s += '<text x="4" y="' + (y + 6) + '" font-size="16" class="t2">' + Atlas.PLACES[g.p] + '</text>';
-      for (var i = 0; i < g.n; i++) s += Atlas.draw.disk(130 + (i % 10) * gap, y + Math.floor(i / 10) * gap, r, g.p);
+      s += '<text x="4" y="' + (y + L.y) + '" font-size="' + L.size + '" class="t2">' + Atlas.PLACES[g.p] + '</text>';
+      for (var i = 0; i < g.n; i++) s += Atlas.draw.disk(L.x + (i % 10) * gap, y + Math.floor(i / 10) * gap, r, g.p);
       y += rows * gap + 4;
     });
     return Atlas.svg(W, y - 2, s, label || 'Place value disks');
@@ -171,10 +190,18 @@
     return { svg: P(x, y, a, b, c, dims[3], dims[4], dims[5], p), w: a + b * k, h: c + b * k };
   };
   /* a picture of a whole number in base-ten blocks, wrapping onto new rows. 10 000 is shown as 10 thousand cubes. */
-  Atlas.draw.blocks = function (n, label, W) {
+  Atlas.draw.blocks = function (n, label, W, u) {
     W = W || 540;
-    var u = 5, s = '', x = 4, rowH = 0, top = 4, items = [], digits = String(n).split('').reverse();
+    u = u || 5;
+    var items = [], digits = String(n).split('').reverse();
     for (var p = 3; p >= 0; p--) for (var i = 0; i < (p === 3 ? Math.floor(n / 1000) : +digits[p] || 0); i++) items.push(p);
+    return Atlas.draw.pile(items, label || 'Base-ten blocks showing ' + n, W, u);
+  };
+  /* base-ten blocks from a list of places, in the order given, e.g. [2, 2, 1, 0] is 2 flats, a rod and a cube */
+  Atlas.draw.pile = function (items, label, W, u) {
+    W = W || 540;
+    u = u || 5;
+    var s = '', top = 4;
     var rows = [[]], rx = 4;
     items.forEach(function (p, j) {
       var b = Atlas.draw.block(0, 0, p, u), row = rows[rows.length - 1];
@@ -190,29 +217,103 @@
       row.forEach(function (it) { s += Atlas.draw.block(it.x, y + h, it.p, u).svg; maxX = Math.max(maxX, it.x + it.b.w); });
       y += h + 12;
     });
-    return Atlas.svg(Math.ceil(maxX + 4), Math.ceil(y), s, label || 'Base-ten blocks showing ' + n);
+    if (!items.length) return Atlas.svg(120, 30, '<text x="4" y="20" font-size="14" class="t2">(no blocks)</text>', label || 'No blocks');
+    return Atlas.svg(Math.ceil(maxX + 4), Math.ceil(y), s, label);
+  };
+  /* ---- fraction pictures ---- */
+  /* a circle cut into d equal slices with n shaded (n can be up to d) */
+  Atlas.draw.pie = function (n, d, r, label, col) {
+    r = r || 46; col = col || 'var(--strand)';
+    var c = r + 3, s = '';
+    if (d === 1) s = '<circle cx="' + c + '" cy="' + c + '" r="' + r + '" style="fill:' + (n ? col : 'var(--card)') + ';stroke:var(--ink)" stroke-width="2"/>';
+    else for (var i = 0; i < d; i++) {
+      var a0 = -Math.PI / 2 + 2 * Math.PI * i / d, a1 = a0 + 2 * Math.PI / d;
+      s += '<path d="M' + c + ' ' + c + 'L' + (c + r * Math.cos(a0)).toFixed(2) + ' ' + (c + r * Math.sin(a0)).toFixed(2) + 'A' + r + ' ' + r + ' 0 0 1 ' + (c + r * Math.cos(a1)).toFixed(2) + ' ' + (c + r * Math.sin(a1)).toFixed(2) + 'Z" style="fill:' + (i < n ? col : 'var(--card)') + ';stroke:var(--ink)" stroke-width="' + (d > 24 ? 1 : 2) + '" stroke-linejoin="round"/>';
+    }
+    return Atlas.svg(2 * c, 2 * c, s, label || n + ' of ' + d + ' equal slices shaded');
+  };
+  /* bars stacked one above the other, all the same length so sizes can be compared.
+     rows: [{n, d, label, col}]; a row with n > d draws extra wholes to the right */
+  Atlas.draw.fbars = function (rows, opts) {
+    opts = opts || {};
+    var W = opts.w || 540, lw = opts.lw || 70, unit = opts.unit || (W - lw - 10), h = 34, gap = 12, s = '', y = 4, maxX = 0;
+    rows.forEach(function (r) {
+      var wholes = Math.max(1, Math.ceil(r.n / r.d)), cw = unit / r.d;
+      s += '<text x="' + (lw - 10) + '" y="' + (y + h / 2 + 6) + '" text-anchor="end" font-size="17" font-weight="700">' + (r.label || r.n + '/' + r.d) + '</text>';
+      for (var w = 0; w < wholes; w++) for (var i = 0; i < r.d; i++) {
+        var k = w * r.d + i, x = lw + w * (unit + 8) + i * cw;
+        s += '<rect x="' + x.toFixed(2) + '" y="' + y + '" width="' + cw.toFixed(2) + '" height="' + h + '" style="fill:' + (k < r.n ? (r.cols ? r.cols[k] || r.col || 'var(--strand)' : r.col || 'var(--strand)') : 'var(--card)') + ';stroke:var(--ink)" stroke-width="' + (r.d > 30 ? 0.75 : 1.5) + '"/>';
+        maxX = Math.max(maxX, x + cw);
+      }
+      y += h + gap;
+    });
+    if (opts.mark !== undefined) {
+      var mx = lw + unit * opts.mark;
+      s += '<line x1="' + mx + '" y1="0" x2="' + mx + '" y2="' + (y - gap + 4) + '" style="stroke:var(--accent)" stroke-width="2.5" stroke-dasharray="6 4"/>';
+    }
+    return Atlas.svg(Math.ceil(Math.max(maxX, lw + unit) + 4), y - gap + 6, s, opts.label || rows.map(function (r) { return r.n + '/' + r.d; }).join(', ') + ' drawn as bars');
+  };
+  /* number line from 0 to max wholes, ticks every 1/d, points [{v, label, col, up}] */
+  Atlas.draw.fline = function (max, d, points, label, W) {
+    W = W || 540;
+    var x0 = 24, x1 = W - 24, y = 62, s = '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" style="stroke:var(--ink)" stroke-width="2.5"/>';
+    var X = function (v) { return x0 + (x1 - x0) * v / max; };
+    for (var i = 0; i <= max * d; i++) {
+      var whole = i % d === 0, x = X(i / d);
+      s += '<line x1="' + x + '" y1="' + (y - (whole ? 12 : 7)) + '" x2="' + x + '" y2="' + (y + (whole ? 12 : 7)) + '" style="stroke:var(--ink)" stroke-width="' + (whole ? 2.5 : 1.5) + '"/>';
+      if (whole) s += '<text x="' + x + '" y="' + (y + 32) + '" text-anchor="middle" font-size="17" font-weight="700">' + (i / d) + '</text>';
+    }
+    (points || []).forEach(function (p, k) {
+      var x = X(p.v), up = p.up !== false;
+      s += '<circle cx="' + x + '" cy="' + y + '" r="8" style="fill:' + (p.col || 'var(--hi)') + ';stroke:var(--ink)" stroke-width="2"/>';
+      if (p.label) s += '<text x="' + Math.min(Math.max(x, 30), W - 30) + '" y="' + (up ? y - 20 : y + 52) + '" text-anchor="middle" font-size="16" font-weight="700">' + p.label + '</text>';
+    });
+    return Atlas.svg(W, y + 60, s, label || 'Number line from 0 to ' + max);
   };
 
   Atlas.bind = function (root, ids, fn) {
+    var found = 0;
     ids.forEach(function (i) {
       var e = $('#' + i, root);
-      if (e) { e.addEventListener('input', fn); e.addEventListener('change', fn); }
+      if (e) { found++; e.addEventListener('input', fn); e.addEventListener('change', fn); }
     });
-    fn();
+    /* a lesson screen may hold only one of a chapter's widgets: skip the others */
+    if (found) fn();
   };
 
   function shown(q, v) {
     if (Q(q)) return v === q.answer ? Atlas.Q.text(q) : String(v);
     if (q.type === 'mc') return q.options[v];
+    if (q.show !== undefined && v === q.answer) return q.show;
     var a = Atlas.fmt(v);
-    if (q.unit === '$') return '$' + Number(v).toFixed(2);
+    if (q.unit === '$') return '$' + (S.wholeDollars && Number(v) % 1 === 0 ? Number(v) : Number(v).toFixed(2));
     return a + (q.unit ? ' ' + q.unit : '');
   }
   function unitHtml(q) { return q.unit && q.unit !== '$' ? '<span class="unit">' + q.unit + '</span>' : ''; }
-  function parseNum(t) { return parseFloat(String(t).replace(/[^0-9.\-]/g, '')); }
-  /* new answer types (tap, pick, order, line, match, tf, fill, build) live in ../assets/engine/qkit.js */
+  function parseNum(t) { return S.parseNum ? S.parseNum(t) : parseFloat(String(t).replace(/[^0-9.\-]/g, '')); }
+  function numOk(q, v, raw) { return S.judge ? S.judge(q, v, raw) : Math.abs(v - q.answer) <= (q.tol || 1e-9); }
+  /* new answer types (tap, pick, order, line, match, tf, fill, build) live in qkit.js */
   function Q(q) { return !!(Atlas.Q && Atlas.Q.has(q)); }
-  function numOk(q, v) { return Math.abs(v - q.answer) <= (q.tol || 1e-9); }
+  /* a typed answer box. S.input.pad adds a big number pad for children who find the keyboard hard. */
+  function numForm(q, iid, label) {
+    return '<form class="numrow"><label class="sr" for="' + iid + '">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
+      '<input type="text" inputmode="' + (q.kb || S.input.mode) + '" autocomplete="off" id="' + iid + '" placeholder="' + S.input.placeholder + '">' + unitHtml(q) +
+      '<button class="btn" type="submit">' + label + '</button>' + (S.input.pad ? padHtml() : '') + '</form>';
+  }
+  function padHtml() {
+    var h = '<div class="pad" role="group" aria-label="Number pad">';
+    for (var i = 1; i <= 9; i++) h += '<button type="button" data-k="' + i + '">' + i + '</button>';
+    return h + '<button type="button" data-k="back" aria-label="Rub out">&#9003;</button><button type="button" data-k="0">0</button><button type="button" data-k="clear" aria-label="Clear">Clear</button></div>';
+  }
+  document.addEventListener('click', function (e) {
+    var b = e.target.closest && e.target.closest('.pad button');
+    if (!b || b.disabled) return;
+    var f = b.closest('form'), inp = f && $('input', f), k = b.getAttribute('data-k');
+    if (!inp || inp.disabled) return;
+    if (k === 'back') inp.value = inp.value.slice(0, -1);
+    else if (k === 'clear') inp.value = '';
+    else if (inp.value.length < 4) inp.value += k;
+  });
 
   /* Practice questions.
      {q, type:'mc', options:[...], answer:index, explain, hint}
@@ -231,7 +332,7 @@
       } else el.textContent = d + ' of ' + qs.length + ' answered';
     }
     box.innerHTML = '<div class="qhead"><h2>Chapter quiz</h2><p class="qscore" aria-live="polite"></p></div>' +
-      '<p class="qintro">Seven questions about the whole chapter. You get a hint after a wrong answer, then a second try.</p>';
+      '<p class="qintro">' + (typeof qs0 === 'function' ? 'Seven questions about the whole chapter, new every time. ' : 'Seven questions about the whole chapter. ') + 'You get a hint after a wrong answer, then a second try.</p>';
     qs.forEach(function (q, i) {
       var d = document.createElement('div');
       d.className = 'q';
@@ -243,10 +344,7 @@
           return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>';
         }).join('') + '</div>';
       } else {
-        h += '<form class="numrow"><label class="sr" for="q-' + id + '-' + i + '">Your answer</label>' +
-          (q.unit === '$' ? '<span class="unit">$</span>' : '') +
-          '<input type="text" inputmode="decimal" autocomplete="off" id="q-' + id + '-' + i + '" placeholder="Type a number">' +
-          unitHtml(q) + '<button class="btn" type="submit">Check</button></form>';
+        h += numForm(q, 'q-' + id + '-' + i, 'Check');
       }
       h += '<div class="fb" aria-live="polite"></div>';
       d.innerHTML = h;
@@ -257,7 +355,7 @@
         s.done = true;
         if (ok && s.tries === 1) s.first = true;
         fb.className = 'fb ' + (ok ? 'ok' : 'bad');
-        fb.innerHTML = '<b>' + (ok ? 'Correct.' : 'The answer is ' + shown(q, q.answer) + '.') + '</b> <span>' + (q.explain || '') + '</span>';
+        fb.innerHTML = '<b>' + (ok ? S.right : 'The answer is ' + shown(q, q.answer) + '.') + '</b> <span>' + (q.explain || '') + '</span>';
         Atlas.$$('button,input', d).forEach(function (b) { b.disabled = true; });
         score();
       }
@@ -290,10 +388,10 @@
         $('form', d).addEventListener('submit', function (e) {
           e.preventDefault();
           if (s.done) return;
-          var v = parseNum($('input', d).value);
+          var raw = $('input', d).value, v = parseNum(raw);
           if (isNaN(v)) { fb.className = 'fb bad'; fb.textContent = 'Type a number first.'; return; }
           s.tries++;
-          if (numOk(q, v)) finish(true);
+          if (numOk(q, v, raw)) finish(true);
           else if (s.tries >= 2) finish(false); else wrong();
         });
       }
@@ -308,10 +406,10 @@
     score();
   };
   /* A fresh chapter quiz: one question from each of 5 different skills (level 2, any question shape)
-     plus 2 from the chapter's written quiz, mixed together. Turn on with quizFresh: true in a chapter. */
+     plus 2 from the chapter's written quiz, mixed together. */
   Atlas.freshQuiz = function (ch) {
-    var out = [];
-    R.shuffle(ch.practice || []).slice(0, 5).forEach(function (sk) { out.push(make(sk, sk.quizLevel || 2)); });
+    var out = [], skills = R.shuffle(ch.practice || []).slice(0, 5);
+    skills.forEach(function (sk) { var q = make(sk, sk.quizLevel || 2); out.push(q); });
     R.shuffle(ch.quiz || []).slice(0, 7 - out.length).forEach(function (q) { out.push(q); });
     return R.shuffle(out);
   };
@@ -368,7 +466,7 @@
         '<button type="button" class="skill mixb' + (mix ? ' cur' : '') + '" data-sk="mix" aria-pressed="' + mix + '"><span class="sn">Mixed review</span><span class="ss">All skills, weakest first</span><span class="sc">Repeat</span></button>';
     }
     box.innerHTML = '<div class="qhead"><h2>Practise</h2><p class="qscore pscore" aria-live="polite"></p></div>' +
-      '<p class="qintro">New questions every time. Pick a skill. Three right in a row moves you up a level. If a question is tricky, you get a hint, then the steps, then a similar one to try.</p>' +
+      '<p class="qintro">New questions every time. Pick a skill. Three right in a row moves you up a level. Every fourth question reviews a skill from earlier. If a question is tricky, you get a hint, then the steps, then a similar one to try.</p>' +
       '<div class="skills"></div><div class="pq" aria-live="polite"></div>';
     var row = $('.skills', box), pq = $('.pq', box);
     function refreshRow() {
@@ -385,68 +483,77 @@
     function scoreLine() {
       $('.pscore', box).textContent = session.n ? 'This session: ' + session.n + ' done, ' + session.first + ' right first time' : '';
     }
-    var home = null, reviewFrom = '';
+    var home = null;
     function next(focus, easier) {
-      /* mixed review: every third question comes from another chapter the student has already practised */
-      if (mix) { cur = pickWeakest(); var oth = Atlas.allSkills().filter(function (p) { return p.ch.id !== id && skillState(p.sk.id).n > 0; }); if (!easier && session.n % 3 === 2 && oth.length) cur = R.pick(oth).sk; }
-      /* mostly review: every 4th question in single-skill practice comes from another skill already started */
-      if (home) { cur = home; home = null; }
-      else if (!mix && !easier && session.n % 4 === 3) {
-        var old = Atlas.allSkills().filter(function (p) { return p.sk.id !== cur.id && skillState(p.sk.id).n > 0; });
-        if (old.length) { home = cur; var pk = R.pick(old); cur = pk.sk; reviewFrom = pk.ch.title; }
+      var away = false;
+      if (mix) {
+        cur = pickWeakest();
+        /* mixed review: every third question comes from another chapter the student has already practised */
+        var other = Atlas.allSkills().filter(function (p) { return p.ch.id !== id && skillState(p.sk.id).n > 0; });
+        if (!easier && session.n % 3 === 2 && other.length) { var pk = R.pick(other); cur = pk.sk; away = pk.ch.title; }
+      } else {
+        if (home && !easier) { cur = home; home = null; }
+        var seen = skills.filter(function (sk) { return sk.id !== cur.id && skillState(sk.id).n > 0; });
+        if (!easier && session.n % 4 === 3 && seen.length) { home = cur; cur = R.pick(seen); }
       }
       var st = skillState(cur.id);
       var lv = easier ? Math.max(1, st.lv - 1) : st.lv;
       q = make(cur, lv); q.lv = lv; tries = 0; done = false;
       Atlas._q = q; /* exposed for automated checks */
       refreshRow();
-      var h = '<div class="pcard"><p class="plv">' + (home ? '<b>Review from ' + reviewFrom + '.</b> ' : '') + '<span class="pill">' + cur.code + '</span> <b>' + cur.name + '</b> &middot; Level ' + lv + ': ' + LV[lv] + '</p>' +
+      var h = '<div class="pcard"><p class="plv"><span class="pill">' + cur.code + '</span> <b>' + cur.name + '</b> &middot; Level ' + lv + ': ' + LV[lv] + (home ? ' &middot; <i>Review from earlier</i>' : '') + (away ? ' &middot; <i>Review from ' + away + '</i>' : '') + '</p>' +
         '<p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (Q(q)) h += '<div class="qkbox"></div>';
       else if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
-      else h += '<form class="numrow"><label class="sr" for="pin-' + id + '">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
-        '<input type="text" inputmode="decimal" autocomplete="off" id="pin-' + id + '" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Check</button></form>';
+      else h += numForm(q, 'pin-' + id, 'Check');
       h += '<div class="fb"></div><div class="steps"></div><div class="pnext"></div></div>';
       pq.innerHTML = h;
       qk = null;
-      if (Q(q)) { qk = Atlas.Q.mount($('.qkbox', pq), q, function (ok) { if (!done) answer(ok); }); Atlas._qk = qk; }
+      if (Q(q)) { qk = Atlas.Q.mount($('.qkbox', pq), q, function (ok, given) { if (!done) answer(ok, given); }); Atlas._qk = qk; }
       else if (q.type === 'mc') Atlas.$$('.opt', pq).forEach(function (b) {
         b.addEventListener('click', function () {
           if (done) return;
           var j = +b.getAttribute('data-j');
           if (j === q.answer) { b.classList.add('yes'); answer(true); }
-          else { b.classList.add('no'); b.disabled = true; answer(false); }
+          else { b.classList.add('no'); b.disabled = true; answer(false, q.options[j]); }
         });
       });
       else $('form', pq).addEventListener('submit', function (e) {
         e.preventDefault();
         if (done) return;
-        var v = parseNum($('input', pq).value);
+        var raw = $('input', pq).value, v = parseNum(raw);
         if (isNaN(v)) { $('.fb', pq).className = 'fb bad'; $('.fb', pq).textContent = 'Type a number first.'; return; }
-        answer(numOk(q, v));
+        answer(numOk(q, v, raw), raw);
       });
       if (focus) { var f = $('.opt, input', pq); if (f) f.focus(); }
       scoreLine();
     }
-    function answer(ok) {
+    function answer(ok, given) {
       tries++;
       var fb = $('.fb', pq), st = skillState(cur.id), msg = '';
       if (!ok && tries === 1) {
         fb.className = 'fb bad';
-        fb.innerHTML = '<b>Not quite.</b> <span>' + (q.hint || 'Have another go.') + '</span>' + (q.steps && q.steps.length > 1 ? '<p class="step1"><b>First step:</b> ' + q.steps[0] + '</p>' : '');
+        fb.innerHTML = '<b>Not quite.</b> <span>' + (Atlas.Q.diag(q, given) || q.hint || 'Have another go.') + '</span>' + (q.steps && q.steps[0] ? '<p class="t2">Step 1: ' + q.steps[0] + '</p>' : '');
         return;
       }
       done = true; session.n++;
-      Atlas.$$('button.opt, input, form .btn', pq).forEach(function (b) { b.disabled = true; });
+      Atlas.$$('button.opt, input, form .btn, .pad button', pq).forEach(function (b) { b.disabled = true; });
       if (qk) { if (!ok) qk.reveal(); qk.lock(); }
       else if (q.type === 'mc') Atlas.$$('.opt', pq)[q.answer].classList.add('yes');
       st.n++;
       if (ok && tries === 1) {
         session.first++; st.ok++; st.streak++; st.miss = 0;
         if (st.streak >= 3 && st.lv < 3) { st.lv++; st.streak = 0; msg = 'Three in a row. Moving up to level ' + st.lv + '.'; }
-        else if (st.streak >= 3 && st.lv === 3 && !st.secure) { st.secure = true; msg = 'This skill is now marked secure. Come back to it now and then to keep it fresh.'; }
+        else if (st.streak >= 3 && st.lv === 3 && !st.secure) {
+          /* in a full chapter, a skill is secure only after a strong run at the top level on two different days */
+          var day = new Date().toDateString();
+          st.days = (st.days || []).filter(function (d) { return d !== day; }).concat([day]);
+          if (!cur.full || st.days.length >= 2) { st.secure = true; msg = 'This skill is now marked secure. Come back to it now and then to keep it fresh.'; }
+          else { st.streak = 0; msg = 'Strong work. Do this again on another day to make it secure.'; }
+        }
       } else {
         st.streak = 0;
+        if (cur.full && st.secure && !ok) { st.secure = false; st.days = []; msg = 'This one needs more practice, so it is no longer marked secure.'; }
         if (!ok) {
           st.miss++;
           if (st.miss >= 2 && st.lv > 1) { st.lv--; st.miss = 0; msg = 'Let\'s step back to level ' + st.lv + ' and build up again.'; }
@@ -454,7 +561,7 @@
       }
       skillSave(cur.id, st);
       fb.className = 'fb ' + (ok ? 'ok' : 'bad');
-      fb.innerHTML = '<b>' + (ok ? (tries === 1 ? 'Correct.' : 'Correct on the second try.') : 'The answer is ' + shown(q, q.answer) + '.') + '</b> <span>' + (q.explain || '') + '</span>' +
+      fb.innerHTML = '<b>' + (ok ? (tries === 1 ? S.right : S.right2) : 'The answer is ' + shown(q, q.answer) + '.') + '</b> <span>' + (q.explain || '') + '</span>' +
         (msg ? '<p class="lvmsg">' + msg + '</p>' : '');
       var nb = '<button type="button" class="btn" id="pn-' + id + '">Next question</button>';
       if (!ok && q.steps && q.steps.length) {
@@ -485,7 +592,6 @@
   };
 
   /* ---------- Check-up (assessment) ---------- */
-  /* ---------- Check-up (assessment) ---------- */
   /* which expectations have been checked: one chip per code, from every chapter's skills */
   function coverage() {
     var cov = load('cov', {}), codes = [], seen = {};
@@ -502,14 +608,9 @@
     if (!scope) {
       var h = '<div class="wrap chapter"><p class="crumb"><a href="#home">All chapters</a></p><header class="chead"><span class="num">Assessment</span><h1>Check-up</h1>' +
         '<p class="lede">Find out what you know and what to practise next.</p></header>' +
-        '<section class="sec cu"><h2>How it works</h2><ul>' +
-        '<li>Each question is new. There are no hints and no time limit.</li>' +
-        '<li>Questions start easy, with pictures. A chapter check-up asks one easy question for every skill, then a few a step harder.</li>' +
-        '<li>If you do not know, choose <b>"I\'m not sure yet"</b>. That is more useful than a guess.</li>' +
-        '<li>At the end you see every answer, what each question checked, and a plan for what to practise.</li>' +
-        '<li>Your practice levels change to match your results.</li></ul>' +
-        '<div class="cuopts"><a class="btn" href="#check-up/all">Quick whole-grade check-up: one easy question from every chapter</a></div>' +
-        '<h3>Check one chapter</h3><p>Doing every chapter\'s check-up checks every Grade 4 expectation. The map below fills in as you go.</p><div class="cuch">' +
+        '<section class="sec cu"><h2>How it works</h2><ul>' + S.checkup.steps.map(function (t) { return '<li>' + t + '</li>'; }).join('') + '</ul>' +
+        '<div class="cuopts">' + S.checkup.whole.map(function (w) { return '<a class="btn' + (w.alt ? ' alt' : '') + '" href="#check-up/' + w.scope + '">' + w.button + '</a>'; }).join(' ') + '</div>' + S.checkup.note +
+        '<h3>Check one chapter</h3><p>Doing every chapter\'s check-up checks every Grade ' + S.grade + ' expectation. The map below fills in as you go.</p><div class="cuch">' +
         Atlas.meta.filter(function (m) { return Atlas.chapters[m.id] && Atlas.chapters[m.id].practice; }).map(function (m) {
           return '<a class="pill" data-strand="' + m.strand + '" href="#check-up/' + m.id + '">' + m.title + '</a>';
         }).join('') + '</div>' + coverage() + '</section>';
@@ -523,18 +624,19 @@
       return;
     }
     /* Grade-appropriate by design: every question starts at level 1 (the gentlest, with pictures).
-       Whole grade: one level-1 question per chapter. One chapter: one level-1 question for every skill
+       Whole grade: level-1 questions from every chapter (S.checkup.whole). One chapter: one level-1 question for every skill
        (so all chapter check-ups together cover every expectation), then up to 3 level-2 questions on skills answered right. */
-    var pool = Atlas.allSkills(), qs = [], label, chapterScope = scope !== 'all';
+    var whole = S.checkup.whole.filter(function (w) { return w.scope === scope; })[0];
+    var pool = Atlas.allSkills(), qs = [], label, chapterScope = !whole;
     function add(p, lv) { var q = make(p.sk, lv); q.ch = p.ch; q.sk = p.sk; q.lv = lv; qs.push(q); }
-    if (scope === 'all') {
-      label = 'Quick whole-grade check-up';
-      Atlas.meta.filter(function (m) { return Atlas.chapters[m.id] && Atlas.chapters[m.id].practice; }).forEach(function (m) {
-        add(R.pick(pool.filter(function (p) { return p.ch.id === m.id; })), 1);
+    if (whole) {
+      label = whole.label;
+      Atlas.meta.forEach(function (m) {
+        R.shuffle(pool.filter(function (p) { return p.ch.id === m.id; })).slice(0, whole.per).forEach(function (p) { add(p, 1); });
       });
     } else {
       var m0 = Atlas.meta.filter(function (m) { return m.id === scope; })[0];
-      if (!m0) { location.hash = '#check-up'; return; }
+      if (!m0 || !Atlas.chapters[scope] || !Atlas.chapters[scope].practice) { location.hash = '#check-up'; return; }
       label = m0.title + ' check-up';
       var mine = pool.filter(function (p) { return p.ch.id === scope; });
       mine.forEach(function (p) { add(p, 1); });
@@ -558,8 +660,7 @@
         '<p class="plv"><span class="pill">' + q.ch.title + '</span></p><p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
       if (Q(q)) h += '<div class="qkbox"></div>';
       else if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
-      else h += '<form class="numrow"><label class="sr" for="cuin">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
-        '<input type="text" inputmode="numeric" autocomplete="off" id="cuin" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Save answer</button></form>';
+      else h += numForm(q, 'cuin', 'Save answer');
       h += '<p><button type="button" class="btn alt" id="cuskip">I\'m not sure yet</button></p></div></div>';
       app.innerHTML = h;
       function rec(given, ok) { res.push({ given: given, ok: ok }); k++; if (k === qs.length) stepUp(); if (k < qs.length) { show(); var f = $('.opt, input', app); if (f) f.focus(); } else report(); }
@@ -569,9 +670,9 @@
       });
       else $('form', app).addEventListener('submit', function (e) {
         e.preventDefault();
-        var v = parseNum($('#cuin', app).value);
+        var raw = $('#cuin', app).value, v = parseNum(raw);
         if (isNaN(v)) { $('#cuin', app).focus(); return; }
-        rec(shown(q, v), numOk(q, v));
+        rec(shown(q, v), numOk(q, v, raw));
       });
       $('#cuskip', app).addEventListener('click', function () { rec(null, false); });
     }
@@ -622,102 +723,18 @@
     show();
   }
 
-
-  /* ---------- "Your turn" checks and warm-up review ----------
-     A.yt(q) returns a placeholder for the lesson html. q is a question like a quiz question,
-     or {gen: function () {...}, label} to make a fresh question each time with an "Another one" button.
-     The pattern in every section: explanation, worked example, then the student does one. */
-  Atlas._yts = [];
-  Atlas.yt = function (q) { Atlas._yts.push(q); return '<div class="yt" data-yt="' + (Atlas._yts.length - 1) + '"></div>'; };
-  function one(box, q, done) {
-    Atlas._q = q; /* exposed for automated checks */
-    var tries = 0, over = false, uid = 'm' + Math.random().toString(36).slice(2, 8);
-    var h = '<p class="qtext">' + q.q + '</p>' + (q.fig ? '<div class="fig">' + q.fig + '</div>' : '');
-    if (q.type === 'mc') h += '<div class="opts">' + q.options.map(function (o, j) { return '<button type="button" class="opt" data-j="' + j + '">' + o + '</button>'; }).join('') + '</div>';
-    else h += '<form class="numrow"><label class="sr" for="' + uid + '">Your answer</label>' + (q.unit === '$' ? '<span class="unit">$</span>' : '') +
-      '<input type="text" inputmode="decimal" autocomplete="off" id="' + uid + '" placeholder="Type a number">' + unitHtml(q) + '<button class="btn" type="submit">Check</button></form>';
-    h += '<div class="fb" aria-live="polite"></div><div class="steps"></div>';
-    box.innerHTML = h;
-    var fb = $('.fb', box);
-    function result(ok) {
-      tries++;
-      if (!ok && tries === 1) { fb.className = 'fb bad'; fb.innerHTML = '<b>Not quite.</b> <span>' + (q.hint || 'Look back at the example and try again.') + '</span>'; return; }
-      over = true;
-      Atlas.$$('button.opt, input, form .btn', box).forEach(function (b) { b.disabled = true; });
-      if (q.type === 'mc') Atlas.$$('.opt', box)[q.answer].classList.add('yes');
-      fb.className = 'fb ' + (ok ? 'ok' : 'bad');
-      fb.innerHTML = '<b>' + (ok ? (tries === 1 ? 'Correct.' : 'Correct on the second try.') : 'The answer is ' + shown(q, q.answer) + '.') + '</b> <span>' + (q.explain || '') + '</span>';
-      if (!ok && q.steps && q.steps.length) $('.steps', box).innerHTML = '<p class="sth"><b>Step by step</b></p><ol>' + q.steps.map(function (x) { return '<li>' + x + '</li>'; }).join('') + '</ol>';
-      if (done) done(ok, tries);
-    }
-    if (q.type === 'mc') Atlas.$$('.opt', box).forEach(function (b) {
-      b.addEventListener('click', function () {
-        if (over) return;
-        var j = +b.getAttribute('data-j');
-        if (j === q.answer) { b.classList.add('yes'); result(true); } else { b.classList.add('no'); b.disabled = true; result(false); }
-      });
-    });
-    else $('form', box).addEventListener('submit', function (e) {
-      e.preventDefault();
-      if (over) return;
-      var v = parseNum($('input', box).value);
-      if (isNaN(v)) { fb.className = 'fb bad'; fb.textContent = 'Type a number first.'; return; }
-      result(numOk(q, v));
-    });
-  }
-  Atlas.one = one;
-  function wireYT(root) {
-    Atlas.$$('.yt[data-yt]', root).forEach(function (el) {
-      var spec = Atlas._yts[+el.getAttribute('data-yt')], n = 0;
-      el.innerHTML = '<span class="yth">Your turn</span><div class="ytq"></div><div class="ytn"></div>';
-      function go() {
-        var q = spec.gen ? spec.gen() : spec;
-        n++;
-        if (n === 1 || spec.gen) Atlas._q = q;
-        one($('.ytq', el), q, function () {
-          if (!spec.gen) return;
-          $('.ytn', el).innerHTML = '<button type="button" class="btn alt">Another one like this</button>';
-          $('.ytn .btn', el).addEventListener('click', function () { $('.ytn', el).innerHTML = ''; go(); var f = $('.ytq .opt, .ytq input', el); if (f) f.focus(); });
-        });
-      }
-      go();
-    });
-  }
-  /* warm-up: three quick questions from earlier chapters, so every session starts with review */
-  function warmup(box, idx) {
-    var pool = Atlas.allSkills().filter(function (p) { return Atlas.meta.indexOf(p.ch) < idx; });
-    if (!pool.length) { box.parentNode.removeChild(box); return; }
-    var picks = R.shuffle(pool).slice(0, 3), k = 0, right = 0;
-    box.innerHTML = '<h2>Warm-up</h2><p class="qintro">Three quick questions from earlier chapters. Review keeps skills strong.</p><div class="wuq"></div><div class="wun"></div>';
-    function go() {
-      var p = picks[k], st = skillState(p.sk.id), q = make(p.sk, Math.min(st.lv, 2));
-      $('.wuq', box).innerHTML = '<p class="plv"><span class="pill" data-strand="' + p.ch.strand + '">' + p.ch.title + '</span> Question ' + (k + 1) + ' of ' + picks.length + '</p><div class="wu1"></div>';
-      one($('.wu1', box), q, function (ok, tries) {
-        if (ok && tries === 1) right++;
-        k++;
-        $('.wun', box).innerHTML = k < picks.length ? '<button type="button" class="btn">Next warm-up question</button>' :
-          '<p class="lvmsg">Warm-up done: ' + right + ' of ' + picks.length + ' right first time.' + (right < picks.length ? ' <a href="#' + p.ch.id + '/practice/' + p.sk.id + '">Practise ' + p.sk.name + '</a> later.' : '') + '</p>';
-        var b = $('.wun .btn', box);
-        if (b) { b.addEventListener('click', function () { $('.wun', box).innerHTML = ''; go(); }); b.focus(); }
-      });
-    }
-    $('.wun', box).innerHTML = '<button type="button" class="btn">Start the warm-up</button> <button type="button" class="btn alt" id="wuskip">Skip</button>';
-    $('.wun .btn', box).addEventListener('click', function () { $('.wun', box).innerHTML = ''; go(); });
-    $('#wuskip', box).addEventListener('click', function () { box.innerHTML = '<p class="t2" style="margin:0">Warm-up skipped.</p>'; });
-  }
-
   function counts(ch) {
     return { s: ((ch.html || '').match(/<section/g) || []).length, q: ch.quiz ? ch.quiz.length : 0 };
   }
 
+  /* the grade's home page. S.home: hero (html, or a function that returns it), intro, start, contents, notes,
+     legend ('hero' or 'below') and card (function (m, i, stats) -> html) for a grade with its own chapter cards */
   function home(app) {
-    var h = '<div class="wrap"><div class="hero"><h1>Grade 4 Math, one step at a time</h1>' +
-      '<p class="lede">A free study site for Ontario Grade 4 math. Short lessons with lots of pictures, drawings you can change, practice that adjusts to you, and a check-up that shows what to work on next.</p>' +
-      '<div class="legend">';
-    Object.keys(Atlas.strands).forEach(function (k) {
-      h += '<span class="pill" data-strand="' + k + '">' + k + ' &middot; ' + Atlas.strands[k] + '</span>';
-    });
-    h += '</div></div>';
+    var H = S.home, hero = typeof H.hero === 'function' ? H.hero() : H.hero, below = H.legend === 'below';
+    var legend = Object.keys(Atlas.strands).map(function (k) {
+      return '<span class="pill" data-strand="' + k + '">' + (below ? '' : k + ' &middot; ') + Atlas.strands[k] + '</span>';
+    }).join('');
+    var h = '<div class="wrap"><div class="hero">' + hero + (below ? '' : '<div class="legend">' + legend + '</div>') + '</div>' + (H.intro || '');
     var plan = load('plan', []), hist = load('checkups', []);
     h += '<div class="start">';
     if (hist.length) {
@@ -726,22 +743,20 @@
         (plan.length ? '<p>Next up:</p><ul>' + plan.map(function (p) { return '<li><a href="#' + p.ch + '/practice/' + p.sk + '">' + p.name + '</a> <span class="t2">(' + p.t + ')</span></li>'; }).join('') + '</ul>' : '') +
         '<p><a href="#check-up">Take another check-up</a></p>';
     } else {
-      h += '<p><b>Not sure where to start?</b> Take the <a href="#check-up">check-up</a>. It takes about 20 minutes and builds a practice plan for you.</p>';
+      h += H.start;
     }
-    h += '</div><div class="cards">';
+    h += '</div>' + (below ? '<div class="legend">' + legend + '</div>' : '') + (H.contents || '') + '<div class="cards">';
     Atlas.meta.forEach(function (m, i) {
       var ch = Atlas.chapters[m.id];
       if (!ch) return;
       var c = counts(ch), best = parseInt(store('best:' + m.id) || '-1', 10), sec = 0, nsk = ch.practice ? ch.practice.length : 0;
       if (ch.practice) ch.practice.forEach(function (sk) { if (skillState(sk.id).secure) sec++; });
-      h += '<a class="card" data-strand="' + m.strand + '" href="#' + m.id + '">' +
+      var stats = m.ref ? '<span>one page</span>' : '<span>' + (ch.lessons ? ch.lessons.length + ' lessons, ' + ch.lessons.reduce(function (t, l) { return t + l.concepts.length; }, 0) + ' ideas' : c.s + ' parts') + (best >= 0 ? ' &middot; <span class="done">quiz ' + best + '/' + c.q + '</span>' : '') + (sec ? ' &middot; <span class="done">' + sec + '/' + nsk + ' secure</span>' : '') + '</span>';
+      h += H.card ? H.card(m, i, stats) : '<a class="card" data-strand="' + m.strand + '" href="#' + m.id + '">' +
         '<span class="no">' + (m.ref ? 'Ref' : i + 1) + '</span><h2>' + m.title + '</h2><p class="sub">' + m.sub + '</p><p class="desc">' + m.desc + '</p>' +
-        '<div class="meta"><span class="pill" data-strand="' + m.strand + '">' + m.strand + ' &middot; ' + Atlas.strands[m.strand] + '</span>' +
-        (m.ref ? '<span>one page</span>' : '<span>' + (ch.lessons ? ch.lessons.length + ' lessons, ' + ch.lessons.reduce(function (t, l) { return t + l.concepts.length; }, 0) + ' ideas' : c.s + ' parts') + (best >= 0 ? ' &middot; <span class="done">quiz ' + best + '/' + c.q + '</span>' : '') + (sec ? ' &middot; <span class="done">' + sec + '/' + nsk + ' secure</span>' : '') + '</span>') + '</div></a>';
+        '<div class="meta"><span class="pill" data-strand="' + m.strand + '">' + m.strand + ' &middot; ' + Atlas.strands[m.strand] + '</span>' + stats + '</div></a>';
     });
-    h += '</div><div class="note"><p><b>About this site.</b> It follows the five content strands (B to F) of the 2020 Ontario elementary math curriculum for Grade 4. ' +
-      'It is a study aid, not a copy of the curriculum. Teachers and parents should check details against the Ministry of Education document.</p>' +
-      '<p><b>Not covered:</b> strand A (social-emotional learning skills and math processes) is woven through, not taught as its own chapter. Mathematical modelling (C4) has no chapter of its own. Infographics (D1.4) are described, but students make them on paper, not on the site. Coding (C3) uses simple step lists, not a real coding app.</p>' +
+    h += '</div><div class="note">' + H.notes +
       '<p><b>Progress</b> is saved in this browser. With a <a href="../family.html">family account</a>, it is also kept for any device, and parents and tutors can follow along.</p></div></div>';
     app.innerHTML = h;
   }
@@ -749,14 +764,16 @@
   function chapter(app, id, sub) {
     var ch = Atlas.chapters[id], idx = 0;
     Atlas.meta.forEach(function (m, i) { if (m.id === id) idx = i; });
-    var m = Atlas.meta[idx], prev = Atlas.meta[idx - 1], next = Atlas.meta[idx + 1];
+    var m = Atlas.meta[idx], prev = null, next = null;
+    for (var pi = idx - 1; pi >= 0 && !prev; pi--) if (Atlas.chapters[Atlas.meta[pi].id]) prev = Atlas.meta[pi];
+    for (var ni = idx + 1; ni < Atlas.meta.length && !next; ni++) if (Atlas.chapters[Atlas.meta[ni].id]) next = Atlas.meta[ni];
     var h = '<div class="wrap chapter" data-strand="' + m.strand + '"><p class="crumb"><a href="#home">All chapters</a></p>' +
       '<header class="chead"><span class="num">' + (m.ref ? 'Reference' : 'Chapter ' + (idx + 1)) + '</span><h1>' + m.title + '</h1>' +
       '<p class="lede">' + m.sub.charAt(0).toUpperCase() + m.sub.slice(1) + '.</p>' +
       '<span class="pill">' + m.strand + ' &middot; ' + Atlas.strands[m.strand] + '</span>' + (m.codes ? ' <span class="codes">Ontario expectations ' + m.codes + '</span>' : '') + '</header>';
+    /* chapters built as lessons show one concept per screen (assets/lesson.js) */
     if (ch.lessons && Atlas.lessons) return Atlas.lessons.chapter(app, id, sub, { head: h.replace(/^<div class="wrap chapter"[^>]*><p class="crumb">.*?<\/p>/, ''), m: m, prev: prev, next: next });
     if (ch.practice || ch.quiz) h += '<nav class="jump" aria-label="In this chapter"><a href="#' + id + '/lesson">Lesson</a>' + (ch.practice ? '<a href="#' + id + '/practice">Practise</a>' : '') + (ch.quiz ? '<a href="#' + id + '/quiz">Chapter quiz</a>' : '') + '<a href="#check-up/' + id + '">Check-up</a></nav>';
-    if (idx > 0 && !m.ref) h += '<div class="warm" id="warmup"></div>';
     h += '<div id="lesson">' + ch.html + '</div>';
     if (ch.practice) h += '<div class="quiz prac" id="practice"></div>';
     if (ch.quiz) h += '<div class="quiz" id="quiz"></div>';
@@ -765,8 +782,6 @@
       (next ? '<a class="nx" href="#' + next.id + '"><small>Next</small>' + next.title + '</a>' : '') + '</div></div>';
     app.innerHTML = h;
     if (ch.init) ch.init(app);
-    wireYT(app);
-    if ($('#warmup', app)) warmup($('#warmup', app), idx);
     var parts = (sub || '').split('/');
     if (ch.practice) Atlas.practice($('#practice', app), id, ch.practice, parts[0] === 'practice' ? parts[1] : null);
     if (ch.quiz) Atlas.quiz($('#quiz', app), id, ch.quizFresh ? function () { return Atlas.freshQuiz(ch); } : ch.quiz);
@@ -794,11 +809,13 @@
     }
     if (target) target.scrollIntoView(); else window.scrollTo(0, 0);
     app.focus({ preventScroll: true });
+    if (S.afterRoute) S.afterRoute(app);
   }
 
   /* reading supports: theme and larger text, remembered in this browser */
   function prefs() {
-    var root = document.documentElement, th = store('theme') === 'dark' ? 'dark' : 'light', big = store('big') === '1';
+    /* light only: all grades share one calm look (Noel, 2026-10-31) */
+    var root = document.documentElement, th = 'light', big = store('big') === '1';
     function apply() {
       root.setAttribute('data-theme', th);
       root.classList.toggle('bigtext', big);
@@ -807,10 +824,7 @@
       if (bb) { bb.setAttribute('aria-pressed', String(big)); bb.textContent = big ? 'Text: larger' : 'Text: normal'; }
     }
     var tb = $('#themeb'), bb = $('#bigb'), ab = $('#adultb');
-    if (tb) tb.addEventListener('click', function () { th = th === 'light' ? 'dark' : 'light'; store('theme', th); apply(); });
-    if (bb) bb.addEventListener('click', function () { big = !big; store('big', big ? '1' : '0'); apply(); });
-    apply();
-    /* grown-up view: coaching notes (common mistakes) for a parent or tutor. Kept outside the g4atlas: keys so it is never copied to the student's account. */
+    /* grown-up view: coaching notes (common mistakes) for a parent or tutor. Kept outside the gNatlas: keys so it is never copied to the student's account. */
     function adult(on) {
       try { if (on === undefined) on = localStorage.getItem('atlas:adult') === '1'; else localStorage.setItem('atlas:adult', on ? '1' : '0'); } catch (e) { on = !!on; }
       root.classList.toggle('adult', on);
@@ -820,11 +834,14 @@
     Atlas.adult = adult;
     if (ab) ab.addEventListener('click', function () { adult(!root.classList.contains('adult')); });
     adult();
+    if (tb) tb.addEventListener('click', function () { th = th === 'light' ? 'dark' : 'light'; store('theme', th); apply(); });
+    if (bb) bb.addEventListener('click', function () { big = !big; store('big', big ? '1' : '0'); apply(); });
+    apply();
   }
 
-  /* keep the groups of a big number together on one line: 48 000 never breaks after 48 */
+  /* keep the groups of a big number together on one line: 48 000 never breaks after 48 (nor 0.333 333, with S.groupDecimals) */
   function glue(node) {
-    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), t, re = /(\d) (?=\d{3}(?!\d))/g;
+    var w = document.createTreeWalker(node, NodeFilter.SHOW_TEXT), t, re = S.groupDecimals ? /(\d) (?=\d)/g : /(\d) (?=\d{3}(?!\d))/g;
     while ((t = w.nextNode())) if (re.test(t.nodeValue)) { re.lastIndex = 0; t.nodeValue = t.nodeValue.replace(re, '$1\u00a0'); }
   }
   Atlas.start = function () {
