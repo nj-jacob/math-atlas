@@ -3,7 +3,8 @@
    It fails (exit code 1) if anything below finds a problem, and the publish step on GitHub will not run.
 
    1. Repository rules: every script parses; the shared engine has exactly one copy (assets/engine);
-      every grade page loads it; every Math Plan expectation has a short plain-language line (plan/blurbs.js).
+      every grade page loads it; every Math Plan expectation has a short plain-language line (plan/blurbs.js)
+      and belongs to exactly one concept family (plan/families.js).
    2. Questions: every practice skill at every level, every lesson "Your turn" check and every written quiz
       question is made many times and checked: the right shape for its type, no "undefined" or "NaN" on screen,
       and, for the newer question shapes, the answer worked out again by verify/*.js.
@@ -48,7 +49,7 @@ function repoRules() {
   }
   /* Math Plan: every expectation in ladder.js has exactly one short plain-language line in blurbs.js. */
   const sand = { window: {} };
-  for (const f of ['ladder.js', 'blurbs.js']) vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'plan', f), 'utf8'), sand);
+  for (const f of ['ladder.js', 'blurbs.js', 'families.js']) vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'plan', f), 'utf8'), sand);
   const ids = sand.window.PL.map(r => 'g' + r[0] + '.' + r[1]), blurbs = sand.window.PLB;
   for (const id of ids) {
     const b = blurbs[id];
@@ -56,6 +57,19 @@ function repoRules() {
     else if (b.length > 140) fail('plan/blurbs.js', id + ' is longer than 140 characters. Keep it short.');
   }
   for (const id of Object.keys(blurbs)) if (!ids.includes(id)) fail('plan/blurbs.js', id + ' is not an expectation in ladder.js');
+  /* Math Plan: every expectation belongs to exactly one concept family (families.js). */
+  const famOf = {}, famIds = new Set();
+  for (const f of sand.window.PF) {
+    if (famIds.has(f.id)) fail('plan/families.js', 'family id ' + f.id + ' is used twice');
+    famIds.add(f.id);
+    if (!f.name || !['num', 'ops', 'alg', 'data', 'space', 'money'].includes(f.area)) fail('plan/families.js', f.id + ' needs a name and one of the six areas');
+    for (const id of f.rows) {
+      if (!ids.includes(id)) fail('plan/families.js', id + ' (in ' + f.id + ') is not an expectation in ladder.js');
+      else if (famOf[id]) fail('plan/families.js', id + ' is in two families: ' + famOf[id] + ' and ' + f.id);
+      famOf[id] = f.id;
+    }
+  }
+  for (const id of ids) if (!famOf[id]) fail('plan/families.js', id + ' is not in any family. Add it to the family it belongs to.');
 }
 
 /* ---------- 2 to 4: in the browser ---------- */

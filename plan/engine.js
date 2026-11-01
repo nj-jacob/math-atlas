@@ -16,6 +16,13 @@
   E.rows = ROWS; E.row = function (id) { return BY_ID[id]; };
   E.rowsFor = function (g, a) { return ROWS.filter(function (r) { return r.g === g && r.area === a; }); };
 
+  /* Concept families (families.js): one idea across the grades. E.family(rowId) gives the family a row belongs to. */
+  var FAMS = window.PF, FAM_BY_ID = {}, FAM_OF = {};
+  FAMS.forEach(function (f) { FAM_BY_ID[f.id] = f; f.rows.forEach(function (id) { FAM_OF[id] = f; }); });
+  E.families = function (a) { return FAMS.filter(function (f) { return f.area === a; }); };
+  E.family = function (rowId) { return FAM_OF[rowId]; };
+  E.familyById = function (fid) { return FAM_BY_ID[fid]; };
+
   E.today = function (d) {
     d = d || new Date();
     return d.getFullYear() + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + ('0' + d.getDate()).slice(-2);

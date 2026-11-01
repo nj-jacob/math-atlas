@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-01
+- Math Plan concept map: a new "By idea" view. Every expectation now belongs to one of 41 idea families (for example Fractions, Rounding, Time, Budgets), shown one row per family with Grades 1 to 8 across. Tapping a family's name lists that idea in every grade, with a link to each lesson. Tapping a square also links to its family. The checks fail if an expectation is in no family or in two. A new rule in CLAUDE.md: when a lesson is improved, check the same idea in the other grades.
+
 ## 2026-10-31
 - One app: Math and Language are now one site, **Atlas**. The home page shows Math and Language side by side (for parents, each child's card shows both subjects). The Curriculum page has a Math / Language switch, and Language grades and chapters appear there as they are published. The parent page shows Language progress too. Language pages are published under /language/ from the language-atlas repository (one-time setup in SETUP.md).
 - Home page: the curriculum now has its own page under the "Curriculum" tab in the top bar, with each grade opening to its chapters. The home page shows only the plan (for parents and tutors: their children). Every "All grades" link goes to the Curriculum page. On a phone the top bar keeps both tabs.

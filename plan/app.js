@@ -476,7 +476,7 @@
     if (acct.mode === 'adult' && acct.saved) h += '<div class="note">' + esc(acct.saved) + '</div>';
     h += '<div class="card fade-in"><h2>Levels</h2>' + levels(st) + '</div>';
     h += '<div class="card fade-in"><h2>This week\'s focus</h2><p class="t2 small">Mastered means right on ' + E.MASTER_DAYS + ' different days. Each circle is one day.</p>' + weekList(st, false) + '</div>';
-    h += '<div class="card fade-in"><h2>Concept map</h2><p class="t2 small">Every Ontario expectation from Grade 1 to Grade 8, one square each. Touch a square to see what it means.</p>' + cmap(st) + '</div>';
+    h += '<div class="card fade-in"><h2>Concept map</h2><p class="t2 small">Every Ontario expectation from Grade 1 to Grade 8, one square each. Touch a square to see what it means' + (cmapView() === 'idea' ? ', or an idea\'s name to see it grade by grade' : '') + '.</p>' + cmap(st) + '</div>';
     var up = st.queue.filter(function (id) { return !st.week || st.week.items.indexOf(id) < 0; }).slice(0, 12);
     h += '<div class="card fade-in"><h2>Up next</h2>' + (up.length ? '<ul class="items">' + up.map(function (id) {
       var r = E.row(id), c = st.concepts[id];
@@ -496,27 +496,51 @@
     return '<div class="mapwrap"><table class="vt" style="margin:0"><thead><tr><th>Date</th><th>Kind</th>' + E.AREAS.map(function (a) { return '<th>' + E.AREA_NAME[a].split(' ')[0] + '</th>'; }).join('') + '</tr></thead><tbody>' +
       st.history.map(function (x) { return '<tr><td>' + x.d + '</td><td>' + (x.kind === 'recheck' ? 'Re-check' : 'Placement') + '</td>' + E.AREAS.map(function (a) { return '<td>' + (x.levels[a] || '–') + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table></div>';
   }
+  /* Concept map: "By strand" shows each area grade by grade; "By idea" shows one row per concept family (families.js). */
+  function cmapView() { return sessionStorage.getItem('mathplan-cmap') === 'idea' ? 'idea' : 'strand'; }
   function cmap(st) {
-    var C = st.concepts, skip = st.prefs.skip;
-    var h = '<div class="legend"><span><i class="dot mastered"></i>Mastered</span><span><i class="dot learning"></i>Learning now</span><span><i class="dot review"></i>Review</span><span><i class="dot todo"></i>In the plan</span><span><i class="dot placed"></i>Secure from placement</span><span><i class="dot"></i>Not in the plan yet</span></div>';
-    h += '<div class="cmap">';
-    E.AREAS.forEach(function (a) {
-      h += '<div class="carea"><h3>' + E.AREA_NAME[a] + '</h3><div class="cgr">';
-      for (var g = 1; g <= 8; g++) {
-        h += '<div class="cg"><span>Gr ' + g + '</span><div class="dots">' + E.rowsFor(g, a).map(function (r) {
-          var c = C[r.id], s = skip.indexOf(r.id) >= 0 ? 'skip' : c ? c.st : '';
-          return '<button type="button" class="dot ' + s + '" data-id="' + r.id + '" aria-label="' + esc(E.title(r)) + (s ? ': ' + s : '') + '"></button>';
-        }).join('') + '</div></div>';
-      }
-      h += '</div><div class="cpop" aria-live="polite"></div></div>';
-    });
-    return h + '</div>';
+    var view = cmapView();
+    var h = '<div class="vsw noprint" role="group" aria-label="Sort the concept map">' + [['strand', 'By strand'], ['idea', 'By idea']].map(function (v) {
+      return '<button type="button" data-view="' + v[0] + '" aria-pressed="' + (view === v[0]) + '">' + v[1] + '</button>';
+    }).join('') + '</div>';
+    h += '<div class="legend"><span><i class="dot mastered"></i>Mastered</span><span><i class="dot learning"></i>Learning now</span><span><i class="dot review"></i>Review</span><span><i class="dot todo"></i>In the plan</span><span><i class="dot placed"></i>Secure from placement</span><span><i class="dot"></i>Not in the plan yet</span></div>';
+    return h + '<div class="cmap">' + (view === 'idea' ? ideaMap(st) : strandMap(st)) + '</div>';
+  }
+  function cdot(st, r) {
+    var c = st.concepts[r.id], s = st.prefs.skip.indexOf(r.id) >= 0 ? 'skip' : c ? c.st : '';
+    return '<button type="button" class="dot ' + s + '" data-id="' + r.id + '" aria-label="' + esc(E.title(r)) + (s ? ': ' + s : '') + '"></button>';
+  }
+  function strandMap(st) {
+    return E.AREAS.map(function (a) {
+      var h = '<div class="carea"><h3>' + E.AREA_NAME[a] + '</h3><div class="cgr">';
+      for (var g = 1; g <= 8; g++) h += '<div class="cg"><span>Gr ' + g + '</span><div class="dots">' + E.rowsFor(g, a).map(function (r) { return cdot(st, r); }).join('') + '</div></div>';
+      return h + '</div><div class="cpop" aria-live="polite"></div></div>';
+    }).join('');
+  }
+  function ideaMap(st) {
+    var head = '<div class="frow fhead" aria-hidden="true"><span></span>' + [1, 2, 3, 4, 5, 6, 7, 8].map(function (g) { return '<span>Gr ' + g + '</span>'; }).join('') + '</div>';
+    return E.AREAS.map(function (a) {
+      return '<div class="cidea"><h3>' + E.AREA_NAME[a] + '</h3>' + head + E.families(a).map(function (f) {
+        var h = '<div class="cfam"><div class="frow"><button type="button" class="fname" data-fam="' + f.id + '" aria-expanded="false">' + esc(f.name) + '</button>';
+        for (var g = 1; g <= 8; g++) {
+          var rs = f.rows.filter(function (id) { return E.row(id).g === g; });
+          h += rs.length ? '<div class="fc"><div class="dots">' + rs.map(function (id) { return cdot(st, E.row(id)); }).join('') + '</div></div>' : '<div class="fc none" aria-hidden="true"></div>';
+        }
+        return h + '</div><div class="cpop" aria-live="polite"></div></div>';
+      }).join('') + '</div>';
+    }).join('');
   }
   function wirePlan(st) {
     var gu = document.getElementById('gu');
     if (gu) gu.addEventListener('click', function () { sessionStorage.setItem('mathplan-adult', grownUp() ? '0' : '1'); plan(load()); });
     [].forEach.call(app.querySelectorAll('.dot[data-id]'), function (d) {
       d.addEventListener('click', function () { conceptPop(st, d); });
+    });
+    [].forEach.call(app.querySelectorAll('.vsw [data-view]'), function (b) {
+      b.addEventListener('click', function () { sessionStorage.setItem('mathplan-cmap', b.getAttribute('data-view')); plan(load()); });
+    });
+    [].forEach.call(app.querySelectorAll('.fname'), function (b) {
+      b.addEventListener('click', function () { famPop(st, b.getAttribute('data-fam'), b.closest('.cfam').querySelector('.cpop'), b); });
     });
     wireActs(app, st);
     var rc = document.getElementById('rc2');
@@ -529,10 +553,9 @@
   }
   /* Concept map: tapping a square opens a short note just under that area's row; tapping it again closes it. */
   function conceptPop(st, d) {
-    var id = d.getAttribute('data-id'), r = E.row(id), c = st.concepts[id], pop = d.closest('.carea').querySelector('.cpop');
+    var id = d.getAttribute('data-id'), r = E.row(id), c = st.concepts[id], f = E.family(id), pop = d.closest('.carea, .cfam').querySelector('.cpop');
     var open = d.classList.contains('sel');
-    [].forEach.call(app.querySelectorAll('.cpop'), function (p) { p.innerHTML = ''; });
-    [].forEach.call(app.querySelectorAll('.dot.sel'), function (x) { x.classList.remove('sel'); });
+    closePops();
     if (open) return;
     d.classList.add('sel');
     pop.innerHTML = '<div class="pop"><p class="t2 small" style="margin:0">Grade ' + r.g + ' · ' + esc(r.topic.trim()) + ' · ' + r.code + '</p>' +
@@ -540,8 +563,31 @@
       '<p>' + (c ? chip(c) + (c.days.length ? ev(c) : '') : '<span class="chip">Not in the plan yet</span>') + '</p>' +
       '<details><summary>Ontario wording</summary><p class="small t2">' + esc(r.text.charAt(0).toUpperCase() + r.text.slice(1)) + '.</p></details>' +
       (r.ch.length ? '<p class="small"><a href="' + siteLink(r.g, r.ch[0]) + '">Open the Grade ' + r.g + ' lesson</a>' + (lessonState(id) ? ' · ' + lessonState(id) : '') + '</p>' : '') +
+      '<p class="small">Same idea in every grade: <button type="button" class="link" data-fam="' + f.id + '">' + esc(f.name) + '</button></p>' +
       (grownUp() && (!c || c.st !== 'mastered') ? '<p class="noprint"><button class="btn alt quiet sm" data-act="pin" data-id="' + id + '">Add to the top of the plan</button></p>' : '') + '</div>';
     wireActs(pop, st);
+    pop.querySelector('[data-fam]').addEventListener('click', function () { famPop(st, f.id, pop); });
+  }
+  function closePops() {
+    [].forEach.call(app.querySelectorAll('.cpop'), function (p) { p.innerHTML = ''; });
+    [].forEach.call(app.querySelectorAll('.dot.sel'), function (x) { x.classList.remove('sel'); });
+    [].forEach.call(app.querySelectorAll('.fname[aria-expanded="true"]'), function (x) { x.setAttribute('aria-expanded', 'false'); });
+  }
+  /* A concept family: the idea in every grade, with each lesson. For grown-ups it is also the list of
+     sibling lessons to check when one of them is improved. Tapping the family name again closes it. */
+  function famPop(st, fid, pop, btn) {
+    var f = E.familyById(fid), open = btn && btn.getAttribute('aria-expanded') === 'true';
+    closePops();
+    if (open) return;
+    if (btn) btn.setAttribute('aria-expanded', 'true');
+    var gs = f.rows.map(function (id) { return E.row(id).g; });
+    pop.innerHTML = '<div class="pop"><p class="t2 small" style="margin:0">' + esc(f.name) + ' · ' + (gs[gs.length - 1] > gs[0] ? 'Grades ' + gs[0] + ' to ' + gs[gs.length - 1] : 'Grade ' + gs[0]) + '</p>' +
+      '<p class="blurb">How this idea grows, grade by grade.</p><ul class="flist">' + f.rows.map(function (id) {
+        var r = E.row(id), c = st.concepts[id];
+        return '<li><b>Gr ' + r.g + '</b><span>' + esc(E.plain(r)) + (c ? ' ' + chip(c) : '') +
+          (r.ch.length ? ' <a href="' + siteLink(r.g, r.ch[0]) + '">Lesson</a>' : '') + '</span></li>';
+      }).join('') + '</ul>' +
+      (grownUp() ? '<p class="small t2" style="margin:0">When one of these lessons is improved, check the others too.</p>' : '') + '</div>';
   }
   function wireActs(root, st) {
     [].forEach.call(root.querySelectorAll('[data-act]'), function (b) {
