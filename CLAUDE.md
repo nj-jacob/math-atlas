@@ -24,6 +24,9 @@ See `docs/QUESTIONS.md`. Every new question shape:
 
 A shape without an answer check fails the checks on purpose.
 
+## Improving a lesson
+Every expectation belongs to one **concept family** in `plan/families.js` (for example Fractions, Grades 1 to 7). When you improve a lesson, a picture or a question shape, look up its family and check the same idea in the other grades. Carry the improvement to them where it fits, in the same pull request or a follow-up one, and say in the pull request which grades you checked. On the site, the concept map's "By idea" view shows the same list.
+
 ## House rules (Noel's)
 - One calm, premium look across all grades. Nothing gamified. No read-aloud.
 - "Common mistake" boxes show only in the grown-up view.
