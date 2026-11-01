@@ -10,7 +10,9 @@
       and, for the newer question shapes, the answer worked out again by verify/*.js.
    3. Pages: every chapter, lesson screen, practice page and quiz opens with no errors.
    4. Answering: on a phone-size screen, practice questions of every kind are answered the way a child would
-      (right, and sometimes wrong first), and must be marked correctly. Nothing may run off the side of the screen. */
+      (right, and sometimes wrong first), and must be marked correctly. Nothing may run off the side of the screen.
+   5. Parent pages: the Language placement check results (assets/langplace.js) are drawn for finished, older, unfinished
+      and missing checks, on a phone-size screen, with nothing missing or cut off. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { chromium } = require('playwright');
 const startServer = require('./server');
@@ -196,6 +198,70 @@ async function checkGrade(browser, base, g) {
   return { made: gen.made, answered, routes: routes.length, shapes: gen.shapes, types: gen.types };
 }
 
+/* ---------- 5. Language placement results on the parent pages ---------- */
+async function checkLangPlace(browser, base) {
+  const w = 'Language placement on the parent pages';
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, r => r.abort());
+  await page.goto(base + '/404.html', { waitUntil: 'domcontentloaded' });
+  const out = await page.evaluate(async () => {
+    const L = await import('/assets/langplace.js');
+    const levels = { words: 3, vocab: 4, sentences: 2, punct: 0, reading: 4, thinking: 3, writing: 5 };
+    const starts = Object.keys(levels).map(a => ({ a, g: Math.min(8, levels[a] + 1), ch: 'ch-' + a, t: 'Chapter & "' + a + '"', done: false }));
+    const done = { grade: 4, levels, last: { d: '2026-11-01', log: [] }, starts,
+      aloud: { d: '2026-11-01', g: 4, season: 0, norm: 94, wcpm: 71, acc: 93, reads: [] }, writing: { d: '2026-11-01', g: 4, text: 'x', lv: 2 } };
+    const older = { grade: 1, levels: { words: 1, vocab: 1, sentences: 1, punct: 1, reading: 1, thinking: 1, writing: 1 }, last: { d: '2026-10-30', log: [] },
+      aloud: { d: '2026-10-30', g: 1, season: 0, norm: null, wcpm: 20, acc: 97, reads: [] }, writing: { d: '2026-10-30', g: 1, text: 'x', lv: 0 } };
+    const going = { grade: 6, place: { log: [1, 2, 3, 4, 5] } };
+    const cases = { done, older, going, none: null };
+    const r = {};
+    for (const k in cases) {
+      const st = L.placeState(cases[k] ? { state: JSON.stringify(cases[k]) } : null);
+      document.body.innerHTML = '<div id="app"><div class="wrap">' + L.placeSection(st, 'Sam') + '</div></div>';
+      r[k] = { line: L.placeLine(st), text: document.body.textContent, links: [...document.querySelectorAll('a')].map(a => a.getAttribute('href')),
+        rows: document.querySelectorAll('tbody tr').length };
+    }
+    return r;
+  });
+  await page.evaluate(() => {
+    document.head.querySelectorAll('link[rel=stylesheet]').forEach(l => l.remove());
+    for (const f of ['site.css', 'family.css', 'atlas-theme.css']) { const l = document.createElement('link'); l.rel = 'stylesheet'; l.href = '/assets/' + f; document.head.appendChild(l); }
+  });
+  for (const [k, r] of Object.entries(out)) {
+    if (/undefined|NaN|null|\[object/.test(r.text + r.line)) fail(w, 'the ' + k + ' case shows "undefined", "NaN" or "null"');
+    for (const h of r.links) if (!/^language\/(placement\/|grade[1-8]\/(#[\w-]+)?)$/.test(h)) fail(w, 'the ' + k + ' case links to ' + h);
+  }
+  const d = out.done;
+  if (d.rows !== 7) fail(w, 'a finished check shows ' + d.rows + ' parts, not 7');
+  if (!d.links.includes('language/grade1/#ch-punct') || !d.links.includes('language/grade4/#writing')) fail(w, 'a finished check does not link to its starting lessons and writing lessons');
+  if (!/Chapter & "words"/.test(d.text)) fail(w, 'chapter names are not shown as written');
+  if (!/71 words correct per minute.*94, so regular fluency practice will help.*sounding out/.test(d.text)) fail(w, 'the reading-aloud result is not compared with the benchmark');
+  if (!/Marked Getting there for Grade 4 writing/.test(d.text)) fail(w, 'the writing mark is not shown');
+  if (d.line !== 'Language placement check (2026-11-01): secure up to early Grade 1 to Grade 5.') fail(w, 'the card line for a finished check reads: ' + d.line);
+  if (out.older.rows !== 7 || !out.older.links.includes('language/grade2/')) fail(w, 'a check from before starting lessons were kept does not link to the next grade');
+  if (!/no Grade 1 benchmark in the fall/.test(out.older.text) || !/not marked yet/.test(out.older.text)) fail(w, 'an older check does not explain the missing benchmark or the unmarked writing');
+  if (out.older.line !== 'Language placement check (2026-10-30): secure up to Grade 1.') fail(w, 'the card line for an older check reads: ' + out.older.line);
+  if (!/5 questions answered/.test(out.going.text + out.going.line)) fail(w, 'an unfinished check does not say how far it got');
+  if (!/has not taken it yet/.test(out.none.text) || out.none.line !== 'Language placement check: not taken yet.') fail(w, 'a missing check is not explained');
+  /* the finished case again, with the real styles, on a phone */
+  await page.evaluate(async () => {
+    const L = await import('/assets/langplace.js');
+    const levels = { words: 8, vocab: 8, sentences: 8, punct: 8, reading: 8, thinking: 8, writing: 8 };
+    const st = { grade: 8, levels, last: { d: '2026-11-01', log: [] }, starts: Object.keys(levels).map(a => ({ a, g: 8, ch: 'x', t: 'Drafting, Revising and Publishing', done: true })),
+      aloud: { d: '2026-11-01', g: 8, season: 2, norm: 151, wcpm: 160, acc: 99, reads: [] }, writing: { d: '2026-11-01', g: 8, text: 'x', lv: 4 } };
+    document.body.innerHTML = '<div id="app"><div class="wrap">' + L.placeSection(st, 'Sam') + '</div></div>';
+  });
+  await page.waitForTimeout(300);
+  const wide = await page.evaluate(() => document.documentElement.scrollWidth);
+  if (wide > 390) fail(w, 'the section is ' + wide + ' px wide on a 390 px phone screen');
+  errors.forEach(e => fail(w, 'page error: ' + e));
+  await ctx.close();
+  log('Language placement on the parent pages: ' + Object.keys(out).length + ' cases drawn.');
+}
+
 (async () => {
   const t0 = Date.now();
   repoRules();
@@ -209,6 +275,7 @@ async function checkGrade(browser, base, g) {
         'Types: ' + Object.entries(s.types).map(([k, v]) => k + ' ' + v).join(', ') + '. ' + (problems.length - before ? (problems.length - before) + ' problems.' : 'All good.'));
     } catch (e) { fail('grade ' + g, 'the check itself stopped: ' + e.message.split('\n')[0]); }
   }
+  try { await checkLangPlace(browser, url); } catch (e) { fail('Language placement on the parent pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   await browser.close(); srv.close();
   log('');
   if (problems.length) {

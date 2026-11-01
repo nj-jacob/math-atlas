@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-01
+- Parent pages: Language placement check results. Each child's card on the home page has a line for it, and Progress and notes shows the secure grade and starting lesson in each of the 7 parts, the reading-aloud result and the writing mark. Signing out now also clears the placement check from the device.
 - Math Plan concept map: a new "By idea" view. Every expectation now belongs to one of 41 idea families (for example Fractions, Rounding, Time, Budgets), shown one row per family with Grades 1 to 8 across. Tapping a family's name lists that idea in every grade, with a link to each lesson. Tapping a square also links to its family. The checks fail if an expectation is in no family or in two. A new rule in CLAUDE.md: when a lesson is improved, check the same idea in the other grades.
 - Pages always load fresh: web pages (like the Language list of ready grades) are no longer kept in the browser for up to an hour, so a newly published grade no longer shows "Coming soon".
 - Review notes for grown-ups: in grown-up view, every grade page has a **Note** button. A parent or tutor types a tweak and the note saves to their account with the exact screen and question. **My notes** on the parent page lists them (to do and done), with a button to copy them all to send to Claude. Students never see the button or the notes.
