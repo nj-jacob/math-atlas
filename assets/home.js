@@ -1,7 +1,7 @@
 /* Atlas top bar and home page, loaded by index.html and curriculum.html: the sign-in pop-over, the account menu,
    the Math plan and Language panels (home page only) and the "Your grade" tag on the curriculum list (curriculum page only).
    Both pages are plain HTML that works even if this file cannot load. */
-import { placeState, placeLine } from './langplace.js';
+import { placeState, placeLine, placeLink } from './langplace.js';
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -139,12 +139,41 @@ function localLangGrade() {
   try { for (let i = 0; i < localStorage.length; i++) { const m = /^lang-g(\d):/.exec(localStorage.key(i)); if (m) g = Math.max(g, +m[1]); } } catch (e) { /* storage blocked */ }
   return g;
 }
-function showLanguage(g) {
+/* the Language placement check saved in this browser, or null */
+const localPlace = () => { try { return parse(localStorage.getItem('lang-place:state'), null); } catch (e) { return null; } };
+const PLACE = 'language/placement/';
+/* the Language panel, in the same three steps as the Math one: start the check, finish it, then work in a grade.
+   g is the newest Language grade with progress (0 for none), st the placement state, who the signed-in student or null. */
+function showLanguage(g, st, who) {
   const b = $('#lang-body');
-  if (!b || !g) return;
-  $('#lang-h').textContent = 'Grade ' + g + ' Language';
-  b.innerHTML = '<p>Pick up where you left off, or choose another grade.</p>' +
-    '<div class="acts"><a class="hbtn" href="language/grade' + g + '/">Open Grade ' + g + ' Language</a><a class="hbtn ghost" href="curriculum.html#language">All grades</a></div>';
+  if (!b) return;
+  const pick = '<a class="hbtn ghost" href="curriculum.html#language">' + (g ? 'All grades' : 'Choose a grade') + '</a>';
+  if (st && st.levels) {
+    $('#lang-h').textContent = g ? 'Grade ' + g + ' Language' : (who ? 'Your' : 'The') + ' starting points';
+    b.innerHTML = '<p>' + (g ? 'Pick up where you left off, or look at the starting points again.' : 'The placement check found where to start in each part of language.') + '</p>' +
+      '<div class="acts">' + (g ? '<a class="hbtn" href="language/grade' + g + '/">Open Grade ' + g + ' Language</a>' : '') +
+      '<a class="hbtn' + (g ? ' ghost' : '') + '" href="' + PLACE + '#results">' + (who ? 'My' : 'See the') + ' starting points</a>' + pick + '</div>';
+    return;
+  }
+  if (st && st.place) {
+    const n = st.place.log ? st.place.log.length : 0, pc = Math.min(100, Math.round(n / 55 * 100));
+    $('#lang-h').textContent = 'Placement check in progress';
+    b.innerHTML = '<p>' + plural(n, 'question') + ' answered so far. It takes about 55, and it saves as you go.</p>' +
+      '<div class="bar" style="margin:14px 0 18px" role="img" aria-label="About ' + pc + '% done"><i style="width:' + pc + '%"></i></div>' +
+      '<div class="acts"><a class="hbtn" href="' + PLACE + '">Continue the check</a>' + pick + '</div>';
+    return;
+  }
+  if (g) {
+    $('#lang-h').textContent = 'Grade ' + g + ' Language';
+    b.innerHTML = '<p>Pick up where you left off, or take the placement check to find the right grade for each part.</p>' +
+      '<div class="acts"><a class="hbtn" href="language/grade' + g + '/">Open Grade ' + g + ' Language</a><a class="hbtn ghost" href="' + PLACE + '">Placement check</a>' + pick + '</div>';
+    return;
+  }
+  if (who) {
+    $('#lang-h').textContent = 'Find your starting point';
+    b.innerHTML = '<p>A short check finds the right place to start in each part of language. Then it shows your first lessons.</p>' +
+      '<div class="acts"><a class="hbtn" href="' + PLACE + '">Start the placement check</a>' + pick + '</div>';
+  }
 }
 function langLine(rows) {
   const r = rows[0];
@@ -186,9 +215,13 @@ async function showKids(F, me) {
     const seen = upd && upd.toDate ? ' Last plan activity ' + upd.toDate().toLocaleDateString('en-CA', { month: 'short', day: 'numeric' }) + '.' : '';
     return '<li class="kid"><div class="kh"><span class="av" aria-hidden="true">' + initial(k.name) + '</span><div><h3>' + esc(k.name) + '</h3>' +
       '<p class="ks">' + status + seen + '</p><p class="ks">' + esc(langLine(lang)) + '</p><p class="ks">' + esc(placeLine(place)) + '</p></div></div>' + chips +
-      '<div class="acts"><a class="hbtn sm" href="plan/?sid=' + encodeURIComponent(k.id) + '">' + (S.kind === 'plan' ? 'Open plan' : 'Go to Math Plan') + '</a>' +
+      '<div class="acts"><a class="hbtn sm" href="plan/?sid=' + encodeURIComponent(k.id) + '">Math Plan</a>' +
+      '<a class="hbtn sm" href="' + placeLink(k.id) + '">Language placement</a>' +
       '<a class="hbtn ghost sm" href="family.html#s/' + encodeURIComponent(k.id) + '">Progress and notes</a></div></li>';
   }).join('') + '</ul><div class="acts"><a class="hbtn ghost sm" href="family.html#add">Add a student</a></div>';
+  /* with one child, the menu's Language placement link opens that child's results */
+  const ml = $('#menu-lplace');
+  if (ml && kids.length === 1) ml.href = placeLink(kids[0].id);
 }
 
 async function kidsOf(F, me) {
@@ -309,8 +342,8 @@ function closeMenu() {
 function accountMenu(me) {
   const role = me.role === 'student' ? 'Student' : me.role === 'tutor' ? 'Tutor' : me.role === 'parent' ? 'Parent' : 'Account';
   let links = '';
-  if (me.role === 'student') links = '<a href="plan/">My plan</a><a href="family.html">My notes and suggestions</a>';
-  else if (me.role) links = '<a href="family.html">Students and progress</a><a href="family.html#add">Add a student</a><a href="plan/">Math Plan</a>';
+  if (me.role === 'student') links = '<a href="plan/">Math Plan</a><a href="' + PLACE + '">Language placement</a><a href="family.html">My notes and suggestions</a>';
+  else if (me.role) links = '<a href="family.html">Students and progress</a><a href="family.html#add">Add a student</a><a href="plan/">Math Plan</a><a href="family.html" id="menu-lplace">Language placement</a>';
   else links = '<a href="family.html">Finish setting up</a>';
   $('#acct').innerHTML = '<button type="button" class="who" id="who" aria-haspopup="true" aria-expanded="false" aria-controls="menu">' +
     '<span class="av" aria-hidden="true">' + initial(me.name || me.user.email) + '</span><span class="nm">' + esc(me.name || me.user.email) + '</span><span class="caret" aria-hidden="true"></span></button>' +
@@ -326,7 +359,7 @@ const localPlan = () => { try { return parse(localStorage.getItem('mathplan:stat
 const acct = $('#acct');
 async function start() {
   try { F = await import('./fb.js'); } catch (e) { F = null; }
-  if (!F || !F.configured) { F = null; wireSignin(); showPlan(localPlan(), null); showLanguage(localLangGrade()); return; }
+  if (!F || !F.configured) { F = null; wireSignin(); showPlan(localPlan(), null); showLanguage(localLangGrade(), localPlace(), null); return; }
   wireSignin();
   acct.classList.add('wait');
   const reveal = setTimeout(() => acct.classList.remove('wait'), 2500);
@@ -337,21 +370,22 @@ async function start() {
     clearTimeout(reveal); acct.classList.remove('wait');
     if (!first && !me) { location.reload(); return; }
     first = false;
-    if (!me) { showPlan(localPlan(), null); showLanguage(localLangGrade()); return; }
+    if (!me) { showPlan(localPlan(), null); showLanguage(localLangGrade(), localPlace(), null); return; }
     if (me.role) try { localStorage.setItem('atlas:adult', me.role === 'student' ? '0' : '1'); } catch (e) { /* storage blocked */ }
     accountMenu(me);
     greet(me);
     if (me.role === 'student') {
-      const [p, k] = await Promise.all([
+      const [p, k, lp] = await Promise.all([
         F.getDoc(F.doc(F.db, 'students', me.sid, 'progress', 'plan')).catch(() => null),
-        F.getDoc(F.doc(F.db, 'students', me.sid)).catch(() => null)
+        F.getDoc(F.doc(F.db, 'students', me.sid)).catch(() => null),
+        F.getDoc(F.doc(F.db, 'students', me.sid, 'progress', 'lplace')).catch(() => null)
       ]);
       const remote = p && p.exists() && p.data().data ? parse(p.data().data.state, null) : null;
       await showPlan(remote || localPlan(), me);
       const kid = k && k.exists() ? k.data() : null, sug = suggestions(kid);
       if (sug && body()) body().insertAdjacentHTML('beforeend', sug);
       const lang = await langProgress(F, me.sid);
-      showLanguage(lang.length ? lang[0].g : localLangGrade());
+      showLanguage(lang.length ? lang[0].g : localLangGrade(), placeState(lp && lp.exists() ? lp.data().data : null) || localPlace(), me);
     } else if (me.role) {
       $('#nav-plan').textContent = 'Plans';
       /* parents and tutors see only their children here; both subjects are in each child's card */

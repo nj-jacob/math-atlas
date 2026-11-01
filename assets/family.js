@@ -5,7 +5,7 @@ import {
   sendPasswordResetEmail, updateProfile, doc, collection, getDoc, getDocs, setDoc, updateDoc, addDoc, deleteDoc,
   query, where, orderBy, limit, serverTimestamp
 } from './fb.js';
-import { placeState, placeSection } from './langplace.js';
+import { placeState, placeSection, placeLink } from './langplace.js';
 
 const app = document.getElementById('app');
 const $ = (s, r) => (r || document).querySelector(s);
@@ -64,7 +64,7 @@ function route() {
   if (me.role === 'student') return studentHome();
   if (!me.role) return finishSignup();
   const h = location.hash;
-  if (h.indexOf('#s/') === 0) return studentDetail(decodeURIComponent(h.slice(3)));
+  if (h.indexOf('#s/') === 0) { const [sid, part] = h.slice(3).split('/'); return studentDetail(decodeURIComponent(sid), part); }
   if (h === '#add') return addStudent();
   if (h === '#notes') return myNotes();
   return adultHome();
@@ -177,6 +177,7 @@ async function studentHome() {
   let h = '<div class="wrap"><header class="chead"><span class="num">Student</span><h1>Hi, ' + esc(kid.name) + '</h1>' +
     '<p class="lede">Your practice saves to your account, so you can use any device.</p></header><div class="cards">';
   h += '<a class="card" data-strand="E" href="plan/" data-site="plan"><h2>Math Plan</h2><p class="desc">Placement check and learning plan.</p></a>' +
+    '<a class="card" data-strand="C" href="language/placement/"><h2>Language placement</h2><p class="desc">Find where to start in each part of language.</p></a>' +
     '<a class="card" data-strand="B" href="curriculum.html"><h2>Math</h2><p class="desc">Every grade: lessons, practice and check-ups.</p></a>' +
     '<a class="card" data-strand="C" href="curriculum.html#language"><h2>Language</h2><p class="desc">Reading, writing, words and talking.</p></a>';
   h += '</div>';
@@ -510,7 +511,8 @@ function activityChart(days, site) {
   return '<h3>Questions answered per day, last 2 weeks</h3><div class="chart"><svg viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Questions answered per day for the last 14 days, in practice, quizzes and check-ups">' + g + '</svg></div>' + table;
 }
 
-async function studentDetail(sid) {
+/* part 'lplace' scrolls to the Language placement section */
+async function studentDetail(sid, part) {
   if (!quiet) app.innerHTML = '<div class="wrap"><p class="t2">Loading…</p></div>';
   const snap = await getDoc(doc(db, 'students', sid)).catch(() => null);
   if (!snap || !snap.exists()) {
@@ -529,6 +531,7 @@ async function studentDetail(sid) {
     '<p class="lede">Username <b>' + esc(kid.username) + '</b> &middot; last active ' + when(lastActive(prog)) + '</p>' +
     '<p><a class="btn" href="live.html?sid=' + encodeURIComponent(sid) + '">Work together</a> <span class="t2 small">See ' + esc(kid.name) + '\'s screen and click on it, after they tap Allow.</span></p>' +
     '<p><a class="btn alt" href="plan/?sid=' + encodeURIComponent(sid) + '#plan">Math Plan</a> <span class="t2 small">' + esc(kid.name) + '\'s placement check, learning plan and weekly check-in.</span></p>' +
+    '<p><a class="btn alt" href="' + placeLink(sid) + '">Language placement</a> <span class="t2 small">' + esc(kid.name) + '\'s starting points, reading aloud and writing sample.</span></p>' +
     '<p class="t2 small">Updates by itself every minute. Last updated ' + new Date().toLocaleTimeString('en-CA', { hour: 'numeric', minute: '2-digit' }) +
     '. <button type="button" class="btn alt sm" id="refresh">Refresh now</button></p></header>';
 
@@ -615,6 +618,7 @@ async function studentDetail(sid) {
       '<h3>Remove student</h3><p><button type="button" class="btn alt" id="del-kid">Remove ' + esc(kid.name) + ' from this list</button></p><p class="fb" id="del-fb"></p></section>';
   }
   app.innerHTML = h + '</div>';
+  if (part === 'lplace' && !quiet) $('#lplace').scrollIntoView();
 
   $('#refresh').addEventListener('click', () => refreshQuietly(true));
   const ref = doc(db, 'students', sid);
