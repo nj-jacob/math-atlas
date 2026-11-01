@@ -670,7 +670,7 @@
   }
 
   function counts(ch) {
-    return { s: (ch.html.match(/<section/g) || []).length, q: ch.quiz ? ch.quiz.length : 0 };
+    return { s: ((ch.html || '').match(/<section/g) || []).length, q: ch.quiz ? ch.quiz.length : 0 };
   }
 
   function home(app) {

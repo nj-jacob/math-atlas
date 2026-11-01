@@ -227,8 +227,9 @@ async function checkGrade(browser, base, g) {
         if (!box._q) break;
         await window.__answer(box._q, box.querySelector('.wu-ans'), box._qk, false);
         if (!/\bok\b/.test(box.querySelector('.fb').className)) return 'a right warm-up answer was marked wrong';
+        box._q = null;
         box.querySelector('.ytn .btn').click();
-        box._q = null; await new Promise(r => setTimeout(r, 20));
+        await new Promise(r => setTimeout(r, 20));
       }
       return /Warm-up done/.test(box.textContent) ? '' : 'warm-up did not finish';
     }, cid);
