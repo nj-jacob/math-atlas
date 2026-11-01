@@ -1100,6 +1100,8 @@
   const mnDrawn = svg => { const d = document.createElement('div'); d.innerHTML = svg || ''; return [...d.querySelectorAll('g.coin')].reduce((a, g) => a + +g.getAttribute('class').match(/c(\d+)/)[1], 0); };
   /* a cash total: the nearest 5 cents */
   const mnCash = c => Math.round(c / 5) * 5;
+  /* reads a written amount as cents: "97¢" is 97, "$1" or "$1.25" is 100 or 125 */
+  const mnVal = t => /\$/.test(t) ? Math.round(H.num(t) * 100) : H.num(t);
   const mnSum = l => l.reduce((a, b) => a + b, 0);
   /* the fewest coins or bills: try every mix of the two biggest, the smallest fills the rest */
   const mnFewest = (c, d) => { let best = Infinity; for (let i = 0; i * d[0] <= c; i++) for (let j = 0; i * d[0] + j * d[1] <= c; j++) { const r = c - i * d[0] - j * d[1]; if (r % d[2] === 0) best = Math.min(best, i + j + r / d[2]); } return best; };
@@ -1110,15 +1112,15 @@
   set('g3mn-ct-pic', (q, m) => mnDrawn(q.fig) / (m.dol ? 100 : 1) === q.answer ? '' : 'total');
   set('g3mn-ct-times', (q, m) => H.strip(q.q).includes(String(m.n)) && m.n * m.c / (m.c >= 100 ? 100 : 1) === q.answer ? '' : 'times');
   set('g3mn-ct-words', q => mnCents(q.q) === q.answer ? '' : 'total');
-  set('g3mn-ct-tap', (q, m) => { const hit = q.tiles.map((t, j) => mnDrawn(t) === m.t ? j : -1).filter(j => j >= 0); return H.num(bold(q)) === m.t && hit.length === 1 && hit[0] === q.answer ? '' : 'coins'; });
-  set('g3mn-ct-tf', (q, m) => H.num(bold(q)) === m.said && (mnDrawn(q.fig) === m.said) === q.answer ? '' : 'truth');
+  set('g3mn-ct-tap', (q, m) => { const hit = q.tiles.map((t, j) => mnDrawn(t) === m.t ? j : -1).filter(j => j >= 0); return mnVal(bold(q)) === m.t && hit.length === 1 && hit[0] === q.answer ? '' : 'coins'; });
+  set('g3mn-ct-tf', (q, m) => mnVal(bold(q)) === m.said && (mnDrawn(q.fig) === m.said) === q.answer ? '' : 'truth');
   set('g3mn-ct-match', q => q.pairs.every(p => mnCents(p[0]) === mnFirst(p[1])) ? '' : 'pairs');
   set('g3mn-ct-sum', q => ev(H.strip(q.q).replace(/=.*$/, '')) === q.answer ? '' : 'sum');
   set('g3mn-rd-num', (q, m) => mnCash(m.t) === q.answer ? '' : 'cash');
   set('g3mn-rd-card', (q, m) => q.answers[0] === m.a + m.b && q.answers[1] === mnCash(m.a + m.b) ? '' : 'card and cash');
   set('g3mn-rd-up', (q, m) => { const c = mnCash(m.t), o = mnChoice(q); return (c > m.t ? /^Up/.test(o) : /^Down/.test(o)) && mnAmt(o) === c ? '' : 'up or down'; });
   set('g3mn-rd-line', (q, m) => q.answer === mnCash(m.t) ? '' : 'cash');
-  set('g3mn-rd-tf', (q, m) => H.num(bold(q)) === m.said && (mnCash(m.t) === m.said) === q.answer ? '' : 'truth');
+  set('g3mn-rd-tf', (q, m) => mnVal(bold(q)) === m.said && (mnCash(m.t) === m.said) === q.answer ? '' : 'truth');
   set('g3mn-rd-sum', (q, m) => q.answer === mnCash(m.a + m.b) ? '' : 'cash');
   set('g3mn-rd-pick', (q, m) => same(q.options.map((o, j) => mnCash(mnFirst(o)) === m.c ? j : -1).filter(j => j >= 0), q.answer) ? '' : 'picks');
   set('g3mn-rd-change', (q, m) => q.answer === 100 - mnCash(m.a + m.b) ? '' : 'change');
