@@ -63,9 +63,16 @@ function focusList(S, by) {
   }).join('') + '</ul>';
 }
 
+/* a student's first view of a subject panel: the same words for Math and Language */
+function startText(subject) {
+  return '<p class="msg first"><b>A short check comes first.</b>It finds the right grade for each part of ' + subject + '. Then ' +
+    (subject === 'math' ? 'you get a plan with a few ideas each week.' : 'it shows your first lessons.') + '</p>';
+}
+
 /* ---------- My plan panel ---------- */
 const body = () => $('#plan-body');
 function setHead(kicker, title) { $('#plan .kicker').textContent = kicker; $('#plan-h').textContent = title; }
+function langHead(title) { $('#lang .kicker').textContent = 'Language'; $('#lang-h').textContent = title; }
 
 async function showPlan(st, who) {
   const S = summary(st);
@@ -73,12 +80,7 @@ async function showPlan(st, who) {
   if (!body()) return;
   if (S.kind === 'none') {
     if (who && who.role === 'student') {
-      setHead('Math', 'Find your starting point');
-      body().innerHTML = '<p>A short check finds the right place to start in each part of math. Then you get a plan with a few ideas each week.</p>' +
-        '<ol class="steps"><li><b>Placement check</b><span>About 30 questions. It gets easier or harder as you go. Take your time.</span></li>' +
-        '<li><b>Weekly plan</b><span>Four ideas at a time, each with its lesson.</span></li>' +
-        '<li><b>Check-ins</b><span>Ten questions each week to see what is solid.</span></li></ol>' +
-        '<p><a class="hbtn" href="plan/">Start the placement check</a></p>';
+      body().innerHTML = startText('math') + '<div class="acts"><a class="hbtn" href="plan/">Start the placement check</a><a class="hbtn ghost" href="curriculum.html">Choose a grade</a></div>';
     }
     return;
   }
@@ -149,7 +151,7 @@ function showLanguage(g, st, who) {
   if (!b) return;
   const pick = '<a class="hbtn ghost" href="curriculum.html#language">' + (g ? 'All grades' : 'Choose a grade') + '</a>';
   if (st && st.levels) {
-    $('#lang-h').textContent = g ? 'Grade ' + g + ' Language' : (who ? 'Your' : 'The') + ' starting points';
+    langHead(g ? 'Grade ' + g + ' Language' : (who ? 'Your' : 'The') + ' starting points');
     b.innerHTML = '<p>' + (g ? 'Pick up where you left off, or look at the starting points again.' : 'The placement check found where to start in each part of language.') + '</p>' +
       '<div class="acts">' + (g ? '<a class="hbtn" href="language/grade' + g + '/">Open Grade ' + g + ' Language</a>' : '') +
       '<a class="hbtn' + (g ? ' ghost' : '') + '" href="' + PLACE + '#results">' + (who ? 'My' : 'See the') + ' starting points</a>' + pick + '</div>';
@@ -157,22 +159,20 @@ function showLanguage(g, st, who) {
   }
   if (st && st.place) {
     const n = st.place.log ? st.place.log.length : 0, pc = Math.min(100, Math.round(n / 55 * 100));
-    $('#lang-h').textContent = 'Placement check in progress';
+    langHead('Placement check in progress');
     b.innerHTML = '<p>' + plural(n, 'question') + ' answered so far. It takes about 55, and it saves as you go.</p>' +
       '<div class="bar" style="margin:14px 0 18px" role="img" aria-label="About ' + pc + '% done"><i style="width:' + pc + '%"></i></div>' +
       '<div class="acts"><a class="hbtn" href="' + PLACE + '">Continue the check</a>' + pick + '</div>';
     return;
   }
   if (g) {
-    $('#lang-h').textContent = 'Grade ' + g + ' Language';
+    langHead('Grade ' + g + ' Language');
     b.innerHTML = '<p>Pick up where you left off, or take the placement check to find the right grade for each part.</p>' +
       '<div class="acts"><a class="hbtn" href="language/grade' + g + '/">Open Grade ' + g + ' Language</a><a class="hbtn ghost" href="' + PLACE + '">Placement check</a>' + pick + '</div>';
     return;
   }
   if (who) {
-    $('#lang-h').textContent = 'Find your starting point';
-    b.innerHTML = '<p>A short check finds the right place to start in each part of language. Then it shows your first lessons.</p>' +
-      '<div class="acts"><a class="hbtn" href="' + PLACE + '">Start the placement check</a>' + pick + '</div>';
+    b.innerHTML = startText('language') + '<div class="acts"><a class="hbtn" href="' + PLACE + '">Start the placement check</a>' + pick + '</div>';
   }
 }
 function langLine(rows) {
