@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-01
+- Pages always load fresh: web pages (like the Language list of ready grades) are no longer kept in the browser for up to an hour, so a newly published grade no longer shows "Coming soon".
 - Review notes for grown-ups: in grown-up view, every grade page has a **Note** button. A parent or tutor types a tweak and the note saves to their account with the exact screen and question. **My notes** on the parent page lists them (to do and done), with a button to copy them all to send to Claude. Students never see the button or the notes.
 
 ## 2026-10-31

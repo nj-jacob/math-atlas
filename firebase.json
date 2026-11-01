@@ -4,7 +4,7 @@
     "ignore": ["firebase.json", "firestore.rules", "firestore.indexes.json", "**/*.md", "tests/**", "docs/**", "language/tests/**", "language/docs/**", "language/firebase.json", "**/.*", "**/node_modules/**", "**/*.log"],
     "cleanUrls": false,
     "headers": [
-      { "source": "**/*.@(js|css)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
+      { "source": "**/*.@(js|css|html)", "headers": [{ "key": "Cache-Control", "value": "no-cache" }] }
     ]
   },
   "firestore": { "rules": "firestore.rules", "indexes": "firestore.indexes.json" },

@@ -62,7 +62,8 @@ function loadLanguage() {
   if (loading) return loading;
   const box = $('#lang-grades');
   loading = (async () => {
-    const res = await fetch(LANG).catch(() => null);
+    /* ask the server every time, so a newly published grade shows at once */
+    const res = await fetch(LANG, { cache: 'no-cache' }).catch(() => null);
     if (!res || !res.ok) { box.innerHTML = '<p class="loading">Language is not on this copy of the site yet.</p>'; return; }
     const home = await res.text(), ready = new Set(Array.from(home.matchAll(/href="grade(\d)\/"/g), (m) => +m[1]));
     let h = '';
