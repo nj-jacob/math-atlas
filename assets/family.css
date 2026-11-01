@@ -88,3 +88,32 @@ ul.clist li.lh{font-weight:700;margin-top:8px}
 
 /* students do not get the grown-up view switch; parents and tutors have it on */
 html.kidview #adultb{display:none}
+
+/* Review notes (review.js): the grown-up "Note" button on grade pages, its sheet, and "My notes" on the family page */
+.rv-btn{display:none}
+html.adult:not(.kidview) .rv-btn{display:inline-flex;align-items:center;gap:6px;position:fixed;right:14px;bottom:calc(14px + env(safe-area-inset-bottom));z-index:55;
+  font:700 .9rem/1 var(--body);color:var(--ink);background:var(--card);border:1.5px solid var(--at-line2,var(--line));border-radius:99px;
+  padding:0 16px;min-height:44px;box-shadow:var(--at-shadow,0 4px 14px rgba(0,0,0,.12));cursor:pointer}
+html.adult:not(.kidview) .rv-btn:hover{border-color:var(--accent);color:var(--accent)}
+html.adult:not(.kidview) body{padding-bottom:72px}
+.rv-sheet{width:min(560px,calc(100% - 24px));border:1px solid var(--line);border-radius:16px;padding:18px 18px 8px;background:var(--card);color:var(--ink);
+  box-shadow:0 20px 50px rgba(19,32,57,.22)}
+.rv-sheet::backdrop{background:rgba(19,32,57,.35)}
+.rv-sheet h2{margin:0 0 6px;font-size:1.2rem}
+.rv-where{margin:0 0 10px;font-size:.88rem;color:var(--ink2)}
+.rv-where span{color:var(--ink)}
+.rv-sheet textarea{display:block;width:100%;box-sizing:border-box;font:inherit;padding:10px 12px;border:1.5px solid var(--line);border-radius:10px;background:var(--paper);color:var(--ink);min-height:110px;resize:vertical}
+.rv-sheet textarea:focus{border-color:var(--accent)}
+.rv-act{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0 6px}
+.rv-sheet .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.rv-toast{position:fixed;left:50%;width:max-content;bottom:calc(70px + env(safe-area-inset-bottom));transform:translateX(-50%);z-index:60;margin:0;max-width:calc(100% - 32px);
+  background:var(--ink);color:var(--card);border-radius:10px;padding:10px 14px;font-size:.92rem;box-shadow:0 8px 24px rgba(0,0,0,.2)}
+ul.rvlist{list-style:none;padding:0;margin:8px 0}
+ul.rvlist li{border-top:1px solid var(--line);padding:12px 0}
+ul.rvlist li:first-child{border-top:0}
+ul.rvlist .rv-text{margin:0 0 4px;font-weight:700;color:var(--ink)}
+ul.rvlist .rv-where{margin:0 0 6px}
+ul.rvlist li.done .rv-text{font-weight:400;color:var(--ink2);text-decoration:line-through}
+ul.rvlist .rv-act{margin:6px 0 0}
+.rv-tabs{display:flex;gap:6px;margin:8px 0}
+@media print{.rv-btn,.rv-toast{display:none!important}}
