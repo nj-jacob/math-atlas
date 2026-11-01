@@ -1,7 +1,8 @@
 /* The Language placement check on the parent pages: a child's starting points in each part of Language, their reading
    aloud and their writing sample. The check itself is in the language-atlas repository (placement/), served at
    language/placement/. Inside Atlas it saves its state to students/{id}/progress/lplace (data.state), and this file only
-   reads that state: placeLine() for the child's card on the home page, placeSection() for the Progress and notes page.
+   reads that state: placeLine() for the child's card on the home page, placeSection() for the Progress and notes page,
+   and placeLink() for the grown-up's links to that section.
    The part names and writing levels below are the ones placement.js and writing.js use. */
 const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const AREAS = [
@@ -17,6 +18,9 @@ const gname = (l) => (l ? 'Grade ' + l : 'early Grade 1');
 export function placeState(data) {
   try { return data && data.state ? JSON.parse(data.state) : null; } catch (e) { return null; }
 }
+
+/* the child's results on the Progress and notes page; the child takes the check on their own sign-in */
+export const placeLink = (sid) => 'family.html#s/' + encodeURIComponent(sid) + '/lplace';
 
 /* one line for the child's card */
 export function placeLine(st) {
@@ -46,11 +50,10 @@ function writingText(w) {
 
 /* the section on the Progress and notes page; name is the child's name */
 export function placeSection(st, name) {
-  let h = '<section class="sec" data-strand="C"><h2>Language placement check</h2>';
+  let h = '<section class="sec" data-strand="C" id="lplace"><h2>Language placement check</h2>';
   if (!st || !st.levels) {
-    h += '<p>' + (st && st.place ? 'In progress: ' + st.place.log.length + ' questions answered so far.'
-      : esc(name) + ' has not taken it yet. It finds a starting point in each part of Language, Grades 1 to 8.') +
-      ' <a href="language/placement/">Language placement check</a></p>';
+    h += '<p>' + (st && st.place ? 'In progress: ' + st.place.log.length + ' questions answered so far. ' + esc(name) + ' carries on from the Language panel on the home page, on their own sign-in.'
+      : esc(name) + ' has not taken it yet. It finds a starting point in each part of Language, Grades 1 to 8. On their own sign-in, they press <b>Start the placement check</b> in the Language panel on the home page.') + '</p>';
     return h + '</section>';
   }
   const starts = {};
