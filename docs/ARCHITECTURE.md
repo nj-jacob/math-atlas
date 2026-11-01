@@ -18,6 +18,7 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | `assets/icon.svg` | The site icon shown in browser tabs and bookmarks. Every page links to it. |
 | `assets/load-note.js` | On the family and "Work together" pages: if sign-in cannot load, shows a short note instead of a blank page |
 | `assets/fb.js`, `sync.js`, `family.js`, `live.js` | Sign-in and saving progress (Firebase) |
+| `assets/review.js` | Review notes: the grown-up "Note" button on grade pages (see "Review notes" below) |
 | `tests/` | Automatic checks (see `CHECKS.md`) |
 | `.github/workflows/` | `checks.yml` runs the checks on pull requests. `deploy.yml` runs them again, then publishes `main`. |
 
@@ -58,6 +59,15 @@ Atlas.register('numbers-1000', {
 ## Saved progress
 
 Progress is kept in the browser (`localStorage`, prefix `gNatlas:`). When a child is signed in, `assets/sync.js` copies it to Firebase so parents and tutors see it.
+
+## Review notes
+
+A way for Noel (or any parent or tutor) to leave tweaks while looking through the lessons, instead of one message at a time.
+- `assets/sync.js` loads `assets/review.js` on every page that loads sync.js, for a signed-in parent or tutor, or when nobody is signed in (the note then asks them to sign in). Never for a student.
+- The **Note** button shows only in grown-up view (`html.adult`). It opens a small sheet that says which screen the note is about: grade, lesson, idea, card (for example "Your turn card") and the question in view, plus the page address.
+- Notes are saved to `users/{uid}/reviews/{id}` with `text`, `where`, `q`, `url`, `site`, `at`, `done`. `firestore.rules` lets only that parent or tutor read, change or delete them; students cannot write any.
+- `family.js` shows **My notes** on the parent and tutor page (`family.html#notes`): To do and Done lists, Open screen, Mark done, Delete, and **Copy notes to send**, which copies the to-do list as plain text to paste to Claude.
+- Language pages get the same button once they load `assets/sync.js` (the same file, from this repository).
 
 ## One app, two repositories
 

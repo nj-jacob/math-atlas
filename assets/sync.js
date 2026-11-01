@@ -2,7 +2,7 @@
    The grade site keeps working on its own. This file only watches what it saves in the browser
    (localStorage) and copies it to Firebase, and brings it back on another device. */
 import {
-  configured, auth, db, onAuthStateChanged, whoAmI, signOutAll, clearDeviceProgress, esc, today,
+  configured, auth, db, onAuthStateChanged, whoAmI, signOutAll, clearDeviceProgress, esc, today, SITES,
   doc, collection, getDoc, getDocs, setDoc, query, orderBy, limit, serverTimestamp, increment, arrayUnion
 } from './fb.js';
 
@@ -281,6 +281,13 @@ function grownUpView(who) {
   document.documentElement.classList.toggle('kidview', !on);
 }
 
+/* Review notes: the grown-up "Note" button (review.js). Never for a student. */
+function reviewNotes(who) {
+  if (who && who.role !== 'parent' && who.role !== 'tutor') return;
+  import('./review.js').then((R) => R.startReview(who, SITE, SITES[SITE] ? SITES[SITE].name : document.title))
+    .catch((e) => console.warn('Atlas: notes are off', e));
+}
+
 function rerender() { window.dispatchEvent(new HashChangeEvent('hashchange')); }
 
 if (configured) {
@@ -308,6 +315,7 @@ if (configured) {
         }
       }
       drawBar();
+      reviewNotes(me);
     } catch (e) {
       console.warn('Math Atlas: sign-in check failed', e);
       drawBar();
