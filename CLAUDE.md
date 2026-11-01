@@ -11,8 +11,8 @@ Read this before changing anything. The owner, Noel, is not a developer, so thes
 
 ## Where things live
 See `docs/ARCHITECTURE.md`. In short:
-- `assets/engine/` holds the **one shared copy** of the lesson engine (`lesson.js`), the toolbox (`manip.js/css`) and the answer types (`qkit.js/css`). Never copy these into a grade folder. A check fails if you do.
-- `gradeN/assets/site.js` is that grade's own app: chapter list, practice, quiz and check-up.
+- `assets/engine/` holds the **one shared copy** of the grade app (`site.js`: home page, practice, quiz, check-up, progress), the lesson engine (`lesson.js`), the toolbox (`manip.js/css`) and the answer types (`qkit.js/css`). Never copy these into a grade folder. A check fails if you do.
+- `gradeN/assets/grade.js` holds that grade's settings (chapter list, home page words, options such as Grade 1's number pad) and its own drawing helpers. No app logic goes there.
 - `gradeN/chapters/*.js` holds one chapter each: lessons, written quiz, practice skills, and question shapes.
 - `assets/atlas-theme.css` is the one look for every grade. Don't add colours or fonts in a grade.
 

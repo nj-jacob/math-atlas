@@ -11,7 +11,9 @@
    3. Pages: every chapter, lesson screen, practice page and quiz opens with no errors.
    4. Answering: on a phone-size screen, practice questions of every kind are answered the way a child would
       (right, and sometimes wrong first), and must be marked correctly. Nothing may run off the side of the screen.
-   5. Parent pages: the Language placement check results (assets/langplace.js) are drawn for finished, older, unfinished
+   5. Saved progress: progress saved before a change (gNatlas: keys) still loads: levels, secure skills, quiz bests,
+      check-ups and the plan show, and practice keeps saving under the same keys in the same shape.
+   6. Parent pages: the Language placement check results (assets/langplace.js) are drawn for finished, older, unfinished
       and missing checks, on a phone-size screen, with nothing missing or cut off. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { chromium } = require('playwright');
@@ -41,11 +43,11 @@ function repoRules() {
     try { new vm.Script(src, { filename: f }); } catch (e) { fail(path.relative(ROOT, f), 'does not parse: ' + e.message); }
   }
   for (let g = 1; g <= 8; g++) {
-    for (const dup of ['lesson.js', 'manip.js', 'manip.css', 'qkit.js', 'qkit.css']) {
+    for (const dup of ['site.js', 'lesson.js', 'manip.js', 'manip.css', 'qkit.js', 'qkit.css']) {
       if (fs.existsSync(path.join(ROOT, 'grade' + g, 'assets', dup))) fail('grade' + g, 'has its own copy of ' + dup + '. The one shared copy lives in assets/engine/.');
     }
     const html = fs.readFileSync(path.join(ROOT, 'grade' + g, 'index.html'), 'utf8');
-    for (const need of ['../assets/engine/qkit.js', '../assets/engine/manip.js', '../assets/engine/lesson.js', '../assets/engine/manip.css', '../assets/engine/qkit.css', '../assets/atlas-theme.css']) {
+    for (const need of ['../assets/engine/site.js', 'assets/grade.js', '../assets/engine/qkit.js', '../assets/engine/manip.js', '../assets/engine/lesson.js', '../assets/engine/manip.css', '../assets/engine/qkit.css', '../assets/atlas-theme.css']) {
       if (!html.includes(need)) fail('grade' + g + '/index.html', 'does not load ' + need);
     }
   }
@@ -294,7 +296,57 @@ async function checkGrade(browser, base, g) {
   return { made: gen.made, answered, routes: routes.length, shapes: gen.shapes, types: gen.types };
 }
 
-/* ---------- 5. Language placement results on the parent pages ---------- */
+/* ---------- 5. saved progress still loads ---------- */
+async function checkSaved(browser, base, g) {
+  const where = 'grade ' + g + ' saved progress';
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  await ctx.route('**/*', r => (r.request().url().startsWith(base) ? r.continue() : r.abort()));
+  for (const f of ['validate.js', 'answer.js']) await ctx.addInitScript({ content: fs.readFileSync(path.join(__dirname, f), 'utf8') });
+  const page = await ctx.newPage();
+  const errs = [];
+  page.on('pageerror', e => errs.push(e.message));
+  await page.goto(base + '/grade' + g + '/index.html#home');
+  await page.waitForFunction(() => window.Atlas && Atlas.meta && Object.keys(Atlas.chapters).length > 0, null, { timeout: 15000 });
+  /* a saved state written the way every grade has always saved it */
+  const P = 'g' + g + 'atlas:';
+  const seed = await page.evaluate(P => {
+    localStorage.clear();
+    const m = Atlas.meta.filter(x => Atlas.chapters[x.id] && Atlas.chapters[x.id].practice)[0], sk = Atlas.chapters[m.id].practice;
+    const st = {};
+    st[P + 'sk:' + sk[0].id] = { lv: 3, streak: 0, miss: 0, n: 12, ok: 10, secure: true, t: 1761900000000 };
+    st[P + 'sk:' + sk[1].id] = { lv: 2, streak: 1, miss: 0, n: 6, ok: 4, secure: false, t: 1761900001000 };
+    st[P + 'best:' + m.id] = 6;
+    st[P + 'checkups'] = [{ d: '2026-10-25', w: 'Quick whole-grade check-up', s: 7, n: 10 }];
+    st[P + 'plan'] = [{ ch: m.id, sk: sk[1].id, name: sk[1].name, t: m.title }];
+    st[P + 'cov'] = { [sk[0].code.split(/,\s*/)[0]]: { d: '2026-10-25', ok: 1, n: 1 } };
+    Object.keys(st).forEach(k => localStorage.setItem(k, typeof st[k] === 'number' ? String(st[k]) : JSON.stringify(st[k])));
+    return { ch: m.id, s0: sk[0].id, s1: sk[1].id, nsk: sk.length };
+  }, P);
+  await page.evaluate(() => { location.hash = '#check-up'; location.hash = '#home'; });
+  await page.waitForTimeout(80);
+  const home = await page.evaluate(s => ({ card: (document.querySelector('a.card[href="#' + s.ch + '"]') || {}).textContent || '', start: document.querySelector('.start').textContent, plan: !!document.querySelector('.start a[href="#' + s.ch + '/practice/' + s.s1 + '"]') }), seed);
+  if (!home.card.includes('quiz 6/')) fail(where, 'the chapter card does not show the saved quiz score 6');
+  if (!home.card.includes('1/' + seed.nsk + ' secure')) fail(where, 'the chapter card does not show 1 secure skill');
+  if (!home.start.includes('Last check-up (2026-10-25): 7 of 10.') || !home.plan) fail(where, 'the home page does not show the saved check-up and plan');
+  const status = await page.evaluate(s => [Atlas.skillStatus(s.s0).t, Atlas.skillStatus(s.s1).t], seed);
+  if (status[0] !== 'Secure' || status[1] !== 'Level 2: Building') fail(where, 'saved skill levels read as ' + status.join(' and '));
+  await page.evaluate(() => { location.hash = '#check-up'; });
+  await page.waitForTimeout(80);
+  const cu = await page.evaluate(() => document.querySelector('#app').textContent);
+  if (!cu.includes('Quick whole-grade check-up') || !/Expectations checked: 1 of \d+/.test(cu)) fail(where, 'the check-up page does not show the saved history and coverage');
+  /* one right answer in practice: saved back under the same key, in the same shape */
+  await page.evaluate(h => { location.hash = h; }, '#' + seed.ch + '/practice/' + seed.s1);
+  await page.waitForTimeout(80);
+  await page.evaluate(async () => { const root = document.querySelector('.pq'); if (Atlas._q && root) await window.__answer(Atlas._q, root, Atlas._qk, false); });
+  const after = await page.evaluate(([P, s]) => ({ v: JSON.parse(localStorage.getItem(P + 'sk:' + s.s1) || 'null'), stray: Object.keys(localStorage).filter(k => k.indexOf(P) !== 0 && k.indexOf('atlas:') !== 0) }), [P, seed]);
+  const v = after.v || {};
+  if (!(v.n === 7 && v.ok === 5 && v.lv === 2 && v.streak === 2 && v.secure === false && v.t > 1761900001000)) fail(where, 'practice saved ' + JSON.stringify(v) + ' (expected n 7, ok 5, level 2, streak 2)');
+  if (after.stray.length) fail(where, 'progress saved outside the ' + P + ' keys: ' + after.stray.join(', '));
+  if (errs.length) fail(where, 'errors: ' + [...new Set(errs)].slice(0, 3).join(' / '));
+  await ctx.close();
+}
+
+/* ---------- 6. Language placement results on the parent pages ---------- */
 async function checkLangPlace(browser, base) {
   const w = 'Language placement on the parent pages';
   const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
@@ -370,6 +422,7 @@ async function checkLangPlace(browser, base) {
       log('Grade ' + g + ': ' + s.made + ' questions made and checked, ' + s.routes + ' pages opened, ' + s.answered + ' answered on a phone screen. ' +
         'Types: ' + Object.entries(s.types).map(([k, v]) => k + ' ' + v).join(', ') + '. ' + (problems.length - before ? (problems.length - before) + ' problems.' : 'All good.'));
     } catch (e) { fail('grade ' + g, 'the check itself stopped: ' + e.message.split('\n')[0]); }
+    try { await checkSaved(browser, url, g); } catch (e) { fail('grade ' + g + ' saved progress', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   }
   try { await checkLangPlace(browser, url); } catch (e) { fail('Language placement on the parent pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   await browser.close(); srv.close();

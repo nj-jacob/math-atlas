@@ -12,7 +12,7 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | `404.html` | The "page not found" page. Firebase shows it for any address that does not exist. It uses `/` paths so it works at any depth. |
 | `plan/` | Math Plan: placement test and learning plans, Grades 1 to 8 |
 | `grade1/` … `grade8/` | One site per grade (see below) |
-| `assets/engine/` | **Shared by every grade**: lesson engine, toolbox, answer types |
+| `assets/engine/` | **Shared by every grade**: the grade app (`site.js`), lesson engine, toolbox, answer types |
 | `assets/atlas-theme.css` | The one look for every page |
 | `assets/atlas-header.js` | The shared header on grade sites ("All grades" link to the Curriculum page) |
 | `assets/icon.svg` | The site icon shown in browser tabs and bookmarks. Every page links to it. |
@@ -25,12 +25,26 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 ## One grade site
 
 `gradeN/index.html` loads, in this order:
-1. `gradeN/assets/site.js`: the grade's app (chapter list, router, practice, quiz, check-up, progress). It creates the `Atlas` object.
-2. `../assets/engine/qkit.js`: the answer types (`Atlas.Q`).
-3. `../assets/engine/manip.js`: the toolbox of manipulatives (`Manip`: base-ten blocks, number lines, coins and more).
-4. `../assets/engine/lesson.js`: the one-idea-per-screen lessons (`Atlas.lessons`).
-5. `gradeN/assets/gNkit.js`: small helpers for that grade's chapters (optional).
-6. `gradeN/chapters/*.js`: one file per chapter. Each one calls `Atlas.register(id, chapter)`.
+1. `../assets/engine/site.js`: the grade app, the same for every grade (router, home page, practice, quiz, check-up, progress, reading settings). It creates the `Atlas` object.
+2. `gradeN/assets/grade.js`: that grade's settings, in one `Atlas.setup({ ... })` call, and the grade's own drawing helpers for its chapters (see "Grade settings" below).
+3. `../assets/engine/qkit.js`: the answer types (`Atlas.Q`).
+4. `../assets/engine/manip.js`: the toolbox of manipulatives (`Manip`: base-ten blocks, number lines, coins and more).
+5. `../assets/engine/lesson.js`: the one-idea-per-screen lessons (`Atlas.lessons`).
+6. `gradeN/assets/gNkit.js`: small helpers for that grade's chapters (optional).
+7. `gradeN/chapters/*.js`: one file per chapter. Each one calls `Atlas.register(id, chapter)`.
+
+### Grade settings
+
+Every grade runs the same app, so practice, the chapter quiz and the check-up work the same way in every grade. What differs is set in `gradeN/assets/grade.js` (the defaults are at the top of `assets/engine/site.js`):
+- `grade`, `tools` (the Toolbox page) and `meta` (the chapter list: id, title, strand, expectation codes, description).
+- `home`: the home page words (`hero`, `start`, `notes`), and for a grade with its own layout `intro`, `legend`, `contents` and `card` (Grade 1 numbers its chapter cards with small ten frames; Grade 8 uses its own card layout).
+- Words and typing for younger children: `right` and `right2` (Grade 1 says "Yes, that is right."), and `input`: the keyboard (`numeric` in Grades 1 and 2), the box's placeholder, and `pad`, a big number pad under each answer box (Grade 1).
+- `checkup`: the "How it works" list and the whole-grade check-ups. Grade 1 has a short one (10 questions, `#check-up/short`) and a longer one (`#check-up/all`); Grade 7 asks two questions from every chapter.
+- Typed answers a grade reads its own way: `parseNum` (Grades 6 to 8 also accept a typed minus sign −; Grades 7 and 8 accept fractions and mixed numbers) and `judge` (Grade 7 can insist on lowest terms; Grade 8 compares very big and very small answers to 9 significant figures).
+- Small drawing and number options: `svgScale` (Grade 1 draws pictures a little bigger), `svgLabelText`, `diskLabel` (Grade 4), `wholeDollars` (Grade 3 shows $5, not $5.00), `groupDecimals` (Grade 8 spaces long decimals: 0.333 333).
+- `afterRoute`: runs after each page is drawn (Grade 7 draws pictures in as they scroll into view; Grade 8 fades sections in).
+
+If a setting is needed by a second grade, use it there too; if a new behaviour is needed, add it to `assets/engine/site.js` (with a setting only when grades must differ), never to a grade file.
 
 ## A chapter
 
@@ -43,7 +57,7 @@ Atlas.register('numbers-1000', {
 });
 ```
 
-- **Practice skills** make a new question every time, at level 1, 2 or 3. The site moves a child up a level after 3 right in a row, and down after 2 misses.
+- **Practice skills** make a new question every time, at level 1, 2 or 3. The site moves a child up a level after 3 right in a row, and down after 2 misses. Every fourth question reviews another skill of the chapter already started; "Mixed review" brings in skills from other chapters. A skill is **secure** after 3 right in a row at level 3 (in a full chapter: on two different days, see below).
 - **Question shapes**: a skill can ask the same idea in several ways. `Atlas.Q.vary(skillId, level, [[minLevel, 'shape-name', fn], ...])` picks one, never the same shape twice in a row. See `QUESTIONS.md`.
 - **Check-ups** use level 1 of every skill, then a few level-2 questions.
 - **Idea cards**: each idea in a lesson shows as a small stack of cards, one at a time: "Watch" (or "Learn") with the explanation and clip, "Try it" with the key idea, then "Your turn". Back and Next move through the cards first, then to the other ideas. A part the idea doesn't have is left out. An idea with only one part shows as a single page.
@@ -59,7 +73,7 @@ Atlas.register('numbers-1000', {
 
 ## Saved progress
 
-Progress is kept in the browser (`localStorage`, prefix `gNatlas:`). When a child is signed in, `assets/sync.js` copies it to Firebase so parents and tutors see it.
+Progress is kept in the browser (`localStorage`, prefix `gNatlas:`, for example `g3atlas:sk:<skill id>` for a practice skill, `best:<chapter>` for the best quiz score, `checkups`, `cov`, `plan`, and `cn:<idea>` for lessons). The shared app saves exactly the keys and shapes each grade saved before it was shared; the checks load an older saved state in every grade to make sure it still shows. When a child is signed in, `assets/sync.js` copies it to Firebase so parents and tutors see it.
 
 ## Review notes
 
