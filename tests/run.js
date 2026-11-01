@@ -115,6 +115,55 @@ async function checkGrade(browser, base, g) {
         });
       }));
     }
+    /* a full chapter (full: true) is built to the full standard: see docs/QUESTIONS.md, "Full chapters" */
+    const txt = q => window.__H.strip(q.q) + ' | ' + window.__H.strip(q.fig || '') + ' | ' + JSON.stringify(q.options || q.items || q.pairs || q.answers || q.answer);
+    for (const [id, ch] of Object.entries(Atlas.chapters)) {
+      if (!ch.full) continue;
+      const skills = {}, used = {};
+      (ch.practice || []).forEach(sk => { skills[sk.id] = sk; });
+      (ch.lessons || []).forEach(ls => ls.concepts.forEach(c => {
+        const w = id + ' idea ' + (c.slug || c.id) + ' (full chapter)';
+        if (!c.watch || !c.example) out.problems.push(w + ': needs a Watch clip and a My turn example');
+        if (!c.mistake) out.problems.push(w + ': needs a common mistake for grown-ups');
+        if (!c.together || c.together.length < 3) out.problems.push(w + ': needs 3 Together problems');
+        if ([].concat(c.check || []).length < 5) out.problems.push(w + ': needs 5 Your turn questions');
+        if (!c.skill || !skills[c.skill]) out.problems.push(w + ': needs its own practice skill');
+        else if (used[c.skill]) out.problems.push(w + ': shares practice skill ' + c.skill + ' with ' + used[c.skill] + '. Each idea needs its own.');
+        else used[c.skill] = c.slug || c.id;
+        (c.together || []).forEach((f, k) => {
+          for (let i = 0; i < 6; i++) {
+            let P; try { P = f(); } catch (e) { out.problems.push(w + ' Together #' + (k + 1) + ' crashed: ' + e.message); break; }
+            if (!P || !Array.isArray(P.steps) || P.steps.length < 2) { out.problems.push(w + ' Together #' + (k + 1) + ': a problem needs 2 or more steps'); break; }
+            P.steps.forEach((st, j) => { check(st.q, w + ' Together #' + (k + 1) + ' step ' + (j + 1)); if (!(st.q.meta && st.q.meta.k)) out.problems.push(w + ' Together #' + (k + 1) + ' step ' + (j + 1) + ': has no answer check (meta.k)'); });
+          }
+        });
+        [].concat(c.check || []).forEach((f, k) => { const q = f(); if (!(q.meta && q.meta.k)) out.problems.push(w + ' Your turn #' + (k + 1) + ': has no answer check (meta.k)'); });
+      }));
+      (ch.practice || []).forEach(sk => {
+        const w = id + ' skill ' + sk.id + ' (full chapter)', byLv = [null, new Set(), new Set(), new Set()];
+        let tf = 0, tfTrue = 0, mc = 0, longest = 0, unchecked = 0;
+        const pos = {};
+        for (let lv = 1; lv <= 3; lv++) for (let i = 0; i < 150; i++) {
+          const q = sk.gen(lv);
+          byLv[lv].add(txt(q));
+          if (!(q.meta && q.meta.k)) unchecked++;
+          if (q.type === 'tf') { tf++; if (q.answer) tfTrue++; }
+          if (q.type === 'mc' && q.options.length >= 3) {
+            mc++; pos[q.answer] = (pos[q.answer] || 0) + 1;
+            const len = q.options.map(o => window.__H.strip(o).length), mx = Math.max(...len);
+            if (len[q.answer] === mx && len.filter(x => x === mx).length === 1) longest++;
+          }
+        }
+        if (unchecked) out.problems.push(w + ': ' + unchecked + ' of 450 questions have no answer check (meta.k), including plain ones');
+        const all = new Set([...byLv[1], ...byLv[2], ...byLv[3]]);
+        if (all.size < 30) out.problems.push(w + ': makes only ' + all.size + ' different questions. A full skill needs 30 or more.');
+        const same = [...byLv[3]].filter(t => byLv[1].has(t)).length;
+        if (same > byLv[3].size / 2) out.problems.push(w + ': level 3 mostly repeats level 1 (' + same + ' of ' + byLv[3].size + '). Level 3 must be harder.');
+        if (tf >= 20 && (tfTrue / tf < 0.25 || tfTrue / tf > 0.75)) out.problems.push(w + ': true/false is ' + Math.round(100 * tfTrue / tf) + '% "true". Keep it between 25% and 75%, so it cannot be guessed.');
+        if (mc >= 20 && longest / mc > 0.6) out.problems.push(w + ': the right choice is the longest one ' + Math.round(100 * longest / mc) + '% of the time. That gives it away.');
+        if (mc >= 20 && Object.values(pos).some(n => n / mc > 0.7)) out.problems.push(w + ': the right choice is nearly always in the same place.');
+      });
+    }
     return out;
   }, TRIES);
   gen.problems.forEach(p => fail(where, p));
@@ -138,6 +187,52 @@ async function checkGrade(browser, base, g) {
     await page.evaluate(h => { location.hash = '#' + h; }, r);
     await page.waitForTimeout(40);
     if (errs.length > before) fail(where, 'page #' + r + ' has an error: ' + errs.slice(before).join(' / '));
+  }
+
+  /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
+  const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
+  for (const [cid, slug] of fullIdeas) {
+    await page.evaluate(h => { location.hash = '#home'; location.hash = h; }, '#' + cid + '/learn/' + slug);
+    await page.waitForTimeout(60);
+    const r = await page.evaluate(async () => {
+      const box = document.querySelector('.ls-tog');
+      if (!box) return 'no Together card';
+      for (let guard = 0; guard < 40; guard++) {
+        if (box._tg) {
+          const first = guard === 0;
+          await window.__answer(box._tg.q, box._tg.root, box._tg.qk, first);
+          if (first) { if (!/\bbad\b/.test(box.querySelector('.fb').className)) return 'a wrong step was not caught'; await window.__answer(box._tg.q, box._tg.root, box._tg.qk, false); }
+          continue;
+        }
+        const b = box.querySelector('.ytn .btn');
+        if (!b) return 'stuck after a step';
+        if (/Next problem/.test(b.textContent)) { b.click(); continue; }
+        return /your turn/i.test(b.textContent) ? '' : 'did not finish: ' + b.textContent;
+      }
+      return 'did not finish';
+    });
+    if (r) fail(where, cid + '/learn/' + slug + ' Together: ' + r);
+  }
+  const fullCh = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).map(([id]) => id));
+  for (const cid of fullCh) {
+    const r = await page.evaluate(async cid => {
+      const pre = (document.querySelector('meta[name=atlas-prefix]') || {}).content || ('g' + Atlas.grade + 'atlas:');
+      const old = new Date(Date.now() - 2 * 864e5), day = old.getFullYear() + '-' + ('0' + (old.getMonth() + 1)).slice(-2) + '-' + ('0' + old.getDate()).slice(-2);
+      Atlas.lessons.flat(cid).forEach(c => localStorage.setItem(pre + 'cn:' + c.id, JSON.stringify({ seen: 1, n: 4, ok: 4, got: true, gd: day, rv: 0 })));
+      if (Atlas.lessons.due(cid).length === 0) return 'ideas got 2 days ago are not due for the warm-up';
+      location.hash = '#' + cid + '/review';
+      await new Promise(r => setTimeout(r, 60));
+      const box = document.querySelector('#warm');
+      for (let i = 0; i < 3; i++) {
+        if (!box._q) break;
+        await window.__answer(box._q, box.querySelector('.wu-ans'), box._qk, false);
+        if (!/\bok\b/.test(box.querySelector('.fb').className)) return 'a right warm-up answer was marked wrong';
+        box.querySelector('.ytn .btn').click();
+        box._q = null; await new Promise(r => setTimeout(r, 20));
+      }
+      return /Warm-up done/.test(box.textContent) ? '' : 'warm-up did not finish';
+    }, cid);
+    if (r) fail(where, cid + ' warm-up: ' + r);
   }
 
   /* 4. answering on a phone-size screen */

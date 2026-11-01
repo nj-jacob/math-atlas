@@ -35,7 +35,7 @@
   var $ = (Atlas.$ = function (s, r) { return (r || document).querySelector(s); });
   Atlas.$$ = function (s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); };
 
-  Atlas.register = function (id, ch) { Atlas.chapters[id] = ch; };
+  Atlas.register = function (id, ch) { Atlas.chapters[id] = ch; if (ch.full) (ch.practice || []).forEach(function (sk) { sk.full = true; }); };
 
   /* Canadian number style: a space groups numbers of 5 or more digits. */
   Atlas.fmt = function (n) {
@@ -450,31 +450,31 @@
       h += '<div class="fb"></div><div class="steps"></div><div class="pnext"></div></div>';
       pq.innerHTML = h;
       qk = null;
-      if (Q(q)) { qk = Atlas.Q.mount($('.qkbox', pq), q, function (ok) { if (!done) answer(ok); }); Atlas._qk = qk; }
+      if (Q(q)) { qk = Atlas.Q.mount($('.qkbox', pq), q, function (ok, given) { if (!done) answer(ok, given); }); Atlas._qk = qk; }
       else if (q.type === 'mc') Atlas.$$('.opt', pq).forEach(function (b) {
         b.addEventListener('click', function () {
           if (done) return;
           var j = +b.getAttribute('data-j');
           if (j === q.answer) { b.classList.add('yes'); answer(true); }
-          else { b.classList.add('no'); b.disabled = true; answer(false); }
+          else { b.classList.add('no'); b.disabled = true; answer(false, q.options[j]); }
         });
       });
       else $('form', pq).addEventListener('submit', function (e) {
         e.preventDefault();
         if (done) return;
-        var v = parseNum($('input', pq).value);
+        var raw = $('input', pq).value, v = parseNum(raw);
         if (isNaN(v)) { $('.fb', pq).className = 'fb bad'; $('.fb', pq).textContent = 'Type a number first.'; return; }
-        answer(numOk(q, v));
+        answer(numOk(q, v), raw);
       });
       if (focus) { var f = $('.opt, input', pq); if (f) f.focus(); }
       scoreLine();
     }
-    function answer(ok) {
+    function answer(ok, given) {
       tries++;
       var fb = $('.fb', pq), st = skillState(cur.id), msg = '';
       if (!ok && tries === 1) {
         fb.className = 'fb bad';
-        fb.innerHTML = '<b>Not quite.</b> <span>' + (q.hint || 'Have another go.') + '</span>' + (q.steps && q.steps[0] ? '<p class="t2">Step 1: ' + q.steps[0] + '</p>' : '');
+        fb.innerHTML = '<b>Not quite.</b> <span>' + (Atlas.Q.diag(q, given) || q.hint || 'Have another go.') + '</span>' + (q.steps && q.steps[0] ? '<p class="t2">Step 1: ' + q.steps[0] + '</p>' : '');
         return;
       }
       done = true; session.n++;
@@ -485,9 +485,16 @@
       if (ok && tries === 1) {
         session.first++; st.ok++; st.streak++; st.miss = 0;
         if (st.streak >= 3 && st.lv < 3) { st.lv++; st.streak = 0; msg = 'Three in a row. Moving up to level ' + st.lv + '.'; }
-        else if (st.streak >= 3 && st.lv === 3 && !st.secure) { st.secure = true; msg = 'This skill is now marked secure. Come back to it now and then to keep it fresh.'; }
+        else if (st.streak >= 3 && st.lv === 3 && !st.secure) {
+          /* in a full chapter, a skill is secure only after a strong run at the top level on two different days */
+          var day = new Date().toDateString();
+          st.days = (st.days || []).filter(function (d) { return d !== day; }).concat([day]);
+          if (!cur.full || st.days.length >= 2) { st.secure = true; msg = 'This skill is now marked secure. Come back to it now and then to keep it fresh.'; }
+          else { st.streak = 0; msg = 'Strong work. Do this again on another day to make it secure.'; }
+        }
       } else {
         st.streak = 0;
+        if (cur.full && st.secure && !ok) { st.secure = false; st.days = []; msg = 'This one needs more practice, so it is no longer marked secure.'; }
         if (!ok) {
           st.miss++;
           if (st.miss >= 2 && st.lv > 1) { st.lv--; st.miss = 0; msg = 'Let\'s step back to level ' + st.lv + ' and build up again.'; }

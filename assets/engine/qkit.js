@@ -13,6 +13,7 @@
      fill   fill the blanks.            fill: 'html with [[]] for each blank', answers: [number, ...], tol
      build  build it with a tool.       tool: 'base10' | 'coins', opts, answer (value; coins in cents)
    Atlas.Q.mount(el, q, cb) draws the answer area. cb(ok, givenText) runs when the child commits an answer.
+   Atlas.Q.diag(q, givenText) gives the fix for a known wrong answer, from q.wrong (see below).
    It returns { lock(), reveal(), focus() }. Atlas.Q.text(q) gives the right answer in words.
    Atlas.Q.vary(id, lv, list) picks a question shape for a skill: list = [[minLevel, shapeName, fn(lv)], ...].
    Atlas.Q.shapes(chapterId, SHAPES) wires a chapter's shapes into all its practice skills. */
@@ -51,6 +52,9 @@
     }
     return '';
   };
+  /* the fix for a known wrong answer: q.wrong maps a wrong answer (as the child gave it, in plain words) to a short
+     correction that names the mistake, for example { '1/8': 'More pieces means smaller pieces.' }. Empty when none fits. */
+  Q.diag = function (q, given) { return (q && q.wrong && given != null && q.wrong[strip(given)]) || ''; };
   function checkBtn(label) { return '<div class="qk-act"><button type="button" class="btn qk-go">' + (label || 'Check') + '</button><span class="qk-msg" aria-live="polite"></span></div>'; }
 
   Q.mount = function (el, q, cb) {

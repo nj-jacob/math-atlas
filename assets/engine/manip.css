@@ -249,6 +249,15 @@
 .ls-legend{display:flex;flex-wrap:wrap;gap:6px 16px;font-size:.88rem;color:var(--ink2,#55627a);margin:6px 0}
 .ls-legend span{display:inline-flex;align-items:center;gap:6px}
 .ls-go{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:14px 0}
+/* Together (we do): finished steps stay listed above the step being worked on */
+.tg-done{margin:6px 0 10px;padding-left:1.4em;color:var(--ink2,#55627a)}
+.tg-done li{margin:2px 0}
+.tg-done b{color:var(--good,#17804a)}
+.tg-cue{margin:6px 0;padding:6px 12px;border-left:4px solid var(--accent,#0b6e78);background:color-mix(in srgb,var(--accent,#0b6e78) 7%,var(--card,#fff));border-radius:6px}
+.tg-ask{font-weight:600;margin:8px 0}
+/* warm-up banner on a chapter page */
+.ls-warm{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:space-between;margin:14px 0;padding:10px 14px;border:1px solid var(--line,#dfe5ee);border-left:5px solid var(--accent,#0b6e78);border-radius:12px;background:var(--card,#fff)}
+.ls-warm p{margin:0}
 .ls-tabs{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 0}
 .ls-tabs a[aria-current="page"]{border-color:var(--strand);background:color-mix(in srgb,var(--strand) 14%,var(--card,#fff))}
 .ls-top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px 14px;margin:18px 0 0}
