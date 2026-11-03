@@ -20,7 +20,7 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | `assets/fb.js`, `sync.js`, `family.js`, `live.js`, `langplace.js` | Sign-in and saving progress (Firebase); `langplace.js` shows Language placement results on the parent pages |
 | `assets/review.js` | Review notes: the grown-up "Note" button on grade pages (see "Review notes" below) |
 | `tests/` | Automatic checks (see `CHECKS.md`) |
-| `.github/workflows/` | `checks.yml` runs the checks on pull requests. `deploy.yml` runs them again, then publishes `main`. |
+| `.github/workflows/` | `checks.yml` runs the checks on pull requests. `preview.yml` publishes each pull request to a 7-day test link. `deploy.yml` runs the checks again, then publishes `main`. |
 
 ## One grade site
 

@@ -1,10 +1,9 @@
-# Runs the automatic checks (tests/run.js) on every pull request and every push.
+# Runs the automatic checks (tests/run.js) on every pull request, once per change.
 # A pull request shows a red cross if anything is broken. See docs/CHECKS.md.
+# main is checked by the publish workflow before it publishes.
 name: Checks
 on:
   pull_request:
-  push:
-    branches-ignore: [main]   # main is checked by the publish workflow before it publishes
   workflow_dispatch:
 jobs:
   checks:

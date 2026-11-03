@@ -45,6 +45,23 @@ Atlas shows Language at `/language/`. Those pages live in a second repository, `
 
 Until this is done, the site still publishes, just without Language (the Curriculum page says so). When the token expires, make a new one the same way and paste it into both secrets.
 
+## Test links before going live
+
+Every pull request gets its own test link, posted on the pull request by the **Preview** workflow (it looks like `https://ontario-math-atlas--pr41-....web.app`). Open it on a phone or iPad to look at the change before you OK it. It shows the change with the live Language pages, and stops working after 7 days.
+
+- The test link uses the **real** family database. Sign in with a test child, not your child's account.
+- It never changes the privacy rules and never touches the live site.
+
+## Undo a bad publish (about 1 minute)
+
+Firebase keeps every version it has published. If something looks wrong on the live site:
+
+1. Open https://console.firebase.google.com/project/ontario-math-atlas/hosting/sites and click the site **ontario-math-atlas**.
+2. Under **Release history**, find the version before the bad one (each row has a date and time).
+3. Click the three dots on that row and choose **Roll back**, then confirm.
+
+The old version is live again within a minute. This only changes the pages: saved progress and notes are not affected. Then tell Claude, so the problem is fixed in the code too; the next publish would otherwise bring it back.
+
 ## First use
 
 1. Open `https://YOUR-PROJECT-ID.web.app/family.html`, choose **Create a parent or tutor account**, and click the link in the confirmation email (check spam; it comes from `noreply@YOUR-PROJECT-ID.firebaseapp.com`).
