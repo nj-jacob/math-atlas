@@ -109,6 +109,8 @@
     function slot(k, i, n, g) {
       var u = g.u, x0 = cols.indexOf(k) * g.cw + g.pad, y0 = g.top;
       if (k === 'h') {
+        /* Toolbox: hundreds pile up, each showing a strip, so the mat does not grow */
+        if (o.drag) return { x: x0, y: y0 + i * 1.3 * u, w: 10 * u, h: 10 * u };
         var step = n > 3 ? Math.max(2.2 * u, (7 * u) / (n - 1) + 0.5 * u) : 10.8 * u;
         return { x: x0 + (n > 3 ? i * 0.35 * u : 0), y: y0 + i * step, w: 10 * u, h: 10 * u };
       }
