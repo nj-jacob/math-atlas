@@ -546,33 +546,6 @@
     app.innerHTML = h;
   };
 
-  /* ---------- Toolbox: every manipulative, free to play with ---------- */
-  var BOX = [
-    ['base10', 'Base-ten blocks', 'Tap + to add blocks. Tap a block to light it up and count. Group 10 ones into a ten, or break a ten apart.', { controls: true, words: function (n) { return A.words ? A.words(n) : ''; } }],
-    ['disks', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] }],
-    ['clock', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 }],
-    ['areagrid', 'Area grid', 'Tap squares to cover a shape and count its area.', { cols: 10, rows: 6 }],
-    ['scale', 'Kitchen scale', 'Put 1 kg, 100 g and 10 g blocks on the scale.', {}],
-    ['counters', 'Counters', 'Tap counters to count them. Pair them up to see even and odd, or group them in tens.', { n: 13, controls: true, max: 60 }],
-    ['tenframe', 'Ten-frames', 'Tap a box to put in a counter. Tap again to change its colour.', { frames: 2, two: true }],
-    ['hundred', 'Hundred chart', 'Tap numbers to light them up and look for patterns.', { pages: true }],
-    ['numberline', 'Number line', 'Tap or drag along the line, or make jumps.', { min: 0, max: 100, tick: 5, every: 10, step: [2, 5, 10, 20, 25], snap: 1 }],
-    ['fractions', 'Fraction strips', 'Choose how many equal parts, then tap parts to shade them.', { parts: 4 }],
-    ['coins', 'Coins and bills', 'Tap coins and bills to add them. Tap one on the mat to take it away.', { set: [5, 10, 25, 100, 200, 500, 1000, 2000] }],
-    ['geoboard', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 }],
-    ['tiles', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true }]
-  ];
-  /* a grade lists the tools its Toolbox shows in Atlas.tools (ids); unset shows them all */
-  L.toolbox = function (app, sub) {
-    var box = A.tools ? BOX.filter(function (b) { return A.tools.indexOf(b[0]) >= 0; }) : BOX;
-    var cur = box.filter(function (b) { return b[0] === sub; })[0] || box[0];
-    app.innerHTML = '<div class="wrap chapter"><p class="crumb"><a href="#home">All chapters</a></p><header class="chead"><span class="num">Toolbox</span><h1>Math tools</h1>' +
-      '<p class="lede">The hands-on tools from the lessons, free to play with. Good for working through a question with a tutor or parent.</p></header>' +
-      '<nav class="tb-pick" aria-label="Tools">' + box.map(function (b) { return '<a href="#tools/' + b[0] + '"' + (b === cur ? ' aria-current="page"' : '') + '>' + b[1] + '</a>'; }).join('') + '</nav>' +
-      '<section class="sec"><h2>' + cur[1] + '</h2><p>' + cur[2] + '</p><div id="tbtool"></div></section></div>';
-    M.make(cur[0], $('#tbtool', app), cur[3]);
-  };
-
   /* left and right arrow keys move between ideas */
   document.addEventListener('keydown', function (e) {
     if (e.altKey || e.ctrlKey || e.metaKey || /INPUT|TEXTAREA|SELECT/.test(e.target.tagName)) return;

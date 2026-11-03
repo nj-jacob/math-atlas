@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-03
+- Toolbox, first step of the new hands-on tool box: the tool now fills the screen under a slim bar (back, Undo, Show number, Tools). The **Tools** menu groups each grade's tools on five shelves (Numbers; Parts and groups; Patterns and equations; Shapes and space; Measure, money and data), each with a small picture. **Place value blocks** (pilot) are now dragged from a tray onto the mat: drag a block off the mat to put it back, drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten (or tap the buttons that appear). The number stays hidden until **Show number** is switched on, so the child does the counting. Base-ten blocks everywhere, lessons included, now look like solid blocks. A new check drags the blocks like a child would.
+
 ## 2026-11-01
 - Home page tidied: Math and Language now sit side by side as two matching panels. Each has the subject's name, one short "Not sure where to start?" note, and the same two buttons: Start the placement check and Choose a grade. On a computer the two panels are the same height, with their buttons in line.
 - Both placement checks are now in the same places. The home page's Language panel offers the Language placement check (then "Continue the check", then the starting points), like the Math panel. The account menu, the student page and the top of the Curriculum lists link both checks. For grown-ups, each child's card and Progress and notes have a **Math Plan** and a **Language placement** button; Language placement opens the child's results.

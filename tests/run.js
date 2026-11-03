@@ -8,7 +8,8 @@
    2. Questions: every practice skill at every level, every lesson "Your turn" check and every written quiz
       question is made many times and checked: the right shape for its type, no "undefined" or "NaN" on screen,
       and, for the newer question shapes, the answer worked out again by verify/*.js.
-   3. Pages: every chapter, lesson screen, practice page and quiz opens with no errors.
+   3. Pages: every chapter, lesson screen, practice page, quiz and Toolbox tool opens with no errors. The Toolbox blocks
+      are tapped and dragged the way a child would (add, snap 10 ones into a ten, put back, undo) on a phone-size screen.
    4. Answering: on a phone-size screen, practice questions of every kind are answered the way a child would
       (right, and sometimes wrong first), and must be marked correctly. Nothing may run off the side of the screen.
    5. Saved progress: progress saved before a change (gNatlas: keys) still loads: levels, secure skills, quiz bests,
@@ -181,7 +182,7 @@ async function checkGrade(browser, base, g) {
 
   /* 3. pages */
   const routes = await page.evaluate(() => {
-    const r = ['home', 'check-up', 'progress', 'tools'];
+    const r = ['home', 'check-up', 'progress', 'tools'].concat((Atlas.tools || []).map(t => 'tools/' + t));
     for (const [id, ch] of Object.entries(Atlas.chapters)) {
       r.push(id);
       if (ch.practice) r.push(id + '/practice');
@@ -198,6 +199,36 @@ async function checkGrade(browser, base, g) {
     await page.evaluate(h => { location.hash = '#' + h; }, r);
     await page.waitForTimeout(40);
     if (errs.length > before) fail(where, 'page #' + r + ' has an error: ' + errs.slice(before).join(' / '));
+  }
+
+  /* 3a. Toolbox blocks: tap and drag blocks onto the mat, drag a one into Tens to snap 10 ones into a ten,
+     drag a block off the mat to put it back, and undo. Nothing may run off the side of the screen. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('base10'))) {
+    await page.evaluate(() => { location.hash = '#tools/base10'; });
+    await page.waitForTimeout(150);
+    const count = () => page.evaluate(() => ({ t: document.querySelectorAll('.mp-layer .mp-t').length, o: document.querySelectorAll('.mp-layer .mp-o').length }));
+    const dragTo = async (from, to) => {
+      const a = await from.boundingBox(), b = await to.boundingBox();
+      await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
+      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 }); await page.mouse.up();
+      await page.waitForTimeout(500);
+    };
+    for (let i = 0; i < 9; i++) await page.click('.mp-tp[data-k=o]');
+    await dragTo(page.locator('.mp-tp[data-k=o]'), page.locator('.mp-col[data-k=o]'));
+    await page.waitForTimeout(600);
+    let c = await count();
+    if (c.o !== 10) fail(where, 'Toolbox blocks: tapping and dragging ones onto the mat gave ' + c.o + ' ones, not 10');
+    await dragTo(page.locator('.mp-layer .mp-o').last(), page.locator('.mp-col[data-k=t]'));
+    await page.waitForTimeout(1000);
+    c = await count();
+    if (c.t !== 1 || c.o !== 0) fail(where, 'Toolbox blocks: dragging a one into Tens did not snap 10 ones into a ten (' + JSON.stringify(c) + ')');
+    await dragTo(page.locator('.mp-layer .mp-t').first(), page.locator('.tb-bar h1'));
+    c = await count();
+    if (c.t !== 0) fail(where, 'Toolbox blocks: dragging a ten off the mat did not put it back');
+    await page.click('.tb-b[data-a=undo]'); await page.waitForTimeout(200);
+    c = await count();
+    if (c.t !== 1) fail(where, 'Toolbox blocks: Undo did not bring the ten back');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox blocks: the page runs off the side of a phone screen');
   }
 
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
