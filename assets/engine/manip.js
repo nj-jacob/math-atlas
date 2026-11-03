@@ -107,8 +107,9 @@
     function value() { var c = counts(); return c.k * 1000 + c.h * 100 + c.t * 10 + c.o; }
     /* Toolbox: where the i-th of n blocks of a kind sits inside its column (width W), at block size u */
     function dslot(k, i, n, u, W) {
-      if (k === 'k') return { x: 0, y: 3 * u + i * 1.5 * u, w: 10 * u, h: 10 * u };
-      if (k === 'h') return { x: 0, y: 0.2 * u + i * 1.3 * u, w: 10 * u, h: 10 * u };
+      /* piled hundreds and thousands leave a strip of each block behind showing, wide enough to tap */
+      if (k === 'k') return { x: 0, y: 3 * u + i * 2 * u, w: 10 * u, h: 10 * u };
+      if (k === 'h') return { x: 0, y: 0.2 * u + i * 1.8 * u, w: 10 * u, h: 10 * u };
       if (k === 't') {
         var per = Math.max(1, Math.floor((W - 0.2 * u + 0.5 * u) / (1.5 * u)));
         return { x: (i % per) * 1.5 * u, y: 0.2 * u + Math.floor(i / per) * 10.8 * u, w: u, h: 10 * u };

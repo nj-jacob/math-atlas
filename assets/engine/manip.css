@@ -397,6 +397,12 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 .mp-b10d .mp-col.mp-over{background:color-mix(in srgb,var(--mg) 16%,transparent)}
 .mp-b10d .mp-pc{filter:drop-shadow(0 3px 3px rgba(19,32,57,.16))}
 .mp-pc.mp-lift{opacity:.25}
+/* in a pile, the top of a block behind can be tapped too, and a lit block stays in its place in the pile (in lessons the faces are only for looks) */
+.mp-b10d .mp-layer .mp-blk::before,.mp-b10d .mp-layer .mp-blk::after{pointer-events:auto}
+.mp-b10d .mp-layer .mp-h.lit,.mp-b10d .mp-layer .mp-k.lit{z-index:auto}
+.mp-b10d .mp-layer .mp-h.lit .mp-blk,.mp-b10d .mp-layer .mp-k.lit .mp-blk{transform:none}
+/* notes and buttons on the mat span every column, so they sit in the middle of the whole mat */
+.mp-empty,.mp-snaps,.mp-say{grid-column:1/-1;grid-row:1;max-width:none}
 .mp-u{position:absolute;z-index:1;font-style:normal;display:grid;place-items:center;pointer-events:none;font-weight:700;line-height:1;color:var(--mink);background:var(--mg);box-shadow:inset 0 0 0 1px color-mix(in srgb,var(--mg) 60%,#000);font-variant-numeric:tabular-nums}
 .mp-ghost{position:fixed;left:0;top:0;z-index:1000;pointer-events:none;transition:none;filter:drop-shadow(0 14px 14px rgba(19,32,57,.3))}
 .mp-empty{position:absolute;left:0;right:0;top:45%;margin:0;text-align:center;color:var(--at-ink3,#7b879c);font-size:1.05rem;pointer-events:none;display:none}
