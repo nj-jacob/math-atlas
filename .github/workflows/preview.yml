@@ -1,0 +1,35 @@
+# Publishes every pull request to its own private test link (a Firebase "preview channel"), so a change can be
+# looked at on a phone before it goes live. The link is posted on the pull request and stops working after 7 days.
+# Only the website is copied there: the privacy rules are never changed, and the live site is not touched.
+# The preview uses the real family database, so test with a test child, not a real child's account.
+# Needs the same two secrets as the publish workflow (see SETUP.md).
+name: Preview
+on:
+  pull_request:
+concurrency:
+  group: preview-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+jobs:
+  preview:
+    # Secrets are only available to pull requests from this repository, not from copies of it.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Add the live Language pages under /language/
+        uses: actions/checkout@v4
+        with:
+          repository: nj-jacob/language-atlas
+          token: ${{ secrets.ATLAS_TOKEN }}
+          path: language
+      - uses: FirebaseExtended/action-hosting-deploy@v0
+        with:
+          repoToken: ${{ secrets.GITHUB_TOKEN }}
+          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+          projectId: ontario-math-atlas
+          expires: 7d
