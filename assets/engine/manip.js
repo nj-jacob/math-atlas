@@ -59,15 +59,21 @@
   }
 
   /* ================= Base-ten blocks =================
-     options: h, t, o (start counts); cols ['h','t','o'] or ['t','o']; controls (tray of buttons);
+     options: h, t, o (start counts); cols ['h','t','o'] or ['t','o'] (the Toolbox adds 'k', thousands); controls (tray of buttons);
      readout (place value chart); words(n) (number words); expanded (show 100 + 40 + 7); tap (light up on tap, default true);
-     max {h,t,o}; hideTotal; onChange(state, tool).
-     Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h'), countAll(), lightKind(kind), clearLit(). */
-  var VAL = { h: 100, t: 10, o: 1 }, NAME = { h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
-  var PLACE = { h: 'Hundreds', t: 'Tens', o: 'Ones' };
+     max {h,t,o}; hideTotal; u / uMax (block size); onChange(state, tool).
+     drag: the Toolbox version. The mat keeps one size and the blocks get smaller as more are added. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
+     drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten; tap a square inside a ten or hundred
+     to number it 1, 2, 3, or a layer of a thousand cube to count 100, 200, 300 (when "Tap to count" is on Small squares). Adds undo() and showNumbers(on).
+     Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h', piece), countAll(), lightKind(kind), clearLit(). */
+  var VAL = { k: 1000, h: 100, t: 10, o: 1 }, NAME = { k: 'thousand cube', h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { k: 'thousand cubes', h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
+  var PLACE = { k: 'Thousands', h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { k: 'Thousand', h: 'Hundred', t: 'Ten', o: 'One' };
+  var KINDS = ['k', 'h', 't', 'o'], UP = { o: 't', t: 'h', h: 'k' }, DOWN = { k: 'h', h: 't', t: 'o' };
+  /* Toolbox mat: how wide each column is, in block units (a thousand cube needs room for its depth) */
+  var WIDE = { k: 16.5, h: 11.2, t: 10, o: 8 };
   M.base10 = function (root, o) {
     o = o || {};
-    var T = base(root, 'b10'), cols = o.cols || ['h', 't', 'o'], pieces = [], litOrder = [], last = '';
+    var T = base(root, 'b10'), cols = o.cols || ['h', 't', 'o'], pieces = [], litOrder = [], last = '', hist = [], dragEnd = 0, countMode = 'block';
     var max = o.max || { h: 9, t: 19, o: 19 };
     var tray = '';
     if (o.controls) {
@@ -80,26 +86,72 @@
         (cols.indexOf('h') >= 0 ? '<button type="button" class="mp-act" data-a="gt">Group 10 tens</button><button type="button" class="mp-act" data-a="sh">Break a hundred</button>' : '') +
         '<button type="button" class="mp-act" data-a="count">Count them</button><button type="button" class="mp-act" data-a="clear">Clear</button></div>';
     }
-    root.innerHTML = tray +
-      '<div class="mp-mat" style="--n:' + cols.length + '">' + cols.map(function (k) { return '<div class="mp-col mp-c' + k + '" data-k="' + k + '"><span>' + PLACE[k] + '</span></div>'; }).join('') +
-      '<div class="mp-layer"></div></div>' +
-      '<div class="mp-read" aria-live="polite"></div><p class="mp-live sr" aria-live="polite"></p>';
+    var readHtml = '<div class="mp-read" aria-live="polite"></div>';
+    var matHtml = '<div class="mp-mat" style="--n:' + cols.length + '">' + cols.map(function (k) { return '<div class="mp-col mp-c' + k + '" data-k="' + k + '"><span>' + PLACE[k] + '</span></div>'; }).join('') +
+      '<div class="mp-layer"></div>' + (o.drag ? '<p class="mp-empty">Drag blocks here</p><div class="mp-snaps"></div><p class="mp-say" aria-live="polite"></p>' : '') + '</div>' +
+      (o.drag ? '' : readHtml) + '<p class="mp-live sr" aria-live="polite"></p>';
+    if (o.drag) {
+      root.classList.add('mp-b10d');
+      root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray" role="group" aria-label="Blocks to drag onto the mat">' + cols.map(function (k) {
+        return '<button type="button" class="mp-tp" data-k="' + k + '" aria-label="Add a ' + NAME[k] + '"><span class="mp-pc mp-' + k + '"><i class="mp-blk"></i></span><small>' + ONE[k] + '</small></button>';
+      }).join('') + '</div><div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="What a tap counts"><span>Tap to count</span>' +
+        '<button type="button" data-m="block" aria-pressed="true">Whole blocks</button><button type="button" data-m="unit" aria-pressed="false">Small squares</button></div>' +
+        /* in the Toolbox the number sits above the mat, where it is easy to see; the mat shrinks to make room */
+        readHtml + matHtml + '</div></div>';
+    } else root.innerHTML = tray + matHtml;
     var mat = qs('.mp-mat', root), layer = qs('.mp-layer', root), read = qs('.mp-read', root);
+    if (o.drag) mat.style.gridTemplateColumns = cols.map(function (k) { return WIDE[k] + 'fr'; }).join(' ');
 
     function counts() {
-      var c = { h: 0, t: 0, o: 0 };
+      var c = { k: 0, h: 0, t: 0, o: 0 };
       pieces.forEach(function (p) { c[p.k]++; });
       return c;
     }
-    function value() { var c = counts(); return c.h * 100 + c.t * 10 + c.o; }
+    function value() { var c = counts(); return c.k * 1000 + c.h * 100 + c.t * 10 + c.o; }
+    /* Toolbox: where the i-th of n blocks of a kind sits inside its column (width W), at block size u */
+    function dslot(k, i, n, u, W) {
+      /* piled hundreds and thousands leave a strip of each block behind showing, wide enough to tap */
+      if (k === 'k') return { x: 0, y: 5 * u + i * 2 * u, w: 10 * u, h: 10 * u };
+      if (k === 'h') return { x: 0, y: 0.2 * u + i * 1.8 * u, w: 10 * u, h: 10 * u };
+      if (k === 't') {
+        var per = Math.max(1, Math.floor((W - 0.2 * u + 0.5 * u) / (1.5 * u)));
+        return { x: (i % per) * 1.5 * u, y: 0.2 * u + Math.floor(i / per) * 10.8 * u, w: u, h: 10 * u };
+      }
+      var gpr = Math.max(1, Math.floor((W + 0.9 * u) / (6.9 * u))), g = Math.floor(i / 10), j = i % 10;
+      return { x: (g % gpr) * 6.9 * u + (j % 5) * 1.2 * u, y: 0.2 * u + Math.floor(g / gpr) * 3.3 * u + Math.floor(j / 5) * 1.2 * u, w: u, h: u };
+    }
+    /* Toolbox: the mat keeps its size; the biggest block size at which every column's blocks fit */
+    function dgeom() {
+      var W = mat.clientWidth || 600, H = mat.clientHeight || 400, c = counts(), tot = 0, x = {}, cw = {}, at = 0, top = 64;
+      cols.forEach(function (k) { tot += WIDE[k]; });
+      cols.forEach(function (k) { cw[k] = W * WIDE[k] / tot; x[k] = at; at += cw[k]; });
+      /* the bottom strip stays clear for the snap buttons; when they wrap to more rows, the blocks shrink to make room */
+      var pad = clamp(W / tot * 0.4, 4, 12), u = o.uMax || 34, foot = Math.max(72, snapH + 28);
+      var need = { k: 15.4, h: 10.4, t: 1.4, o: 6.2 };
+      function fits(u) {
+        return cols.every(function (k) {
+          if (need[k] * u > cw[k] - 2 * pad) return false;
+          if (!c[k]) return true;
+          var r = dslot(k, c[k] - 1, c[k], u, cw[k] - 2 * pad);
+          return r.y + r.h + 0.2 * u <= H - top - foot;
+        });
+      }
+      while (u > 3 && !fits(u)) u -= 0.5;
+      return { u: u, x: x, cw: cw, pad: pad, top: top };
+    }
     function geom() {
+      if (o.drag) return dgeom();
       var W = mat.clientWidth || 600, cw = W / cols.length, pad = clamp(cw * 0.07, 6, 16), inner = cw - 2 * pad;
       /* without a hundreds column the blocks can be bigger, which makes them easier to tap */
       var big = cols.indexOf('h') < 0;
-      return { cw: cw, pad: pad, inner: inner, u: clamp(Math.min(o.u || (big ? 22 : 16), inner / (big ? 7.4 : 10.4)), 5, 22), top: 44 };
+      return { cw: cw, pad: pad, inner: inner, u: clamp(Math.min(o.u || (big ? 22 : 16), inner / (big ? 7.4 : 10.4)), 5, o.uMax || 22), top: o.drag ? 64 : 44 };
     }
     /* where the i-th piece of a kind sits, given how many of that kind there are */
     function slot(k, i, n, g) {
+      if (o.drag) {
+        var d = dslot(k, i, n, g.u, g.cw[k] - 2 * g.pad);
+        return { x: g.x[k] + g.pad + d.x, y: g.top + d.y, w: d.w, h: d.h };
+      }
       var u = g.u, x0 = cols.indexOf(k) * g.cw + g.pad, y0 = g.top;
       if (k === 'h') {
         var step = n > 3 ? Math.max(2.2 * u, (7 * u) / (n - 1) + 0.5 * u) : 10.8 * u;
@@ -118,27 +170,31 @@
       p.r = r;
     }
     function layout() {
-      var g = geom(), c = counts(), idx = { h: 0, t: 0, o: 0 }, bottom = g.top + 10.4 * g.u;
+      var g = geom(), c = counts(), idx = { k: 0, h: 0, t: 0, o: 0 }, bottom = g.top + 10.4 * g.u;
       mat.style.setProperty('--u', g.u + 'px');
       pieces.forEach(function (p) {
         var r = slot(p.k, idx[p.k]++, c[p.k], g);
         put(p, r);
         bottom = Math.max(bottom, r.y + r.h);
       });
-      mat.style.height = Math.ceil(bottom + g.pad + 4) + 'px';
+      if (!o.drag) mat.style.height = Math.ceil(bottom + g.pad + 4) + 'px';
     }
     function make(k, enter) {
       var p = { k: k, lit: false, el: button('mp-pc mp-' + k, '<i class="mp-blk"></i><b class="mp-cnt"></b>', NAME[k] + ', worth ' + VAL[k]) };
       p.el.setAttribute('aria-pressed', 'false');
       if (o.tap === false) p.el.tabIndex = -1;
-      p.el.addEventListener('click', function () { if (o.tap !== false) toggle(p); });
+      p.el.addEventListener('click', function (e) {
+        if (o.tap === false || Date.now() - dragEnd < 400) return;
+        if (o.drag && k !== 'o' && countMode === 'unit' && e.detail) unit(p, e); else toggle(p);
+      });
+      if (o.drag) p.el.addEventListener('pointerdown', function (e) { drag(e, k, p); });
       if (enter && !T.fast) p.el.classList.add('mp-enter');
       layer.appendChild(p.el);
       return p;
     }
     /* keep pieces sorted hundreds, tens, ones so new ones land at the end of their column */
     function insert(p) {
-      var order = { h: 0, t: 1, o: 2 }, at = pieces.length;
+      var order = { k: 0, h: 1, t: 2, o: 3 }, at = pieces.length;
       for (var i = 0; i < pieces.length; i++) if (order[pieces[i].k] > order[p.k]) { at = i; break; }
       pieces.splice(at, 0, p);
     }
@@ -151,7 +207,8 @@
     }
     function relabel() {
       var sum = 0;
-      litOrder.forEach(function (p) { sum += VAL[p.k]; qs('.mp-cnt', p.el).textContent = fmt(sum); });
+      /* lessons show the running count (10, 20, 21); the Toolbox shows each block's own value (100, 10, 1) */
+      litOrder.forEach(function (p) { sum += VAL[p.k]; qs('.mp-cnt', p.el).textContent = fmt(o.drag ? VAL[p.k] : sum); });
       return sum;
     }
     function unlit(p) {
@@ -175,7 +232,7 @@
     }
     function state() {
       var c = counts(), lt = litOrder.reduce(function (s, p) { return s + VAL[p.k]; }, 0);
-      return { h: c.h, t: c.t, o: c.o, value: c.h * 100 + c.t * 10 + c.o, lit: litOrder.length, litValue: lt, allLit: pieces.length > 0 && litOrder.length === pieces.length, last: last, pieces: pieces.length };
+      return { k: c.k, h: c.h, t: c.t, o: c.o, value: value(), lit: litOrder.length, litValue: lt, allLit: pieces.length > 0 && litOrder.length === pieces.length, last: last, pieces: pieces.length };
     }
     function readout() {
       var c = counts(), v = value(), h = '';
@@ -189,17 +246,18 @@
       }
       if (!o.hideTotal) {
         h += '<p class="mp-total"><span class="mp-num">' + fmt(v) + '</span>';
-        if (o.expanded && v) h += ' <span class="mp-exp">= ' + ['h', 't', 'o'].filter(function (k) { return c[k]; }).map(function (k) { return '<b class="mp-c' + k + 't">' + fmt(c[k] * VAL[k]) + '</b>'; }).join(' + ') + '</span>';
+        if (o.expanded && v) h += ' <span class="mp-exp">= ' + KINDS.filter(function (k) { return c[k]; }).map(function (k) { return '<b class="mp-c' + k + 't">' + fmt(c[k] * VAL[k]) + '</b>'; }).join(' + ') + '</span>';
         if (o.words && v <= 999) h += ' <span class="mp-words">' + o.words(v) + '</span>';
         h += '</p>';
       }
-      if (litOrder.length && litOrder.length < pieces.length) h += '<p class="mp-litline">Counted so far: <b>' + fmt(state().litValue) + '</b></p>';
+      if (litOrder.length && litOrder.length < pieces.length && !(o.drag && o.hideTotal)) h += '<p class="mp-litline">Counted so far: <b>' + fmt(state().litValue) + '</b></p>';
       var before = read.getAttribute('data-v');
       read.innerHTML = h;
       if (before !== String(v)) { var n = qs('.mp-num', read); if (n && before !== null && !T.fast) bump(n); }
       read.setAttribute('data-v', String(v));
     }
     function sync() {
+      if (o.drag) snaps();
       if (!o.controls) return;
       var c = counts();
       qsa('.mp-add', root).forEach(function (b) { var k = b.getAttribute('data-k'); b.disabled = c[k] >= max[k] || value() + VAL[k] > (o.limit || 999); });
@@ -248,14 +306,14 @@
     };
     /* 10 ones slide together into a ten (or 10 tens into a hundred) */
     T.group = function (k) {
-      var up = k === 'o' ? 't' : 'h', list = pieces.filter(function (p) { return p.k === k; });
+      var up = UP[k], list = pieces.filter(function (p) { return p.k === k; });
       if (list.length < 10 || cols.indexOf(up) < 0) return Promise.resolve(false);
       var ep = T.ep, ten = list.slice(-10), g = geom(), c = counts(), u = g.u;
       var target = slot(up, c[up], c[up] + 1, g);
       ten.forEach(function (p, i) {
         unlit(p);
         p.el.classList.add('mp-merge');
-        put(p, up === 't' ? { x: target.x, y: target.y + i * u, w: u, h: u } : { x: target.x + i * u, y: target.y, w: u, h: 10 * u });
+        put(p, up === 't' ? { x: target.x, y: target.y + i * u, w: u, h: u } : up === 'h' ? { x: target.x + i * u, y: target.y, w: u, h: 10 * u } : { x: target.x, y: target.y + i * 0.3 * u, w: 10 * u, h: 10 * u });
       });
       relabel();
       return T.wait(700).then(function () {
@@ -271,14 +329,14 @@
       });
     };
     /* a ten breaks into 10 ones (or a hundred into 10 tens) */
-    T.split = function (k) {
-      var down = k === 't' ? 'o' : 't', list = pieces.filter(function (p) { return p.k === k; });
+    T.split = function (k, piece) {
+      var down = DOWN[k], list = pieces.filter(function (p) { return p.k === k; });
       if (!list.length || cols.indexOf(down) < 0) return Promise.resolve(false);
-      var ep = T.ep, p = list[list.length - 1], r = p.r, u = geom().u, made = [];
+      var ep = T.ep, p = piece || list[list.length - 1], r = p.r, u = geom().u, made = [];
       for (var i = 0; i < 10; i++) {
         var np = make(down, false);
         np.el.classList.add('mp-merge');
-        put(np, down === 'o' ? { x: r.x, y: r.y + i * u, w: u, h: u } : { x: r.x + i * u, y: r.y, w: u, h: 10 * u });
+        put(np, down === 'o' ? { x: r.x, y: r.y + i * u, w: u, h: u } : down === 't' ? { x: r.x + i * u, y: r.y, w: u, h: 10 * u } : { x: r.x, y: r.y + i * 0.3 * u, w: 10 * u, h: 10 * u });
         insert(np); made.push(np);
       }
       pieces.splice(pieces.indexOf(p), 1); unlit(p); p.el.remove(); relabel();
@@ -311,15 +369,133 @@
     T.pulseCol = function (k) { var c = qs('.mp-c' + k, mat); if (c && !T.fast) bump(c, 'mp-glow'); return T.wait(900); };
     T.state = state;
     T.value = value;
-    T.reset = function () {
+    /* put exactly these blocks on the mat at once, with no animation */
+    function rebuild(c) {
       T.ep++;
       pieces.slice().forEach(function (p) { p.el.remove(); });
-      pieces = []; litOrder = []; last = '';
+      pieces = []; litOrder = [];
       var f = T.fast; T.fast = true;
-      ['h', 't', 'o'].forEach(function (k) { for (var i = 0; i < (o[k] || 0); i++) insert(make(k, false)); });
+      KINDS.forEach(function (k) { if (cols.indexOf(k) >= 0) for (var i = 0; i < (c[k] || 0); i++) insert(make(k, false)); });
       T.fast = f;
       layout(); change();
-    };
+    }
+    T.reset = function () { hist = []; last = ''; rebuild(o); };
+
+    /* ---- the Toolbox version (o.drag): drag, snap, undo, and a number that stays hidden until asked for ---- */
+    function act(fn) { hist.push(counts()); if (hist.length > 60) hist.shift(); fn(); }
+    T.undo = function () { if (!hist.length) return; last = 'undo'; rebuild(hist.pop()); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { o.readout = !!on; o.hideTotal = !on; change(); };
+    function canAdd(k) { return counts()[k] < max[k] && value() + VAL[k] <= (o.limit || 999); }
+    var sayTimer;
+    function say(text) {
+      var s = qs('.mp-say', root);
+      s.textContent = text; s.classList.add('on');
+      announce(T, text);
+      clearTimeout(sayTimer);
+      sayTimer = setTimeout(function () { s.classList.remove('on'); }, 2600);
+    }
+    /* Toolbox: tap a small square inside a ten or a hundred to light it and number it 1, 2, 3... (that block's own count) */
+    function unit(p, e) {
+      var blk = qs('.mp-blk', p.el), r = blk.getBoundingClientRect(), w = k10(p).w;
+      var col = clamp(Math.floor((e.clientX - r.left) / (r.width / w)), 0, w - 1), row = clamp(Math.floor((e.clientY - r.top) / (r.height / 10)), 0, 9);
+      var id = row * 10 + col, marks = p.marks = p.marks || [], at = marks.indexOf(id);
+      if (at >= 0) marks.splice(at, 1); else marks.push(id);
+      qsa('.mp-u', blk).forEach(function (m) { m.remove(); });
+      /* placed in tenths of the block, inside it, so the squares stay lined up when the block grows as it lights up */
+      marks.forEach(function (m, i) {
+        var s = el('span', 'mp-u', String((i + 1) * k10(p).each));
+        s.style.cssText = 'left:' + (m % 10) * 100 / w + '%;top:' + Math.floor(m / 10) * 10 + '%;width:' + 100 / w + '%;height:10%;font-size:' + Math.max(8, geom().u * 0.42) + 'px';
+        blk.appendChild(s);
+      });
+      announce(T, marks.length ? 'Counted ' + marks.length * k10(p).each + ' of ' + VAL[p.k] : 'Nothing counted');
+    }
+    /* what one tap marks: a square of a hundred, a square of a ten, or a whole layer (a hundred) of a thousand cube */
+    function k10(p) { return p.k === 'h' ? { w: 10, each: 1 } : p.k === 'k' ? { w: 1, each: 100 } : { w: 1, each: 1 }; }
+    var snapH = 0;
+    function snaps() {
+      var c = counts(), b = [];
+      if (c.o >= 10 && cols.indexOf('t') >= 0) b.push(['go', 'Snap<i> 10 ones into</i> a ten', 1]);
+      if (c.t >= 10 && cols.indexOf('h') >= 0) b.push(['gt', 'Snap<i> 10 tens into</i> a hundred', 1]);
+      if (c.h >= 10 && cols.indexOf('k') >= 0) b.push(['gh', 'Snap<i> 10 hundreds into</i> a thousand', 1]);
+      if (c.t && cols.indexOf('o') >= 0 && c.o + 10 <= max.o) b.push(['st', 'Break a ten', 0]);
+      if (c.h && cols.indexOf('t') >= 0 && c.t + 10 <= max.t) b.push(['sh', 'Break a hundred', 0]);
+      if (c.k && cols.indexOf('h') >= 0 && c.h + 10 <= max.h) b.push(['sk', 'Break a thousand', 0]);
+      qs('.mp-snaps', root).innerHTML = b.map(function (x) { return '<button type="button" class="mp-snap' + (x[2] ? ' go' : '') + '" data-a="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+      mat.classList.toggle('is-empty', !pieces.length);
+      var h = qs('.mp-snaps', root).offsetHeight;
+      if (h !== snapH) { snapH = h; layout(); }
+    }
+    function colAt(x, y) {
+      var hit = null;
+      qsa('.mp-col', mat).forEach(function (c) { var r = c.getBoundingClientRect(); if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hit = c.getAttribute('data-k'); });
+      return hit;
+    }
+    function over(k) { qsa('.mp-col', mat).forEach(function (c) { c.classList.toggle('mp-over', c.getAttribute('data-k') === k); }); }
+    /* a block dropped from the tray (piece is null) or from the mat, on column col (null: off the mat) */
+    function dropped(k, piece, col) {
+      var i = cols.indexOf(k), j = cols.indexOf(col);
+      if (!piece) {
+        if (!col) return;
+        if (canAdd(k)) act(function () { T.add(k, 1); }); else say('The mat is full. Take some blocks away first.');
+      } else if (!col) act(function () { drop(piece); last = 'remove'; relabel(); layout(); change(); });
+      else if (j === i + 1) {
+        if (counts()[cols[j]] + 10 <= max[cols[j]]) act(function () { T.split(k, piece); });
+        else say('No room for 10 more. Take some away first.');
+      } else if (j === i - 1) {
+        if (counts()[k] >= 10) act(function () { T.group(k); });
+        else say(k === 'o' ? 'You need 10 ones to make a ten.' : 'You need 10 tens to make a hundred.');
+      }
+    }
+    function drag(e, k, piece) {
+      if (e.button > 0) return;
+      var sx = e.clientX, sy = e.clientY, ghost = null, ox = 0, oy = 0;
+      function move(ev) {
+        if (ev.pointerId !== e.pointerId) return;
+        if (!ghost) {
+          if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 8) return;
+          var u = geom().u, w = (k === 'h' || k === 'k' ? 10 : 1) * u, h = (k === 'o' ? 1 : 10) * u;
+          if (piece) { var r = piece.el.getBoundingClientRect(); ox = sx - r.left; oy = sy - r.top; unlit(piece); relabel(); piece.el.classList.add('mp-lift'); }
+          else { ox = w / 2; oy = Math.min(h / 2, 24); }
+          ghost = el('span', 'mp-pc mp-' + k + ' mp-ghost', '<i class="mp-blk"></i>');
+          ghost.style.cssText = 'width:' + w + 'px;height:' + h + 'px;--u:' + u + 'px';
+          document.body.appendChild(ghost);
+        }
+        ev.preventDefault();
+        ghost.style.transform = 'translate(' + (ev.clientX - ox) + 'px,' + (ev.clientY - oy) + 'px)';
+        over(colAt(ev.clientX, ev.clientY));
+      }
+      function up(ev) {
+        if (ev.pointerId !== e.pointerId) return;
+        document.removeEventListener('pointermove', move);
+        document.removeEventListener('pointerup', up);
+        document.removeEventListener('pointercancel', up);
+        if (!ghost) return;
+        dragEnd = Date.now();
+        ghost.remove(); over(null);
+        if (piece) piece.el.classList.remove('mp-lift');
+        if (ev.type === 'pointerup') dropped(k, piece, colAt(ev.clientX, ev.clientY));
+      }
+      document.addEventListener('pointermove', move, { passive: false });
+      document.addEventListener('pointerup', up);
+      document.addEventListener('pointercancel', up);
+    }
+    if (o.drag) {
+      qsa('.mp-tp', root).forEach(function (b) { b.addEventListener('pointerdown', function (e) { drag(e, b.getAttribute('data-k'), null); }); });
+      root.addEventListener('click', function (e) {
+        var m = e.target.closest('.mp-cmode button');
+        if (m) {
+          countMode = m.getAttribute('data-m');
+          qsa('.mp-cmode button', root).forEach(function (x) { x.setAttribute('aria-pressed', String(x === m)); });
+          return;
+        }
+        var b = e.target.closest('.mp-tp, .mp-snap');
+        if (!b || !root.contains(b) || Date.now() - dragEnd < 400) return;
+        var k = b.getAttribute('data-k'), a = b.getAttribute('data-a');
+        if (k) { if (canAdd(k)) act(function () { T.add(k, 1); }); else say('The mat is full. Take some blocks away first.'); }
+        else act(function () { if (a === 'go') T.group('o'); else if (a === 'gt') T.group('t'); else if (a === 'gh') T.group('h'); else if (a === 'st') T.split('t'); else if (a === 'sh') T.split('h'); else T.split('k'); });
+      });
+    }
 
     if (o.controls) {
       root.addEventListener('click', function (e) {
@@ -338,6 +514,8 @@
     }
     T.reset();
     watchSize(T, layout);
+    /* the Toolbox mat follows the screen's height too (turning an iPad) */
+    if (o.drag && window.ResizeObserver) { var mh = 0; new ResizeObserver(function () { if (mat.clientHeight !== mh) { mh = mat.clientHeight; layout(); } }).observe(mat); }
     return T;
   };
 
@@ -1383,6 +1561,81 @@
       io.observe(root);
     }
     return { play: go, pause: pause, jump: jump, restart: function () { return jump(0, true); }, step: stepOn, tool: tool, get playing() { return playing; }, get at() { return k; } };
+  };
+
+  /* ================= Toolbox page (#tools) =================
+     Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
+     ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
+  var SHELVES = [['num', 'Numbers'], ['parts', 'Parts and groups'], ['alg', 'Patterns and equations'], ['space', 'Shapes and space'], ['meas', 'Measure, money and data']];
+  /* [id, shelf, name, one line on how to use it (none when the tool shows its own), options, icon] */
+  var BOX = [
+    ['counters', 'num', 'Counters', 'Tap counters to count them. Pair them up to see even and odd, or group them in tens.', { n: 13, controls: true, max: 60 },
+      '<circle cx="16" cy="18" r="7" style="fill:#c0392b"/><circle cx="32" cy="16" r="7" style="fill:#c0392b"/><circle cx="24" cy="31" r="7" style="fill:var(--mp-ones,#e0a100)"/>'],
+    ['tenframe', 'num', 'Ten-frames', 'Tap a box to put in a counter. Tap again to change its colour.', { frames: 2, two: true },
+      '<rect x="5" y="13" width="38" height="22" rx="2" style="fill:none;stroke:var(--ink,#132039);stroke-width:2"/><path d="M12.6 13v22M20.2 13v22M27.8 13v22M35.4 13v22M5 24h38" style="stroke:var(--ink,#132039);stroke-width:1.5"/><circle cx="8.8" cy="18.5" r="2.6" style="fill:#c0392b"/><circle cx="16.4" cy="18.5" r="2.6" style="fill:#c0392b"/><circle cx="24" cy="18.5" r="2.6" style="fill:#c0392b"/>'],
+    ['base10', 'num', 'Place value blocks', '', { drag: true, cols: ['k', 'h', 't', 'o'], readout: false, hideTotal: true, u: 34, uMax: 34, limit: 9999, max: { k: 9, h: 19, t: 19, o: 29 } },
+      '<rect x="6" y="14" width="18" height="18" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="8" width="6" height="30" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="37" y="30" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
+    ['disks', 'num', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] },
+      '<circle cx="15" cy="17" r="9" style="fill:var(--mp-hund,#2f62c4)"/><circle cx="33" cy="17" r="9" style="fill:var(--mp-tens,#2f9e44)"/><circle cx="24" cy="33" r="9" style="fill:var(--mp-ones,#e0a100)"/>'],
+    ['hundred', 'num', 'Hundred chart', 'Tap numbers to light them up and look for patterns.', { pages: true },
+      '<g style="fill:var(--line,#dfe5ee)"><rect x="7" y="7" width="7" height="7" rx="1.5"/><rect x="25" y="7" width="7" height="7" rx="1.5"/><rect x="16" y="16" width="7" height="7" rx="1.5"/><rect x="34" y="16" width="7" height="7" rx="1.5"/><rect x="7" y="25" width="7" height="7" rx="1.5"/><rect x="25" y="25" width="7" height="7" rx="1.5"/><rect x="16" y="34" width="7" height="7" rx="1.5"/><rect x="34" y="34" width="7" height="7" rx="1.5"/></g><g style="fill:var(--accent,#0b6e78)"><rect x="16" y="7" width="7" height="7" rx="1.5"/><rect x="34" y="7" width="7" height="7" rx="1.5"/><rect x="7" y="16" width="7" height="7" rx="1.5"/><rect x="25" y="16" width="7" height="7" rx="1.5"/><rect x="16" y="25" width="7" height="7" rx="1.5"/><rect x="34" y="25" width="7" height="7" rx="1.5"/><rect x="7" y="34" width="7" height="7" rx="1.5"/><rect x="25" y="34" width="7" height="7" rx="1.5"/></g>'],
+    ['numberline', 'num', 'Number line', 'Tap or drag along the line, or make jumps.', { min: 0, max: 100, tick: 5, every: 10, step: [2, 5, 10, 20, 25], snap: 1 },
+      '<path d="M5 31h38M8 27v8M18 27v8M28 27v8M38 27v8" style="stroke:var(--ink,#132039);stroke-width:2"/><path d="M8 27Q13 13 18 27M18 27Q23 13 28 27" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5"/>'],
+    ['fractions', 'parts', 'Fraction strips', 'Choose how many equal parts, then tap parts to shade them.', { parts: 4 },
+      '<rect x="5" y="15" width="38" height="18" rx="2" style="fill:var(--card,#fff);stroke:var(--accent,#0b6e78);stroke-width:2"/><rect x="5" y="15" width="19" height="18" rx="2" style="fill:#7646bf"/><path d="M24 15v18M14.5 15v18M33.5 15v18" style="stroke:var(--accent,#0b6e78);stroke-width:1.5"/>'],
+    ['areagrid', 'parts', 'Area grid', 'Tap squares to cover a shape and count its area.', { cols: 10, rows: 6 },
+      '<g style="fill:#c25a12"><rect x="7" y="9" width="9" height="9" rx="1"/><rect x="18" y="9" width="9" height="9" rx="1"/><rect x="29" y="9" width="9" height="9" rx="1"/><rect x="7" y="20" width="9" height="9" rx="1"/><rect x="18" y="20" width="9" height="9" rx="1"/><rect x="29" y="20" width="9" height="9" rx="1"/></g><g style="fill:var(--line,#dfe5ee)"><rect x="7" y="31" width="9" height="9" rx="1"/><rect x="18" y="31" width="9" height="9" rx="1"/><rect x="29" y="31" width="9" height="9" rx="1"/></g>'],
+    ['tiles', 'alg', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true },
+      '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
+    ['geoboard', 'space', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 },
+      '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
+    ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
+      '<circle cx="24" cy="24" r="17" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:2.5"/><path d="M24 24V12" style="stroke:var(--mp-hund,#2f62c4);stroke-width:2.5"/><path d="M24 24h8" style="stroke:var(--ink,#132039);stroke-width:3"/>'],
+    ['scale', 'meas', 'Kitchen scale', 'Put 1 kg, 100 g and 10 g blocks on the scale.', {},
+      '<rect x="8" y="12" width="32" height="4" rx="2" style="fill:var(--ink2,#55627a)"/><path d="M14 16h20l3 22H11Z" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><circle cx="24" cy="28" r="6" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:1.5"/><path d="M24 28l3-3" style="stroke:var(--bad,#b4283f);stroke-width:1.5"/>'],
+    ['coins', 'meas', 'Coins and bills', 'Tap coins and bills to add them. Tap one on the mat to take it away.', { set: [5, 10, 25, 100, 200, 500, 1000, 2000] },
+      '<circle cx="18" cy="26" r="11" style="fill:#d9b44a;stroke:#a8862a;stroke-width:1.5"/><circle cx="31" cy="21" r="10" style="fill:#dfe3ea;stroke:#9aa3b2;stroke-width:1.5"/><circle cx="31" cy="21" r="5.5" style="fill:#d9b44a"/>']
+  ];
+  function icon(b) { return '<svg class="tb-ic" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">' + b[5] + '</svg>'; }
+  var SVG_UNDO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var SVG_MENU = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
+  M.toolbox = function (app, sub, ids) {
+    var box = ids ? BOX.filter(function (b) { return ids.indexOf(b[0]) >= 0; }) : BOX;
+    var cur = box.filter(function (b) { return b[0] === sub; })[0] || box[0], t = null;
+    var grade = window.Atlas && Atlas.grade ? '<span class="tb-g">Grade ' + Atlas.grade + '</span>' : '';
+    var menu = '<dialog class="tb-menu" aria-labelledby="tbmh"><div class="tb-mh"><h2 id="tbmh">Tools</h2>' + grade +
+      '<button type="button" class="tb-x" aria-label="Close">&#10005;</button></div>' +
+      SHELVES.map(function (s) {
+        var on = box.filter(function (b) { return b[1] === s[0]; });
+        if (!on.length) return '';
+        return '<section class="tb-shelf"><h3><i class="tb-s-' + s[0] + '"></i>' + s[1] + '</h3><div class="tb-cards">' + on.map(function (b) {
+          return '<a class="tb-card" href="#tools/' + b[0] + '"' + (b === cur ? ' aria-current="page"' : '') + '>' + icon(b) + '<span>' + b[2] + '</span></a>';
+        }).join('') + '</div></section>';
+      }).join('') + '</dialog>';
+    app.innerHTML = '<div class="tb"><div class="tb-bar"><a class="tb-back" href="#home" aria-label="Back to the chapters">&#8249;</a><h1>' + cur[2] + '</h1><span class="tb-sp"></span>' +
+      '<button type="button" class="tb-b" data-a="undo" hidden>' + SVG_UNDO + '<span>Undo</span></button>' +
+      '<button type="button" class="tb-b" data-a="show" role="switch" aria-checked="false" hidden><span>Show number</span><i class="tb-sw" aria-hidden="true"></i></button>' +
+      '<button type="button" class="tb-b" data-a="menu" aria-haspopup="dialog">' + SVG_MENU + '<span>Tools</span></button></div>' +
+      (cur[3] ? '<p class="tb-how">' + cur[3] + '</p>' : '') + '<div class="tb-stage"></div>' + menu + '</div>';
+    var undo = qs('[data-a="undo"]', app), show = qs('[data-a="show"]', app), dlg = qs('.tb-menu', app);
+    function sync() { if (t && t.canUndo) undo.disabled = !t.canUndo(); }
+    var opts = {}, k;
+    for (k in cur[4]) opts[k] = cur[4][k];
+    if (cur[0] === 'base10' && window.Atlas && Atlas.words) opts.words = Atlas.words;
+    opts.onChange = sync;
+    t = M.make(cur[0], qs('.tb-stage', app), opts);
+    undo.hidden = !t.undo; show.hidden = !t.showNumbers;
+    sync();
+    undo.addEventListener('click', function () { t.undo(); });
+    show.addEventListener('click', function () {
+      var on = show.getAttribute('aria-checked') !== 'true';
+      show.setAttribute('aria-checked', String(on));
+      t.showNumbers(on);
+    });
+    qs('[data-a="menu"]', app).addEventListener('click', function () { dlg.showModal(); });
+    qs('.tb-x', dlg).addEventListener('click', function () { dlg.close(); });
+    dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.closest('.tb-card')) dlg.close(); });
+    return t;
   };
 
   /* make a tool by name: Manip.make('base10', element, options) */
