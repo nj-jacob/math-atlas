@@ -64,13 +64,13 @@
      max {h,t,o}; hideTotal; u / uMax (block size); onChange(state, tool).
      drag: the Toolbox version. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
      drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten; tap a square inside a ten or hundred
-     to number it 1, 2, 3... Adds undo() and showNumbers(on).
+     to number it 1, 2, 3 (when "Tap to count" is on Small squares). Adds undo() and showNumbers(on).
      Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h', piece), countAll(), lightKind(kind), clearLit(). */
   var VAL = { h: 100, t: 10, o: 1 }, NAME = { h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
   var PLACE = { h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { h: 'Hundred', t: 'Ten', o: 'One' };
   M.base10 = function (root, o) {
     o = o || {};
-    var T = base(root, 'b10'), cols = o.cols || ['h', 't', 'o'], pieces = [], litOrder = [], last = '', hist = [], dragEnd = 0;
+    var T = base(root, 'b10'), cols = o.cols || ['h', 't', 'o'], pieces = [], litOrder = [], last = '', hist = [], dragEnd = 0, countMode = 'block';
     var max = o.max || { h: 9, t: 19, o: 19 };
     var tray = '';
     if (o.controls) {
@@ -90,7 +90,8 @@
       root.classList.add('mp-b10d');
       root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray" role="group" aria-label="Blocks to drag onto the mat">' + cols.map(function (k) {
         return '<button type="button" class="mp-tp" data-k="' + k + '" aria-label="Add a ' + NAME[k] + '"><span class="mp-pc mp-' + k + '"><i class="mp-blk"></i></span><small>' + ONE[k] + '</small></button>';
-      }).join('') + '</div><div class="mp-dmain">' + matHtml + '</div></div>';
+      }).join('') + '</div><div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="What a tap counts"><span>Tap to count</span>' +
+        '<button type="button" data-m="block" aria-pressed="true">Whole blocks</button><button type="button" data-m="unit" aria-pressed="false">Small squares</button></div>' + matHtml + '</div></div>';
     } else root.innerHTML = tray + matHtml;
     var mat = qs('.mp-mat', root), layer = qs('.mp-layer', root), read = qs('.mp-read', root);
 
@@ -143,7 +144,7 @@
       if (o.tap === false) p.el.tabIndex = -1;
       p.el.addEventListener('click', function (e) {
         if (o.tap === false || Date.now() - dragEnd < 400) return;
-        if (o.drag && k !== 'o' && e.detail) unit(p, e); else toggle(p);
+        if (o.drag && k !== 'o' && countMode === 'unit' && e.detail) unit(p, e); else toggle(p);
       });
       if (o.drag) p.el.addEventListener('pointerdown', function (e) { drag(e, k, p); });
       if (enter && !T.fast) p.el.classList.add('mp-enter');
@@ -165,7 +166,8 @@
     }
     function relabel() {
       var sum = 0;
-      litOrder.forEach(function (p) { sum += VAL[p.k]; qs('.mp-cnt', p.el).textContent = fmt(sum); });
+      /* lessons show the running count (10, 20, 21); the Toolbox shows each block's own value (100, 10, 1) */
+      litOrder.forEach(function (p) { sum += VAL[p.k]; qs('.mp-cnt', p.el).textContent = fmt(o.drag ? VAL[p.k] : sum); });
       return sum;
     }
     function unlit(p) {
@@ -207,7 +209,7 @@
         if (o.words && v <= 999) h += ' <span class="mp-words">' + o.words(v) + '</span>';
         h += '</p>';
       }
-      if (litOrder.length && litOrder.length < pieces.length) h += '<p class="mp-litline">Counted so far: <b>' + fmt(state().litValue) + '</b></p>';
+      if (litOrder.length && litOrder.length < pieces.length && !(o.drag && o.hideTotal)) h += '<p class="mp-litline">Counted so far: <b>' + fmt(state().litValue) + '</b></p>';
       var before = read.getAttribute('data-v');
       read.innerHTML = h;
       if (before !== String(v)) { var n = qs('.mp-num', read); if (n && before !== null && !T.fast) bump(n); }
@@ -432,6 +434,12 @@
     if (o.drag) {
       qsa('.mp-tp', root).forEach(function (b) { b.addEventListener('pointerdown', function (e) { drag(e, b.getAttribute('data-k'), null); }); });
       root.addEventListener('click', function (e) {
+        var m = e.target.closest('.mp-cmode button');
+        if (m) {
+          countMode = m.getAttribute('data-m');
+          qsa('.mp-cmode button', root).forEach(function (x) { x.setAttribute('aria-pressed', String(x === m)); });
+          return;
+        }
         var b = e.target.closest('.mp-tp, .mp-snap');
         if (!b || !root.contains(b) || Date.now() - dragEnd < 400) return;
         var k = b.getAttribute('data-k'), a = b.getAttribute('data-a');

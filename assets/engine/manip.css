@@ -382,7 +382,11 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 .mp-tp[data-k=o] .mp-pc{--u:28px;width:28px;height:28px}
 .mp-b10d .mp-pc,.mp-b10d .mp-tp{touch-action:none;-webkit-user-select:none;user-select:none}
 .mp-dmain{flex:1;min-width:0;display:flex;flex-direction:column}
-.mp-b10d .mp-mat{flex:1 0 auto;min-height:max(340px,calc(100dvh - 96px));border:0;border-radius:22px;box-shadow:var(--at-shadow,0 8px 24px rgba(19,32,57,.06))}
+.mp-cmode{display:flex;align-items:center;flex-wrap:wrap;gap:6px;margin:0 0 10px}
+.mp-cmode span{font-weight:700;font-size:.85rem;color:var(--ink2,#55627a);margin-right:4px}
+.mp-cmode button{min-height:40px;padding:4px 14px;font-size:.95rem;border-radius:12px;border:1.5px solid var(--mline);background:var(--mcard);font-weight:700;color:var(--ink2,#55627a);cursor:pointer}
+.mp-cmode button[aria-pressed=true]{border-color:var(--accent,#0b6e78);background:var(--at-tint,#e8f3f4);color:var(--accent,#0b6e78)}
+.mp-b10d .mp-mat{flex:1 0 auto;min-height:max(340px,calc(100dvh - 146px));border:0;border-radius:22px;box-shadow:var(--at-shadow,0 8px 24px rgba(19,32,57,.06))}
 .mp-b10d .mp-col{padding:14px 8px}
 .mp-b10d .mp-col>span{font-size:.82rem;padding:4px 12px}
 .mp-b10d .mp-col.mp-over{background:color-mix(in srgb,var(--mg) 16%,transparent)}
@@ -407,10 +411,13 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
   .mp-tp[data-k=h] .mp-pc{--u:5px;width:50px;height:50px}
   .mp-tp[data-k=t] .mp-pc{--u:6px;width:6px;height:60px}
   .mp-tp[data-k=o] .mp-pc{--u:22px;width:22px;height:22px}
-  .mp-b10d .mp-mat{min-height:max(300px,calc(100dvh - 180px))}
+  .mp-b10d .mp-mat{min-height:max(300px,calc(100dvh - 290px))}
   .mp-b10d .mp-col{padding:10px 4px}
   .mp-b10d .mp-col>span{font-size:.68rem;padding:3px 8px}
   .mp-snap{min-height:40px;padding:4px 12px;font-size:.9rem}
+  .mp-cmode{flex-wrap:nowrap;gap:5px;margin-bottom:8px}
+  .mp-cmode span{font-size:.78rem;margin-right:0}
+  .mp-cmode button{min-height:38px;padding:2px 10px;font-size:.85rem;white-space:nowrap}
   .mp-say{white-space:normal;text-align:center;width:max-content}
 }
 
