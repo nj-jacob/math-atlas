@@ -474,7 +474,7 @@
       return num(R.pick(HOPS)(Q.name(), n, k), n * k, prodFix(n, k), { hint: n + ' groups of ' + k + ': count by ' + k + 's.', steps: [n + X + k + '.', 'Count by ' + k + 's: ' + skips(k, n) + '.'], explain: n + X + k + ' = ' + n * k + '.', meta: mt(n, k, 'x') });
     }],
     [2, 'tf', function (lv) {
-      var k = R.pick(K1[lv]), n = rng(lv, NJ), who = Q.name(), truth = coin(), said = truth ? n * k : R.pick([n * k + k, n * k - k, n + k]);
+      var k = R.pick(K1[lv]), n = rng(lv, NJ), who = Q.name(), truth = coin(), said = truth ? n * k : R.pick([n * k + k, n * k - k, n + k].filter(function (v) { return v !== n * k; }));
       return tf(who + ' says ' + m(n + X + k + ' = ' + said) + '. True or false: ' + who + ' is right.', truth, n + ' jumps of ' + k + ': ' + skips(k, n) + '.', ['Add ' + n + ' and ' + k + '.', 'Stop one jump early.', 'Any number that ends in 0 is right.'],
         'Count the jumps: ' + n + ' jumps of ' + k + '.', { fig: lv === 2 ? lineFig(k, n, { show: edge(k), dot: false }) : '', hint: 'Count by ' + k + 's and keep track of the jumps.', meta: { k: 'g3md-tf', a: n, b: k, op: 'x', said: said } });
     }]
@@ -861,7 +861,7 @@
       return { q: hasOne(c.th, c.k) + '. Match each one.', type: 'match', pairs: P, hint: 'Count by ' + c.k + 's for each one.', steps: ['Multiply by ' + c.k + '.'], explain: P.map(function (x) { return x[0] + ': ' + x[1]; }).join('. ') + '.', meta: { k: 'g3md-match-ratio', f: c.k } };
     }],
     [2, 'tf', function (lv) {
-      var c = rcase(lv), who = Q.name(), truth = coin(), said = truth ? c.n * c.k : R.pick([c.n + c.k, c.n * c.k + c.k, c.n * c.k - c.k]);
+      var c = rcase(lv), who = Q.name(), truth = coin(), said = truth ? c.n * c.k : R.pick([c.n + c.k, c.n * c.k + c.k, c.n * c.k - c.k].filter(function (v) { return v !== c.n * c.k; }));
       return tf(hasOne(c.th, c.k) + '. ' + who + ' says ' + c.n + ' ' + c.th.many + (c.th.coin ? ' are worth ' : ' have ') + said + ' ' + c.th.parts + '. True or false: ' + who + ' is right.', truth, c.n + X + c.k + ' = ' + c.n * c.k + '.',
         ['Add ' + c.n + ' and ' + c.k + '.', 'Each new ' + c.th.one + ' adds 1 more.', 'The number stays the same.'], 'Count by ' + c.k + 's, ' + c.n + ' times.', { hint: 'Count by ' + c.k + 's.', meta: { k: 'g3md-tf', a: c.n, b: c.k, op: 'x', said: said } });
     }]
@@ -895,7 +895,7 @@
       return num('How many ' + c[1] + ' make ' + (c[2] === '$' ? '$' + t : t + '&cent;') + '?', n, divFix(t, c[0]), { hint: (c[1] === 'toonies' ? 'A toonie is $2' : 'Each one is ' + c[0] + '&cent;') + '. Count by ' + c[0] + 's.', steps: ['Count by ' + c[0] + 's to ' + t + ': ' + skips(c[0], n) + '.', n + ' ' + c[1] + '.'], explain: t + DV + c[0] + ' = ' + n + '.', meta: mt(t, c[0], 'd') });
     }],
     [2, 'tf', function (lv) {
-      var c = rcase(lv), t = c.n * c.k, who = Q.name(), truth = coin(), said = truth ? c.n : R.pick([c.n + 1, c.n - 1, t - c.k]);
+      var c = rcase(lv), t = c.n * c.k, who = Q.name(), truth = coin(), said = truth ? c.n : R.pick([c.n + 1, c.n - 1, t - c.k].filter(function (v) { return v !== c.n; }));
       return tf(hasOne(c.th, c.k) + '. ' + who + ' says ' + (c.th.coin ? t + '&cent; is ' : t + ' ' + c.th.parts + ' means ') + said + ' ' + c.th.many + '. True or false: ' + who + ' is right.', truth, said + X + c.k + ' = ' + said * c.k + (truth ? '.' : ', not ' + t + '.'),
         ['Take ' + c.k + ' away once.', 'The total is the number of ' + c.th.many + '.', 'Add ' + c.k + '.'], 'Check: ' + said + X + c.k + '.', { hint: 'Multiply to check.', meta: { k: 'g3md-tf', a: t, b: c.k, op: 'd', said: said } });
     }],
