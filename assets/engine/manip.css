@@ -1,7 +1,7 @@
 /* Math Atlas manipulatives and one-concept lessons. Shared by every grade.
    All colours come from the grade's theme variables, with plain fallbacks, so each grade keeps its own look.
-   A grade can set --mp-ones, --mp-tens, --mp-hund, --mp-glow, --mp-radius to tune the tools. */
-.mp,.mp-player,.mp-ghost{--mo:var(--mp-ones,var(--p0,#e0a100));--mt:var(--mp-tens,var(--p1,#2f9e44));--mh:var(--mp-hund,var(--p2,#2f62c4));
+   A grade can set --mp-ones, --mp-tens, --mp-hund, --mp-thou, --mp-glow, --mp-radius to tune the tools. */
+.mp,.mp-player,.mp-ghost{--mo:var(--mp-ones,var(--p0,#e0a100));--mt:var(--mp-tens,var(--p1,#2f9e44));--mh:var(--mp-hund,var(--p2,#2f62c4));--mk:var(--mp-thou,var(--p4,#7646bf));
   --mg:var(--mp-glow,var(--hi,#f6d36b));--mr:var(--mp-radius,14px);--mline:var(--line,#dfe5ee);--mcard:var(--card,#fff);--mink:var(--ink,#132039);
   position:relative;margin:8px 0}
 .mp .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
@@ -51,7 +51,7 @@
 .mp-col{border-left:2px dashed var(--mline);padding:6px 4px;text-align:center;transition:background .3s}
 .mp-col:first-child{border-left:0}
 .mp-col>span{display:inline-block;font-weight:700;font-size:.78rem;letter-spacing:.04em;text-transform:uppercase;padding:1px 10px;border-radius:99px;color:#fff}
-.mp-ch>span{background:var(--mh)}.mp-ct>span{background:var(--mt)}.mp-co>span{background:var(--mo);color:#2b2118}
+.mp-ck>span{background:var(--mk)}.mp-ch>span{background:var(--mh)}.mp-ct>span{background:var(--mt)}.mp-co>span{background:var(--mo);color:#2b2118}
 .mp-layer{position:absolute;inset:0}
 .mp-pc{position:absolute;left:0;top:0;padding:0;border:0;background:none;cursor:pointer;transition:transform .55s cubic-bezier(.45,.05,.3,1.15),width .3s,height .3s}
 .mp-o::after{content:"";position:absolute;inset:-4px}
@@ -65,6 +65,10 @@
 .mp-t .mp-blk{--c:var(--mt);background-image:linear-gradient(to bottom,color-mix(in srgb,var(--mt) 62%,#000) 1px,transparent 1px),linear-gradient(100deg,rgba(255,255,255,.3),transparent 60%);background-size:100% var(--u,10px),100% 100%}
 .mp-h .mp-blk{--c:var(--mh);background-image:linear-gradient(color-mix(in srgb,var(--mh) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mh) 62%,#000) 1px,transparent 1px),linear-gradient(135deg,rgba(255,255,255,.28),transparent 60%);
   background-size:var(--u,10px) var(--u,10px),var(--u,10px) var(--u,10px),100% 100%}
+/* a thousand cube: ten hundreds deep, so its top and side faces are gridded too */
+.mp-k .mp-blk{--c:var(--mk);--d:calc(var(--u,10px) * 3);background-image:linear-gradient(color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(135deg,rgba(255,255,255,.28),transparent 60%);
+  background-size:var(--u,10px) var(--u,10px),var(--u,10px) var(--u,10px),100% 100%}
+.mp-k .mp-blk::before,.mp-k .mp-blk::after{background-image:linear-gradient(color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px);background-size:var(--u,10px) var(--u,10px)}
 .mp-pc:hover .mp-blk{filter:brightness(1.08)}
 .mp-pc.lit{z-index:2}
 .mp-pc.lit .mp-blk{filter:brightness(1.2) saturate(1.2);box-shadow:0 0 0 3px #fff,0 0 0 6px var(--mg),0 0 18px 6px color-mix(in srgb,var(--mg) 70%,transparent);transform:scale(1.06)}
@@ -81,13 +85,13 @@
 .mp-pvt>div{border-left:2px solid var(--mline);transition:background .3s}
 .mp-pvt>div:first-child{border-left:0}
 .mp-pvt span{display:block;font-size:.72rem;font-weight:700;text-transform:uppercase;letter-spacing:.04em;padding:2px 0;color:#fff}
-.mp-pvt .mp-ch span{background:var(--mh)}.mp-pvt .mp-ct span{background:var(--mt)}.mp-pvt .mp-co span{background:var(--mo);color:#2b2118}
+.mp-pvt .mp-ck span{background:var(--mk)}.mp-pvt .mp-ch span{background:var(--mh)}.mp-pvt .mp-ct span{background:var(--mt)}.mp-pvt .mp-co span{background:var(--mo);color:#2b2118}
 .mp-pvt b{display:block;font-family:var(--display,inherit);font-size:1.7rem;line-height:1.4}
 .mp-pvt .over{background:color-mix(in srgb,var(--bad,#b4283f) 14%,var(--mcard))}
 .mp-pvt .over b{color:var(--bad,#b4283f)}
 .mp-total{font-size:1.05rem}
 .mp-exp b{font-family:var(--display,inherit)}
-.mp-cht{color:var(--mh)}.mp-ctt{color:var(--mt)}.mp-cot{color:color-mix(in srgb,var(--mo) 70%,#000)}
+.mp-ckt{color:var(--mk)}.mp-cht{color:var(--mh)}.mp-ctt{color:var(--mt)}.mp-cot{color:color-mix(in srgb,var(--mo) 70%,#000)}
 .mp-words{display:inline-block;font-style:italic;color:var(--ink2,#55627a)}
 
 /* ---------- clock, area grid, scale ---------- */
@@ -372,12 +376,13 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 /* ---------- base-ten blocks, Toolbox version (drag) ---------- */
 .mp-b10d{flex:1;display:flex;margin:0}
 .mp-dwrap{flex:1;display:flex;gap:14px;min-width:0}
-.mp-dtray{flex:none;width:136px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px;padding:16px 8px;background:var(--mcard);border-radius:20px;box-shadow:var(--at-shadow,0 8px 24px rgba(19,32,57,.06))}
+.mp-dtray{flex:none;width:136px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:12px 8px;background:var(--mcard);border-radius:20px;box-shadow:var(--at-shadow,0 8px 24px rgba(19,32,57,.06))}
 .mp-tp{display:flex;flex-direction:column;align-items:center;gap:8px;border:0;background:none;padding:10px 8px 6px;border-radius:14px;cursor:grab}
 .mp-tp:hover{background:color-mix(in srgb,var(--mg) 18%,transparent)}
 .mp-tp small{font-weight:700;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2,#55627a)}
 .mp-tp .mp-pc{position:relative;display:block;transition:none;cursor:inherit}
-.mp-tp[data-k=h] .mp-pc{--u:8px;width:80px;height:80px}
+.mp-tp[data-k=k] .mp-pc{--u:5.4px;width:54px;height:54px;margin:16px 16px 0 0}
+.mp-tp[data-k=h] .mp-pc{--u:7px;width:70px;height:70px}
 .mp-tp[data-k=t] .mp-pc{--u:11px;width:11px;height:110px}
 .mp-tp[data-k=o] .mp-pc{--u:28px;width:28px;height:28px}
 .mp-b10d .mp-pc,.mp-b10d .mp-tp{touch-action:none;-webkit-user-select:none;user-select:none}
@@ -386,7 +391,7 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 .mp-cmode span{font-weight:700;font-size:.85rem;color:var(--ink2,#55627a);margin-right:4px}
 .mp-cmode button{min-height:40px;padding:4px 14px;font-size:.95rem;border-radius:12px;border:1.5px solid var(--mline);background:var(--mcard);font-weight:700;color:var(--ink2,#55627a);cursor:pointer}
 .mp-cmode button[aria-pressed=true]{border-color:var(--accent,#0b6e78);background:var(--at-tint,#e8f3f4);color:var(--accent,#0b6e78)}
-.mp-b10d .mp-mat{flex:1 0 auto;min-height:max(340px,calc(100dvh - 146px));border:0;border-radius:22px;box-shadow:var(--at-shadow,0 8px 24px rgba(19,32,57,.06))}
+.mp-b10d .mp-mat{flex:none;height:max(340px,calc(100dvh - 156px));border:0;border-radius:22px;box-shadow:var(--at-shadow,0 8px 24px rgba(19,32,57,.06))}
 .mp-b10d .mp-col{padding:14px 8px}
 .mp-b10d .mp-col>span{font-size:.82rem;padding:4px 12px}
 .mp-b10d .mp-col.mp-over{background:color-mix(in srgb,var(--mg) 16%,transparent)}
@@ -398,6 +403,7 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 .mp-mat.is-empty .mp-empty{display:block}
 .mp-snaps{position:absolute;left:8px;right:8px;bottom:16px;z-index:4;display:flex;flex-wrap:wrap;justify-content:center;gap:8px;pointer-events:none}
 .mp-snap{pointer-events:auto;min-height:44px;padding:6px 16px;border-radius:14px;border:1.5px solid var(--mline);background:var(--mcard);font-weight:700;color:var(--ink2,#55627a);cursor:pointer;box-shadow:0 4px 14px rgba(19,32,57,.08)}
+.mp-snap i{font-style:normal}
 .mp-snap.go{background:var(--mink);border-color:var(--mink);color:#fff}
 .mp-snap.go::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:var(--mg);margin-right:9px;vertical-align:1px}
 .mp-say{position:absolute;left:50%;top:56px;z-index:5;margin:0;transform:translate(-50%,-6px);opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
@@ -407,14 +413,17 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 @media (max-width:700px){
   .mp-dwrap{flex-direction:column-reverse;gap:10px}
   .mp-dtray{width:auto;flex-direction:row;justify-content:space-around;gap:8px;padding:8px}
-  .mp-tp{flex-direction:row;gap:10px;padding:8px}
-  .mp-tp[data-k=h] .mp-pc{--u:5px;width:50px;height:50px}
+  .mp-tp{gap:4px;padding:4px 6px;justify-content:flex-end}
+  .mp-tp small{font-size:.62rem;letter-spacing:.04em}
+  .mp-tp[data-k=k] .mp-pc{--u:3.4px;width:34px;height:34px;margin:10px 10px 0 0}
+  .mp-tp[data-k=h] .mp-pc{--u:4px;width:40px;height:40px}
   .mp-tp[data-k=t] .mp-pc{--u:6px;width:6px;height:60px}
   .mp-tp[data-k=o] .mp-pc{--u:22px;width:22px;height:22px}
-  .mp-b10d .mp-mat{min-height:max(300px,calc(100dvh - 290px))}
+  .mp-b10d .mp-mat{height:max(300px,calc(100dvh - 290px))}
   .mp-b10d .mp-col{padding:10px 4px}
   .mp-b10d .mp-col>span{font-size:.68rem;padding:3px 8px}
   .mp-snap{min-height:40px;padding:4px 12px;font-size:.9rem}
+  .mp-snap i{display:none}
   .mp-cmode{flex-wrap:nowrap;gap:5px;margin-bottom:8px}
   .mp-cmode span{font-size:.78rem;margin-right:0}
   .mp-cmode button{min-height:38px;padding:2px 10px;font-size:.85rem;white-space:nowrap}

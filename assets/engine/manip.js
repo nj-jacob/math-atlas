@@ -59,15 +59,18 @@
   }
 
   /* ================= Base-ten blocks =================
-     options: h, t, o (start counts); cols ['h','t','o'] or ['t','o']; controls (tray of buttons);
+     options: h, t, o (start counts); cols ['h','t','o'] or ['t','o'] (the Toolbox adds 'k', thousands); controls (tray of buttons);
      readout (place value chart); words(n) (number words); expanded (show 100 + 40 + 7); tap (light up on tap, default true);
      max {h,t,o}; hideTotal; u / uMax (block size); onChange(state, tool).
-     drag: the Toolbox version. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
+     drag: the Toolbox version. The mat keeps one size and the blocks get smaller as more are added. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
      drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten; tap a square inside a ten or hundred
      to number it 1, 2, 3 (when "Tap to count" is on Small squares). Adds undo() and showNumbers(on).
      Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h', piece), countAll(), lightKind(kind), clearLit(). */
-  var VAL = { h: 100, t: 10, o: 1 }, NAME = { h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
-  var PLACE = { h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { h: 'Hundred', t: 'Ten', o: 'One' };
+  var VAL = { k: 1000, h: 100, t: 10, o: 1 }, NAME = { k: 'thousand cube', h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { k: 'thousand cubes', h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
+  var PLACE = { k: 'Thousands', h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { k: 'Thousand', h: 'Hundred', t: 'Ten', o: 'One' };
+  var KINDS = ['k', 'h', 't', 'o'], UP = { o: 't', t: 'h', h: 'k' }, DOWN = { k: 'h', h: 't', t: 'o' };
+  /* Toolbox mat: how wide each column is, in block units (a thousand cube needs room for its depth) */
+  var WIDE = { k: 14.5, h: 11.2, t: 10, o: 8 };
   M.base10 = function (root, o) {
     o = o || {};
     var T = base(root, 'b10'), cols = o.cols || ['h', 't', 'o'], pieces = [], litOrder = [], last = '', hist = [], dragEnd = 0, countMode = 'block';
@@ -94,14 +97,46 @@
         '<button type="button" data-m="block" aria-pressed="true">Whole blocks</button><button type="button" data-m="unit" aria-pressed="false">Small squares</button></div>' + matHtml + '</div></div>';
     } else root.innerHTML = tray + matHtml;
     var mat = qs('.mp-mat', root), layer = qs('.mp-layer', root), read = qs('.mp-read', root);
+    if (o.drag) mat.style.gridTemplateColumns = cols.map(function (k) { return WIDE[k] + 'fr'; }).join(' ');
 
     function counts() {
-      var c = { h: 0, t: 0, o: 0 };
+      var c = { k: 0, h: 0, t: 0, o: 0 };
       pieces.forEach(function (p) { c[p.k]++; });
       return c;
     }
-    function value() { var c = counts(); return c.h * 100 + c.t * 10 + c.o; }
+    function value() { var c = counts(); return c.k * 1000 + c.h * 100 + c.t * 10 + c.o; }
+    /* Toolbox: where the i-th of n blocks of a kind sits inside its column (width W), at block size u */
+    function dslot(k, i, n, u, W) {
+      if (k === 'k') return { x: 0, y: 3 * u + i * 1.5 * u, w: 10 * u, h: 10 * u };
+      if (k === 'h') return { x: 0, y: 0.2 * u + i * 1.3 * u, w: 10 * u, h: 10 * u };
+      if (k === 't') {
+        var per = Math.max(1, Math.floor((W - 0.2 * u + 0.5 * u) / (1.5 * u)));
+        return { x: (i % per) * 1.5 * u, y: 0.2 * u + Math.floor(i / per) * 10.8 * u, w: u, h: 10 * u };
+      }
+      var gpr = Math.max(1, Math.floor((W + 0.9 * u) / (6.9 * u))), g = Math.floor(i / 10), j = i % 10;
+      return { x: (g % gpr) * 6.9 * u + (j % 5) * 1.2 * u, y: 0.2 * u + Math.floor(g / gpr) * 3.3 * u + Math.floor(j / 5) * 1.2 * u, w: u, h: u };
+    }
+    /* Toolbox: the mat keeps its size; the biggest block size at which every column's blocks fit */
+    function dgeom() {
+      var W = mat.clientWidth || 600, H = mat.clientHeight || 400, c = counts(), tot = 0, x = {}, cw = {}, at = 0, top = 64;
+      cols.forEach(function (k) { tot += WIDE[k]; });
+      cols.forEach(function (k) { cw[k] = W * WIDE[k] / tot; x[k] = at; at += cw[k]; });
+      /* the bottom strip stays clear for the snap buttons; when they wrap to more rows, the blocks shrink to make room */
+      var pad = clamp(W / tot * 0.4, 4, 12), u = o.uMax || 34, foot = Math.max(72, snapH + 28);
+      var need = { k: 13.2, h: 10.4, t: 1.4, o: 6.2 };
+      function fits(u) {
+        return cols.every(function (k) {
+          if (need[k] * u > cw[k] - 2 * pad) return false;
+          if (!c[k]) return true;
+          var r = dslot(k, c[k] - 1, c[k], u, cw[k] - 2 * pad);
+          return r.y + r.h + 0.2 * u <= H - top - foot;
+        });
+      }
+      while (u > 3 && !fits(u)) u -= 0.5;
+      return { u: u, x: x, cw: cw, pad: pad, top: top };
+    }
     function geom() {
+      if (o.drag) return dgeom();
       var W = mat.clientWidth || 600, cw = W / cols.length, pad = clamp(cw * 0.07, 6, 16), inner = cw - 2 * pad;
       /* without a hundreds column the blocks can be bigger, which makes them easier to tap */
       var big = cols.indexOf('h') < 0;
@@ -109,10 +144,12 @@
     }
     /* where the i-th piece of a kind sits, given how many of that kind there are */
     function slot(k, i, n, g) {
+      if (o.drag) {
+        var d = dslot(k, i, n, g.u, g.cw[k] - 2 * g.pad);
+        return { x: g.x[k] + g.pad + d.x, y: g.top + d.y, w: d.w, h: d.h };
+      }
       var u = g.u, x0 = cols.indexOf(k) * g.cw + g.pad, y0 = g.top;
       if (k === 'h') {
-        /* Toolbox: hundreds pile up, each showing a strip, so the mat does not grow */
-        if (o.drag) return { x: x0, y: y0 + i * 1.3 * u, w: 10 * u, h: 10 * u };
         var step = n > 3 ? Math.max(2.2 * u, (7 * u) / (n - 1) + 0.5 * u) : 10.8 * u;
         return { x: x0 + (n > 3 ? i * 0.35 * u : 0), y: y0 + i * step, w: 10 * u, h: 10 * u };
       }
@@ -129,14 +166,14 @@
       p.r = r;
     }
     function layout() {
-      var g = geom(), c = counts(), idx = { h: 0, t: 0, o: 0 }, bottom = g.top + 10.4 * g.u;
+      var g = geom(), c = counts(), idx = { k: 0, h: 0, t: 0, o: 0 }, bottom = g.top + 10.4 * g.u;
       mat.style.setProperty('--u', g.u + 'px');
       pieces.forEach(function (p) {
         var r = slot(p.k, idx[p.k]++, c[p.k], g);
         put(p, r);
         bottom = Math.max(bottom, r.y + r.h);
       });
-      mat.style.height = Math.ceil(bottom + g.pad + 4) + 'px';
+      if (!o.drag) mat.style.height = Math.ceil(bottom + g.pad + 4) + 'px';
     }
     function make(k, enter) {
       var p = { k: k, lit: false, el: button('mp-pc mp-' + k, '<i class="mp-blk"></i><b class="mp-cnt"></b>', NAME[k] + ', worth ' + VAL[k]) };
@@ -144,7 +181,7 @@
       if (o.tap === false) p.el.tabIndex = -1;
       p.el.addEventListener('click', function (e) {
         if (o.tap === false || Date.now() - dragEnd < 400) return;
-        if (o.drag && k !== 'o' && countMode === 'unit' && e.detail) unit(p, e); else toggle(p);
+        if (o.drag && (k === 'h' || k === 't') && countMode === 'unit' && e.detail) unit(p, e); else toggle(p);
       });
       if (o.drag) p.el.addEventListener('pointerdown', function (e) { drag(e, k, p); });
       if (enter && !T.fast) p.el.classList.add('mp-enter');
@@ -153,7 +190,7 @@
     }
     /* keep pieces sorted hundreds, tens, ones so new ones land at the end of their column */
     function insert(p) {
-      var order = { h: 0, t: 1, o: 2 }, at = pieces.length;
+      var order = { k: 0, h: 1, t: 2, o: 3 }, at = pieces.length;
       for (var i = 0; i < pieces.length; i++) if (order[pieces[i].k] > order[p.k]) { at = i; break; }
       pieces.splice(at, 0, p);
     }
@@ -191,7 +228,7 @@
     }
     function state() {
       var c = counts(), lt = litOrder.reduce(function (s, p) { return s + VAL[p.k]; }, 0);
-      return { h: c.h, t: c.t, o: c.o, value: c.h * 100 + c.t * 10 + c.o, lit: litOrder.length, litValue: lt, allLit: pieces.length > 0 && litOrder.length === pieces.length, last: last, pieces: pieces.length };
+      return { k: c.k, h: c.h, t: c.t, o: c.o, value: value(), lit: litOrder.length, litValue: lt, allLit: pieces.length > 0 && litOrder.length === pieces.length, last: last, pieces: pieces.length };
     }
     function readout() {
       var c = counts(), v = value(), h = '';
@@ -205,7 +242,7 @@
       }
       if (!o.hideTotal) {
         h += '<p class="mp-total"><span class="mp-num">' + fmt(v) + '</span>';
-        if (o.expanded && v) h += ' <span class="mp-exp">= ' + ['h', 't', 'o'].filter(function (k) { return c[k]; }).map(function (k) { return '<b class="mp-c' + k + 't">' + fmt(c[k] * VAL[k]) + '</b>'; }).join(' + ') + '</span>';
+        if (o.expanded && v) h += ' <span class="mp-exp">= ' + KINDS.filter(function (k) { return c[k]; }).map(function (k) { return '<b class="mp-c' + k + 't">' + fmt(c[k] * VAL[k]) + '</b>'; }).join(' + ') + '</span>';
         if (o.words && v <= 999) h += ' <span class="mp-words">' + o.words(v) + '</span>';
         h += '</p>';
       }
@@ -265,14 +302,14 @@
     };
     /* 10 ones slide together into a ten (or 10 tens into a hundred) */
     T.group = function (k) {
-      var up = k === 'o' ? 't' : 'h', list = pieces.filter(function (p) { return p.k === k; });
+      var up = UP[k], list = pieces.filter(function (p) { return p.k === k; });
       if (list.length < 10 || cols.indexOf(up) < 0) return Promise.resolve(false);
       var ep = T.ep, ten = list.slice(-10), g = geom(), c = counts(), u = g.u;
       var target = slot(up, c[up], c[up] + 1, g);
       ten.forEach(function (p, i) {
         unlit(p);
         p.el.classList.add('mp-merge');
-        put(p, up === 't' ? { x: target.x, y: target.y + i * u, w: u, h: u } : { x: target.x + i * u, y: target.y, w: u, h: 10 * u });
+        put(p, up === 't' ? { x: target.x, y: target.y + i * u, w: u, h: u } : up === 'h' ? { x: target.x + i * u, y: target.y, w: u, h: 10 * u } : { x: target.x, y: target.y + i * 0.3 * u, w: 10 * u, h: 10 * u });
       });
       relabel();
       return T.wait(700).then(function () {
@@ -289,13 +326,13 @@
     };
     /* a ten breaks into 10 ones (or a hundred into 10 tens) */
     T.split = function (k, piece) {
-      var down = k === 't' ? 'o' : 't', list = pieces.filter(function (p) { return p.k === k; });
+      var down = DOWN[k], list = pieces.filter(function (p) { return p.k === k; });
       if (!list.length || cols.indexOf(down) < 0) return Promise.resolve(false);
       var ep = T.ep, p = piece || list[list.length - 1], r = p.r, u = geom().u, made = [];
       for (var i = 0; i < 10; i++) {
         var np = make(down, false);
         np.el.classList.add('mp-merge');
-        put(np, down === 'o' ? { x: r.x, y: r.y + i * u, w: u, h: u } : { x: r.x + i * u, y: r.y, w: u, h: 10 * u });
+        put(np, down === 'o' ? { x: r.x, y: r.y + i * u, w: u, h: u } : down === 't' ? { x: r.x + i * u, y: r.y, w: u, h: 10 * u } : { x: r.x, y: r.y + i * 0.3 * u, w: 10 * u, h: 10 * u });
         insert(np); made.push(np);
       }
       pieces.splice(pieces.indexOf(p), 1); unlit(p); p.el.remove(); relabel();
@@ -334,7 +371,7 @@
       pieces.slice().forEach(function (p) { p.el.remove(); });
       pieces = []; litOrder = [];
       var f = T.fast; T.fast = true;
-      ['h', 't', 'o'].forEach(function (k) { for (var i = 0; i < (c[k] || 0); i++) insert(make(k, false)); });
+      KINDS.forEach(function (k) { if (cols.indexOf(k) >= 0) for (var i = 0; i < (c[k] || 0); i++) insert(make(k, false)); });
       T.fast = f;
       layout(); change();
     }
@@ -370,19 +407,24 @@
       announce(T, marks.length ? 'Counted ' + marks.length + ' of ' + VAL[p.k] : 'Nothing counted');
     }
     function k10(p) { return p.k === 'h' ? { w: 10 } : { w: 1 }; }
+    var snapH = 0;
     function snaps() {
       var c = counts(), b = [];
-      if (c.o >= 10 && cols.indexOf('t') >= 0) b.push(['go', 'Snap 10 ones into a ten', 1]);
-      if (c.t >= 10 && cols.indexOf('h') >= 0) b.push(['gt', 'Snap 10 tens into a hundred', 1]);
+      if (c.o >= 10 && cols.indexOf('t') >= 0) b.push(['go', 'Snap<i> 10 ones into</i> a ten', 1]);
+      if (c.t >= 10 && cols.indexOf('h') >= 0) b.push(['gt', 'Snap<i> 10 tens into</i> a hundred', 1]);
+      if (c.h >= 10 && cols.indexOf('k') >= 0) b.push(['gh', 'Snap<i> 10 hundreds into</i> a thousand', 1]);
       if (c.t && cols.indexOf('o') >= 0 && c.o + 10 <= max.o) b.push(['st', 'Break a ten', 0]);
       if (c.h && cols.indexOf('t') >= 0 && c.t + 10 <= max.t) b.push(['sh', 'Break a hundred', 0]);
+      if (c.k && cols.indexOf('h') >= 0 && c.h + 10 <= max.h) b.push(['sk', 'Break a thousand', 0]);
       qs('.mp-snaps', root).innerHTML = b.map(function (x) { return '<button type="button" class="mp-snap' + (x[2] ? ' go' : '') + '" data-a="' + x[0] + '">' + x[1] + '</button>'; }).join('');
       mat.classList.toggle('is-empty', !pieces.length);
+      var h = qs('.mp-snaps', root).offsetHeight;
+      if (h !== snapH) { snapH = h; layout(); }
     }
     function colAt(x, y) {
-      var r = mat.getBoundingClientRect();
-      if (x < r.left || x > r.right || y < r.top || y > r.bottom) return null;
-      return cols[clamp(Math.floor((x - r.left) / (r.width / cols.length)), 0, cols.length - 1)];
+      var hit = null;
+      qsa('.mp-col', mat).forEach(function (c) { var r = c.getBoundingClientRect(); if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) hit = c.getAttribute('data-k'); });
+      return hit;
     }
     function over(k) { qsa('.mp-col', mat).forEach(function (c) { c.classList.toggle('mp-over', c.getAttribute('data-k') === k); }); }
     /* a block dropped from the tray (piece is null) or from the mat, on column col (null: off the mat) */
@@ -407,7 +449,7 @@
         if (ev.pointerId !== e.pointerId) return;
         if (!ghost) {
           if (Math.abs(ev.clientX - sx) + Math.abs(ev.clientY - sy) < 8) return;
-          var u = geom().u, w = (k === 'h' ? 10 : 1) * u, h = (k === 'o' ? 1 : 10) * u;
+          var u = geom().u, w = (k === 'h' || k === 'k' ? 10 : 1) * u, h = (k === 'o' ? 1 : 10) * u;
           if (piece) { var r = piece.el.getBoundingClientRect(); ox = sx - r.left; oy = sy - r.top; unlit(piece); relabel(); piece.el.classList.add('mp-lift'); }
           else { ox = w / 2; oy = Math.min(h / 2, 24); }
           ghost = el('span', 'mp-pc mp-' + k + ' mp-ghost', '<i class="mp-blk"></i>');
@@ -446,7 +488,7 @@
         if (!b || !root.contains(b) || Date.now() - dragEnd < 400) return;
         var k = b.getAttribute('data-k'), a = b.getAttribute('data-a');
         if (k) { if (canAdd(k)) act(function () { T.add(k, 1); }); else say('The mat is full. Take some blocks away first.'); }
-        else act(function () { if (a === 'go') T.group('o'); else if (a === 'gt') T.group('t'); else if (a === 'st') T.split('t'); else T.split('h'); });
+        else act(function () { if (a === 'go') T.group('o'); else if (a === 'gt') T.group('t'); else if (a === 'gh') T.group('h'); else if (a === 'st') T.split('t'); else if (a === 'sh') T.split('h'); else T.split('k'); });
       });
     }
 
@@ -467,6 +509,8 @@
     }
     T.reset();
     watchSize(T, layout);
+    /* the Toolbox mat follows the screen's height too (turning an iPad) */
+    if (o.drag && window.ResizeObserver) { var mh = 0; new ResizeObserver(function () { if (mat.clientHeight !== mh) { mh = mat.clientHeight; layout(); } }).observe(mat); }
     return T;
   };
 
@@ -1524,7 +1568,7 @@
       '<circle cx="16" cy="18" r="7" style="fill:#c0392b"/><circle cx="32" cy="16" r="7" style="fill:#c0392b"/><circle cx="24" cy="31" r="7" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['tenframe', 'num', 'Ten-frames', 'Tap a box to put in a counter. Tap again to change its colour.', { frames: 2, two: true },
       '<rect x="5" y="13" width="38" height="22" rx="2" style="fill:none;stroke:var(--ink,#132039);stroke-width:2"/><path d="M12.6 13v22M20.2 13v22M27.8 13v22M35.4 13v22M5 24h38" style="stroke:var(--ink,#132039);stroke-width:1.5"/><circle cx="8.8" cy="18.5" r="2.6" style="fill:#c0392b"/><circle cx="16.4" cy="18.5" r="2.6" style="fill:#c0392b"/><circle cx="24" cy="18.5" r="2.6" style="fill:#c0392b"/>'],
-    ['base10', 'num', 'Place value blocks', '', { drag: true, readout: false, hideTotal: true, u: 34, uMax: 34, max: { h: 9, t: 19, o: 29 } },
+    ['base10', 'num', 'Place value blocks', '', { drag: true, cols: ['k', 'h', 't', 'o'], readout: false, hideTotal: true, u: 34, uMax: 34, limit: 9999, max: { k: 9, h: 19, t: 19, o: 29 } },
       '<rect x="6" y="14" width="18" height="18" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="8" width="6" height="30" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="37" y="30" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['disks', 'num', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] },
       '<circle cx="15" cy="17" r="9" style="fill:var(--mp-hund,#2f62c4)"/><circle cx="33" cy="17" r="9" style="fill:var(--mp-tens,#2f9e44)"/><circle cx="24" cy="33" r="9" style="fill:var(--mp-ones,#e0a100)"/>'],
