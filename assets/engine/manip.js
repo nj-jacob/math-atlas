@@ -356,18 +356,20 @@
     }
     /* Toolbox: tap a small square inside a ten or a hundred to light it and number it 1, 2, 3... (that block's own count) */
     function unit(p, e) {
-      var u = geom().u, r = p.el.getBoundingClientRect(), col = clamp(Math.floor((e.clientX - r.left) / u), 0, k10(p).w - 1), row = clamp(Math.floor((e.clientY - r.top) / u), 0, k10(p).h - 1);
+      var blk = qs('.mp-blk', p.el), r = blk.getBoundingClientRect(), w = k10(p).w;
+      var col = clamp(Math.floor((e.clientX - r.left) / (r.width / w)), 0, w - 1), row = clamp(Math.floor((e.clientY - r.top) / (r.height / 10)), 0, 9);
       var id = row * 10 + col, marks = p.marks = p.marks || [], at = marks.indexOf(id);
       if (at >= 0) marks.splice(at, 1); else marks.push(id);
-      qsa('.mp-u', p.el).forEach(function (m) { m.remove(); });
+      qsa('.mp-u', blk).forEach(function (m) { m.remove(); });
+      /* placed in tenths of the block, inside it, so the squares stay lined up when the block grows as it lights up */
       marks.forEach(function (m, i) {
         var s = el('span', 'mp-u', String(i + 1));
-        s.style.cssText = 'left:' + (m % 10) * u + 'px;top:' + Math.floor(m / 10) * u + 'px;width:' + u + 'px;height:' + u + 'px;font-size:' + Math.max(8, u * 0.42) + 'px';
-        p.el.appendChild(s);
+        s.style.cssText = 'left:' + (m % 10) * 100 / w + '%;top:' + Math.floor(m / 10) * 10 + '%;width:' + 100 / w + '%;height:10%;font-size:' + Math.max(8, geom().u * 0.42) + 'px';
+        blk.appendChild(s);
       });
       announce(T, marks.length ? 'Counted ' + marks.length + ' of ' + VAL[p.k] : 'Nothing counted');
     }
-    function k10(p) { return p.k === 'h' ? { w: 10, h: 10 } : { w: 1, h: 10 }; }
+    function k10(p) { return p.k === 'h' ? { w: 10 } : { w: 1 }; }
     function snaps() {
       var c = counts(), b = [];
       if (c.o >= 10 && cols.indexOf('t') >= 0) b.push(['go', 'Snap 10 ones into a ten', 1]);
