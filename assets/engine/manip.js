@@ -63,7 +63,8 @@
      readout (place value chart); words(n) (number words); expanded (show 100 + 40 + 7); tap (light up on tap, default true);
      max {h,t,o}; hideTotal; u / uMax (block size); onChange(state, tool).
      drag: the Toolbox version. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
-     drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten. Adds undo() and showNumbers(on).
+     drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten; tap a square inside a ten or hundred
+     to number it 1, 2, 3... Adds undo() and showNumbers(on).
      Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h', piece), countAll(), lightKind(kind), clearLit(). */
   var VAL = { h: 100, t: 10, o: 1 }, NAME = { h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
   var PLACE = { h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { h: 'Hundred', t: 'Ten', o: 'One' };
@@ -140,7 +141,10 @@
       var p = { k: k, lit: false, el: button('mp-pc mp-' + k, '<i class="mp-blk"></i><b class="mp-cnt"></b>', NAME[k] + ', worth ' + VAL[k]) };
       p.el.setAttribute('aria-pressed', 'false');
       if (o.tap === false) p.el.tabIndex = -1;
-      p.el.addEventListener('click', function () { if (o.tap !== false && Date.now() - dragEnd > 400) toggle(p); });
+      p.el.addEventListener('click', function (e) {
+        if (o.tap === false || Date.now() - dragEnd < 400) return;
+        if (o.drag && k !== 'o' && e.detail) unit(p, e); else toggle(p);
+      });
       if (o.drag) p.el.addEventListener('pointerdown', function (e) { drag(e, k, p); });
       if (enter && !T.fast) p.el.classList.add('mp-enter');
       layer.appendChild(p.el);
@@ -348,6 +352,20 @@
       clearTimeout(sayTimer);
       sayTimer = setTimeout(function () { s.classList.remove('on'); }, 2600);
     }
+    /* Toolbox: tap a small square inside a ten or a hundred to light it and number it 1, 2, 3... (that block's own count) */
+    function unit(p, e) {
+      var u = geom().u, r = p.el.getBoundingClientRect(), col = clamp(Math.floor((e.clientX - r.left) / u), 0, k10(p).w - 1), row = clamp(Math.floor((e.clientY - r.top) / u), 0, k10(p).h - 1);
+      var id = row * 10 + col, marks = p.marks = p.marks || [], at = marks.indexOf(id);
+      if (at >= 0) marks.splice(at, 1); else marks.push(id);
+      qsa('.mp-u', p.el).forEach(function (m) { m.remove(); });
+      marks.forEach(function (m, i) {
+        var s = el('span', 'mp-u', String(i + 1));
+        s.style.cssText = 'left:' + (m % 10) * u + 'px;top:' + Math.floor(m / 10) * u + 'px;width:' + u + 'px;height:' + u + 'px;font-size:' + Math.max(8, u * 0.42) + 'px';
+        p.el.appendChild(s);
+      });
+      announce(T, marks.length ? 'Counted ' + marks.length + ' of ' + VAL[p.k] : 'Nothing counted');
+    }
+    function k10(p) { return p.k === 'h' ? { w: 10, h: 10 } : { w: 1, h: 10 }; }
     function snaps() {
       var c = counts(), b = [];
       if (c.o >= 10 && cols.indexOf('t') >= 0) b.push(['go', 'Snap 10 ones into a ten', 1]);
