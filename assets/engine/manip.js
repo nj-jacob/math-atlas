@@ -86,15 +86,18 @@
         (cols.indexOf('h') >= 0 ? '<button type="button" class="mp-act" data-a="gt">Group 10 tens</button><button type="button" class="mp-act" data-a="sh">Break a hundred</button>' : '') +
         '<button type="button" class="mp-act" data-a="count">Count them</button><button type="button" class="mp-act" data-a="clear">Clear</button></div>';
     }
+    var readHtml = '<div class="mp-read" aria-live="polite"></div>';
     var matHtml = '<div class="mp-mat" style="--n:' + cols.length + '">' + cols.map(function (k) { return '<div class="mp-col mp-c' + k + '" data-k="' + k + '"><span>' + PLACE[k] + '</span></div>'; }).join('') +
       '<div class="mp-layer"></div>' + (o.drag ? '<p class="mp-empty">Drag blocks here</p><div class="mp-snaps"></div><p class="mp-say" aria-live="polite"></p>' : '') + '</div>' +
-      '<div class="mp-read" aria-live="polite"></div><p class="mp-live sr" aria-live="polite"></p>';
+      (o.drag ? '' : readHtml) + '<p class="mp-live sr" aria-live="polite"></p>';
     if (o.drag) {
       root.classList.add('mp-b10d');
       root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray" role="group" aria-label="Blocks to drag onto the mat">' + cols.map(function (k) {
         return '<button type="button" class="mp-tp" data-k="' + k + '" aria-label="Add a ' + NAME[k] + '"><span class="mp-pc mp-' + k + '"><i class="mp-blk"></i></span><small>' + ONE[k] + '</small></button>';
       }).join('') + '</div><div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="What a tap counts"><span>Tap to count</span>' +
-        '<button type="button" data-m="block" aria-pressed="true">Whole blocks</button><button type="button" data-m="unit" aria-pressed="false">Small squares</button></div>' + matHtml + '</div></div>';
+        '<button type="button" data-m="block" aria-pressed="true">Whole blocks</button><button type="button" data-m="unit" aria-pressed="false">Small squares</button></div>' +
+        /* in the Toolbox the number sits above the mat, where it is easy to see; the mat shrinks to make room */
+        readHtml + matHtml + '</div></div>';
     } else root.innerHTML = tray + matHtml;
     var mat = qs('.mp-mat', root), layer = qs('.mp-layer', root), read = qs('.mp-read', root);
     if (o.drag) mat.style.gridTemplateColumns = cols.map(function (k) { return WIDE[k] + 'fr'; }).join(' ');
