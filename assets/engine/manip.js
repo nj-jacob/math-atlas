@@ -64,13 +64,13 @@
      max {h,t,o}; hideTotal; u / uMax (block size); onChange(state, tool).
      drag: the Toolbox version. The mat keeps one size and the blocks get smaller as more are added. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
      drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten; tap a square inside a ten or hundred
-     to number it 1, 2, 3 (when "Tap to count" is on Small squares). Adds undo() and showNumbers(on).
+     to number it 1, 2, 3, or a layer of a thousand cube to count 100, 200, 300 (when "Tap to count" is on Small squares). Adds undo() and showNumbers(on).
      Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h', piece), countAll(), lightKind(kind), clearLit(). */
   var VAL = { k: 1000, h: 100, t: 10, o: 1 }, NAME = { k: 'thousand cube', h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { k: 'thousand cubes', h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
   var PLACE = { k: 'Thousands', h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { k: 'Thousand', h: 'Hundred', t: 'Ten', o: 'One' };
   var KINDS = ['k', 'h', 't', 'o'], UP = { o: 't', t: 'h', h: 'k' }, DOWN = { k: 'h', h: 't', t: 'o' };
   /* Toolbox mat: how wide each column is, in block units (a thousand cube needs room for its depth) */
-  var WIDE = { k: 14.5, h: 11.2, t: 10, o: 8 };
+  var WIDE = { k: 16.5, h: 11.2, t: 10, o: 8 };
   M.base10 = function (root, o) {
     o = o || {};
     var T = base(root, 'b10'), cols = o.cols || ['h', 't', 'o'], pieces = [], litOrder = [], last = '', hist = [], dragEnd = 0, countMode = 'block';
@@ -111,7 +111,7 @@
     /* Toolbox: where the i-th of n blocks of a kind sits inside its column (width W), at block size u */
     function dslot(k, i, n, u, W) {
       /* piled hundreds and thousands leave a strip of each block behind showing, wide enough to tap */
-      if (k === 'k') return { x: 0, y: 3 * u + i * 2 * u, w: 10 * u, h: 10 * u };
+      if (k === 'k') return { x: 0, y: 5 * u + i * 2 * u, w: 10 * u, h: 10 * u };
       if (k === 'h') return { x: 0, y: 0.2 * u + i * 1.8 * u, w: 10 * u, h: 10 * u };
       if (k === 't') {
         var per = Math.max(1, Math.floor((W - 0.2 * u + 0.5 * u) / (1.5 * u)));
@@ -127,7 +127,7 @@
       cols.forEach(function (k) { cw[k] = W * WIDE[k] / tot; x[k] = at; at += cw[k]; });
       /* the bottom strip stays clear for the snap buttons; when they wrap to more rows, the blocks shrink to make room */
       var pad = clamp(W / tot * 0.4, 4, 12), u = o.uMax || 34, foot = Math.max(72, snapH + 28);
-      var need = { k: 13.2, h: 10.4, t: 1.4, o: 6.2 };
+      var need = { k: 15.4, h: 10.4, t: 1.4, o: 6.2 };
       function fits(u) {
         return cols.every(function (k) {
           if (need[k] * u > cw[k] - 2 * pad) return false;
@@ -185,7 +185,7 @@
       if (o.tap === false) p.el.tabIndex = -1;
       p.el.addEventListener('click', function (e) {
         if (o.tap === false || Date.now() - dragEnd < 400) return;
-        if (o.drag && (k === 'h' || k === 't') && countMode === 'unit' && e.detail) unit(p, e); else toggle(p);
+        if (o.drag && k !== 'o' && countMode === 'unit' && e.detail) unit(p, e); else toggle(p);
       });
       if (o.drag) p.el.addEventListener('pointerdown', function (e) { drag(e, k, p); });
       if (enter && !T.fast) p.el.classList.add('mp-enter');
@@ -404,13 +404,14 @@
       qsa('.mp-u', blk).forEach(function (m) { m.remove(); });
       /* placed in tenths of the block, inside it, so the squares stay lined up when the block grows as it lights up */
       marks.forEach(function (m, i) {
-        var s = el('span', 'mp-u', String(i + 1));
+        var s = el('span', 'mp-u', String((i + 1) * k10(p).each));
         s.style.cssText = 'left:' + (m % 10) * 100 / w + '%;top:' + Math.floor(m / 10) * 10 + '%;width:' + 100 / w + '%;height:10%;font-size:' + Math.max(8, geom().u * 0.42) + 'px';
         blk.appendChild(s);
       });
-      announce(T, marks.length ? 'Counted ' + marks.length + ' of ' + VAL[p.k] : 'Nothing counted');
+      announce(T, marks.length ? 'Counted ' + marks.length * k10(p).each + ' of ' + VAL[p.k] : 'Nothing counted');
     }
-    function k10(p) { return p.k === 'h' ? { w: 10 } : { w: 1 }; }
+    /* what one tap marks: a square of a hundred, a square of a ten, or a whole layer (a hundred) of a thousand cube */
+    function k10(p) { return p.k === 'h' ? { w: 10, each: 1 } : p.k === 'k' ? { w: 1, each: 100 } : { w: 1, each: 1 }; }
     var snapH = 0;
     function snaps() {
       var c = counts(), b = [];

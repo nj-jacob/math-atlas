@@ -65,10 +65,12 @@
 .mp-t .mp-blk{--c:var(--mt);background-image:linear-gradient(to bottom,color-mix(in srgb,var(--mt) 62%,#000) 1px,transparent 1px),linear-gradient(100deg,rgba(255,255,255,.3),transparent 60%);background-size:100% var(--u,10px),100% 100%}
 .mp-h .mp-blk{--c:var(--mh);background-image:linear-gradient(color-mix(in srgb,var(--mh) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mh) 62%,#000) 1px,transparent 1px),linear-gradient(135deg,rgba(255,255,255,.28),transparent 60%);
   background-size:var(--u,10px) var(--u,10px),var(--u,10px) var(--u,10px),100% 100%}
-/* a thousand cube: ten hundreds deep, so its top and side faces are gridded too */
-.mp-k .mp-blk{--c:var(--mk);--d:calc(var(--u,10px) * 3);background-image:linear-gradient(color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(135deg,rgba(255,255,255,.28),transparent 60%);
+/* a thousand cube: ten hundreds deep. The depth is drawn at half scale (5 squares' worth), so the top and side faces each show 10 rows of half-size squares */
+.mp-k .mp-blk{--c:var(--mk);--d:calc(var(--u,10px) * 5);background-image:linear-gradient(color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(135deg,rgba(255,255,255,.28),transparent 60%);
   background-size:var(--u,10px) var(--u,10px),var(--u,10px) var(--u,10px),100% 100%}
-.mp-k .mp-blk::before,.mp-k .mp-blk::after{background-image:linear-gradient(color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px);background-size:var(--u,10px) var(--u,10px)}
+.mp-k .mp-blk::before,.mp-k .mp-blk::after{background-image:linear-gradient(color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px),linear-gradient(90deg,color-mix(in srgb,var(--mk) 62%,#000) 1px,transparent 1px)}
+.mp-k .mp-blk::before{background-size:100% calc(var(--d) / 10),var(--u,10px) 100%}
+.mp-k .mp-blk::after{background-size:100% var(--u,10px),calc(var(--d) / 10) 100%}
 .mp-pc:hover .mp-blk{filter:brightness(1.08)}
 .mp-pc.lit{z-index:2}
 .mp-pc.lit .mp-blk{filter:brightness(1.2) saturate(1.2);box-shadow:0 0 0 3px #fff,0 0 0 6px var(--mg),0 0 18px 6px color-mix(in srgb,var(--mg) 70%,transparent);transform:scale(1.06)}
@@ -381,7 +383,7 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 .mp-tp:hover{background:color-mix(in srgb,var(--mg) 18%,transparent)}
 .mp-tp small{font-weight:700;font-size:.72rem;letter-spacing:.06em;text-transform:uppercase;color:var(--ink2,#55627a)}
 .mp-tp .mp-pc{position:relative;display:block;transition:none;cursor:inherit}
-.mp-tp[data-k=k] .mp-pc{--u:5.4px;width:54px;height:54px;margin:16px 16px 0 0}
+.mp-tp[data-k=k] .mp-pc{--u:4.6px;width:46px;height:46px;margin:23px 23px 0 0}
 .mp-tp[data-k=h] .mp-pc{--u:7px;width:70px;height:70px}
 .mp-tp[data-k=t] .mp-pc{--u:11px;width:11px;height:110px}
 .mp-tp[data-k=o] .mp-pc{--u:28px;width:28px;height:28px}
@@ -428,7 +430,7 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
   .mp-dtray{width:auto;flex-direction:row;justify-content:space-around;gap:8px;padding:8px}
   .mp-tp{gap:4px;padding:4px 6px;justify-content:flex-end}
   .mp-tp small{font-size:.62rem;letter-spacing:.04em}
-  .mp-tp[data-k=k] .mp-pc{--u:3.4px;width:34px;height:34px;margin:10px 10px 0 0}
+  .mp-tp[data-k=k] .mp-pc{--u:3px;width:30px;height:30px;margin:15px 15px 0 0}
   .mp-tp[data-k=h] .mp-pc{--u:4px;width:40px;height:40px}
   .mp-tp[data-k=t] .mp-pc{--u:6px;width:6px;height:60px}
   .mp-tp[data-k=o] .mp-pc{--u:22px;width:22px;height:22px}
