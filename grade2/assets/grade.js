@@ -2,7 +2,7 @@
    then Grade 2's own pictures, shared by every chapter. */
 Atlas.setup({
   grade: 2,
-  tools: ['base10', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'clock'],
+  tools: ['base10', 'counters', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'clock'],
   meta: [
     { id: 'numbers-200', title: 'Numbers to 200', sub: 'read, build, compare, count', strand: 'B', codes: 'B1.1 to B1.5',
       desc: 'Hundreds, tens and ones. Compare numbers, skip count, estimate, and even or odd.' },

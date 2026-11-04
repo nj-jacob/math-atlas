@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-04
+- Toolbox **Counters and ten-frames**, one tool in place of the old separate Counters and Ten-frames: tap or drag red and yellow counters from the tray onto the mat. Choose a free mat, 1 ten-frame or 2 ten-frames (a counter dropped on a frame snaps into a box). Tap a counter to turn it over (red to yellow). Drag one off the mat to put it back. **Pair up** shows even and odd, **Rows of ten** shows tens and ones, and **Share into** splits the counters into 2 to 10 equal groups with any left over. With Show number on: "8 + 6 = 14, that is 10 and 4", "7 pairs, none left over", "4 in each, 2 left over". Up to 100 counters. A new check uses it like a child would.
+
 ## 2026-11-03
 - Toolbox **Number line**, rebuilt for Grades 1 to 3 (every grade gets it until the older-grade version): choose 0 to 20, 0 to 100, 0 to 1 000 or a blank line. Drag up to 3 coloured markers onto the line to compare numbers. Make jumps by dragging the round handle by a marker, or with the Jump by buttons (forward or back by 1, 2, 5, 10, 20, 25, 50 or 100). Tap the line between two numbers to zoom in (30 to 40 shows every one). Nearest ten and Nearest hundred shade the tens or hundreds around a marker and mark halfway, for rounding. Numbers and the jump sum show only with Show number. On a phone the line stands up so the numbers have room.
 - Grade 3 multiplying and dividing: a few true-or-false questions could rarely show a "wrong" claim that was actually right (for example "2 × 2 = 4" marked false). Fixed.

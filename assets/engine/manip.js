@@ -524,6 +524,7 @@
      Moves: arrange(name), setN(n), countAll(), clearLit(). */
   M.counters = function (root, o) {
     o = o || {};
+    if (o.tool) return toolCounters(root, o);
     var T = base(root, 'cnt'), dots = [], mode = o.arrange || 'scatter', seed = o.seed || 7, count = 0, last = '';
     root.innerHTML = (o.controls ? '<div class="mp-acts">' +
       '<button type="button" class="mp-act" data-a="less" aria-label="One fewer counter">&minus; 1</button><button type="button" class="mp-act" data-a="more" aria-label="One more counter">+ 1</button>' +
@@ -782,6 +783,312 @@
     return T;
   };
 
+  /* ================= Counters and ten-frames, Toolbox version =================
+     Manip.counters(root, { tool: true }). Red and yellow counters are tapped or dragged from the tray onto the mat.
+     The mat is free, or holds 1 or 2 ten-frames (a counter dropped on a frame snaps into a box; counters can also sit
+     beside the frames). Tap a counter to turn it over (red to yellow). Drag a counter off the mat to put it back.
+     "Pair up", "Rows of ten" and "Share into" (2 to 10 groups) line the counters up on the free mat.
+     Numbers show only with Show number. Up to 100 counters (20 fit on two frames). Adds undo() and showNumbers(on). */
+  var CT_MAX = 100, CT_NAME = { a: 'red', b: 'yellow' };
+  function toolCounters(root, o) {
+    var T = base(root, 'ctt');
+    root.classList.add('mp-tool', 'mp-ctt');
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-cttray"><small>Counters</small>' +
+      ['a', 'b'].map(function (c) { return '<button type="button" class="mp-cpile" data-c="' + c + '" aria-label="Add a ' + CT_NAME[c] + ' counter"><i class="mp-ctr ' + c + '"></i><i class="mp-ctr ' + c + '"></i></button>'; }).join('') +
+      '<small>Sort them</small><div class="mp-csort" role="group" aria-label="Sort the counters"><button type="button" data-s="pairs" aria-pressed="false">Pair up</button><button type="button" data-s="tens" aria-pressed="false">Rows of ten</button><button type="button" data-s="share" aria-pressed="false">Share into&hellip;</button></div></div>' +
+      '<div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="Mat"><span>Mat</span>' +
+      '<button type="button" data-f="free" aria-pressed="true">Free mat</button><button type="button" data-f="one" aria-pressed="false">1 ten-frame</button><button type="button" data-f="two" aria-pressed="false">2 ten-frames</button></div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-cmat"><div class="mp-clayer"></div><p class="mp-empty">Tap or drag a counter from the tray.</p><div class="mp-snaps"></div><p class="mp-say" aria-live="polite"></p></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var mat = qs('.mp-mat', root), layer = qs('.mp-clayer', mat), read = qs('.mp-read', root), sayEl = qs('.mp-say', root);
+    /* state: counters {c: 'a' or 'b', cell (box number, or -1), x, y (centre, as a share of the mat)}, the mat, the sort and its groups */
+    var ctrs = [], kind = 'free', sort = '', k = 3, picking = false, shown = false, hist = [], last = '', G = null, P = [], drag = null, sayT = 0, seed = 5;
+    function nF() { return kind === 'one' ? 1 : kind === 'two' ? 2 : 0; }
+    function geom() {
+      var r = mat.getBoundingClientRect(), W = r.width || 700, H = r.height || 420, F = nF(), g = { W: W, H: H, F: F, boxes: [] }, room = H - 76;
+      g.D = clamp(Math.min(W, H) / 8.5, 34, 56);
+      if (F) {
+        var side = F === 1 || W >= 560, gap = 22, cs;
+        if (F === 1) cs = Math.min((W - 40) / 5, (room - 20) / 2, 84);
+        else if (side) cs = Math.min((W - 64 - gap) / 10, (room - 20) / 2, 80);
+        else cs = Math.min((W - 40) / 5, (room - 20 - gap) / 4, 80);
+        cs = Math.floor(cs);
+        var fw = cs * 5, fh = cs * 2, tw = side ? F * fw + (F - 1) * gap : fw, th = side ? fh : F * fh + (F - 1) * gap;
+        var extra = ctrs.some(function (c) { return c.cell < 0; }) ? cs : 0, x0 = (W - tw) / 2, y0 = Math.max(14, (room - th) / 2 - extra / 2);
+        for (var f = 0; f < F; f++) g.boxes.push({ x: x0 + (side ? f * (fw + gap) : 0), y: y0 + (side ? 0 : f * (fh + gap)), w: fw, h: fh });
+        g.cs = cs; g.D = Math.round(cs * 0.72); g.fbottom = y0 + th;
+      }
+      return g;
+    }
+    function cellXY(i) { var b = G.boxes[Math.floor(i / 10)], j = i % 10; return { x: b.x + (j % 5 + 0.5) * G.cs, y: b.y + (Math.floor(j / 5) + 0.5) * G.cs }; }
+    /* sorted layouts on the free mat: the biggest counters that still fit */
+    function fit(build) {
+      for (var D = clamp(Math.min(G.W, G.H) / 8.5, 34, 56); D >= 14; D -= 2) { var L = build(D); if (L.w <= G.W - 24 && L.h <= G.H - 92) return center(L, D); }
+      return center(build(14), 14);
+    }
+    function center(L, D) {
+      var dx = (G.W - L.w) / 2, dy = Math.max(12, (G.H - 76 - L.h) / 2);
+      L.pos.forEach(function (p) { p.x += dx; p.y += dy; });
+      (L.deco || []).forEach(function (d) { d.x += dx; d.y += dy; });
+      L.D = D; return L;
+    }
+    function layout() {
+      var n = ctrs.length;
+      if (sort === 'pairs') return fit(function (D) {
+        var g = D * 1.18, per = Math.max(1, Math.floor((G.W - 24) / (g * 1.25))), cols = Math.ceil(n / 2), bands = Math.ceil(cols / per) || 1, bh = 2 * g + D * 0.5, pos = [], deco = [];
+        for (var i = 0; i < n; i++) { var c = Math.floor(i / 2), b = Math.floor(c / per); pos.push({ x: (c % per) * g * 1.25 + D / 2, y: b * bh + (i % 2) * g + D / 2 }); }
+        if (n % 2) { var p = pos[n - 1]; deco.push({ t: 'odd', x: p.x - D * 0.75, y: p.y - D * 0.75, w: D * 1.5, h: D * 1.5 }); }
+        return { pos: pos, deco: deco, w: (Math.min(per, cols) - 1) * g * 1.25 + D, h: (bands - 1) * bh + g + D };
+      });
+      if (sort === 'tens') return fit(function (D) {
+        var g = D * (G.W < 520 ? 1.08 : 1.15), pos = [], deco = [], rows = Math.ceil(n / 10) || 1;
+        for (var i = 0; i < n; i++) { var c = i % 10; pos.push({ x: c * g + (c >= 5 ? g * 0.4 : 0) + D / 2, y: Math.floor(i / 10) * g + D / 2 }); }
+        if (shown) for (var r = 0; r < rows; r++) deco.push({ t: 'lab', x: 10.4 * g + D * 0.2, y: r * g + D / 2, s: fmt(Math.min(n, r * 10 + 10)) });
+        return { pos: pos, deco: deco, w: 10.4 * g + (shown ? D * 1.6 : D - g), h: (rows - 1) * g + D };
+      });
+      if (sort === 'share') return fit(function (D) {
+        var q = Math.floor(n / k), left = n - q * k, g = D * 1.15, gc = Math.max(1, Math.min(q, q > 6 ? Math.ceil(Math.sqrt(q)) : 2)), gr = Math.max(1, Math.ceil(q / gc));
+        var rw = gc * g + D * 0.5 + 8, rh = gr * g + D * 0.5 + 8 + (shown ? 22 : 0), gap = D * 0.45, per = Math.max(1, Math.floor((G.W - 24 + gap) / (rw + gap))), pos = [], deco = [], i = 0;
+        for (var j = 0; j < k; j++) {
+          var ox = (j % per) * (rw + gap), oy = Math.floor(j / per) * (rh + gap);
+          deco.push({ t: 'ring', x: ox, y: oy, w: rw, h: rh, s: shown ? fmt(q) : '' });
+          for (var m = 0; m < q; m++, i++) pos.push({ x: ox + 4 + D * 0.25 + (m % gc) * g + D / 2, y: oy + 4 + D * 0.25 + Math.floor(m / gc) * g + D / 2 });
+        }
+        var top = Math.ceil(k / per) * (rh + gap) + (left ? D * 0.2 : 0), lw = left * g;
+        for (var e = 0; e < left; e++, i++) pos.push({ x: e * g + D / 2, y: top + D / 2, left: true });
+        var w = Math.min(k, per) * (rw + gap) - gap;
+        pos.forEach(function (p) { if (p.left) p.x += (w - lw) / 2; });
+        if (left) deco.push({ t: 'left', x: w / 2, y: top + D + 8, s: shown ? left + ' left over' : 'left over' });
+        return { pos: pos, deco: deco, w: Math.max(w, lw), h: top + (left ? D + 30 : -gap) };
+      });
+      return null;
+    }
+    function draw() {
+      G = geom();
+      var L = layout(), h = '';
+      G.boxes.forEach(function (b, f) {
+        h += '<div class="mp-cframe" style="left:' + b.x + 'px;top:' + b.y + 'px;width:' + b.w + 'px;height:' + b.h + 'px;--cs:' + G.cs + 'px" aria-hidden="true">';
+        for (var i = 0; i < 10; i++) h += '<i></i>';
+        h += '</div>';
+      });
+      if (L) L.deco.forEach(function (d) {
+        if (d.t === 'odd' || d.t === 'ring') h += '<span class="mp-c' + d.t + '" style="left:' + d.x + 'px;top:' + d.y + 'px;width:' + d.w + 'px;height:' + d.h + 'px">' + (d.s ? '<b>' + d.s + '</b>' : '') + '</span>';
+        else h += '<span class="mp-c' + d.t + '" style="left:' + d.x + 'px;top:' + d.y + 'px">' + d.s + '</span>';
+      });
+      P = ctrs.map(function (c, i) {
+        if (L) return { x: L.pos[i].x, y: L.pos[i].y, D: L.D };
+        if (c.cell >= 0 && G.F) { var q = cellXY(c.cell); return { x: q.x, y: q.y, D: G.D }; }
+        return { x: c.x * G.W, y: c.y * G.H, D: G.D };
+      });
+      ctrs.forEach(function (c, i) {
+        var p = P[i];
+        h += '<button type="button" class="mp-ctr ' + c.c + '" data-i="' + i + '" aria-label="' + CT_NAME[c.c] + ' counter. Tap to turn it over." style="width:' + p.D + 'px;height:' + p.D + 'px;transform:translate(' + (p.x - p.D / 2) + 'px,' + (p.y - p.D / 2) + 'px)"></button>';
+      });
+      layer.innerHTML = h;
+      mat.classList.toggle('is-empty', !ctrs.length);
+      readout(); snaps(); sync();
+    }
+    function counts() {
+      var a = ctrs.filter(function (c) { return c.c === 'a'; }).length;
+      return { n: ctrs.length, a: a, b: ctrs.length - a, framed: G && G.F ? ctrs.filter(function (c) { return c.cell >= 0; }).length : 0 };
+    }
+    function readout() {
+      var s = counts(), n = s.n, h = '', eq = '';
+      if (!shown || !n) { read.innerHTML = ''; return; }
+      h += '<p class="mp-total"><span class="mp-num">' + fmt(n) + '</span></p>';
+      var both = s.a && s.b ? '<b class="mp-ka">' + s.a + '</b> + <b class="mp-kb">' + s.b + '</b> = <b>' + fmt(n) + '</b>' : '';
+      if (sort === 'pairs') eq = pl(Math.floor(n / 2), 'pair', 'pairs') + (n % 2 ? ' and <b>1 left over</b>: ' + fmt(n) + ' is <b>odd</b>' : ', none left over: ' + fmt(n) + ' is <b>even</b>');
+      else if (sort === 'tens') eq = '<b>' + pl(Math.floor(n / 10), 'ten', 'tens') + '</b> and <b>' + pl(n % 10, 'one', 'ones') + '</b> make <b>' + fmt(n) + '</b>';
+      else if (sort === 'share') { var q = Math.floor(n / k), lf = n - q * k; eq = 'shared into <b>' + k + '</b> groups: <b>' + q + '</b> in each' + (lf ? ', <b>' + lf + '</b> left over' : ', none left over'); }
+      else if (G.F && s.framed === n && n <= 10 && G.F === 1) eq = (both ? both + ', ' : '') + (n === 10 ? 'a full ten' : (n > 5 ? '<b>5</b> and <b>' + (n - 5) + '</b>, ' : '') + '<b>' + (10 - n) + '</b> more make 10');
+      else if (G.F && s.framed === n && n > 10) eq = (both ? both + ', that is ' : '') + '<b>10</b> and <b>' + (n - 10) + '</b>';
+      else if (G.F === 2 && s.framed === n) eq = (both ? both + ', ' : '') + (n === 10 ? 'a full ten' : '<b>' + (10 - n) + '</b> more make 10');
+      else eq = both;
+      if (eq) h += '<p class="mp-ceq">' + eq + '</p>';
+      read.innerHTML = h;
+    }
+    function snaps() {
+      var b = '';
+      if (sort === 'share' || picking) {
+        b += '<span class="mp-cgrp" role="group" aria-label="How many groups"><small>Groups</small>';
+        for (var g = 2; g <= 10; g++) b += '<button type="button" class="mp-snap" data-k="' + g + '" aria-pressed="' + (sort === 'share' && g === k) + '">' + g + '</button>';
+        b += '</span>';
+      }
+      if (ctrs.length) b += '<button type="button" class="mp-snap" data-a="clear">Clear</button>';
+      qs('.mp-snaps', mat).innerHTML = b;
+    }
+    function sync() {
+      qsa('.mp-csort button', root).forEach(function (x) { var s = x.getAttribute('data-s'); x.setAttribute('aria-pressed', String(sort === s || (s === 'share' && picking))); });
+      qsa('.mp-cmode [data-f]', root).forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-f') === kind)); });
+    }
+    function say(t) { sayEl.textContent = t; sayEl.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(function () { sayEl.classList.remove('on'); }, 1800); announce(T, t); }
+    function snapshot() { return JSON.stringify({ ctrs: ctrs, kind: kind, sort: sort, k: k }); }
+    function act(fn) { var before = snapshot(); fn(); if (snapshot() !== before) { hist.push(before); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { var s = counts(); s.mat = kind; s.sort = sort; s.groups = k; s.last = last; return s; }
+    /* the counters keep where they are drawn now, so a sorted mat can be moved about freely */
+    function freeze() {
+      ctrs.forEach(function (c, i) { if (sort || c.cell < 0 || !G.F) { c.x = P[i].x / G.W; c.y = P[i].y / G.H; } });
+      sort = ''; picking = false;
+    }
+    function emptyCell(nearX, nearY) {
+      var used = {}, best = -1, bd = 1e9;
+      ctrs.forEach(function (c) { if (c.cell >= 0) used[c.cell] = 1; });
+      for (var i = 0; i < G.F * 10; i++) {
+        if (used[i]) continue;
+        if (nearX == null) return i;
+        var p = cellXY(i), d = Math.hypot(p.x - nearX, p.y - nearY);
+        if (d < bd) { bd = d; best = i; }
+      }
+      return best;
+    }
+    function onFrame(x, y) { return G.boxes.some(function (b) { return x > b.x - 20 && x < b.x + b.w + 20 && y > b.y - 20 && y < b.y + b.h + 20; }); }
+    function freeSpot() {
+      var D = G.D, step = D * 1.3, R = rng(seed += 7), spots = [];
+      for (var y = D * 0.8; y < G.H - 80; y += step) for (var x = D * 0.8; x < G.W - D * 0.6; x += step) spots.push([x, y]);
+      for (var i = spots.length - 1; i > 0; i--) { var j = Math.floor(R() * (i + 1)), t = spots[i]; spots[i] = spots[j]; spots[j] = t; }
+      for (var s = 0; s < spots.length; s++) {
+        var ok = !onFrame(spots[s][0], spots[s][1]) && P.every(function (p) { return Math.hypot(p.x - spots[s][0], p.y - spots[s][1]) > D * 1.1; });
+        if (ok) return { x: spots[s][0] / G.W, y: spots[s][1] / G.H };
+      }
+      return { x: 0.15 + R() * 0.7, y: 0.1 + R() * 0.6 };
+    }
+    function add(c, x, y) {
+      if (ctrs.length >= CT_MAX) { say('The mat holds 100 counters.'); return; }
+      act(function () {
+        var cell = G.F ? emptyCell(x, y) : -1;
+        if (x != null && G.F && !onFrame(x, y)) cell = -1;
+        if (sort) { ctrs.push({ c: c, cell: -1, x: 0.5, y: 0.5 }); last = 'add'; return; }
+        if (cell >= 0) { ctrs.push({ c: c, cell: cell, x: 0.5, y: 0.5 }); last = 'add'; return; }
+        if (x == null && G.F && emptyCell() < 0) say('The frames are full.');
+        var p = x == null ? freeSpot() : { x: clamp(x, G.D / 2, G.W - G.D / 2) / G.W, y: clamp(y, G.D / 2, G.H - G.D / 2) / G.H };
+        ctrs.push({ c: c, cell: -1, x: p.x, y: p.y }); last = 'add';
+      });
+      announce(T, CT_NAME[c] + ' counter');
+    }
+    /* switching mats: frames fill box by box with the counters in order, any more wait below the frames */
+    function setMat(f) {
+      act(function () {
+        freeze(); kind = f; last = 'mat';
+        G = geom();
+        var order = ctrs.slice().sort(function (a, b) { return (a.cell < 0 ? 1e3 : a.cell) - (b.cell < 0 ? 1e3 : b.cell); });
+        if (!G.F) { ctrs.forEach(function (c) { c.cell = -1; }); return; }
+        var cap = G.F * 10;
+        order.forEach(function (c, i) { c.cell = i < cap ? i : -1; });
+        G = geom();
+        var extra = order.slice(cap), D = G.D, g = D * 1.15, per = Math.max(1, Math.floor((G.W - 24) / g));
+        extra.forEach(function (c, i) {
+          var row = Math.floor(i / per), inRow = Math.min(per, extra.length - row * per);
+          c.x = (G.W / 2 + ((i % per) - (inRow - 1) / 2) * g) / G.W;
+          c.y = Math.min(G.H - 80 - D / 2, G.fbottom + 18 + D / 2 + row * g) / G.H;
+        });
+      });
+    }
+    function setSort(s, groups) {
+      if (!ctrs.length && s !== 'share') { say('Put some counters on the mat first.'); return; }
+      act(function () {
+        if (kind !== 'free') { freeze(); kind = 'free'; ctrs.forEach(function (c) { c.cell = -1; }); G = geom(); }
+        sort = s; if (groups) k = groups; picking = false; last = s;
+      });
+    }
+    /* pointer handling: drag a counter (or tap it to turn it over); counters dragged in from the tray */
+    var ghost = null;
+    function local(e) { var r = mat.getBoundingClientRect(); return { x: e.clientX - r.left, y: e.clientY - r.top, inside: e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom }; }
+    layer.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest('.mp-ctr');
+      if (!b) return;
+      drag = { i: +b.getAttribute('data-i'), el: b, x: e.clientX, y: e.clientY, moved: false };
+      e.preventDefault();
+    });
+    window.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      if (!drag.moved && Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 6) { drag.moved = true; drag.el.classList.add('mp-lift'); }
+      if (!drag.moved) return;
+      var p = local(e), D = P[drag.i].D;
+      drag.el.style.transform = 'translate(' + (p.x - D / 2) + 'px,' + (p.y - D / 2) + 'px)';
+      drag.el.classList.toggle('off', !p.inside);
+    });
+    function endDrag(e, cancel) {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (cancel) { draw(); return; }
+      if (!d.moved) { act(function () { var c = ctrs[d.i]; c.c = c.c === 'a' ? 'b' : 'a'; last = 'flip'; }); return; }
+      var p = local(e);
+      act(function () {
+        freeze();
+        var c = ctrs[d.i];
+        if (!p.inside) { ctrs.splice(d.i, 1); last = 'remove'; return; }
+        last = 'move';
+        if (G.F && onFrame(p.x, p.y)) { var was = c.cell; c.cell = -1; var cell = emptyCell(p.x, p.y); c.cell = cell >= 0 ? cell : was; if (c.cell >= 0) return; }
+        c.cell = -1; c.x = clamp(p.x, G.D / 2, G.W - G.D / 2) / G.W; c.y = clamp(p.y, G.D / 2, G.H - G.D / 2) / G.H;
+      });
+    }
+    window.addEventListener('pointerup', function (e) { endDrag(e, false); });
+    window.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+    layer.addEventListener('click', function (e) {
+      var b = e.target.closest('.mp-ctr');
+      if (b && e.detail === 0) act(function () { var c = ctrs[+b.getAttribute('data-i')]; c.c = c.c === 'a' ? 'b' : 'a'; last = 'flip'; });
+    });
+    var tray = qs('.mp-dtray', root), tdrag = null;
+    tray.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest('.mp-cpile');
+      if (!b) return;
+      tdrag = { c: b.getAttribute('data-c'), x: e.clientX, y: e.clientY, moved: false };
+      e.preventDefault();
+    });
+    /* the drag is followed on the whole window, so letting go anywhere ends it (a browser can drop the pointer capture) */
+    window.addEventListener('pointermove', function (e) {
+      if (!tdrag) return;
+      if (!tdrag.moved && Math.abs(e.clientX - tdrag.x) + Math.abs(e.clientY - tdrag.y) > 6) {
+        tdrag.moved = true;
+        ghost = el('i', 'mp-ctr mp-cghost ' + tdrag.c); ghost.style.width = ghost.style.height = G.D + 'px'; document.body.appendChild(ghost);
+      }
+      if (ghost) ghost.style.transform = 'translate(' + (e.clientX - G.D / 2) + 'px,' + (e.clientY - G.D / 2) + 'px)';
+    });
+    function trayEnd(e, cancel) {
+      if (!tdrag) return;
+      var d = tdrag; tdrag = null;
+      if (ghost) { ghost.remove(); ghost = null; }
+      if (cancel) return;
+      if (!d.moved) { add(d.c); return; }
+      var p = local(e);
+      if (p.inside) add(d.c, p.x, p.y);
+    }
+    window.addEventListener('pointerup', function (e) { trayEnd(e, false); });
+    window.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('blur', function () { trayEnd(null, true); endDrag(null, true); });
+    tray.addEventListener('click', function (e) {
+      var p = e.target.closest('.mp-cpile'), s = e.target.closest('.mp-csort button');
+      if (p && e.detail === 0) add(p.getAttribute('data-c'));
+      if (!s) return;
+      var v = s.getAttribute('data-s');
+      if (v === 'share') { if (sort === 'share' || picking) { picking = false; if (sort === 'share') act(function () { freeze(); last = 'unsort'; }); else draw(); } else { picking = true; draw(); } return; }
+      if (sort === v) act(function () { freeze(); last = 'unsort'; }); else setSort(v);
+    });
+    qs('.mp-cmode', root).addEventListener('click', function (e) {
+      var b = e.target.closest('[data-f]');
+      if (b && b.getAttribute('data-f') !== kind) setMat(b.getAttribute('data-f'));
+    });
+    mat.addEventListener('click', function (e) {
+      var b = e.target.closest('.mp-snap');
+      if (!b) return;
+      if (b.hasAttribute('data-k')) setSort('share', +b.getAttribute('data-k'));
+      else act(function () { ctrs = []; sort = ''; picking = false; last = 'clear'; });
+    });
+    T.undo = function () {
+      if (!hist.length) return;
+      var s = JSON.parse(hist.pop());
+      ctrs = s.ctrs; kind = s.kind; sort = s.sort; k = s.k; picking = false; last = 'undo';
+      draw(); change();
+    };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { ctrs = []; kind = 'free'; sort = ''; picking = false; hist = []; draw(); };
+    if (window.ResizeObserver) new ResizeObserver(function () { if (!drag) draw(); }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
   /* ================= Number line, Toolbox version =================
      Manip.numberline(root, { tool: true }). The line fills the mat (across on a wide screen, standing up on a phone).
      Line: 0 to 20, 0 to 100, 0 to 1 000, or Blank (ticks, no numbers). Tap the line between two numbers to zoom in
@@ -1029,9 +1336,10 @@
       var b = e.target.closest('.mp-mkb');
       if (!b) return;
       tdrag = { i: +b.getAttribute('data-m'), x: e.clientX, y: e.clientY, moved: false };
-      b.setPointerCapture && b.setPointerCapture(e.pointerId);
+      e.preventDefault();
     });
-    tray.addEventListener('pointermove', function (e) {
+    /* followed on the whole window, so letting go anywhere ends the drag */
+    window.addEventListener('pointermove', function (e) {
       if (!tdrag) return;
       if (!tdrag.moved && Math.abs(e.clientX - tdrag.x) + Math.abs(e.clientY - tdrag.y) > 6) {
         tdrag.moved = true;
@@ -1050,8 +1358,9 @@
       }
       if (inMat(e)) place(d.i, clamp(V(along(e)), view[0], view[1]));
     }
-    tray.addEventListener('pointerup', function (e) { trayEnd(e, false); });
-    tray.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('pointerup', function (e) { trayEnd(e, false); });
+    window.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('blur', function () { trayEnd(null, true); });
     tray.addEventListener('keydown', function (e) {
       var b = e.target.closest('.mp-mkb');
       if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); var i = +b.getAttribute('data-m'); if (marks[i]) { cur = i; draw(); } else place(i, freeSpot(i)); }
@@ -1890,10 +2199,8 @@
   var SHELVES = [['num', 'Numbers'], ['parts', 'Parts and groups'], ['alg', 'Patterns and equations'], ['space', 'Shapes and space'], ['meas', 'Measure, money and data']];
   /* [id, shelf, name, one line on how to use it (none when the tool shows its own), options, icon] */
   var BOX = [
-    ['counters', 'num', 'Counters', 'Tap counters to count them. Pair them up to see even and odd, or group them in tens.', { n: 13, controls: true, max: 60 },
-      '<circle cx="16" cy="18" r="7" style="fill:#c0392b"/><circle cx="32" cy="16" r="7" style="fill:#c0392b"/><circle cx="24" cy="31" r="7" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['tenframe', 'num', 'Ten-frames', 'Tap a box to put in a counter. Tap again to change its colour.', { frames: 2, two: true },
-      '<rect x="5" y="13" width="38" height="22" rx="2" style="fill:none;stroke:var(--ink,#132039);stroke-width:2"/><path d="M12.6 13v22M20.2 13v22M27.8 13v22M35.4 13v22M5 24h38" style="stroke:var(--ink,#132039);stroke-width:1.5"/><circle cx="8.8" cy="18.5" r="2.6" style="fill:#c0392b"/><circle cx="16.4" cy="18.5" r="2.6" style="fill:#c0392b"/><circle cx="24" cy="18.5" r="2.6" style="fill:#c0392b"/>'],
+    ['counters', 'num', 'Counters and ten-frames', '', { tool: true },
+      '<rect x="4" y="8" width="40" height="18" rx="2" style="fill:none;stroke:var(--ink,#132039);stroke-width:2"/><path d="M12 8v18M20 8v18M28 8v18M36 8v18M4 17h40" style="stroke:var(--ink,#132039);stroke-width:1.2"/><circle cx="8" cy="12.5" r="3" style="fill:#c0392b"/><circle cx="16" cy="12.5" r="3" style="fill:#c0392b"/><circle cx="24" cy="12.5" r="3" style="fill:var(--mp-ones,#e0a100)"/><circle cx="16" cy="37" r="6" style="fill:#c0392b"/><circle cx="31" cy="37" r="6" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['base10', 'num', 'Place value blocks', '', { drag: true, cols: ['k', 'h', 't', 'o'], readout: false, hideTotal: true, u: 34, uMax: 34, limit: 9999, max: { k: 9, h: 19, t: 19, o: 29 } },
       '<rect x="6" y="14" width="18" height="18" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="8" width="6" height="30" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="37" y="30" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['disks', 'num', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] },

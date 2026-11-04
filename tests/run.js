@@ -203,16 +203,16 @@ async function checkGrade(browser, base, g) {
 
   /* 3a. Toolbox blocks: tap and drag blocks onto the mat, drag a one into Tens to snap 10 ones into a ten,
      drag a block off the mat to put it back, and undo. Nothing may run off the side of the screen. */
+  const dragTo = async (from, to) => {
+    const a = await from.boundingBox(), b = await to.boundingBox();
+    await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
+    await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 }); await page.mouse.up();
+    await page.waitForTimeout(500);
+  };
   if (await page.evaluate(() => (Atlas.tools || []).includes('base10'))) {
     await page.evaluate(() => { location.hash = '#tools/base10'; });
     await page.waitForTimeout(150);
     const count = () => page.evaluate(() => ({ t: document.querySelectorAll('.mp-layer .mp-t').length, o: document.querySelectorAll('.mp-layer .mp-o').length }));
-    const dragTo = async (from, to) => {
-      const a = await from.boundingBox(), b = await to.boundingBox();
-      await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
-      await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 }); await page.mouse.up();
-      await page.waitForTimeout(500);
-    };
     for (let i = 0; i < 9; i++) await page.click('.mp-tp[data-k=o]');
     await dragTo(page.locator('.mp-tp[data-k=o]'), page.locator('.mp-col[data-k=o]'));
     await page.waitForTimeout(600);
@@ -251,6 +251,28 @@ async function checkGrade(browser, base, g) {
     await page.click('.tb-b[data-a=undo]'); await page.click('.tb-b[data-a=undo]'); await page.click('.tb-b[data-a=undo]'); await page.waitForTimeout(600);
     if (await at() !== 10) fail(where, 'Toolbox number line: Undo did not take back the zoom and the last jump (marker at ' + (await at()) + ')');
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox number line: the page runs off the side of a phone screen');
+  }
+
+  /* 3a3. Toolbox counters: tap counters onto two ten-frames, turn one over, share them into groups, drag one off and undo. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('counters'))) {
+    await page.evaluate(() => { location.hash = '#tools/counters'; });
+    await page.waitForTimeout(150);
+    const n = () => page.evaluate(() => document.querySelectorAll('.mp-clayer .mp-ctr').length);
+    const read = () => page.evaluate(() => document.querySelector('.mp-ctt .mp-read').textContent);
+    await page.click('.mp-cmode [data-f=two]');
+    for (let i = 0; i < 12; i++) await page.click('.mp-cpile[data-c=a]');
+    if (await read() !== '') fail(where, 'Toolbox counters: a number shows before Show number is on');
+    await page.click('.tb-b[data-a=show]');
+    if (!(await read()).includes('10 and 2')) fail(where, 'Toolbox counters: 12 counters on two ten-frames do not read "10 and 2" (' + (await read()) + ')');
+    await page.click('.mp-clayer .mp-ctr >> nth=0');
+    if (!(await read()).includes('11 + 1 = 12')) fail(where, 'Toolbox counters: turning a counter over did not give 11 + 1 = 12 (' + (await read()) + ')');
+    await page.click('.mp-csort [data-s=share]'); await page.click('.mp-snap[data-k="5"]');
+    if (!(await read()).includes('2 in each, 2 left over')) fail(where, 'Toolbox counters: 12 shared into 5 groups is not 2 in each, 2 left over (' + (await read()) + ')');
+    await dragTo(page.locator('.mp-clayer .mp-ctr').first(), page.locator('.tb-bar h1'));
+    if (await n() !== 11) fail(where, 'Toolbox counters: dragging a counter off the mat did not put it back');
+    await page.click('.tb-b[data-a=undo]'); await page.waitForTimeout(150);
+    if (await n() !== 12) fail(where, 'Toolbox counters: Undo did not bring the counter back');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox counters: the page runs off the side of a phone screen');
   }
 
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
