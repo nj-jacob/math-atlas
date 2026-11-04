@@ -91,7 +91,7 @@
       '<div class="mp-layer"></div>' + (o.drag ? '<p class="mp-empty">Drag blocks here</p><div class="mp-snaps"></div><p class="mp-say" aria-live="polite"></p>' : '') + '</div>' +
       (o.drag ? '' : readHtml) + '<p class="mp-live sr" aria-live="polite"></p>';
     if (o.drag) {
-      root.classList.add('mp-b10d');
+      root.classList.add('mp-tool', 'mp-b10d');
       root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray" role="group" aria-label="Blocks to drag onto the mat">' + cols.map(function (k) {
         return '<button type="button" class="mp-tp" data-k="' + k + '" aria-label="Add a ' + NAME[k] + '"><span class="mp-pc mp-' + k + '"><i class="mp-blk"></i></span><small>' + ONE[k] + '</small></button>';
       }).join('') + '</div><div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="What a tap counts"><span>Tap to count</span>' +
@@ -782,12 +782,333 @@
     return T;
   };
 
-  /* ================= Number line =================
+  /* ================= Number line, Toolbox version =================
+     Manip.numberline(root, { tool: true }). The line fills the mat (across on a wide screen, standing up on a phone).
+     Line: 0 to 20, 0 to 100, 0 to 1 000, or Blank (ticks, no numbers). Tap the line between two numbers to zoom in
+     (0 to 100 becomes 30 to 40); "Zoom out" goes back. Up to 3 markers, dragged or tapped from the tray. Drag a marker
+     along the line to move it, or off the line to put it back. Drag the round handle by the chosen marker to draw a jump,
+     or tap a "Jump by" button. Nearest ten / Nearest hundred shade the tens (or hundreds) around the chosen marker and
+     mark halfway. Values and the sum of the jumps show only with Show number. Adds undo() and showNumbers(on). */
+  var NL_COL = ['var(--accent,#0b6e78)', 'var(--p4,#7646bf)', 'var(--p3,#c25a12)'], NL_NAME = ['teal', 'purple', 'orange'];
+  var NL_RANGE = { r20: [0, 20], r100: [0, 100], r1000: [0, 1000], blank: [0, 100] };
+  var nlUid = 0;
+  function toolLine(root, o) {
+    var T = base(root, 'nlt');
+    T.uid = ++nlUid;
+    root.classList.add('mp-tool', 'mp-nlt');
+    var JUMPS = o.jumps || [1, 2, 5, 10, 20, 25, 50, 100];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-nltray"><div class="mp-nlmk" role="group" aria-label="Markers">' +
+      NL_COL.map(function (c, i) { return '<button type="button" class="mp-mkb" data-m="' + i + '" aria-label="Put the ' + NL_NAME[i] + ' marker on the line" style="--c:' + c + '"><i></i></button>'; }).join('') +
+      '</div><div class="mp-nljb" role="group" aria-label="Jump by"><small>Jump</small><div class="mp-dir"><button type="button" data-d="1" aria-pressed="true" aria-label="Jump forward">+</button><button type="button" data-d="-1" aria-pressed="false" aria-label="Jump back">&minus;</button></div>' +
+      '<div class="mp-jbs">' + JUMPS.map(function (j) { return '<button type="button" class="mp-jb" data-j="' + j + '">' + j + '</button>'; }).join('') + '</div></div></div>' +
+      '<div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="Line and helpers"><span>Line</span>' +
+      '<button type="button" data-r="r20" aria-pressed="false">0 to 20</button><button type="button" data-r="r100" aria-pressed="true">0 to 100</button><button type="button" data-r="r1000" aria-pressed="false">0 to 1 000</button><button type="button" data-r="blank" aria-pressed="false">Blank</button>' +
+      '<i class="mp-cgap"></i><span>Show</span><button type="button" data-n="10" aria-pressed="false">Nearest ten</button><button type="button" data-n="100" aria-pressed="false">Nearest hundred</button></div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-nlmat"><svg class="mp-nlsvg" aria-label="Number line"></svg><div class="mp-snaps"></div><p class="mp-say" aria-live="polite"></p></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var mat = qs('.mp-mat', root), svg = qs('svg', mat), read = qs('.mp-read', root), sayEl = qs('.mp-say', root);
+    /* state: the line, the view (zoomed part of it), markers {v} by colour, jumps {m, from, to}, the chosen marker */
+    var range = 'r100', view = [0, 100], zooms = [], marks = [null, null, null], jumps = [], cur = -1, dir = 1, near = 0, shown = false, hist = [], last = '';
+    var G = null, drag = null, sayT = 0;
+    function full() { return NL_RANGE[range].slice(); }
+    function snapStep() { var s = view[1] - view[0]; return s > 200 ? 10 : 1; }
+    function geom() {
+      var r = mat.getBoundingClientRect(), W = r.width || 600, H = r.height || 300, vert = W < 520 && H > W * 1.15;
+      var pad = vert ? 34 : 48, a0 = vert ? H - pad - 54 : pad, a1 = vert ? pad + 10 : W - pad, C = vert ? Math.round(W * 0.3) : Math.round(H * 0.56);
+      return { W: W, H: H, vert: vert, a0: a0, a1: a1, C: C, sg: vert ? 1 : -1, r: vert ? 13 : 15 };
+    }
+    function P(v) { return G.a0 + (G.a1 - G.a0) * (v - view[0]) / (view[1] - view[0]); }
+    function V(a) { return view[0] + (a - G.a0) / (G.a1 - G.a0) * (view[1] - view[0]); }
+    function xy(along, across) { return G.vert ? [across, along] : [along, across]; }
+    function S(tag, at, p) { var e = document.createElementNS(SVGNS, tag); for (var k in at) e.setAttribute(k, at[k]); (p || svg).appendChild(e); return e; }
+    function Tx(along, across, txt, at, par) { var p = xy(along, across); var t = S('text', Object.assign({ x: p[0], y: p[1] }, at || {}), par); t.textContent = txt; return t; }
+    function L(a1, c1, a2, c2, cls, par) { var p = xy(a1, c1), q = xy(a2, c2); return S('line', { x1: p[0], y1: p[1], x2: q[0], y2: q[1], class: cls }, par); }
+    /* the smallest label step that leaves room between numbers */
+    function labelStep() {
+      var span = view[1] - view[0], len = Math.abs(G.a1 - G.a0), digits = String(Math.round(view[1])).length, need = G.vert ? 26 : digits * 12 + 16;
+      var c = [1, 2, 5, 10, 20, 50, 100, 200, 500];
+      for (var i = 0; i < c.length; i++) if (len * c[i] / span >= need) return c[i];
+      return 1000;
+    }
+    function draw() {
+      G = geom();
+      svg.setAttribute('viewBox', '0 0 ' + G.W + ' ' + G.H);
+      svg.innerHTML = '';
+      var span = view[1] - view[0], tick = span > 200 ? 10 : 1, lab = labelStep(), blank = range === 'blank', C = G.C;
+      /* jumps that start or end beyond a zoomed view are cut off at the ends of the line */
+      var clip = S('clipPath', { id: 'mp-nlclip' + T.uid }, S('defs', {})), ce = xy(Math.min(G.a0, G.a1) - 2, 0);
+      S('rect', G.vert ? { x: 0, y: ce[1], width: G.W, height: Math.abs(G.a1 - G.a0) + 4 } : { x: ce[0], y: 0, width: Math.abs(G.a1 - G.a0) + 4, height: G.H }, clip);
+      var gLens = S('g', {}), gLine = S('g', { class: 'mp-nlline' }), gHops = S('g', { 'clip-path': 'url(#mp-nlclip' + T.uid + ')' }), gMk = S('g', {});
+      /* rounding: shade the ten (or hundred) around the chosen marker and mark halfway */
+      var lensOn = near && cur >= 0 && marks[cur], lo = 0, hi = 0;
+      if (lensOn) {
+        var v = marks[cur].v;
+        lo = Math.floor(v / near) * near; hi = lo + near;
+        var pa = P(lo), pb = P(hi), half = (lo + hi) / 2, bw = G.vert ? 150 : 170;
+        S('rect', G.vert ? { x: C - 30, y: Math.min(pa, pb), width: bw, height: Math.abs(pb - pa), rx: 12, class: 'mp-nlband' } : { x: Math.min(pa, pb), y: C - bw + 30, width: Math.abs(pb - pa), height: bw, rx: 12, class: 'mp-nlband' }, gLens);
+        L(P(half), C + G.sg * 4, P(half), C + G.sg * (bw - 46), 'mp-nlhalf', gLens);
+        Tx(P(half), C + G.sg * (bw - 34), 'halfway', { class: 'mp-nlhw', 'text-anchor': G.vert ? 'start' : 'middle', 'dominant-baseline': 'middle' }, gLens);
+        if (shown && !G.vert) {
+          var to = v - lo < hi - v ? lo : hi, msg = v === lo ? fmt(v) + ' is already a ' + (near === 10 ? 'ten' : 'hundred') : v === half ? fmt(v) + ' is halfway: it rounds up to ' + fmt(hi) : fmt(v) + ' is closer to ' + fmt(to);
+          Tx(P(half), C + 118, msg, { class: 'mp-nlmsg', 'text-anchor': 'middle', 'dominant-baseline': 'middle' }, gLens);
+        }
+      }
+      /* the line, ticks and numbers */
+      var ends = [G.a0 + (G.vert ? 14 : -14), G.a1 + (G.vert ? -14 : 14)];
+      L(ends[0], C, ends[1], C, 'mp-nlaxis', gLine);
+      var first = Math.ceil(view[0] / tick) * tick;
+      for (var t = first; t <= view[1] + 1e-9; t += tick) {
+        var big = t % lab === 0, mid = !big && (t % (tick * 5) === 0), h = big ? 13 : mid ? 9 : 5;
+        if (blank && !big && !mid && tick === 1 && span > 20) continue;
+        L(P(t), C - h, P(t), C + h, big ? 'mp-nltk big' : 'mp-nltk', gLine);
+        if (big && !blank) Tx(P(t), C + (G.vert ? -24 : 40), fmt(t), { class: 'mp-nltl' + (lensOn && (t === lo || t === hi) ? ' on' : ''), 'text-anchor': G.vert ? 'end' : 'middle', 'dominant-baseline': 'middle' }, gLine);
+      }
+      /* jumps: arcs above the line (to the right when it stands up), each with its size */
+      jumps.forEach(function (j) {
+        if (!marks[j.m]) return;
+        hop(gHops, j.from, j.to, NL_COL[j.m], (j.to > j.from ? '+' : '−') + fmt(Math.abs(j.to - j.from)));
+      });
+      if (drag && drag.kind === 'hop' && drag.to !== drag.from) hop(gHops, drag.from, drag.to, NL_COL[drag.m], (drag.to > drag.from ? '+' : '−') + fmt(Math.abs(drag.to - drag.from)), true);
+      /* markers: beads on the line; the chosen one has a jump handle */
+      marks.forEach(function (m, i) {
+        if (!m || m.v < view[0] - 1e-9 || m.v > view[1] + 1e-9) return;
+        var p = xy(P(m.v), C), g = S('g', { class: 'mp-nlm' + (i === cur ? ' on' : '') + (drag && drag.kind === 'move' && drag.m === i && drag.off ? ' off' : ''), 'data-m': i, tabindex: 0, role: 'slider', 'aria-label': NL_NAME[i] + ' marker', 'aria-valuenow': m.v, 'aria-valuemin': full()[0], 'aria-valuemax': full()[1], style: '--c:' + NL_COL[i] }, gMk);
+        S('circle', { cx: p[0], cy: p[1], r: 26, class: 'mp-nlhit' }, g);
+        S('circle', { cx: p[0], cy: p[1], r: G.r, class: 'mp-nlbead' }, g);
+        S('circle', { cx: p[0], cy: p[1], r: 4.5, class: 'mp-nldot' }, g);
+        if (shown) { var t = Tx(P(m.v), C + (G.vert ? 0 : 76), fmt(m.v), { class: 'mp-nlval', 'text-anchor': G.vert ? 'end' : 'middle', 'dominant-baseline': 'middle' }, g); if (G.vert) t.setAttribute('x', C - 62); }
+        if (i === cur) {
+          /* the jump handle sits up and to the right of the bead (above it, when the line stands up), clear of the jumps that land on it */
+          var k = xy(P(m.v) + (G.vert ? -24 : 24), C + G.sg * 34), hg = S('g', { class: 'mp-nlknob', 'data-k': i, role: 'button', 'aria-label': 'Drag to make a jump' }, gMk);
+          S('circle', { cx: k[0], cy: k[1], r: 26, class: 'mp-nlhit' }, hg);
+          S('circle', { cx: k[0], cy: k[1], r: 15 }, hg);
+          S('path', { d: G.vert ? 'M' + (k[0] - 5) + ' ' + (k[1] + 6) + 'q9 -1 9 -6t-9 -6m0 0l3 -3m-3 3l3 3' : 'M' + (k[0] - 6) + ' ' + (k[1] + 5) + 'q1 -9 6 -9t6 9m0 0l-3 -3m3 3l3 -3' }, hg);
+        }
+      });
+      mat.classList.toggle('is-empty', !marks.some(Boolean));
+      readout(); snaps();
+    }
+    function hop(gp, from, to, col, label, ghost) {
+      var pa = P(from), pb = P(to), len = Math.abs(pb - pa), h = clamp(len * 0.6, 30, 130), sg = G.sg, C = G.C;
+      var a = xy(pa, C + sg * 17), b = xy(pb, C + sg * 17), c1 = xy(pa, C + sg * (17 + h * 1.3)), c2 = xy(pb, C + sg * (17 + h * 1.3));
+      S('path', { d: 'M' + a[0] + ' ' + a[1] + 'C' + c1[0] + ' ' + c1[1] + ' ' + c2[0] + ' ' + c2[1] + ' ' + b[0] + ' ' + b[1], class: 'mp-nlhop' + (ghost ? ' ghost' : ''), style: 'stroke:' + col }, gp);
+      var ah = G.vert ? 'M' + b[0] + ' ' + b[1] + 'l' + 9 + ' ' + (to > from ? 4 : -4) + 'l-2 ' + (to > from ? 9 : -9) + 'z' : 'M' + b[0] + ' ' + b[1] + 'l' + (to > from ? -10 : 10) + ' -5l' + (to > from ? 4 : -4) + ' -8z';
+      S('path', { d: ah, style: 'fill:' + col }, gp);
+      var l = xy((pa + pb) / 2, C + sg * (17 + h * 1.0 + 18)), w = label.length * 10 + 22;
+      S('rect', { x: l[0] - w / 2, y: l[1] - 15, width: w, height: 30, rx: 10, class: 'mp-nllab', style: 'stroke:' + col }, gp);
+      var t = S('text', { x: l[0], y: l[1] + 1, class: 'mp-nllabt', 'text-anchor': 'middle', 'dominant-baseline': 'middle', style: 'fill:' + col }, gp); t.textContent = label;
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var on = marks.map(function (m, i) { return m ? { v: m.v, i: i } : null; }).filter(Boolean), h = '';
+      if (!on.length) { read.innerHTML = ''; return; }
+      var c = cur >= 0 && marks[cur] ? cur : on[0].i, js = jumps.filter(function (j) { return j.m === c; });
+      h += '<p class="mp-total"><span class="mp-num" style="color:' + NL_COL[c] + '">' + fmt(marks[c].v) + '</span></p>';
+      if (js.length) {
+        var parts = fmt(js[0].from) + js.map(function (j) { return (j.to > j.from ? ' + ' : ' − ') + fmt(Math.abs(j.to - j.from)); }).join('');
+        var net = marks[c].v - js[0].from;
+        h += '<p class="mp-nleq">' + parts + ' = <b>' + fmt(marks[c].v) + '</b><span>' + (net >= 0 ? 'jumped ' + fmt(net) + ' forward' : 'jumped ' + fmt(-net) + ' back') + '</span></p>';
+      } else if (on.length > 1) {
+        on.sort(function (a, b) { return a.v - b.v; });
+        h += '<p class="mp-nleq">' + on.map(function (m) { return '<b style="color:' + NL_COL[m.i] + '">' + fmt(m.v) + '</b>'; }).reduce(function (s, x, k) { return s + (k ? (on[k - 1].v === on[k].v ? ' = ' : ' &lt; ') : '') + x; }, '') + '</p>';
+      }
+      if (near && marks[c]) {
+        var v = marks[c].v, lo = Math.floor(v / near) * near, hi = lo + near, r = v - lo < hi - v ? lo : hi;
+        h += '<p class="mp-nleq">nearest ' + (near === 10 ? 'ten' : 'hundred') + ': <b>' + fmt(v === lo ? v : r) + '</b></p>';
+      }
+      read.innerHTML = h;
+    }
+    function snaps() {
+      var b = [];
+      if (jumps.length) b.push(['clear', 'Clear jumps']);
+      if (zooms.length) b.push(['out', 'Zoom out']);
+      qs('.mp-snaps', mat).innerHTML = b.map(function (x) { return '<button type="button" class="mp-snap" data-a="' + x[0] + '">' + x[1] + '</button>'; }).join('');
+      qsa('.mp-mkb', root).forEach(function (e, i) { e.classList.toggle('used', !!marks[i]); e.setAttribute('aria-pressed', String(i === cur)); });
+      qsa('.mp-jb', root).forEach(function (e) { e.disabled = cur < 0 || !marks[cur]; });
+    }
+    function say(t) { sayEl.textContent = t; sayEl.classList.add('on'); clearTimeout(sayT); sayT = setTimeout(function () { sayEl.classList.remove('on'); }, 1800); announce(T, t); }
+    function snapV(v) { var s = snapStep(), f = full(); return clamp(Math.round(v / s) * s, f[0], f[1]); }
+    function snapshot() { return JSON.stringify({ range: range, view: view, zooms: zooms, marks: marks, jumps: jumps, cur: cur }); }
+    function act(fn) { var before = snapshot(); fn(); if (snapshot() !== before) { hist.push(before); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { range: range, view: view.slice(), marks: marks.map(function (m) { return m ? m.v : null; }), jumps: jumps.length, cur: cur, near: near, last: last }; }
+    /* zoom: animate the view to a new part of the line */
+    var anim = 0;
+    function zoomTo(to) {
+      var from = view.slice(), t0 = null, ep = ++anim;
+      if (T.fast || !window.requestAnimationFrame) { view = to; draw(); return; }
+      requestAnimationFrame(function step(ts) {
+        if (ep !== anim) return;
+        if (t0 === null) t0 = ts;
+        var k = Math.min(1, (ts - t0) / 420), e = k < 0.5 ? 2 * k * k : 1 - Math.pow(-2 * k + 2, 2) / 2;
+        view = [from[0] + (to[0] - from[0]) * e, from[1] + (to[1] - from[1]) * e];
+        if (k >= 1) view = to.slice();
+        draw();
+        if (k < 1) requestAnimationFrame(step);
+      });
+    }
+    function zoomAt(v) {
+      var span = view[1] - view[0];
+      if (span < 100) { say(span <= 10 ? 'This is as close as it zooms.' : 'Zoom works on 0 to 100 and 0 to 1 000.'); return; }
+      var n = span / 10, lo = clamp(Math.floor(v / n) * n, view[0], view[1] - n);
+      act(function () { zooms.push(view.slice()); last = 'zoom'; });
+      zoomTo([lo, lo + n]);
+      say(fmt(lo) + ' to ' + fmt(lo + n));
+    }
+    function zoomOut() { if (!zooms.length) return; var to = zooms[zooms.length - 1]; act(function () { zooms.pop(); last = 'zoom'; }); zoomTo(to); }
+    function place(i, v) {
+      act(function () {
+        marks[i] = { v: snapV(v) }; cur = i; last = 'place';
+        jumps = jumps.filter(function (j) { return j.m !== i; });
+      });
+    }
+    function freeSpot(i) {
+      var span = view[1] - view[0], lab = labelStep(), want = view[0] + span * [0, 1 / 3, 2 / 3][i], v = Math.round(want / lab) * lab;
+      while (marks.some(function (m) { return m && m.v === v; }) && v + lab <= view[1]) v += lab;
+      return v;
+    }
+    function jumpBy(n) {
+      if (cur < 0 || !marks[cur]) { say('Put a marker on the line first.'); return; }
+      var from = marks[cur].v, to = from + dir * n, f = full();
+      if (to < f[0] || to > f[1]) { say('That jump goes off the line.'); return; }
+      act(function () { jumps.push({ m: cur, from: from, to: to }); marks[cur].v = to; last = 'jump'; });
+      if (to < view[0] || to > view[1]) { var s = view[1] - view[0], lo = clamp(Math.floor(to / s) * s, f[0], f[1] - s); zoomTo([lo, lo + s]); }
+      announce(T, (dir > 0 ? 'Jumped forward ' : 'Jumped back ') + n);
+    }
+    /* pointer handling: markers, the jump handle, the line (zoom), and markers dragged in from the tray */
+    function along(e) { var r = svg.getBoundingClientRect(); return G.vert ? e.clientY - r.top : e.clientX - r.left; }
+    function across(e) { var r = svg.getBoundingClientRect(); return G.vert ? e.clientX - r.left : e.clientY - r.top; }
+    function inMat(e) { var r = mat.getBoundingClientRect(); return e.clientX >= r.left && e.clientX <= r.right && e.clientY >= r.top && e.clientY <= r.bottom; }
+    svg.addEventListener('pointerdown', function (e) {
+      var k = e.target.closest('.mp-nlknob'), m = e.target.closest('.mp-nlm');
+      if (k) drag = { kind: 'hop', m: +k.getAttribute('data-k'), from: marks[+k.getAttribute('data-k')].v, to: marks[+k.getAttribute('data-k')].v };
+      else if (m) { var i = +m.getAttribute('data-m'); drag = { kind: 'move', m: i, start: marks[i].v, moved: false, x: e.clientX, y: e.clientY }; if (cur !== i) { cur = i; draw(); } }
+      else drag = { kind: 'tap', x: e.clientX, y: e.clientY };
+      svg.setPointerCapture && svg.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    svg.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      if (drag.kind === 'hop') { var v = snapV(V(along(e))); v = clamp(v, view[0], view[1]); if (v !== drag.to) { drag.to = v; draw(); } }
+      if (drag.kind === 'move') {
+        if (Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 6) drag.moved = true;
+        if (!drag.moved) return;
+        drag.off = Math.abs(across(e) - G.C) > 110 || !inMat(e);
+        var nv = clamp(snapV(V(along(e))), view[0], view[1]);
+        if (nv !== marks[drag.m].v || drag.offWas !== drag.off) { marks[drag.m].v = nv; drag.offWas = drag.off; draw(); }
+      }
+    });
+    function endDrag(e, cancel) {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (d.kind === 'hop') {
+        if (!cancel && d.to !== d.from) act(function () { jumps.push({ m: d.m, from: d.from, to: d.to }); marks[d.m].v = d.to; last = 'jump'; });
+        else draw();
+      } else if (d.kind === 'move') {
+        var end = marks[d.m].v; marks[d.m].v = d.start;
+        if (cancel || !d.moved) { draw(); return; }
+        if (d.off) act(function () { marks[d.m] = null; jumps = jumps.filter(function (j) { return j.m !== d.m; }); cur = marks.findIndex(Boolean); last = 'remove'; });
+        else if (end !== d.start) act(function () { marks[d.m].v = end; jumps = jumps.filter(function (j) { return j.m !== d.m; }); last = 'move'; });
+        else draw();
+      } else if (!cancel && Math.abs(e.clientX - d.x) + Math.abs(e.clientY - d.y) < 10 && Math.abs(across(e) - G.C) < 70) zoomAt(V(along(e)));
+    }
+    svg.addEventListener('pointerup', function (e) { endDrag(e, false); });
+    svg.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+    svg.addEventListener('keydown', function (e) {
+      var m = e.target.closest && e.target.closest('.mp-nlm');
+      if (!m) return;
+      var i = +m.getAttribute('data-m'), s = snapStep(), d = { ArrowRight: s, ArrowUp: s, ArrowLeft: -s, ArrowDown: -s }[e.key];
+      if (d == null) return;
+      e.preventDefault();
+      var f = full(), nv = clamp(marks[i].v + d, f[0], f[1]);
+      act(function () { cur = i; marks[i].v = nv; jumps = jumps.filter(function (j) { return j.m !== i; }); last = 'move'; });
+      var el = qs('.mp-nlm[data-m="' + i + '"]', svg); if (el) el.focus();
+    });
+    /* the tray: tap a marker to put it on the line (or choose it), drag it to a spot; jump buttons */
+    var tray = qs('.mp-dtray', root), ghost = null, tdrag = null;
+    tray.addEventListener('pointerdown', function (e) {
+      var b = e.target.closest('.mp-mkb');
+      if (!b) return;
+      tdrag = { i: +b.getAttribute('data-m'), x: e.clientX, y: e.clientY, moved: false };
+      b.setPointerCapture && b.setPointerCapture(e.pointerId);
+    });
+    tray.addEventListener('pointermove', function (e) {
+      if (!tdrag) return;
+      if (!tdrag.moved && Math.abs(e.clientX - tdrag.x) + Math.abs(e.clientY - tdrag.y) > 6) {
+        tdrag.moved = true;
+        ghost = el('span', 'mp-nlghost'); ghost.style.setProperty('--c', NL_COL[tdrag.i]); document.body.appendChild(ghost);
+      }
+      if (ghost) ghost.style.transform = 'translate(' + (e.clientX - 16) + 'px,' + (e.clientY - 16) + 'px)';
+    });
+    function trayEnd(e, cancel) {
+      if (!tdrag) return;
+      var d = tdrag; tdrag = null;
+      if (ghost) { ghost.remove(); ghost = null; }
+      if (cancel) return;
+      if (!d.moved) {
+        if (marks[d.i]) { cur = d.i; draw(); change(); } else place(d.i, freeSpot(d.i));
+        return;
+      }
+      if (inMat(e)) place(d.i, clamp(V(along(e)), view[0], view[1]));
+    }
+    tray.addEventListener('pointerup', function (e) { trayEnd(e, false); });
+    tray.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    tray.addEventListener('keydown', function (e) {
+      var b = e.target.closest('.mp-mkb');
+      if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); var i = +b.getAttribute('data-m'); if (marks[i]) { cur = i; draw(); } else place(i, freeSpot(i)); }
+    });
+    tray.addEventListener('click', function (e) {
+      var j = e.target.closest('.mp-jb'), d = e.target.closest('.mp-dir button');
+      if (j) jumpBy(+j.getAttribute('data-j'));
+      if (d) { dir = +d.getAttribute('data-d'); qsa('.mp-dir button', root).forEach(function (x) { x.setAttribute('aria-pressed', String(x === d)); }); }
+    });
+    qs('.mp-cmode', root).addEventListener('click', function (e) {
+      var b = e.target.closest('button');
+      if (!b) return;
+      if (b.hasAttribute('data-r')) {
+        var r = b.getAttribute('data-r');
+        if (r === range) return;
+        act(function () {
+          range = r; var f = full(); view = f.slice(); zooms = []; jumps = []; last = 'range';
+          marks = marks.map(function (m) { return m ? { v: clamp(m.v, f[0], f[1]) } : null; });
+        });
+      } else {
+        var n = +b.getAttribute('data-n');
+        near = near === n ? 0 : n; last = 'near'; draw(); change();
+      }
+      syncChips();
+    });
+    function syncChips() {
+      qsa('.mp-cmode [data-r]', root).forEach(function (x) { x.setAttribute('aria-pressed', String(x.getAttribute('data-r') === range)); });
+      qsa('.mp-cmode [data-n]', root).forEach(function (x) { x.setAttribute('aria-pressed', String(+x.getAttribute('data-n') === near)); });
+    }
+    mat.addEventListener('click', function (e) {
+      var b = e.target.closest('.mp-snap');
+      if (!b) return;
+      if (b.getAttribute('data-a') === 'clear') act(function () { jumps = []; last = 'clear'; });
+      else zoomOut();
+    });
+    T.undo = function () {
+      if (!hist.length) return;
+      var s = JSON.parse(hist.pop());
+      range = s.range; view = s.view; zooms = s.zooms; marks = s.marks; jumps = s.jumps; cur = s.cur; last = 'undo';
+      anim++; syncChips(); draw(); change();
+    };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { range = 'r100'; view = [0, 100]; zooms = []; marks = [null, null, null]; jumps = []; cur = -1; hist = []; syncChips(); draw(); };
+    if (window.ResizeObserver) new ResizeObserver(function () { draw(); }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
+  /* ================= Number line (lessons; tool: true gives the Toolbox version above) =================
      options: min, max, tick, every (label every), start (marker), step (jump buttons, a number or a list), marks [{v,t}],
      tap (tap or drag to move the marker, default true), onChange.
      Moves: hop(to, label), jumps(step, count), moveTo(v), mark(v, text), clearHops(). */
   M.numberline = function (root, o) {
     o = o || {};
+    if (o.tool) return toolLine(root, o);
     var T = base(root, 'nl'), min = o.min || 0, max = o.max == null ? 20 : o.max, tick = o.tick || 1, every = o.every || tick * 5;
     var W = 640, H = 120, x0 = 26, x1 = W - 26, Y = 80, pos = o.start == null ? min : o.start, hops = 0, last = '', steps = [].concat(o.step || []);
     var stepNow = steps[0] || 0;
@@ -1579,7 +1900,7 @@
       '<circle cx="15" cy="17" r="9" style="fill:var(--mp-hund,#2f62c4)"/><circle cx="33" cy="17" r="9" style="fill:var(--mp-tens,#2f9e44)"/><circle cx="24" cy="33" r="9" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['hundred', 'num', 'Hundred chart', 'Tap numbers to light them up and look for patterns.', { pages: true },
       '<g style="fill:var(--line,#dfe5ee)"><rect x="7" y="7" width="7" height="7" rx="1.5"/><rect x="25" y="7" width="7" height="7" rx="1.5"/><rect x="16" y="16" width="7" height="7" rx="1.5"/><rect x="34" y="16" width="7" height="7" rx="1.5"/><rect x="7" y="25" width="7" height="7" rx="1.5"/><rect x="25" y="25" width="7" height="7" rx="1.5"/><rect x="16" y="34" width="7" height="7" rx="1.5"/><rect x="34" y="34" width="7" height="7" rx="1.5"/></g><g style="fill:var(--accent,#0b6e78)"><rect x="16" y="7" width="7" height="7" rx="1.5"/><rect x="34" y="7" width="7" height="7" rx="1.5"/><rect x="7" y="16" width="7" height="7" rx="1.5"/><rect x="25" y="16" width="7" height="7" rx="1.5"/><rect x="16" y="25" width="7" height="7" rx="1.5"/><rect x="34" y="25" width="7" height="7" rx="1.5"/><rect x="7" y="34" width="7" height="7" rx="1.5"/><rect x="25" y="34" width="7" height="7" rx="1.5"/></g>'],
-    ['numberline', 'num', 'Number line', 'Tap or drag along the line, or make jumps.', { min: 0, max: 100, tick: 5, every: 10, step: [2, 5, 10, 20, 25], snap: 1 },
+    ['numberline', 'num', 'Number line', '', { tool: true },
       '<path d="M5 31h38M8 27v8M18 27v8M28 27v8M38 27v8" style="stroke:var(--ink,#132039);stroke-width:2"/><path d="M8 27Q13 13 18 27M18 27Q23 13 28 27" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5"/>'],
     ['fractions', 'parts', 'Fraction strips', 'Choose how many equal parts, then tap parts to shade them.', { parts: 4 },
       '<rect x="5" y="15" width="38" height="18" rx="2" style="fill:var(--card,#fff);stroke:var(--accent,#0b6e78);stroke-width:2"/><rect x="5" y="15" width="19" height="18" rx="2" style="fill:#7646bf"/><path d="M24 15v18M14.5 15v18M33.5 15v18" style="stroke:var(--accent,#0b6e78);stroke-width:1.5"/>'],

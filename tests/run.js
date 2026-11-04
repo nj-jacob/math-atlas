@@ -231,6 +231,28 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox blocks: the page runs off the side of a phone screen');
   }
 
+  /* 3a2. Toolbox number line: put a marker on the line, jump by 10 twice, tap the line to zoom in, zoom out and undo. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('numberline'))) {
+    await page.evaluate(() => { location.hash = '#tools/numberline'; });
+    await page.waitForTimeout(150);
+    const at = () => page.evaluate(() => { const m = document.querySelector('.mp-nlm'); return m ? +m.getAttribute('aria-valuenow') : null; });
+    await page.click('.mp-mkb[data-m="0"]');
+    await page.click('.mp-jb[data-j="10"]'); await page.click('.mp-jb[data-j="10"]');
+    if (await at() !== 20) fail(where, 'Toolbox number line: a marker at 0 with two jumps of 10 is at ' + (await at()) + ', not 20');
+    const spot = await page.evaluate(() => {
+      const box = t => [...document.querySelectorAll('.mp-nltl')].find(x => x.textContent === t).getBoundingClientRect(), a = document.querySelector('.mp-nlaxis').getBoundingClientRect();
+      const p30 = box('30'), p40 = box('40'), up = a.height > a.width;
+      return up ? { x: a.left + a.width / 2, y: (p30.top + p40.bottom) / 2 } : { x: (p30.left + p40.right) / 2, y: a.top + a.height / 2 };
+    });
+    await page.mouse.click(spot.x, spot.y); await page.waitForTimeout(600);
+    const labels = await page.evaluate(() => [...document.querySelectorAll('.mp-nltl')].map(x => x.textContent).join(' '));
+    if (labels !== '30 31 32 33 34 35 36 37 38 39 40') fail(where, 'Toolbox number line: tapping between 30 and 40 did not zoom in (labels: ' + labels + ')');
+    await page.click('.mp-snap[data-a=out]'); await page.waitForTimeout(600);
+    await page.click('.tb-b[data-a=undo]'); await page.click('.tb-b[data-a=undo]'); await page.click('.tb-b[data-a=undo]'); await page.waitForTimeout(600);
+    if (await at() !== 10) fail(where, 'Toolbox number line: Undo did not take back the zoom and the last jump (marker at ' + (await at()) + ')');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox number line: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
