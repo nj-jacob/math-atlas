@@ -725,6 +725,7 @@
      Moves: skip(step, start, upto), clear(), page(from). Tap a number to light it. */
   M.hundred = function (root, o) {
     o = o || {};
+    if (o.tool) return toolChart(root, o);
     var T = base(root, 'hc'), from = o.from || 1, lit = {}, order = [], last = '';
     root.innerHTML = (o.pages ? '<div class="mp-acts"><button type="button" class="mp-act" data-p="1">1 to 100</button><button type="button" class="mp-act" data-p="101">101 to 200</button><button type="button" class="mp-act" data-p="clear">Clear</button></div>' : '') +
       '<div class="mp-grid" role="group" aria-label="Hundred chart"></div><div class="mp-read" aria-live="polite"></div>';
@@ -1085,6 +1086,169 @@
     T.state = state;
     T.reset = function () { ctrs = []; kind = 'free'; sort = ''; picking = false; hist = []; draw(); };
     if (window.ResizeObserver) new ResizeObserver(function () { if (!drag) draw(); }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
+  /* ================= Number chart, Toolbox version =================
+     Manip.hundred(root, { tool: true }). A 10 by 10 chart: 1 to 100, 101 to 200 or 0 to 99, sized to fill the mat.
+     "Colour it": tap squares to colour them with the chosen pen (3 colours). "Skip count by" colours every 2nd, 3rd,
+     4th, 5th, 10th or 25th number with the pen, one after another; a square can hold more than one colour (fill, ring, dot).
+     "Jump": tap a start and an end; a path shows the jumps of ten down (or up) and of one across, and with Show number
+     the sum. "Hide some" blanks a few numbers; tap one to show it. Adds undo() and showNumbers(on). */
+  var HC_FROM = { c1: 1, c101: 101, c0: 0 };
+  var hcUid = 0;
+  function toolChart(root, o) {
+    var T = base(root, 'hct');
+    T.uid = ++hcUid;
+    root.classList.add('mp-tool', 'mp-hct');
+    var SKIPS = [2, 3, 4, 5, 10, 25];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-hctray"><small>Colour</small><div class="mp-pens" role="group" aria-label="Colour">' +
+      NL_COL.map(function (c, i) { return '<button type="button" class="mp-pen" data-p="' + i + '" aria-label="' + NL_NAME[i] + '" aria-pressed="' + (i === 0) + '" style="--c:' + c + '"></button>'; }).join('') +
+      '</div><small>Skip count by</small><div class="mp-skips" role="group" aria-label="Skip count by">' + SKIPS.map(function (k) { return '<button type="button" class="mp-jb" data-k="' + k + '">' + k + '</button>'; }).join('') +
+      '</div><button type="button" class="mp-hide" aria-pressed="false">Hide some</button></div>' +
+      '<div class="mp-dmain"><div class="mp-cmode" role="group" aria-label="Chart and tap"><span>Chart</span>' +
+      '<button type="button" data-c="c1" aria-pressed="true">1 to 100</button><button type="button" data-c="c101" aria-pressed="false">101 to 200</button><button type="button" data-c="c0" aria-pressed="false">0 to 99</button>' +
+      '<i class="mp-cgap"></i><span>Tap</span><button type="button" data-t="colour" aria-pressed="true">Colour it</button><button type="button" data-t="jump" aria-pressed="false">Jump from&hellip; to&hellip;</button></div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-hcmat"><div class="mp-hcgrid" role="group" aria-label="Number chart"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var mat = qs('.mp-mat', root), grid = qs('.mp-hcgrid', mat), read = qs('.mp-read', root);
+    /* state: the chart, colours on each square (a set of pens as bits), the pen, what a tap does, the jump, hidden squares */
+    var chart = 'c1', marks = {}, pen = 0, tap = 'colour', jump = { a: null, b: null }, hidden = {}, shown = false, hist = [], last = '', lastSkip = null, skipBy = {}, peek = null, anim = 0;
+    function from() { return HC_FROM[chart]; }
+    function idx(n) { var i = n - from(); return { r: Math.floor(i / 10), c: i % 10 }; }
+    /* the jump path: tens down (or up) to the end's row, then ones across */
+    function path(a, b) {
+      var p = [a], A = idx(a), B = idx(b), n = a, s = B.r > A.r ? 10 : -10, t = B.c > A.c ? 1 : -1, i;
+      for (i = 0; i < Math.abs(B.r - A.r); i++) { n += s; p.push(n); }
+      for (i = 0; i < Math.abs(B.c - A.c); i++) { n += t; p.push(n); }
+      return p;
+    }
+    function size() {
+      var r = mat.getBoundingClientRect(), W = r.width || 700, H = r.height || 500, gap = W < 520 ? 3 : 5;
+      var s = Math.floor(Math.min((W - 24 - 9 * gap) / 10, (H - 84 - 9 * gap) / 10, 66));
+      grid.style.setProperty('--s', Math.max(22, s) + 'px'); grid.style.setProperty('--g', gap + 'px');
+    }
+    function draw() {
+      size();
+      var h = '', onPath = {}, f = from();
+      if (jump.a != null && jump.b != null) path(jump.a, jump.b).forEach(function (n) { onPath[n] = 1; });
+      for (var n = f; n < f + 100; n++) {
+        var m = marks[n] || 0, cs = [0, 1, 2].filter(function (k) { return m & (1 << k); }), cls = 'mp-hcn', st = '';
+        if (cs.length) { cls += ' f'; st = '--f:' + NL_COL[cs[0]] + (cs[1] != null ? ';--r:' + NL_COL[cs[1]] : '') + (cs[2] != null ? ';--d:' + NL_COL[cs[2]] : ''); if (cs[1] != null) cls += ' r'; if (cs[2] != null) cls += ' d'; }
+        if (n === jump.a) cls += ' ja'; else if (n === jump.b) cls += ' jb'; else if (onPath[n]) cls += ' jp';
+        var hid = hidden[n] && n !== peek;
+        if (hid) cls += ' hid'; else if (n === peek) cls += ' peek';
+        h += '<button type="button" class="' + cls + '" data-n="' + n + '" style="' + st + '" aria-label="' + (hid ? 'Hidden number' : n) + '">' + (hid ? '' : n) + '</button>';
+      }
+      grid.classList.toggle('w3', chart === 'c101');
+      grid.innerHTML = h + '<svg class="mp-hcpath" aria-hidden="true"></svg>';
+      drawPath(); readout(); snaps(); sync();
+    }
+    function centre(n) {
+      var b = qs('[data-n="' + n + '"]', grid), g = grid.getBoundingClientRect(), r = b.getBoundingClientRect();
+      return [r.left - g.left + r.width / 2, r.top - g.top + r.height / 2];
+    }
+    function drawPath() {
+      if (jump.a == null || jump.b == null || jump.a === jump.b) return;
+      var svg = qs('.mp-hcpath', grid), p = path(jump.a, jump.b).map(centre);
+      svg.innerHTML = '<path d="M' + p.map(function (q) { return q[0] + ' ' + q[1]; }).join(' L') + '"/>';
+    }
+    function list(ns) { return ns.slice(0, 5).map(fmt).join(', ') + (ns.length > 5 ? ' &hellip;' : ''); }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var h = '';
+      if (peek != null) {
+        var f = from(), bits = [];
+        if (peek - 1 >= f) bits.push('one more than <b>' + fmt(peek - 1) + '</b>');
+        if (peek - 10 >= f) bits.push('ten more than <b>' + fmt(peek - 10) + '</b>');
+        h += '<p class="mp-total"><span class="mp-num">' + fmt(peek) + '</span></p>' + (bits.length ? '<p class="mp-ceq">' + bits.join(', ') + '</p>' : '');
+      } else if (tap === 'jump' && jump.a != null && jump.b != null) {
+        var d = jump.b - jump.a, A = idx(jump.a), B = idx(jump.b), dr = B.r - A.r, dc = B.c - A.c, parts = [];
+        if (dr) parts.push('<b>' + (dr > 0 ? '+10' : '−10') + (Math.abs(dr) > 1 ? ' × ' + Math.abs(dr) : '') + '</b> ' + (dr > 0 ? 'down' : 'up'));
+        if (dc) parts.push('<b>' + (dc > 0 ? '+1' : '−1') + (Math.abs(dc) > 1 ? ' × ' + Math.abs(dc) : '') + '</b> across');
+        h += '<p class="mp-total"><span class="mp-num">' + fmt(Math.abs(d)) + '</span></p><p class="mp-ceq">from <b>' + fmt(jump.a) + '</b> to <b>' + fmt(jump.b) + '</b>' + (parts.length ? ': ' + parts.join(', ') : '') + ', so <b>' + fmt(jump.a) + (d >= 0 ? ' + ' : ' − ') + fmt(Math.abs(d)) + ' = ' + fmt(jump.b) + '</b></p>';
+      } else {
+        var by = [0, 1, 2].map(function (k) { return Object.keys(marks).map(Number).filter(function (n) { return marks[n] & (1 << k); }).sort(function (x, y) { return x - y; }); });
+        var used = [0, 1, 2].filter(function (k) { return by[k].length; });
+        if (lastSkip && by[lastSkip.p].length) h += '<p class="mp-total"><span class="mp-num" style="color:' + NL_COL[lastSkip.p] + '">' + list(by[lastSkip.p]).replace(' &hellip;', '') + ' &hellip;</span></p>';
+        if (used.length) h += '<p class="mp-ceq">' + used.map(function (k) { return '<b style="color:' + NL_COL[k] + '">' + NL_NAME[k] + '</b>: ' + pl(by[k].length, 'square', 'squares') + (skipBy[k] ? ', counting by <b>' + skipBy[k] + '</b>' : ''); }).join('; ') + '</p>';
+        if (used.length > 1) { var both = by[used[0]].filter(function (n) { return marks[n] & (1 << used[1]); }); if (both.length) h += '<p class="mp-ceq">both: <b>' + list(both) + '</b></p>'; }
+      }
+      read.innerHTML = h;
+    }
+    function snaps() {
+      var any = Object.keys(marks).length || jump.a != null, hint = tap !== 'jump' ? '' : jump.a == null || jump.b != null ? 'Tap where a jump starts.' : 'Now tap where it ends.';
+      qs('.mp-snaps', mat).innerHTML = (hint ? '<span class="mp-hint">' + hint + '</span>' : '') + (any ? '<button type="button" class="mp-snap" data-a="clear">Clear</button>' : '');
+    }
+    function sync() {
+      qsa('.mp-pen', root).forEach(function (b) { b.setAttribute('aria-pressed', String(+b.getAttribute('data-p') === pen)); });
+      qsa('.mp-cmode [data-c]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-c') === chart)); });
+      qsa('.mp-cmode [data-t]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-t') === tap)); });
+      qs('.mp-hide', root).setAttribute('aria-pressed', String(Object.keys(hidden).length > 0));
+    }
+    function snapshot() { return JSON.stringify({ chart: chart, marks: marks, jump: jump, hidden: hidden, lastSkip: lastSkip, skipBy: skipBy }); }
+    function act(fn) { anim++; var before = snapshot(); fn(); if (snapshot() !== before) { hist.push(before); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() {
+      return { chart: chart, from: from(), marked: Object.keys(marks).map(Number).sort(function (a, b) { return a - b; }), jump: { a: jump.a, b: jump.b }, hidden: Object.keys(hidden).map(Number), last: last };
+    }
+    /* skip counting: colour the multiples one after another, so the pattern grows */
+    function skip(k) {
+      var f = from(), ns = [];
+      for (var n = Math.ceil(Math.max(f, 1) / k) * k; n < f + 100; n += k) ns.push(n);
+      act(function () { ns.forEach(function (n) { marks[n] = (marks[n] || 0) | (1 << pen); }); lastSkip = { k: k, p: pen }; skipBy[pen] = k; peek = null; last = 'skip'; });
+      if (T.fast) return;
+      var ep = anim, sq = ns.map(function (n) { return qs('[data-n="' + n + '"]', grid); });
+      sq.forEach(function (b) { b.classList.add('mp-wait'); });
+      sq.forEach(function (b, i) { setTimeout(function () { if (ep === anim) { b.classList.remove('mp-wait'); bump(b, 'mp-pop'); } }, 60 + i * Math.min(90, 1600 / ns.length)); });
+      announce(T, 'Counting by ' + k);
+    }
+    grid.addEventListener('click', function (e) {
+      var b = e.target.closest('.mp-hcn');
+      if (!b) return;
+      var n = +b.getAttribute('data-n');
+      if (hidden[n] && n !== peek) { peek = n; last = 'peek'; draw(); change(); announce(T, String(n)); return; }
+      if (tap === 'jump') {
+        act(function () {
+          if (jump.a == null || jump.b != null) { jump = { a: n, b: null }; } else jump.b = n;
+          peek = null; last = 'jump';
+        });
+        announce(T, jump.b == null ? 'Now tap where it ends.' : 'Jump from ' + jump.a + ' to ' + jump.b);
+        return;
+      }
+      act(function () { marks[n] = (marks[n] || 0) ^ (1 << pen); if (!marks[n]) delete marks[n]; peek = null; last = 'tap'; });
+    });
+    qs('.mp-dtray', root).addEventListener('click', function (e) {
+      var p = e.target.closest('.mp-pen'), k = e.target.closest('.mp-skips button'), hd = e.target.closest('.mp-hide');
+      if (p) { pen = +p.getAttribute('data-p'); sync(); }
+      if (k) { if (tap !== 'colour') { tap = 'colour'; } skip(+k.getAttribute('data-k')); }
+      if (hd) act(function () {
+        peek = null; last = 'hide';
+        if (Object.keys(hidden).length) { hidden = {}; return; }
+        var R = rng(Date.now() % 9973), f = from(), pick = [];
+        while (pick.length < 10) { var n = f + Math.floor(R() * 100); if (pick.indexOf(n) < 0 && n !== jump.a && n !== jump.b) pick.push(n); }
+        hidden = {}; pick.forEach(function (n) { hidden[n] = 1; });
+      });
+    });
+    qs('.mp-cmode', root).addEventListener('click', function (e) {
+      var c = e.target.closest('[data-c]'), t = e.target.closest('[data-t]');
+      if (c && c.getAttribute('data-c') !== chart) act(function () { chart = c.getAttribute('data-c'); marks = {}; jump = { a: null, b: null }; hidden = {}; lastSkip = null; skipBy = {}; peek = null; last = 'chart'; });
+      if (t && t.getAttribute('data-t') !== tap) { tap = t.getAttribute('data-t'); peek = null; last = 'mode'; draw(); change(); }
+    });
+    mat.addEventListener('click', function (e) {
+      if (e.target.closest('.mp-snap')) act(function () { marks = {}; jump = { a: null, b: null }; lastSkip = null; skipBy = {}; peek = null; last = 'clear'; });
+    });
+    T.undo = function () {
+      if (!hist.length) return;
+      var s = JSON.parse(hist.pop());
+      chart = s.chart; marks = s.marks; jump = s.jump; hidden = s.hidden; lastSkip = s.lastSkip; skipBy = s.skipBy; peek = null; last = 'undo'; anim++;
+      draw(); change();
+    };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { chart = 'c1'; marks = {}; jump = { a: null, b: null }; hidden = {}; lastSkip = null; skipBy = {}; peek = null; hist = []; draw(); };
+    if (window.ResizeObserver) new ResizeObserver(function () { size(); drawPath(); }).observe(mat); else window.addEventListener('resize', draw);
     T.reset();
     return T;
   }
@@ -2205,7 +2369,7 @@
       '<rect x="6" y="14" width="18" height="18" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="8" width="6" height="30" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="37" y="30" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['disks', 'num', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] },
       '<circle cx="15" cy="17" r="9" style="fill:var(--mp-hund,#2f62c4)"/><circle cx="33" cy="17" r="9" style="fill:var(--mp-tens,#2f9e44)"/><circle cx="24" cy="33" r="9" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['hundred', 'num', 'Hundred chart', 'Tap numbers to light them up and look for patterns.', { pages: true },
+    ['hundred', 'num', 'Number chart', '', { tool: true },
       '<g style="fill:var(--line,#dfe5ee)"><rect x="7" y="7" width="7" height="7" rx="1.5"/><rect x="25" y="7" width="7" height="7" rx="1.5"/><rect x="16" y="16" width="7" height="7" rx="1.5"/><rect x="34" y="16" width="7" height="7" rx="1.5"/><rect x="7" y="25" width="7" height="7" rx="1.5"/><rect x="25" y="25" width="7" height="7" rx="1.5"/><rect x="16" y="34" width="7" height="7" rx="1.5"/><rect x="34" y="34" width="7" height="7" rx="1.5"/></g><g style="fill:var(--accent,#0b6e78)"><rect x="16" y="7" width="7" height="7" rx="1.5"/><rect x="34" y="7" width="7" height="7" rx="1.5"/><rect x="7" y="16" width="7" height="7" rx="1.5"/><rect x="25" y="16" width="7" height="7" rx="1.5"/><rect x="16" y="25" width="7" height="7" rx="1.5"/><rect x="34" y="25" width="7" height="7" rx="1.5"/><rect x="7" y="34" width="7" height="7" rx="1.5"/><rect x="25" y="34" width="7" height="7" rx="1.5"/></g>'],
     ['numberline', 'num', 'Number line', '', { tool: true },
       '<path d="M5 31h38M8 27v8M18 27v8M28 27v8M38 27v8" style="stroke:var(--ink,#132039);stroke-width:2"/><path d="M8 27Q13 13 18 27M18 27Q23 13 28 27" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5"/>'],

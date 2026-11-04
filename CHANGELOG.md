@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-04
+- Toolbox **Number chart** (was Hundred chart), rebuilt: choose 1 to 100, 101 to 200 or 0 to 99. Tap squares to colour them with one of 3 colours. **Skip count by** 2, 3, 4, 5, 10 or 25 colours the pattern one square after another; two patterns can share a square (a ring shows the second colour), so where counting by 2 and by 5 meet (10, 20, 30) stands out. **Jump from… to…**: tap two numbers to see the jump as tens down and ones across (23 to 47 is +10 +10 and +1 +1 +1 +1, so 23 + 24 = 47). **Hide some** blanks a few numbers to work out; tap one to see it. Numbers in the readout show only with Show number.
 - Checks: the drag test now waits for a tool that redraws itself (for example when its number appears), so a slow computer can't make the check stop early. This had blocked publishing the counters.
 - Toolbox **Counters and ten-frames**, one tool in place of the old separate Counters and Ten-frames: tap or drag red and yellow counters from the tray onto the mat. Choose a free mat, 1 ten-frame or 2 ten-frames (a counter dropped on a frame snaps into a box). Tap a counter to turn it over (red to yellow). Drag one off the mat to put it back. **Pair up** shows even and odd, **Rows of ten** shows tens and ones, and **Share into** splits the counters into 2 to 10 equal groups with any left over. With Show number on: "8 + 6 = 14, that is 10 and 4", "7 pairs, none left over", "4 in each, 2 left over". Up to 100 counters. A new check uses it like a child would.
 
