@@ -997,10 +997,9 @@
       var b = e.target.closest('.mp-ctr');
       if (!b) return;
       drag = { i: +b.getAttribute('data-i'), el: b, x: e.clientX, y: e.clientY, moved: false };
-      layer.setPointerCapture && layer.setPointerCapture(e.pointerId);
       e.preventDefault();
     });
-    layer.addEventListener('pointermove', function (e) {
+    window.addEventListener('pointermove', function (e) {
       if (!drag) return;
       if (!drag.moved && Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 6) { drag.moved = true; drag.el.classList.add('mp-lift'); }
       if (!drag.moved) return;
@@ -1023,8 +1022,8 @@
         c.cell = -1; c.x = clamp(p.x, G.D / 2, G.W - G.D / 2) / G.W; c.y = clamp(p.y, G.D / 2, G.H - G.D / 2) / G.H;
       });
     }
-    layer.addEventListener('pointerup', function (e) { endDrag(e, false); });
-    layer.addEventListener('pointercancel', function (e) { endDrag(e, true); });
+    window.addEventListener('pointerup', function (e) { endDrag(e, false); });
+    window.addEventListener('pointercancel', function (e) { endDrag(e, true); });
     layer.addEventListener('click', function (e) {
       var b = e.target.closest('.mp-ctr');
       if (b && e.detail === 0) act(function () { var c = ctrs[+b.getAttribute('data-i')]; c.c = c.c === 'a' ? 'b' : 'a'; last = 'flip'; });
@@ -1034,9 +1033,10 @@
       var b = e.target.closest('.mp-cpile');
       if (!b) return;
       tdrag = { c: b.getAttribute('data-c'), x: e.clientX, y: e.clientY, moved: false };
-      b.setPointerCapture && b.setPointerCapture(e.pointerId);
+      e.preventDefault();
     });
-    tray.addEventListener('pointermove', function (e) {
+    /* the drag is followed on the whole window, so letting go anywhere ends it (a browser can drop the pointer capture) */
+    window.addEventListener('pointermove', function (e) {
       if (!tdrag) return;
       if (!tdrag.moved && Math.abs(e.clientX - tdrag.x) + Math.abs(e.clientY - tdrag.y) > 6) {
         tdrag.moved = true;
@@ -1053,8 +1053,9 @@
       var p = local(e);
       if (p.inside) add(d.c, p.x, p.y);
     }
-    tray.addEventListener('pointerup', function (e) { trayEnd(e, false); });
-    tray.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('pointerup', function (e) { trayEnd(e, false); });
+    window.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('blur', function () { trayEnd(null, true); endDrag(null, true); });
     tray.addEventListener('click', function (e) {
       var p = e.target.closest('.mp-cpile'), s = e.target.closest('.mp-csort button');
       if (p && e.detail === 0) add(p.getAttribute('data-c'));
@@ -1335,9 +1336,10 @@
       var b = e.target.closest('.mp-mkb');
       if (!b) return;
       tdrag = { i: +b.getAttribute('data-m'), x: e.clientX, y: e.clientY, moved: false };
-      b.setPointerCapture && b.setPointerCapture(e.pointerId);
+      e.preventDefault();
     });
-    tray.addEventListener('pointermove', function (e) {
+    /* followed on the whole window, so letting go anywhere ends the drag */
+    window.addEventListener('pointermove', function (e) {
       if (!tdrag) return;
       if (!tdrag.moved && Math.abs(e.clientX - tdrag.x) + Math.abs(e.clientY - tdrag.y) > 6) {
         tdrag.moved = true;
@@ -1356,8 +1358,9 @@
       }
       if (inMat(e)) place(d.i, clamp(V(along(e)), view[0], view[1]));
     }
-    tray.addEventListener('pointerup', function (e) { trayEnd(e, false); });
-    tray.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('pointerup', function (e) { trayEnd(e, false); });
+    window.addEventListener('pointercancel', function (e) { trayEnd(e, true); });
+    window.addEventListener('blur', function () { trayEnd(null, true); });
     tray.addEventListener('keydown', function (e) {
       var b = e.target.closest('.mp-mkb');
       if (b && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); var i = +b.getAttribute('data-m'); if (marks[i]) { cur = i; draw(); } else place(i, freeSpot(i)); }
