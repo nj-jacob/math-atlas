@@ -294,6 +294,36 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox number chart: the page runs off the side of a phone screen');
   }
 
+  /* 3a5. Toolbox fraction kit: tap three fourths, split them into eighths, undo, pack seven fourths into wholes, share 7 by 2, drag a piece on. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('fractions'))) {
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/fractions'; });
+    await page.waitForTimeout(150);
+    const early = await page.evaluate(() => Atlas.grade <= 2);
+    const read = () => page.evaluate(() => document.querySelector('.mp-fkt .mp-read').textContent.replace(/\u00a0/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    for (let i = 0; i < 3; i++) await page.click('.mp-fkpc[data-d="4"]');
+    if (await read() !== '') fail(where, 'Toolbox fraction kit: a number shows before Show number is on');
+    await page.click('.tb-b[data-a=show]');
+    const want = (e, g) => early ? e : g;
+    if (!(await has(want('3 fourths', '3/4')))) fail(where, 'Toolbox fraction kit: three fourths do not read ' + want('3 fourths', '3/4') + ' (' + (await read()) + ')');
+    await page.click('.mp-fkdo [data-m=split]'); await page.click('.mp-snap[data-k="2"]');
+    if (await page.locator('.mp-fkrow .mp-fkp').count() !== 6 || !(await has(want('3 fourths = 6 eighths', '3/4 = 6/8')))) fail(where, 'Toolbox fraction kit: splitting 3 fourths into 2 does not give 6 eighths (' + (await read()) + ')');
+    await page.click('.tb-b[data-a=undo]'); await page.waitForTimeout(100);
+    if (await page.locator('.mp-fkrow .mp-fkp').count() !== 3) fail(where, 'Toolbox fraction kit: Undo did not take back the split');
+    await page.click('.mp-fkdo [data-m=fill]');
+    for (let i = 0; i < 4; i++) await page.click('.mp-fkpc[data-d="4"]');
+    await page.click('.mp-snap[data-a=pack]');
+    if (!(await has(want('1 and 3 fourths', '7/4 = 1 3/4')))) fail(where, 'Toolbox fraction kit: packing 7 fourths does not give ' + want('1 and 3 fourths', '1 3/4') + ' (' + (await read()) + ')');
+    await page.click('.mp-fkdo [data-m=share]'); await page.click('.mp-snap[data-a=dealall]'); await page.click('.mp-snap[data-a=cut]');
+    if (!(await has(want('3 and 1 half each', '3 1/2 each')))) fail(where, 'Toolbox fraction kit: 7 shared by 2 does not give ' + want('3 and 1 half', '3 1/2') + ' each (' + (await read()) + ')');
+    await page.click('.mp-snap[data-a=toMat]');
+    if (await page.locator('.mp-fkrow .mp-fkp').count() !== 4) fail(where, 'Toolbox fraction kit: one share did not go on the mat as 3 wholes and 1 half');
+    await page.click('.mp-snap[data-a=clear]');
+    await dragTo(page.locator('.mp-fkpc[data-d="3"]'), page.locator('.mp-fkmat'));
+    if (await page.locator('.mp-fkrow .mp-fkp').count() !== 1) fail(where, 'Toolbox fraction kit: dragging a third onto the mat did not add it');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
