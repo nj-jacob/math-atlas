@@ -11,7 +11,7 @@ The checks in `tests/run.js` stand in for a careful human tester. They run:
    - the question fits its type (for example, the right answer is one of the options);
    - nothing on screen says "undefined" or "NaN";
    - every newer question shape has its answer worked out again by `tests/verify/`.
-3. **Every page.** Every chapter, lesson screen, practice page, quiz and Toolbox tool opens with no errors. On a phone-size screen the Toolbox blocks are tapped and dragged like a child would: add ones, drag a one into Tens to snap 10 ones into a ten, drag a ten off the mat, and Undo. Each step must do the right thing, and nothing may run off the side of the screen.
+3. **Every page.** Every chapter, lesson screen, practice page, quiz and Toolbox tool opens with no errors. On a phone-size screen the Toolbox blocks are tapped and dragged like a child would: add ones, drag a one into Tens to snap 10 ones into a ten, drag a ten off the mat, and Undo. The Toolbox number line is used the same way: put a marker on the line, jump by 10 twice, tap the line between 30 and 40 to zoom in, zoom out, and Undo. Each step must do the right thing, and nothing may run off the side of the screen.
 4. **Answering like a child.** On a phone-size screen (390 px wide), practice questions of every kind are answered right, and sometimes wrong first. They must be marked correctly. Nothing may run off the side of the screen. Fresh quizzes answered all right must score 7 of 7.
 5. **Saved progress.** In every grade, progress saved the way the grade has always saved it (skill levels, secure skills, a quiz score, a check-up, the plan) still shows on the home and check-up pages, and practice saves back under the same keys in the same shape.
 
