@@ -277,6 +277,23 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox counters: the page runs off the side of a phone screen');
   }
 
+  /* 3a4. Toolbox number chart: skip count by 5, jump from 23 to 47, undo. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('hundred'))) {
+    await page.evaluate(() => { location.hash = '#tools/hundred'; });
+    await page.waitForTimeout(150);
+    const coloured = () => page.evaluate(() => document.querySelectorAll('.mp-hcn.f').length);
+    const read = () => page.evaluate(() => document.querySelector('.mp-hct .mp-read').textContent);
+    await page.click('.mp-skips [data-k="5"]');
+    if (await coloured() !== 20) fail(where, 'Toolbox number chart: counting by 5 coloured ' + (await coloured()) + ' squares, not 20');
+    if (await read() !== '') fail(where, 'Toolbox number chart: a number shows before Show number is on');
+    await page.click('.tb-b[data-a=show]');
+    await page.click('.mp-cmode [data-t=jump]'); await page.click('.mp-hcn[data-n="23"]'); await page.click('.mp-hcn[data-n="47"]');
+    if (!(await read()).includes('23 + 24 = 47')) fail(where, 'Toolbox number chart: a jump from 23 to 47 does not read 23 + 24 = 47 (' + (await read()) + ')');
+    await page.click('.tb-b[data-a=undo]'); await page.click('.tb-b[data-a=undo]'); await page.click('.tb-b[data-a=undo]');
+    if (await coloured() !== 0) fail(where, 'Toolbox number chart: Undo did not take back the skip counting');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox number chart: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
