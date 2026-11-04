@@ -203,8 +203,10 @@ async function checkGrade(browser, base, g) {
 
   /* 3a. Toolbox blocks: tap and drag blocks onto the mat, drag a one into Tens to snap 10 ones into a ten,
      drag a block off the mat to put it back, and undo. Nothing may run off the side of the screen. */
+  /* a tool can redraw (for example when its number appears), so wait for the thing to drag to be on screen */
+  const boxOf = async loc => { for (let i = 0; i < 20; i++) { const r = await loc.boundingBox().catch(() => null); if (r) return r; await page.waitForTimeout(100); } throw new Error('nothing to drag: ' + loc); };
   const dragTo = async (from, to) => {
-    const a = await from.boundingBox(), b = await to.boundingBox();
+    const a = await boxOf(from), b = await boxOf(to);
     await page.mouse.move(a.x + a.width / 2, a.y + a.height / 2); await page.mouse.down();
     await page.mouse.move(b.x + b.width / 2, b.y + b.height / 2, { steps: 8 }); await page.mouse.up();
     await page.waitForTimeout(500);
