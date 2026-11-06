@@ -1810,14 +1810,14 @@
     var T = base(root, 'fkt');
     T.uid = ++fkUid;
     root.classList.add('mp-tool', 'mp-fkt');
-    var gr = window.Atlas && +Atlas.grade || 0, early = !!gr && gr <= 2, mid = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6;
+    var gr = window.Atlas && +Atlas.grade || 0, early = !!gr && gr <= 2, mid = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
     var FD = g5 ? FK_D.concat(12) : FK_D, DEC = g6 ? [10, 100, 1000] : g5 ? [10, 100] : mid ? [10] : [];
     var CUTS = mid ? [2, 3, 4, 5, 10] : [2, 3, 4, 5];
-    var WINS = [['s', 'Strips'], ['c', 'Circle'], ['k', 'Counters'], ['n', 'Number line']].concat(mid ? [['g', 'Grid'], ['y', 'Symbols']] : []);
+    var WINS = [['s', 'Strips'], ['c', 'Circle'], ['k', 'Counters'], ['n', 'Number line']].concat(mid ? [['g', 'Grid']] : [], g7 ? [['a', 'Area']] : [], mid ? [['y', 'Symbols']] : []);
     var DO = [['share', 'Share'], ['split', 'Split']].concat(g5 ? [['join', 'Join']] : [], [['line', 'Line up'], ['fill', 'Fill wholes'], ['count', 'Count on']],
-      g5 ? [['comb', 'Combine']] : [], mid ? [['groups', 'Groups of']] : [], g5 ? [['fit', 'Fit into']] : []);
+      g5 ? [['comb', 'Combine']] : [], mid ? [['groups', 'Groups of']] : [], g5 ? [['fit', 'Fit into']] : [], g7 ? [['times', 'Times']] : []);
     /* with many moves, the Do row shows one set at a time: Explore (show and change an amount) or Calculate (work with two amounts) */
-    var CALC = { comb: 1, groups: 1, fit: 1 }, sets = DO.length > 7, dset = 'e', tset = 'f';
+    var CALC = { comb: 1, groups: 1, fit: 1, times: 1 }, sets = DO.length > 7, dset = 'e', tset = 'f';
     root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray"></div>' +
       '<div class="mp-dmain"><div class="mp-cmode mp-fkwin" role="group" aria-label="See it as"><span>See it as</span>' + WINS.map(function (w) { return '<button type="button" data-w="' + w[0] + '">' + w[1] + '</button>'; }).join('') + '</div>' +
       '<div class="mp-cmode mp-fkdo" role="group" aria-label="Do"><span>Do</span>' + (sets ? '<span class="mp-fkseg" role="group" aria-label="Kind of move"><button type="button" data-set="e">Explore</button><button type="button" data-set="c">Calculate</button></span>' : '') +
@@ -1826,10 +1826,11 @@
     var tray = qs('.mp-fktray', root), mat = qs('.mp-mat', root), wins = qs('.mp-fkwins', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
     /* state: the amounts (rows of piece sizes, 1 = a whole) and how each row was made (decimal pieces, or a typed number),
        the row pieces go to, the move, the windows on, the amount before the last split, join or packing, the sharing story,
-       the piece Count on uses, Combine or Take away, the number of groups, and the wholes to fit pieces into */
-    var rows, tag, sel, mode, win, before, did, share, unit, op, grp, fitW, shown = false, hist = [], last = '';
+       the piece Count on uses, Combine or Take away, the number of groups, the wholes to fit pieces into, whether Fit into fills
+       an amount instead (Grade 7 and up), and which lined-up amounts are negative (Grade 7 and up) */
+    var rows, tag, sel, mode, win, before, did, share, unit, op, grp, fitW, fitA, neg, shown = false, hist = [], last = '';
     function fresh() {
-      rows = [[]]; tag = [null]; sel = 0; mode = 'build'; win = { s: 1, c: 0, k: 0, n: 0, g: 0, y: 0 }; before = null; did = null;
+      rows = [[]]; tag = [null]; sel = 0; mode = 'build'; win = { s: 1, c: 0, k: 0, n: 0, g: 0, a: 0, y: 0 }; before = null; did = null; fitA = 0; neg = [];
       share = { n: 7, p: 2, dealt: 0, cut: false, thing: 'cookie' }; unit = 4; op = '+'; grp = 3; fitW = 3;
     }
     /* ---- fraction arithmetic ---- */
@@ -1841,6 +1842,7 @@
     }
     function simp(f) { var g = gcd(f[0], f[1]) || 1; return [f[0] / g, f[1] / g]; }
     function val(row) { var a = amount(row); return a[0] / a[1]; }
+    function many(n, d) { var out = []; for (var i = 0; i < n; i++) out.push(d); return out; }
     function oneSize(row) { var s = row.filter(function (d, i) { return row.indexOf(d) === i; }); return s.length === 1 ? s[0] : 0; }
     /* a fraction written for the child: notation from Grade 3, words before */
     function frac(n, d) { return d === 1 ? fmt(n) : n + '/' + d; }
@@ -1876,10 +1878,35 @@
       var a = oneSize(row) ? [row.length, oneSize(row)] : simp(amount(row));
       return say(a[0], a[1]);
     }
+    /* an amount as one fraction (6/8 stays 6/8 when the pieces are one size), and written the way a child reads it best */
+    function ratOf(row) { var o = oneSize(row); return o ? [row.length, o] : simp(amount(row)); }
+    function nice(n, d) { return d === 1 ? fmt(n) : n > d ? mixed(n, d) : say(n, d); }
+    /* a lined-up amount below 0 (Grade 7 and up) */
+    function sv(r) { return (neg[r] ? -1 : 1) * val(rows[r]); }
+    function sgn(r, t) { return neg[r] && rows[r].length ? '\u2212' + t : t; }
+    function anyNeg() { return mode === 'line' && rows.some(function (row, r) { return neg[r] && row.length; }); }
+    /* Times (Grade 7 and up): the first amount times a fraction of 1 whole or less, answer not yet simplified (6/12) */
+    function timesRes() {
+      if (mode !== 'times' || rows.length < 2 || !rows[0].length || !rows[1].length) return null;
+      var a = ratOf(rows[0]), b = ratOf(rows[1]), n = a[0] * b[0], d = a[1] * b[1];
+      return { a: a, b: b, n: n, d: d, f: simp([n, d]) };
+    }
+    /* Find one between (Grade 7 and up): cut two lined-up amounts into the same pieces, finer until one fits between */
+    function betweenPlan() {
+      if (!g7 || mode !== 'line' || rows.length < 2 || !rows[0].length || !rows[1].length || neg[0] || neg[1]) return null;
+      var dec = decLook(0) && decLook(1), k = dec ? 10 : 2, L = did && did.btw ? did.btw * k : lcm(amount(rows[0])[1], amount(rows[1])[1]);
+      var a = Math.round(val(rows[0]) * L), b = Math.round(val(rows[1]) * L);
+      if (a === b) return null;
+      while (Math.abs(a - b) < 2) { L *= k; a *= k; b *= k; }
+      if (Math.max(a, b) > 120 || L > (dec ? 1000 : 60)) return null;
+      return { L: L, a: a, b: b, m: Math.min(a, b) + Math.floor(Math.abs(a - b) / 2), dec: dec };
+    }
     /* ---- what each move allows ---- */
-    function multi() { return mode === 'line' || mode === 'comb'; }
+    function multi() { return mode === 'line' || mode === 'comb' || mode === 'times' || (mode === 'fit' && fitA); }
     function allowed(k) {
       if (mode === 'share') return false;
+      if (k === 'a') return mode === 'times';
+      if (mode === 'times') return k === 's' || k === 'n' || k === 'y';
       if (mode === 'groups' || mode === 'fit' || mode === 'comb') return k === 's' || k === 'n';
       return true;
     }
@@ -1887,7 +1914,10 @@
     function cap() { return mode === 'count' && mid ? FK_BIG : FK_MAX; }
     function full(d, r) {
       var nv = val(rows[r]) + 1 / d;
-      if (mode === 'fit') return nv > 1 + 1e-9 ? 'The piece to fit is 1 whole or less.' : fitW / nv > 120 ? 'Use a bigger piece.' : '';
+      if (mode === 'times') return d > FK_TOP ? 'Use fraction pieces.' : r === 1 ? (nv > 1 + 1e-9 ? 'The fraction to take is 1 whole or less.' : '')
+        : nv > (g8 ? FK_MAX : 1) + 1e-9 ? (g8 ? 'The first amount is up to ' + FK_MAX + ' wholes.' : 'The first amount is 1 whole or less.') : '';
+      if (mode === 'fit' && fitA && r === 0) return nv > FK_MAX + 1e-9 ? 'The amount is up to ' + FK_MAX + ' wholes.' : '';
+      if (mode === 'fit') return nv > fitMax() + 1e-9 ? 'The piece to fit is ' + (fitMax() > 1 ? 'up to ' + FK_MAX + ' wholes.' : '1 whole or less.') : fitTo() / nv > 120 ? 'Use a bigger piece.' : '';
       if (mode === 'groups') return grp * nv > FK_BIG + 1e-9 ? 'All the groups together make up to ' + FK_BIG + '.' : '';
       if (mode === 'comb' && op === '+' && rows.length > 1) return nv + val(rows[1 - r]) > FK_MAX + 1e-9 ? 'Together they make up to ' + FK_MAX + ' wholes.' : '';
       return nv > cap() + 1e-9 ? 'The mat holds up to ' + cap() + ' wholes.' : '';
@@ -1929,16 +1959,18 @@
       var t = dec && fkPow(d) ? String(1 / d) : early ? fkName(d) : '1/' + d;
       return px >= (/\//.test(t) ? t.length * 5 + 14 : t.length * 9 + 10) ? stk(t) : '';
     }
-    function stripRow(row, r, S, W, still, dec) {
-      var x = 0, h = '', one = oneSize(row), v = val(row);
+    /* side: 0 for a strip from the left edge; 1 or -1 for a strip going right or left from 0 in the middle (negative amounts) */
+    function stripRow(row, r, S, W, still, dec, side) {
+      var x = 0, h = '', one = oneSize(row), v = val(row), q = side ? 2 : 1;
+      function at(x, w) { return (side > 0 ? 0.5 + x / 2 : side < 0 ? 0.5 - (x + w) / 2 : x) * 100; }
       row.forEach(function (d, i) {
         var w = 1 / d / S;
-        h += '<' + (still ? 'i' : 'button type="button"') + ' class="mp-fkp' + (w * W < 8 ? ' tiny' : '') + '" data-r="' + r + '" data-i="' + i + '" style="left:' + (x * 100) + '%;width:' + (w * 100) + '%;--c:' + fkCol(d) + '"' + (still ? '' : ' aria-label="' + (d === 1 ? '1 whole' : '1 ' + fkName(d)) + ', tap to take it off"') + '>' + pieceLabel(d, w * W, dec) + '</' + (still ? 'i' : 'button') + '>';
+        h += '<' + (still ? 'i' : 'button type="button"') + ' class="mp-fkp' + (w / q * W < 8 ? ' tiny' : '') + '" data-r="' + r + '" data-i="' + i + '" style="left:' + at(x, w) + '%;width:' + (w / q * 100) + '%;--c:' + fkCol(d) + '"' + (still ? '' : ' aria-label="' + (d === 1 ? '1 whole' : '1 ' + fkName(d)) + ', tap to take it off"') + '>' + pieceLabel(d, w / q * W, dec) + '</' + (still ? 'i' : 'button') + '>';
         x += w;
       });
       if (one && one > 1 && one <= FK_TOP) {
         var end = Math.max(1, Math.ceil(v - 1e-9)), k = row.length;
-        for (; k < one * end && k < one * S; k++) h += '<i class="mp-fkg" style="left:' + (k / one / S * 100) + '%;width:' + (100 / one / S) + '%"></i>';
+        for (; k < one * end && k < one * S; k++) h += '<i class="mp-fkg" style="left:' + at(k / one / S, 1 / one / S) + '%;width:' + (100 / one / S / q) + '%"></i>';
       }
       return h;
     }
@@ -1948,11 +1980,11 @@
       return h + '</div>';
     }
     function strips(W) {
-      var S = span(), h = '<div class="mp-fkw mp-fks"><div class="mp-fkwl">Strips</div>' + wholeBar(S, W);
+      var S = span(), two = anyNeg(), h = '<div class="mp-fkw mp-fks"><div class="mp-fkwl">Strips' + (two ? ', from 0' : '') + '</div>' + wholeBar(two ? 2 * S : S, W);
       if (before) h += '<div class="mp-fkwl">' + (did && did.k ? 'Before' : did && did.j ? 'Before' : 'Before packing') + '</div><div class="mp-fktrack mp-fkbefore">' + stripRow(before, -1, S, W, true, isDec(sel)) + '</div><div class="mp-fkwl">' + (did && did.k ? 'Each piece cut into ' + did.k : did && did.j ? 'Every ' + did.j + ' pieces joined' : 'Packed into wholes') + '</div>';
       rows.forEach(function (row, r) {
         if (mode === 'comb' && r === 1) h += '<div class="mp-fkwl">' + (op === '+' ? 'Add' : 'Take away') + '</div>';
-        h += '<div class="mp-fktrack mp-fkrow' + (rows.length > 1 && r === sel ? ' sel' : '') + '" data-r="' + r + '"' + '>' + stripRow(row, r, S, W, false, decLook(r)) +
+        h += '<div class="mp-fktrack mp-fkrow' + (rows.length > 1 && r === sel ? ' sel' : '') + '" data-r="' + r + '"' + '>' + stripRow(row, r, S, W, false, decLook(r), two ? (neg[r] ? -1 : 1) : 0) +
           (!row.length ? '<span class="mp-fkempty">' + (rows.length > 1 ? 'Tap a piece to fill this row' : 'Tap or drag a piece') + '</span>' : '') + '</div>';
       });
       if (mode === 'comb' && rows.length > 1 && rows[0].length && rows[1].length) {
@@ -1961,6 +1993,7 @@
         else h += '<p class="mp-fknote">' + (oneSize(rows[0]) && oneSize(rows[0]) === oneSize(rows[1]) ? 'There is not enough to take that away.' : 'The pieces are different sizes.') + '</p>';
       }
       if (before && rows[0].length) h += '<i class="mp-fkvl" style="left:' + (val(rows[0]) / S * 100) + '%"></i>';
+      if (two) h += '<i class="mp-fkvl" style="left:50%"></i>';
       return h + '</div>';
     }
     function groupsHtml(W) {
@@ -1978,26 +2011,64 @@
       }
       return h + '</div>';
     }
+    /* Fit into: pieces fitted into whole wholes, or (Grade 7 and up) into an amount made in row 0, with the piece in row 1 */
+    function fitMax() { return g8 && fitA ? FK_MAX : 1; }
+    function fitTo() { return fitA ? val(rows[0]) : fitW; }
+    function fitSpan() { return fitA ? Math.max(1, Math.ceil(Math.max(val(rows[0]), val(rows[1] || [])) - 1e-9)) : fitW; }
     function fitParts() {
-      var row = rows[0], v = val(row);
-      if (!row.length || v > 1 + 1e-9) return null;
-      var f = oneSize(row) ? [row.length, oneSize(row)] : simp(amount(row)), q = Math.floor(fitW / v + 1e-9);
-      return { f: f, v: v, q: q, rest: simp([fitW * f[1] - q * f[0], f[0]]) };
+      var row = rows[fitA ? 1 : 0] || [], v = val(row), t = fitA ? ratOf(rows[0]) : [fitW, 1];
+      if (!row.length || !t[0] || v > fitMax() + 1e-9) return null;
+      var f = ratOf(row), a = t[0] * f[1], b = t[1] * f[0], q = Math.floor(a / b + 1e-9);
+      return { f: f, t: t, T: t[0] / t[1], v: v, q: q, rest: simp([a - q * b, b]), Q: simp([a, b]) };
     }
     function fitHtml(W) {
-      var S = fitW, h = '<div class="mp-fkw mp-fks"><div class="mp-fkwl">Strips</div>' + wholeBar(S, W);
-      h += '<div class="mp-fkwl">The piece to fit</div><div class="mp-fktrack mp-fkrow" data-r="0">' + stripRow(rows[0], 0, S, W) + (!rows[0].length ? '<span class="mp-fkempty">Tap a piece</span>' : '') + '</div>';
+      var S = fitSpan(), P = fitA ? 1 : 0, h = '<div class="mp-fkw mp-fks"><div class="mp-fkwl">Strips</div>' + wholeBar(S, W);
+      if (fitA) h += '<div class="mp-fkwl">The amount</div><div class="mp-fktrack mp-fkrow' + (sel === 0 ? ' sel' : '') + '" data-r="0">' + stripRow(rows[0], 0, S, W) + (!rows[0].length ? '<span class="mp-fkempty">Tap a piece</span>' : '') + '</div>';
+      h += '<div class="mp-fkwl">The piece to fit</div><div class="mp-fktrack mp-fkrow' + (fitA && sel === 1 ? ' sel' : '') + '" data-r="' + P + '">' + stripRow(rows[P], P, S, W) + (!rows[P].length ? '<span class="mp-fkempty">Tap a piece</span>' : '') + '</div>';
       var p = fitParts();
       if (p) {
-        var bw = p.v / S, c = rowCol(rows[0]), t = '', n = '';
+        var bw = p.v / S, c = rowCol(rows[P]), t = '', n = '';
         for (var i = 0; i < p.q; i++) {
           t += '<i class="mp-fkp mp-fkcopy' + (i % 2 ? ' odd' : '') + '" style="left:' + (i * bw * 100) + '%;width:' + (bw * 100) + '%;--c:' + c + '"></i>';
           if (bw * W >= 16) n += '<span style="left:' + ((i + 0.5) * bw * 100) + '%">' + (i + 1) + '</span>';
         }
-        if (p.rest[0]) t += '<i class="mp-fkg mp-fkpart" style="left:' + (p.q * bw * 100) + '%;width:' + ((1 - p.q * bw) * 100) + '%"></i>';
+        if (p.rest[0]) t += '<i class="mp-fkg mp-fkpart" style="left:' + (p.q * bw * 100) + '%;width:' + ((p.T / S - p.q * bw) * 100) + '%"></i>';
         h += '<div class="mp-fkwl">How many fit</div><div class="mp-fktrack mp-fkres">' + t + '</div><div class="mp-fkcnt">' + n + '</div>';
-      } else if (rows[0].length) h += '<p class="mp-fknote">Make a piece of 1 whole or less.</p>';
+      } else if (rows[P].length) h += '<p class="mp-fknote">Make a piece of ' + (fitMax() > 1 ? 'up to ' + FK_MAX + ' wholes' : '1 whole or less') + '.</p>';
       return h + '</div>';
+    }
+    /* Times: the first amount, the fraction taken of it, and the answer */
+    function timesHtml(W) {
+      var S = Math.max(1, Math.ceil(val(rows[0]) - 1e-9)), h = '<div class="mp-fkw mp-fks"><div class="mp-fkwl">Strips</div>' + wholeBar(S, W);
+      [['First amount', 0], ['Times', 1]].forEach(function (q) {
+        var r = q[1];
+        h += '<div class="mp-fkwl">' + q[0] + '</div><div class="mp-fktrack mp-fkrow' + (r === sel ? ' sel' : '') + '" data-r="' + r + '">' + stripRow(rows[r], r, S, W) + (!rows[r].length ? '<span class="mp-fkempty">Tap a piece to fill this row</span>' : '') + '</div>';
+      });
+      var t = timesRes();
+      if (t) {
+        var d = t.d <= FK_TOP ? t.d : t.f[1] <= FK_TOP ? t.f[1] : 0;
+        h += '<div class="mp-fkwl">Answer</div><div class="mp-fktrack mp-fkres">' + (d ? stripRow(many(t.n * d / t.d, d), -2, S, W, true) : '<i class="mp-fkp" style="left:0;width:' + (t.n / t.d / S * 100) + '%;--c:' + fkCol(3) + '"></i>') + '</div>';
+      }
+      return h + '</div>';
+    }
+    /* the area model: each whole of the first amount is a square cut into columns; the fraction taken cuts it into rows */
+    function areaHtml(Z) {
+      var h = '<div class="mp-fkw mp-fka"><div class="mp-fkwl">Area</div>';
+      if (!rows[0].length) return h + '<p class="mp-fknote">Make the first amount.</p></div>';
+      var a = ratOf(rows[0]), b = rows[1] && rows[1].length ? ratOf(rows[1]) : [0, 1], n = Math.max(1, Math.ceil(a[0] / a[1] - 1e-9)), s = '';
+      if (a[1] > FK_TOP || b[1] > FK_TOP) return h + '<p class="mp-fknote">Use pieces of one size to see the area.</p></div>';
+      var cw = Z / a[1], rh = Z / b[1];
+      for (var i = 0; i < n; i++) {
+        var k = Math.min(a[1], a[0] - i * a[1]), g = '';
+        for (var c = 0; c < a[1]; c++) for (var r = 0; r < b[1]; r++) {
+          var inA = c < k, inB = r < b[0];
+          g += '<rect class="mp-fka' + (inA && inB ? 2 : inA ? 1 : inB ? 3 : 0) + '" x="' + (c * cw).toFixed(1) + '" y="' + (r * rh).toFixed(1) + '" width="' + cw.toFixed(1) + '" height="' + rh.toFixed(1) + '"/>';
+        }
+        s += '<svg class="mp-fkarea" width="' + (Z + 16) + '" height="' + (Z + 16) + '" viewBox="-13 -13 ' + (Z + 16) + ' ' + (Z + 16) + '" aria-hidden="true">' + g +
+          '<line class="mp-fkab" x1="0" y1="-8" x2="' + (k * cw).toFixed(1) + '" y2="-8"/>' + (b[0] ? '<line class="mp-fkac" x1="-8" y1="0" x2="-8" y2="' + (b[0] * rh).toFixed(1) + '"/>' : '') + '<rect class="mp-fkgo" width="' + Z + '" height="' + Z + '"/></svg>';
+      }
+      var t = timesRes(), leg = shown && t ? '<div class="mp-fkleg"><span><i class="mp-fka1"></i>' + nice(a[0], a[1]) + '</span><span><i class="mp-fka2"></i>' + say(b[0], b[1]) + ' of ' + nice(a[0], a[1]) + '</span><span><b>' + t.n + '</b> small parts, each ' + say(1, t.d) + '</span></div>' : '';
+      return h + '<div class="mp-fkas">' + s + stk(leg) + '</div></div>';
     }
     function sector(a0, a1, R) {
       var p0 = a0 * 2 * Math.PI - Math.PI / 2, p1 = a1 * 2 * Math.PI - Math.PI / 2, big = a1 - a0 > 0.5 ? 1 : 0;
@@ -2062,7 +2133,7 @@
       rows.forEach(function (row, r) {
         if (!row.length && rows.length > 1) return;
         var v = val(row), n = Math.max(1, Math.ceil(v - 1e-9)), zoom = 0;
-        h += '<figure class="mp-fkgf">' + (shown && rows.length > 1 ? '<figcaption>' + stk(rowSay(row, r)) + '</figcaption>' : '') + '<div>';
+        h += '<figure class="mp-fkgf">' + (shown && rows.length > 1 ? '<figcaption>' + stk(sgn(r, rowSay(row, r))) + '</figcaption>' : '') + '<div>';
         for (var i = 0; i < n; i++) {
           var part = Math.min(1, Math.max(0, v - i)), sl = part * 100 - Math.floor(part * 100 + 1e-6);
           h += gridSvg(part, G);
@@ -2090,13 +2161,14 @@
     function symbols() {
       var h = '<div class="mp-fkw mp-fky"><div class="mp-fkwl">Symbols</div>';
       if (!shown) return h + '<p class="mp-fknote">Turn on Show number to see the symbols.</p></div>';
-      var any = false;
-      rows.forEach(function (row, r) {
+      var any = false, t = timesRes(), list = mode === 'times' ? (t ? [[many(t.n, t.d), -1]] : []) : rows.map(function (row, r) { return [row, r]; });
+      list.forEach(function (q) {
+        var row = q[0], r = q[1];
         if (!row.length) return;
         any = true;
-        h += '<div class="mp-fksym">' + forms(row, r).map(function (t, i) { return (i ? '<em>=</em>' : '') + '<span><b>' + stk(t[0]) + '</b><small>' + t[1] + '</small></span>'; }).join('') + '</div>';
+        h += '<div class="mp-fksym">' + forms(row, r).map(function (f, i) { return (i ? '<em>=</em>' : '') + '<span><b>' + stk(sgn(r, f[0])) + '</b><small>' + f[1] + '</small></span>'; }).join('') + '</div>';
       });
-      return h + (any ? '' : '<p class="mp-fknote">Add pieces to see the symbols.</p>') + '</div>';
+      return h + (any ? '' : '<p class="mp-fknote">' + (mode === 'times' ? 'Make both amounts to see the answer.' : 'Add pieces to see the symbols.') + '</p>') + '</div>';
     }
     function nline(W) {
       var S = span(), L = 1, top = 0, pad = 16, hops = [], pts = [], v0, p;
@@ -2106,21 +2178,27 @@
         v0 = val(rows[0]); S = Math.min(FK_BIG, Math.max(1, Math.ceil(grp * v0 - 1e-9)));
         if (rows[0].length) { for (var i = 0; i < grp; i++) hops.push([i * v0, (i + 1) * v0, 'var(--accent,#0b6e78)']); pts.push([grp * v0]); }
       } else if (mode === 'fit') {
-        S = fitW; p = fitParts();
-        if (p) { for (i = 0; i < p.q; i++) hops.push([i * p.v, (i + 1) * p.v, rowCol(rows[0])]); if (p.rest[0]) hops.push([p.q * p.v, fitW, rowCol(rows[0]), 1]); pts.push([fitW]); }
+        S = fitSpan(); p = fitParts(); var pc = rowCol(rows[fitA ? 1 : 0]);
+        if (p) { for (i = 0; i < p.q; i++) hops.push([i * p.v, (i + 1) * p.v, pc]); if (p.rest[0]) hops.push([p.q * p.v, p.T, pc, 1]); pts.push([p.T]); }
+      } else if (mode === 'times') {
+        var tr = timesRes(); S = Math.max(1, Math.ceil(val(rows[0]) - 1e-9));
+        if (rows[0].length) pts.push([val(rows[0]), rowCol(rows[0]), shown ? rowSay(rows[0], 0) : '']);
+        if (tr) pts.push([tr.n / tr.d, null, shown ? nice(tr.f[0], tr.f[1]) : '']);
       } else if (mode === 'comb' && rows.length > 1) {
         v0 = run(rows[0], 0, 1);
         if (rows[1].length) { var end = run(rows[1], v0, op === '+' ? 1 : -1); if (combRes()) pts.push([end]); else hops = hops.filter(function (q) { return q[1] >= -1e-9; }); }
         else if (rows[0].length) pts.push([v0]);
       } else {
         rows.forEach(function (row, r) {
-          if (rows.length === 1 && row.length <= 40) run(row, 0, 1);
-          if (row.length) pts.push([val(row), rows.length > 1 ? rowCol(row) : null, shown && rows.length > 1 ? rowSay(row, r) : '']);
+          if (rows.length === 1 && row.length <= 40) run(row, 0, neg[r] ? -1 : 1);
+          if (row.length) pts.push([sv(r), rows.length > 1 ? rowCol(row) : null, shown && rows.length > 1 ? sgn(r, rowSay(row, r)) : '']);
         });
       }
-      if (mode === 'groups' || mode === 'fit') { L = 1; rows[0].forEach(function (d) { L = lcm(L, d); }); }
-      if (L > FK_TOP || (W - 2 * pad) / S / L < 7) L = (W - 2 * pad) / S / 10 >= 7 && L % 10 === 0 ? 10 : 1;
-      var x = function (v) { return pad + v / S * (W - 2 * pad); }, labs = pts.filter(function (q) { return q[2]; });
+      if (mode === 'groups' || mode === 'fit') { L = 1; (mode === 'fit' && fitA ? rows : [rows[0]]).forEach(function (row) { row.forEach(function (d) { L = lcm(L, d); }); }); }
+      if (mode === 'times') { var tt = timesRes(); L = tt ? tt.d : 1; rows[0].forEach(function (d) { L = lcm(L, d); }); }
+      var lo = anyNeg() ? -S : 0;
+      if (L > FK_TOP || (W - 2 * pad) / (S - lo) / L < 7) L = (W - 2 * pad) / (S - lo) / 10 >= 7 && L % 10 === 0 ? 10 : 1;
+      var x = function (v) { return pad + (v - lo) / (S - lo) * (W - 2 * pad); }, labs = pts.filter(function (q) { return q[2]; });
       /* labels for amounts lined up sit on up to 4 levels so they do not overlap */
       var lv = [], used = [];
       labs.slice().sort(function (a, b) { return a[0] - b[0]; }).forEach(function (q) {
@@ -2129,11 +2207,11 @@
         lv.push([q, k]); used[k] = px + wd / 2;
       });
       top = labs.length ? 16 * (1 + Math.max.apply(null, lv.map(function (z) { return z[1]; }).concat(0))) : 0;
-      var H = 92 + top, s = '<svg class="mp-fknl" width="' + W + '" height="' + H + '" viewBox="0 ' + (-top) + ' ' + W + ' ' + H + '" aria-hidden="true"><line class="mp-fkax" x1="' + x(0) + '" y1="60" x2="' + x(S) + '" y2="60"/>';
-      for (i = 0; i <= S * L; i++) {
+      var H = 92 + top, s = '<svg class="mp-fknl" width="' + W + '" height="' + H + '" viewBox="0 ' + (-top) + ' ' + W + ' ' + H + '" aria-hidden="true"><line class="mp-fkax" x1="' + x(lo) + '" y1="60" x2="' + x(S) + '" y2="60"/>';
+      for (i = lo * L; i <= S * L; i++) {
         var big = i % L === 0;
         s += '<line class="' + (big ? 'mp-fkt1' : 'mp-fkt2') + '" x1="' + x(i / L) + '" y1="' + (big ? 48 : 53) + '" x2="' + x(i / L) + '" y2="' + (big ? 72 : 67) + '"/>';
-        if (big) s += '<text x="' + x(i / L) + '" y="89">' + (i / L) + '</text>';
+        if (big) s += '<text x="' + x(i / L) + '" y="89">' + (i < 0 ? '\u2212' + (-i / L) : i / L) + '</text>';
       }
       hops.forEach(function (q) { var a = x(q[0]), b = x(q[1]); s += '<path class="mp-fkhop' + (q[3] ? ' part' : '') + '" style="stroke:' + q[2] + '" d="M' + a + ' 54Q' + ((a + b) / 2) + ' ' + (54 - Math.min(36, Math.abs(b - a) * 0.7)) + ' ' + b + ' 54"/>'; });
       pts.forEach(function (q) { s += '<circle class="mp-fkpt" cx="' + x(q[0]) + '" cy="60" r="10" style="fill:' + (q[1] || 'var(--accent,#0b6e78)') + '"/>'; });
@@ -2173,16 +2251,20 @@
       tray.innerHTML = stk(trayHtml());
       tray.classList.toggle('mp-fkshare', mode === 'share');
       readout();
+      /* the buttons sit over the bottom of the mat; leave room for them, however many rows they wrap to */
+      snaps();
+      mat.style.paddingBottom = (snapsEl.offsetHeight + 28) + 'px';
       var W = width();
       if (mode === 'share') wins.innerHTML = shareHtml();
       else {
         var any = WINS.some(function (w) { return on(w[0]); }), sOn = on('s') || !any;
         /* fit every window on the mat: draw at full size, then make strips thinner, circles and grids smaller and counters
            tighter, step by step, until it all fits (a very full mat may still scroll) */
-        var midOn = on('c') || on('k') || on('g'), nc = rows.reduce(function (t, r) { return t + Math.max(1, Math.ceil(val(r) - 1e-9)); }, 0);
+        var midOn = on('c') || on('k') || on('g') || on('a'), nc = rows.reduce(function (t, r) { return t + Math.max(1, Math.ceil(val(r) - 1e-9)); }, 0);
         var cs = getComputedStyle(mat), room = mat.clientHeight - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
         var R0 = Math.max(30, Math.floor(Math.min(74, ((W - (on('k') ? 240 : 0) - (on('g') ? 220 : 0)) / nc - 36) / 2))), th0 = W < 500 ? 42 : 52;
         var G0 = Math.max(90, Math.min(200, Math.floor((on('c') || on('k') ? W / 2 : W) / Math.min(nc, 4)) - 24));
+        var na = Math.max(1, Math.ceil(val(rows[0]) - 1e-9)), Z0 = Math.max(90, Math.min(220, Math.floor((W - (shown && W >= 560 ? 200 : 0)) / na) - 40));
         wins.style.setProperty('--fkw', W + 'px');
         for (var lv = 0; lv < 8; lv++) {
           wins.style.setProperty('--fkh', Math.max(30, th0 - lv * 4) + 'px');
@@ -2190,9 +2272,9 @@
           wins.style.setProperty('--fkg', Math.max(8, 18 - lv * 2) + 'px');
           wins.classList.toggle('tight', lv >= 3);
           wins.classList.toggle('tighter', lv >= 5);
-          var sh = mode === 'groups' ? groupsHtml(W) : mode === 'fit' ? fitHtml(W) : strips(W);
+          var sh = mode === 'groups' ? groupsHtml(W) : mode === 'fit' ? fitHtml(W) : mode === 'times' ? timesHtml(W) : strips(W);
           wins.innerHTML = (sOn ? sh : '') +
-            (midOn ? '<div class="mp-fkmid">' + (on('c') ? circles(Math.max(24, Math.round(R0 * (1 - lv * 0.1)))) : '') + (on('k') ? counters() : '') + (on('g') ? grids(Math.max(70, Math.round(G0 * (1 - lv * 0.08)))) : '') + '</div>' : '') +
+            (midOn ? '<div class="mp-fkmid">' + (on('c') ? circles(Math.max(24, Math.round(R0 * (1 - lv * 0.1)))) : '') + (on('k') ? counters() : '') + (on('g') ? grids(Math.max(70, Math.round(G0 * (1 - lv * 0.08)))) : '') + (on('a') ? areaHtml(Math.max(80, Math.round(Z0 * (1 - lv * 0.08)))) : '') + '</div>' : '') +
             (on('n') ? nline(W) : '') + (on('y') ? symbols() : '');
           if (!room || wins.offsetHeight <= room) break;
         }
@@ -2202,7 +2284,6 @@
       if (CALC[mode]) dset = 'c';
       qsa('.mp-fkdo [data-m]', root).forEach(function (b) { var m = b.getAttribute('data-m'); b.setAttribute('aria-pressed', String(m === mode)); b.hidden = sets && (dset === 'c') !== !!CALC[m]; });
       qsa('.mp-fkdo [data-set]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-set') === dset)); });
-      snaps();
     }
     function readout() {
       if (!shown) { read.innerHTML = ''; return; }
@@ -2223,13 +2304,15 @@
             : '<b>' + grp + '</b> ' + (grp === 1 ? 'group' : 'groups') + ' of <b>' + words(nd[0], td) + '</b> is <b>' + words(tn, td) + '</b>' + (td > 1 && tn >= td ? ', and <b>' + words(td, td) + '</b> make 1 whole' : '');
         }
       } else if (mode === 'fit') {
-        var p = fitParts();
-        if (!row.length) eq = 'Make the piece to fit into <b>' + pl(fitW, 'whole', 'wholes') + '</b>';
-        else if (!p) eq = 'The piece to fit is <b>1 whole</b> or less';
+        var p = fitParts(), pr = rows[fitA ? 1 : 0], into = fitA ? nice(p ? p.t[0] : 0, p ? p.t[1] : 1) : fitW;
+        if (fitA && !rows[0].length) eq = 'Make the amount to fill';
+        else if (!pr.length) eq = fitA ? 'Now make the piece to fit into it' : 'Make the piece to fit into <b>' + pl(fitW, 'whole', 'wholes') + '</b>';
+        else if (!p) eq = 'The piece to fit is <b>' + (fitMax() > 1 ? FK_MAX + ' wholes</b> or less' : '1 whole</b> or less');
         else {
-          var P = say(p.f[0], p.f[1]), Q = simp([fitW * p.f[1], p.f[0]]);
-          big = fitW + ' &divide; ' + P + ' = ' + (Q[1] === 1 ? fmt(Q[0]) : mixed(Q[0], Q[1]));
-          if (p.f[0] === 1 && p.f[1] > 1) eq = '<b>' + words(p.f[1], p.f[1]) + '</b> fit in each whole, and there ' + (fitW === 1 ? 'is <b>1</b> whole' : 'are <b>' + fitW + '</b> wholes');
+          var P = nice(p.f[0], p.f[1]);
+          big = into + ' &divide; ' + P + ' = ' + nice(p.Q[0], p.Q[1]);
+          if (fitA) eq = (did && did.same ? 'in <b>' + fkNames(did.same) + '</b>: ' : '') + '<b>' + P + '</b> fits ' + (p.rest[0] ? '<b>' + p.q + '</b> ' + (p.q === 1 ? 'time' : 'times') + ', and <b>' + say(p.rest[0], p.rest[1]) + '</b> of another one fits in what is left' : 'exactly <b>' + p.q + '</b> ' + (p.q === 1 ? 'time' : 'times'));
+          else if (p.f[0] === 1 && p.f[1] > 1) eq = '<b>' + words(p.f[1], p.f[1]) + '</b> fit in each whole, and there ' + (fitW === 1 ? 'is <b>1</b> whole' : 'are <b>' + fitW + '</b> wholes');
           else if (!p.rest[0]) eq = '<b>' + P + '</b> fits into <b>' + fitW + '</b> exactly <b>' + p.q + '</b> ' + (p.q === 1 ? 'time' : 'times');
           else eq = '<b>' + P + '</b> fits <b>' + p.q + '</b> ' + (p.q === 1 ? 'time' : 'times') + ', and <b>' + say(p.rest[0], p.rest[1]) + '</b> of another one fits in what is left';
         }
@@ -2244,17 +2327,37 @@
           eq = (did && did.same ? 'cut into <b>' + fkNames(c.d) + '</b>, then count: ' : 'same-size pieces, so count them: ') + '<b>' + words(A.length, c.d) + '</b> ' + (op === '+' ? 'and' : 'take away') + ' <b>' + words(B.length, c.d) + '</b>';
         } else if (oneSize(A) && oneSize(A) === oneSize(B)) { big = rowSay(A, 0) + sign + rowSay(B, 1); eq = 'there is not enough to take that away'; }
         else { big = rowSay(A, 0) + sign + rowSay(B, 1) + ' = ?'; eq = 'the pieces are <b>different sizes</b>, so they cannot be counted together yet'; }
+      } else if (mode === 'times' && rows.length > 1) {
+        var t = timesRes();
+        if (!rows[0].length) eq = 'Make the first amount';
+        else if (!t) { big = rowSay(rows[0], 0); eq = 'Now make the fraction to take of it'; }
+        else {
+          var ta = t.a, tb = t.b, rem = ta[0] % ta[1];
+          big = nice(ta[0], ta[1]) + ' &times; ' + say(tb[0], tb[1]) + ' = ' + say(t.n, t.d) + (t.f[1] !== t.d || t.n > t.d ? ' = ' + nice(t.f[0], t.f[1]) : '');
+          eq = ta[0] <= ta[1] ? '<b>' + say(tb[0], tb[1]) + '</b> of <b>' + say(ta[0], ta[1]) + '</b>: cut the ' + say(ta[0], ta[1]) + ' into <b>' + tb[1] + '</b> rows and take <b>' + tb[0] + '</b>'
+            : '<b>' + say(tb[0], tb[1]) + '</b> of each whole' + (rem ? ', and <b>' + say(tb[0], tb[1]) + '</b> of the ' + say(rem, ta[1]) : '') + ', then put them together';
+        }
+      } else if (mode === 'line' && did && did.btw && rows.length === 3) {
+        var bq = rows.map(function (r, i) { return { i: i, v: val(r), n: r.length }; }).sort(function (p, q) { return p.v - q.v; });
+        var bt = function (q) { return did.dec ? String(+decRow(rows[q.i])) : nice(simp([q.n, did.btw])[0], simp([q.n, did.btw])[1]); };
+        var bp = function (q) { return did.dec ? decRow(rows[q.i]) : frac(q.n, did.btw); };
+        big = bq.map(bt).join(' &lt; ');
+        var mid3 = bq.filter(function (q) { return q.i === 2; })[0], ends3 = bq.filter(function (q) { return q.i !== 2; });
+        eq = 'in <b>' + fkNames(did.btw) + '</b>, <b>' + bp(ends3[0]) + '</b> and <b>' + bp(ends3[1]) + '</b> have <b>' + bp(mid3) + '</b> between them';
       } else if (mode === 'line' && filled.length > 1) {
-        var fl = rows.map(function (r, i) { return { i: i, v: val(r), t: rowSay(r, i) }; }).filter(function (q) { return rows[q.i].length; });
+        var fl = rows.map(function (r, i) { return { i: i, v: sv(i), t: sgn(i, rowSay(r, i)) }; }).filter(function (q) { return rows[q.i].length; });
         if (fl.length === 2) {
           var X = fl[0], Y = fl[1], same = Math.abs(X.v - Y.v) < 1e-9;
           big = X.t + (same ? ' = ' : X.v > Y.v ? ' &gt; ' : ' &lt; ') + Y.t;
-          eq = same ? 'the same length: <b>equal' + (isDec(X.i) || isDec(Y.i) || tag[X.i] || tag[Y.i] ? ' amounts' : ' fractions') + '</b>' : '<b>' + (X.v > Y.v ? X.t : Y.t) + '</b> is longer' + (oneSize(rows[X.i]) && oneSize(rows[Y.i]) && rows[X.i].length === rows[Y.i].length && rows[X.i].length && !tag[X.i] && !tag[Y.i] ? ': ' + (oneSize(rows[X.i]) < oneSize(rows[Y.i]) ? 'fewer' : 'more') + ' people sharing means ' + (X.v > Y.v ? 'bigger' : 'smaller') + ' pieces' : '');
+          if (!same && (neg[X.i] || neg[Y.i])) eq = '<b>' + (X.v > Y.v ? X.t : Y.t) + '</b> is further right on the number line' + (neg[X.i] && neg[Y.i] ? ': the further a negative number is from 0, the smaller it is' : '');
+          else eq = same ? 'the same length: <b>equal' + (isDec(X.i) || isDec(Y.i) || tag[X.i] || tag[Y.i] ? ' amounts' : ' fractions') + '</b>' : '<b>' + (X.v > Y.v ? X.t : Y.t) + '</b> is longer' + (oneSize(rows[X.i]) && oneSize(rows[Y.i]) && rows[X.i].length === rows[Y.i].length && rows[X.i].length && !tag[X.i] && !tag[Y.i] ? ': ' + (oneSize(rows[X.i]) < oneSize(rows[Y.i]) ? 'fewer' : 'more') + ' people sharing means ' + (X.v > Y.v ? 'bigger' : 'smaller') + ' pieces' : '');
         } else {
           fl.sort(function (p, q) { return p.v - q.v; });
           big = fl.map(function (q) { return q.t; }).reduce(function (s, t, i) { return i ? s + (Math.abs(fl[i].v - fl[i - 1].v) < 1e-9 ? ' = ' : ' &lt; ') + t : t; }, '');
           eq = 'from shortest to longest';
         }
+      } else if (mode === 'line' && neg[ri] && row.length) {
+        big = sgn(ri, rowSay(row, ri)); eq = 'less than <b>0</b>';
       } else if (did && (did.k || did.j) && before) {
         var bo = oneSize(before), k = did.k || did.j, dec = isDec(sel);
         big = (dec ? decRow(before) : say(before.length, bo)) + ' = ' + (dec ? decRow(row) : say(row.length, one));
@@ -2270,6 +2373,12 @@
       } else if (row.length && (isDec(ri) || (tag[ri] && tag[ri].t))) {
         big = rowSay(row, ri);
         eq = row.every(function (d) { return d === 1 || fkPow(d); }) ? placeWords(row) : '';
+        if (/%$/.test(big)) {
+          var pv = val(row);
+          big += ' = ' + nice(f[0], f[1]);
+          if (pv > 1 + 1e-9) eq = 'more than <b>100%</b> is more than <b>1 whole</b>';
+          else if (pv < 0.01 - 1e-9) eq = 'less than <b>1%</b> is less than <b>1 small square</b> of the grid';
+        }
       } else if (wh && rest.length && mode !== 'count') {
         var rf = oneSize(rest) ? [rest.length, oneSize(rest)] : simp(amount(rest));
         big = (early ? wh + ' and ' + say(rf[0], rf[1]) : wh + ' ' + frac(rf[0], rf[1])) + (early || rf[0] >= rf[1] ? '' : ' = ' + frac(f[0], f[1]));
@@ -2311,14 +2420,24 @@
       } else if (mode === 'count') {
         h += btn('add', '+ ' + say(1, unit), null, val(row) + 1 / unit > cap() + 1e-9) + btn('back', '&minus; ' + say(1, unit), null, row.lastIndexOf(unit) < 0) + (mid ? btn('to10', 'Count to ' + FK_BIG, null, val(row) + 1 / unit > FK_BIG + 1e-9 || unit > FK_TOP) : '');
       } else if (mode === 'line') {
+        if (g7) h += btn('sign', 'Plus', !neg[sel], null, ' data-v="0"') + btn('sign', 'Minus', !!neg[sel], null, ' data-v="1"');
         if (rows.length < (mid ? 4 : 3)) h += btn('row', 'Add a row');
-        if (g6 && rows.length < 4) h += '<input class="mp-fkin" type="text" inputmode="decimal" autocomplete="off" aria-label="Type a fraction, decimal or percent" placeholder="3/4, 0.7 or 65%">' + btn('type', 'Add number');
+        if (g7 && rows[1] && rows[0].length && rows[1].length && !neg[0] && !neg[1]) h += btn('btw', did && did.btw ? 'Cut finer' : 'Find one between', null, !betweenPlan());
+        if (g6 && rows.length < 4) h += typeBox('3/4, 0.7 or 65%') + btn('type', 'Add number');
+      } else if (mode === 'build' && g8) {
+        h += typeBox('150%, 0.5% or 2/3') + btn('type', 'Show it');
       } else if (mode === 'comb') {
         h += btn('op', 'Combine', op === '+', null, ' data-o="+"') + btn('op', 'Take away', op === '-', null, ' data-o="-"');
         if (g6 && rows[1] && rows[0].length && rows[1].length && !combRes() && !(oneSize(rows[0]) && oneSize(rows[0]) === oneSize(rows[1]))) h += btn('same', 'Cut into same-size pieces', null, !sameSize());
       } else if (mode === 'groups') {
         h += '<span class="mp-hint">Groups</span>' + btn('grp', '&minus;', null, grp <= 1, ' data-v="-1" aria-label="One fewer group"') + '<b class="mp-fkcount">' + grp + '</b>' + btn('grp', '+', null, grp >= FK_BIG || (grp + 1) * val(rows[0]) > FK_BIG + 1e-9, ' data-v="1" aria-label="One more group"');
+      } else if (mode === 'times') {
+        h += [['First amount', 0], ['Times', 1]].map(function (q) { var r = q[1], a = ratOf(rows[r]); return btn('pick', q[0] + (shown && rows[r].length ? ' <b>' + nice(a[0], a[1]) + '</b>' : ''), sel === r, null, ' data-v="' + r + '"'); }).join('');
+      } else if (mode === 'fit' && fitA) {
+        h += btn('fita', 'Into wholes', false, null, ' data-v="0"') + btn('fita', 'Into an amount', true, null, ' data-v="1"');
+        if (rows[0].length && rows[1].length && (!oneSize(rows[0]) || oneSize(rows[0]) !== oneSize(rows[1]))) h += btn('same', 'Cut into same-size pieces', null, !sameSize());
       } else if (mode === 'fit') {
+        if (g7) h += btn('fita', 'Into wholes', true, null, ' data-v="0"') + btn('fita', 'Into an amount', false, null, ' data-v="1"');
         h += '<span class="mp-hint">Wholes</span>' + btn('fitw', '&minus;', null, fitW <= 1, ' data-v="-1" aria-label="One fewer whole"') + '<b class="mp-fkcount">' + fitW + '</b>' + btn('fitw', '+', null, fitW >= FK_BIG || (rows[0].length && (fitW + 1) / val(rows[0]) > 120), ' data-v="1" aria-label="One more whole"');
       }
       if (any && mode !== 'share') h += btn('clear', 'Clear');
@@ -2326,6 +2445,7 @@
       var ni = qs('.mp-fkin', snapsEl);
       if (ni) { ni.value = typed; if (focus) ni.focus(); }
     }
+    function typeBox(eg) { return '<input class="mp-fkin" type="text" inputmode="decimal" autocomplete="off" aria-label="Type a fraction, decimal or percent" placeholder="' + eg + '">'; }
     /* a typed fraction, mixed number, decimal or percent becomes pieces: n pieces of the fraction, or place-value pieces */
     function parseTyped(t) {
       t = t.replace(/\s+/g, ' ').trim();
@@ -2345,7 +2465,7 @@
       return { row: row, t: pct ? +num + '%' : String(+num) };
     }
     /* ---- moves ---- */
-    function snapshot() { return JSON.stringify({ rows: rows, tag: tag, sel: sel, mode: mode, win: win, before: before, did: did, share: share, unit: unit, op: op, grp: grp, fitW: fitW }); }
+    function snapshot() { return JSON.stringify({ rows: rows, tag: tag, sel: sel, mode: mode, win: win, before: before, did: did, share: share, unit: unit, op: op, grp: grp, fitW: fitW, fitA: fitA, neg: neg }); }
     function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
     function change() { if (o.onChange) o.onChange(state(), T); }
     function state() {
@@ -2370,16 +2490,19 @@
     }
     function setMode(m) {
       act(function () {
-        var to = mode === m ? 'build' : m, many = to === 'line' || to === 'comb';
+        var to = mode === m ? 'build' : m, two = to === 'comb' || to === 'times', many = to === 'line' || two;
         if (multi() && !many) { rows = [rows[0]]; tag = [tag[0]]; sel = 0; }
+        if (to !== 'fit') fitA = 0;
+        if (to !== 'line') neg = [];
         if (many) {
-          if (to === 'comb') { rows = rows.slice(0, 2); tag = tag.slice(0, 2); }
-          if (rows.length === 1 && (rows[0].length || to === 'comb')) { rows.push([]); tag.push(null); sel = rows[0].length ? 1 : 0; }
+          if (two) { rows = rows.slice(0, 2); tag = tag.slice(0, 2); }
+          if (rows.length === 1 && (rows[0].length || two)) { rows.push([]); tag.push(null); sel = rows[0].length ? 1 : 0; }
           if (sel >= rows.length) sel = rows.length - 1;
         }
         if (to !== mode) settle();
         if (to === 'count' && rows[0].length) unit = oneSize(rows[0]) || rows[0][rows[0].length - 1];
         if (to === 'fill' && !win.n) win.n = 1;
+        if (to === 'times') { win.a = 1; win.y = 1; win.s = 0; } else if (mode === 'times') win.s = 1;
         if (to === 'groups' && rows[0].length) grp = Math.max(1, Math.min(grp, Math.floor(FK_BIG / val(rows[0]) + 1e-9)));
         mode = to; last = 'mode';
       });
@@ -2452,9 +2575,10 @@
       var inp = qs('.mp-fkin', snapsEl), got = inp && parseTyped(inp.value);
       if (!got) { if (inp) { bump(inp, 'mp-shake'); announce(T, 'Type a fraction, decimal or percent up to ' + FK_MAX + ', like 3/4, 0.7 or 65%.'); } return; }
       act(function () {
-        var r = rows.map(function (x) { return x.length; }).indexOf(0);
+        var r = mode === 'line' ? rows.map(function (x) { return x.length; }).indexOf(0) : 0;
         if (r < 0) { rows.push([]); tag.push(null); r = rows.length - 1; }
-        rows[r] = got.row; tag[r] = { t: got.t }; sel = Math.min(r + 1, rows.length - 1); last = 'type';
+        rows[r] = got.row; tag[r] = { t: got.t }; sel = mode === 'line' ? Math.min(r + 1, rows.length - 1) : 0; settle(); last = 'type';
+        if (mode !== 'line' && got.row.some(function (d) { return d >= 100; }) && allowed('g')) win.g = 1;
       });
       var ni = qs('.mp-fkin', snapsEl);
       if (ni) { ni.value = ''; ni.focus(); }
@@ -2502,6 +2626,18 @@
           did = { same: L }; last = 'same';
         });
         if (a === 'grp') act(function () { grp += v; last = 'grp'; });
+        if (a === 'pick') { sel = v; draw(); }
+        if (a === 'sign') act(function () { neg[sel] = v; settle(); last = 'sign'; });
+        if (a === 'fita') act(function () {
+          if (v === fitA) return;
+          if (v) { rows = [[], rows[0]]; tag = [null, tag[0]]; sel = 0; } else { rows = [rows[1] || []]; tag = [tag[1] || null]; sel = 0; }
+          fitA = v; settle(); last = 'fita';
+        });
+        if (a === 'btw') act(function () {
+          var bp = betweenPlan();
+          rows = [many(bp.a, bp.L), many(bp.b, bp.L), many(bp.m, bp.L)]; tag = rows.map(function () { return bp.dec ? { dec: 1 } : null; }); neg = [];
+          sel = 2; did = { btw: bp.L, dec: bp.dec }; before = null; last = 'btw';
+        });
         if (a === 'fitw') act(function () { fitW += v; last = 'fitw'; });
         if (a === 'deal') deal(false);
         if (a === 'dealall') deal(true);
@@ -2522,7 +2658,7 @@
     T.undo = function () {
       if (!hist.length) return;
       var s = JSON.parse(hist.pop());
-      rows = s.rows; tag = s.tag; sel = s.sel; mode = s.mode; win = s.win; before = s.before; did = s.did; share = s.share; unit = s.unit; op = s.op; grp = s.grp; fitW = s.fitW; last = 'undo';
+      rows = s.rows; tag = s.tag; sel = s.sel; mode = s.mode; win = s.win; before = s.before; did = s.did; share = s.share; unit = s.unit; op = s.op; grp = s.grp; fitW = s.fitW; fitA = s.fitA; neg = s.neg; last = 'undo';
       draw(); change();
     };
     T.canUndo = function () { return hist.length > 0; };
