@@ -2355,7 +2355,7 @@
       if (no) { announce(T, no); bump(mat, 'mp-shake'); return; }
       act(function () {
         plain(r);
-        tag[r] = dec ? (!rows[r].length || isDec(r) ? { dec: 1 } : null) : d === 1 ? tag[r] : null;
+        if (dec) tag[r] = { dec: 1 };
         rows[r].push(d); settle(); if (mode === 'count') unit = d; last = 'add';
         if (d >= 100 && allowed('g')) win.g = 1;
       });
