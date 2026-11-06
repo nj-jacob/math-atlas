@@ -2435,9 +2435,9 @@
     function ratioSnaps() {
       var t = RT[rat.thing], v = rat.v, h = '';
       if (v === 'miss') return '<input class="mp-fkin" type="text" autocomplete="off" aria-label="Type a proportion with one question mark" placeholder="3 : 5 = ? : 20">' + btn('rsolve', 'Find it') + btn('rv', 'Find the missing number', true, null, ' data-v="miss"');
+      if (g7) h += btn('rv', 'Times', v === '', null, ' data-v=""') + btn('rv', 'Add', v === 'add', null, ' data-v="add"');
       if (v !== 'cmp' && v !== 'part' && v !== 'one') {
-        if (g7) h += btn('rv', 'Times', v !== 'add', null, ' data-v=""') + btn('rv', 'Add', v === 'add', null, ' data-v="add"');
-        else h += '<span class="mp-hint">' + (gr && gr <= 4 ? (rat.thing === 'apples' && rat.b === 1 ? 'Children' : 'Groups') : 'Times') + '</span>';
+        if (!g7) h += '<span class="mp-hint">' + (gr && gr <= 4 ? (rat.thing === 'apples' && rat.b === 1 ? 'Children' : 'Groups') : 'Times') + '</span>';
         h += btn('rk', '&minus;', null, rat.k <= 1, ' data-v="-1" aria-label="Less"') + '<b class="mp-fkcount">' + rat.k + '</b>' + btn('rk', '+', null, rat.k >= rMaxK(), ' data-v="1" aria-label="More"');
       }
       if (g6 && t.part) h += btn('rv', 'Part of the whole', v === 'part', null, ' data-v="part"');
