@@ -686,8 +686,23 @@ button.mp-fkp{cursor:pointer}
 .mp-fkgrid .mp-fkgo{fill:none;stroke:var(--mink);stroke-width:3}
 .mp-fkzoom{display:flex;flex-direction:column;align-items:center;gap:4px;margin-left:10px}
 .mp-fkzoom span{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--at-ink3,#7b879c)}
+/* the area model for Times (Grade 7 and up): first amount as columns, the fraction taken as rows, the overlap is the answer */
+.mp-fkas{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:center}
+.mp-fkarea{display:block}
+.mp-fkarea rect{stroke:var(--mcard);stroke-width:2}
+.mp-fka0{fill:color-mix(in srgb,var(--mline) 45%,var(--mcard))}
+.mp-fka1{fill:color-mix(in srgb,#c25a12 35%,var(--mcard));background:color-mix(in srgb,#c25a12 35%,var(--mcard))}
+.mp-fka2{fill:#7646bf;background:#7646bf}
+.mp-fka3{fill:color-mix(in srgb,#7646bf 22%,var(--mcard))}
+.mp-fkarea .mp-fkab{stroke:#c25a12;stroke-width:5;stroke-linecap:round}
+.mp-fkarea .mp-fkac{stroke:#7646bf;stroke-width:5;stroke-linecap:round}
+.mp-fkarea .mp-fkgo{fill:none;stroke:var(--mink);stroke-width:3}
+.mp-fkleg{display:flex;flex-direction:column;gap:8px;font-weight:700;color:var(--ink2,#55627a)}
+.mp-fkleg>span{display:flex;align-items:center;gap:8px}
+.mp-fkleg>span>i{display:inline-block;width:18px;height:18px;border-radius:5px;flex:none}
+.mp-fkleg>span:last-child{font-weight:400}
 .mp-fksym{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:4px 12px}
-.mp-fksym span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mp-fksym>span{display:flex;flex-direction:column;align-items:center;gap:2px}
 .mp-fksym b{font:800 1.9rem/1.1 var(--display,inherit);color:var(--mink);white-space:nowrap}
 .mp-fksym small{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--at-ink3,#7b879c)}
 .mp-fksym em{font:800 1.6rem/1.2 var(--display,inherit);font-style:normal;color:var(--at-ink3,#7b879c)}
@@ -743,6 +758,10 @@ button.mp-fkp{cursor:pointer}
   .mp-fkthing{width:34px;height:34px}
   .mp-fkplates{gap:30px 12px}
   .mp-fksym b{font-size:1.4rem}.mp-fksym em{font-size:1.2rem}
+  .mp-fkt .mp-snap .mp-fr{flex-direction:row;font-size:1em;vertical-align:baseline}
+  .mp-fkt .mp-snap .mp-fr b{border:0;padding:0}.mp-fkt .mp-snap .mp-fr i{padding:0;display:inline}
+  .mp-fkt .mp-snap .mp-fr s{position:static;width:auto;height:auto;clip:auto}
+  .mp-fkleg{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:.9rem}
   .mp-fkgrps{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
   .mp-fkin{width:120px}
   .mp-fkzoom{margin-left:0}
