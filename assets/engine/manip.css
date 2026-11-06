@@ -634,6 +634,7 @@ html body .ls-card:has(.ls-stack){background:transparent!important;border:0!impo
 .mp-fkt .mp-fkp{color:#fff;font-weight:800}
 .mp-fkp{position:absolute;top:0;bottom:0;display:grid;place-items:center;padding:0;margin:0;font:800 1rem var(--body,inherit);color:#fff;background:var(--c);border:2px solid var(--mcard);border-radius:8px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);overflow:hidden;white-space:nowrap}
 button.mp-fkp{cursor:pointer}
+.mp-fkp.tiny{min-width:3px;border-width:0 1px 0 0;border-radius:1px;box-shadow:none}
 .mp-fkg{position:absolute;top:0;bottom:0;border:2px dashed var(--mline);border-radius:8px}
 .mp-fkbefore{opacity:.55}
 .mp-fkempty{position:absolute;inset:0;display:grid;place-items:center;border:2px dashed var(--mline);border-radius:8px;color:var(--at-ink3,#7b879c);font-weight:700;font-size:.9rem}
@@ -704,9 +705,16 @@ button.mp-fkp{cursor:pointer}
 .mp-fkin{pointer-events:auto;width:150px;min-height:44px;padding:0 12px;border-radius:12px;border:1.5px solid var(--mline);background:var(--mcard);color:var(--mink);font:700 1rem var(--body,inherit)}
 .mp-fkin:focus{outline:2.5px solid var(--accent,#0b6e78);outline-offset:1px}
 .mp-fkdec i{height:26px}
+.mp-fktabs{display:flex;flex-direction:column;width:100%;padding:3px;gap:2px;border-radius:12px;background:color-mix(in srgb,var(--mline) 45%,var(--mcard))}
+.mp-fktabs button,.mp-fkseg button{flex:1;min-height:36px;padding:0 8px;border:0;border-radius:9px;background:none;font:700 .8rem var(--body,inherit);color:var(--ink2,#55627a);cursor:pointer}
+.mp-fktabs button[aria-pressed=true],.mp-fkseg button[aria-pressed=true]{background:var(--mcard);color:var(--accent,#0b6e78);box-shadow:0 1px 3px rgba(19,32,57,.12)}
+.mp-fkt .mp-fkdo .mp-fkseg{display:flex;flex:none;gap:2px;padding:3px;margin-right:6px;border-radius:12px;background:color-mix(in srgb,var(--mline) 45%,var(--mcard))}
+.mp-fkdo button[hidden]{display:none}
 @media (max-width:700px){
   .mp-fktray{flex-direction:row;justify-content:flex-start;align-items:center;gap:6px;padding:8px;overflow-x:auto;overflow-y:hidden;min-width:0}
   .mp-fktray>small{display:none}
+  .mp-fktabs{width:auto;flex:none}
+  .mp-fktabs button{min-height:30px;font-size:.72rem}
   .mp-fkpc{flex-direction:column;gap:2px;width:auto;min-height:0;padding:2px 4px}
   .mp-fkpc i{width:calc(var(--w) * .45);min-width:12px;height:22px}
   .mp-fkpc b{font-size:.72rem}
@@ -714,7 +722,7 @@ button.mp-fkp{cursor:pointer}
   .mp-fkthings{flex-direction:row;width:auto}
   .mp-fkthings button,.mp-fkstep button{min-height:38px;min-width:36px;font-size:.85rem;padding:0 8px}
   .mp-fkt .mp-cmode{overflow-x:auto;min-width:0;scrollbar-width:none}
-  .mp-fkt .mp-cmode span{display:none}
+  .mp-fkt .mp-cmode>span:not(.mp-fkseg){display:none}
   .mp-fkmat{padding:12px 10px 64px}
   .mp-fkp{font-size:.82rem}
   .mp-fkplate{min-width:130px;padding:14px 16px}

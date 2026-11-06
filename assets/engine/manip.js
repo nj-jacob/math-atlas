@@ -1816,9 +1816,12 @@
     var WINS = [['s', 'Strips'], ['c', 'Circle'], ['k', 'Counters'], ['n', 'Number line']].concat(mid ? [['g', 'Grid'], ['y', 'Symbols']] : []);
     var DO = [['share', 'Share'], ['split', 'Split']].concat(g5 ? [['join', 'Join']] : [], [['line', 'Line up'], ['fill', 'Fill wholes'], ['count', 'Count on']],
       g5 ? [['comb', 'Combine']] : [], mid ? [['groups', 'Groups of']] : [], g5 ? [['fit', 'Fit into']] : []);
+    /* with many moves, the Do row shows one set at a time: Explore (show and change an amount) or Calculate (work with two amounts) */
+    var CALC = { comb: 1, groups: 1, fit: 1 }, sets = DO.length > 7, dset = 'e', tset = 'f';
     root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray"></div>' +
       '<div class="mp-dmain"><div class="mp-cmode mp-fkwin" role="group" aria-label="See it as"><span>See it as</span>' + WINS.map(function (w) { return '<button type="button" data-w="' + w[0] + '">' + w[1] + '</button>'; }).join('') + '</div>' +
-      '<div class="mp-cmode mp-fkdo" role="group" aria-label="Do"><span>Do</span>' + DO.map(function (d) { return '<button type="button" data-m="' + d[0] + '">' + d[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-cmode mp-fkdo" role="group" aria-label="Do"><span>Do</span>' + (sets ? '<span class="mp-fkseg" role="group" aria-label="Kind of move"><button type="button" data-set="e">Explore</button><button type="button" data-set="c">Calculate</button></span>' : '') +
+      DO.map(function (d) { return '<button type="button" data-m="' + d[0] + '">' + d[1] + '</button>'; }).join('') + '</div>' +
       '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat"><div class="mp-fkwins"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
     var tray = qs('.mp-fktray', root), mat = qs('.mp-mat', root), wins = qs('.mp-fkwins', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
     /* state: the amounts (rows of piece sizes, 1 = a whole) and how each row was made (decimal pieces, or a typed number),
@@ -1892,11 +1895,13 @@
           '<small>People</small><div class="mp-fkstep" data-s="p"><button type="button" data-v="-1" aria-label="One fewer person">&minus;</button><b>' + share.p + '</b><button type="button" data-v="1" aria-label="One more person">+</button></div>' +
           '<small>Share</small><div class="mp-fkthings">' + Object.keys(FK_THING).map(function (t) { return '<button type="button" data-t="' + t + '" aria-pressed="' + (share.thing === t) + '">' + FK_THING[t][1].replace(/^./, function (c) { return c.toUpperCase(); }) + '</button>'; }).join('') + '</div>';
       }
-      return '<small>Pieces</small>' + FD.map(function (d) {
-        return '<button type="button" class="mp-fkpc" data-d="' + d + '" aria-label="Add ' + (d === 1 ? '1 whole' : '1 ' + fkName(d)) + '"' + (mode === 'count' && d === unit ? ' aria-pressed="true"' : '') + '><i style="--c:' + fkCol(d) + ';--w:' + (d === 1 ? 100 : Math.max(10, Math.round(100 / d))) + 'px"></i><b>' + (d === 1 ? '1' : early ? fkName(d) : '1/' + d) + '</b></button>';
-      }).join('') + (DEC.length ? '<small>Decimals</small>' + DEC.map(function (d) {
+      var tabs = DEC.length ? '<div class="mp-fktabs" role="group" aria-label="Pieces"><button type="button" data-ts="f" aria-pressed="' + (tset === 'f') + '">Fractions</button><button type="button" data-ts="d" aria-pressed="' + (tset === 'd') + '">Decimals</button></div>' : '<small>Pieces</small>';
+      if (tset === 'd') return tabs + DEC.map(function (d) {
         return '<button type="button" class="mp-fkpc mp-fkdec" data-d="' + d + '" data-x="dec" aria-label="Add ' + (1 / d) + '"><i style="--c:' + fkCol(d) + ';--w:' + (d === 10 ? 12 : d === 100 ? 8 : 4) + 'px"></i><b>' + (1 / d) + '</b></button>';
-      }).join('') : '');
+      }).join('');
+      return tabs + FD.map(function (d) {
+        return '<button type="button" class="mp-fkpc" data-d="' + d + '" aria-label="Add ' + (d === 1 ? '1 whole' : '1 ' + fkName(d)) + '"' + (mode === 'count' && d === unit ? ' aria-pressed="true"' : '') + '><i style="--c:' + fkCol(d) + ';--w:' + (d === 1 ? 100 : Math.max(10, Math.round(100 / d))) + 'px"></i><b>' + (d === 1 ? '1' : early ? fkName(d) : '1/' + d) + '</b></button>';
+      }).join('');
     }
     /* ---- drawing the windows ---- */
     function combRes() {
@@ -1924,7 +1929,7 @@
       var x = 0, h = '', one = oneSize(row), v = val(row);
       row.forEach(function (d, i) {
         var w = 1 / d / S;
-        h += '<' + (still ? 'i' : 'button type="button"') + ' class="mp-fkp" data-r="' + r + '" data-i="' + i + '" style="left:' + (x * 100) + '%;width:' + (w * 100) + '%;--c:' + fkCol(d) + '"' + (still ? '' : ' aria-label="' + (d === 1 ? '1 whole' : '1 ' + fkName(d)) + ', tap to take it off"') + '>' + pieceLabel(d, w * W, dec) + '</' + (still ? 'i' : 'button') + '>';
+        h += '<' + (still ? 'i' : 'button type="button"') + ' class="mp-fkp' + (w * W < 8 ? ' tiny' : '') + '" data-r="' + r + '" data-i="' + i + '" style="left:' + (x * 100) + '%;width:' + (w * 100) + '%;--c:' + fkCol(d) + '"' + (still ? '' : ' aria-label="' + (d === 1 ? '1 whole' : '1 ' + fkName(d)) + ', tap to take it off"') + '>' + pieceLabel(d, w * W, dec) + '</' + (still ? 'i' : 'button') + '>';
         x += w;
       });
       if (one && one > 1 && one <= FK_TOP) {
@@ -2189,7 +2194,9 @@
       }
       wins.style.setProperty('--fkw', W + 'px');
       qsa('.mp-fkwin button', root).forEach(function (b) { var k = b.getAttribute('data-w'); b.setAttribute('aria-pressed', String(on(k))); b.disabled = !allowed(k); });
-      qsa('.mp-fkdo button', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === mode)); });
+      if (CALC[mode]) dset = 'c';
+      qsa('.mp-fkdo [data-m]', root).forEach(function (b) { var m = b.getAttribute('data-m'); b.setAttribute('aria-pressed', String(m === mode)); b.hidden = sets && (dset === 'c') !== !!CALC[m]; });
+      qsa('.mp-fkdo [data-set]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-set') === dset)); });
       snaps();
     }
     function readout() {
@@ -2350,6 +2357,7 @@
         plain(r);
         tag[r] = dec ? (!rows[r].length || isDec(r) ? { dec: 1 } : null) : d === 1 ? tag[r] : null;
         rows[r].push(d); settle(); if (mode === 'count') unit = d; last = 'add';
+        if (d >= 100 && allowed('g')) win.g = 1;
       });
       var p = qsa('.mp-fkrow[data-r="' + r + '"] .mp-fkp', wins).pop();
       if (p) bump(p, 'mp-pop');
@@ -2414,7 +2422,8 @@
     window.addEventListener('blur', function () { if (drag && drag.g) drag.g.remove(); drag = null; });
     tray.addEventListener('click', function (e) {
       if (eat) { eat = false; return; }
-      var p = e.target.closest('.mp-fkpc'), st = e.target.closest('.mp-fkstep button'), th = e.target.closest('.mp-fkthings button');
+      var p = e.target.closest('.mp-fkpc'), st = e.target.closest('.mp-fkstep button'), th = e.target.closest('.mp-fkthings button'), tb = e.target.closest('[data-ts]');
+      if (tb) { tset = tb.getAttribute('data-ts'); tray.innerHTML = trayHtml(); return; }
       if (p) add(+p.getAttribute('data-d'), null, p.hasAttribute('data-x'));
       if (st) {
         var k = st.parentNode.getAttribute('data-s'), v = +st.getAttribute('data-v'), lim = k === 'n' ? [1, 20] : [2, 10];
@@ -2430,7 +2439,8 @@
       act(function () { win[k] = win[k] ? 0 : 1; if (!WINS.some(function (w) { return win[w[0]]; })) win[k] = 1; last = 'win'; });
     });
     qs('.mp-fkdo', root).addEventListener('click', function (e) {
-      var b = e.target.closest('[data-m]');
+      var st = e.target.closest('[data-set]'), b = e.target.closest('[data-m]');
+      if (st) { dset = st.getAttribute('data-set'); if (mode !== 'build' && (dset === 'c') !== !!CALC[mode]) setMode(mode); else draw(); return; }
       if (b) setMode(b.getAttribute('data-m'));
     });
     function typeIn() {
