@@ -56,8 +56,25 @@
   E.itemById = function (id) { return BANK.filter(function (b) { return b.id === id; })[0]; };
 
   /* ---------- placement ----------
-     Each area climbs or drops one grade at a time. At each grade: 2 right before 2 wrong = secure there.
+     Each area climbs or drops one grade at a time. At each grade it keeps asking until the answers clearly say
+     "secure" or "not yet" (a sequential probability ratio test, the standard method for adaptive mastery tests).
+     A student who is secure at a grade is taken to get about 85% right there; one who is not, about 35%
+     (guesses and partial knowledge). Each answer adds evidence for one or the other. The check decides once the
+     evidence is 19 to 1 either way, so about 1 decision in 20 is wrong. Usually 3 to 6 questions per grade.
      It stops when it finds a secure grade with the next grade not secure. */
+  E.P_SECURE = 0.85; E.P_NOT = 0.35; E.PLACE_ERR = 0.05;
+  E.PLACE_PER_GRADE = 8;  /* still undecided after this many at one grade: go with the way the evidence leans */
+  E.PLACE_PER_AREA = 24;  /* never more than this many questions in one area */
+  var UP = Math.log(E.P_SECURE / E.P_NOT), DOWN = Math.log((1 - E.P_SECURE) / (1 - E.P_NOT)), BAR = Math.log((1 - E.PLACE_ERR) / E.PLACE_ERR);
+  /* What the answers at one grade say: 1 = secure, -1 = not yet, 0 = keep asking. r and w are right and wrong counts. */
+  E.placeVerdict = function (R) {
+    if (!R) return 0;
+    var ev = R.r * UP + R.w * DOWN;
+    if (ev >= BAR) return 1;
+    if (ev <= -BAR) return -1;
+    if (R.r + R.w >= E.PLACE_PER_GRADE) return ev > 0 ? 1 : -1;
+    return 0;
+  };
   E.startPlacement = function (st, kind) {
     var areas = {}, top = Math.min(8, st.grade + 2);
     AREAS.forEach(function (a) {
@@ -86,8 +103,8 @@
     if (ok) R.r++; else R.w++;
     st.place.log.push({ g: q.g, a: q.a, e: q.e, ok: !!ok, idk: ok === null });
     var top = st.place.top;
-    function secure(l) { return A.res[l] && A.res[l].r >= 2; }
-    function notYet(l) { return A.res[l] && A.res[l].w >= 2; }
+    function secure(l) { return E.placeVerdict(A.res[l]) === 1; }
+    function notYet(l) { return E.placeVerdict(A.res[l]) === -1; }
     if (secure(L)) {
       if (L >= top || notYet(L + 1)) return finish(L);
       A.cur = L + 1;
@@ -96,7 +113,7 @@
       if (secure(L - 1)) return finish(L - 1);
       A.cur = L - 1;
     }
-    if (A.n >= 14) return finish(Math.max(0, A.cur - 1));
+    if (A.n >= E.PLACE_PER_AREA) return finish(Math.max(0, A.cur - 1));
     return false;
     function finish(lv) { A.done = true; A.lv = lv; return true; }
   };
