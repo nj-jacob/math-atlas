@@ -86,7 +86,7 @@ async function showPlan(st, who) {
   }
   if (S.kind === 'placing') {
     setHead('Math', 'Placement check in progress');
-    body().innerHTML = '<p>' + plural(S.n, 'question') + ' answered so far. It takes about 30, and it saves as you go.</p>' +
+    body().innerHTML = '<p>' + plural(S.n, 'question') + ' answered so far. It takes about 60 to 90, and it saves as you go.</p>' +
       '<div class="bar" style="margin:14px 0 18px" role="img" aria-label="About ' + Math.min(100, Math.round(S.n / 30 * 100)) + '% done"><i style="width:' + Math.min(100, Math.round(S.n / 30 * 100)) + '%"></i></div>' +
       '<p><a class="hbtn" href="plan/">Continue the check</a></p>';
     return;

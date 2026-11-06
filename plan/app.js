@@ -87,7 +87,7 @@
   function welcome() {
     page('<div class="hero"><div><h1>Find the right starting point in math</h1>' +
       '<p class="lead">A short check finds where a student is in each part of Ontario math, from Grade 1 to Grade 8. Then it builds a plan of what to learn next, and checks in each week to adjust it.</p>' +
-      '<div class="steps3"><div><b>1. Placement check</b>About 25 minutes. Can be split into two sittings.</div><div><b>2. A plan</b>The ideas to learn next, in the order they build on each other.</div><div><b>3. Check-ins</b>A short session each day and a check every week. The plan adjusts.</div></div>' +
+      '<div class="steps3"><div><b>1. Placement check</b>About 60 to 90 questions. Best over two or three sittings.</div><div><b>2. A plan</b>The ideas to learn next, in the order they build on each other.</div><div><b>3. Check-ins</b>A short session each day and a check every week. The plan adjusts.</div></div>' +
       '<div class="row"><a class="btn" href="#setup">Get started</a><a class="btn alt" href="#about">How it works</a></div></div>' +
       '<div class="hero-art" aria-hidden="true">' + V.blocks(234, { maxW: 300 }) + '<div class="count" id="hc"></div><p class="hint">Touch the blocks. They light up and count.</p></div></div>');
     wireTaps(app.querySelector('.hero-art'));
@@ -112,7 +112,7 @@
   function placementIntro(st) {
     page('<div class="card" style="max-width:720px"><h1>' + (st.name ? esc(st.name) + ', let\'s find your starting point' : 'Let\'s find your starting point') + '</h1>' +
       '<p class="lead">This is not a test with a mark. It finds what you already know, so your plan skips what you know and starts where it helps.</p>' +
-      '<ul><li>About 30 questions in 6 areas: numbers, operations, patterns, shapes and measuring, data, and money.</li>' +
+      '<ul><li>About 60 to 90 questions in 6 areas: numbers, operations, patterns, shapes and measuring, data, and money.</li>' +
       '<li>Some questions will feel easy and some will feel hard. That is how it finds the right level.</li>' +
       '<li>There is no timer. If you don\'t know, press <b>I don\'t know yet</b>. That is a good answer too.</li>' +
       '<li>You can stop after any area and come back later.</li>' +
@@ -325,7 +325,7 @@
     if (!q) return placement(st);
     var answered = st.place.log.length;
     showQ(q, {
-      title: E.AREA_NAME[a] + ' · area ' + (p.done + 1) + ' of ' + p.total, progress: (p.done + Math.min(A.n / 6, 0.9)) / p.total, feedback: false, quit: 'Stop for now', route: 'test',
+      title: E.AREA_NAME[a] + ' · area ' + (p.done + 1) + ' of ' + p.total, progress: (p.done + Math.min(A.n / 14, 0.9)) / p.total, feedback: false, quit: 'Stop for now', route: 'test',
       onAnswer: function (ok) { var areaDone = E.placeAnswer(st, q, ok); save(st); q.areaDone = areaDone; },
       onNext: function () {
         if (q.areaDone && E.placeArea(st)) return breakScreen(st, a);
@@ -632,9 +632,10 @@
   function about() {
     page('<div class="card" style="max-width:820px"><h1>How Math Plan works</h1>' +
       '<h2>1. Placement check</h2><ul><li>It checks 6 areas on their own: numbers, operations, patterns and algebra, shapes and measuring, data and probability, and money.</li>' +
-      '<li>Each area starts one grade below the student\'s school grade. Two right answers at a grade means "secure there" and the questions move up a grade. Two misses means "not yet" and they move down.</li>' +
+      '<li>Each area starts one grade below the student\'s school grade. At each grade it keeps asking until the answers clearly show "secure there" (the questions move up a grade) or "not yet" (they move down). That is usually 3 to 6 questions.</li>' +
+      '<li>"Clearly" means the answers are at least 19 times more likely from a student who is secure than from one who is not, or the other way round. This is the standard method for adaptive mastery tests (a sequential probability ratio test). A lucky guess or one slip does not decide a grade.</li>' +
       '<li>It stops when it finds a grade that is secure with the next grade not secure yet. That is the level for the area.</li>' +
-      '<li>"I don\'t know yet" counts as not yet. There is no timer and no mark. Most students answer about 30 questions.</li></ul>' +
+      '<li>"I don\'t know yet" counts as not yet. There is no timer and no mark. Most students answer 60 to 90 questions, fewer if their level is close to their school grade.</li></ul>' +
       '<h2>2. The plan</h2><ul><li>The plan lists every Ontario expectation (from Noel\'s Ministry document) from the level up to the school grade, in each area.</li>' +
       '<li>Ideas from lower grades come first, and numbers and operations lead, because most other topics build on them.</li>' +
       '<li>If the check missed something at a grade that is otherwise secure, that gap goes to the front.</li>' +
@@ -657,7 +658,7 @@
     [].forEach.call(app.querySelectorAll('[data-sid]'), function (b) { b.addEventListener('click', function () { acct.open(b.getAttribute('data-sid')); }); });
   }
   function adultEmpty() {
-    page('<div class="card" style="max-width:700px"><h1>No plan yet</h1><p>' + esc(acct.kidName || 'This student') + ' has not taken the placement check. On their own sign-in, they open Math Plan and press <b>Get started</b>. It takes about 25 minutes and can be split into two sittings.</p>' +
+    page('<div class="card" style="max-width:700px"><h1>No plan yet</h1><p>' + esc(acct.kidName || 'This student') + ' has not taken the placement check. On their own sign-in, they open Math Plan and press <b>Get started</b>. It is about 60 to 90 questions and is best split over two or three sittings.</p>' +
       ((acct.kids || []).length > 1 ? '<button class="btn alt" id="other">Choose another student</button>' : '') + '</div>', 'plan');
     var o = document.getElementById('other'); if (o) o.addEventListener('click', function () { acct.sid = null; route(); });
   }
