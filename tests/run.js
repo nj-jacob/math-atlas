@@ -14,6 +14,7 @@
       (right, and sometimes wrong first), and must be marked correctly. Nothing may run off the side of the screen.
    5. Saved progress: progress saved before a change (gNatlas: keys) still loads: levels, secure skills, quiz bests,
       check-ups and the plan show, and practice keeps saving under the same keys in the same shape.
+   Also in 1: the Math Plan placement check is taken many times by pretend students and must find their true level.
    6. Parent pages: the Language placement check results (assets/langplace.js) are drawn for finished, older, unfinished
       and missing checks, on a phone-size screen, with nothing missing or cut off. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
@@ -75,6 +76,32 @@ function repoRules() {
     }
   }
   for (const id of ids) if (!famOf[id]) fail('plan/families.js', id + ' is not in any family. Add it to the family it belongs to.');
+  checkPlacement();
+}
+
+/* Math Plan placement: pretend students take the check many times. A pretend student gets 85% right at grades
+   they are secure in and 35% right above that. The level found must match the true level most of the time,
+   and the check must not run long. */
+function checkPlacement() {
+  const w = 'Math Plan placement', box = { window: {} };
+  for (const f of ['vis.js', 'bank.js', 'ladder.js', 'families.js', 'engine.js']) vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'plan', f), 'utf8'), box);
+  const E = box.window.PE, runs = QUICK ? 150 : 600;
+  let right = 0, off2 = 0, total = 0, longest = 0;
+  for (let i = 0; i < runs; i++) {
+    const grade = 1 + (i % 8), st = E.fresh('Test', grade), truth = {};
+    E.AREAS.forEach((a, k) => { truth[a] = Math.max(0, Math.min(Math.min(8, grade + 2), grade - 2 + ((i + k) % 5))); });
+    E.startPlacement(st);
+    let q, n = 0;
+    while ((q = E.placeNext(st)) && n < 500) { n++; E.placeAnswer(st, q, Math.random() < (q.g <= truth[q.area] ? 0.85 : 0.35)); }
+    const lv = E.finishPlacement(st);
+    total += n; longest = Math.max(longest, n);
+    E.AREAS.forEach(a => { if (lv[a] === truth[a]) right++; else if (Math.abs(lv[a] - truth[a]) >= 2) off2++; });
+  }
+  const areas = runs * E.AREAS.length, acc = right / areas;
+  if (acc < 0.8) fail(w, 'found the true level only ' + Math.round(acc * 100) + '% of the time (need 80%)');
+  if (off2 / areas > 0.05) fail(w, 'was 2 or more grades out ' + Math.round(off2 / areas * 100) + '% of the time');
+  if (longest > E.AREAS.length * E.PLACE_PER_AREA) fail(w, 'one check ran to ' + longest + ' questions');
+  log(w + ': true level found ' + Math.round(acc * 100) + '% of the time, about ' + Math.round(total / runs) + ' questions per check.');
 }
 
 /* ---------- 2 to 4: in the browser ---------- */
