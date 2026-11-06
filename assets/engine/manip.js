@@ -1866,6 +1866,10 @@
       [[100, 'tenth'], [10, 'hundredth'], [1, 'thousandth']].forEach(function (p) { var k = Math.floor(t / p[0]) % 10; if (k) parts.push('<b>' + k + '</b> ' + p[1] + (k === 1 ? '' : 's')); });
       return parts.length > 1 ? parts.slice(0, -1).join(', ') + ' and ' + parts[parts.length - 1] : parts.join('');
     }
+    /* fractions are shown stacked (numerator over denominator); a hidden slash keeps them readable as "3/4" to screen readers */
+    function stk(h) {
+      return String(h).split(/(<[^>]*>)/).map(function (t) { return t.charAt(0) === '<' ? t : t.replace(/(\d+)\/(\d+)/g, '<span class="mp-fr"><b>$1</b><s class="sr">/</s><i>$2</i></span>'); }).join('');
+    }
     function rowSay(row, r) {
       if (r != null && tag[r] && tag[r].t) return tag[r].t;
       if (r != null && isDec(r)) return decRow(row);
@@ -1923,7 +1927,7 @@
     function pieceLabel(d, px, dec) {
       if (d === 1) return px > 70 ? '1 whole' : '1';
       var t = dec && fkPow(d) ? String(1 / d) : early ? fkName(d) : '1/' + d;
-      return px >= t.length * 9 + 10 ? t : '';
+      return px >= (/\//.test(t) ? t.length * 5 + 14 : t.length * 9 + 10) ? stk(t) : '';
     }
     function stripRow(row, r, S, W, still, dec) {
       var x = 0, h = '', one = oneSize(row), v = val(row);
@@ -2058,7 +2062,7 @@
       rows.forEach(function (row, r) {
         if (!row.length && rows.length > 1) return;
         var v = val(row), n = Math.max(1, Math.ceil(v - 1e-9)), zoom = 0;
-        h += '<figure class="mp-fkgf">' + (shown && rows.length > 1 ? '<figcaption>' + rowSay(row, r) + '</figcaption>' : '') + '<div>';
+        h += '<figure class="mp-fkgf">' + (shown && rows.length > 1 ? '<figcaption>' + stk(rowSay(row, r)) + '</figcaption>' : '') + '<div>';
         for (var i = 0; i < n; i++) {
           var part = Math.min(1, Math.max(0, v - i)), sl = part * 100 - Math.floor(part * 100 + 1e-6);
           h += gridSvg(part, G);
@@ -2090,7 +2094,7 @@
       rows.forEach(function (row, r) {
         if (!row.length) return;
         any = true;
-        h += '<div class="mp-fksym">' + forms(row, r).map(function (t, i) { return (i ? '<em>=</em>' : '') + '<span><b>' + t[0] + '</b><small>' + t[1] + '</small></span>'; }).join('') + '</div>';
+        h += '<div class="mp-fksym">' + forms(row, r).map(function (t, i) { return (i ? '<em>=</em>' : '') + '<span><b>' + stk(t[0]) + '</b><small>' + t[1] + '</small></span>'; }).join('') + '</div>';
       });
       return h + (any ? '' : '<p class="mp-fknote">Add pieces to see the symbols.</p>') + '</div>';
     }
@@ -2166,7 +2170,7 @@
     }
     /* ---- one redraw of everything ---- */
     function draw() {
-      tray.innerHTML = trayHtml();
+      tray.innerHTML = stk(trayHtml());
       tray.classList.toggle('mp-fkshare', mode === 'share');
       readout();
       var W = width();
@@ -2185,6 +2189,7 @@
           wins.style.setProperty('--kd', Math.max(10, 18 - lv * 1.5) + 'px');
           wins.style.setProperty('--fkg', Math.max(8, 18 - lv * 2) + 'px');
           wins.classList.toggle('tight', lv >= 3);
+          wins.classList.toggle('tighter', lv >= 5);
           var sh = mode === 'groups' ? groupsHtml(W) : mode === 'fit' ? fitHtml(W) : strips(W);
           wins.innerHTML = (sOn ? sh : '') +
             (midOn ? '<div class="mp-fkmid">' + (on('c') ? circles(Math.max(24, Math.round(R0 * (1 - lv * 0.1)))) : '') + (on('k') ? counters() : '') + (on('g') ? grids(Math.max(70, Math.round(G0 * (1 - lv * 0.08)))) : '') + '</div>' : '') +
@@ -2283,7 +2288,7 @@
           eq = row.length <= 8 ? row.map(function (x) { return say(1, x); }).join(' + ') + ' = <b>' + say(f[0], f[1]) + '</b>' : '';
         }
       }
-      read.innerHTML = (big ? '<p class="mp-total"><span class="mp-num">' + big + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : '');
+      read.innerHTML = stk((big ? '<p class="mp-total"><span class="mp-num">' + big + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : ''));
     }
     function btn(a, t, on, dis, extra) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (extra || '') + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
     function cutOk(row, k) { return row.length && !row.some(function (d) { return k === 10 ? !(d === 1 || fkPow(d)) || d * k > 1000 : d * k > FK_TOP; }); }
@@ -2317,7 +2322,7 @@
         h += '<span class="mp-hint">Wholes</span>' + btn('fitw', '&minus;', null, fitW <= 1, ' data-v="-1" aria-label="One fewer whole"') + '<b class="mp-fkcount">' + fitW + '</b>' + btn('fitw', '+', null, fitW >= FK_BIG || (rows[0].length && (fitW + 1) / val(rows[0]) > 120), ' data-v="1" aria-label="One more whole"');
       }
       if (any && mode !== 'share') h += btn('clear', 'Clear');
-      snapsEl.innerHTML = h;
+      snapsEl.innerHTML = stk(h);
       var ni = qs('.mp-fkin', snapsEl);
       if (ni) { ni.value = typed; if (focus) ni.focus(); }
     }
@@ -2423,7 +2428,7 @@
     tray.addEventListener('click', function (e) {
       if (eat) { eat = false; return; }
       var p = e.target.closest('.mp-fkpc'), st = e.target.closest('.mp-fkstep button'), th = e.target.closest('.mp-fkthings button'), tb = e.target.closest('[data-ts]');
-      if (tb) { tset = tb.getAttribute('data-ts'); tray.innerHTML = trayHtml(); return; }
+      if (tb) { tset = tb.getAttribute('data-ts'); tray.innerHTML = stk(trayHtml()); return; }
       if (p) add(+p.getAttribute('data-d'), null, p.hasAttribute('data-x'));
       if (st) {
         var k = st.parentNode.getAttribute('data-s'), v = +st.getAttribute('data-v'), lim = k === 'n' ? [1, 20] : [2, 10];
