@@ -673,6 +673,37 @@ button.mp-fkp{cursor:pointer}
 .mp-fkghost i{display:block;height:46px;border-radius:8px;background:var(--c);box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
 .mp-fkt .mp-snap[aria-pressed=true]{border-color:var(--accent,#0b6e78);background:var(--at-tint,#e8f3f4);color:var(--accent,#0b6e78)}
 .mp-fkt .mp-snap:disabled{opacity:.45;cursor:default}
+.mp-fkgs{display:flex;flex-wrap:wrap;gap:12px 24px;justify-content:center}
+.mp-fkgf{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px}
+.mp-fkgf>div{display:flex;flex-wrap:wrap;gap:10px;align-items:center;justify-content:center}
+.mp-fkgf figcaption{font-weight:800;color:var(--mink)}
+.mp-fkgrid{display:block}
+.mp-fkgrid rect{stroke:var(--mcard);stroke-width:1.5}
+.mp-fkg0{fill:color-mix(in srgb,var(--mline) 45%,var(--mcard))}
+.mp-fkg1{fill:#9a6e00}.mp-fkg2{fill:#2f62c4}.mp-fkg3{fill:#b4283f}
+.mp-fkgrid .mp-fkgz{fill:none;stroke:var(--mink);stroke-width:2.5}
+.mp-fkgrid .mp-fkgo{fill:none;stroke:var(--mink);stroke-width:3}
+.mp-fkzoom{display:flex;flex-direction:column;align-items:center;gap:4px;margin-left:10px}
+.mp-fkzoom span{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--at-ink3,#7b879c)}
+.mp-fksym{display:flex;flex-wrap:wrap;align-items:flex-start;justify-content:center;gap:4px 12px}
+.mp-fksym span{display:flex;flex-direction:column;align-items:center;gap:2px}
+.mp-fksym b{font:800 1.9rem/1.1 var(--display,inherit);color:var(--mink);white-space:nowrap}
+.mp-fksym small{font-size:.7rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--at-ink3,#7b879c)}
+.mp-fksym em{font:800 1.6rem/1.2 var(--display,inherit);font-style:normal;color:var(--at-ink3,#7b879c)}
+.mp-fkwins.tight .mp-fksym b{font-size:1.3rem}
+.mp-fkwins.tight .mp-fksym small{display:none}
+.mp-fkwins.tight .mp-fksym em{font-size:1.1rem}
+.mp-fkhop.part{stroke-dasharray:6 5}
+.mp-fkgrps{display:grid;grid-template-columns:repeat(var(--per,3),1fr);gap:10px 12px}
+.mp-fkbox{display:flex;flex-direction:column;gap:6px;padding:8px 10px 10px;border:2px dashed var(--mline);border-radius:14px}
+.mp-fkcopy{opacity:1}.mp-fkcopy.odd{opacity:.7}
+.mp-fkpart{border-color:var(--at-ink3,#7b879c)}
+.mp-fkcnt{position:relative;height:18px;margin-top:-2px}
+.mp-fkcnt span{position:absolute;transform:translateX(-50%);font-weight:700;font-size:.8rem;color:var(--at-ink3,#7b879c)}
+.mp-fkcount{align-self:center;line-height:44px;min-width:28px;text-align:center;font:800 1.3rem var(--display,inherit);color:var(--mink)}
+.mp-fkin{pointer-events:auto;width:150px;min-height:44px;padding:0 12px;border-radius:12px;border:1.5px solid var(--mline);background:var(--mcard);color:var(--mink);font:700 1rem var(--body,inherit)}
+.mp-fkin:focus{outline:2.5px solid var(--accent,#0b6e78);outline-offset:1px}
+.mp-fkdec i{height:26px}
 @media (max-width:700px){
   .mp-fktray{flex-direction:row;justify-content:flex-start;align-items:center;gap:6px;padding:8px;overflow-x:auto;overflow-y:hidden;min-width:0}
   .mp-fktray>small{display:none}
@@ -689,6 +720,10 @@ button.mp-fkp{cursor:pointer}
   .mp-fkplate{min-width:130px;padding:14px 16px}
   .mp-fkthing{width:34px;height:34px}
   .mp-fkplates{gap:30px 12px}
+  .mp-fksym b{font-size:1.4rem}.mp-fksym em{font-size:1.2rem}
+  .mp-fkgrps{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+  .mp-fkin{width:120px}
+  .mp-fkzoom{margin-left:0}
 }
 
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */

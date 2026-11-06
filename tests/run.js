@@ -324,6 +324,58 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
   }
 
+  /* 3a6. Toolbox fraction kit, Grades 4 and up: decimal pieces on the grid and in symbols, Groups of, Count to 10; Join, Combine and Fit into
+     from Grade 5; same-size pieces and typed numbers in Line up from Grade 6. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('fractions') && Atlas.grade >= 4)) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/fractions'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-fkt .mp-read').textContent.replace(/\u00a0/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox fraction kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const clear = () => page.click('.mp-snap[data-a=clear]');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    for (let i = 0; i < 3; i++) await page.click('.mp-fkpc[data-x][data-d="10"]');
+    if (g >= 5) for (let i = 0; i < 7; i++) await page.click('.mp-fkpc[data-x][data-d="100"]');
+    await bad(g >= 5 ? '0.37' : '0.3', 'decimal pieces');
+    await page.click('.mp-fkwin [data-w=g]'); await page.click('.mp-fkwin [data-w=y]');
+    if (await page.locator('.mp-fkgrid .mp-fkg1').count() !== 30) fail(where, 'Toolbox fraction kit: 3 tenths do not fill 3 columns of the grid');
+    const sym = await page.textContent('.mp-fky');
+    if (!sym.includes(g >= 5 ? '37/100' : '3/10') || (g >= 5 && !sym.includes('37%'))) fail(where, 'Toolbox fraction kit: the Symbols window misses the same amount as a fraction or percent (' + sym + ')');
+    await clear();
+    await page.click('.mp-fkpc:not([data-x])[data-d="4"]'); await page.click('.mp-fkdo [data-m=groups]');
+    await page.click('.mp-snap[data-a=grp][data-v="1"]'); await page.click('.mp-snap[data-a=grp][data-v="1"]');
+    await bad('5 × 1/4 = 5/4', '5 groups of 1/4');
+    await page.click('.tb-b[data-a=undo]');
+    await bad('4 × 1/4 = 4/4', 'Undo of a group');
+    await clear(); await page.click('.mp-fkdo [data-m=count]'); await page.click('.mp-fkpc:not([data-x])[data-d="2"]'); await page.click('.mp-snap[data-a=to10]');
+    await bad('20/2 = 10', 'counting halves to 10');
+    if (g >= 5) {
+      await clear(); await page.click('.mp-fkdo [data-m=join]');
+      for (let i = 0; i < 6; i++) await page.click('.mp-fkpc:not([data-x])[data-d="8"]');
+      await page.click('.mp-snap[data-a=join][data-k="2"]');
+      await bad('6/8 = 3/4', 'joining 6 eighths in twos');
+      await clear(); await page.click('.mp-fkdo [data-m=comb]');
+      for (let i = 0; i < 3; i++) await page.click('.mp-fkpc:not([data-x])[data-d="8"]');
+      await page.click('.mp-fkrow[data-r="1"]');
+      for (let i = 0; i < 2; i++) await page.click('.mp-fkpc:not([data-x])[data-d="8"]');
+      await bad('3/8 + 2/8 = 5/8', 'combining 3/8 and 2/8');
+      await clear(); await page.click('.mp-fkdo [data-m=fit]'); await page.click('.mp-fkpc:not([data-x])[data-d="4"]');
+      await bad('3 ÷ 1/4 = 12', 'fitting fourths into 3');
+    }
+    if (g >= 6) {
+      await clear(); await page.click('.mp-fkdo [data-m=comb]');
+      await page.click('.mp-fkpc:not([data-x])[data-d="2"]'); await page.click('.mp-fkrow[data-r="1"]'); await page.click('.mp-fkpc:not([data-x])[data-d="3"]');
+      await page.click('.mp-snap[data-a=same]');
+      await bad('3/6 + 2/6 = 5/6', 'adding 1/2 and 1/3');
+      await clear(); await page.click('.mp-fkdo [data-m=line]');
+      await page.fill('.mp-fkin', '65%'); await page.click('.mp-snap[data-a=type]');
+      await page.fill('.mp-fkin', '3/4'); await page.press('.mp-fkin', 'Enter');
+      await bad('65% < 3/4', 'lining up 65% and 3/4');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
