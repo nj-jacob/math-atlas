@@ -738,7 +738,43 @@ button.mp-fkp{cursor:pointer}
 .mp-fktabs button,.mp-fkseg button{flex:1;min-height:36px;padding:0 8px;border:0;border-radius:9px;background:none;font:700 .8rem var(--body,inherit);color:var(--ink2,#55627a);cursor:pointer}
 .mp-fktabs button[aria-pressed=true],.mp-fkseg button[aria-pressed=true]{background:var(--mcard);color:var(--accent,#0b6e78);box-shadow:0 1px 3px rgba(19,32,57,.12)}
 .mp-fkt .mp-fkdo .mp-fkseg{display:flex;flex:none;gap:2px;padding:3px;margin-right:6px;border-radius:12px;background:color-mix(in srgb,var(--mline) 45%,var(--mcard))}
-.mp-fkdo button[hidden]{display:none}
+.mp-fkdo button[hidden],.mp-fkwin button[hidden]{display:none}
+/* Ratio: counters in groups, a bar of units, a double number line, a table and a graph */
+.mp-rdot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:0}
+.mp-rgs{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+.mp-rg{border:2px dashed var(--mline);border-radius:14px;padding:8px 10px;display:flex;flex-direction:column;align-items:center;gap:6px}
+.mp-rg>div{display:flex;flex-wrap:wrap;gap:5px;justify-content:center;max-width:160px}
+.mp-rg i{width:20px;height:20px;border-radius:50%;box-shadow:inset 0 -2px 0 rgba(0,0,0,.2)}
+.mp-rg small{font-size:.8rem;font-weight:700;color:var(--at-ink3,#7b879c)}
+.mp-rtape{display:flex;flex-direction:column;gap:6px;width:100%}
+.mp-rtape>div{display:flex;align-items:center;gap:8px}
+.mp-rtape>div>b{width:60px;flex:none;font-size:.85rem;color:var(--ink2,#55627a);text-align:right}
+.mp-ru{display:flex;flex:1;min-width:0}
+.mp-ru i{height:36px;border:2px solid var(--mcard);border-radius:7px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18)}
+.mp-ru i.gs{margin-left:6px}
+.mp-rsvg{display:block;max-width:100%;overflow:visible}
+.mp-rsvg text{font:700 16px var(--body,inherit);fill:var(--mink);text-anchor:middle}
+.mp-rsvg .mp-rpl{fill:var(--accent,#0b6e78);font-weight:800}
+.mp-rsvg .mp-rlab{font-size:13px;letter-spacing:.04em;text-transform:uppercase;text-anchor:start}
+.mp-rsvg .mp-rsm{font-size:13px;fill:var(--at-ink3,#7b879c)}
+.mp-rcell{stroke:var(--mcard);stroke-width:3}
+.mp-rmark{stroke:var(--accent,#0b6e78);stroke-width:2.5;stroke-dasharray:6 5}
+.mp-rlink{stroke:var(--mline);stroke-width:2;stroke-dasharray:3 5}
+.mp-rgrid{stroke:var(--mline);stroke-width:1}
+.mp-rline{stroke:var(--accent,#0b6e78);stroke-width:3;stroke-linecap:round}
+.mp-rpt{fill:var(--accent,#0b6e78);stroke:var(--mcard);stroke-width:3}
+.mp-roff{fill:var(--mcard);stroke:var(--bad,#b4283f);stroke-width:3.5}
+.mp-rfix{justify-content:center}
+.mp-rtbl{width:auto;border-collapse:separate;border-spacing:0;font-weight:700;margin:0 auto;font-variant-numeric:tabular-nums}
+.mp-rtbl td,.mp-rtbl th{padding:8px 14px;min-width:44px;height:44px;text-align:center;border:0;border-bottom:1px solid var(--mline);background:none;font-size:1.15rem;color:var(--mink)}
+.mp-rtbl th{font-family:inherit;font-size:.75rem;letter-spacing:.06em;text-transform:uppercase;color:var(--at-ink3,#7b879c);text-align:right}
+.mp-rtbl tr{background:none}
+.mp-rtbl td.hi{background:var(--at-tint,#e8f3f4);color:var(--accent,#0b6e78);border-radius:8px}
+.mp-fkwin button[data-w^=r]{white-space:nowrap}
+.mp-rtwo{display:flex;gap:24px;align-items:flex-start}
+.mp-rtwo>.mp-fkw:first-child{flex:1;min-width:0}
+.mp-fksym .mp-rsep{width:28px}
+.mp-rtape+.mp-fkwl{margin-top:4px}
 @media (max-width:700px){
   .mp-fktray{flex-direction:row;justify-content:flex-start;align-items:center;gap:6px;padding:8px;overflow-x:auto;overflow-y:hidden;min-width:0}
   .mp-fktray>small{display:none}
@@ -764,6 +800,11 @@ button.mp-fkp{cursor:pointer}
   .mp-fkleg{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:6px 14px;font-size:.9rem}
   .mp-fkgrps{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
   .mp-fkin{width:120px}
+  .mp-fktray.mp-fkrat>small{display:block;flex:none;font-size:.68rem}
+  .mp-rtbl td,.mp-rtbl th{padding:6px 8px;min-width:34px;height:38px;font-size:1rem}
+  .mp-rg i{width:15px;height:15px}
+  .mp-rtape>div>b{width:46px;font-size:.72rem}
+  .mp-ru i{height:28px}
   .mp-fkzoom{margin-left:0}
 }
 
