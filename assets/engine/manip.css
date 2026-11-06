@@ -808,6 +808,60 @@ button.mp-fkp{cursor:pointer}
   .mp-fkzoom{margin-left:0}
 }
 
+/* ---------- Balance (Toolbox): a pan balance for equal sides, equations and inequalities ---------- */
+.mp-balt{--bcube:var(--mp-ones,#e0a100);--bred:#c0392b;--bten:var(--mp-tens,#2f9e44);--btenth:#9a6e00;--bbag:#8a6a3b;--bbagd:#5e4522;--bbln:#d94a64}
+.mp-btray{gap:6px}
+.mp-bpc{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;min-height:44px;padding:6px 4px;border:0;border-radius:12px;background:none;cursor:grab;touch-action:none;-webkit-user-select:none;user-select:none}
+.mp-bpc:hover{background:color-mix(in srgb,var(--mg) 18%,transparent)}
+.mp-bpc:disabled{opacity:.35;cursor:default}
+.mp-bpc b{font-size:.8rem;color:var(--ink2,#55627a)}
+.mp-bpc svg,.mp-bghostd svg{display:block;overflow:visible}
+.mp-bc{fill:var(--bcube)}.mp-bk{fill:var(--bred)}.mp-bt{fill:var(--btenth)}
+.mp-bc,.mp-bk,.mp-bt,.mp-br{stroke:rgba(0,0,0,.18);stroke-width:1}
+.mp-br{fill:var(--bten)}.mp-brl{stroke:rgba(255,255,255,.75);stroke-width:1.2}
+.mp-bbag{fill:var(--bbag);stroke:var(--bbagd);stroke-width:2}.mp-bbag.open{fill:color-mix(in srgb,var(--bbag) 18%,var(--mcard))}
+.mp-bbagt{fill:none;stroke:var(--bbagd);stroke-width:2}
+.mp-bbagx{fill:#fff;font:italic 800 18px var(--display,inherit);text-anchor:middle}.mp-bbagx.open{fill:var(--mink);font-style:normal}
+.mp-bln{fill:var(--bbln)}.mp-blnt{fill:#fff;font:800 13px var(--body,inherit);text-anchor:middle}
+.mp-bstr{fill:none;stroke:var(--at-ink3,#9aa6b8);stroke-width:1.5}
+.mp-bmat{justify-content:center}
+.mp-bwin{display:flex;flex-direction:column;align-items:center;gap:10px;width:100%}
+.mp-bwin.side{flex-direction:row;flex-wrap:wrap;justify-content:center;gap:20px}
+.mp-bwin.side .mp-bline{flex-basis:100%;align-items:center}
+.mp-bmain{position:relative;display:flex;justify-content:center;max-width:100%}
+.mp-bsvg{display:block;max-width:100%;height:auto;overflow:visible}
+.mp-bnote{position:absolute;left:0;right:0;top:12px;text-align:center}
+.mp-bpost{fill:color-mix(in srgb,var(--mline) 70%,var(--mcard));stroke:var(--at-ink3,#9aa6b8);stroke-width:2}
+.mp-bfoot{fill:var(--at-ink3,#9aa6b8)}
+.mp-bbeam line{stroke:var(--mink);stroke-width:8;stroke-linecap:round}.mp-bbeam circle{fill:var(--mink)}
+.mp-bdish{fill:color-mix(in srgb,var(--mline) 85%,var(--mcard));stroke:var(--at-ink3,#9aa6b8);stroke-width:2}
+.mp-bpan.sel .mp-bdish{stroke:var(--accent,#0b6e78);stroke-width:3}
+.mp-bhit{fill:transparent;cursor:pointer}
+.mp-bit{cursor:pointer}
+.mp-bmove .mp-bpan,.mp-bmove .mp-bbeam{transition:transform .55s cubic-bezier(.3,1.3,.5,1)}
+.mp-bghost{fill:none;stroke:var(--bten);stroke-width:2;stroke-dasharray:4 3}
+.mp-bsign circle{fill:color-mix(in srgb,var(--bad,#b4283f) 10%,var(--mcard));stroke:var(--bad,#b4283f);stroke-width:2.5}
+.mp-bsign text{fill:var(--bad,#b4283f);font:800 30px var(--display,inherit);text-anchor:middle}
+.mp-bsign.eq circle{fill:var(--at-tint,#e8f3f4);stroke:var(--accent,#0b6e78)}.mp-bsign.eq text{fill:var(--accent,#0b6e78)}
+.mp-bsteps{display:flex;flex-direction:column;gap:6px;min-width:190px}
+.mp-bsteps>div:not(.mp-fkwl){padding:6px 12px;border-radius:10px;background:color-mix(in srgb,var(--mline) 35%,var(--mcard))}
+.mp-bsteps b{display:block;font:800 1.3rem/1.2 var(--display,inherit);color:var(--mink);white-space:nowrap}
+.mp-bsteps small{display:block;font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--at-ink3,#7b879c)}
+.mp-bsteps .now{background:var(--at-tint,#e8f3f4)}.mp-bsteps .now b{color:var(--accent,#0b6e78)}
+.mp-bline{align-items:center;max-width:100%}
+.mp-bnl text{font:700 15px var(--body,inherit);fill:var(--mink);text-anchor:middle}
+.mp-bsol{stroke:var(--bten);stroke-width:8;stroke-linecap:round;opacity:.75}
+.mp-bsolo{fill:var(--mcard);stroke:var(--bten);stroke-width:3}.mp-bsolp{fill:var(--bten);stroke:var(--mcard);stroke-width:2}
+.mp-byes{fill:var(--bten);stroke:var(--mcard);stroke-width:2}.mp-bno{fill:var(--bad,#b4283f);stroke:var(--mcard);stroke-width:2}
+.mp-byes.now,.mp-bno.now{stroke:var(--mink);stroke-width:2.5}
+@media (max-width:700px){
+  .mp-bpc{width:auto;padding:2px 6px;min-width:44px}
+  .mp-bpc b{font-size:.68rem;white-space:nowrap}
+  .mp-bsteps{flex-direction:row;flex-wrap:wrap;justify-content:center;min-width:0}
+  .mp-bsteps .mp-fkwl{flex-basis:100%;text-align:center}
+  .mp-bsteps b{font-size:1rem}
+}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

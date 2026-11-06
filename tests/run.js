@@ -513,6 +513,64 @@ async function checkGrade(browser, base, g) {
     await go('ratio');
   }
 
+  /* 3a9. Toolbox balance: 5 + 3 balances 4 + 4, Make it balance shows what the lighter side needs, 3 × 4 = 6 + 6 (Grade 3 and
+     up); Grade 4 and up tries numbers in x + 3 < 9, and Grades 4 to 6 solve a new puzzle by taking the same from both sides; Grade 6 and up
+     types 2x + 3 = 11, Grade 7 3x + 2 = x + 8 and Grade 8 x + 4 = -2 (with balloons), and solves each. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('balance'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/balance'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-balt .mp-read').textContent.replace(/ /g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox balance: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const put = async (k, n) => { for (let i = 0; i < n; i++) await page.click('.mp-bpc[data-k=' + k + ']'); };
+    const side = async i => { const h = page.locator('.mp-bpan[data-side="' + i + '"] .mp-bhit'); await h.waitFor(); await page.waitForTimeout(100); const b = await h.boundingBox(); await h.click({ position: { x: b.width / 2, y: 4 }, force: true }); };
+    const mode = m => page.click('.mp-bdo [data-m=' + m + ']');
+    const snap = (a, v) => page.click('.mp-snap[data-a=' + a + ']' + (v != null ? '[data-v="' + v + '"]' : ''));
+    const clear = async () => { if (await page.isVisible('.mp-snap[data-a=clear]')) await snap('clear'); };
+    const times = async (a, v, n) => { for (let i = 0; i < n; i++) await snap(a, v); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await mode('free'); await clear(); await side(0);
+    await put('k', 5); await put('c', 3); await side(1); await put('k', 4); await put('c', 4);
+    await bad('5 + 3 = 4 + 4', '5 + 3 against 4 + 4');
+    await bad('both sides make 8', '5 + 3 against 4 + 4');
+    await mode('make'); await page.click('.mp-bit[data-s="1"]');
+    await bad('needs 1 more', 'taking one cube off 4 + 4');
+    if (await page.locator('.mp-bghost').count() !== 1) fail(where, 'Toolbox balance: Make it balance does not show 1 dashed cube');
+    if (g >= 3) {
+      await mode('free'); await clear(); await side(0);
+      await put('k', 4); await put('c', 4); await put('k', 4); await side(1); await put('k', 6); await put('c', 6);
+      await bad('3 × 4 = 6 + 6', '3 groups of 4 against 6 + 6');
+    }
+    if (g >= 4) {
+      await mode('try'); await clear(); await side(0); await put('x', 1); await put('c', 3); await side(1); await put('c', 9);
+      await snap('goal', '<');
+      for (let i = 0; i < 12 && !(await read()).includes('x = 4 makes'); i++) await snap('tv', (await read()).match(/x = (\d+) makes/) && +(await read()).match(/x = (\d+) makes/)[1] > 4 ? -1 : 1);
+      await bad('x = 4 makes 7 < 9: true. It is true for x < 6', 'trying 4 in x + 3 < 9');
+      if (await page.locator('.mp-bnl .mp-byes').count() < 1) fail(where, 'Toolbox balance: the number line does not mark 4 as a number that works');
+      await mode('solve');
+    }
+    if (g >= 4 && g <= 6) {
+      await snap('new');
+      const m = (await read()).match(/^(\d*)x(?: \+ (\d+))? = (\d+)/);
+      if (!m) fail(where, 'Toolbox balance: a new puzzle does not read like x + 5 = 12 (' + (await read()) + ')');
+      else {
+        const a = +(m[1] || 1), c = +(m[2] || 0), r = +m[3];
+        await times('take', 1, c); if (a > 1) await snap('split', a);
+        await bad('one bag is alone: x = ' + (r - c) / a, 'solving ' + m[0]);
+      }
+    }
+    const typed = async (eq, moves, x) => {
+      await page.fill('.mp-fkin', eq); await page.press('.mp-fkin', 'Enter');
+      for (const mv of moves) await snap(mv[0], mv[1]);
+      await bad('one bag is alone: x = ' + x, 'solving ' + eq);
+    };
+    if (g === 6) await typed('2x + 3 = 11', [['take', 1], ['take', 1], ['take', 1], ['split', 2]], '4');
+    if (g === 7) await typed('3x + 2 = x + 8', [['takex'], ['take', 1], ['take', 1], ['split', 2]], '3');
+    if (g === 8) await typed('x + 4 = -2', [['add', 'n'], ['add', 'n'], ['add', 'n'], ['add', 'n'], ['pairs']], '−6');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox balance: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
