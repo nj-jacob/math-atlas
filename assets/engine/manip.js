@@ -3493,6 +3493,453 @@
     return { play: go, pause: pause, jump: jump, restart: function () { return jump(0, true); }, step: stepOn, tool: tool, get playing() { return playing; }, get at() { return k; } };
   };
 
+  /* ================= Balance, Toolbox version =================
+     Manip.balance(root, { tool: true }). A pan balance: put cubes (1), tens (Grade 2 and up), bags with a hidden number x
+     (Grade 4 and up), 0.1 pieces (Grade 7 and up) and -1 balloons that pull up (Grade 8) on either side, and it tips to the
+     heavier side. Moves: Free; Make it balance (dashed cubes show what the lighter side needs); Solve (Grade 4 and up: take
+     the same from both sides, add the same to both, split both sides, cancel cube and balloon pairs, with every step listed);
+     Try numbers (Grade 4 and up: put a number in the bag and see whether an inequality is true, on a number line).
+     Grade 6 and up can type an equation or inequality to set up the balance. Numbers and signs show only with Show number. */
+  var BL = { c: 1, k: 1, r: 10, t: 0.1, n: -1 }, BL_MAX = 30;
+  function toolBal(root, o) {
+    var T = base(root, 'bal');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-balt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var CAP = !gr || gr >= 2 ? 100 : 20;
+    var KINDS = [['c', '1'], ['k', '1 red']].concat(g2 ? [['r', '10']] : [], g4 ? [['x', 'Bag of x']] : [], g7 ? [['t', '0.1']] : [], g8 ? [['n', '−1 balloon']] : []);
+    var MODES = [['free', 'Free'], ['make', 'Make it balance']].concat(g4 ? [['solve', 'Solve'], ['try', 'Try numbers']] : []);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-btray"><small>Put on</small>' + KINDS.map(function (k) {
+      return '<button type="button" class="mp-bpc" data-k="' + k[0] + '" aria-label="Put on ' + k[1] + '">' + trayIcon(k[0]) + '<b>' + k[1] + '</b></button>';
+    }).join('') + '</div><div class="mp-dmain"><div class="mp-cmode mp-bdo" role="group" aria-label="Do"><span>Do</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-bmat"><div class="mp-bwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-btray', root), mat = qs('.mp-bmat', root), win = qs('.mp-bwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the two sides (lists of kinds), the side the tray fills, the move, the hidden number in the bags, whether the
+       bags are open, the steps so far (Solve), the number tried (Try numbers), the sign to test and the numbers tried */
+    var S, sel, mode, xv, peek, steps, tv, goal, tried, shown = false, hist = [], last = '', ang = 0;
+    function fresh() { S = [[], []]; sel = 0; mode = 'free'; xv = 2 + Math.floor(Math.random() * 8); peek = false; steps = []; tv = 1; goal = '<'; tried = []; }
+    function trayIcon(k) {
+      if (k === 'x') return '<svg width="34" height="38" viewBox="0 0 34 38" aria-hidden="true">' + bagPath(17, 36, 34, 'x', false) + '</svg>';
+      if (k === 'n') return '<svg width="28" height="40" viewBox="0 0 28 40" aria-hidden="true"><ellipse cx="14" cy="14" rx="11" ry="13" class="mp-bln"/><path d="M14 27q-4 6 0 12" class="mp-bstr"/></svg>';
+      if (k === 'r') return '<svg width="16" height="62" viewBox="0 0 16 62" aria-hidden="true">' + rod(1, 1, 14, 60) + '</svg>';
+      if (k === 't') return '<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="10" y="2" width="7" height="22" rx="2" class="mp-bt"/></svg>';
+      return '<svg width="26" height="26" viewBox="0 0 26 26" aria-hidden="true"><rect x="2" y="2" width="22" height="22" rx="4" class="mp-b' + k + '"/></svg>';
+    }
+    function rod(x, y, w, h) { var s = '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3" class="mp-br"/>'; for (var i = 1; i < 10; i++) s += '<line x1="' + x + '" x2="' + (x + w) + '" y1="' + (y + h * i / 10) + '" y2="' + (y + h * i / 10) + '" class="mp-brl"/>'; return s; }
+    function bagPath(cx, by, w, lab, open) {
+      var h = w * 1.12, l = cx - w / 2;
+      return '<path d="M' + (l + w * .18) + ' ' + (by - h * .8) + ' Q' + cx + ' ' + (by - h) + ' ' + (l + w * .82) + ' ' + (by - h * .8) + ' L' + (l + w) + ' ' + (by - w * .12) + ' Q' + cx + ' ' + (by + w * .05) + ' ' + l + ' ' + (by - w * .12) + ' Z" class="mp-bbag' + (open ? ' open' : '') + '"/>' +
+        '<path d="M' + (l + w * .22) + ' ' + (by - h * .8) + ' Q' + cx + ' ' + (by - h * .68) + ' ' + (l + w * .78) + ' ' + (by - h * .8) + '" class="mp-bbagt"/>' +
+        '<text x="' + cx + '" y="' + (by - h * .28) + '" class="mp-bbagx' + (open ? ' open' : '') + '" style="font-size:' + Math.round(w * (String(lab).length > 2 ? .34 : .46)) + 'px">' + lab + '</text>';
+    }
+    /* ---- numbers ---- */
+    function bagv() { return mode === 'try' ? tv : xv; }
+    function wt(k) { return k === 'x' ? bagv() : BL[k]; }
+    function tot(side) { return +side.reduce(function (t, k) { return t + wt(k); }, 0).toFixed(4); }
+    function bags(side) { return side.filter(function (k) { return k === 'x'; }).length; }
+    function con(side) { return +side.reduce(function (t, k) { return t + (k === 'x' ? 0 : BL[k]); }, 0).toFixed(4); }
+    function anyBag() { return bags(S[0]) + bags(S[1]) > 0; }
+    function num(v) { v = +(+v).toFixed(4); return v < 0 ? '−' + fmt(-v) : fmt(v); }
+    function term(a) { return (a === 1 ? '' : a) + 'x'; }
+    /* a side written for the child: x terms and a number once bags are used; before that the parts as they were put on
+       (5 + 3), three or more equal parts in a row as times from Grade 3 (3 × 4) */
+    function expr(side) {
+      if (!side.length) return '0';
+      if (anyBag()) {
+        var a = bags(side), c = con(side);
+        if (!a) return num(c);
+        return term(a) + (c > 0 ? ' + ' + num(c) : c < 0 ? ' − ' + num(-c) : '');
+      }
+      var runs = [], prev = null;
+      side.forEach(function (k) { var g = k === 'r' ? 'r' : k === 't' ? 't' : k === 'n' ? 'n' : k; if (g === prev) runs[runs.length - 1] += BL[k]; else runs.push(BL[k]); prev = g; });
+      var out = [], i = 0;
+      while (i < runs.length) {
+        var j = i; while (g3 && j + 1 < runs.length && Math.abs(runs[j + 1] - runs[i]) < 1e-9 && runs[i] > 0) j++;
+        if (j - i < 2) j = i;
+        out.push(j > i ? (j - i + 1) + ' × ' + num(runs[i]) : num(runs[i]));
+        i = j + 1;
+      }
+      return out.join(' + ').replace(/\+ −/g, '− ');
+    }
+    function sign() { var d = tot(S[0]) - tot(S[1]); return Math.abs(d) < 1e-9 ? '=' : d < 0 ? '<' : '>'; }
+    /* ---- the balance ---- */
+    function layout(side, si, PW, S0) {
+      /* bags, tens, cubes and 0.1 pieces in rows from the pan floor up; balloons float above */
+      var items = side.map(function (k, i) { return { k: k, i: i }; }).filter(function (q) { return q.k !== 'n'; });
+      var n = items.length, u = Math.max(12, Math.min(S0, Math.floor((PW - 10) / Math.max(5, Math.ceil(Math.sqrt(n * 2.2)))) - 3));
+      function size(k) { return k === 'x' ? [u * 1.8, u * 2] : k === 'r' ? [u * .62, u * 3.2] : k === 't' ? [u * .36, u] : [u, u]; }
+      var rows = [], row = [], w = 0;
+      items.forEach(function (q) { var s = size(q.k); if (row.length && w + s[0] > PW - 8) { rows.push(row); row = []; w = 0; } row.push(q); q.s = s; w += s[0] + 3; });
+      if (row.length) rows.push(row);
+      var out = '', y = -3;
+      rows.forEach(function (r) {
+        var rw = r.reduce(function (t, q) { return t + q.s[0] + 3; }, -3), x = -rw / 2, rh = Math.max.apply(null, r.map(function (q) { return q.s[1]; }));
+        r.forEach(function (q) {
+          var k = q.k, sw = q.s[0], sh = q.s[1], at = ' data-s="' + si + '" data-i="' + q.i + '"';
+          if (k === 'x') out += '<g class="mp-bit"' + at + '>' + bagPath(x + sw / 2, y, sw, mode === 'try' ? num(tv) : peek ? num(xv) : 'x', mode === 'try' || peek) + '</g>';
+          else if (k === 'r') out += '<g class="mp-bit"' + at + '>' + rod(x, y - sh, sw, sh) + '</g>';
+          else out += '<rect class="mp-bit mp-b' + k + '"' + at + ' x="' + x.toFixed(1) + '" y="' + (y - sh).toFixed(1) + '" width="' + sw.toFixed(1) + '" height="' + sh.toFixed(1) + '" rx="' + (k === 't' ? 2 : 4) + '"/>';
+          x += sw + 3;
+        });
+        y -= rh + 3;
+      });
+      return { svg: out, top: y, u: u };
+    }
+    function ghosts(PW, top, u, n) {
+      var s = '', per = Math.max(1, Math.floor((PW - 8) / (u + 3))), rows = Math.ceil(n / per);
+      for (var i = 0; i < n; i++) { var r = Math.floor(i / per), c = i % per, inRow = r === rows - 1 ? n - r * per : per, x = -(inRow * (u + 3) - 3) / 2 + c * (u + 3); s += '<rect class="mp-bghost" x="' + x.toFixed(1) + '" y="' + (top - (r + 1) * (u + 3)).toFixed(1) + '" width="' + u + '" height="' + u + '" rx="4"/>'; }
+      return s;
+    }
+    function balanceSvg(W, H) {
+      var narrow = W < 500, cx = W / 2, py = H * .26, half = W * (narrow ? .3 : .34), PW = W * (narrow ? .38 : .3), drop = H * .5, d = tot(S[1]) - tot(S[0]), sc = Math.max(2, (Math.abs(tot(S[0])) + Math.abs(tot(S[1]))) / 6);
+      var a = Math.abs(d) < 1e-9 ? 0 : (d > 0 ? 1 : -1) * Math.max(2.5, Math.min(10, 10 * Math.tanh(Math.abs(d) / sc)));
+      var miss = mode === 'make' && Math.abs(d) > 1e-9 ? Math.abs(d) : 0, ghostOn = miss && Math.abs(miss - Math.round(miss)) < 1e-9 && miss <= 40;
+      var s = '<svg class="mp-bsvg" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="A balance">';
+      s += '<path class="mp-bpost" d="M' + cx + ' ' + py + ' L' + (cx - W * .06) + ' ' + (H - 14) + ' H' + (cx + W * .06) + ' Z"/><rect class="mp-bfoot" x="' + (cx - W * .12) + '" y="' + (H - 16) + '" width="' + (W * .24) + '" height="10" rx="5"/>';
+      var S0 = Math.round(Math.min(30, W / (narrow ? 17 : 26)));
+      [0, 1].forEach(function (i) {
+        var side = S[i], L = layout(side, i, PW, S0), ni = [], b = '';
+        side.forEach(function (k, q) { if (k === 'n') ni.push(q); });
+        var n = ni.length;
+        for (var j = 0; j < n; j++) {
+          var bx = n === 1 ? 0 : -PW * .4 + j * (PW * .8 / (n - 1)), by = -drop * .62 - (j % 2) * 14, r = Math.max(10, Math.min(16, W / 50));
+          b += '<path class="mp-bstr" d="M' + bx * .6 + ' -2 Q' + (bx - 6) + ' ' + (by / 2) + ' ' + bx + ' ' + (by + r * 1.2) + '"/><g class="mp-bit" data-s="' + i + '" data-i="' + ni[j] + '"><ellipse class="mp-bln" cx="' + bx + '" cy="' + by + '" rx="' + r + '" ry="' + r * 1.25 + '"/><text class="mp-blnt" x="' + bx + '" y="' + (by + 5) + '">−1</text></g>';
+        }
+        var g = ghostOn && ((d > 0 && i === 0) || (d < 0 && i === 1)) ? ghosts(PW, L.top, L.u, Math.round(miss)) : '';
+        s += '<g class="mp-bpan' + (sel === i ? ' sel' : '') + '" data-side="' + i + '" style="transform:translate(' + (cx + (i ? 1 : -1) * half).toFixed(1) + 'px,' + (py + drop).toFixed(1) + 'px)">' +
+          '<path class="mp-bstr" d="M0 ' + (-drop) + ' L' + (-PW / 2) + ' -6 M0 ' + (-drop) + ' L' + (PW / 2) + ' -6"/>' +
+          '<path class="mp-bdish" d="M' + (-PW / 2 - 4) + ' -6 Q0 ' + (PW * .12) + ' ' + (PW / 2 + 4) + ' -6 Z"/><rect class="mp-bhit" x="' + (-PW / 2) + '" y="' + (-drop * .78) + '" width="' + PW + '" height="' + (drop * .78 + 10) + '"/>' +
+          L.svg + g + b + '</g>';
+      });
+      s += '<g class="mp-bbeam" style="transform-origin:' + cx + 'px ' + py + 'px;transform:rotate(' + a + 'deg)"><line x1="' + (cx - half) + '" y1="' + py + '" x2="' + (cx + half) + '" y2="' + py + '"/><circle cx="' + cx + '" cy="' + py + '" r="' + Math.max(6, W / 90) + '"/></g>';
+      if (shown && (S[0].length || S[1].length)) { var sg = sign(); s += '<g class="mp-bsign' + (sg === '=' ? ' eq' : '') + '"><circle cx="' + cx + '" cy="' + (py - H * .13) + '" r="' + Math.max(18, W / 32) + '"/><text x="' + cx + '" y="' + (py - H * .13 + Math.max(7, W / 80)) + '" style="font-size:' + Math.max(22, W / 26) + 'px">' + sg + '</text></g>'; }
+      return { svg: s + '</svg>', a: a, cx: cx, py: py, half: half, drop: drop };
+    }
+    /* the pans hang from the ends of the beam: move them with it */
+    function hang(svg, g, a) {
+      var r = a * Math.PI / 180;
+      qsa('.mp-bpan', svg).forEach(function (p, i) {
+        var s = i ? 1 : -1, x = g.cx + s * g.half * Math.cos(r), y = g.py + s * g.half * Math.sin(r) + g.drop;
+        p.style.transform = 'translate(' + x.toFixed(1) + 'px,' + y.toFixed(1) + 'px)';
+      });
+      qs('.mp-bbeam', svg).style.transform = 'rotate(' + a + 'deg)';
+    }
+    /* ---- Try numbers: the number line of numbers tried, and (with Show number) every number that works ---- */
+    function trueAt(v) { var l = side(0, v), r = side(1, v); return goal === '<' ? l < r - 1e-9 : goal === '>' ? l > r + 1e-9 : Math.abs(l - r) < 1e-9; }
+    function side(i, v) { return +(bags(S[i]) * v + con(S[i])).toFixed(4); }
+    function trueNow() { return trueAt(tv); }
+    function edge() { var a = bags(S[0]) - bags(S[1]); return a ? (con(S[1]) - con(S[0])) / a : null; }
+    function range() {
+      var b = edge(), lo = g8 ? -10 : 0, top = Math.max(10, tv + 1, b == null ? 0 : b + 3);
+      tried.forEach(function (v) { top = Math.max(top, v + 1); });
+      var hi = top <= 10 ? 10 : top <= 20 ? 20 : 50;
+      return [lo, hi];
+    }
+    function tryLine(W) {
+      var rg = range(), lo = rg[0], hi = rg[1], L = 26, x = function (v) { return L + (v - lo) / (hi - lo) * (W - 2 * L); }, s = '<svg class="mp-bsvg mp-bnl" width="' + W + '" height="76" viewBox="0 0 ' + W + ' 76" aria-hidden="true">';
+      s += '<line class="mp-fkax" x1="' + (x(lo) - 10) + '" y1="30" x2="' + (x(hi) + 10) + '" y2="30"/>';
+      var step = hi - lo <= 20 ? (W < 500 && hi - lo > 10 ? 2 : 1) : 5;
+      for (var v = lo; v <= hi; v++) {
+        var big = v % step === 0;
+        s += '<line class="' + (big ? 'mp-fkt1' : 'mp-fkt2') + '" x1="' + x(v) + '" y1="' + (big ? 21 : 25) + '" x2="' + x(v) + '" y2="' + (big ? 39 : 35) + '"/>' + (big ? '<text x="' + x(v) + '" y="64">' + num(v) + '</text>' : '');
+      }
+      var b = edge(), a = bags(S[0]) - bags(S[1]);
+      if (shown && b != null && b >= lo - 1e-9 && b <= hi + 1e-9) {
+        var right = goal === '=' ? null : (goal === '>') === (a > 0), end = right ? hi : lo;
+        if (right != null) s += '<line class="mp-bsol" x1="' + x(b) + '" y1="30" x2="' + x(Math.max(lo, Math.min(hi, end))) + '" y2="30"/>';
+        s += '<circle class="' + (goal === '=' ? 'mp-bsolp' : 'mp-bsolo') + '" cx="' + x(b) + '" cy="30" r="9"/>';
+      } else if (shown && b == null && trueAt(0)) s += '<line class="mp-bsol" x1="' + x(lo) + '" y1="30" x2="' + x(hi) + '" y2="30"/>';
+      tried.concat(tried.indexOf(tv) < 0 ? [tv] : []).forEach(function (v) { s += '<circle class="' + (trueAt(v) ? 'mp-byes' : 'mp-bno') + (v === tv ? ' now' : '') + '" cx="' + x(v) + '" cy="30" r="8"/>'; });
+      return '<div class="mp-fkw mp-bline"><div class="mp-fkwl">Numbers tried</div>' + s + '</svg></div>';
+    }
+    function stepsHtml() {
+      if (mode !== 'solve' || !shown || !steps.length) return '';
+      return '<div class="mp-bsteps"><div class="mp-fkwl">Steps</div>' + steps.map(function (q, i) { return '<div class="' + (i === steps.length - 1 ? 'now' : '') + '"><b>' + q[0] + '</b>' + (q[1] ? '<small>' + q[1] + '</small>' : '') + '</div>'; }).join('') + '</div>';
+    }
+    /* ---- one redraw ---- */
+    function draw() {
+      readout();
+      snaps();
+      mat.style.paddingBottom = (snapsEl.offsetHeight + 28) + 'px';
+      qsa('.mp-bdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === mode)); });
+      qsa('.mp-bpc', tray).forEach(function (b) { b.disabled = !!full(b.getAttribute('data-k'), sel); });
+      var cs = getComputedStyle(mat), MW = (mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), MH = (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom);
+      var st = stepsHtml(), beside = st && MW >= 760, W = Math.max(280, Math.min(820, MW - (beside ? 230 : 0))), lineH = mode === 'try' ? 110 : 0, stH = st && !beside ? 70 + steps.length * 30 : 0;
+      var H = Math.round(Math.max(200, Math.min(W * (W < 500 ? .72 : .56), MH - lineH - stH - 12)));
+      var g = balanceSvg(W, H), empty = !S[0].length && !S[1].length;
+      win.classList.toggle('side', !!beside);
+      win.innerHTML = '<div class="mp-bmain">' + g.svg + (empty ? '<p class="mp-fknote mp-bnote">' + (mode === 'try' ? 'Put a bag of x and some cubes on the balance.' : 'Tap or drag cubes onto a side.') + '</p>' : '') + '</div>' + st + (mode === 'try' ? tryLine(Math.min(W, 640)) : '');
+      var svg = qs('.mp-bsvg', win);
+      if (!T.fast && ang !== g.a) { hang(svg, g, ang); void svg.getBoundingClientRect(); svg.classList.add('mp-bmove'); }
+      hang(svg, g, g.a);
+      ang = g.a;
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var big = '', eq = '', l = tot(S[0]), r = tot(S[1]), sg = sign(), empty = !S[0].length && !S[1].length;
+      if (empty) { read.innerHTML = ''; return; }
+      if (mode === 'try') {
+        if (!anyBag()) eq = 'Put a bag of x on the balance to try numbers';
+        else {
+          var b = edge(), a = bags(S[0]) - bags(S[1]), ok = trueNow();
+          big = expr(S[0]) + ' ' + goal + ' ' + expr(S[1]);
+          eq = 'x = <b>' + num(tv) + '</b> makes <b>' + num(l) + ' ' + sg + ' ' + num(r) + '</b>: ' + (ok ? 'true' : 'not true');
+          if (b == null) eq += trueAt(0) ? '. It is true for <b>every</b> number' : '. It is <b>never</b> true';
+          else if (goal === '=') eq += '. It is true only for <b>x = ' + num(b) + '</b>';
+          else eq += '. It is true for <b>x ' + (((goal === '>') === (a > 0)) ? '&gt;' : '&lt;') + ' ' + num(b) + '</b>';
+        }
+      } else if (mode === 'solve') {
+        big = expr(S[0]) + ' ' + sg + ' ' + expr(S[1]);
+        var done = solved();
+        if (sg !== '=') eq = 'the two sides do not balance';
+        else if (done) eq = 'one bag is alone: <b>x = ' + num(xv) + '</b>';
+        else eq = steps.length > 1 ? steps[steps.length - 1][1] : 'do the same to both sides until one bag is alone';
+      } else if (mode === 'make' && sg !== '=') {
+        var lt = l < r, m = Math.abs(l - r);
+        big = (lt ? expr(S[0]) + ' + ?' : expr(S[0])) + ' = ' + (lt ? expr(S[1]) : expr(S[1]) + ' + ?');
+        eq = 'the lighter side needs <b>' + num(m) + '</b> more to make <b>' + num(Math.max(l, r)) + '</b>';
+        if (anyBag()) eq = 'the lighter side needs <b>' + num(m) + '</b> more';
+      } else {
+        big = expr(S[0]) + ' ' + sg + ' ' + expr(S[1]);
+        eq = anyBag() ? (sg === '=' ? 'the two sides balance' : 'the ' + (sg === '>' ? 'left' : 'right') + ' side is heavier')
+          : sg === '=' ? 'both sides make <b>' + num(l) + '</b>' : '<b>' + num(Math.max(l, r)) + '</b> is more than <b>' + num(Math.min(l, r)) + '</b>';
+      }
+      read.innerHTML = (big ? '<p class="mp-total"><span class="mp-num">' + big.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : '');
+    }
+    function solved() { return [0, 1].some(function (i) { return bags(S[i]) === 1 && S[i].length === 1 && !bags(S[1 - i]); }) && sign() === '='; }
+    function btn(a, t, on, dis, extra) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (extra || '') + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function snaps() {
+      var h = '', inp = qs('.mp-fkin', snapsEl), typed = inp ? inp.value : '', focus = inp && document.activeElement === inp, any = S[0].length || S[1].length;
+      if (mode === 'solve') {
+        h += '<span class="mp-hint">Take from both</span>' + btn('take', '1', null, !canTake(1), ' data-v="1"') + (g2 ? btn('take', '10', null, !canTake(10), ' data-v="10"') : '') + (g7 ? btn('take', '0.1', null, !canTake(0.1), ' data-v="0.1"') : '') + btn('takex', 'x', null, !(bags(S[0]) && bags(S[1])));
+        if (g8) h += '<span class="mp-hint">Add to both</span>' + btn('add', '1', null, !canAdd('c'), ' data-v="c"') + btn('add', '−1', null, !canAdd('n'), ' data-v="n"') + btn('pairs', 'Cancel pairs', null, !hasPairs());
+        h += '<span class="mp-hint">Split both into</span>' + [2, 3, 4, 5].map(function (n) { return btn('split', String(n), null, !canSplit(n), ' data-v="' + n + '"'); }).join('');
+        h += btn('peek', 'Peek in the bag', peek, !anyBag()) + btn('new', 'New puzzle');
+        if (g6) h += typeBox('2x + 3 = 11') + btn('type', 'Set up');
+      } else if (mode === 'try') {
+        h += btn('goal', '&lt;', goal === '<', null, ' data-v="<" aria-label="Less than"') + btn('goal', '=', goal === '=', null, ' data-v="=" aria-label="Equal to"') + btn('goal', '&gt;', goal === '>', null, ' data-v=">" aria-label="Greater than"');
+        var rg = range();
+        h += '<span class="mp-hint">Try x =</span>' + btn('tv', '&minus;', null, tv <= rg[0], ' data-v="-1" aria-label="One less"') + '<b class="mp-fkcount">' + num(tv) + '</b>' + btn('tv', '+', null, tv >= 50, ' data-v="1" aria-label="One more"');
+        h += btn('new', 'New puzzle');
+        if (g6) h += typeBox('x + 3 < 9') + btn('type', 'Set up');
+      }
+      if (any) h += btn('clear', 'Clear');
+      snapsEl.innerHTML = h;
+      var ni = qs('.mp-fkin', snapsEl);
+      if (ni) { ni.value = typed; if (focus) ni.focus(); }
+    }
+    function typeBox(eg) { return '<input class="mp-fkin" type="text" autocomplete="off" aria-label="Type an equation" placeholder="' + eg + '">'; }
+    /* ---- what a move can do ---- */
+    function full(k, i) {
+      var side = S[i];
+      if (side.length >= BL_MAX) return 'A side holds up to ' + BL_MAX + ' things.';
+      if (k === 'n' && side.filter(function (q) { return q === 'n'; }).length >= 12) return 'A side holds up to 12 balloons.';
+      if (k === 'x' && bags(side) >= 6) return 'A side holds up to 6 bags.';
+      if (k !== 'x' && k !== 'n' && con(side) + BL[k] > CAP + 1e-9) return 'A side holds up to ' + CAP + '.';
+      return '';
+    }
+    function count(side, k) { return side.filter(function (q) { return q === k; }).length; }
+    function ones(side) { return count(side, 'c') + count(side, 'k'); }
+    /* take an amount from one side: a cube, or a ten broken into ones, or ten 0.1 pieces; in Grade 8 a balloon instead */
+    function lastOne(side) { return Math.max(side.lastIndexOf('c'), side.lastIndexOf('k')); }
+    function takeFrom(side, v) {
+      var i, j;
+      if (v === 10) {
+        if ((i = side.lastIndexOf('r')) >= 0) { side.splice(i, 1); return true; }
+        if (ones(side) < 10) return false;
+        for (j = 0; j < 10; j++) side.splice(lastOne(side), 1);
+        return true;
+      }
+      if (v === 0.1) {
+        if ((i = side.lastIndexOf('t')) >= 0) { side.splice(i, 1); return true; }
+        if (!ones(side)) return false;
+        side.splice(lastOne(side), 1);
+        for (j = 0; j < 9; j++) side.push('t');
+        return true;
+      }
+      if (ones(side)) { side.splice(lastOne(side), 1); return true; }
+      if ((i = side.lastIndexOf('r')) >= 0) { side.splice(i, 1); for (j = 0; j < 9; j++) side.push('c'); return true; }
+      if (count(side, 't') >= 10) { for (j = 0; j < 10; j++) side.splice(side.lastIndexOf('t'), 1); return true; }
+      if (g8 && count(side, 'n') < 12) { side.push('n'); return true; }
+      return false;
+    }
+    function canTake(v) { return S.every(function (s) { return takeFrom(s.slice(), v); }); }
+    function canAdd(k) { return S.every(function (s, i) { return !full(k, i); }); }
+    function hasPairs() { return S.some(function (s) { return count(s, 'n') && (ones(s) || count(s, 'r')); }); }
+    function canSplit(n) {
+      return (S[0].length || S[1].length) && S.every(function (s) { var a = bags(s), c = con(s), q = c / n * (g7 ? 10 : 1); return a % n === 0 && Math.abs(q - Math.round(q)) < 1e-9; }) && S.some(function (s) { return s.length; });
+    }
+    /* an amount as things on the pan: tens, ones, 0.1 pieces; below zero as balloons */
+    function build(a, c) {
+      var out = [], i;
+      for (i = 0; i < a; i++) out.push('x');
+      if (c < 0) { for (i = 0; i < Math.round(-c); i++) out.push('n'); return out; }
+      var t = Math.round(c * 10), tens = g2 ? Math.floor(t / 100) : 0, on = Math.floor((t - tens * 100) / 10), te = t % 10;
+      for (i = 0; i < tens; i++) out.push('r');
+      for (i = 0; i < on; i++) out.push('c');
+      for (i = 0; i < te; i++) out.push('t');
+      return out;
+    }
+    function fits(a, c) { var b = build(a, c); return b.length <= BL_MAX && count(b, 'n') <= 12 && c <= CAP + 1e-9; }
+    /* a new puzzle for the grade: x + 5 = 12 (Grade 4), 3x = 15 or x + 27 = 64 (Grade 5), 2x + 3 = 11 (Grade 6),
+       3x + 2 = x + 8 (Grade 7), x + 4 = -2 (Grade 8) */
+    function puzzle() {
+      var R = function (a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }, p, x;
+      for (var guard = 0; guard < 50; guard++) {
+        var lvl = gr || 6;
+        if (lvl <= 4) { x = R(2, 15); p = [1, R(1, 9), 0, 0]; }
+        else if (lvl === 5) { x = R(2, 12); p = Math.random() < .5 ? [R(2, 4), 0, 0, 0] : [1, R(5, 30), 0, 0]; }
+        else if (lvl === 6) { x = R(2, 8); p = [R(2, 4), R(1, 9), 0, 0]; }
+        else if (lvl === 7) { x = R(1, 6); p = [R(2, 4), R(0, 8), 1, 0]; }
+        else { x = R(-6, 6) || -3; p = [R(1, 3), R(-5, 6), 0, 0]; }
+        p[3] = p[0] * x + p[1] - p[2] * x;
+        if (fits(p[0], p[1]) && fits(p[2], p[3]) && p[3] !== 0) break;
+      }
+      return { L: build(p[0], p[1]), R: build(p[2], p[3]), x: x };
+    }
+    /* a typed equation or inequality: 2x + 3 = 11, 3x + 2 = x + 8, x + 4 = -2, x + 3 < 9 */
+    function parse(txt, rel) {
+      var t = txt.replace(/\s+/g, '').replace(/[−–]/g, '-').replace(/×/g, ''), m = t.match(/^([^<>=]+)([<>=])([^<>=]+)$/);
+      if (!m || (rel && rel !== m[2] && !(rel === '<>=' && /[<>=]/.test(m[2])))) return null;
+      var sides = [m[1], m[3]].map(function (s) {
+        var a = 0, c = 0, ok = true, terms = s.match(/[+-]?[^+-]+/g) || [];
+        if (terms.join('') !== s) return null;
+        terms.forEach(function (q) {
+          var mm = q.match(/^([+-]?)(\d*\.?\d*)(x?)$/);
+          if (!mm || (!mm[2] && !mm[3])) { ok = false; return; }
+          var v = mm[2] === '' ? 1 : +mm[2], sg = mm[1] === '-' ? -1 : 1;
+          if (isNaN(v)) { ok = false; return; }
+          if (mm[3]) { if (sg < 0 || v !== Math.round(v)) ok = false; a += v; } else c += sg * v;
+        });
+        return ok ? [a, +c.toFixed(4)] : null;
+      });
+      if (!sides[0] || !sides[1]) return null;
+      var bad = sides.some(function (s) { return s[0] > 6 || (!g8 && s[1] < 0) || (!g7 && Math.abs(s[1] - Math.round(s[1])) > 1e-9) || Math.abs(s[1] * 10 - Math.round(s[1] * 10)) > 1e-9 || (s[1] < 0 && Math.abs(s[1] - Math.round(s[1])) > 1e-9) || !fits(s[0], s[1]); });
+      if (bad || sides[0][0] + sides[1][0] === 0) return null;
+      return { s: sides, rel: m[2] };
+    }
+    function setUp() {
+      var inp = qs('.mp-fkin', snapsEl), p = inp && parse(inp.value, mode === 'solve' ? '=' : '<>='), x = null;
+      if (p && mode === 'solve') {
+        var a = p.s[0][0] - p.s[1][0];
+        x = a ? (p.s[1][1] - p.s[0][1]) / a : null;
+        if (x == null || Math.abs(x * 10 - Math.round(x * 10)) > 1e-9 || (!g8 && x < 0) || (!g7 && Math.abs(x - Math.round(x)) > 1e-9)) p = null;
+      }
+      if (!p) { if (inp) { bump(inp, 'mp-shake'); announce(T, mode === 'solve' ? 'Type an equation with x on one or both sides, like 2x + 3 = 11.' : 'Type an inequality with x, like x + 3 < 9.'); } return; }
+      act(function () {
+        S = [build(p.s[0][0], p.s[0][1]), build(p.s[1][0], p.s[1][1])]; peek = false; tried = [];
+        if (mode === 'solve') { xv = +x.toFixed(4); steps = [[expr(S[0]) + ' = ' + expr(S[1]), '']]; } else { goal = p.rel; tv = Math.max(range()[0], 1); }
+        last = 'type';
+      });
+      var ni = qs('.mp-fkin', snapsEl);
+      if (ni) ni.value = '';
+    }
+    function newPuzzle() {
+      act(function () {
+        var p = puzzle();
+        S = [p.L, p.R]; peek = false; tried = [];
+        if (mode === 'solve') { xv = p.x; steps = [[expr(S[0]) + ' = ' + expr(S[1]), '']]; }
+        else {
+          var R = function (a, b) { return a + Math.floor(Math.random() * (b - a + 1)); }, c = R(1, 6), e = c + R(3, 9), two = g6 && Math.random() < .5;
+          S = [build(two ? 2 : 1, c), build(0, two ? e + R(2, 8) : e)]; goal = ['<', '>'][R(0, 1)]; tv = 1;
+        }
+        last = 'new';
+      });
+    }
+    /* each Solve move is done to both sides and listed with the equation it leaves */
+    function both(fn, say) {
+      act(function () {
+        fn();
+        steps.push([expr(S[0]) + ' ' + sign() + ' ' + expr(S[1]), say]);
+        last = 'solve';
+      });
+    }
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify({ S: S, sel: sel, mode: mode, xv: xv, peek: peek, steps: steps, tv: tv, goal: goal, tried: tried }); }
+    function act(fn) { var b = snapshot(); if (mode === 'try' && anyBag() && tried.indexOf(tv) < 0) tried.push(tv); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: mode, left: S[0].slice(), right: S[1].slice(), sign: sign(), x: xv, steps: steps.map(function (q) { return q[0]; }), tried: tried.slice(), last: last }; }
+    function put(k, i) {
+      if (i == null) i = sel;
+      var no = full(k, i);
+      if (no) { announce(T, no); bump(mat, 'mp-shake'); return; }
+      act(function () { S[i].push(k); sel = i; if (mode === 'solve') steps = []; if (mode === 'try') tried = []; last = 'put'; });
+      announce(T, 'Put ' + ({ c: '1', k: '1', r: '10', x: 'a bag of x', t: '0.1', n: 'a balloon' })[k] + ' on the ' + (i ? 'right' : 'left'));
+    }
+    function setMode(m) {
+      act(function () {
+        mode = m; peek = false; steps = []; tried = [];
+        if (m === 'solve' && anyBag()) steps = [[expr(S[0]) + ' ' + sign() + ' ' + expr(S[1]), '']];
+        last = 'mode';
+      });
+      if ((m === 'solve' || m === 'try') && !anyBag()) newPuzzle();
+    }
+    /* ---- events ---- */
+    var drag = null, eat = false;
+    tray.addEventListener('pointerdown', function (e) { var p = e.target.closest('.mp-bpc'); if (p && !p.disabled) drag = { k: p.getAttribute('data-k'), x: e.clientX, y: e.clientY, g: null }; });
+    function move(e) {
+      if (!drag) return;
+      if (!drag.g && Math.abs(e.clientX - drag.x) + Math.abs(e.clientY - drag.y) > 8) {
+        drag.g = document.createElement('div');
+        drag.g.className = 'mp-ghost mp-bghostd';
+        drag.g.innerHTML = trayIcon(drag.k);
+        document.body.appendChild(drag.g);
+      }
+      if (drag.g) { e.preventDefault(); drag.g.style.transform = 'translate(' + (e.clientX - 14) + 'px,' + (e.clientY - 20) + 'px)'; }
+    }
+    function up(e) {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (!d.g) return;
+      d.g.remove(); eat = true;
+      var m = mat.getBoundingClientRect();
+      if (e.type !== 'pointerup' || e.clientX < m.left || e.clientX > m.right || e.clientY < m.top || e.clientY > m.bottom) return;
+      put(d.k, e.clientX < m.left + m.width / 2 ? 0 : 1);
+    }
+    window.addEventListener('pointermove', move, { passive: false });
+    window.addEventListener('pointerup', up);
+    window.addEventListener('pointercancel', up);
+    tray.addEventListener('click', function (e) { if (eat) { eat = false; return; } var p = e.target.closest('.mp-bpc'); if (p) put(p.getAttribute('data-k')); });
+    qs('.mp-bdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) setMode(b.getAttribute('data-m')); });
+    snapsEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('mp-fkin')) { e.preventDefault(); setUp(); } });
+    mat.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'), it = e.target.closest('.mp-bit'), pan = e.target.closest('.mp-bpan');
+      if (s) {
+        var a = s.getAttribute('data-a'), v = s.getAttribute('data-v');
+        if (a === 'clear') act(function () { S = [[], []]; steps = []; tried = []; peek = false; last = 'clear'; });
+        if (a === 'take') both(function () { S.forEach(function (sd) { takeFrom(sd, +v); }); }, 'take ' + num(+v) + ' from both');
+        if (a === 'takex') both(function () { S.forEach(function (sd) { sd.splice(sd.lastIndexOf('x'), 1); }); }, 'take x from both');
+        if (a === 'add') both(function () { S.forEach(function (sd) { sd.push(v); }); }, 'add ' + (v === 'n' ? '−1' : '1') + ' to both');
+        if (a === 'pairs') both(function () { S.forEach(function (sd) { while (count(sd, 'n') && (ones(sd) || count(sd, 'r'))) { if (!ones(sd)) sd.splice(sd.lastIndexOf('r'), 1, 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c', 'c'); sd.splice(lastOne(sd), 1); sd.splice(sd.lastIndexOf('n'), 1); } }); }, 'cancel each 1 with a −1');
+        if (a === 'split') both(function () { var n = +v; S = S.map(function (sd) { return build(bags(sd) / n, con(sd) / n); }); }, 'split both into ' + v);
+        if (a === 'peek') act(function () { peek = !peek; last = 'peek'; });
+        if (a === 'new') newPuzzle();
+        if (a === 'type') setUp();
+        if (a === 'goal') act(function () { goal = v; last = 'goal'; });
+        if (a === 'tv') act(function () { tv = +(tv + +v).toFixed(4); last = 'try'; });
+        return;
+      }
+      if (it) { var si = +it.getAttribute('data-s'), ii = +it.getAttribute('data-i'); act(function () { S[si].splice(ii, 1); sel = si; if (mode === 'solve') steps = []; if (mode === 'try') tried = []; last = 'remove'; }); return; }
+      if (pan) { sel = +pan.getAttribute('data-side'); draw(); }
+    });
+    T.put = put;
+    T.undo = function () {
+      if (!hist.length) return;
+      var s = JSON.parse(hist.pop());
+      S = s.S; sel = s.sel; mode = s.mode; xv = s.xv; peek = s.peek; steps = s.steps; tv = s.tv; goal = s.goal; tried = s.tried; last = 'undo';
+      draw(); change();
+    };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0, lh = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth, h = mat.clientHeight; if (w && (w !== lw || Math.abs(h - lh) > 2)) { lw = w; lh = h; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+  M.balance = function (root, o) { return toolBal(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -3513,6 +3960,8 @@
       '<rect x="5" y="15" width="38" height="18" rx="2" style="fill:var(--card,#fff);stroke:var(--accent,#0b6e78);stroke-width:2"/><rect x="5" y="15" width="19" height="18" rx="2" style="fill:#7646bf"/><path d="M24 15v18M14.5 15v18M33.5 15v18" style="stroke:var(--accent,#0b6e78);stroke-width:1.5"/>'],
     ['areagrid', 'parts', 'Area grid', 'Tap squares to cover a shape and count its area.', { cols: 10, rows: 6 },
       '<g style="fill:#c25a12"><rect x="7" y="9" width="9" height="9" rx="1"/><rect x="18" y="9" width="9" height="9" rx="1"/><rect x="29" y="9" width="9" height="9" rx="1"/><rect x="7" y="20" width="9" height="9" rx="1"/><rect x="18" y="20" width="9" height="9" rx="1"/><rect x="29" y="20" width="9" height="9" rx="1"/></g><g style="fill:var(--line,#dfe5ee)"><rect x="7" y="31" width="9" height="9" rx="1"/><rect x="18" y="31" width="9" height="9" rx="1"/><rect x="29" y="31" width="9" height="9" rx="1"/></g>'],
+    ['balance', 'alg', 'Balance', '', { tool: true },
+      '<path d="M24 12L18 40h12Z" style="fill:var(--line,#dfe5ee)"/><path d="M8 14h32" style="stroke:var(--ink,#132039);stroke-width:3;stroke-linecap:round"/><path d="M8 14l-5 12h10ZM40 14l-5 12h10Z" style="fill:none;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-linejoin:round"/><rect x="4" y="20" width="5" height="5" rx="1" style="fill:var(--mp-ones,#e0a100)"/><path d="M36 26q4-7 8 0Z" style="fill:#8a6a3b"/>'],
     ['tiles', 'alg', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true },
       '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
     ['geoboard', 'space', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 },
@@ -3571,5 +4020,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();
