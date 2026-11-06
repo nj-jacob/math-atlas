@@ -458,6 +458,61 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
   }
 
+  /* 3a8. Toolbox fraction kit, Ratio (Grade 3 and up): scaling up a ratio in groups; Grade 4 a rate; Grade 6 part of the whole
+     and the price for 1; Grade 7 adding the same to both (off the graph's line); Grade 8 comparing two mixes and a missing number. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('fractions') && Atlas.grade >= 3)) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/fractions'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-fkt .mp-read').textContent.replace(/\u00a0/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox fraction kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const go = async m => { if (!(await page.isVisible('.mp-fkdo [data-m=' + m + ']'))) await page.click('.mp-fkdo [data-set]:not([aria-pressed=true])'); await page.click('.mp-fkdo [data-m=' + m + ']'); };
+    const view = v => page.click('.mp-snap[data-a=rv][data-v="' + v + '"]');
+    const more = async n => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a=rk][data-v="1"]'); };
+    const thing = async t => { if (await page.isVisible('[data-rt=' + t + ']')) await page.click('[data-rt=' + t + ']'); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    const on = await page.evaluate(() => { const b = document.querySelector('.mp-fkdo [data-m][aria-pressed=true]'); return b && b.getAttribute('data-m'); });
+    if (on) await go(on);
+    await go('ratio');
+    const vOn = await page.evaluate(() => { const b = document.querySelector('.mp-snap[data-a=rv][aria-pressed=true]:not([data-v=""])'); return b && b.getAttribute('data-v'); });
+    if (vOn) await view(vOn);
+    await thing('beads');
+    while (await page.isEnabled('.mp-snap[data-a=rk][data-v="-1"]')) await page.click('.mp-snap[data-a=rk][data-v="-1"]');
+    if (g === 3) {
+      await more(2);
+      await bad('1 to 5 = 2 to 10 = 3 to 15', '3 groups of 1 red and 5 blue');
+      if (await page.locator('.mp-rg').count() !== 3) fail(where, 'Toolbox fraction kit: Ratio does not show 3 groups of counters');
+    } else if (g === 4) {
+      await thing('apples'); await more(3);
+      await bad('4 × 3 = 12', '3 apples for each of 4 children');
+    } else {
+      await more(3);
+      await bad('2 : 3 = 4 : 6 = 6 : 9 = 8 : 12', '2 : 3 four times as much');
+      if (await page.locator('.mp-rtbl td.hi').count() !== 2) fail(where, 'Toolbox fraction kit: the ratio table does not mark 8 and 12');
+    }
+    if (g >= 6) {
+      await thing('juice'); await view('part');
+      await bad('juice is 3 of 5 cups: 60% of the mix', 'part of the whole for 3 : 2');
+      await thing('prices'); await view('one');
+      await bad('4 for $6 = 1 for $1.50', 'the price of 1 apple');
+    }
+    if (g >= 7) {
+      await thing('beads'); await view('add');
+      await bad('2 : 3 → 4 : 5', 'adding 2 to both');
+      if (await page.locator('.mp-rsvg .mp-roff').count() !== 1) fail(where, 'Toolbox fraction kit: the graph does not show 4 : 5 off the line');
+    }
+    if (g >= 8) {
+      await thing('juice'); await view('cmp');
+      await bad('60% of mix A and 37.5% of mix B, so A is stronger', 'comparing 3 : 2 with 3 : 5');
+      await view('miss');
+      await page.fill('.mp-fkin', '3 : 5 = ? : 20'); await page.press('.mp-fkin', 'Enter');
+      await bad('the missing number is 4 times 3: 12', 'solving 3 : 5 = ? : 20');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
+    await go('ratio');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {

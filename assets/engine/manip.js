@@ -1813,11 +1813,13 @@
     var gr = window.Atlas && +Atlas.grade || 0, early = !!gr && gr <= 2, mid = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
     var FD = g5 ? FK_D.concat(12) : FK_D, DEC = g6 ? [10, 100, 1000] : g5 ? [10, 100] : mid ? [10] : [];
     var CUTS = mid ? [2, 3, 4, 5, 10] : [2, 3, 4, 5];
-    var WINS = [['s', 'Strips'], ['c', 'Circle'], ['k', 'Counters'], ['n', 'Number line']].concat(mid ? [['g', 'Grid']] : [], g7 ? [['a', 'Area']] : [], mid ? [['y', 'Symbols']] : []);
+    var WINS = [['s', 'Strips'], ['c', 'Circle'], ['k', 'Counters'], ['n', 'Number line']].concat(mid ? [['g', 'Grid']] : [], g7 ? [['a', 'Area']] : [], mid ? [['y', 'Symbols']] : [],
+      /* the Ratio windows (two-letter keys) show only in Ratio, and the windows above only outside it */
+      gr === 3 || gr === 4 ? [['rk', 'Counters'], ['rt', 'Table'], ['ry', 'Symbols']] : [['rk', 'Counters'], ['rb', 'Bar'], ['rd', 'Double number line'], ['rt', 'Table']].concat(g7 ? [['rp', 'Graph']] : [], [['ry', 'Symbols']]));
     var DO = [['share', 'Share'], ['split', 'Split']].concat(g5 ? [['join', 'Join']] : [], [['line', 'Line up'], ['fill', 'Fill wholes'], ['count', 'Count on']],
-      g5 ? [['comb', 'Combine']] : [], mid ? [['groups', 'Groups of']] : [], g5 ? [['fit', 'Fit into']] : [], g7 ? [['times', 'Times']] : []);
+      g5 ? [['comb', 'Combine']] : [], mid ? [['groups', 'Groups of']] : [], g5 ? [['fit', 'Fit into']] : [], g7 ? [['times', 'Times']] : [], !gr || gr >= 3 ? [['ratio', 'Ratio']] : []);
     /* with many moves, the Do row shows one set at a time: Explore (show and change an amount) or Calculate (work with two amounts) */
-    var CALC = { comb: 1, groups: 1, fit: 1, times: 1 }, sets = DO.length > 7, dset = 'e', tset = 'f';
+    var CALC = { comb: 1, groups: 1, fit: 1, times: 1, ratio: 1 }, sets = DO.length > 7, dset = 'e', tset = 'f';
     root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray"></div>' +
       '<div class="mp-dmain"><div class="mp-cmode mp-fkwin" role="group" aria-label="See it as"><span>See it as</span>' + WINS.map(function (w) { return '<button type="button" data-w="' + w[0] + '">' + w[1] + '</button>'; }).join('') + '</div>' +
       '<div class="mp-cmode mp-fkdo" role="group" aria-label="Do"><span>Do</span>' + (sets ? '<span class="mp-fkseg" role="group" aria-label="Kind of move"><button type="button" data-set="e">Explore</button><button type="button" data-set="c">Calculate</button></span>' : '') +
@@ -1827,10 +1829,10 @@
     /* state: the amounts (rows of piece sizes, 1 = a whole) and how each row was made (decimal pieces, or a typed number),
        the row pieces go to, the move, the windows on, the amount before the last split, join or packing, the sharing story,
        the piece Count on uses, Combine or Take away, the number of groups, the wholes to fit pieces into, whether Fit into fills
-       an amount instead (Grade 7 and up), and which lined-up amounts are negative (Grade 7 and up) */
-    var rows, tag, sel, mode, win, before, did, share, unit, op, grp, fitW, fitA, neg, shown = false, hist = [], last = '';
+       an amount instead (Grade 7 and up), which lined-up amounts are negative (Grade 7 and up), and the ratio (Grade 3 and up) */
+    var rows, tag, sel, mode, win, before, did, share, unit, op, grp, fitW, fitA, neg, rat, shown = false, hist = [], last = '';
     function fresh() {
-      rows = [[]]; tag = [null]; sel = 0; mode = 'build'; win = { s: 1, c: 0, k: 0, n: 0, g: 0, a: 0, y: 0 }; before = null; did = null; fitA = 0; neg = [];
+      rows = [[]]; tag = [null]; sel = 0; mode = 'build'; win = { s: 1, c: 0, k: 0, n: 0, g: 0, a: 0, y: 0, rk: !g5 ? 1 : 0, rb: g5 ? 1 : 0, rd: g5 ? 1 : 0, rt: 1, rp: 0, ry: 0 }; before = null; did = null; fitA = 0; neg = []; rat = rFresh();
       share = { n: 7, p: 2, dealt: 0, cut: false, thing: 'cookie' }; unit = 4; op = '+'; grp = 3; fitW = 3;
     }
     /* ---- fraction arithmetic ---- */
@@ -1904,6 +1906,8 @@
     /* ---- what each move allows ---- */
     function multi() { return mode === 'line' || mode === 'comb' || mode === 'times' || (mode === 'fit' && fitA); }
     function allowed(k) {
+      if ((k.length === 2) !== (mode === 'ratio')) return false;
+      if (mode === 'ratio') return WINS.some(function (w) { return w[0] === k; });
       if (mode === 'share') return false;
       if (k === 'a') return mode === 'times';
       if (mode === 'times') return k === 's' || k === 'n' || k === 'y';
@@ -1924,6 +1928,7 @@
     }
     /* ---- the tray ---- */
     function trayHtml() {
+      if (mode === 'ratio') return ratioTray();
       if (mode === 'share') {
         return '<small>Things</small><div class="mp-fkstep" data-s="n"><button type="button" data-v="-1" aria-label="One fewer">&minus;</button><b>' + share.n + '</b><button type="button" data-v="1" aria-label="One more">+</button></div>' +
           '<small>People</small><div class="mp-fkstep" data-s="p"><button type="button" data-v="-1" aria-label="One fewer person">&minus;</button><b>' + share.p + '</b><button type="button" data-v="1" aria-label="One more person">+</button></div>' +
@@ -2246,16 +2251,213 @@
       if (!s.each) return say(f[0], f[1]);
       return early ? s.each + ' and ' + words(f[0], f[1]) : s.each + ' ' + f[0] + '/' + f[1];
     }
+    /* ---- Ratio (Grade 3 and up): two amounts compared and scaled up, as counters, a bar, a double number line, a table,
+       a graph (Grade 7 and up) and symbols. Grade 3 uses 1 to 2, 1 to 5 and 1 to 10; Grade 6 adds part of the whole and
+       the amount for 1; Grade 7 adds Add (not proportional) beside Times; Grade 8 compares two mixes and finds a missing number. */
+    var RT = {
+      beads: { name: 'Beads', A: 'Red', B: 'Blue', ca: '#b4283f', cb: '#2f62c4', part: 'beads', more: 'has more red',
+        pair: function (a, b) { return '<b>' + fmt(a) + '</b> red and <b>' + fmt(b) + '</b> blue'; } },
+      juice: { name: 'Juice mix', A: 'Juice', B: 'Water', ca: '#c25a12', cb: '#5aa9d6', part: 'cups', more: 'is stronger',
+        pair: function (a, b) { return '<b>' + fmt(a) + '</b> ' + (a === 1 ? 'cup' : 'cups') + ' of juice and <b>' + fmt(b) + '</b> of water'; } },
+      apples: { name: 'Apples', A: 'Apples', B: 'Children', ca: '#2f9e44', cb: '#7b879c',
+        pair: function (a, b) { return '<b>' + fmt(a) + '</b> ' + (a === 1 ? 'apple' : 'apples') + (b === 1 ? ' for each child' : ' for every <b>' + fmt(b) + '</b> children'); } },
+      prices: { name: 'Prices', A: 'Apples', B: 'Dollars', ca: '#2f9e44', cb: '#9a6e00', money: 1,
+        pair: function (a, b) { return '<b>' + fmt(a) + '</b> ' + (a === 1 ? 'apple' : 'apples') + ' for <b>' + rMoney(b) + '</b>'; } }
+    };
+    var RTS = gr === 3 ? ['beads'] : g6 ? ['beads', 'juice', 'apples', 'prices'] : ['beads', 'juice', 'apples'], R3 = [2, 5, 10];
+    function rFresh() { return { a: gr === 3 ? 1 : 2, b: gr === 3 ? 5 : 3, k: 1, thing: 'beads', v: '', a2: 3, b2: 5, miss: null }; }
+    function rNum(v) { return fmt(+v.toFixed(2)); }
+    function rMoney(v) { return '$' + (Math.abs(v - Math.round(v)) < 1e-9 ? fmt(Math.round(v)) : v.toFixed(2)); }
+    function rSecond(v) { return RT[rat.thing].money ? rMoney(v) : rNum(v); }
+    function rPair(a, b) { return RT[rat.thing].money ? rNum(a) + ' for ' + rMoney(b) : rNum(a) + (gr && gr <= 4 ? ' to ' : ' : ') + rNum(b); }
+    function rPct(n, d) { return String(+(n / d * 100).toFixed(1)) + '%'; }
+    function rMaxK() { return Math.max(1, Math.min(12, Math.floor(120 / Math.max(rat.a, rat.b)))); }
+    /* the columns of the table and double number line: [first, second, highlighted] */
+    function rCols() {
+      var a = rat.a, b = rat.b, k = rat.k, js = [], out = [];
+      if (rat.v === 'miss' && rat.miss) {
+        var m = rat.miss, f = m.f;
+        if (Math.abs(f - Math.round(f)) < 1e-9 && f >= 1 && f <= 12) { for (var j = 1; j <= f; j++) out.push([m.base[0] * j, m.base[1] * j, j === f]); }
+        else out = [[m.base[0], m.base[1], false], [1, m.base[1] / m.base[0], false], [m.t[0], m.t[1], true]].sort(function (p, q) { return p[0] - q[0]; });
+        return out;
+      }
+      for (var i = 1; i <= k; i++) if (k <= 6 || i <= 3 || i === k) js.push(i);
+      if (rat.v === 'one' && a > 1) out.push([1, b / a, true]);
+      return out.concat(js.map(function (i) { return [i * a, i * b, rat.v !== 'one' && i === k && k > 1]; }));
+    }
+    function rTape(list, n) {
+      return '<div class="mp-rtape">' + list.map(function (r) {
+        var u = '';
+        for (var i = 0; i < r[1]; i++) { var gs = r[3] && i && i % r[3] === 0; u += '<i class="' + (gs ? 'gs' : '') + '" style="width:calc(' + (100 / n) + '% - ' + (gs ? 6 : 0) + 'px);background:' + r[2] + '"></i>'; }
+        return '<div><b>' + r[0] + '</b><div class="mp-ru">' + u + '</div></div>';
+      }).join('') + '</div>';
+    }
+    /* one bar of a mix, out of 100%: the first amount and then the second, over a percent scale */
+    function rPartSvg(a, b, W) {
+      var t = RT[rat.thing], n = a + b, w = (W - 40) / n, s = '<svg class="mp-rsvg" width="' + W + '" height="110" viewBox="0 0 ' + W + ' 110" aria-hidden="true">';
+      for (var i = 0; i < n; i++) s += '<rect x="' + (20 + i * w).toFixed(1) + '" y="8" width="' + w.toFixed(1) + '" height="42" rx="7" style="fill:' + (i < a ? t.ca : t.cb) + '" class="mp-rcell"/>';
+      s += '<line class="mp-fkax" x1="20" y1="72" x2="' + (W - 20) + '" y2="72"/>';
+      var at = a / n * 100;
+      for (var p = 0; p <= 100; p += 10) { var X = 20 + p / 100 * (W - 40); s += '<line class="' + (p % 50 ? 'mp-fkt2' : 'mp-fkt1') + '" x1="' + X + '" y1="' + (p % 50 ? 66 : 62) + '" x2="' + X + '" y2="' + (p % 50 ? 78 : 82) + '"/>' + (p % 20 === 0 && (W > 420 || p % 50 === 0) && !(shown && Math.abs(p - at) < (W > 420 ? 9 : 16)) ? '<text x="' + X + '" y="100">' + p + '%</text>' : ''); }
+      var x = 20 + a / n * (W - 40);
+      return s + '<line class="mp-rmark" x1="' + x + '" y1="2" x2="' + x + '" y2="86"/>' + (shown ? '<text class="mp-rpl" x="' + x + '" y="100">' + rPct(a, n) + '</text>' : '') + '</svg>';
+    }
+    function rDnl(W) {
+      var t = RT[rat.thing], cols = rCols(), max = Math.max.apply(null, cols.map(function (c) { return c[0]; })), L = W < 420 ? 64 : 84;
+      var x = function (v) { return L + v / max * (W - L - 24); }, s = '<svg class="mp-rsvg" width="' + W + '" height="150" viewBox="0 0 ' + W + ' 150" aria-hidden="true">';
+      [[42, t.A, t.ca], [110, t.B, t.cb]].forEach(function (q) { s += '<text class="mp-rlab" x="0" y="' + (q[0] + 5) + '" style="fill:' + q[2] + '">' + q[1] + '</text><line class="mp-fkax" x1="' + x(0) + '" y1="' + q[0] + '" x2="' + x(max) + '" y2="' + q[0] + '"/>'; });
+      [[0, 0, false]].concat(cols).forEach(function (c) {
+        var X = x(c[0]), m = rat.v === 'miss' && rat.miss;
+        s += '<line class="' + (c[2] ? 'mp-rmark' : 'mp-rlink') + '" x1="' + X + '" y1="42" x2="' + X + '" y2="110"/>';
+        [[42, c[0], -12, 0], [110, c[1], 30, 1]].forEach(function (q) {
+          var hide = m && c[2] && q[3] === m.at % 2;
+          s += '<line class="mp-fkt1" x1="' + X + '" y1="' + (q[0] - 8) + '" x2="' + X + '" y2="' + (q[0] + 8) + '"/>' + (shown || !q[1] ? '<text class="' + (c[2] ? 'mp-rpl' : '') + '" x="' + X + '" y="' + (q[0] + q[2]) + '">' + (hide ? '?' : q[3] ? rSecond(q[1]) : rNum(q[1])) + '</text>' : '');
+        });
+      });
+      return s + '</svg>';
+    }
+    function rTable() {
+      var t = RT[rat.thing], cols = rCols();
+      return '<table class="mp-rtbl">' + [[t.A, 0], [t.B, 1]].map(function (r) {
+        return '<tr><th>' + r[0] + '</th>' + cols.map(function (c) { return '<td' + (c[2] ? ' class="hi"' : '') + '>' + (shown ? (r[1] ? rSecond(c[1]) : rNum(c[0])) : '') + '</td>'; }).join('') + '</tr>';
+      }).join('') + '</table>';
+    }
+    function rGraph(Z) {
+      var t = RT[rat.thing], a = rat.a, b = rat.b, k = rat.k, pts = [], off = null, i;
+      for (i = 1; i <= Math.max(k, rat.v === 'add' ? 3 : 1); i++) pts.push([i * a, i * b]);
+      if (rat.v === 'add') off = [a + k, b + k];
+      var top = Math.max.apply(null, pts.concat(off ? [off] : []).map(function (p) { return Math.max(p[0], p[1]); }));
+      var st = [1, 2, 5, 10, 20, 25, 50].filter(function (q) { return top / q <= 8; })[0] || 100, max = Math.ceil(top / st) * st;
+      var x = function (v) { return 40 + v / max * Z; }, y = function (v) { return Z + 30 - v / max * Z; }, s = '<svg class="mp-rsvg" width="' + (Z + 60) + '" height="' + (Z + 74) + '" viewBox="0 0 ' + (Z + 60) + ' ' + (Z + 74) + '" aria-hidden="true">';
+      for (i = 0; i <= max; i += st) s += '<line class="mp-rgrid" x1="' + x(i) + '" y1="' + y(0) + '" x2="' + x(i) + '" y2="' + y(max) + '"/><line class="mp-rgrid" x1="' + x(0) + '" y1="' + y(i) + '" x2="' + x(max) + '" y2="' + y(i) + '"/>' +
+        (shown ? '<text class="mp-rsm" x="' + x(i) + '" y="' + (y(0) + 18) + '">' + i + '</text>' + (i ? '<text class="mp-rsm" x="' + (x(0) - 10) + '" y="' + (y(i) + 4) + '" text-anchor="end">' + i + '</text>' : '') : '');
+      s += '<line class="mp-fkax" x1="' + x(0) + '" y1="' + y(0) + '" x2="' + x(max) + '" y2="' + y(0) + '"/><line class="mp-fkax" x1="' + x(0) + '" y1="' + y(0) + '" x2="' + x(0) + '" y2="' + y(max) + '"/>';
+      var e = Math.min(max / a, max / b);
+      s += '<line class="mp-rline" x1="' + x(0) + '" y1="' + y(0) + '" x2="' + x(e * a) + '" y2="' + y(e * b) + '"/>';
+      pts.forEach(function (p) { s += '<circle class="mp-rpt" cx="' + x(p[0]) + '" cy="' + y(p[1]) + '" r="8"/>'; });
+      if (off) s += '<circle class="mp-roff" cx="' + x(off[0]) + '" cy="' + y(off[1]) + '" r="8"/>';
+      return s + '<text class="mp-rlab" x="' + x(max / 2) + '" y="' + (Z + 70) + '" text-anchor="middle" style="fill:' + t.ca + '">' + t.A + '</text><text class="mp-rlab" x="0" y="' + (y(max) - 16) + '" style="fill:' + t.cb + '">' + t.B + '</text></svg>';
+    }
+    function rForms() {
+      var t = RT[rat.thing], a = rat.a, b = rat.b, k = rat.k, g = gcd(a, b), out = [[rPair(a, b), 'ratio']];
+      if (rat.v === 'miss' && rat.miss) { var m = rat.miss; return [[rPair(m.base[0], m.base[1]), 'ratio'], [rPair(m.t[0], m.t[1]), 'the same ratio']]; }
+      if (rat.v === 'cmp') return [[a + '/' + (a + b), 'mix A'], [rPct(a, a + b), 'percent'], [rat.a2 + '/' + (rat.a2 + rat.b2), 'mix B'], [rPct(rat.a2, rat.a2 + rat.b2), 'percent']];
+      if (g > 1) out.push([rPair(a / g, b / g), 'simplest']);
+      if (k > 1 && rat.v !== 'add') out.push([rPair(k * a, k * b), k + ' times as much']);
+      if (g6 && t.part) { var f = simp([a, a + b]); out.push([f[0] + '/' + f[1], t.A.toLowerCase() + ' of the whole'], [rPct(a, a + b), 'percent']); }
+      if (g6 && t.money) out.push([rMoney(b / a), 'for 1 apple']);
+      return out;
+    }
+    function ratioHtml(W) {
+      var t = RT[rat.thing], a = rat.a, b = rat.b, k = rat.k, h = '', miss = rat.v === 'miss';
+      if (miss && !rat.miss) return '<p class="mp-fknote">Type a proportion with one ?, like 3 : 5 = ? : 20.</p>';
+      if (on('rk') && !miss) {
+        var kid = rat.thing === 'apples' && b === 1, n = rat.v === 'add' ? 1 : k, dots = '';
+        if (n * (a + (kid ? 0 : b)) > 150) h += '<div class="mp-fkw"><div class="mp-fkwl">Counters</div><p class="mp-fknote">Too many to show as counters: try the bar.</p></div>';
+        else {
+          for (var i = 0; i < n; i++) dots += '<div class="mp-rg"><div>' + new Array(a + 1).join('<i style="background:' + t.ca + '"></i>') + (kid ? '' : new Array(b + 1).join('<i style="background:' + t.cb + '"></i>')) + '</div><small>' + (kid ? 'Child ' : 'Group ') + (i + 1) + '</small></div>';
+          h += '<div class="mp-fkw"><div class="mp-fkwl">Counters</div><div class="mp-rgs">' + dots + '</div></div>';
+        }
+      }
+      if (on('rb') && !miss) {
+        var bar;
+        if (rat.v === 'part') bar = rPartSvg(a, b, W);
+        else if (rat.v === 'cmp') bar = '<div class="mp-fkwl">Mix A</div>' + rPartSvg(a, b, W) + '<div class="mp-fkwl">Mix B</div>' + rPartSvg(rat.a2, rat.b2, W);
+        else if (rat.v === 'add') {
+          var N = Math.max(k * Math.max(a, b), Math.max(a, b) + k);
+          bar = rTape([[t.A, a, t.ca], [t.B, b, t.cb]], N) + '<div class="mp-fkwl">Add ' + k + ' to both</div>' + rTape([[t.A, a + k, t.ca], [t.B, b + k, t.cb]], N) + '<div class="mp-fkwl">Times ' + k + '</div>' + rTape([[t.A, k * a, t.ca, a], [t.B, k * b, t.cb, b]], N);
+        } else bar = (k * Math.max(a, b) > 60 ? '<p class="mp-fknote">Too long to show as a bar: try the double number line.</p>' : rTape([[t.A, k * a, t.ca, a], [t.B, k * b, t.cb, b]], k * Math.max(a, b)));
+        h += '<!--bar--><div class="mp-fkw"><div class="mp-fkwl">Bar' + (rat.v === 'part' || rat.v === 'cmp' ? ', out of 100%' : '') + '</div>' + bar + '</div><!--/bar-->';
+      }
+      if (on('rd') && rat.v !== 'cmp' && rat.v !== 'add') h += '<div class="mp-fkw"><div class="mp-fkwl">Double number line</div>' + rDnl(W) + '</div>';
+      if (on('rt') && rat.v !== 'cmp' && rat.v !== 'add') h += '<div class="mp-fkw"><div class="mp-fkwl">Table</div>' + rTable() + '</div>';
+      if (on('rp') && !miss && rat.v !== 'cmp') {
+        var side = W >= 600 && on('rb'), gw = '<div class="mp-fkw"><div class="mp-fkwl">Graph</div>' + rGraph(side ? Math.min(220, Math.round(W * 0.34)) : Math.min(W < 500 ? 180 : 260, W - 80)) + '</div>';
+        h = side ? h.replace(/<!--bar-->([\s\S]*)<!--\/bar-->/, function (m, b) { return '<div class="mp-rtwo">' + b + gw + '</div>'; }) : h + gw;
+      }
+      if (on('ry')) h += '<div class="mp-fkw mp-fky"><div class="mp-fkwl">Symbols</div>' + (shown ? '<div class="mp-fksym">' + rForms().map(function (f, i) { return (i ? (f[1] === 'mix B' ? '<em class="mp-rsep"></em>' : '<em>=</em>') : '') + '<span><b>' + stk(f[0]) + '</b><small>' + f[1] + '</small></span>'; }).join('') + '</div>' : '<p class="mp-fknote">Turn on Show number to see the symbols.</p>') + '</div>';
+      return h || '<p class="mp-fknote">Choose a way to see it.</p>';
+    }
+    function ratioRead() {
+      var t = RT[rat.thing], a = rat.a, b = rat.b, k = rat.k, big = '', eq = '';
+      if (rat.v === 'miss') {
+        var m = rat.miss;
+        if (!m) eq = 'Type a proportion with one <b>?</b>, like 3 : 5 = ? : 20';
+        else {
+          big = m.txt;
+          var i = m.at % 2;
+          eq = '<b>' + rNum(m.t[1 - i]) + '</b> is <b>' + rNum(m.f) + '</b> times ' + rNum(m.base[1 - i]) + ', so the missing number is <b>' + rNum(m.f) + '</b> times ' + rNum(m.base[i]) + ': <b>' + rNum(m.x) + '</b>';
+        }
+      } else if (rat.v === 'cmp') {
+        var pa = a / (a + b), pb = rat.a2 / (rat.a2 + rat.b2);
+        big = rPair(a, b) + ' or ' + rPair(rat.a2, rat.b2) + '?';
+        eq = t.A.toLowerCase() + ' is <b>' + rPct(a, a + b) + '</b> of mix A and <b>' + rPct(rat.a2, rat.a2 + rat.b2) + '</b> of mix B, so ' + (Math.abs(pa - pb) < 1e-9 ? 'they are <b>the same mix</b>' : '<b>' + (pa > pb ? 'A' : 'B') + '</b> ' + t.more);
+      } else if (rat.v === 'part') {
+        big = rPair(a, b);
+        eq = t.A.toLowerCase() + ' is <b>' + a + '</b> of <b>' + (a + b) + '</b> ' + t.part + ': <b>' + rPct(a, a + b) + '</b> of the mix';
+      } else if (rat.v === 'one') {
+        big = rPair(a, b) + ' = ' + rPair(1, b / a);
+        eq = (t.money ? 'the price of <b>1</b>' : 'for <b>1</b>') + ': share ' + rSecond(b) + ' by <b>' + a + '</b>';
+      } else if (rat.v === 'add') {
+        big = rPair(a, b) + ' &rarr; ' + rPair(a + k, b + k);
+        eq = a === b ? 'adding the same keeps <b>1 : 1</b> only because the two amounts are equal' : '<b>adding ' + k + '</b> to both changes the mix; <b>times ' + k + '</b> (' + rPair(k * a, k * b) + ') keeps it';
+      } else if (gr && gr <= 4 && rat.thing === 'apples' && b === 1) {
+        big = k + ' &times; ' + a + ' = ' + fmt(k * a);
+        eq = t.pair(a, b) + ', <b>' + k + '</b> ' + (k === 1 ? 'child' : 'children');
+      } else {
+        var js = [];
+        for (var j = 1; j <= k; j++) if (k <= 4 || j === 1 || j === k) js.push(rPair(j * a, j * b));
+        big = js.join(' = ');
+        eq = gr && gr <= 4 ? '<b>' + k + '</b> ' + (k === 1 ? 'group' : 'groups') + ' of ' + t.pair(a, b) : k > 1 ? 'the same ratio, <b>' + k + '</b> times as much' : t.pair(a, b);
+      }
+      return [big, eq];
+    }
+    /* a typed proportion like 3 : 5 = ? : 20 */
+    function rParse(txt) {
+      var m = txt.replace(/\s+/g, '').match(/^(\d+(?:\.\d+)?|\?):(\d+(?:\.\d+)?|\?)=(\d+(?:\.\d+)?|\?):(\d+(?:\.\d+)?|\?)$/);
+      if (!m) return null;
+      var v = m.slice(1, 5), at = v.indexOf('?');
+      if (at < 0 || v.lastIndexOf('?') !== at) return null;
+      v = v.map(function (q) { return q === '?' ? 0 : +q; });
+      if (v.some(function (q, i) { return i !== at && (q <= 0 || q > 1000); })) return null;
+      var bp = at < 2 ? [v[2], v[3]] : [v[0], v[1]], tp = at < 2 ? [v[0], v[1]] : [v[2], v[3]], i = at % 2, f = tp[1 - i] / bp[1 - i], x = f * bp[i];
+      tp[i] = x;
+      return { txt: txt.replace(/\s*:\s*/g, ' : ').replace(/\s*=\s*/g, ' = ').trim(), at: at, base: bp, t: tp, f: f, x: x };
+    }
+    function ratioTray() {
+      var t = RT[rat.thing], cmp = rat.v === 'cmp';
+      function step(key, lab, col, v) { return '<small><i class="mp-rdot" style="background:' + col + '"></i>' + lab + '</small><div class="mp-fkstep" data-r="' + key + '"><button type="button" data-v="-1" aria-label="Less ' + lab.toLowerCase() + '">&minus;</button><b>' + (key.charAt(1) === 'b' && t.money ? '$' + v : v) + '</b><button type="button" data-v="1" aria-label="More ' + lab.toLowerCase() + '">+</button></div>'; }
+      if (rat.v === 'miss') return '';
+      return (gr === 3 ? '<small><i class="mp-rdot" style="background:' + t.ca + '"></i>' + t.A + '</small><div class="mp-fkstep mp-rfix"><b>1</b></div>' : step('ra', (cmp ? 'A: ' : '') + t.A, t.ca, rat.a)) + step('rb', (cmp ? 'A: ' : '') + t.B, t.cb, rat.b) +
+        (cmp ? step('ra2', 'B: ' + t.A, t.ca, rat.a2) + step('rb2', 'B: ' + t.B, t.cb, rat.b2) : '') +
+        (RTS.length > 1 ? '<small>Things</small><div class="mp-fkthings">' + RTS.map(function (k) { return '<button type="button" data-rt="' + k + '" aria-pressed="' + (rat.thing === k) + '">' + RT[k].name + '</button>'; }).join('') + '</div>' : '');
+    }
+    function ratioSnaps() {
+      var t = RT[rat.thing], v = rat.v, h = '';
+      if (v === 'miss') return '<input class="mp-fkin" type="text" autocomplete="off" aria-label="Type a proportion with one question mark" placeholder="3 : 5 = ? : 20">' + btn('rsolve', 'Find it') + btn('rv', 'Find the missing number', true, null, ' data-v="miss"');
+      if (v !== 'cmp' && v !== 'part' && v !== 'one') {
+        if (g7) h += btn('rv', 'Times', v !== 'add', null, ' data-v=""') + btn('rv', 'Add', v === 'add', null, ' data-v="add"');
+        else h += '<span class="mp-hint">' + (gr && gr <= 4 ? (rat.thing === 'apples' && rat.b === 1 ? 'Children' : 'Groups') : 'Times') + '</span>';
+        h += btn('rk', '&minus;', null, rat.k <= 1, ' data-v="-1" aria-label="Less"') + '<b class="mp-fkcount">' + rat.k + '</b>' + btn('rk', '+', null, rat.k >= rMaxK(), ' data-v="1" aria-label="More"');
+      }
+      if (g6 && t.part) h += btn('rv', 'Part of the whole', v === 'part', null, ' data-v="part"');
+      if (g6) h += btn('rv', 'For 1', v === 'one', null, ' data-v="one"');
+      if (g8 && t.part) h += btn('rv', 'Compare two mixes', v === 'cmp', null, ' data-v="cmp"');
+      if (g8) h += btn('rv', 'Find the missing number', false, null, ' data-v="miss"');
+      return h;
+    }
     /* ---- one redraw of everything ---- */
     function draw() {
       tray.innerHTML = stk(trayHtml());
-      tray.classList.toggle('mp-fkshare', mode === 'share');
+      tray.classList.toggle('mp-fkshare', mode === 'share' || mode === 'ratio');
+      tray.classList.toggle('mp-fkrat', mode === 'ratio');
       readout();
       /* the buttons sit over the bottom of the mat; leave room for them, however many rows they wrap to */
       snaps();
       mat.style.paddingBottom = (snapsEl.offsetHeight + 28) + 'px';
       var W = width();
       if (mode === 'share') wins.innerHTML = shareHtml();
+      else if (mode === 'ratio') { wins.style.setProperty('--fkg', '18px'); wins.classList.remove('tight', 'tighter'); wins.innerHTML = stk(ratioHtml(W)); }
       else {
         var any = WINS.some(function (w) { return on(w[0]); }), sOn = on('s') || !any;
         /* fit every window on the mat: draw at full size, then make strips thinner, circles and grids smaller and counters
@@ -2280,13 +2482,14 @@
         }
       }
       wins.style.setProperty('--fkw', W + 'px');
-      qsa('.mp-fkwin button', root).forEach(function (b) { var k = b.getAttribute('data-w'); b.setAttribute('aria-pressed', String(on(k))); b.disabled = !allowed(k); });
+      qsa('.mp-fkwin button', root).forEach(function (b) { var k = b.getAttribute('data-w'); b.setAttribute('aria-pressed', String(on(k))); b.hidden = (k.length === 2) !== (mode === 'ratio'); b.disabled = !allowed(k); });
       if (CALC[mode]) dset = 'c';
       qsa('.mp-fkdo [data-m]', root).forEach(function (b) { var m = b.getAttribute('data-m'); b.setAttribute('aria-pressed', String(m === mode)); b.hidden = sets && (dset === 'c') !== !!CALC[m]; });
       qsa('.mp-fkdo [data-set]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-set') === dset)); });
     }
     function readout() {
       if (!shown) { read.innerHTML = ''; return; }
+      if (mode === 'ratio') { var rr = ratioRead(); read.innerHTML = stk((rr[0] ? '<p class="mp-total"><span class="mp-num">' + rr[0] + '</span></p>' : '') + '<p class="mp-ceq">' + rr[1] + '</p>'); return; }
       var filled = rows.filter(function (r) { return r.length; }), row = filled.length === 1 ? filled[0] : rows[0], ri = rows.indexOf(row);
       var big = '', eq = '', one = oneSize(row), a = amount(row), f = simp(a), wh = row.filter(function (d) { return d === 1; }).length, rest = row.filter(function (d) { return d !== 1; });
       var nd = one ? [row.length, one] : f;
@@ -2404,7 +2607,8 @@
     function sameSize() { var L = 1; rows.slice(0, 2).forEach(function (r) { r.forEach(function (d) { L = lcm(L, d); }); }); return L <= FK_TOP || fkPow(L) ? L : 0; }
     function snaps() {
       var h = '', row = rows[sel] || [], any = rows.some(function (r) { return r.length; }), inp = qs('.mp-fkin', snapsEl), typed = inp ? inp.value : '', focus = inp && document.activeElement === inp;
-      if (mode === 'share') {
+      if (mode === 'ratio') h += ratioSnaps();
+      else if (mode === 'share') {
         var s = shareParts();
         if (s.left >= share.p) h += btn('deal', 'Share one each') + btn('dealall', 'Share them all');
         else if (s.left && !share.cut) h += btn('cut', 'Cut the rest into ' + share.p);
@@ -2440,7 +2644,7 @@
         if (g7) h += btn('fita', 'Into wholes', true, null, ' data-v="0"') + btn('fita', 'Into an amount', false, null, ' data-v="1"');
         h += '<span class="mp-hint">Wholes</span>' + btn('fitw', '&minus;', null, fitW <= 1, ' data-v="-1" aria-label="One fewer whole"') + '<b class="mp-fkcount">' + fitW + '</b>' + btn('fitw', '+', null, fitW >= FK_BIG || (rows[0].length && (fitW + 1) / val(rows[0]) > 120), ' data-v="1" aria-label="One more whole"');
       }
-      if (any && mode !== 'share') h += btn('clear', 'Clear');
+      if (any && mode !== 'share' && mode !== 'ratio') h += btn('clear', 'Clear');
       snapsEl.innerHTML = stk(h);
       var ni = qs('.mp-fkin', snapsEl);
       if (ni) { ni.value = typed; if (focus) ni.focus(); }
@@ -2465,12 +2669,12 @@
       return { row: row, t: pct ? +num + '%' : String(+num) };
     }
     /* ---- moves ---- */
-    function snapshot() { return JSON.stringify({ rows: rows, tag: tag, sel: sel, mode: mode, win: win, before: before, did: did, share: share, unit: unit, op: op, grp: grp, fitW: fitW, fitA: fitA, neg: neg }); }
+    function snapshot() { return JSON.stringify({ rows: rows, tag: tag, sel: sel, mode: mode, win: win, before: before, did: did, share: share, unit: unit, op: op, grp: grp, fitW: fitW, fitA: fitA, neg: neg, rat: rat }); }
     function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
     function change() { if (o.onChange) o.onChange(state(), T); }
     function state() {
       var f = simp(amount(rows[0]));
-      return { mode: mode, rows: rows.map(function (r) { return r.slice(); }), value: f, wins: Object.keys(win).filter(function (k) { return win[k]; }), share: { n: share.n, p: share.p, dealt: share.dealt, cut: share.cut }, op: op, groups: grp, wholes: fitW, last: last };
+      return { mode: mode, rows: rows.map(function (r) { return r.slice(); }), value: f, wins: Object.keys(win).filter(function (k) { return win[k]; }), share: { n: share.n, p: share.p, dealt: share.dealt, cut: share.cut }, op: op, groups: grp, wholes: fitW, ratio: { a: rat.a, b: rat.b, k: rat.k, thing: rat.thing, view: rat.v, a2: rat.a2, b2: rat.b2, missing: rat.miss ? rat.miss.x : null }, last: last };
     }
     function settle() { before = null; did = null; }
     function plain(r) { if (tag[r] && tag[r].t) tag[r] = null; }
@@ -2553,6 +2757,9 @@
       var p = e.target.closest('.mp-fkpc'), st = e.target.closest('.mp-fkstep button'), th = e.target.closest('.mp-fkthings button'), tb = e.target.closest('[data-ts]');
       if (tb) { tset = tb.getAttribute('data-ts'); tray.innerHTML = stk(trayHtml()); return; }
       if (p) add(+p.getAttribute('data-d'), null, p.hasAttribute('data-x'));
+      var rs = st && st.parentNode.getAttribute('data-r'), rth = th && th.getAttribute('data-rt');
+      if (rs) { ratioStep(rs, +st.getAttribute('data-v')); return; }
+      if (rth) { ratioThing(rth); return; }
       if (st) {
         var k = st.parentNode.getAttribute('data-s'), v = +st.getAttribute('data-v'), lim = k === 'n' ? [1, 20] : [2, 10];
         var nv = share[k] + v;
@@ -2583,7 +2790,40 @@
       var ni = qs('.mp-fkin', snapsEl);
       if (ni) { ni.value = ''; ni.focus(); }
     }
-    snapsEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('mp-fkin')) { e.preventDefault(); typeIn(); } });
+    /* ratio moves: the two amounts (Grade 3 picks the second from 2, 5 and 10), the things compared, the view, and a typed proportion */
+    function ratioStep(key, v) {
+      var f = key.slice(1), n;
+      if (gr === 3 && f === 'b') n = R3[R3.indexOf(rat.b) + v];
+      else n = rat[f] + v;
+      if (!(n >= 1 && n <= 12)) { bump(tray, 'mp-shake'); return; }
+      act(function () { rat[f] = n; if (rat.v === 'miss') { rat.v = ''; rat.miss = null; } rat.k = Math.min(rat.k, rMaxK()); last = 'ratio-set'; });
+    }
+    var RSTART = { beads: [2, 3], juice: [3, 2], apples: [3, 1], prices: [4, 6] };
+    function ratioThing(t) {
+      act(function () {
+        rat.thing = t; rat.a = RSTART[t][0]; rat.b = RSTART[t][1]; rat.k = 1; rat.miss = null;
+        if (!RT[t].part && (rat.v === 'part' || rat.v === 'cmp')) rat.v = '';
+        if (rat.v === 'miss') rat.v = '';
+        last = 'thing';
+      });
+    }
+    var RVIEW = { none: g5 ? ['rb', 'rd', 'rt'] : ['rk', 'rt'], part: ['rb', 'ry'], cmp: ['rb', 'ry'], one: ['rd', 'rt'], miss: ['rd', 'rt'], add: ['rb', 'rp'] };
+    function ratioView(v) {
+      act(function () {
+        rat.v = rat.v === v && v !== '' ? '' : v; rat.miss = null;
+        if (rat.v === 'add' && rat.k < 2) rat.k = 2;
+        var w = RVIEW[rat.v] || RVIEW.none;
+        ['rk', 'rb', 'rd', 'rt', 'rp', 'ry'].forEach(function (k) { win[k] = w.indexOf(k) >= 0 ? 1 : 0; });
+        last = 'ratio-view';
+      });
+    }
+    function ratioSolve() {
+      var inp = qs('.mp-fkin', snapsEl), got = inp && rParse(inp.value);
+      if (!got) { if (inp) { bump(inp, 'mp-shake'); announce(T, 'Type a proportion with one ?, like 3 : 5 = ? : 20.'); } return; }
+      act(function () { rat.miss = got; last = 'ratio-solve'; });
+      announce(T, 'The missing number is ' + rNum(got.x));
+    }
+    snapsEl.addEventListener('keydown', function (e) { if (e.key === 'Enter' && e.target.classList.contains('mp-fkin')) { e.preventDefault(); if (mode === 'ratio') ratioSolve(); else typeIn(); } });
     mat.addEventListener('click', function (e) {
       var s = e.target.closest('.mp-snap'), p = e.target.closest('button.mp-fkp'), r = e.target.closest('.mp-fkrow');
       if (s) {
@@ -2627,6 +2867,9 @@
         });
         if (a === 'grp') act(function () { grp += v; last = 'grp'; });
         if (a === 'pick') { sel = v; draw(); }
+        if (a === 'rk') act(function () { rat.k = Math.max(1, Math.min(rMaxK(), rat.k + v)); last = 'ratio-k'; });
+        if (a === 'rv') ratioView(s.getAttribute('data-v'));
+        if (a === 'rsolve') ratioSolve();
         if (a === 'sign') act(function () { neg[sel] = v; settle(); last = 'sign'; });
         if (a === 'fita') act(function () {
           if (v === fitA) return;
@@ -2658,7 +2901,7 @@
     T.undo = function () {
       if (!hist.length) return;
       var s = JSON.parse(hist.pop());
-      rows = s.rows; tag = s.tag; sel = s.sel; mode = s.mode; win = s.win; before = s.before; did = s.did; share = s.share; unit = s.unit; op = s.op; grp = s.grp; fitW = s.fitW; fitA = s.fitA; neg = s.neg; last = 'undo';
+      rows = s.rows; tag = s.tag; sel = s.sel; mode = s.mode; win = s.win; before = s.before; did = s.did; share = s.share; unit = s.unit; op = s.op; grp = s.grp; fitW = s.fitW; fitA = s.fitA; neg = s.neg; rat = s.rat; last = 'undo';
       draw(); change();
     };
     T.canUndo = function () { return hist.length > 0; };
