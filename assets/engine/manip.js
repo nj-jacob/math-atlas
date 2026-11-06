@@ -3940,6 +3940,372 @@
   }
   M.balance = function (root, o) { return toolBal(root, o || {}); };
 
+  /* ================= Pattern builder (Toolbox) =================
+     Make a pattern three ways: Repeat (a core of shapes repeated; letters, claps and from Grade 3 a table of positions),
+     Numbers (start at, then add, take away, multiply or divide each time; on a number line, a number chart (Grades 1 to 3),
+     a table and graph (Grade 4 and up), the rule and any term (Grade 6 and up), negative steps from Grade 7 and fractions in
+     Grade 8) and Grow (Grade 4 and up: tile figures that grow, or shrink from Grade 5, with a table, a graph, and from Grade 6
+     the rule and any step). Grade 7 and up can Compare two linear patterns on one table and graph. */
+  var PP = { ro: ['o', 'r', 'red circle'], bs: ['s', 'b', 'blue square'], yt: ['t', 'y', 'yellow triangle'], gh: ['h', 'g', 'green hexagon'], bo: ['o', 'b', 'blue circle'], rs: ['s', 'r', 'red square'] };
+  var PACT = ['clap', 'snap', 'stamp', 'tap', 'nod', 'jump'], PMAX = 24;
+  function toolPat(root, o) {
+    var T = base(root, 'pat');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var MODES = [['rep', 'Repeat'], ['num', 'Numbers']].concat(g4 ? [['grow', 'Grow']] : [], g7 ? [['cmp', 'Compare']] : []);
+    /* the steps a number pattern can take in this grade, smallest first */
+    var STEPS = (function () {
+      var add = [1, 2, 5, 10].concat(g2 ? [3, 4, 25] : [], g3 ? [50, 100] : [], g4 ? [0.1] : [], g5 ? [0.01] : [], g6 ? [0.5, 0.25] : []), out = [];
+      add.forEach(function (v) { out.push({ op: '+', v: v }, { op: '+', v: -v }); });
+      if (g8) [2, 3, 4].forEach(function (q) { out.push({ op: '+', v: 1 / q, q: q }, { op: '+', v: -1 / q, q: q }); });
+      if (g4) out.push({ op: '×', v: 2 }, { op: '×', v: 10 });
+      if (g5) out.push({ op: '÷', v: 10 });
+      return out.sort(function (a, b) { return a.op === b.op ? a.v - b.v : a.op === '+' ? -1 : b.op === '+' ? 1 : a.op === '×' ? -1 : 1; });
+    }());
+    var SMAX = g3 ? 1000 : g2 ? 100 : 50, SMIN = g7 ? -100 : 0;
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray"></div><div class="mp-dmain"><div class="mp-cmode mp-pdo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-ptray', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Repeat: the core, how many times it shows, the hidden place, the view and the place asked about;
+       Numbers: start, step, how many terms, the hidden term; Grow: step 1 and the change each step, how many steps;
+       Compare: two starts and two rates; the views turned on and the term or step to predict */
+    var P, shown = false, hist = [], last = '';
+    function fresh() {
+      P = { mode: 'rep', core: [], reps: 1, hide: -1, say: '', pos: 0, start: 2, si: idx('+', 2), k: 6, nhide: -1,
+        s1: g6 ? 4 : g5 ? 18 : 2, a: g6 ? 3 : g5 ? -3 : 2, steps: 4, ghide: -1, A: [5, 2], B: [1, 4], ck: 4,
+        view: { table: g3, graph: g4, rule: g6, line: true, chart: false }, at: 20 };
+    }
+    function idx(op, v) { for (var i = 0; i < STEPS.length; i++) if (STEPS[i].op === op && Math.abs(STEPS[i].v - v) < 1e-9) return i; return 0; }
+    /* ---- numbers ---- */
+    function num(v, q) {
+      v = +(+v).toFixed(6);
+      if (q && Math.abs(v * q - Math.round(v * q)) < 1e-6 && Math.abs(v - Math.round(v)) > 1e-9) {
+        var n = Math.round(Math.abs(v) * q), w = Math.floor(n / q), r = n % q;
+        return (v < 0 ? '−' : '') + (w ? w + ' ' : '') + r + '/' + q;
+      }
+      return v < 0 ? '−' + fmt(+(-v).toFixed(4)) : fmt(+v.toFixed(4));
+    }
+    function rule(a, b, x) { x = x || 'n'; var s = a === 0 ? '' : a === 1 ? x : a === -1 ? '−' + x : num(a) + x; if (!s) return num(b); return s + (b > 0 ? ' + ' + num(b) : b < 0 ? ' − ' + num(-b) : ''); }
+    function step() { return STEPS[P.si]; }
+    function apply(v, s) { return +(s.op === '+' ? v + s.v : s.op === '×' ? v * s.v : v / s.v).toFixed(6); }
+    function okVal(v) { return (g7 || v >= -1e-9) && Math.abs(v) <= 100000 && (s1q() || Math.abs(v * 10000 - Math.round(v * 10000)) < 1e-6); }
+    function s1q() { return step().q || 0; }
+    /* the terms of the number pattern; it stops before a number the grade does not use yet */
+    function terms() { var v = P.start, out = [v]; while (out.length < P.k) { v = apply(v, step()); if (!okVal(v)) break; out.push(v); } return out; }
+    function stepWords(s, pre) {
+      if (s.op === '×') return 'multiply by <b>' + s.v + '</b> each time';
+      if (s.op === '÷') return 'divide by <b>' + s.v + '</b> each time';
+      if (s.v < 0 && !g7) return 'take away <b>' + num(-s.v, s.q) + '</b> each ' + pre;
+      return 'add <b>' + num(s.v, s.q) + '</b> each ' + pre;
+    }
+    function stepLab(s) { return s.op === '+' ? (s.v < 0 ? '− ' + num(-s.v, s.q) : '+ ' + num(s.v, s.q)) : s.op + ' ' + s.v; }
+    /* Grow: tiles in step n = a × n + b, where step 1 has s1 */
+    function tiles(n) { return P.s1 + P.a * (n - 1); }
+    function growMax() { var n = 1; while (n < 6 && tiles(n + 1) >= 0 && tiles(n + 1) <= 60) n++; return n; }
+    /* Compare: value at step n = start + rate × n */
+    function cv(p, n) { return p[0] + p[1] * n; }
+    /* ---- Repeat ---- */
+    function whole() { var out = []; for (var r = 0; r < P.reps; r++) out = out.concat(P.core); return out; }
+    function letters() { var seen = []; return P.core.map(function (k) { if (seen.indexOf(k) < 0) seen.push(k); return String.fromCharCode(65 + seen.indexOf(k)); }); }
+    function shapeSvg(k, s, cls) {
+      var p = PP[k], h = s / 2, d = '';
+      if (p[0] === 'o') d = '<circle cx="' + h + '" cy="' + h + '" r="' + (h - 3) + '"/>';
+      if (p[0] === 's') d = '<rect x="4" y="4" width="' + (s - 8) + '" height="' + (s - 8) + '" rx="' + s / 9 + '"/>';
+      if (p[0] === 't') d = '<path d="M' + h + ' 4L' + (s - 3) + ' ' + (s - 5) + 'H3Z" stroke-linejoin="round" stroke-width="3"/>';
+      if (p[0] === 'h') d = '<path d="M' + h + ' 3L' + (s - 4) + ' ' + s * .27 + 'V' + s * .73 + 'L' + h + ' ' + (s - 3) + 'L4 ' + s * .73 + 'V' + s * .27 + 'Z"/>';
+      return '<svg width="' + s + '" height="' + s + '" viewBox="0 0 ' + s + ' ' + s + '" class="mp-psh mp-pc-' + p[1] + (cls ? ' ' + cls : '') + '" aria-hidden="true">' + d + '</svg>';
+    }
+    /* ---- the tray: shapes for Repeat, number steppers for the others ---- */
+    function stepper(id, lab, val, wide) {
+      return '<div class="mp-pst" data-st="' + id + '"><small>' + lab + '</small><b>' + val + '</b><div class="mp-pstr">' +
+        '<button type="button" class="mp-pstb" data-st="' + id + '" data-d="-1" aria-label="' + lab + ': less">&minus;</button><button type="button" class="mp-pstb" data-st="' + id + '" data-d="1" aria-label="' + lab + ': more">+</button></div>' +
+        (wide ? '<div class="mp-pstr"><button type="button" class="mp-pstb" data-st="' + id + '" data-d="-10" aria-label="' + lab + ': 10 less">&minus;10</button><button type="button" class="mp-pstb" data-st="' + id + '" data-d="10" aria-label="' + lab + ': 10 more">+10</button></div>' : '') + '</div>';
+    }
+    function trayHtml() {
+      if (P.mode === 'rep') return '<small>Put on</small>' + Object.keys(PP).map(function (k) { return '<button type="button" class="mp-bpc mp-ppc" data-k="' + k + '" aria-label="Put on a ' + PP[k][2] + '"' + (P.core.length >= 8 ? ' disabled' : '') + '>' + shapeSvg(k, 34) + '<b>' + PP[k][2] + '</b></button>'; }).join('');
+      if (P.mode === 'num') return stepper('start', 'Start at', num(P.start), g2) + stepper('step', 'Each time', stepLab(step()));
+      if (P.mode === 'grow') return stepper('s1', 'Step 1 has', P.s1, g5) + stepper('a', 'Each step', (P.a < 0 ? '− ' + -P.a : '+ ' + P.a));
+      return stepper('A0', 'A starts at', num(P.A[0])) + stepper('A1', 'A grows by', num(P.A[1])) + stepper('B0', 'B starts at', num(P.B[0])) + stepper('B1', 'B grows by', num(P.B[1]));
+    }
+    function nudge(id, d) {
+      act(function () {
+        if (id === 'start') P.start = Math.max(SMIN, Math.min(SMAX, P.start + d));
+        if (id === 'step') P.si = Math.max(0, Math.min(STEPS.length - 1, P.si + (d > 0 ? 1 : -1)));
+        if (id === 's1') P.s1 = Math.max(1, Math.min(g5 ? 40 : 20, P.s1 + d));
+        if (id === 'a') { var a = P.a + d; if (a === 0) a += d; P.a = Math.max(g5 ? -6 : 1, Math.min(6, a)); }
+        if (id === 'at') P.at = Math.max(1, Math.min(100, P.at + d));
+        if (id === 'pos') P.pos = Math.max(1, Math.min(100, P.pos + d));
+        if (id === 'A0' || id === 'B0' || id === 'A1' || id === 'B1') {
+          var p = id[0] === 'A' ? P.A : P.B, j = +id[1], lo = j ? (g8 ? -6 : 0) : (g8 ? -20 : 0), hi = j ? 6 : 20;
+          p[j] = Math.max(lo, Math.min(hi, p[j] + d));
+        }
+        P.nhide = -1; P.ghide = -1;
+        if (P.mode === 'grow') P.steps = Math.min(P.steps, growMax());
+        last = id;
+      });
+    }
+    /* ---- drawing ---- */
+    function nice(span, n) { var r = span / n, p = Math.pow(10, Math.floor(Math.log(r) / Math.LN10)), m = r / p; return (m <= 1 ? 1 : m <= 2 ? 2 : m <= 5 ? 5 : 10) * p; }
+    function graph(series, xs, W, H, q) {
+      var all = [0]; series.forEach(function (s) { s.v.forEach(function (v) { if (v != null) all.push(v); }); });
+      var lo = Math.min.apply(null, all), hi = Math.max.apply(null, all); if (hi - lo < 1e-9) hi = lo + 1;
+      var st = nice(hi - lo, 5); lo = Math.floor(lo / st + 1e-9) * st; hi = Math.ceil(hi / st - 1e-9) * st;
+      var L = 46, B = 34, Tp = 10, R = 14, x0 = xs[0], x1 = xs[xs.length - 1] === x0 ? x0 + 1 : xs[xs.length - 1];
+      var X = function (x) { return L + (x - x0) / (x1 - x0) * (W - L - R); }, Y = function (v) { return Tp + (hi - v) / (hi - lo) * (H - Tp - B); };
+      var s = '<svg class="mp-pgr" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">';
+      for (var v = lo; v <= hi + 1e-9; v += st) s += '<line class="' + (Math.abs(v) < 1e-9 ? 'mp-pgz' : 'mp-pgl') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/><text class="mp-pgy" x="' + (L - 8) + '" y="' + (Y(v) + 4).toFixed(1) + '">' + num(+v.toFixed(6), q) + '</text>';
+      xs.forEach(function (x) { s += '<text class="mp-pgx" x="' + X(x).toFixed(1) + '" y="' + (H - 14) + '">' + x + '</text>'; });
+      series.forEach(function (sr) {
+        var pts = []; xs.forEach(function (x, i) { if (sr.v[i] != null) pts.push(X(x).toFixed(1) + ',' + Y(sr.v[i]).toFixed(1)); });
+        if (sr.line && pts.length > 1) s += '<polyline class="mp-pgline ' + sr.c + '" points="' + pts.join(' ') + '"/>';
+        xs.forEach(function (x, i) { if (sr.v[i] != null) s += '<circle class="mp-pgd ' + sr.c + '" cx="' + X(x).toFixed(1) + '" cy="' + Y(sr.v[i]).toFixed(1) + '" r="6"/>'; });
+      });
+      return s + '</svg>';
+    }
+    function table(head, rows) {
+      return '<table class="mp-ptbl"><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (c, j) { return '<td' + (j && head.length > 2 ? ' class="mp-pt' + j + '"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    }
+    function box(label, inner, cls) { return '<div class="mp-fkw ' + (cls || '') + '"><div class="mp-fkwl">' + label + '</div>' + inner + '</div>'; }
+    function chip(lab, val, on) { return '<div class="mp-pchip' + (on ? ' on' : '') + '"><small>' + lab + '</small><b>' + val + '</b></div>'; }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function drawRep(W) {
+      if (!P.core.length) return '<p class="mp-fknote">Tap shapes to make the core: the part that repeats.</p>';
+      var all = whole(), L = letters(), n = all.length, per = Math.max(P.core.length, Math.floor(W / 62)), s = Math.max(28, Math.min(56, Math.floor(W / Math.min(n, per)) - 12));
+      if (W < 500) s = Math.max(28, Math.min(44, s));
+      var cell = function (k, i) {
+        var c = i % P.core.length, lab = P.say === 'letters' ? L[c] : P.say === 'claps' ? PACT[L[c].charCodeAt(0) - 65] : '';
+        if (i === P.hide) return '<button type="button" class="mp-pcell" data-hid="1" aria-label="Hidden: tap to show"><span class="mp-pq" style="width:' + s + 'px;height:' + s + 'px">?</span>' + (P.view.table && g3 ? '<small>' + (i + 1) + '</small>' : lab ? '<i>?</i>' : '') + '</button>';
+        return '<button type="button" class="mp-pcell" data-i="' + i + '" aria-label="' + PP[k][2] + (i < P.core.length ? ', tap to take it off' : '') + '">' + shapeSvg(k, s) + (lab ? '<i>' + lab + '</i>' : '') + (P.view.table && g3 ? '<small>' + (i + 1) + '</small>' : '') + '</button>';
+      };
+      var h = '<div class="mp-pstrip">';
+      for (var r = 0; r < P.reps; r++) h += '<div class="mp-pgrp' + (r ? '' : ' mp-pcore') + '">' + P.core.map(function (k, j) { return cell(k, r * P.core.length + j); }).join('') + '</div>';
+      h += '</div>';
+      if (g3 && P.view.table) {
+        var kinds = []; P.core.forEach(function (k) { if (kinds.indexOf(k) < 0) kinds.push(k); });
+        h += box('Positions', table(['shape', 'positions'], kinds.map(function (k) { var at = []; all.forEach(function (q, i) { if (q === k) at.push(i === P.hide ? '?' : i + 1); }); return [shapeSvg(k, 26) + ' ' + PP[k][2].split(' ')[1], at.join(', ')]; })), 'mp-pbox');
+      }
+      return h;
+    }
+    function drawLine(v, W) {
+      var lo = Math.min(0, Math.min.apply(null, v)), hi = Math.max.apply(null, v.concat([lo + 1])), st = nice(hi - lo, W < 500 ? 5 : 10), q = s1q();
+      lo = Math.floor(lo / st + 1e-9) * st; hi = Math.ceil(hi / st - 1e-9) * st;
+      var Lm = 24, X = function (x) { return Lm + (x - lo) / (hi - lo) * (W - 2 * Lm); }, s = '<svg class="mp-pnl" width="' + W + '" height="110" viewBox="0 0 ' + W + ' 110" aria-hidden="true">';
+      s += '<line class="mp-fkax" x1="' + (Lm - 10) + '" y1="70" x2="' + (W - Lm + 10) + '" y2="70"/>';
+      var sub = st / (st >= 10 && (hi - lo) / st <= 10 ? 5 : 1);
+      if ((hi - lo) / sub <= 100) for (var t = lo; t <= hi + 1e-9; t += sub) s += '<line class="mp-fkt2" x1="' + X(t).toFixed(1) + '" y1="65" x2="' + X(t).toFixed(1) + '" y2="75"/>';
+      for (t = lo; t <= hi + 1e-9; t += st) s += '<line class="mp-fkt1" x1="' + X(t).toFixed(1) + '" y1="60" x2="' + X(t).toFixed(1) + '" y2="80"/><text x="' + X(t).toFixed(1) + '" y="102">' + num(+t.toFixed(6), q) + '</text>';
+      if (v.length <= 12) for (var i = 0; i + 1 < v.length; i++) {
+        var a = X(v[i]), b = X(v[i + 1]), up = Math.min(44, Math.max(14, Math.abs(b - a) * .6));
+        s += '<path class="mp-pjump" d="M' + a.toFixed(1) + ' 64Q' + ((a + b) / 2).toFixed(1) + ' ' + (64 - up * 1.6).toFixed(1) + ' ' + b.toFixed(1) + ' 64"/>';
+        if (Math.abs(b - a) > 44) s += '<text class="mp-pjl" x="' + ((a + b) / 2).toFixed(1) + '" y="' + (64 - up * .8 - 4).toFixed(1) + '">' + stepLab(step()).replace(' ', '') + '</text>';
+      }
+      v.forEach(function (x, i) { s += i === P.nhide ? '<text class="mp-pnq" x="' + X(x).toFixed(1) + '" y="76">?</text>' : '<circle class="mp-pnd' + (i === v.length - 1 ? ' last' : '') + '" cx="' + X(x).toFixed(1) + '" cy="70" r="8"/>'; });
+      return s + '</svg>';
+    }
+    /* Grades 1 to 3: the hundred block the numbers sit in, coloured */
+    function chartBlock(v) {
+      if (!v.every(function (x) { return x >= 1 && Math.abs(x - Math.round(x)) < 1e-9; })) return null;
+      var b = Math.floor((Math.min.apply(null, v) - 1) / 100) * 100;
+      return Math.max.apply(null, v) <= b + 100 ? b : null;
+    }
+    function drawChart(v, b) {
+      var h = '<div class="mp-pchart">';
+      for (var i = 1; i <= 100; i++) { var x = b + i, j = v.indexOf(x); h += '<span class="' + (j >= 0 ? (j === P.nhide ? 'q' : 'on') : '') + '">' + (j === P.nhide ? '?' : x) + '</span>'; }
+      return h + '</div>';
+    }
+    function predictLine(a, b, n, x) {
+      var v = a * n + b;
+      return (a === 1 ? n : (a === -1 ? '−' + n : num(a) + ' × ' + n)) + (b > 0 ? ' + ' + num(b) : b < 0 ? ' − ' + num(-b) : '') + ' = ' + num(v);
+    }
+    function drawNum(W) {
+      var v = terms(), s = step(), q = s1q(), h = '', wide = W >= 640;
+      if (P.view.line) h += box('Number line', drawLine(v, Math.min(W, 820)), 'mp-pbox');
+      var b = !g4 && P.view.chart ? chartBlock(v) : null;
+      if (b != null) h += box('Number chart', drawChart(v, b), 'mp-pbox');
+      var lin = s.op === '+' && !q;
+      if (shown && g6 && P.view.rule && s.op === '+') h += '<div class="mp-prow">' + chip('rule', rule(+s.v.toFixed(6), +(P.start - s.v).toFixed(6))) + (lin ? chip('term ' + P.at, predictLine(+s.v.toFixed(6), +(P.start - s.v).toFixed(6), P.at), true) : '') + '</div>';
+      var parts = '';
+      if (g4 && P.view.table) parts += box('Table', table(['term', 'value'], v.map(function (x, i) { return [i + 1, i === P.nhide ? '?' : num(x, q)]; })));
+      if (g4 && P.view.graph) parts += box('Graph', graph([{ v: v.map(function (x, i) { return i === P.nhide ? null : x; }), c: 'a', line: s.op === '+' && g6 }], v.map(function (x, i) { return i + 1; }), wide ? 340 : Math.min(W - 10, 300), wide ? 230 : 200, q));
+      if (parts) h += '<div class="mp-prow">' + parts + '</div>';
+      return h;
+    }
+    function drawGrow(W, H) {
+      var n = P.steps, figs = [], maxH = 1, cols = 0, a = Math.abs(P.a);
+      for (var i = 1; i <= n; i++) {
+        var t = tiles(i), f = { t: t, n: i, c: [] };
+        if (P.a > 0) {
+          /* the tiles there before step 1 sit on the left; each step adds a column, the newest one coloured */
+          var base = Math.max(0, P.s1 - P.a), rest = t - base;
+          for (var b = base; b > 0; b -= a) f.c.push([Math.min(a, b), 0, 0]);
+          var full = Math.floor(rest / a), part = rest - full * a;
+          if (part) f.c.push([part, 0, 0]);
+          for (var c = 0; c < full; c++) f.c.push([a, c === full - 1 ? a : 0, 0]);
+        } else {
+          var gone = i > 1 ? a : 0, cnt = t + gone, cc = 0;
+          for (var left = cnt; left > 0; left -= a) { var hgt = Math.min(a, left); f.c.unshift([hgt, 0, Math.max(0, Math.min(hgt, gone - cc))]); cc += hgt; }
+        }
+        f.c.forEach(function (q) { maxH = Math.max(maxH, q[0]); });
+        cols += Math.max(1, f.c.length); figs.push(f);
+      }
+      var gapW = 34 * (n - 1) + 20, u = Math.max(8, Math.min(26, Math.floor((W - gapW) / Math.max(cols, 1)) - 2, Math.floor(Math.min(170, H * .32) / maxH) - 2));
+      var h = '<div class="mp-pfigs">' + figs.map(function (f) {
+        if (f.n - 1 === P.ghide) return '<div class="mp-pfig"><span class="mp-pq" style="width:' + Math.max(44, u * 2) + 'px;height:' + Math.max(44, u * 2) + 'px">?</span><small>step ' + f.n + '</small>' + (shown ? '<b>?</b>' : '') + '</div>';
+        var w = Math.max(1, f.c.length) * (u + 2), hh = maxH * (u + 2), s = '<svg width="' + w + '" height="' + hh + '" viewBox="0 0 ' + w + ' ' + hh + '" aria-hidden="true">';
+        f.c.forEach(function (col, x) { for (var y = 0; y < col[0]; y++) { var cls = y >= col[0] - col[2] ? 'mp-ptg' : col[1] ? 'mp-ptn' : 'mp-ptb'; s += '<rect class="' + cls + '" x="' + (x * (u + 2) + 1) + '" y="' + (hh - (y + 1) * (u + 2) + 1) + '" width="' + u + '" height="' + u + '" rx="' + Math.max(2, u / 6).toFixed(1) + '"/>'; } });
+        return '<div class="mp-pfig">' + s + '</svg><small>step ' + f.n + '</small>' + (shown ? '<b>' + f.t + '</b>' : '') + '</div>';
+      }).join('') + '</div>';
+      var bb = P.s1 - P.a;
+      if (shown && g6 && P.view.rule) h += '<div class="mp-prow">' + chip('rule', rule(P.a, bb)) + chip('step ' + P.at, predictLine(P.a, bb, P.at), true) + '</div>';
+      var v = figs.map(function (f) { return f.n - 1 === P.ghide ? null : f.t; }), parts = '', wide = W >= 640;
+      if (P.view.table) parts += box('Table', table(['step', 'tiles'], figs.map(function (f) { return [f.n, f.n - 1 === P.ghide ? '?' : f.t]; })));
+      if (P.view.graph) parts += box('Graph', graph([{ v: v, c: 'a', line: g6 }], figs.map(function (f) { return f.n; }), wide ? 320 : Math.min(W - 10, 300), wide ? 210 : 190));
+      if (parts) h += '<div class="mp-prow">' + parts + '</div>';
+      return h;
+    }
+    function meet() {
+      var da = P.A[1] - P.B[1], db = P.B[0] - P.A[0];
+      if (!da) return db ? null : 'same';
+      return db / da;
+    }
+    function drawCmp(W) {
+      var xs = []; for (var i = 0; i <= P.ck; i++) xs.push(i);
+      var a = xs.map(function (n) { return cv(P.A, n); }), b = xs.map(function (n) { return cv(P.B, n); }), wide = W >= 640, h = '';
+      if (shown) {
+        var m = meet(), mt = m === 'same' ? 'the same pattern' : m == null ? 'never: same rate' : m < -1e-9 ? 'not after step 0' : Math.abs(m - Math.round(m)) < 1e-9 ? 'step ' + Math.round(m) + ': ' + num(cv(P.A, Math.round(m))) : 'between step ' + Math.floor(m) + ' and ' + Math.ceil(m);
+        h += '<div class="mp-prow">' + chip('A', rule(P.A[1], P.A[0])) + chip('B', rule(P.B[1], P.B[0])) + chip('they meet', mt, true) + '</div>';
+      }
+      h += '<div class="mp-prow">' + box('Table', table(['step', 'A', 'B'], xs.map(function (n, i) { return [n, num(a[i]), num(b[i])]; }))) +
+        box('Graph', graph([{ v: a, c: 'a', line: true }, { v: b, c: 'b', line: true }], xs, wide ? 360 : Math.min(W - 10, 300), wide ? 240 : 200)) + '</div>';
+      return h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      snaps();
+      qsa('.mp-pdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]);
+      win.innerHTML = P.mode === 'rep' ? drawRep(W) : P.mode === 'num' ? drawNum(W) : P.mode === 'grow' ? drawGrow(W, sz[1]) : drawCmp(W);
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var big = '', eq = '';
+      if (P.mode === 'rep') {
+        if (P.core.length) {
+          big = letters().join(' ');
+          eq = 'the core has <b>' + P.core.length + '</b> part' + (P.core.length > 1 ? 's' : '') + ', repeated <b>' + P.reps + '</b> time' + (P.reps > 1 ? 's' : '');
+          if (P.hide >= 0) eq += '. What is at position <b>' + (P.hide + 1) + '</b>?';
+          else if (g3 && P.view.table) { var k = P.core[(P.pos - 1) % P.core.length]; eq += '. Position <b>' + P.pos + '</b> is a <b>' + PP[k][2] + '</b>'; }
+        }
+      } else if (P.mode === 'num') {
+        var v = terms(), q = s1q();
+        big = v.map(function (x, i) { return i === P.nhide ? '?' : num(x, q); }).join(', ') + ', …';
+        eq = 'start at <b>' + num(P.start) + '</b>, ' + stepWords(step(), 'time');
+      } else if (P.mode === 'grow') {
+        var t = []; for (var i = 1; i <= P.steps; i++) t.push(i - 1 === P.ghide ? '?' : tiles(i));
+        big = t.join(', ');
+        eq = 'step 1 has <b>' + P.s1 + '</b> tile' + (P.s1 === 1 ? '' : 's') + ', ' + (P.a > 0 ? 'add <b>' + P.a + '</b>' : 'take away <b>' + -P.a + '</b>') + ' each step';
+      } else {
+        big = 'A = ' + rule(P.A[1], P.A[0]) + ', B = ' + rule(P.B[1], P.B[0]);
+        var hiS = P.A[0] === P.B[0] ? 'A and B start at the same number' : (P.A[0] > P.B[0] ? 'A' : 'B') + ' starts higher', fast = P.A[1] === P.B[1] ? 'they grow at the same rate' : (P.A[1] > P.B[1] ? 'A' : 'B') + ' grows faster';
+        eq = hiS + ', ' + fast;
+      }
+      read.innerHTML = (big ? '<p class="mp-total"><span class="mp-num">' + big + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : '');
+    }
+    function btn(a, t, on, dis, extra) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (extra || '') + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function views(list) { return list.map(function (v) { return btn('view', v[1], !!P.view[v[0]], false, ' data-v="' + v[0] + '"'); }).join(''); }
+    function count(id, lab, val, lo, hi) {
+      return '<span class="mp-hint">' + lab + '</span>' + btn('st', '&minus;', null, val <= lo, ' data-st="' + id + '" data-d="-1" aria-label="' + lab + ': less"') + '<b class="mp-fkcount">' + val + '</b>' + btn('st', '+', null, val >= hi, ' data-st="' + id + '" data-d="1" aria-label="' + lab + ': more"') +
+        (hi >= 50 ? btn('st', '+10', null, val + 10 > hi, ' data-st="' + id + '" data-d="10" aria-label="' + lab + ': 10 more"') : '');
+    }
+    function snaps() {
+      var h = '';
+      if (P.mode === 'rep') {
+        var n = P.core.length;
+        h += btn('rep', 'Repeat the core', null, !n || n * (P.reps + 1) > PMAX) + btn('unrep', 'Take one off', null, P.reps < 2) + btn('hide', P.hide >= 0 ? 'Show it' : 'Hide one', P.hide >= 0, P.reps < 2);
+        h += btn('say', 'Letters', P.say === 'letters', !n, ' data-v="letters"') + (g3 ? '' : btn('say', 'Claps', P.say === 'claps', !n, ' data-v="claps"'));
+        if (g3) { h += views([['table', 'Table']]); if (P.view.table && shown && n) h += count('pos', 'Position', P.pos, 1, 100); }
+        if (n) h += btn('clear', 'Clear');
+      } else if (P.mode === 'num') {
+        var v = terms(), lin = step().op === '+' && !s1q();
+        h += btn('next', 'Next number', null, v.length < P.k || P.k >= 12 || !okVal(apply(v[v.length - 1], step()))) + btn('fewer', 'Take one off', null, P.k <= 2) + btn('nhide', P.nhide >= 0 ? 'Show it' : 'Hide one', P.nhide >= 0, v.length < 3);
+        h += views([['line', 'Number line']].concat(!g4 ? [['chart', 'Number chart']] : [], g4 ? [['table', 'Table'], ['graph', 'Graph']] : [], g6 ? [['rule', 'Rule']] : []));
+        if (g6 && P.view.rule && shown && lin) h += count('at', 'Term', P.at, 1, 100);
+      } else if (P.mode === 'grow') {
+        h += btn('gnext', 'Next step', null, P.steps >= growMax()) + btn('gback', 'Take a step off', null, P.steps <= 1) + btn('ghide', P.ghide >= 0 ? 'Show it' : 'Hide a step', P.ghide >= 0, P.steps < 3);
+        h += views([['table', 'Table'], ['graph', 'Graph']].concat(g6 ? [['rule', 'Rule']] : []));
+        if (g6 && P.view.rule && shown) h += count('at', 'Step', P.at, 1, 100);
+      } else {
+        h += btn('cnext', 'Next step', null, P.ck >= 10) + btn('cback', 'Take a step off', null, P.ck <= 1);
+      }
+      snapsEl.innerHTML = h;
+      if (P.mode === 'num' && !g4) { var cb = qs('[data-v="chart"]', snapsEl); if (cb) cb.disabled = chartBlock(terms()) == null; }
+    }
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() {
+      return { mode: P.mode, core: P.core.slice(), reps: P.reps, letters: P.core.length ? letters().join('') : '', terms: terms(), step: stepLab(step()),
+        tiles: (function () { var t = []; for (var i = 1; i <= P.steps; i++) t.push(tiles(i)); return t; }()), last: last };
+    }
+    function put(k) {
+      if (P.core.length >= 8) { announce(T, 'A core holds up to 8 shapes.'); bump(mat, 'mp-shake'); return; }
+      act(function () { P.core.push(k); while (P.core.length * P.reps > PMAX) P.reps--; P.hide = -1; P.pos = P.core.length * P.reps + 1; last = 'put'; });
+      announce(T, 'Put on a ' + PP[k][2]);
+    }
+    tray.addEventListener('click', function (e) {
+      var p = e.target.closest('.mp-ppc'), s = e.target.closest('.mp-pstb');
+      if (p && !p.disabled) put(p.getAttribute('data-k'));
+      if (s) nudge(s.getAttribute('data-st'), +s.getAttribute('data-d'));
+    });
+    qs('.mp-pdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    mat.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'), c = e.target.closest('.mp-pcell');
+      if (s) {
+        var a = s.getAttribute('data-a'), v = s.getAttribute('data-v');
+        if (a === 'st') return nudge(s.getAttribute('data-st'), +s.getAttribute('data-d'));
+        act(function () {
+          var R = function (lo, hi) { return lo + Math.floor(Math.random() * (hi - lo + 1)); };
+          if (a === 'rep') { P.reps++; P.pos = P.core.length * P.reps + 1; }
+          if (a === 'unrep') { P.reps--; if (P.hide >= P.core.length * P.reps) P.hide = -1; P.pos = P.core.length * P.reps + 1; }
+          if (a === 'hide') P.hide = P.hide >= 0 ? -1 : R(P.core.length, P.core.length * P.reps - 1);
+          if (a === 'say') P.say = P.say === v ? '' : v;
+          if (a === 'view') P.view[v] = !P.view[v];
+          if (a === 'clear') { P.core = []; P.reps = 1; P.hide = -1; }
+          if (a === 'next') P.k++;
+          if (a === 'fewer') { P.k = Math.min(terms().length, P.k) - 1; if (P.nhide >= P.k) P.nhide = -1; }
+          if (a === 'nhide') P.nhide = P.nhide >= 0 ? -1 : R(1, terms().length - 1);
+          if (a === 'gnext') P.steps++;
+          if (a === 'gback') { P.steps--; if (P.ghide >= P.steps) P.ghide = -1; }
+          if (a === 'ghide') P.ghide = P.ghide >= 0 ? -1 : R(1, P.steps - 1);
+          if (a === 'cnext') P.ck++;
+          if (a === 'cback') P.ck--;
+          last = a;
+        });
+        return;
+      }
+      if (c) {
+        if (c.hasAttribute('data-hid')) return act(function () { P.hide = -1; last = 'show'; });
+        var i = +c.getAttribute('data-i');
+        if (i < P.core.length) act(function () { P.core.splice(i, 1); if (!P.core.length) P.reps = 1; P.hide = -1; P.pos = P.core.length * P.reps + 1; last = 'remove'; });
+      }
+    });
+    T.put = put;
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0, lh = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth, h = mat.clientHeight; if (w && (w !== lw || Math.abs(h - lh) > 2)) { lw = w; lh = h; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+  M.patterns = function (root, o) { return toolPat(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -3962,6 +4328,8 @@
       '<g style="fill:#c25a12"><rect x="7" y="9" width="9" height="9" rx="1"/><rect x="18" y="9" width="9" height="9" rx="1"/><rect x="29" y="9" width="9" height="9" rx="1"/><rect x="7" y="20" width="9" height="9" rx="1"/><rect x="18" y="20" width="9" height="9" rx="1"/><rect x="29" y="20" width="9" height="9" rx="1"/></g><g style="fill:var(--line,#dfe5ee)"><rect x="7" y="31" width="9" height="9" rx="1"/><rect x="18" y="31" width="9" height="9" rx="1"/><rect x="29" y="31" width="9" height="9" rx="1"/></g>'],
     ['balance', 'alg', 'Balance', '', { tool: true },
       '<path d="M24 12L18 40h12Z" style="fill:var(--line,#dfe5ee)"/><path d="M8 14h32" style="stroke:var(--ink,#132039);stroke-width:3;stroke-linecap:round"/><path d="M8 14l-5 12h10ZM40 14l-5 12h10Z" style="fill:none;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-linejoin:round"/><rect x="4" y="20" width="5" height="5" rx="1" style="fill:var(--mp-ones,#e0a100)"/><path d="M36 26q4-7 8 0Z" style="fill:#8a6a3b"/>'],
+    ['patterns', 'alg', 'Pattern builder', '', { tool: true },
+      '<circle cx="9" cy="16" r="5" style="fill:#c0392b"/><rect x="17" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="6" y="34" width="6" height="6" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="18" y="28" width="6" height="12" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="30" y="22" width="6" height="18" rx="1" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['tiles', 'alg', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true },
       '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
     ['geoboard', 'space', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 },
@@ -4020,5 +4388,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['balance', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'patterns', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

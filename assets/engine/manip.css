@@ -862,6 +862,75 @@ button.mp-fkp{cursor:pointer}
   .mp-bsteps b{font-size:1rem}
 }
 
+/* ---------- Pattern builder (Toolbox): repeating, number, growing and compared patterns ---------- */
+.mp-patt{--pr:#c0392b;--pb:var(--mp-hund,#2f62c4);--py:var(--mp-ones,#e0a100);--pg:var(--mp-tens,#2f9e44);--pa:var(--mp-hund,#2f62c4);--pbb:#c25a12}
+.mp-pc-r{fill:var(--pr);stroke:var(--pr)}.mp-pc-b{fill:var(--pb);stroke:var(--pb)}.mp-pc-y{fill:var(--py);stroke:var(--py)}.mp-pc-g{fill:var(--pg);stroke:var(--pg)}
+.mp-psh{display:block;overflow:visible;stroke-width:0}
+.mp-ptray{gap:6px}
+.mp-pst{display:flex;flex-direction:column;align-items:center;gap:4px;width:100%;padding:6px 0}
+.mp-pst small{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--ink2,#55627a);text-align:center}
+.mp-pst b{font:800 1.5rem/1.1 var(--display,inherit);color:var(--mink);white-space:nowrap}
+.mp-pstr{display:flex;gap:6px}
+.mp-pstb{min-width:44px;min-height:40px;padding:0 6px;border-radius:12px;border:1.5px solid var(--mline);background:var(--mcard);color:var(--ink2,#55627a);font:700 1rem var(--body,inherit);cursor:pointer}
+.mp-pmat{justify-content:flex-start;overflow-y:auto;padding-bottom:14px}
+.mp-pmat .mp-snaps{position:static;margin-top:auto;padding-top:14px}
+.mp-pwin{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;padding-top:8px}
+.mp-pstrip{display:flex;flex-wrap:wrap;justify-content:center;gap:8px}
+.mp-pgrp{display:flex;gap:4px;padding:8px 6px 6px;border-radius:14px;border:2px dashed var(--mline)}
+.mp-pcore{position:relative;border:2.5px solid var(--accent,#0b6e78);background:var(--at-tint,#e8f3f4)}
+.mp-pcore::before{content:"Core";position:absolute;top:-10px;left:10px;padding:0 6px;background:var(--mcard);border-radius:6px;font-size:.68rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--accent,#0b6e78)}
+.mp-pcell{display:flex;flex-direction:column;align-items:center;gap:2px;padding:0;border:0;background:none;cursor:pointer;color:inherit;font:inherit}
+.mp-pcell i{font:800 1.1rem var(--display,inherit);font-style:normal;color:var(--accent,#0b6e78)}
+.mp-pcell small{font-size:.75rem;font-weight:700;color:var(--at-ink3,#7b879c)}
+.mp-pq{display:grid;place-items:center;border:2.5px dashed var(--accent,#0b6e78);border-radius:12px;font:800 1.4rem var(--display,inherit);color:var(--accent,#0b6e78);box-sizing:border-box}
+.mp-prow{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-start;gap:14px 26px;max-width:100%}
+.mp-pbox{align-items:center;max-width:100%}
+.mp-ptbl{border-collapse:separate;border-spacing:0;border:1px solid var(--mline);border-radius:12px;overflow:hidden;background:var(--mcard)}
+.mp-ptbl th,.mp-ptbl td{padding:5px 14px;text-align:center;border-bottom:1px solid var(--mline)}
+.mp-ptbl th{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2,#55627a);background:color-mix(in srgb,var(--mline) 35%,var(--mcard))}
+.mp-ptbl td{font:800 1.05rem var(--display,inherit);color:var(--mink)}
+.mp-ptbl td svg{display:inline-block;vertical-align:middle;margin-right:4px}
+.mp-ptbl tr:last-child td{border-bottom:0}
+.mp-ptbl .mp-pt1{color:var(--pa)}.mp-ptbl .mp-pt2{color:var(--pbb)}
+.mp-pgr{display:block;max-width:100%;height:auto;overflow:visible}
+.mp-pgl{stroke:color-mix(in srgb,var(--mline) 70%,var(--mcard));stroke-width:1}.mp-pgz{stroke:var(--at-ink3,#7b879c);stroke-width:1.6}
+.mp-pgy{font:700 12px var(--body,inherit);fill:var(--at-ink3,#7b879c);text-anchor:end}.mp-pgx{font:700 12px var(--body,inherit);fill:var(--at-ink3,#7b879c);text-anchor:middle}
+.mp-pgline{fill:none;stroke-width:2.5}.mp-pgline.a{stroke:var(--pa)}.mp-pgline.b{stroke:var(--pbb);stroke-dasharray:6 4}
+.mp-pgd{stroke:var(--mcard);stroke-width:2}.mp-pgd.a{fill:var(--pa)}.mp-pgd.b{fill:var(--pbb)}
+.mp-pnl{display:block;max-width:100%;height:auto;overflow:visible}
+.mp-pnl text{font:700 14px var(--body,inherit);fill:var(--mink);text-anchor:middle}
+.mp-pjump{fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5}
+.mp-pnl .mp-pjl{fill:var(--accent,#0b6e78);font-weight:800;font-size:13px}
+.mp-pnd{fill:var(--accent,#0b6e78);stroke:var(--mcard);stroke-width:2}.mp-pnd.last{fill:var(--mcard);stroke:var(--accent,#0b6e78);stroke-width:2.5}
+.mp-pnl .mp-pnq{fill:var(--accent,#0b6e78);font:800 18px var(--display,inherit)}
+.mp-pchart{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:3px;width:min(380px,100%)}
+.mp-pchart span{box-sizing:border-box;display:grid;place-items:center;aspect-ratio:1;border-radius:6px;font-size:.78rem;font-weight:700;color:var(--ink2,#55627a);background:color-mix(in srgb,var(--mline) 35%,var(--mcard))}
+.mp-pchart span.on{background:var(--accent,#0b6e78);color:#fff}.mp-pchart span.q{border:2px dashed var(--accent,#0b6e78);color:var(--accent,#0b6e78);background:none}
+.mp-pchip{display:flex;align-items:center;gap:8px;min-height:44px;padding:6px 14px;border-radius:14px;background:color-mix(in srgb,var(--mline) 35%,var(--mcard))}
+.mp-pchip small{font-size:.72rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--at-ink3,#7b879c)}
+.mp-pchip b{font:800 1.15rem var(--display,inherit);color:var(--mink);white-space:nowrap}
+.mp-pchip.on{background:var(--at-tint,#e8f3f4)}.mp-pchip.on b{color:var(--accent,#0b6e78)}
+.mp-pfigs{display:flex;flex-wrap:wrap;justify-content:center;align-items:flex-end;gap:14px 34px}
+.mp-pfig{display:flex;flex-direction:column;align-items:center;gap:6px}
+.mp-pfig svg{display:block}
+.mp-pfig small{font-size:.8rem;font-weight:700;color:var(--ink2,#55627a)}
+.mp-pfig b{font:800 1.2rem var(--display,inherit);color:var(--mink)}
+.mp-ptb{fill:var(--pb)}.mp-ptn{fill:var(--py)}.mp-ptg{fill:none;stroke:var(--at-ink3,#9aa6b8);stroke-width:1.5;stroke-dasharray:3 2}
+@media (max-width:700px){
+  .mp-pst{width:auto;padding:2px 4px}
+  .mp-ppc b{display:none}
+  .mp-pst small{font-size:.62rem}
+  .mp-pst b{font-size:1.1rem}
+  .mp-pstr{gap:4px}
+  .mp-pstb{min-width:38px;min-height:36px}
+  .mp-pfigs{gap:10px 16px}
+  .mp-ptbl th,.mp-ptbl td{padding:3px 8px}
+  .mp-ptbl td{font-size:.92rem}
+  .mp-pchip{min-height:38px;padding:4px 10px}
+  .mp-pchip b{font-size:.95rem}
+  .mp-pwin{gap:10px}
+}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

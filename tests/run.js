@@ -571,6 +571,53 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox balance: the page runs off the side of a phone screen');
   }
 
+  /* 3a10. Toolbox pattern builder: a core of 3 shapes repeated 3 times reads A B B; from Grade 3 the table says position 7 of
+     A B C is a red circle; numbers start at 2 and add 2 (2, 4, 6, …); Grade 4 and up grow tiles (2, 4, 6, 8 in Grade 4, 18, 15, 12, 9 in
+     Grade 5, 4, 7, 10, 13 in Grade 6 and up) with a table and graph; Grade 6 and up show the rule 3n + 1 and step 20 (61); Grade 7 and up
+     compare 2n + 5 with 4n + 1 (they meet at step 2); Grade 8 starts at 6 and adds −2 (6, 4, 2, 0, −2). */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('patterns'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/patterns'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-patt .mp-read'), win = () => txt('.mp-patt .mp-pwin');
+    const has = async (t, f) => { for (let i = 0; i < 20; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox patterns: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const put = k => page.click('.mp-ppc[data-k=' + k + ']');
+    const mode = m => page.click('.mp-pdo [data-m=' + m + ']');
+    const snap = (a, v) => page.click('.mp-snap[data-a=' + a + ']' + (v != null ? '[data-v="' + v + '"]' : ''));
+    const nudge = (id, d) => page.click('.mp-pstb[data-st=' + id + '][data-d="' + d + '"]');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await mode('rep');
+    await put('ro'); await put('bs'); await put('bs'); await snap('rep'); await snap('rep'); await snap('say', 'letters');
+    await bad('A B B', 'a red circle and two blue squares');
+    await bad('repeated 3 times', 'a core repeated twice more');
+    if (await page.locator('.mp-pcell').count() !== 9) fail(where, 'Toolbox patterns: 3 repeats of a core of 3 do not show 9 shapes');
+    if (g >= 3) {
+      await snap('clear'); await put('ro'); await put('bs'); await put('yt'); await snap('rep');
+      await bad('Position 7 is a red circle', 'asking about position 7 of A B C');
+      await bad('3, 6', 'the table of positions', win);
+    }
+    await mode('num');
+    await bad('2, 4, 6, 8, 10, 12', 'start at 2, add 2'); await bad('add 2 each time', 'start at 2, add 2');
+    await snap('next'); await bad('12, 14', 'one more number');
+    if (g >= 4) {
+      await mode('grow');
+      await bad(g === 4 ? '2, 4, 6, 8' : g === 5 ? '18, 15, 12, 9' : '4, 7, 10, 13', 'the first growing pattern');
+      if (await page.locator('.mp-pwin .mp-ptbl tbody tr').count() !== 4) fail(where, 'Toolbox patterns: the table does not have a row for each of 4 steps');
+      if (await page.locator('.mp-pwin .mp-pgd').count() !== 4) fail(where, 'Toolbox patterns: the graph does not have a dot for each of 4 steps');
+      if (g >= 6) { await bad('3n + 1', 'the rule of 4, 7, 10, 13', win); await bad('3 × 20 + 1 = 61', 'step 20 of 4, 7, 10, 13', win); }
+    }
+    if (g >= 7) { await mode('cmp'); await bad('step 2: 9', 'where 2n + 5 meets 4n + 1', win); }
+    if (g === 8) {
+      await mode('num');
+      for (let i = 0; i < 4; i++) await nudge('start', 1);
+      for (let i = 0; i < 40 && !(await read()).includes('add −2 each'); i++) await nudge('step', -1);
+      await bad('6, 4, 2, 0, −2', 'start at 6, add −2');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox patterns: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {

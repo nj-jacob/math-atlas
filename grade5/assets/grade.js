@@ -1,7 +1,7 @@
 /* Grade 5 settings for the shared grade app (assets/engine/site.js): chapters, home page text and options. */
 Atlas.setup({
   grade: 5,
-  tools: ['disks', 'base10', 'numberline', 'fractions', 'balance', 'areagrid', 'geoboard', 'coins', 'scale', 'tiles'],
+  tools: ['disks', 'base10', 'numberline', 'fractions', 'balance', 'patterns', 'areagrid', 'geoboard', 'coins', 'scale', 'tiles'],
   meta: [
     { id: 'place-value', title: 'Place Value', sub: 'whole numbers to 100 000', strand: 'B', codes: 'B1.1, B1.2',
       desc: 'Read, write, build, compare and order big numbers.' },
