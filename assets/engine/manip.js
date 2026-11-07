@@ -4828,7 +4828,7 @@
         B.forEach(function (b) {
           var yb = (k + 0.5) * rowH + 5; k++;
           s += '<line class="mp-dtl" x1="' + (x1 + 14) + '" y1="' + ya + '" x2="' + (x2 - 14) + '" y2="' + yb + '"/>' + t(x2, yb + 5, b.s, 'mp-dtx', 'middle') +
-            t(W - 4, yb + 5, a.s + b.s + (shown ? '  ' + frac(a.p[0] * b.p[0], a.p[1] * b.p[1]) : ''), 'mp-dtx2', 'end');
+            t(W - 4, yb + 5, a.s + b.s + (shown ? ' ' + frac(a.p[0] * b.p[0], a.p[1] * b.p[1]) : ''), 'mp-dtx2', 'end');
         });
       });
       return box('Tree diagram: ' + nL + ' outcomes', s + '</svg>');
