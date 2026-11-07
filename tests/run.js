@@ -1009,6 +1009,31 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox place value disks: the page runs off the side of a phone screen');
   }
 
+  /* 3a21. Toolbox times grid: tapping 4 × 6 reads 24, which is in 4 places on the Grade 3 grid (to 10 × 10) and 6 places from Grade 4
+     (to 12 × 12); from Grade 4 the factors of 24 are 1, 2, 3, 4, 6, 8, 12, 24, and from Grade 6 23 is prime; from Grade 6 crossing out
+     the multiples of 2, 3, 5 and 7 leaves 25 primes; from Grade 7 √36 = 6 and √40 is between 6 and 7. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('times'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/times'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-tmt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox times grid: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const mode = m => page.click('.mp-tmdo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await page.click('.mp-tmc[data-rc="4,6"]');
+    await bad('4 × 6 = 24', 'tapping 4 × 6');
+    await bad(g === 3 ? '24 is in 4 places' : '24 is in 6 places', 'the products that are 24');
+    if (g >= 4) { await mode('fac'); await bad('Factors of 24: 1, 2, 3, 4, 6, 8, 12, 24', 'the factors of 24'); }
+    if (g >= 6) {
+      await snap('n-1'); await bad('23 is prime', 'the factors of 23');
+      await mode('pri'); await snap('next', 4); await bad('25 primes up to 100', 'the sieve to 100');
+    }
+    if (g >= 7) { await mode('sq'); await bad('√36 = 6', 'the square root of 36'); await snap('s+1', 4); await bad('between 6 and 7', 'the square root of 40'); }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox times grid: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {

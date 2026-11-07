@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-07
+- Toolbox: new **Times grid** for Grades 3 to 8: the times grid with rectangles and same products, factors and factor pairs (Grade 4 and up), prime numbers by crossing out multiples (Grade 6 and up), and squares and square roots (Grade 7 and up). A new check uses it like a child would.
 - Toolbox: **Place value disks** rebuilt for Grades 3 to 7: columns from thousands up to millions and down to thousandths by grade, Group 10, Break one, × 10 and ÷ 10, and the expanded form (with powers of ten from Grade 7). A new check uses it like a child would.
 - Toolbox: **Algebra tiles** rebuilt for Grades 5 to 8. **Expressions** with Group like terms and Let x = to evaluate; **Equations** with tiles on both sides, doing the same to both sides, Share, and a check of the answer; **Integers** with zero pairs, taking away, and a × b in Grade 8. A new check uses it like a child would.
 - Toolbox: Coins and bills is rebuilt as **Money**. **Count** with Sort, Fewest coins and Break the biggest; **Shop** with price tags, paying and counting up the change (Grade 3 and up, HST and cash rounding from Grade 5); **Budget** with a saving goal (Grade 5 and up); **Interest**, simple and then compound (Grade 6 and up); **Exchange** between currencies (Grade 7 and up). A new check uses it like a child would.

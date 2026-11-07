@@ -7931,6 +7931,151 @@
     return T;
   }
 
+  /* ================= Times grid (Toolbox) =================
+     Show: Times grid (Grade 3 and up: tap a product to light its rectangle and every other place the same product is), Factors (Grade 4
+     and up: every rectangle of a number, its factor pairs, and from Grade 6 prime or composite), Primes (Grade 6 and up: cross out the
+     multiples of 2, 3, 5 and 7 on a 1 to 100 chart) and Squares (Grade 7 and up: a number as the biggest square it holds, square roots,
+     and a square root estimated between two whole numbers). */
+  function toolTimes(root, o) {
+    var T = base(root, 'tms');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-tmt');
+    var gr = window.Atlas && +Atlas.grade || 0, g4 = !gr || gr >= 4, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7;
+    var MODES = [['grid', 'Times grid']].concat(g4 ? [['fac', 'Factors']] : []).concat(g6 ? [['pri', 'Primes']] : []).concat(g7 ? [['sq', 'Squares']] : []);
+    var N = gr && gr < 4 ? 10 : 12, PR = [2, 3, 5, 7];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-tmtr"></div><div class="mp-dmain"><div class="mp-cmode mp-tmdo" role="group" aria-label="Show"><span>Show</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-tmtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the mode; Times grid: the cell picked; Factors: the number; Primes: how many of 2, 3, 5, 7 are crossed out; Squares: the number */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { mode: 'grid', a: 0, b: 0, n: 24, k: 0, s: 36 }; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function step(a, label, v, lo, hi) { return '<div class="mp-mnstep"><span>' + label + '</span>' + btn(a + '-10', '−10', null, v - 10 < lo) + btn(a + '-1', '−', null, v <= lo) + '<b>' + v + '</b>' + btn(a + '+1', '+', null, v >= hi) + btn(a + '+10', '+10', null, v + 10 > hi) + '</div>'; }
+    function factors(n) { var f = []; for (var i = 1; i <= n; i++) if (n % i === 0) f.push(i); return f; }
+
+    /* ======== Times grid ======== */
+    function gridHtml() {
+      var p = P.a * P.b, h = '<div class="mp-tmg" style="--n:' + (N + 1) + '"><span class="mp-tmc hd">×</span>';
+      for (var c = 1; c <= N; c++) h += '<span class="mp-tmc hd' + (c === P.b ? ' on' : '') + '">' + c + '</span>';
+      for (var r = 1; r <= N; r++) {
+        h += '<span class="mp-tmc hd' + (r === P.a ? ' on' : '') + '">' + r + '</span>';
+        for (c = 1; c <= N; c++) {
+          var inR = P.a && r <= P.a && c <= P.b, same = p && r * c === p, pick = r === P.a && c === P.b;
+          h += '<button type="button" class="mp-tmc' + (inR ? ' in' : '') + (same ? ' same' : '') + (pick ? ' pick' : '') + (r === c ? ' dia' : '') + '" data-rc="' + r + ',' + c + '">' + (shown || pick || same ? r * c : '') + '</button>';
+        }
+      }
+      return h + '</div>';
+    }
+    function gridRead() {
+      if (!P.a) return ['', ''];
+      var p = P.a * P.b, pl2 = [];
+      for (var r = 1; r <= N; r++) for (var c = 1; c <= N; c++) if (r * c === p) pl2.push(r + ' × ' + c);
+      return [P.a + ' × ' + P.b + ' = ' + p, P.a + ' rows of ' + P.b + (P.a !== P.b ? ', and turned, ' + P.b + ' × ' + P.a + ' = ' + p : ' make a square') + (pl2.length > 2 ? '. <b>' + p + '</b> is in ' + pl2.length + ' places: ' + pl2.join(', ') : '')];
+    }
+
+    /* ======== Factors ======== */
+    function facHtml() {
+      var n = P.n, F = factors(n), h = step('n', 'Number', n, 1, 100) + '<div class="mp-tmrects">';
+      F.filter(function (a) { return a <= n / a; }).forEach(function (a) {
+        var b = n / a, sz = Math.max(4, Math.min(14, Math.floor(220 / Math.max(b, 1))));
+        h += '<figure class="mp-tmrect"><div class="mp-tmdots" style="--c:' + b + ';--s:' + sz + 'px">' + new Array(n + 1).join('<i></i>') + '</div><figcaption>' + a + ' × ' + b + '</figcaption></figure>';
+      });
+      return h + '</div>';
+    }
+    function facRead() {
+      var n = P.n, F = factors(n), pairs = F.filter(function (a) { return a <= n / a; }).length;
+      var kind = n === 1 ? '1 is neither prime nor composite' : F.length === 2 ? n + ' is <b>prime</b>: only 1 × ' + n : n + ' is <b>composite</b>';
+      return [F.length + ' factors', 'Factors of ' + n + ': <b>' + F.join(', ') + '</b>. ' + pl(pairs, 'factor pair', 'factor pairs') + (g6 ? '. ' + kind : '')];
+    }
+
+    /* ======== Primes ======== */
+    function crossed(v) { for (var i = 0; i < P.k; i++) { var q = PR[i]; if (v !== q && v % q === 0) return q; } return 0; }
+    function priHtml() {
+      var h = '<div class="mp-tmp">';
+      for (var v = 1; v <= 100; v++) {
+        var x = crossed(v), pr = PR.slice(0, P.k).indexOf(v) >= 0 || P.k === 4 && !x && v > 1;
+        h += '<span class="mp-tmpc' + (v === 1 ? ' one' : '') + (x ? ' x x' + x : '') + (pr ? ' pr' : '') + '">' + v + '</span>';
+      }
+      return h + '</div>';
+    }
+    function priRead() {
+      if (!P.k) return ['', 'Cross out the multiples of 2 first. 2 stays: it is prime'];
+      var left = 0; for (var v = 2; v <= 100; v++) if (!crossed(v)) left++;
+      var done = PR.slice(0, P.k).join(', ');
+      return [P.k === 4 ? '25 primes' : left + ' left', 'Crossed out the multiples of ' + done + '. ' + (P.k === 4 ? 'Every number left is <b>prime</b>: 25 primes up to 100' : '<b>' + left + '</b> numbers left from 2 to 100')];
+    }
+
+    /* ======== Squares ======== */
+    function sqHtml() {
+      var n = P.s, r = Math.floor(Math.sqrt(n)), extra = n - r * r, sz = Math.max(8, Math.min(26, Math.floor(260 / (r + 1)))), h = step('s', 'Number', n, 1, 225);
+      h += '<div class="mp-tmsq" style="--s:' + sz + 'px"><div class="mp-tmdots sq" style="--c:' + r + '">' + new Array(r * r + 1).join('<i></i>') + '</div>';
+      if (extra) h += '<div class="mp-tmdots ex" style="--c:' + Math.ceil(extra / (r + 1)) + '">' + new Array(extra + 1).join('<i></i>') + '</div>';
+      return h + '</div>';
+    }
+    function sqRead() {
+      var n = P.s, r = Math.floor(Math.sqrt(n));
+      if (r * r === n) return ['√' + n + ' = ' + r, r + '² = ' + r + ' × ' + r + ' = <b>' + n + '</b>, so ' + n + ' is a perfect square and √' + n + ' = <b>' + r + '</b>'];
+      return ['√' + n + ' ≈ ' + fmt(Math.round(Math.sqrt(n) * 10) / 10), n + ' is between ' + r + '² = ' + r * r + ' and ' + (r + 1) + '² = ' + (r + 1) * (r + 1) + ', so √' + n + ' is between <b>' + r + '</b> and <b>' + (r + 1) + '</b>, about ' + fmt(Math.round(Math.sqrt(n) * 10) / 10)];
+    }
+
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'grid') return '<small>Times grid</small><p class="mp-fknote">Tap a square to see its rectangle.</p>';
+      if (m === 'fac') return '<small>Factors</small><p class="mp-fknote">Every rectangle you can make with this many squares.</p>';
+      if (m === 'pri') return '<small>Primes</small><p class="mp-fknote">A prime has exactly 2 factors: 1 and itself.</p>';
+      return '<small>Squares</small><p class="mp-fknote">The biggest square inside the number, and what is left.</p>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'grid' ? gridRead() : m === 'fac' ? facRead() : m === 'pri' ? priRead() : sqRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'grid') h += btn('gclr', 'Clear', null, !P.a);
+      if (m === 'pri') h += btn('next', P.k < 4 ? 'Cross out multiples of ' + PR[P.k] : 'All done', null, P.k >= 4) + btn('pclr', 'Start again', null, !P.k);
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-tmdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var m = P.mode;
+      win.innerHTML = '<div class="mp-tmwin">' + (m === 'grid' ? gridHtml() : m === 'fac' ? facHtml() : m === 'pri' ? priHtml() : sqHtml()) + '</div>';
+      snaps();
+    }
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, last: last }; }
+    qs('.mp-tmdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    function onSnap(a) {
+      act(function () {
+        var mm = /^([ns])([+-]\d+)$/.exec(a);
+        if (mm) { if (mm[1] === 'n') P.n = clamp(P.n + +mm[2], 1, 100); else P.s = clamp(P.s + +mm[2], 1, 225); }
+        if (a === 'gclr') { P.a = 0; P.b = 0; }
+        if (a === 'next' && P.k < 4) P.k++;
+        if (a === 'pclr') P.k = 0;
+        last = a;
+      });
+    }
+    snapsEl.addEventListener('click', function (e) { var s = e.target.closest('.mp-snap'); if (s) onSnap(s.getAttribute('data-a')); });
+    win.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (s) { onSnap(s.getAttribute('data-a')); return; }
+      var c = e.target.closest('[data-rc]'); if (!c) return;
+      var rc = c.getAttribute('data-rc').split(',').map(Number);
+      act(function () { if (P.a === rc[0] && P.b === rc[1]) { P.a = 0; P.b = 0; } else { P.a = rc[0]; P.b = rc[1]; } last = 'cell'; });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+  M.times = function (root, o) { return toolTimes(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -7951,6 +8096,8 @@
       '<rect x="5" y="15" width="38" height="18" rx="2" style="fill:var(--card,#fff);stroke:var(--accent,#0b6e78);stroke-width:2"/><rect x="5" y="15" width="19" height="18" rx="2" style="fill:#7646bf"/><path d="M24 15v18M14.5 15v18M33.5 15v18" style="stroke:var(--accent,#0b6e78);stroke-width:1.5"/>'],
     ['areagrid', 'parts', 'Arrays and area model', '', { tool: true },
       '<g style="fill:#c25a12"><rect x="7" y="9" width="9" height="9" rx="1"/><rect x="18" y="9" width="9" height="9" rx="1"/><rect x="29" y="9" width="9" height="9" rx="1"/><rect x="7" y="20" width="9" height="9" rx="1"/><rect x="18" y="20" width="9" height="9" rx="1"/><rect x="29" y="20" width="9" height="9" rx="1"/></g><g style="fill:var(--line,#dfe5ee)"><rect x="7" y="31" width="9" height="9" rx="1"/><rect x="18" y="31" width="9" height="9" rx="1"/><rect x="29" y="31" width="9" height="9" rx="1"/></g>'],
+    ['times', 'parts', 'Times grid', '', { tool: true },
+      '<rect x="6" y="6" width="36" height="36" rx="4" style="fill:var(--card,#fff);stroke:var(--ink2,#55627a);stroke-width:1.5"/><rect x="6" y="6" width="21" height="15" rx="2" style="fill:var(--mp-hund,#2f62c4);opacity:.75"/><path d="M6 15h36M6 24h36M6 33h36M15 6v36M24 6v36M33 6v36" style="stroke:var(--ink2,#55627a);stroke-width:1"/>'],
     ['balance', 'alg', 'Balance', '', { tool: true },
       '<path d="M24 12L18 40h12Z" style="fill:var(--line,#dfe5ee)"/><path d="M8 14h32" style="stroke:var(--ink,#132039);stroke-width:3;stroke-linecap:round"/><path d="M8 14l-5 12h10ZM40 14l-5 12h10Z" style="fill:none;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-linejoin:round"/><rect x="4" y="20" width="5" height="5" rx="1" style="fill:var(--mp-ones,#e0a100)"/><path d="M36 26q4-7 8 0Z" style="fill:#8a6a3b"/>'],
     ['patterns', 'alg', 'Pattern builder', '', { tool: true },
@@ -8019,5 +8166,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'times', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();
