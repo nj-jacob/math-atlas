@@ -5083,6 +5083,487 @@
   }
   M.data = function (root, o) { return toolData(root, o || {}); };
 
+  /* ================= Grid and robot (Toolbox) =================
+     Make: Robot (code from blocks: arrows in Grades 1 and 2, two robots at the same time from Grade 2, forward and quarter turns and
+     Repeat from Grade 3, a repeat inside a repeat from Grade 4, If wall ahead and Repeat until at the goal from Grade 5, My block
+     (a sub-program) from Grade 7), Map (Grades 1 to 3: places on a grid map and directions between two of them), Plot (Grade 4 and up:
+     points on a coordinate grid, scales from Grade 5, four quadrants from Grade 6) and Move (Grade 4 and up: slide and flip, turn from
+     Grade 5, then another move from Grade 6, grow from Grade 7). Show number shows the counts, directions and coordinates. */
+  var GDX = [0, 1, 0, -1], GDY = [-1, 0, 1, 0], GDN = ['up', 'right', 'down', 'left'];
+  var GBLK = { U: ['↑ up', 'mv'], R: ['→ right', 'mv'], D: ['↓ down', 'mv'], L: ['← left', 'mv'], F: ['forward', 'mv'], TL: ['turn left', 'tn'], TR: ['turn right', 'tn'], TA: ['turn around', 'tn'],
+    REP: ['repeat', 'rp'], IF: ['if wall ahead', 'cd'], UNTIL: ['repeat until at the goal', 'rp'], MY: ['my block', 'my'] };
+  var GPLACES = [['school', 'S', 1], ['pond', 'P', 0], ['swings', 'W', 5], ['tree', 'T', 3], ['bench', 'B', 4], ['house', 'H', 2]];
+  var GMAZES = [
+    { s: [0, 0, 1], g: [7, 5], w: [[1, 1], [2, 1], [3, 1], [4, 1], [5, 1], [6, 1], [6, 2], [6, 3], [5, 3], [4, 3], [3, 3], [2, 3], [1, 3], [1, 4]] },
+    { s: [0, 5, 0], g: [7, 0], w: [[1, 5], [1, 4], [1, 3], [1, 2], [3, 0], [3, 1], [3, 2], [3, 3], [5, 5], [5, 4], [5, 3], [5, 2]] },
+    { s: [0, 2, 1], g: [7, 3], w: [[2, 0], [2, 1], [2, 2], [4, 3], [4, 4], [4, 5], [6, 0], [6, 1], [6, 2], [2, 4], [2, 5]] }
+  ];
+  /* shapes to move: on the 0 to 10 grid (Grades 4 and 5), and near (0, 0) on the four-quadrant grid so a turn or grow stays on it */
+  var GSHAPES = [[[3, 4], [5, 4], [3, 7]], [[2, 2], [2, 6], [5, 5], [2, 4]], [[1, 1], [4, 1], [4, 2], [2, 2], [2, 4], [1, 4]]];
+  var GSHAPES4 = [[[1, 2], [3, 2], [1, 4]], [[1, 0], [1, 4], [3, 3], [1, 2]], [[0, 0], [3, 0], [3, 1], [1, 1], [1, 3], [0, 3]]];
+  function toolGrid(root, o) {
+    var T = base(root, 'grd');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-grt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var early = gr && gr <= 3;
+    var MODES = [['robot', 'Robot']].concat(!g4 || early ? [['map', 'Map']] : [], g4 ? [['plot', 'Plot'], ['move', 'Move']] : []);
+    var COLS = 8, ROWS = 6;
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr"></div><div class="mp-dmain"><div class="mp-cmode mp-gdo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-gtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Robot: the code for robot A and B and My block, the maze, the goal, pen and two robots; Map: where each place is
+       and the two places picked; Plot: the points, the point to add, joined, the scale; Move: the shape, the move and its settings,
+       and earlier moves kept */
+    var P, shown = false, hist = [], last = '', k = 0, tgt = 'A', play = null, pickPlace = '';
+    function fresh() {
+      P = { mode: 'robot',
+        r: { A: [], B: [], my: [], two: false, pen: true, maze: -1, goal: g5 ? [6, 1] : [5, 1] },
+        m: { at: { school: [1, 4], pond: [3, 1], swings: [6, 2], tree: [5, 5], bench: [2, 2] }, from: '', to: '' },
+        p: { pts: [], x: 1, y: 4, join: false, scale: 1 },
+        v: { shape: 0, base: shapes()[0].map(function (q) { return q.slice(); }), move: 'slide', dx: 3, dy: -1, line: 0, turn: 90, about: 0, k: 2, done: [] } };
+      tgt = 'A'; k = 0;
+    }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis, extra) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (extra || '') + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function svgOpen(W, H, cls, lab) { return '<svg class="mp-dsvg ' + (cls || '') + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" ' + (lab ? 'role="img" aria-label="' + lab + '"' : 'aria-hidden="true"') + '>'; }
+    function t(x, y, s, cls, anchor) { return '<text class="' + (cls || 'mp-dtx') + '" x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'; }
+    function n(v) { v = Math.round(v * 100) / 100; return v < 0 ? '−' + fmt(-v) : fmt(v); }
+    function pt(q) { return '(' + n(q[0]) + ', ' + n(q[1]) + ')'; }
+    function stp(id, lab, val) {
+      return '<div class="mp-dans mp-dbig"><small>' + lab + '</small><div class="mp-pstr"><button type="button" class="mp-pstb" data-st="' + id + '" data-d="-1" aria-label="' + lab + ': less">&minus;</button>' +
+        '<b>' + val + '</b><button type="button" class="mp-pstb" data-st="' + id + '" data-d="1" aria-label="' + lab + ': more">+</button></div></div>';
+    }
+    function tbl(head, rows) {
+      return '<table class="mp-ptbl mp-dtbl"><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (c, j) { return '<td' + (j ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
+    }
+
+    /* ======== Robot ======== */
+    function maze() { return P.r.maze >= 0 ? GMAZES[P.r.maze] : null; }
+    function starts() { var z = maze(); return { A: z ? z.s.slice() : [1, 4, 0], B: [1, 1, 0] }; }
+    function goal() { var z = maze(); return z ? z.g : P.r.goal; }
+    function walls() { var z = maze(); return z ? z.w : []; }
+    function blocked(x, y) { return x < 0 || y < 0 || x >= COLS || y >= ROWS || walls().some(function (w) { return w[0] === x && w[1] === y; }); }
+    /* the list a code address points to: A, B or my, then a block number and b (inside) or e (otherwise) */
+    function listAt(addr) {
+      var parts = addr.split('/'), L = P.r[parts[0]];
+      for (var i = 1; i < parts.length; i++) { var b = L[parseInt(parts[i], 10)]; L = b && b[parts[i].slice(-1)]; if (!L) return null; }
+      return L;
+    }
+    function count(L) { var c = 0; L.forEach(function (b) { c++; if (b.b) c += count(b.b); if (b.e) c += count(b.e); }); return c; }
+    function depth(addr) { return addr.split('/').length - 1; }
+    /* run the code and keep every step: where the robot is, which way it faces, the block doing it, and a bump into a wall */
+    function trace(who) {
+      var s = starts()[who], st = { x: s[0], y: s[1], d: s[2] }, out = [], stop = false, G = goal();
+      function rec(at, bump) { out.push({ x: st.x, y: st.y, d: st.d, at: at, bump: !!bump }); if (bump || out.length >= 300) stop = true; }
+      function go(d, at) { var nx = st.x + GDX[d], ny = st.y + GDY[d]; if (blocked(nx, ny)) rec(at, true); else { st.x = nx; st.y = ny; rec(at); } }
+      function run(L, addr, lvl) {
+        for (var i = 0; i < L.length && !stop; i++) {
+          var b = L[i], at = addr + '#' + i, sub = addr + '/' + i;
+          if (b.t === 'U' || b.t === 'R' || b.t === 'D' || b.t === 'L') { st.d = 'URDL'.indexOf(b.t); go(st.d, at); }
+          else if (b.t === 'F') go(st.d, at);
+          else if (b.t === 'TL' || b.t === 'TR' || b.t === 'TA') { st.d = (st.d + (b.t === 'TL' ? 3 : b.t === 'TR' ? 1 : 2)) % 4; rec(at); }
+          else if (b.t === 'REP') for (var r = 0; r < b.n && !stop; r++) run(b.b, sub + 'b', lvl);
+          else if (b.t === 'IF') { if (blocked(st.x + GDX[st.d], st.y + GDY[st.d])) run(b.b, sub + 'b', lvl); else run(b.e, sub + 'e', lvl); }
+          else if (b.t === 'UNTIL') { var guard = 0; while (!stop && !(st.x === G[0] && st.y === G[1]) && guard++ < 60) { var before = out.length; run(b.b, sub + 'b', lvl); if (out.length === before) break; } }
+          else if (b.t === 'MY' && lvl < 3) run(P.r.my, 'my', lvl + 1);
+        }
+      }
+      run(P.r[who], who, 0);
+      return out;
+    }
+    function robotSvg(x, y, s, d, cls) { return '<g class="mp-grob ' + cls + '" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + d * 90 + ')"><rect x="' + (-s / 2) + '" y="' + (-s / 2) + '" width="' + s + '" height="' + s + '" rx="' + s / 4 + '"/><path class="mp-grf" d="M' + (-s * .2) + ' ' + (-s * .04) + 'L0 ' + (-s * .32) + 'L' + (s * .2) + ' ' + (-s * .04) + 'Z"/><circle class="mp-grf" cx="0" cy="' + (s * .17) + '" r="' + (s * .09) + '"/></g>'; }
+    function cellGrid(u, inner, lab) {
+      var W = COLS * u + 2, H = ROWS * u + 2, s = svgOpen(W, H, 'mp-gsv', lab) + '<rect class="mp-gbg" x="1" y="1" width="' + COLS * u + '" height="' + ROWS * u + '" rx="10"/>';
+      for (var i = 1; i < COLS; i++) s += '<line class="mp-gln" x1="' + (1 + i * u) + '" x2="' + (1 + i * u) + '" y1="1" y2="' + (ROWS * u + 1) + '"/>';
+      for (var j = 1; j < ROWS; j++) s += '<line class="mp-gln" y1="' + (1 + j * u) + '" y2="' + (1 + j * u) + '" x1="1" x2="' + (COLS * u + 1) + '"/>';
+      return s + inner + '</svg>';
+    }
+    function C(v, u) { return 1 + v * u + u / 2; }
+    function codeHtml(L, addr, cur) {
+      return L.map(function (b, i) {
+        var at = addr + '#' + i, sub = addr + '/' + i, lab = b.t === 'REP' ? 'repeat' : GBLK[b.t][0], h = '<div class="mp-gb k' + GBLK[b.t][1] + (cur === at ? ' cur' : '') + '"><span>' + lab + '</span>';
+        if (b.t === 'REP') h += '<span class="mp-grn"><button type="button" data-rn="' + at + '" data-d="-1" aria-label="Repeat fewer times">&minus;</button><b>' + b.n + '</b><button type="button" data-rn="' + at + '" data-d="1" aria-label="Repeat more times">+</button></span><span>times</span>';
+        h += '<button type="button" class="mp-gx" data-del="' + at + '" aria-label="Take off ' + lab + '">&#10005;</button></div>';
+        if (b.b) h += box2(sub + 'b', b.t === 'IF' ? 'then' : '', b.b, cur);
+        if (b.e) h += '<div class="mp-gb kcd mp-gelse"><span>otherwise</span></div>' + box2(sub + 'e', '', b.e, cur);
+        return h;
+      }).join('');
+    }
+    function box2(addr, lab, L, cur) { return '<div class="mp-gin' + (tgt === addr ? ' tgt' : '') + '" data-tgt="' + addr + '">' + (L.length ? codeHtml(L, addr, cur) : '<button type="button" class="mp-gadd" data-tgt="' + addr + '">' + (tgt === addr ? 'blocks go here' : 'tap to add here') + '</button>') + '</div>'; }
+    function codePanel(who, cur, title) {
+      var L = P.r[who];
+      return '<div class="mp-gcode' + (tgt === who ? ' tgt' : '') + '" data-tgt="' + who + '"><div class="mp-fkwl">' + title + '</div>' +
+        (L.length ? codeHtml(L, who, cur) : '<button type="button" class="mp-gadd" data-tgt="' + who + '">' + (tgt === who ? 'Tap blocks to add them here' : 'tap to add here') + '</button>') + '</div>';
+    }
+    function drawRobot(W, H) {
+      var two = g2 && P.r.two, trA = trace('A'), trB = two ? trace('B') : [], st = starts(), G = goal(), ww = walls();
+      var side = W >= 700, u = Math.max(30, Math.min(80, Math.floor((side ? W - 300 : W - 4) / COLS), Math.floor((H - (side ? 40 : 250)) / ROWS)));
+      var inner = '';
+      ww.forEach(function (w) { inner += '<rect class="mp-gwall" x="' + (1 + w[0] * u + 3) + '" y="' + (1 + w[1] * u + 3) + '" width="' + (u - 6) + '" height="' + (u - 6) + '" rx="6"/>'; });
+      inner += '<circle class="mp-ggoal" cx="' + C(G[0], u) + '" cy="' + C(G[1], u) + '" r="' + (u * .3) + '"/><circle class="mp-ggoal2" cx="' + C(G[0], u) + '" cy="' + C(G[1], u) + '" r="' + (u * .1) + '"/>';
+      [['A', trA, 'a'], ['B', trB, 'b']].forEach(function (R) {
+        if (R[0] === 'B' && !two) return;
+        var s0 = st[R[0]], tr = R[1], upto = Math.min(k, tr.length), pts = [[s0[0], s0[1]]], cur = { x: s0[0], y: s0[1], d: s0[2] };
+        inner += t(C(s0[0], u), 1 + s0[1] * u + u - 5, 'start', 'mp-gst', 'middle');
+        for (var i = 0; i < upto; i++) { cur = tr[i]; if (pts[pts.length - 1][0] !== cur.x || pts[pts.length - 1][1] !== cur.y) pts.push([cur.x, cur.y]); }
+        if (P.r.pen && pts.length > 1) inner += '<polyline class="mp-gpath ' + R[2] + '" points="' + pts.map(function (q) { return C(q[0], u) + ',' + C(q[1], u); }).join(' ') + '"/>';
+        var bump = upto && tr[upto - 1].bump;
+        inner += robotSvg(C(cur.x, u) + (bump ? GDX[cur.d] * u * .18 : 0), C(cur.y, u) + (bump ? GDY[cur.d] * u * .18 : 0), u * .62, cur.d, R[2] + (bump ? ' bump' : ''));
+      });
+      var curA = k && trA[k - 1] ? trA[k - 1].at : '', curB = k && trB[k - 1] ? trB[k - 1].at : '';
+      var code = '<div class="mp-gcodes">' + codePanel('A', curA, two ? 'Robot A code' : 'Code') + (two ? codePanel('B', curB, 'Robot B code') : '') + (g7 ? codePanel('my', curA.indexOf('my') === 0 ? curA : '', 'My block') : '') + '</div>';
+      return '<div class="mp-grow' + (side ? ' side' : '') + '">' + code + cellGrid(u, inner, 'Robot grid') + '</div>';
+    }
+    /* moves and turns: a step that changes the square is a move, one that does not is a turn, a bump is neither */
+    function stepsOf(tr) { var m = 0, tn = 0, s = starts().A, px = s[0], py = s[1]; tr.forEach(function (e) { if (e.bump) return; if (e.x !== px || e.y !== py) m++; else tn++; px = e.x; py = e.y; }); return [m, tn]; }
+    function robotRead() {
+      var tr = trace('A'), cnt = count(P.r.A) + (g7 ? count(P.r.my) : 0), s = starts().A, G = goal(), done = k >= tr.length && tr.length, e = done ? tr[tr.length - 1] : null, big = pl(cnt, 'block', 'blocks'), eq = '';
+      if (!tr.length || !k) return [big, cnt ? 'Go runs the code.' : ''];
+      var bump = tr.filter(function (x) { return x.bump; })[0];
+      if (done) {
+        var dx = e.x - s[0], dy = s[1] - e.y, sm = stepsOf(tr);
+        if (!g3) eq = (g2 && P.r.two ? 'robot A is ' : 'the robot is ') + (dx || dy ? [dx ? '<b>' + Math.abs(dx) + ' ' + (dx > 0 ? 'right' : 'left') + '</b>' : '', dy ? '<b>' + Math.abs(dy) + ' ' + (dy > 0 ? 'up' : 'down') + '</b>' : ''].filter(Boolean).join(' and ') + ' from the start' : 'back at the start');
+        else eq = '<b>' + sm[0] + '</b> step' + (sm[0] === 1 ? '' : 's') + ' and <b>' + sm[1] + '</b> turn' + (sm[1] === 1 ? '' : 's');
+        if (tr.some(function (x) { return x.x === G[0] && x.y === G[1]; })) eq += '. It reached the goal';
+        if (g3 && e.x === s[0] && e.y === s[1] && tr.length > 1) eq += '. It is back at the start';
+      } else eq = 'step <b>' + k + '</b> of <b>' + tr.length + '</b>';
+      if (bump && (done || k >= tr.indexOf(bump) + 1)) eq += '. It bumped into ' + (blocked(bump.x + GDX[bump.d], bump.y + GDY[bump.d]) && bump.x + GDX[bump.d] >= 0 && bump.x + GDX[bump.d] < COLS && bump.y + GDY[bump.d] >= 0 && bump.y + GDY[bump.d] < ROWS ? 'a wall' : 'the edge') + ' at step <b>' + (tr.indexOf(bump) + 1) + '</b>';
+      return [big, eq];
+    }
+    function addBlock(type) {
+      var L = listAt(tgt) || P.r[tgt = 'A'];
+      if (count(P.r.A) + count(P.r.B) + count(P.r.my) >= 40) { announce(T, 'The code holds up to 40 blocks.'); return; }
+      /* a block that holds blocks can go one level deep in Grade 3 and two levels deep (a repeat inside a repeat) from Grade 4 */
+      if ((type === 'REP' || type === 'IF' || type === 'UNTIL') && depth(tgt) >= (g4 ? 2 : 1)) { announce(T, 'That is as deep as blocks go here.'); bump(mat, 'mp-shake'); return; }
+      if (type === 'MY' && tgt.indexOf('my') === 0) { announce(T, 'My block cannot use itself.'); return; }
+      act(function () {
+        var b = { t: type };
+        if (type === 'REP') { b.n = g3 && !g4 ? 4 : 2; b.b = []; }
+        if (type === 'UNTIL') b.b = [];
+        if (type === 'IF') { b.b = []; b.e = []; }
+        L.push(b);
+        if (b.b) tgt = tgt + '/' + (L.length - 1) + 'b';
+        k = 0; last = 'add';
+      });
+    }
+    function delBlock(at) {
+      var p = at.split('#'), L = listAt(p[0]);
+      if (!L) return;
+      act(function () { L.splice(+p[1], 1); if (!listAt(tgt)) tgt = tgt.split('/')[0]; if (tgt.indexOf(at.replace('#', '/')) === 0) tgt = p[0]; k = 0; last = 'remove'; });
+    }
+    function stop() { if (play) { clearInterval(play); play = null; } }
+    function go() {
+      stop();
+      var tr = trace('A'), trB = g2 && P.r.two ? trace('B') : [], end = Math.max(tr.length, trB.length);
+      if (k >= end) k = 0;
+      if (T.fast) { k = end; draw(); change(); return; }
+      play = setInterval(function () { k++; if (k >= end) stop(); draw(); if (!play) change(); }, 260);
+    }
+
+    /* ======== Map ======== */
+    function placeAt(x, y) { var at = P.m.at; for (var key in at) if (at[key][0] === x && at[key][1] === y) return key; return ''; }
+    function pinfo(key) { return GPLACES.filter(function (q) { return q[0] === key; })[0]; }
+    function rel(a, b) {
+      var dx = b[0] - a[0], dy = a[1] - b[1], w = [];
+      if (dx) w.push(dx > 0 ? 'right of' : 'left of');
+      if (dy) w.push(dy > 0 ? 'above' : 'below');
+      return w.join(' and ');
+    }
+    function dirs(a, b) {
+      var dx = b[0] - a[0], dy = a[1] - b[1], w = [];
+      if (dx) w.push(Math.abs(dx) + ' ' + (dx > 0 ? 'right' : 'left'));
+      if (dy) w.push(Math.abs(dy) + ' ' + (dy > 0 ? 'up' : 'down'));
+      return w.join(', ') || 'the same place';
+    }
+    function turns(a, b) {
+      var dx = b[0] - a[0], dy = a[1] - b[1];
+      if (!dx && !dy) return '';
+      if (!dx) return 'face ' + (dy > 0 ? 'up' : 'down') + ', go ' + Math.abs(dy);
+      var s = 'face ' + (dx > 0 ? 'right' : 'left') + ', go ' + Math.abs(dx);
+      if (dy) s += ', turn ' + ((dx > 0) === (dy > 0) ? 'left' : 'right') + ', go ' + Math.abs(dy);
+      return s;
+    }
+    function drawMap(W, H) {
+      var u = Math.max(32, Math.min(70, Math.floor((W - 4) / COLS), Math.floor((H - 110) / ROWS))), inner = '', Mp = P.m;
+      if (Mp.from && Mp.to && Mp.at[Mp.from] && Mp.at[Mp.to]) {
+        var a = Mp.at[Mp.from], b = Mp.at[Mp.to];
+        inner += '<polyline class="mp-gpath d" points="' + [a, [b[0], a[1]], b].map(function (q) { return C(q[0], u) + ',' + C(q[1], u); }).join(' ') + '"/>';
+      }
+      Object.keys(Mp.at).forEach(function (key) {
+        var q = Mp.at[key], p = pinfo(key), on = key === Mp.from || key === Mp.to;
+        inner += '<g class="mp-gpl' + (on ? ' on' : '') + '" data-pl="' + key + '"><rect class="mp-gplb" x="' + (1 + q[0] * u + 4) + '" y="' + (1 + q[1] * u + 4) + '" width="' + (u - 8) + '" height="' + (u - 8) + '" rx="10"/>' +
+          t(C(q[0], u), C(q[1], u) + u * .16, p[1], 'mp-gplt mp-dc' + p[2], 'middle') + '</g>';
+      });
+      var key = '<div class="mp-gkey">' + GPLACES.filter(function (q) { return Mp.at[q[0]]; }).map(function (q) { return '<span><b class="mp-dc' + q[2] + '">' + q[1] + '</b>' + q[0] + '</span>'; }).join('') + '</div>';
+      var note = !Mp.from ? 'Tap a place to start from.' : !Mp.to ? 'Now tap where to go.' : '';
+      return '<div class="mp-gmap">' + cellGrid(u, inner, 'Map') + '</div>' + key + (note ? '<p class="mp-fknote">' + note + '</p>' : '');
+    }
+
+    /* ======== coordinate grid (Plot and Move) ======== */
+    function range() { return g6 ? [-8, 8] : [0, 10]; }
+    function shapes() { return g6 ? GSHAPES4 : GSHAPES; }
+    function cgrid(W, H, sc, inner) {
+      var r = range(), lo = r[0], hi = r[1], S = Math.max(170, Math.min(W - 10, H - 10, 520)), m = 26, u = (S - m - 8) / (hi - lo);
+      var X = function (v) { return m + (v / sc - lo) * u; }, Y = function (v) { return S - m - (v / sc - lo) * u; }, s = svgOpen(S, S, 'mp-gcg', 'Coordinate grid');
+      for (var i = lo; i <= hi; i++) {
+        var ax = i === 0;
+        s += '<line class="' + (ax ? 'mp-gax' : 'mp-gln') + '" x1="' + X(i * sc).toFixed(1) + '" x2="' + X(i * sc).toFixed(1) + '" y1="' + Y(lo * sc).toFixed(1) + '" y2="' + Y(hi * sc).toFixed(1) + '"/>' +
+          '<line class="' + (ax ? 'mp-gax' : 'mp-gln') + '" y1="' + Y(i * sc).toFixed(1) + '" y2="' + Y(i * sc).toFixed(1) + '" x1="' + X(lo * sc).toFixed(1) + '" x2="' + X(hi * sc).toFixed(1) + '"/>';
+        if (i % 2 === 0 || hi - lo <= 10) {
+          if (i !== 0 || !g6) s += t(X(i * sc), (g6 ? Y(0) : Y(lo * sc)) + 16, n(i * sc), 'mp-pgx', 'middle');
+          if (i !== 0) s += t((g6 ? X(0) : X(lo * sc)) - 6, Y(i * sc) + 4, n(i * sc), 'mp-pgy');
+        }
+      }
+      return { svg: s + inner(X, Y, u) + '</svg>', X: X, Y: Y, S: S };
+    }
+    function inRange(q, sc) { var r = range(); return q[0] / sc >= r[0] - 1e-9 && q[0] / sc <= r[1] + 1e-9 && q[1] / sc >= r[0] - 1e-9 && q[1] / sc <= r[1] + 1e-9; }
+    function quad(q) { return !q[0] || !q[1] ? 'on an axis' : q[0] > 0 ? (q[1] > 0 ? 'I' : 'IV') : (q[1] > 0 ? 'II' : 'III'); }
+    function lab(i) { return String.fromCharCode(65 + i % 26); }
+    function drawPlot(W, H) {
+      var Pp = P.p, sc = Pp.scale, side = W >= 760, g = cgrid(side ? W - 280 : W, H - (side ? 20 : shown && Pp.pts.length ? 150 : 40), sc, function (X, Y) {
+        var s = '';
+        if (Pp.join && Pp.pts.length > 1) s += '<polygon class="mp-gpoly" points="' + Pp.pts.map(function (q) { return X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1); }).join(' ') + '"/>';
+        Pp.pts.forEach(function (q, i) { s += '<circle class="mp-gpt" cx="' + X(q[0]).toFixed(1) + '" cy="' + Y(q[1]).toFixed(1) + '" r="7"/>' + t(X(q[0]) + 10, Y(q[1]) - 9, lab(i), 'mp-gptl'); });
+        s += '<circle class="mp-gcur" cx="' + X(Pp.x).toFixed(1) + '" cy="' + Y(Pp.y).toFixed(1) + '" r="9"/>';
+        return s;
+      });
+      var h = '<div class="mp-grow' + (side ? ' side' : '') + '"><div class="mp-gplot">' + g.svg + '</div>';
+      if (shown && Pp.pts.length) h += '<div>' + tbl(['point', '(x, y)'].concat(g6 ? ['quadrant'] : []), Pp.pts.map(function (q, i) { return [lab(i), pt(q)].concat(g6 ? [quad(q)] : []); })) + '</div>';
+      return h + '</div>';
+    }
+    /* ======== Move ======== */
+    function lines() { return g6 ? [['x', 0, 'the y-axis'], ['y', 0, 'the x-axis']] : [['x', 5, 'the line x = 5'], ['y', 5, 'the line y = 5']]; }
+    function turnsOK() { return g6 ? [90, 180, 270] : [90, 180]; }
+    function abouts() { return g7 ? ['corner', 'origin'] : ['corner']; }
+    function moves() { return [['slide', 'Slide'], ['flip', 'Flip']].concat(g5 ? [['turn', 'Turn']] : [], g7 ? [['grow', 'Grow']] : []); }
+    function transform(Q) {
+      var V = P.v, c = V.base[0];
+      return Q.map(function (q) {
+        var x = q[0], y = q[1];
+        if (V.move === 'slide') return [x + V.dx, y + V.dy];
+        if (V.move === 'flip') { var L = lines()[V.line]; return L[0] === 'x' ? [2 * L[1] - x, y] : [x, 2 * L[1] - y]; }
+        if (V.move === 'turn') {
+          var a = abouts()[V.about] === 'origin' ? [0, 0] : c, rx = x - a[0], ry = y - a[1];
+          if (V.turn === 90) return [a[0] + ry, a[1] - rx];
+          if (V.turn === 180) return [a[0] - rx, a[1] - ry];
+          return [a[0] - ry, a[1] + rx];
+        }
+        return [x * V.k, y * V.k];
+      });
+    }
+    function moveName() {
+      var V = P.v;
+      if (V.move === 'slide') return [V.dx ? Math.abs(V.dx) + ' ' + (V.dx > 0 ? 'right' : 'left') : '', V.dy ? Math.abs(V.dy) + ' ' + (V.dy > 0 ? 'up' : 'down') : ''].filter(Boolean).join(', ') || 'no slide';
+      if (V.move === 'flip') return 'flip over ' + lines()[V.line][2];
+      if (V.move === 'turn') return (V.turn === 90 ? '¼ turn clockwise' : V.turn === 180 ? '½ turn' : '¾ turn clockwise') + ' about ' + (abouts()[V.about] === 'origin' ? '(0, 0)' : 'A');
+      return 'grow by ' + n(V.k) + ' from (0, 0)';
+    }
+    function ruleOf() {
+      var V = P.v;
+      if (V.move === 'slide') return '(x, y) → (x ' + (V.dx < 0 ? '− ' + -V.dx : '+ ' + V.dx) + ', y ' + (V.dy < 0 ? '− ' + -V.dy : '+ ' + V.dy) + ')';
+      if (V.move === 'flip' && g6) return lines()[V.line][0] === 'x' ? '(x, y) → (−x, y)' : '(x, y) → (x, −y)';
+      if (V.move === 'turn' && abouts()[V.about] === 'origin') return V.turn === 90 ? '(x, y) → (y, −x)' : V.turn === 180 ? '(x, y) → (−x, −y)' : '(x, y) → (−y, x)';
+      if (V.move === 'grow') return '(x, y) → (' + n(V.k) + 'x, ' + n(V.k) + 'y)';
+      return '';
+    }
+    function drawMove(W, H) {
+      var V = P.v, img = transform(V.base), side = W >= 760, L = V.move === 'flip' ? lines()[V.line] : null, ab = V.move === 'turn' ? (abouts()[V.about] === 'origin' ? [0, 0] : V.base[0]) : null;
+      var g = cgrid(side ? W - 300 : W, H - (side ? 20 : shown ? 190 : 100), 1, function (X, Y) {
+        var s = '', r = range(), poly = function (Q, cls) { return '<polygon class="' + cls + '" points="' + Q.map(function (q) { return X(q[0]).toFixed(1) + ',' + Y(q[1]).toFixed(1); }).join(' ') + '"/>'; };
+        if (L) s += L[0] === 'x' ? '<line class="mp-gmir" x1="' + X(L[1]) + '" x2="' + X(L[1]) + '" y1="' + Y(r[0]) + '" y2="' + Y(r[1]) + '"/>' : '<line class="mp-gmir" y1="' + Y(L[1]) + '" y2="' + Y(L[1]) + '" x1="' + X(r[0]) + '" x2="' + X(r[1]) + '"/>';
+        if (V.move === 'slide' || V.move === 'grow') V.base.forEach(function (q, i) { s += '<line class="mp-gtrk" x1="' + X(V.move === 'grow' ? 0 : q[0]).toFixed(1) + '" y1="' + Y(V.move === 'grow' ? 0 : q[1]).toFixed(1) + '" x2="' + X(img[i][0]).toFixed(1) + '" y2="' + Y(img[i][1]).toFixed(1) + '"/>'; });
+        s += poly(V.base, 'mp-gorig') + poly(img, 'mp-gimg');
+        if (ab) s += '<circle class="mp-gab" cx="' + X(ab[0]) + '" cy="' + Y(ab[1]) + '" r="6"/>';
+        V.base.forEach(function (q, i) { s += t(X(q[0]) - 7, Y(q[1]) - 7, lab(i), 'mp-gol', 'end') + t(X(img[i][0]) + 7, Y(img[i][1]) - 7, lab(i) + '′', 'mp-gil'); });
+        return s;
+      });
+      var h = '<div class="mp-grow' + (side ? ' side' : '') + '"><div class="mp-gplot">' + g.svg + '</div>';
+      h += '<div class="mp-gside">';
+      if (shown) {
+        h += tbl(['corner', 'before', 'after'], V.base.map(function (q, i) { return [lab(i), pt(q), pt(img[i])]; }));
+        var ch = '';
+        if (V.move !== 'grow') ch += chip('same', 'size and shape');
+        else ch += chip('same', 'angles') + chip('area', n(V.k * V.k) + ' times', true);
+        if (g8 && ruleOf()) ch += chip('rule', ruleOf(), true);
+        h += '<div class="mp-prow">' + ch + '</div>';
+        if (V.done.length) h += '<p class="mp-fknote">Moves so far: ' + V.done.concat([moveName()]).join(', then ') + '</p>';
+      }
+      return h + (img.every(function (q) { return inRange(q, 1); }) ? '' : '<p class="mp-fknote mp-gwarn">Part of the new shape is off the grid.</p>') + '</div>';
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      if (P.mode === 'robot') {
+        var list = g3 ? ['F', 'TL', 'TR', 'TA', 'REP'].concat(g5 ? ['IF', 'UNTIL'] : [], g7 ? ['MY'] : []) : ['U', 'D', 'L', 'R'];
+        return '<small>Blocks</small>' + (g2 && P.r.two ? '<div class="mp-fktabs" role="group" aria-label="Code for"><button type="button" data-who="A" aria-pressed="' + (tgt.indexOf('B') !== 0) + '">Robot A</button><button type="button" data-who="B" aria-pressed="' + (tgt.indexOf('B') === 0) + '">Robot B</button></div>' : '') +
+          list.map(function (b) { return '<button type="button" class="mp-gb k' + GBLK[b][1] + ' mp-gtb" data-b="' + b + '">' + GBLK[b][0] + '</button>'; }).join('');
+      }
+      if (P.mode === 'map') return '<small>Put on map</small>' + GPLACES.map(function (q) { return '<button type="button" class="mp-gtp" data-place="' + q[0] + '" aria-pressed="' + (pickPlace === q[0]) + '"><b class="mp-dc' + q[2] + '">' + q[1] + '</b>' + q[0] + '</button>'; }).join('');
+      if (P.mode === 'plot') {
+        return '<small>Point</small>' + stp('x', 'x', n(P.p.x)) + stp('y', 'y', n(P.p.y)) + '<div class="mp-fkthings"><button type="button" data-do="plot">Plot it</button></div>';
+      }
+      var V = P.v, h = '<small>Move</small><div class="mp-fkthings">' + moves().map(function (m) { return '<button type="button" data-mv="' + m[0] + '" aria-pressed="' + (V.move === m[0]) + '">' + m[1] + '</button>'; }).join('') + '</div>';
+      if (V.move === 'slide') h += stp('dx', 'right', V.dx) + stp('dy', 'up', V.dy);
+      if (V.move === 'flip') h += '<small>Over</small><div class="mp-fkthings">' + lines().map(function (L, i) { return '<button type="button" data-line="' + i + '" aria-pressed="' + (V.line === i) + '">' + (L[0] === 'x' ? (g6 ? 'y-axis' : 'x = 5') : (g6 ? 'x-axis' : 'y = 5')) + '</button>'; }).join('') + '</div>';
+      if (V.move === 'turn') h += '<small>Turn</small><div class="mp-fkthings">' + turnsOK().map(function (a) { return '<button type="button" data-turn="' + a + '" aria-pressed="' + (V.turn === a) + '">' + (a === 90 ? '¼ turn' : a === 180 ? '½ turn' : '¾ turn') + '</button>'; }).join('') + '</div>' +
+        (abouts().length > 1 ? '<small>About</small><div class="mp-fkthings">' + abouts().map(function (a, i) { return '<button type="button" data-about="' + i + '" aria-pressed="' + (V.about === i) + '">' + (a === 'origin' ? '(0, 0)' : 'corner A') + '</button>'; }).join('') + '</div>' : '');
+      if (V.move === 'grow') h += '<small>Scale by</small><div class="mp-fkthings">' + [0.5, 2, 3].map(function (q) { return '<button type="button" data-k="' + q + '" aria-pressed="' + (V.k === q) + '">' + (q === 0.5 ? '½' : q) + '</button>'; }).join('') + '</div>';
+      return h;
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var big = '', eq = '';
+      if (P.mode === 'robot') { var r = robotRead(); big = r[0]; eq = r[1]; }
+      else if (P.mode === 'map') {
+        var Mp = P.m;
+        if (Mp.from && Mp.to && Mp.at[Mp.from] && Mp.at[Mp.to]) {
+          var a = Mp.at[Mp.from], b = Mp.at[Mp.to];
+          big = dirs(a, b);
+          eq = 'from the <b>' + Mp.from + '</b> to the <b>' + Mp.to + '</b>: ' + pl(Math.abs(b[0] - a[0]) + Math.abs(b[1] - a[1]), 'step', 'steps');
+          if (!g2) eq += '. The ' + Mp.to + (Mp.to === 'swings' ? ' are' : ' is') + ' <b>' + rel(a, b) + '</b> the ' + Mp.from;
+          if (g3) eq += '. <b>' + turns(a, b) + '</b>';
+        }
+      } else if (P.mode === 'plot') {
+        var Q = P.p.pts, j = Q.length - 1;
+        if (j >= 0) {
+          big = lab(j) + ' ' + pt(Q[j]);
+          if (j > 0) eq = 'from ' + lab(j - 1) + ' to ' + lab(j) + ': <b>' + dirs([Q[j - 1][0], -Q[j - 1][1]], [Q[j][0], -Q[j][1]]) + '</b>';
+          if (g6 && quad(Q[j]) !== 'on an axis') eq += (eq ? '. ' : '') + lab(j) + ' is in quadrant <b>' + quad(Q[j]) + '</b>';
+          else if (g6) eq += (eq ? '. ' : '') + lab(j) + ' is on an axis';
+        }
+      } else {
+        var V = P.v, img = transform(V.base);
+        big = moveName();
+        eq = 'A ' + pt(V.base[0]) + ' goes to A′ ' + pt(img[0]);
+        if (V.move === 'grow') eq += '. Every side is <b>' + n(V.k) + ' times</b> as long';
+      }
+      read.innerHTML = (big ? '<p class="mp-total"><span class="mp-num">' + big + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : '');
+    }
+    function snaps() {
+      var h = '';
+      if (P.mode === 'robot') {
+        var trA = trace('A'), end = Math.max(trA.length, g2 && P.r.two ? trace('B').length : 0);
+        h += btn('go', play ? 'Pause' : 'Go', null, !end) + btn('step', 'Step', null, !end || k >= end) + btn('restart', 'Start again', null, !k);
+        if (g2) h += btn('two', 'Two robots', P.r.two);
+        h += btn('pen', 'Pen', P.r.pen) + (g5 ? btn('maze', P.r.maze < 0 ? 'Maze' : P.r.maze < GMAZES.length - 1 ? 'Next maze' : 'No maze') : btn('goal', 'New goal'));
+        h += btn('cclear', 'Clear code', null, !count(P.r.A) && !count(P.r.B) && !count(P.r.my));
+      } else if (P.mode === 'map') {
+        h += btn('mclear', 'Clear map', null, !Object.keys(P.m.at).length) + btn('sample', 'Sample map');
+      } else if (P.mode === 'plot') {
+        h += btn('join', 'Join them', P.p.join, P.p.pts.length < 2) + (g5 && !g6 ? btn('scale', '1 square = ' + P.p.scale) : '') + btn('pback', 'Take one off', null, !P.p.pts.length) + btn('pclear', 'Clear', null, !P.p.pts.length);
+      } else {
+        h += btn('shape', 'New shape') + (g6 ? btn('keep', 'Then another move') : '') + btn('vreset', 'Start again', null, !P.v.done.length);
+      }
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      snaps();
+      qsa('.mp-gdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(300, sz[1] - 70);
+      var paint = function (h) { win.innerHTML = P.mode === 'robot' ? drawRobot(W, h) : P.mode === 'map' ? drawMap(W, h) : P.mode === 'plot' ? drawPlot(W, h) : drawMove(W, h); };
+      paint(H);
+      /* when the tables and buttons need more room than planned (a phone), draw the grid smaller so nothing scrolls */
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) paint(H - over - 4);
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { stop(); var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() {
+      var tr = trace('A'), e = tr.length ? tr[Math.min(k, tr.length) - 1] : null;
+      return { mode: P.mode, blocks: count(P.r.A), steps: tr.length, at: e ? [e.x, e.y] : null, points: P.p.pts.map(function (q) { return q.slice(); }), image: transform(P.v.base), last: last };
+    }
+    function cgridPoint(e) {
+      var svg = qs('.mp-gcg', win); if (!svg) return null;
+      var b = svg.getBoundingClientRect(), S = svg.viewBox.baseVal.width, px = (e.clientX - b.left) * S / b.width, py = (e.clientY - b.top) * S / b.height, r = range(), m = 26, u = (S - m - 8) / (r[1] - r[0]);
+      var gx = Math.round((px - m) / u + r[0]), gy = Math.round((S - m - py) / u + r[0]);
+      if (gx < r[0] || gx > r[1] || gy < r[0] || gy > r[1]) return null;
+      return [gx * P.p.scale, gy * P.p.scale];
+    }
+    function cellAt(e) {
+      var svg = qs('.mp-gsv', win); if (!svg) return null;
+      var b = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal, x = (e.clientX - b.left) * vb.width / b.width, y = (e.clientY - b.top) * vb.height / b.height, u = (vb.width - 2) / COLS;
+      var cx = Math.floor((x - 1) / u), cy = Math.floor((y - 1) / u);
+      return cx >= 0 && cy >= 0 && cx < COLS && cy < ROWS ? [cx, cy] : null;
+    }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-b')) return addBlock(b.getAttribute('data-b'));
+      if (b.hasAttribute('data-who')) { tgt = b.getAttribute('data-who'); draw(); return; }
+      if (b.hasAttribute('data-place')) { var pk = b.getAttribute('data-place'); pickPlace = pickPlace === pk ? '' : pk; draw(); return; }
+      if (b.classList.contains('mp-pstb')) {
+        var id = b.getAttribute('data-st'), d = +b.getAttribute('data-d'), r = range();
+        return act(function () {
+          if (id === 'x' || id === 'y') P.p[id] = clamp(P.p[id] + d * P.p.scale, r[0] * P.p.scale, r[1] * P.p.scale);
+          if (id === 'dx' || id === 'dy') P.v[id] = clamp(P.v[id] + d, -10, 10);
+          last = 'nudge';
+        });
+      }
+      var V = P.v;
+      if (b.hasAttribute('data-mv')) return act(function () { V.move = b.getAttribute('data-mv'); last = 'move'; });
+      if (b.hasAttribute('data-line')) return act(function () { V.line = +b.getAttribute('data-line'); last = 'line'; });
+      if (b.hasAttribute('data-turn')) return act(function () { V.turn = +b.getAttribute('data-turn'); last = 'turn'; });
+      if (b.hasAttribute('data-about')) return act(function () { V.about = +b.getAttribute('data-about'); last = 'about'; });
+      if (b.hasAttribute('data-k')) return act(function () { V.k = +b.getAttribute('data-k'); last = 'scale'; });
+      if (b.getAttribute('data-do') === 'plot') act(function () { if (P.p.pts.length < 26) P.p.pts.push([P.p.x, P.p.y]); last = 'plot'; });
+    });
+    qs('.mp-gdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    mat.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'), del = e.target.closest('[data-del]'), rn = e.target.closest('[data-rn]'), tg = e.target.closest('[data-tgt]'), pl0 = e.target.closest('[data-pl]');
+      if (del) return delBlock(del.getAttribute('data-del'));
+      if (rn) { var p = rn.getAttribute('data-rn').split('#'), blk = listAt(p[0])[+p[1]], d = +rn.getAttribute('data-d'); return act(function () { blk.n = clamp(blk.n + d, 2, 12); k = 0; last = 'repeat'; }); }
+      if (s) {
+        var a = s.getAttribute('data-a');
+        if (a === 'go') { if (play) { stop(); draw(); } else go(); return; }
+        if (a === 'step') { stop(); k++; draw(); change(); return; }
+        if (a === 'restart') { stop(); k = 0; draw(); change(); return; }
+        act(function () {
+          var R = P.r;
+          if (a === 'two') { R.two = !R.two; tgt = 'A'; k = 0; }
+          if (a === 'pen') R.pen = !R.pen;
+          if (a === 'maze') { R.maze = R.maze >= GMAZES.length - 1 ? -1 : R.maze + 1; k = 0; }
+          if (a === 'goal') { var gx, gy; do { gx = Math.floor(Math.random() * COLS); gy = Math.floor(Math.random() * ROWS); } while ((gx === 1 && gy === 4) || (gx === R.goal[0] && gy === R.goal[1])); R.goal = [gx, gy]; k = 0; }
+          if (a === 'cclear') { R.A = []; R.B = []; R.my = []; tgt = 'A'; k = 0; }
+          if (a === 'mclear') { P.m.at = {}; P.m.from = P.m.to = ''; }
+          if (a === 'sample') { P.m.at = { school: [1, 4], pond: [3, 1], swings: [6, 2], tree: [5, 5], bench: [2, 2] }; P.m.from = P.m.to = ''; }
+          if (a === 'join') P.p.join = !P.p.join;
+          if (a === 'scale') { var ss = [1, 2, 5, 10], ns = ss[(ss.indexOf(P.p.scale) + 1) % ss.length]; P.p.pts = P.p.pts.map(function (q) { return [q[0] / P.p.scale * ns, q[1] / P.p.scale * ns]; }); P.p.x = P.p.x / P.p.scale * ns; P.p.y = P.p.y / P.p.scale * ns; P.p.scale = ns; }
+          if (a === 'pback') P.p.pts.pop();
+          if (a === 'pclear') P.p.pts = [];
+          if (a === 'shape') { P.v.shape = (P.v.shape + 1) % GSHAPES.length; P.v.base = shapes()[P.v.shape].map(function (q) { return q.slice(); }); P.v.done = []; }
+          if (a === 'keep') { P.v.done.push(moveName()); P.v.base = transform(P.v.base); }
+          if (a === 'vreset') { P.v.base = shapes()[P.v.shape].map(function (q) { return q.slice(); }); P.v.done = []; }
+          last = a;
+        });
+        return;
+      }
+      if (tg && P.mode === 'robot') { tgt = tg.getAttribute('data-tgt'); draw(); return; }
+      if (P.mode === 'map') {
+        var Mp = P.m;
+        if (pickPlace) { var c = cellAt(e); if (c && !placeAt(c[0], c[1])) { var pk = pickPlace; pickPlace = ''; act(function () { Mp.at[pk] = c; if (Mp.from === pk || Mp.to === pk) Mp.from = Mp.to = ''; last = 'place'; }); } return; }
+        if (pl0) { var key = pl0.getAttribute('data-pl'); act(function () { if (!Mp.from || Mp.to) { Mp.from = key; Mp.to = ''; } else if (key !== Mp.from) Mp.to = key; last = 'pick'; }); }
+        return;
+      }
+      if (P.mode === 'plot') { var q = cgridPoint(e); if (q) act(function () { P.p.x = q[0]; P.p.y = q[1]; if (P.p.pts.length < 26) P.p.pts.push(q); last = 'plot'; }); }
+    });
+    T.undo = function () { if (!hist.length) return; stop(); P = JSON.parse(hist.pop()); if (!listAt(tgt)) tgt = 'A'; k = 0; last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { stop(); fresh(); hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+  M.grid = function (root, o) { return toolGrid(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -5109,6 +5590,8 @@
       '<circle cx="9" cy="16" r="5" style="fill:#c0392b"/><rect x="17" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="6" y="34" width="6" height="6" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="18" y="28" width="6" height="12" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="30" y="22" width="6" height="18" rx="1" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['tiles', 'alg', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true },
       '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
+    ['grid', 'space', 'Grid and robot', '', { tool: true },
+      '<rect x="5" y="5" width="38" height="38" rx="4" style="fill:var(--card,#fff);stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M17.7 5v38M30.3 5v38M5 17.7h38M5 30.3h38" style="stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M11 37V24h13V11" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/><rect x="30" y="5.5" width="12" height="12" rx="3" style="fill:#2f62c4"/><path d="M33 13l3-4.5 3 4.5Z" style="fill:#fff"/>'],
     ['geoboard', 'space', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 },
       '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
     ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
@@ -5167,5 +5650,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['balance', 'patterns', 'data', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'patterns', 'data', 'grid', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

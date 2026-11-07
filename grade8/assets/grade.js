@@ -2,7 +2,7 @@
    then Grade 8's own number text, typed-answer rules and page motion. */
 Atlas.setup({
   grade: 8,
-  tools: ['numberline', 'tiles', 'fractions', 'balance', 'patterns', 'data', 'areagrid', 'geoboard', 'coins'],
+  tools: ['numberline', 'tiles', 'fractions', 'balance', 'patterns', 'data', 'grid', 'areagrid', 'geoboard', 'coins'],
   meta: [
     { id: 'big-small', title: 'Big and Small Numbers', sub: 'powers of ten and scientific notation', strand: 'B', codes: 'B1.1, B2.3, E2.1',
       desc: 'Powers of ten, multiplying and dividing by 10, 100 and 1000, scientific notation, and mega to pico units.' },

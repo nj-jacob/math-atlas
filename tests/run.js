@@ -674,6 +674,54 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox data: the page runs off the side of a phone screen');
   }
 
+  /* 3a12. Toolbox grid and robot: Grades 1 and 2: arrows right, right, up, up, right put the robot 3 right and 2 up from the start;
+     Grade 3 and up: repeat 4 times (forward, forward, turn right) is 8 steps and 4 turns and ends back at the start; Grades 1 to 3: on the
+     map, the school to the swings is 5 right, 2 up; Grade 4 and up: plotting (1, 4) and then (5, 2) reads 4 right, 2 down, the starting
+     slide (3 right, 1 down) takes A (3, 4) to A′ (6, 3) in Grades 4 and 5 and A (1, 2) to A′ (4, 1) from Grade 6, and in Grade 8 a quarter
+     turn about (0, 0) takes A to (2, −1) with the rule (x, y) → (y, −x). */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('grid'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/grid'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-grt .mp-read'), win = () => txt('.mp-grt .mp-pwin');
+    const has = async (t, f) => { for (let i = 0; i < 60; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox grid: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-gdo [data-m=' + m + ']');
+    const blk = b => page.click('.mp-gtb[data-b=' + b + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    if (g <= 2) {
+      for (const b of ['R', 'R', 'U', 'U', 'R']) await blk(b);
+      await page.click('.mp-snap[data-a=go]');
+      await bad('3 right and 2 up from the start', 'arrows right, right, up, up, right');
+    } else {
+      await blk('REP');
+      for (let n = await page.evaluate(() => +document.querySelector('.mp-grn b').textContent); n < 4; n++) await page.click('.mp-grn [data-d="1"]');
+      for (const b of ['F', 'F', 'TR']) await blk(b);
+      await page.click('.mp-snap[data-a=go]');
+      await bad('8 steps and 4 turns. It is back at the start', 'repeat 4 times (forward, forward, turn right)');
+    }
+    if (g <= 3) {
+      await mode('map');
+      await page.click('.mp-gpl[data-pl=school]'); await page.click('.mp-gpl[data-pl=swings]');
+      await bad('5 right, 2 up', 'the school to the swings');
+    } else {
+      await mode('plot');
+      await page.click('[data-do=plot]');
+      for (let i = 0; i < 4; i++) await page.click('.mp-pstb[data-st=x][data-d="1"]');
+      for (let i = 0; i < 2; i++) await page.click('.mp-pstb[data-st=y][data-d="-1"]');
+      await page.click('[data-do=plot]');
+      await bad('B (5, 2)', 'the second point'); await bad('4 right, 2 down', 'from (1, 4) to (5, 2)');
+      await mode('move');
+      await bad(g <= 5 ? 'A (3, 4) goes to A′ (6, 3)' : 'A (1, 2) goes to A′ (4, 1)', 'a slide 3 right, 1 down');
+      if (g === 8) {
+        await page.click('[data-mv=turn]'); await page.click('[data-about="1"]');
+        await bad('A (1, 2) goes to A′ (2, −1)', 'a quarter turn about (0, 0)'); await bad('(x, y) → (y, −x)', 'the rule for a quarter turn', win);
+      }
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox grid: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
