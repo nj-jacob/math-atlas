@@ -139,7 +139,7 @@
   };
   /* a two-column table: { head: [words, words], rows: [[1, 5], [2, '[]']] }; blanks take answers in order */
   PIC.table = function (p, x, y, w, key, th, ans) {
-    var cw = Math.min(100, w / 2), rh = 30, out = '', k = 0;
+    var cw = Math.min(100, w / 2), rh = 27, out = '', k = 0;
     p.head.forEach(function (hd, c) { out += T(x + c * cw + cw / 2, y + 18, words(hd, th), { s: 12, w: 700, f: INK2, a: 'middle' }); });
     p.rows.forEach(function (row, r) {
       var ry = y + 26 + r * rh;
@@ -229,7 +229,7 @@
       var row = list[i].wide ? [list[i]] : [list[i]].concat(list[i + 1] && !list[i + 1].wide ? [list[i + 1]] : []);
       var hs = row.map(function (it, c) { var r = item(it, n + c, M + c * (COLW + GAP), y, row.length === 1 && it.wide ? RIGHT - M : COLW, key, th); out += r.svg; return r.h; });
       n += row.length; i += row.length;
-      y += Math.max.apply(null, hs) + (th.card ? 30 : 22);
+      y += Math.max.apply(null, hs) + (th.card ? 24 : 22);
     }
     return { svg: out, y: y, n: n };
   }
@@ -240,7 +240,7 @@
   }
   /* the Watch me / Remember band: picture on the left, the sum on the right */
   function band(show, y, th) {
-    var p = show.pic ? pic(show.pic, M + 22, y + 18, 250) : { svg: '', h: 0, w: 0 };
+    var p = show.pic ? pic(show.pic, M + 22, y + 18, 250, false, th, []) : { svg: '', h: 0, w: 0 };
     var tx = p.w ? Math.max(M + 22 + p.w + 36, 300) : M + 24, lines = (show.eq || []), hText = (show.cap ? 24 : 0) + lines.length * 32;
     var h = Math.max(p.h, hText) + 30, out = (th.band ? th.band(M, y, RIGHT - M, h) : '<rect x="' + M + '" y="' + y + '" width="' + (RIGHT - M) + '" height="' + h + '" rx="12" fill="none" stroke="' + LINE + '" stroke-width="1.3"/>') + '<g class="show">' + p.svg + '</g>';
     var ty = y + h / 2 - hText / 2;
@@ -282,7 +282,7 @@
     if (kind === 'learn') {
       out += section(y, 'Watch me', th); var b = band(spec.show, y + 12, th); out += b.svg; y += b.h + 38;
       out += section(y, 'Together', th); var g1 = grid(spec.together, y + 16, n, key, th); out += g1.svg; y = g1.y - 8; n = g1.n;
-      if (spec.cue) { out += T(M, y, words(spec.cue, th), { s: 12, i: 1, f: INK2 }); y += 34; }
+      if (spec.cue) { out += T(M, y, words(spec.cue, th), { s: 12, i: 1, f: INK2 }); y += 28; }
       out += section(y, 'On your own', th); var g2 = grid(spec.own, y + 16, n, key, th); out += g2.svg; y = g2.y; n = g2.n;
     } else {
       if (spec.show) { out += section(y, 'Remember', th); var b2 = band(spec.show, y + 12, th); out += b2.svg; y += b2.h + 38; out += section(y, 'On your own', th); y += 16; }
