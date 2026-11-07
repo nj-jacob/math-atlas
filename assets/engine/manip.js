@@ -3948,6 +3948,9 @@
      the rule and any step). Grade 7 and up can Compare two linear patterns on one table and graph. */
   var PP = { ro: ['o', 'r', 'red circle'], bs: ['s', 'b', 'blue square'], yt: ['t', 'y', 'yellow triangle'], gh: ['h', 'g', 'green hexagon'], bo: ['o', 'b', 'blue circle'], rs: ['s', 'r', 'red square'] };
   var PACT = ['clap', 'snap', 'stamp', 'tap', 'nod', 'jump'], PMAX = 24;
+  /* a labelled window on a Toolbox mat, and a small answer chip (Pattern builder, Data and chance) */
+  function box(label, inner, cls) { return '<div class="mp-fkw ' + (cls || '') + '"><div class="mp-fkwl">' + label + '</div>' + inner + '</div>'; }
+  function chip(lab, val, on) { return '<div class="mp-pchip' + (on ? ' on' : '') + '"><small>' + lab + '</small><b>' + val + '</b></div>'; }
   function toolPat(root, o) {
     var T = base(root, 'pat');
     root.classList.add('mp-tool', 'mp-fkt', 'mp-patt');
@@ -4067,8 +4070,6 @@
       return '<table class="mp-ptbl"><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
         rows.map(function (r) { return '<tr>' + r.map(function (c, j) { return '<td' + (j && head.length > 2 ? ' class="mp-pt' + j + '"' : '') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') + '</tbody></table>';
     }
-    function box(label, inner, cls) { return '<div class="mp-fkw ' + (cls || '') + '"><div class="mp-fkwl">' + label + '</div>' + inner + '</div>'; }
-    function chip(lab, val, on) { return '<div class="mp-pchip' + (on ? ' on' : '') + '"><small>' + lab + '</small><b>' + val + '</b></div>'; }
     function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
     function drawRep(W) {
       if (!P.core.length) return '<p class="mp-fknote">Tap shapes to make the core: the part that repeats.</p>';
@@ -4306,6 +4307,782 @@
   }
   M.patterns = function (root, o) { return toolPat(root, o || {}); };
 
+  /* ================= Data and chance (Toolbox) =================
+     Make: Sort (by one rule into groups; from Grade 2 by two rules in a Venn or Carroll diagram), Graph (a survey: tally,
+     picture graph, line plot, bar graph; from Grade 4 two classes on a double-bar graph; stacked bar from Grade 5; circle graph from Grade 7),
+     Numbers (Grade 4 and up: a list of numbers as a stem-and-leaf plot with mean, median and mode; histogram and range from Grade 6;
+     Grade 8 pairs on a scatter plot with a trend line) and Chance (spinner, coin, die and bag: what should happen and what did,
+     on a probability line; two at once from Grade 6; tree diagrams in Grade 8). Show number shows the answers. */
+  var DCI = { r: 0, b: 1, y: 2 }, DCN = { r: 'red', b: 'blue', y: 'yellow' }, DSN = { o: 'circle', s: 'square', t: 'triangle' }, DZN = { L: 'big', S: 'small' };
+  /* the shapes to sort: every colour and shape, big, and three small ones, mixed up */
+  var DPC = [['r', 'o', 'L'], ['b', 's', 'L'], ['y', 't', 'L'], ['r', 't', 'S'], ['b', 'o', 'L'], ['y', 's', 'L'], ['r', 's', 'L'], ['b', 'o', 'S'], ['y', 'o', 'L'], ['b', 't', 'L'], ['y', 's', 'S'], ['r', 't', 'L']]
+    .map(function (p) { return { c: p[0], s: p[1], z: p[2] }; });
+  var DRULE = [['c', 'r', 'red'], ['c', 'b', 'blue'], ['c', 'y', 'yellow'], ['s', 'o', 'circle'], ['s', 's', 'square'], ['s', 't', 'triangle'], ['z', 'L', 'big'], ['z', 'S', 'small']];
+  /* surveys: the question, the answers, a first class and a second class (two classes from Grade 4); num: the answers are numbers (line plot) */
+  var DSURV = [
+    { q: 'Our favourite fruit', a: ['apple', 'banana', 'grapes', 'berries'], d: [7, 5, 4, 2], e: [4, 6, 5, 3] },
+    { q: 'Our favourite sport', a: ['soccer', 'hockey', 'swimming', 'dance'], d: [12, 10, 6, 8], e: [9, 11, 8, 6] },
+    { q: 'How many pets we have', a: ['0', '1', '2', '3', '4'], d: [5, 7, 4, 2, 1], e: [3, 6, 6, 3, 2], num: true },
+    { q: 'Weather this month', a: ['sunny', 'cloudy', 'rain', 'snow'], d: [11, 9, 6, 4], e: [8, 12, 7, 3] },
+    { q: 'How we get to school', a: ['bus', 'car', 'walk', 'bike'], d: [84, 56, 40, 20], e: [70, 66, 44, 20] }
+  ];
+  var DSETS = [
+    { name: 'heights', unit: 'cm', lo: 105, hi: 175, d: [118, 121, 124, 124, 127, 128, 130, 133, 135, 140] },
+    { name: 'minutes of reading', unit: 'minutes', lo: 0, hi: 90, d: [15, 20, 20, 25, 30, 30, 30, 40, 45, 60] }
+  ];
+  var DPAIRS = [[142, 140], [145, 147], [150, 148], [152, 150], [155, 157], [158, 155], [160, 163], [163, 160], [166, 168], [170, 169]];
+  var DDEV = { spin: ['Spinner', 'Spin', 'spin', 'spins'], coin: ['Coin', 'Flip', 'flip', 'flips'], die: ['Die', 'Roll', 'roll', 'rolls'], bag: ['Bag', 'Pick', 'pick', 'picks'] };
+  var DTWO = [['coin', 'die'], ['coin', 'coin'], ['die', 'die'], ['spin', 'coin']];
+  var DCOLS = ['red', 'blue', 'yellow', 'green'];
+  function gcd(a, b) { while (b) { var t = b; b = a % b; a = t; } return a; }
+  function frac(n, d) { if (!n) return '0'; var g = gcd(n, d); return n / g + '/' + d / g; }
+  function r1(v) { return Math.round(v * 10) / 10; }
+  function toolData(root, o) {
+    var T = base(root, 'dat');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var MODES = [['sort', 'Sort'], ['graph', 'Graph']].concat(g4 ? [['nums', 'Numbers']] : [], [['chance', 'Chance']]);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-dtr"></div><div class="mp-dmain"><div class="mp-cmode mp-ddo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-dtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Sort: how, the two rules, where each shape is (null: in the tray) and the order they went in; Graph: the survey,
+       the counts for one or two classes, the views and the key; Numbers: the data, the value to add, the stats before the last change, pairs;
+       Chance: the thing, its parts, the counts so far, two at once, the views */
+    var P, shown = false, hist = [], last = '', sel = -1, skip = false, spinNow = false;
+    function fresh() {
+      var sv = gr === 7 || gr === 8 ? 4 : gr >= 3 ? 1 : 0;
+      P = { mode: 'sort',
+        s: { how: g2 ? 'venn' : 'groups', r1: 0, r2: 5, at: DPC.map(function () { return null; }), ord: [], lp: -1 },
+        g: { sv: sv, c: DSURV[sv].d.slice(), c2: DSURV[sv].e.slice(), two: false, cls: 0, by: 1, order: false, key: g3 && !g4 ? 2 : 1,
+          view: { tally: true, pict: !g3, line: false, bar: g3, stack: false, circle: g7, fair: false } },
+        n: { set: 0, v: DSETS[0].d.slice(), cur: 128, prev: null, pairs: DPAIRS.map(function (p) { return p.slice(); }), x: 152, y: 150, two: g8, bin: 10,
+          view: { stem: true, hist: g6, mean: true, median: true, mode: true, range: g6, scatter: true, trend: true } },
+        c: { dev: 'spin', sec: [2, 1, 1, 0], bag: [3, 2, 1, 0], cnt: [], n: 0, last: -1, ang: 40, two: false, pair: 0, cnt2: [], last2: null,
+          view: { should: g4, did: true, line: true, pct: false, tree: false } } };
+      P.c.cnt = outs(P.c.dev).map(function () { return 0; });
+    }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis, extra) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (extra || '') + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function views(V, list) { return list.map(function (v) { return btn('view', v[1], !!V[v[0]], v[2], ' data-v="' + v[0] + '"'); }).join(''); }
+    function sw(i) { return '<i class="mp-dsw mp-dc' + i + '"></i>'; }
+    function tbl(head, rows, foot) {
+      return '<table class="mp-ptbl mp-dtbl"><thead><tr>' + head.map(function (h) { return '<th>' + h + '</th>'; }).join('') + '</tr></thead><tbody>' +
+        rows.map(function (r) { return '<tr>' + r.map(function (c, j) { return '<td' + (j ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>'; }).join('') +
+        (foot ? '<tr class="mp-dtot">' + foot.map(function (c, j) { return '<td' + (j ? '' : ' class="l"') + '>' + c + '</td>'; }).join('') + '</tr>' : '') + '</tbody></table>';
+    }
+    function svgOpen(W, H, cls) { return '<svg class="mp-dsvg ' + (cls || '') + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" aria-hidden="true">'; }
+    function t(x, y, s, cls, anchor) { return '<text class="' + (cls || 'mp-dtx') + '" x="' + (+x).toFixed(1) + '" y="' + (+y).toFixed(1) + '"' + (anchor ? ' text-anchor="' + anchor + '"' : '') + '>' + s + '</text>'; }
+    function chartW(W, wide) { return wide ? Math.min(460, Math.floor(W / 2) - 20) : Math.min(W - 6, 460); }
+
+    /* ======== Sort ======== */
+    function has(p, r) { var R = DRULE[r]; return p[R[0]] === R[1]; }
+    function phr(r) { return (DRULE[r][0] === 's' ? 'a ' : '') + DRULE[r][2]; }
+    function pname(p) { return DZN[p.z] + ' ' + DCN[p.c] + ' ' + DSN[p.s]; }
+    function goes(p) { var a = has(p, P.s.r1), b = P.s.how !== 'groups' && has(p, P.s.r2); return a && b ? 'ab' : a ? 'a' : b ? 'b' : 'n'; }
+    function rname(R) {
+      var a = DRULE[P.s.r1][2], b = DRULE[P.s.r2][2];
+      if (P.s.how === 'groups') return R === 'a' ? a : 'not ' + a;
+      if (P.s.how === 'venn') return { ab: 'the middle', a: a + ' only', b: b + ' only', n: 'outside' }[R];
+      return { ab: a + ' and ' + b, a: a + ', not ' + b, b: b + ', not ' + a, n: 'neither' }[R];
+    }
+    function shape(p, cx, cy, s, cls) {
+      var h = s * (p.z === 'S' ? 0.6 : 1) / 2, c = 'mp-dc' + DCI[p.c] + (cls ? ' ' + cls : '');
+      if (p.s === 'o') return '<circle class="' + c + '" cx="' + cx + '" cy="' + cy + '" r="' + (h - 1).toFixed(1) + '"/>';
+      if (p.s === 's') return '<rect class="' + c + '" x="' + (cx - h + 2).toFixed(1) + '" y="' + (cy - h + 2).toFixed(1) + '" width="' + (2 * h - 4).toFixed(1) + '" height="' + (2 * h - 4).toFixed(1) + '" rx="' + (h / 5).toFixed(1) + '"/>';
+      return '<path class="' + c + '" stroke-linejoin="round" d="M' + cx + ' ' + (cy - h + 1).toFixed(1) + 'L' + (cx + h - 1).toFixed(1) + ' ' + (cy + h * 0.8).toFixed(1) + 'H' + (cx - h + 1).toFixed(1) + 'Z"/>';
+    }
+    /* the diagram: its size, which part a point is in, and the drawing */
+    function sgeom(W, H) {
+      var how = P.s.how, a = DRULE[P.s.r1][2], b = DRULE[P.s.r2][2], g = { W: W, H: H }, s = '';
+      if (how === 'groups') {
+        var gw = (W - 18) / 2;
+        g.at = function (x, y) { return y < 30 || y > H - 2 ? null : x < gw ? 'a' : x > gw + 18 ? 'n' : null; };
+        s = '<rect class="mp-dreg" x="1" y="30" width="' + gw + '" height="' + (H - 32) + '" rx="18"/><rect class="mp-dreg" x="' + (gw + 17) + '" y="30" width="' + gw + '" height="' + (H - 32) + '" rx="18"/>' +
+          t(gw / 2, 20, a, 'mp-dlab', 'middle') + t(gw + 17 + gw / 2, 20, 'not ' + a, 'mp-dlab', 'middle');
+      } else if (how === 'venn') {
+        /* room under the circles for the shapes that go outside */
+        var r = Math.min((H - 30 - (W < 500 ? 56 : 66)) / 2, W * 0.25), cy = 30 + r, ca = W / 2 - r * 0.58, cb = W / 2 + r * 0.58;
+        g.at = function (x, y) {
+          if (x < 1 || x > W - 1 || y < 1 || y > H - 1) return null;
+          var ia = Math.hypot(x - ca, y - cy) < r, ib = Math.hypot(x - cb, y - cy) < r;
+          return ia && ib ? 'ab' : ia ? 'a' : ib ? 'b' : 'n';
+        };
+        s = '<rect class="mp-dreg" x="1" y="1" width="' + (W - 2) + '" height="' + (H - 2) + '" rx="18"/>' +
+          '<circle class="mp-dven a" cx="' + ca + '" cy="' + cy + '" r="' + r + '"/><circle class="mp-dven b" cx="' + cb + '" cy="' + cy + '" r="' + r + '"/>' +
+          t(ca - r * 0.35, cy - r - 8, a, 'mp-dlab a', 'middle') + t(cb + r * 0.35, cy - r - 8, b, 'mp-dlab b', 'middle');
+      } else {
+        var hx = W < 500 ? 78 : 104, hy = 34, cw = (W - hx) / 2, ch = (H - hy) / 2;
+        g.at = function (x, y) { if (x < hx || y < hy || x > W || y > H) return null; var c1 = x < hx + cw, rw = y < hy + ch; return rw && c1 ? 'ab' : rw ? 'a' : c1 ? 'b' : 'n'; };
+        s = '<rect class="mp-dreg" x="' + hx + '" y="' + hy + '" width="' + (W - hx - 1) + '" height="' + (H - hy - 1) + '" rx="14"/>' +
+          '<path class="mp-dgrid" d="M' + (hx + cw) + ' ' + hy + 'V' + H + 'M' + hx + ' ' + (hy + ch) + 'H' + W + '"/>' +
+          t(hx + cw / 2, 22, b, 'mp-dlab b', 'middle') + t(hx + cw * 1.5, 22, 'not ' + b, 'mp-dlab', 'middle') +
+          t(hx - 10, hy + ch / 2 + 5, a, 'mp-dlab a', 'end') + t(hx - 10, hy + ch * 1.5 + 5, 'not ' + a, 'mp-dlab', 'end');
+      }
+      g.svg = s;
+      return g;
+    }
+    /* the places a shape can sit in each part: points on a grid whose shape would not cross a line, nearest the middle of the part first */
+    function slots(g, s) {
+      var out = { a: [], b: [], ab: [], n: [] }, st = s + 6;
+      function scan(step, d, few) {
+        for (var y = step / 2 + 2; y < g.H; y += step) for (var x = step / 2 + 2; x < g.W; x += step) {
+          var R = g.at(x, y), L = out[R];
+          if (!R || few && L.length >= 4) continue;
+          var ok = [[d, 0], [-d, 0], [0, d], [0, -d], [d * .7, d * .7], [-d * .7, d * .7], [d * .7, -d * .7], [-d * .7, -d * .7]].every(function (q) { return g.at(x + q[0], y + q[1]) === R; });
+          if (ok && L.every(function (p) { return Math.hypot(p[0] - x, p[1] - y) >= s + 4; })) L.push([x, y]);
+        }
+      }
+      scan(st, s / 2 + 5, false);
+      /* a thin part (the middle of a Venn diagram) gets places that only just fit */
+      scan(st / 3, s / 2 + 1, true);
+      Object.keys(out).forEach(function (R) {
+        var L = out[R];
+        /* a part too thin for a whole shape: use its middle */
+        if (!L.length) { var sx = 0, sy = 0, k = 0; for (var yy = 2; yy < g.H; yy += 4) for (var xx = 2; xx < g.W; xx += 4) if (g.at(xx, yy) === R) { sx += xx; sy += yy; k++; } if (k) L.push([Math.round(sx / k), Math.round(sy / k)]); return; }
+        var mx = 0, my = 0; L.forEach(function (p) { mx += p[0]; my += p[1]; }); mx /= L.length; my /= L.length;
+        if (R === 'n' && P.s.how === 'venn') { mx = g.W / 2; my = g.H; }
+        L.sort(function (p, q) { return Math.hypot(p[0] - mx, p[1] - my) - Math.hypot(q[0] - mx, q[1] - my); });
+      });
+      return out;
+    }
+    function drawSort(W, H) {
+      var g = sgeom(Math.min(W, 760), clamp(H - 150, 240, W < 500 ? 340 : 440)), s = g.W < 500 ? 32 : 42, sl = slots(g, s), used = { a: 0, b: 0, ab: 0, n: 0 }, h = '', anc = {};
+      Object.keys(sl).forEach(function (R) { if (sl[R].length) anc[R] = sl[R][0]; });
+      var pcs = '';
+      P.s.ord.forEach(function (i) {
+        var R = P.s.at[i], L = sl[R] || [], k = used[R]++, pt = L.length ? L[k % L.length] : [g.W / 2, g.H / 2], off = L.length && k >= L.length ? 6 : 0, p = DPC[i];
+        var bad = shown && goes(p) !== R;
+        pcs += '<g class="mp-dpc' + (sel === i ? ' sel' : '') + (bad ? ' bad' : '') + '" data-p="' + i + '" role="button" aria-label="' + pname(p) + (bad ? ', in the wrong place' : '') + '">' +
+          '<rect class="mp-dhit" x="' + (pt[0] + off - s / 2 - 3) + '" y="' + (pt[1] + off - s / 2 - 3) + '" width="' + (s + 6) + '" height="' + (s + 6) + '" rx="10"/>' + shape(p, pt[0] + off, pt[1] + off, s) + '</g>';
+      });
+      h += '<div class="mp-dsort">' + svgOpen(g.W, g.H, 'mp-dsv').replace('aria-hidden="true"', 'role="group" aria-label="Sorting mat" data-anc=\'' + JSON.stringify(anc) + '\'') + g.svg + pcs + '</svg></div>';
+      if (!P.s.ord.length) h += '<p class="mp-fknote">' + (sel >= 0 ? 'Now tap where it goes.' : 'Tap or drag a shape from the tray to where it goes.') + '</p>';
+      if (shown && P.s.ord.length) {
+        var parts = P.s.how === 'groups' ? ['a', 'n'] : ['a', 'b', 'ab', 'n'], wrong = P.s.ord.filter(function (i) { return goes(DPC[i]) !== P.s.at[i]; }).length;
+        h += '<div class="mp-prow">' + parts.map(function (R) { return chip(rname(R), P.s.ord.filter(function (i) { return P.s.at[i] === R; }).length, R === 'ab'); }).join('') +
+          (wrong ? chip('in the wrong place', wrong, true) : '') + '</div>';
+      }
+      return h;
+    }
+    function placeAt(i, R) {
+      if (i < 0 || !R) return;
+      act(function () { if (P.s.at[i] == null) P.s.ord.push(i); P.s.at[i] = R; P.s.lp = i; last = 'place'; });
+      sel = -1; draw();
+      announce(T, pname(DPC[i]) + ' in ' + rname(R));
+    }
+    function unplace(i) {
+      if (i < 0 || P.s.at[i] == null) return;
+      act(function () { P.s.at[i] = null; P.s.ord = P.s.ord.filter(function (j) { return j !== i; }); if (P.s.lp === i) P.s.lp = -1; last = 'back'; });
+      sel = -1; draw();
+    }
+    function svPoint(svg, x, y) { var b = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal; return [(x - b.left) * vb.width / b.width, (y - b.top) * vb.height / b.height]; }
+    function regionAt(x, y) {
+      var svg = qs('.mp-dsv', root); if (!svg) return null;
+      var p = svPoint(svg, x, y);
+      return sgeom(svg.viewBox.baseVal.width, svg.viewBox.baseVal.height).at(p[0], p[1]);
+    }
+    /* drag a shape from the tray or the mat; a tap picks it up instead (then tap where it goes) */
+    root.addEventListener('pointerdown', function (e) {
+      skip = false;
+      var pc = e.target.closest('[data-p]');
+      if (!pc || P.mode !== 'sort' || e.button > 0) return;
+      var i = +pc.getAttribute('data-p'), x0 = e.clientX, y0 = e.clientY, ghost = null;
+      e.preventDefault();
+      function move(ev) {
+        if (!ghost && Math.hypot(ev.clientX - x0, ev.clientY - y0) > 6) {
+          ghost = el('div', 'mp-ghost mp-datt', svgOpen(48, 48) + shape(DPC[i], 24, 24, 42) + '</svg>');
+          document.body.appendChild(ghost);
+          pc.classList.add('mp-lift');
+        }
+        if (ghost) ghost.style.transform = 'translate(' + (ev.clientX - 24) + 'px,' + (ev.clientY - 24) + 'px)';
+      }
+      function up(ev) {
+        window.removeEventListener('pointermove', move); window.removeEventListener('pointerup', up); window.removeEventListener('pointercancel', up);
+        skip = true;
+        /* a tap: pick the shape up, or put it down; with another shape picked up, a tap on a shape on the mat puts it in that part */
+        if (!ghost) { if (sel >= 0 && sel !== i && P.s.at[i] != null) placeAt(sel, P.s.at[i]); else { sel = sel === i ? -1 : i; draw(); } return; }
+        ghost.remove(); pc.classList.remove('mp-lift');
+        if (ev.type === 'pointercancel') return;
+        var at = document.elementFromPoint(ev.clientX, ev.clientY);
+        if (at && at.closest('.mp-dsv')) placeAt(i, regionAt(ev.clientX, ev.clientY));
+        else if (at && at.closest('.mp-dtr')) unplace(i);
+      }
+      window.addEventListener('pointermove', move); window.addEventListener('pointerup', up); window.addEventListener('pointercancel', up);
+    });
+
+    /* ======== Graph ======== */
+    function sv() { return DSURV[P.g.sv]; }
+    function cats() {
+      var G = P.g, ix = sv().a.map(function (a, i) { return i; });
+      if (G.order && !sv().num) ix.sort(function (a, b) { return (G.c[b] + (G.two ? G.c2[b] : 0)) - (G.c[a] + (G.two ? G.c2[a] : 0)) || a - b; });
+      return ix;
+    }
+    function gmax() { return g7 ? 200 : g4 ? 99 : g3 ? 40 : 30; }
+    function sum(a) { return a.reduce(function (s, v) { return s + v; }, 0); }
+    function modes(c) { var m = Math.max.apply(null, c); return m ? c.map(function (v, i) { return v === m ? i : -1; }).filter(function (i) { return i >= 0; }) : []; }
+    function tally(n) {
+      var s = '';
+      for (var i = 0; i < Math.floor(n / 5); i++) s += '<span class="mp-dt5">||||</span>';
+      return s + (n % 5 ? '<span class="mp-dt1">' + '|'.repeat(n % 5) + '</span>' : '');
+    }
+    function pct(v, tot) { return tot ? r1(v / tot * 100) + '%' : '0%'; }
+    function gTable() {
+      var G = P.g, S = sv(), ix = cats(), tot = sum(G.c), tot2 = sum(G.c2), head = ['answer'];
+      if (!g4) head.push('tally');
+      head = head.concat(G.two ? ['A', 'B'] : ['count']);
+      var fr = shown && g5 && !g7, pc = shown && g7;
+      if (fr) head.push('fraction'); if (pc) head.push('%');
+      var rows = ix.map(function (i) {
+        var r = [sw(i) + S.a[i]];
+        if (!g4) r.push('<span class="mp-dtal" aria-label="' + G.c[i] + '">' + tally(G.c[i]) + '</span>');
+        r = r.concat(G.two ? [G.c[i], G.c2[i]] : [G.c[i]]);
+        if (fr) r.push(frac(G.c[i], tot || 1) + (G.two ? ', ' + frac(G.c2[i], tot2 || 1) : ''));
+        if (pc) r.push(pct(G.c[i], tot) + (G.two ? ', ' + pct(G.c2[i], tot2) : ''));
+        return r;
+      });
+      var foot = ['total'].concat(!g4 ? [''] : [], G.two ? [tot, tot2] : [tot], fr || pc ? [''] : []);
+      return box(S.q, tbl(head, rows, g2 ? foot : null));
+    }
+    function pict(W) {
+      var G = P.g, S = sv(), ix = cats(), k = G.key, m = Math.max(1, Math.max.apply(null, G.c)), lw = 86, n = Math.ceil(m / k);
+      var d = Math.max(9, Math.min(30, Math.floor((W - lw - 6) / n))), r = d / 2 - 2, rh = Math.max(d + 8, 34), H = ix.length * rh + 4, s = svgOpen(W, H, 'mp-dpic');
+      ix.forEach(function (i, row) {
+        var y = row * rh + rh / 2 + 2;
+        s += t(0, y + 5, S.a[i], 'mp-dtx');
+        for (var j = 0; j < Math.ceil(G.c[i] / k); j++) {
+          var cx = lw + j * d + d / 2, part = G.c[i] - j * k;
+          if (part >= k) s += '<circle class="mp-dc' + i + '" cx="' + cx + '" cy="' + y + '" r="' + r + '"/>';
+          else s += '<path class="mp-dc' + i + '" d="M' + cx + ' ' + (y - r) + 'A' + r + ' ' + r + ' 0 0 0 ' + cx + ' ' + (y + r) + 'Z"/>';
+        }
+      });
+      return box('Picture graph: 1 picture = ' + pl(k, 'person', 'people'), s + '</svg>');
+    }
+    function axisStep(max, n) { var r = max / n, p = Math.pow(10, Math.floor(Math.log(r) / Math.LN10)), q = r / p; return Math.max(1, (q <= 1 ? 1 : q <= 2 ? 2 : q <= 5 ? 5 : 10) * p); }
+    function bars(W, H) {
+      var G = P.g, S = sv(), ix = cats(), m = Math.max(1, Math.max.apply(null, G.c.concat(G.two ? G.c2 : [])));
+      var st = g4 ? axisStep(m, 5) : G.key, top = Math.ceil(m / st) * st, L = 40, B = 34, Tp = 12, R = 8, bw = (W - L - R) / ix.length;
+      var Y = function (v) { return Tp + (1 - v / top) * (H - Tp - B); }, s = svgOpen(W, H, 'mp-dbar');
+      for (var v = 0; v <= top + 1e-9; v += st) s += '<line class="' + (v ? 'mp-pgl' : 'mp-pgz') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/>' + t(L - 7, Y(v) + 4, fmt(v), 'mp-pgy');
+      ix.forEach(function (i, j) {
+        var vs = G.two ? [G.c[i], G.c2[i]] : [G.c[i]], w = bw * 0.64 / vs.length;
+        vs.forEach(function (v, q) {
+          var x = L + j * bw + bw * 0.18 + q * w;
+          if (v) s += '<rect class="' + (G.two ? 'mp-dser' + q : 'mp-dc' + i) + '" x="' + x.toFixed(1) + '" y="' + Y(v).toFixed(1) + '" width="' + Math.max(2, w - 3).toFixed(1) + '" height="' + (Y(0) - Y(v)).toFixed(1) + '" rx="3"/>';
+        });
+        s += t(L + j * bw + bw / 2, H - 12, S.a[i], 'mp-pgx');
+      });
+      var mean = sum(G.c) / G.c.length;
+      if (shown && G.view.fair && !G.two) s += '<line class="mp-dmean" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(mean).toFixed(1) + '" y2="' + Y(mean).toFixed(1) + '"/>' + t(W - R, Y(mean) - 6, 'fair share ' + fmt(r1(mean)), 'mp-dmeant', 'end');
+      var lab = 'Bar graph' + (!g4 && G.key > 1 ? ': 1 square = ' + G.key + ' people' : '');
+      return box(lab, s + '</svg>' + (G.two ? legend([['mp-dser0', 'class A'], ['mp-dser1', 'class B']]) : ''));
+    }
+    function legend(items) { return '<div class="mp-dleg">' + items.map(function (x) { return '<span><i class="mp-dsw ' + x[0] + '"></i>' + x[1] + '</span>'; }).join('') + '</div>'; }
+    function linePlot(W) {
+      var G = P.g, S = sv(), n = S.a.length, m = Math.max(1, Math.max.apply(null, G.c)), Lm = 30, gap = Math.min(22, 150 / m), H = 54 + m * gap, X = function (i) { return Lm + i * (W - 2 * Lm) / (n - 1); };
+      var s = svgOpen(W, H, 'mp-dlp') + '<line class="mp-fkax" x1="' + (Lm - 14) + '" x2="' + (W - Lm + 14) + '" y1="' + (H - 34) + '" y2="' + (H - 34) + '"/>';
+      S.a.forEach(function (a, i) {
+        s += '<line class="mp-fkt1" x1="' + X(i) + '" x2="' + X(i) + '" y1="' + (H - 40) + '" y2="' + (H - 28) + '"/>' + t(X(i), H - 8, a, 'mp-dtx', 'middle');
+        for (var j = 0; j < G.c[i]; j++) s += t(X(i), H - 44 - j * gap, '×', 'mp-dx', 'middle');
+      });
+      return box('Line plot', s + '</svg>');
+    }
+    function stack(W) {
+      var G = P.g, S = sv(), ix = cats(), sets = G.two ? [G.c, G.c2] : [G.c], bh = 40, H = sets.length * (bh + 16), Lw = G.two ? 26 : 0, s = svgOpen(W, H, 'mp-dstk');
+      sets.forEach(function (c, row) {
+        var tot = sum(c) || 1, x = Lw, y = row * (bh + 16);
+        if (G.two) s += t(0, y + bh / 2 + 5, row ? 'B' : 'A', 'mp-dlab');
+        ix.forEach(function (i) {
+          var w = c[i] / tot * (W - Lw);
+          if (!w) return;
+          s += '<rect class="mp-dc' + i + ' mp-dseg" x="' + x.toFixed(1) + '" y="' + y + '" width="' + w.toFixed(1) + '" height="' + bh + '"/>';
+          if (shown && w > 46) s += t(x + w / 2, y + bh / 2 + 5, g6 ? pct(c[i], tot) : frac(c[i], tot), 'mp-dsegt', 'middle');
+          x += w;
+        });
+      });
+      return box('Stacked bar: parts of the whole', s + '</svg>' + legend(ix.map(function (i) { return ['mp-dc' + i, S.a[i]]; })));
+    }
+    function pie(c, D, ix) {
+      var tot = sum(c), r = D / 2 - 3, cx = D / 2, a0 = -Math.PI / 2, s = svgOpen(D, D, 'mp-dpie');
+      if (!tot) return s + '<circle class="mp-dempty" cx="' + cx + '" cy="' + cx + '" r="' + r + '"/></svg>';
+      ix.forEach(function (i) {
+        var f = c[i] / tot; if (!f) return;
+        if (f > 0.9999) { s += '<circle class="mp-dc' + i + ' mp-dseg" cx="' + cx + '" cy="' + cx + '" r="' + r + '"/>'; return; }
+        var a1 = a0 + f * 2 * Math.PI;
+        s += '<path class="mp-dc' + i + ' mp-dseg" d="M' + cx + ' ' + cx + 'L' + (cx + r * Math.cos(a0)).toFixed(1) + ' ' + (cx + r * Math.sin(a0)).toFixed(1) + 'A' + r + ' ' + r + ' 0 ' + (f > 0.5 ? 1 : 0) + ' 1 ' + (cx + r * Math.cos(a1)).toFixed(1) + ' ' + (cx + r * Math.sin(a1)).toFixed(1) + 'Z"/>';
+        a0 = a1;
+      });
+      return s + '</svg>';
+    }
+    function circleGraph(W) {
+      var G = P.g, S = sv(), ix = cats(), D = Math.min(220, W < 500 ? 170 : 220), h = '<div class="mp-dpies">';
+      (G.two ? [G.c, G.c2] : [G.c]).forEach(function (c, k) { h += '<div class="mp-dpiew">' + pie(c, G.two ? Math.min(D, 170) : D, ix) + (G.two ? '<small>class ' + (k ? 'B' : 'A') + '</small>' : '') + '</div>'; });
+      var tot = sum(G.c);
+      return box('Circle graph', h + '</div>' + legend(ix.map(function (i) { return ['mp-dc' + i, S.a[i] + (shown && !G.two ? ' ' + pct(G.c[i], tot) : '')]; })));
+    }
+    function drawGraph(W) {
+      var G = P.g, V = G.view, wide = W >= 640, cw = chartW(W, wide), parts = [];
+      if (V.tally) parts.push(gTable());
+      if (V.pict && !g5 && !G.two) parts.push(pict(cw));
+      if (V.line && sv().num && g2 && !G.two) parts.push(linePlot(cw));
+      if (V.bar && g2) parts.push(bars(cw, wide ? 260 : 220));
+      if (V.stack && g5) parts.push(stack(cw));
+      if (V.circle && g7) parts.push(circleGraph(cw));
+      if (!parts.length) return '<p class="mp-fknote">Turn on a table or a graph below.</p>';
+      var h = '<div class="mp-prow">' + parts.join('') + '</div>';
+      if (shown) {
+        var m = modes(G.c), ch = '';
+        if (g2 && m.length) ch += chip('mode', m.map(function (i) { return sv().a[i]; }).join(', '), true);
+        if (g3 && V.fair && !G.two) ch += chip('fair share', fmt(sum(G.c)) + ' ÷ ' + G.c.length + ' = ' + fmt(r1(sum(G.c) / G.c.length)));
+        if (ch) h = '<div class="mp-prow">' + ch + '</div>' + h;
+      }
+      return h;
+    }
+    function gNudge(i, d) {
+      var G = P.g, c = G.two && G.cls ? G.c2 : G.c;
+      act(function () { c[i] = clamp(c[i] + d * G.by, 0, gmax()); last = d > 0 ? 'tally' : 'untally'; });
+    }
+
+    /* ======== Numbers ======== */
+    function sorted(v) { return v.slice().sort(function (a, b) { return a - b; }); }
+    function stats(v) {
+      if (!v.length) return null;
+      var s = sorted(v), n = s.length, tot = sum(s), cnt = {}, best = 1, md = [];
+      s.forEach(function (x) { cnt[x] = (cnt[x] || 0) + 1; best = Math.max(best, cnt[x]); });
+      if (best > 1) Object.keys(cnt).forEach(function (k) { if (cnt[k] === best) md.push(+k); });
+      return { n: n, tot: tot, mean: tot / n, med: n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2, mid: n % 2 ? [s[(n - 1) / 2]] : [s[n / 2 - 1], s[n / 2]], mode: md.sort(function (a, b) { return a - b; }), lo: s[0], hi: s[n - 1] };
+    }
+    function eqv(v) { return Math.abs(v - Math.round(v)) < 1e-9 ? ' = ' + fmt(Math.round(v)) : ' ≈ ' + fmt(r1(v)); }
+    function stem(v) {
+      var s = sorted(v), rows = [], lo = Math.floor(s[0] / 10), hi = Math.floor(s[s.length - 1] / 10);
+      for (var k = lo; k <= hi; k++) rows.push([String(k), s.filter(function (x) { return Math.floor(x / 10) === k; }).map(function (x) { return x % 10; }).join(' ')]);
+      return box('Stem and leaf (' + DSETS[P.n.set].unit + ')', tbl(['stem', 'leaves'], rows) + '<small class="mp-dkey">' + rows[0][0] + ' | ' + (s[0] % 10) + ' means ' + s[0] + '</small>');
+    }
+    function histo(v, W, H) {
+      var b = P.n.bin, s = sorted(v), lo = Math.floor(s[0] / b) * b, hi = Math.floor(s[s.length - 1] / b) * b, bins = [];
+      for (var x = lo; x <= hi; x += b) bins.push([x, s.filter(function (q) { return q >= x && q < x + b; }).length]);
+      var m = Math.max.apply(null, bins.map(function (q) { return q[1]; })), st = axisStep(m, 4), top = Math.ceil(m / st) * st, L = 34, B = 40, Tp = 10, R = 6, bw = (W - L - R) / bins.length;
+      var Y = function (q) { return Tp + (1 - q / top) * (H - Tp - B); }, g = svgOpen(W, H, 'mp-dbar');
+      for (var q = 0; q <= top; q += st) g += '<line class="' + (q ? 'mp-pgl' : 'mp-pgz') + '" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(q).toFixed(1) + '" y2="' + Y(q).toFixed(1) + '"/>' + t(L - 6, Y(q) + 4, q, 'mp-pgy');
+      bins.forEach(function (bn, i) {
+        if (bn[1]) g += '<rect class="mp-dhist" x="' + (L + i * bw).toFixed(1) + '" y="' + Y(bn[1]).toFixed(1) + '" width="' + bw.toFixed(1) + '" height="' + (Y(0) - Y(bn[1])).toFixed(1) + '"/>';
+        g += t(L + i * bw + bw / 2, H - 22, bn[0] + '–' + (bn[0] + b - 1), 'mp-pgx' + (bins.length > 5 ? ' sm' : ''), 'middle');
+      });
+      return box('Histogram (' + DSETS[P.n.set].unit + ')', g + '</svg>');
+    }
+    function fit(ps) {
+      var n = ps.length, mx = 0, my = 0; ps.forEach(function (p) { mx += p[0] / n; my += p[1] / n; });
+      var sxy = 0, sxx = 0, syy = 0; ps.forEach(function (p) { sxy += (p[0] - mx) * (p[1] - my); sxx += (p[0] - mx) * (p[0] - mx); syy += (p[1] - my) * (p[1] - my); });
+      var m = sxx ? sxy / sxx : 0; return { m: m, b: my - m * mx, r: sxx && syy ? sxy / Math.sqrt(sxx * syy) : 0 };
+    }
+    function scatter(W, H) {
+      var ps = P.n.pairs, xs = ps.map(function (p) { return p[0]; }), ys = ps.map(function (p) { return p[1]; });
+      var x0 = Math.floor((Math.min.apply(null, xs) - 2) / 10) * 10, x1 = Math.ceil((Math.max.apply(null, xs) + 2) / 10) * 10, y0 = Math.floor((Math.min.apply(null, ys) - 2) / 10) * 10, y1 = Math.ceil((Math.max.apply(null, ys) + 2) / 10) * 10;
+      var L = 50, B = 44, Tp = 10, R = 12, X = function (v) { return L + (v - x0) / (x1 - x0) * (W - L - R); }, Y = function (v) { return Tp + (1 - (v - y0) / (y1 - y0)) * (H - Tp - B); };
+      var s = svgOpen(W, H, 'mp-dsc'), sx = axisStep(x1 - x0, 5), sy = axisStep(y1 - y0, 5);
+      for (var v = y0; v <= y1; v += sy) s += '<line class="mp-pgl" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/>' + t(L - 7, Y(v) + 4, v, 'mp-pgy');
+      for (v = x0; v <= x1; v += sx) s += t(X(v), H - B + 18, v, 'mp-pgx', 'middle');
+      s += '<line class="mp-pgz" x1="' + L + '" x2="' + L + '" y1="' + Tp + '" y2="' + Y(y0) + '"/><line class="mp-pgz" x1="' + L + '" x2="' + (W - R) + '" y1="' + Y(y0) + '" y2="' + Y(y0) + '"/>';
+      if (P.n.view.trend && ps.length > 1) {
+        var f = fit(ps), cl = function (x) { return Math.max(y0, Math.min(y1, f.m * x + f.b)); }, xa = x0, xb = x1;
+        if (f.m) { xa = Math.max(x0, Math.min(x1, ((f.m > 0 ? y0 : y1) - f.b) / f.m)); xb = Math.max(x0, Math.min(x1, ((f.m > 0 ? y1 : y0) - f.b) / f.m)); }
+        s += '<line class="mp-dmean" x1="' + X(xa).toFixed(1) + '" y1="' + Y(cl(xa)).toFixed(1) + '" x2="' + X(xb).toFixed(1) + '" y2="' + Y(cl(xb)).toFixed(1) + '"/>';
+      }
+      ps.forEach(function (p) { s += '<circle class="mp-pgd a" cx="' + X(p[0]).toFixed(1) + '" cy="' + Y(p[1]).toFixed(1) + '" r="6"/>'; });
+      s += t((L + W) / 2, H - 6, 'height (cm)', 'mp-dax', 'middle') + '<text class="mp-dax" x="12" y="' + (H / 2) + '" text-anchor="middle" transform="rotate(-90 12 ' + (H / 2) + ')">arm span (cm)</text>';
+      return box('Scatter plot', s + '</svg>');
+    }
+    function relWords(r) { var a = Math.abs(r); return a < 0.3 ? 'no clear relationship' : (a >= 0.7 ? 'strong, ' : 'weak, ') + (r > 0 ? 'positive' : 'negative'); }
+    function drawNums(W) {
+      var N = P.n, V = N.view, wide = W >= 640, cw = chartW(W, wide), h = '';
+      if (g8 && N.two) {
+        if (!N.pairs.length) return '<p class="mp-fknote">Add a pair from the tray.</p>';
+        var parts = box('Height and arm span', tbl(['height', 'arm span'], N.pairs.map(function (p, i) { return ['<button type="button" class="mp-dval" data-pi="' + i + '" aria-label="Take off ' + p[0] + ' and ' + p[1] + '">' + p[0] + '</button>', p[1]]; })));
+        if (V.scatter) parts += scatter(wide ? Math.min(460, W - 280) : cw, wide ? 300 : 250);
+        if (shown && N.pairs.length > 2) h += '<div class="mp-prow">' + chip('relationship', relWords(fit(N.pairs).r), true) + '</div>';
+        return h + '<div class="mp-prow">' + parts + '</div>';
+      }
+      if (!N.v.length) return '<p class="mp-fknote">Add numbers from the tray.</p>';
+      var S = sorted(N.v), st = stats(N.v);
+      h += '<div class="mp-dlist" role="group" aria-label="The numbers, smallest first">' + S.map(function (x) { return '<button type="button" class="mp-dval' + (shown && V.median && st.mid.indexOf(x) >= 0 ? ' mid' : '') + (shown && V.mode && st.mode.indexOf(x) >= 0 ? ' mo' : '') + '" data-nv="' + x + '" aria-label="Take off ' + x + '">' + x + '</button>'; }).join('') + '</div>';
+      if (shown) {
+        var ch = '';
+        if (V.mean) ch += chip('mean', fmt(st.tot) + ' ÷ ' + st.n + eqv(st.mean));
+        if (V.median) ch += chip('median', st.n % 2 ? fmt(st.med) : '(' + st.mid[0] + ' + ' + st.mid[1] + ') ÷ 2 = ' + fmt(r1(st.med)));
+        if (V.mode) ch += chip('mode', st.mode.length ? st.mode.join(', ') : 'none', true);
+        if (V.range && g6) ch += chip('range', st.hi + ' − ' + st.lo + ' = ' + (st.hi - st.lo));
+        if (ch) h += '<div class="mp-prow">' + ch + '</div>';
+      }
+      var parts2 = '';
+      if (V.stem) parts2 += stem(N.v);
+      if (V.hist && g6) parts2 += histo(N.v, cw, wide ? 240 : 210);
+      if (parts2) h += '<div class="mp-prow">' + parts2 + '</div>';
+      return h;
+    }
+    function nAdd(v) {
+      var N = P.n;
+      act(function () { N.prev = stats(N.v); if (v == null) N.v.push(N.cur); else N.v = N.v.filter(function (x, i, a) { return i !== a.indexOf(v); }); last = v == null ? 'add' : 'takeoff'; });
+    }
+
+    /* ======== Chance ======== */
+    /* the outcomes of a thing: their names, colours and chances as [top, bottom] */
+    function outs(dev, C) {
+      C = C || (P && P.c);
+      if (dev === 'coin') return [{ n: 'heads', s: 'H', p: [1, 2], c: 'mp-dc1' }, { n: 'tails', s: 'T', p: [1, 2], c: 'mp-dc5' }];
+      if (dev === 'die') return [1, 2, 3, 4, 5, 6].map(function (k) { return { n: String(k), s: String(k), p: [1, 6], c: 'mp-dc1' }; });
+      var parts = dev === 'spin' ? (C ? C.sec : [2, 1, 1, 0]) : (C ? C.bag : [3, 2, 1, 0]), tot = sum(parts), out = [];
+      parts.forEach(function (k, i) { if (k) out.push({ n: DCOLS[i], s: DCOLS[i][0].toUpperCase(), p: [k, tot], c: 'mp-dc' + i, i: i }); });
+      return out;
+    }
+    function pair() { return DTWO[P.c.pair]; }
+    function two() { return g6 && P.c.two; }
+    function pwords(p) { var f = p[0] / p[1]; return f === 0 ? 'impossible' : f === 1 ? 'certain' : f < 0.5 ? 'unlikely' : f === 0.5 ? 'as likely as not' : 'likely'; }
+    function pshow(p) { var f = frac(p[0], p[1]); return P.c.view.pct && g5 ? r1(p[0] / p[1] * 100) + '%' : f; }
+    function resetCounts() {
+      var C = P.c;
+      C.cnt = outs(C.dev).map(function () { return 0; }); C.n = 0; C.last = -1; C.last2 = null;
+      var A = outs(pair()[0]), B = outs(pair()[1]);
+      C.cnt2 = A.map(function () { return B.map(function () { return 0; }); });
+    }
+    /* where the spinner stops: somewhere inside the part it landed on */
+    function angFor(L, q) { var st = 0; for (var m = 0; m < q; m++) st += L[m].p[0]; return (st + (0.15 + Math.random() * 0.7) * L[q].p[0]) / L[0].p[1] * 360; }
+    function pick(L) { var tot = L[0].p[1], r = Math.random() * tot, acc = 0; for (var i = 0; i < L.length; i++) { acc += L[i].p[0]; if (r < acc) return i; } return L.length - 1; }
+    function run(k) {
+      var C = P.c;
+      act(function () {
+        if (two()) {
+          var A = outs(pair()[0]), B = outs(pair()[1]);
+          for (var j = 0; j < k; j++) { var a = pick(A), b = pick(B); C.cnt2[a][b]++; C.last2 = [a, b]; }
+          if (pair()[0] === 'spin') C.ang = angFor(A, C.last2[0]);
+        } else {
+          var L = outs(C.dev);
+          for (var i = 0; i < k; i++) { var q = pick(L); C.cnt[q]++; C.last = q; }
+          if (C.dev === 'spin') C.ang = angFor(L, C.last);
+        }
+        C.n += k; last = 'run';
+        spinNow = k === 1;
+      });
+    }
+    function spinner(L, D, ang, anim) {
+      var r = D / 2 - 4, c = D / 2, a0 = -Math.PI / 2, tot = L[0].p[1], s = svgOpen(D, D, 'mp-dspin');
+      L.forEach(function (o) {
+        for (var k = 0; k < o.p[0]; k++) {
+          var a1 = a0 + 2 * Math.PI / tot;
+          s += tot === 1 ? '<circle class="' + o.c + ' mp-dseg" cx="' + c + '" cy="' + c + '" r="' + r + '"/>' : '<path class="' + o.c + ' mp-dseg" d="M' + c + ' ' + c + 'L' + (c + r * Math.cos(a0)).toFixed(1) + ' ' + (c + r * Math.sin(a0)).toFixed(1) + 'A' + r + ' ' + r + ' 0 0 1 ' + (c + r * Math.cos(a1)).toFixed(1) + ' ' + (c + r * Math.sin(a1)).toFixed(1) + 'Z"/>';
+          a0 = a1;
+        }
+      });
+      return s + '<g class="mp-dptr' + (anim ? ' go' : '') + '" style="transform:rotate(' + ang.toFixed(1) + 'deg);transform-origin:' + c + 'px ' + c + 'px"><path d="M' + c + ' ' + (c - r * 0.8) + 'L' + (c + 7) + ' ' + c + 'H' + (c - 7) + 'Z"/></g><circle class="mp-dhub" cx="' + c + '" cy="' + c + '" r="8"/></svg>';
+    }
+    function pips(k, D) {
+      var s = svgOpen(D, D, 'mp-ddie'), q = D / 4, at = { 1: [[2, 2]], 2: [[1, 1], [3, 3]], 3: [[1, 1], [2, 2], [3, 3]], 4: [[1, 1], [3, 1], [1, 3], [3, 3]], 5: [[1, 1], [3, 1], [2, 2], [1, 3], [3, 3]], 6: [[1, 1], [3, 1], [1, 2], [3, 2], [1, 3], [3, 3]] };
+      s += '<rect class="mp-ddf" x="3" y="3" width="' + (D - 6) + '" height="' + (D - 6) + '" rx="' + D / 6 + '"/>';
+      (at[k] || []).forEach(function (p) { s += '<circle class="mp-ddp" cx="' + p[0] * q + '" cy="' + p[1] * q + '" r="' + D / 12 + '"/>'; });
+      return s + '</svg>';
+    }
+    function devPic(dev, lastI, D, ang, anim) {
+      var L = outs(dev);
+      if (dev === 'spin') return spinner(L, D, ang, anim);
+      if (dev === 'die') return pips(lastI >= 0 ? lastI + 1 : 0, D * 0.62);
+      if (dev === 'coin') return '<div class="mp-dcoin' + (lastI === 1 ? ' tails' : '') + (anim ? ' go' : '') + '" style="width:' + D * 0.62 + 'px;height:' + D * 0.62 + 'px">' + (lastI >= 0 ? L[lastI].s : '?') + '</div>';
+      var bag = '<div class="mp-dbag" style="width:' + D * 0.8 + 'px">';
+      P.c.bag.forEach(function (k, i) { for (var j = 0; j < k; j++) bag += '<i class="mp-dsw mp-dc' + i + '"></i>'; });
+      return bag + '</div>' + (lastI >= 0 ? '<div class="mp-dpick"><small>picked</small><i class="mp-dsw ' + L[lastI].c + '"></i></div>' : '');
+    }
+    function probLine(L, W) {
+      var Lm = 24, X = function (f) { return Lm + f * (W - 2 * Lm); }, s = svgOpen(W, 92, 'mp-dpl'), byP = {};
+      s += '<line class="mp-fkax" x1="' + Lm + '" x2="' + (W - Lm) + '" y1="52" y2="52"/>';
+      var ticks = g4 ? [[0, '0'], [0.5, '1/2'], [1, '1']] : [[0, 'impossible'], [0.5, 'even chance'], [1, 'certain']];
+      ticks.forEach(function (k) { s += '<line class="mp-fkt1" x1="' + X(k[0]) + '" x2="' + X(k[0]) + '" y1="44" y2="60"/>' + t(X(k[0]), 80, k[1], 'mp-dtx', k[0] === 0 ? 'start' : k[0] === 1 ? 'end' : 'middle'); });
+      if (!g4) { s += t(X(0.25), 80, 'unlikely', 'mp-dtx2', 'middle') + t(X(0.75), 80, 'likely', 'mp-dtx2', 'middle'); }
+      L.forEach(function (o) { var f = o.p[0] / o.p[1], k = f.toFixed(6); (byP[k] = byP[k] || { f: f, o: [] }).o.push(o); });
+      Object.keys(byP).forEach(function (k) {
+        var b = byP[k], x = X(b.f);
+        b.o.forEach(function (o, j) { s += '<circle class="' + o.c + ' mp-dpd" cx="' + (x + (j - (b.o.length - 1) / 2) * 8).toFixed(1) + '" cy="52" r="' + (b.o.length > 2 ? 6 : 8) + '"/>'; });
+        var lab = b.o.length > 2 ? 'each' : b.o.map(function (o) { return o.n; }).join(', ');
+        s += t(x, 30, lab + (shown && g4 ? ' ' + pshow(b.o[0].p) : ''), 'mp-dtx', b.f < 0.08 ? 'start' : b.f > 0.92 ? 'end' : 'middle');
+      });
+      return box('Probability line', s + '</svg>');
+    }
+    function shouldDid(L, cnt, n, W, H) {
+      var V = P.c.view, ex = L.map(function (o) { return n * o.p[0] / o.p[1]; }), m = Math.max(1, Math.max.apply(null, cnt.concat(V.should && g4 ? ex : [])));
+      var st = axisStep(m, 4), top = Math.ceil(m / st) * st, Lx = 40, B = 30, Tp = 10, R = 6, bw = (W - Lx - R) / L.length, both = V.should && g4 && V.did;
+      var Y = function (v) { return Tp + (1 - v / top) * (H - Tp - B); }, s = svgOpen(W, H, 'mp-dbar');
+      for (var v = 0; v <= top + 1e-9; v += st) s += '<line class="' + (v ? 'mp-pgl' : 'mp-pgz') + '" x1="' + Lx + '" x2="' + (W - R) + '" y1="' + Y(v).toFixed(1) + '" y2="' + Y(v).toFixed(1) + '"/>' + t(Lx - 7, Y(v) + 4, fmt(v), 'mp-pgy');
+      L.forEach(function (o, i) {
+        var w = bw * 0.66 / (both ? 2 : 1), x = Lx + i * bw + bw * 0.17;
+        if (V.should && g4 && ex[i]) { s += '<rect class="mp-dexp" x="' + x.toFixed(1) + '" y="' + Y(ex[i]).toFixed(1) + '" width="' + Math.max(2, w - 3).toFixed(1) + '" height="' + (Y(0) - Y(ex[i])).toFixed(1) + '" rx="3"/>'; if (both) x += w; }
+        if (V.did && cnt[i]) s += '<rect class="' + o.c + '" x="' + x.toFixed(1) + '" y="' + Y(cnt[i]).toFixed(1) + '" width="' + Math.max(2, w - 3).toFixed(1) + '" height="' + (Y(0) - Y(cnt[i])).toFixed(1) + '" rx="3"/>';
+        s += t(Lx + i * bw + bw / 2, H - 10, o.n, 'mp-pgx' + (L.length > 4 ? ' sm' : ''), 'middle');
+      });
+      var leg = [];
+      if (V.should && g4) leg.push(['mp-dexp', 'should happen']);
+      if (V.did) leg.push(['mp-dser0', 'did happen']);
+      return box(g4 ? 'Should happen and did happen' : 'What happened', s + '</svg>' + legend(leg));
+    }
+    function tree(A, B, W) {
+      var nL = A.length * B.length, rowH = 26, H = nL * rowH + 10, x0 = 14, x1 = W * 0.38, x2 = W * 0.72, s = svgOpen(W, H, 'mp-dtree'), k = 0;
+      A.forEach(function (a, i) {
+        var ya = (i + 0.5) * B.length * rowH + 5;
+        s += '<line class="mp-dtl" x1="' + x0 + '" y1="' + (H / 2) + '" x2="' + (x1 - 14) + '" y2="' + ya + '"/>' + t(x1, ya + 5, a.s, 'mp-dtx', 'middle');
+        B.forEach(function (b) {
+          var yb = (k + 0.5) * rowH + 5; k++;
+          s += '<line class="mp-dtl" x1="' + (x1 + 14) + '" y1="' + ya + '" x2="' + (x2 - 14) + '" y2="' + yb + '"/>' + t(x2, yb + 5, b.s, 'mp-dtx', 'middle') +
+            t(W - 4, yb + 5, a.s + b.s + (shown ? '  ' + frac(a.p[0] * b.p[0], a.p[1] * b.p[1]) : ''), 'mp-dtx2', 'end');
+        });
+      });
+      return box('Tree diagram: ' + nL + ' outcomes', s + '</svg>');
+    }
+    function drawChance(W) {
+      var C = P.c, V = C.view, wide = W >= 640, cw = chartW(W, wide), D = W < 500 ? 130 : 170, h = '', anim = spinNow;
+      if (two()) {
+        var pr = pair(), A = outs(pr[0]), B = outs(pr[1]), l2 = C.last2;
+        h += '<div class="mp-prow mp-ddev">' + devPic(pr[0], l2 ? l2[0] : -1, D * 0.8, C.ang, anim) + devPic(pr[1], l2 ? l2[1] : -1, D * 0.8, C.ang, anim) + '</div>';
+        if (shown && l2) {
+          var a = A[l2[0]], b = B[l2[1]], p = [a.p[0] * b.p[0], a.p[1] * b.p[1]], got = C.cnt2[l2[0]][l2[1]];
+          h += '<div class="mp-prow">' + chip(a.s + ' and ' + b.s + ' should', frac(a.p[0], a.p[1]) + ' × ' + frac(b.p[0], b.p[1]) + ' = ' + frac(p[0], p[1]) + ' ≈ ' + Math.round(p[0] / p[1] * 100) + '%') +
+            chip('did', got + '/' + C.n + ' ≈ ' + Math.round(got / C.n * 100) + '%', true) + '</div>';
+        }
+        var parts = box('Did happen', tbl([DDEV[pr[0]][0].toLowerCase()].concat(B.map(function (o) { return o.s; })), A.map(function (o, i) { return [o.s].concat(C.cnt2[i]); })));
+        if (V.tree && g8 && A.length * B.length <= 12) parts += tree(A, B, cw);
+        return h + '<div class="mp-prow">' + parts + '</div>';
+      }
+      var L = outs(C.dev);
+      h += '<div class="mp-prow mp-ddev">' + devPic(C.dev, C.last, D, C.ang, anim) + '</div>';
+      var parts2 = '';
+      if ((V.did || V.should && g4) && (C.n || V.should && g4)) parts2 += shouldDid(L, C.cnt, C.n, cw, wide ? 240 : 200);
+      if (V.line) parts2 += probLine(L, cw);
+      if (!C.n) h += '<p class="mp-fknote">' + DDEV[C.dev][1] + ' to see what happens.</p>';
+      return h + (parts2 ? '<div class="mp-prow">' + parts2 + '</div>' : '');
+    }
+    function cNudge(id, d) {
+      var C = P.c, a = id[0] === 's' ? C.sec : C.bag, i = +id.slice(1);
+      if (d < 0 && sum(a) <= 1 && a[i]) return;
+      act(function () { a[i] = clamp(a[i] + d, 0, id[0] === 's' ? 8 : 10); resetCounts(); last = 'parts'; });
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function stp(id, lab, val, cls) {
+      return '<div class="mp-dans' + (cls ? ' ' + cls : '') + '"><small>' + lab + '</small><div class="mp-pstr"><button type="button" class="mp-pstb" data-st="' + id + '" data-d="-1" aria-label="' + lab.replace(/<[^>]+>/g, '') + ': less">&minus;</button>' +
+        '<b>' + val + '</b><button type="button" class="mp-pstb" data-st="' + id + '" data-d="1" aria-label="' + lab.replace(/<[^>]+>/g, '') + ': more">+</button></div></div>';
+    }
+    function trayHtml() {
+      if (P.mode === 'sort') {
+        var left = DPC.map(function (p, i) { return P.s.at[i] == null ? i : -1; }).filter(function (i) { return i >= 0; });
+        return '<small>Sort these</small>' + (left.length ? left.map(function (i) {
+          return '<button type="button" class="mp-bpc mp-dtp" data-p="' + i + '" aria-pressed="' + (sel === i) + '" aria-label="' + pname(DPC[i]) + '">' + svgOpen(44, 44) + shape(DPC[i], 22, 22, 40) + '</svg></button>';
+        }).join('') : '<p class="mp-fknote">All sorted</p>');
+      }
+      if (P.mode === 'graph') {
+        var G = P.g, S = sv(), c = G.two && G.cls ? G.c2 : G.c;
+        return (G.two ? '<div class="mp-fktabs" role="group" aria-label="Adding to"><button type="button" data-cls="0" aria-pressed="' + !G.cls + '">Class A</button><button type="button" data-cls="1" aria-pressed="' + !!G.cls + '">Class B</button></div>' : '<small>Answers</small>') +
+          S.a.map(function (a, i) { return stp('g' + i, sw(i) + a, c[i]); }).join('') +
+          (g4 ? '<div class="mp-fktabs mp-dby" role="group" aria-label="Each tap adds"><button type="button" data-by="1" aria-pressed="' + (G.by === 1) + '">1</button><button type="button" data-by="10" aria-pressed="' + (G.by === 10) + '">10</button></div>' : '');
+      }
+      if (P.mode === 'nums') {
+        var N = P.n;
+        if (g8 && N.two) return '<small>Pairs</small>' + stp('x', 'height', N.x, 'mp-dbig') + stp('y', 'arm span', N.y, 'mp-dbig') + '<div class="mp-fkthings"><button type="button" data-do="addpair">Add the pair</button><button type="button" data-do="random">Random class</button></div>';
+        return '<small>Numbers</small>' + stp('v', DSETS[N.set].name, N.cur, 'mp-dbig') + '<div class="mp-fkthings"><button type="button" data-do="tens" aria-label="10 less">&minus;10</button><button type="button" data-do="tenp" aria-label="10 more">+10</button></div>' +
+          '<div class="mp-fkthings"><button type="button" data-do="add">Add it</button><button type="button" data-do="random">Random class</button></div>';
+      }
+      var C = P.c, devs = ['spin', 'coin', 'die', 'bag'];
+      var h = '<small>Use</small><div class="mp-fkthings">' + (two() ? DTWO.map(function (p, i) { return '<button type="button" data-pair="' + i + '" aria-pressed="' + (C.pair === i) + '">' + DDEV[p[0]][0] + ' and ' + DDEV[p[1]][0].toLowerCase() + '</button>'; }).join('') :
+        devs.map(function (d) { return '<button type="button" data-dev="' + d + '" aria-pressed="' + (C.dev === d) + '">' + DDEV[d][0] + '</button>'; }).join('')) + '</div>';
+      var ed = two() ? (pair()[0] === 'spin' ? 'spin' : '') : C.dev;
+      if (ed === 'spin' || ed === 'bag') h += '<small>' + (ed === 'spin' ? 'Parts' : 'Counters') + '</small>' + DCOLS.map(function (n, i) { return stp((ed === 'spin' ? 's' : 'b') + i, sw(i) + n, (ed === 'spin' ? C.sec : C.bag)[i]); }).join('');
+      return h;
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var big = '', eq = '';
+      if (P.mode === 'sort') {
+        big = P.s.ord.length + ' of ' + DPC.length + ' sorted';
+        var i = P.s.lp;
+        if (i >= 0 && P.s.at[i] != null) {
+          var p = DPC[i], a = has(p, P.s.r1), b = has(p, P.s.r2), R = goes(p), w1 = (a ? 'is ' : 'is not ') + '<b>' + phr(P.s.r1) + '</b>';
+          if (P.s.how !== 'groups') w1 += (a === b ? (a ? ' and ' : ' and not ') : (b ? ' but is ' : ' but not ')) + '<b>' + phr(P.s.r2) + '</b>';
+          eq = 'the ' + pname(p) + ' ' + w1 + ', so it goes ' + (R === 'n' && P.s.how === 'venn' ? '<b>outside</b>' : 'in <b>' + rname(R) + '</b>') + (P.s.at[i] !== R ? '. Move it.' : '');
+        }
+      } else if (P.mode === 'graph') {
+        var G = P.g, S = sv(), tot = sum(G.c), m = modes(G.c), top = m.map(function (k) { return S.a[k]; }).join(' and ');
+        big = top || 'no answers yet';
+        if (m.length) {
+          eq = 'most chose <b>' + top + '</b> (' + G.c[m[0]] + ')';
+          if (g7) eq += ': ' + G.c[m[0]] + ' of ' + fmt(tot) + ' = <b>' + pct(G.c[m[0]], tot) + '</b>';
+          else if (g5) eq += ': <b>' + frac(G.c[m[0]], tot) + '</b> of the class';
+          eq += '. <b>' + fmt(tot) + '</b> answered';
+          if (G.two) { var m2 = modes(G.c2); eq += '. Class B: most chose <b>' + m2.map(function (k) { return S.a[k]; }).join(' and ') + '</b>'; }
+        }
+      } else if (P.mode === 'nums') {
+        var N = P.n;
+        if (g8 && N.two) { big = pl(N.pairs.length, 'pair', 'pairs'); if (N.pairs.length > 2) { var f = fit(N.pairs); eq = relWords(f.r) + (f.r > 0.3 ? ': taller people have longer arm spans' : ''); } }
+        else if (N.v.length) {
+          var st = stats(N.v);
+          big = pl(st.n, 'number', 'numbers');
+          eq = 'from <b>' + st.lo + '</b> to <b>' + st.hi + '</b> ' + DSETS[N.set].unit;
+          if (g7 && N.prev && (last === 'add' || last === 'takeoff')) eq += '. The mean went from <b>' + fmt(r1(N.prev.mean)) + '</b> to <b>' + fmt(r1(st.mean)) + '</b>';
+        }
+      } else {
+        var C = P.c;
+        if (two()) { big = pl(C.n, 'try', 'tries'); var A = outs(pair()[0]), B = outs(pair()[1]); eq = '<b>' + A.length * B.length + '</b> outcomes'; if (A.every(function (o) { return o.p[0] === A[0].p[0]; }) && B.every(function (o) { return o.p[0] === B[0].p[0]; })) eq += ', each <b>' + frac(1, A.length * B.length) + '</b>'; }
+        else {
+          var L = outs(C.dev), dv = DDEV[C.dev], j = C.last >= 0 ? C.last : 0, o0 = L[j];
+          big = pl(C.n, dv[2], dv[3]);
+          if (!g4) {
+            var srt = L.slice().sort(function (x, y) { return y.p[0] - x.p[0]; });
+            eq = '<b>' + o0.n + '</b> is ' + pwords(o0.p);
+            if (srt.length > 1 && srt[0].p[0] > srt[srt.length - 1].p[0]) eq += '. <b>' + srt[0].n + '</b> is more likely than <b>' + srt[srt.length - 1].n + '</b>';
+            if (C.n) eq += '. ' + o0.n.replace(/^./, function (c) { return c.toUpperCase(); }) + ' came up <b>' + C.cnt[j] + '</b> time' + (C.cnt[j] === 1 ? '' : 's');
+          } else {
+            var ex = C.n * o0.p[0] / o0.p[1];
+            eq = '<b>' + o0.n + '</b> should come up <b>' + pshow(o0.p) + '</b> of the time' + (C.n ? ' (' + fmt(r1(ex)) + '); it did <b>' + C.cnt[j] + '</b> time' + (C.cnt[j] === 1 ? '' : 's') : '');
+          }
+        }
+      }
+      read.innerHTML = (big ? '<p class="mp-total"><span class="mp-num">' + big + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : '');
+    }
+    function snaps() {
+      var h = '';
+      if (P.mode === 'sort') {
+        var S = P.s;
+        if (g2) h += ['groups', 'venn', 'carroll'].map(function (k) { return btn('how', { groups: 'Groups', venn: 'Venn', carroll: 'Carroll' }[k], S.how === k, false, ' data-v="' + k + '"'); }).join('');
+        h += btn('r1', 'Rule: ' + DRULE[S.r1][2]) + (S.how !== 'groups' ? btn('r2', 'Rule 2: ' + DRULE[S.r2][2]) : '');
+        if (sel >= 0 && S.at[sel] != null) h += btn('back', 'Put back');
+        h += btn('auto', 'Sort them all', null, S.ord.length === DPC.length) + btn('clear', 'Clear', null, !S.ord.length);
+      } else if (P.mode === 'graph') {
+        var G = P.g, V = G.view;
+        h += btn('q', 'Next question');
+        h += views(V, [['tally', g4 ? 'Table' : 'Tally']].concat(!g5 ? [['pict', 'Picture graph', G.two]] : [], g2 && sv().num ? [['line', 'Line plot', G.two]] : [], g2 ? [['bar', 'Bar graph']] : [],
+          g5 ? [['stack', 'Stacked bar']] : [], g7 ? [['circle', 'Circle graph']] : [], g3 && !g4 ? [['fair', 'Fair share']] : []));
+        if (g3 && !g4 && (V.pict || V.bar)) h += btn('key', (V.bar ? '1 square = ' : '1 picture = ') + G.key);
+        if (g4) h += btn('two', 'Two classes', G.two);
+        if (!sv().num) h += btn('order', 'Most to least', G.order);
+        h += btn('new', 'New class') + btn('clear', 'Clear', null, !sum(G.c) && !(G.two && sum(G.c2)));
+      } else if (P.mode === 'nums') {
+        var N = P.n, NV = N.view;
+        if (g8) h += btn('ntwo', 'Pairs', N.two);
+        if (g8 && N.two) h += views(NV, [['scatter', 'Scatter plot'], ['trend', 'Trend line']]) + btn('pclear', 'Clear', null, !N.pairs.length);
+        else {
+          h += btn('set', 'Data: ' + DSETS[N.set].name) + views(NV, [['stem', 'Stem and leaf']].concat(g6 ? [['hist', 'Histogram']] : [], [['mean', 'Mean'], ['median', 'Median'], ['mode', 'Mode']], g6 ? [['range', 'Range']] : []));
+          if (g6 && NV.hist) h += btn('bin', 'Bars of ' + N.bin);
+          h += btn('undoadd', 'Take one off', null, !N.v.length) + btn('nclear', 'Clear', null, !N.v.length);
+        }
+      } else {
+        var C = P.c, CV = C.view, vb = two() ? '' : DDEV[C.dev][1] + ' ';
+        h += btn('run', vb + '1' + (vb ? '' : ' time'), null, false, ' data-v="1"') + btn('run', vb + '10' + (vb ? '' : ' times'), null, false, ' data-v="10"') + (g3 ? btn('run', vb + '100' + (vb ? '' : ' times'), null, false, ' data-v="100"') : '');
+        if (!two()) h += views(CV, (g4 ? [['should', 'Should happen']] : []).concat([['did', g4 ? 'Did happen' : 'Graph'], ['line', 'Probability line']], g5 ? [['pct', 'As %']] : []));
+        if (g6) h += btn('ctwo', 'Two at once', C.two);
+        if (two() && g8) { var n2 = outs(pair()[0]).length * outs(pair()[1]).length; h += btn('view', 'Tree diagram', !!CV.tree, n2 > 12, ' data-v="tree"'); }
+        h += btn('cclear', 'Clear', null, !C.n);
+      }
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      snaps();
+      qsa('.mp-ddo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]);
+      win.innerHTML = P.mode === 'sort' ? drawSort(W, sz[1]) : P.mode === 'graph' ? drawGraph(W) : P.mode === 'nums' ? drawNums(W) : drawChance(W);
+      spinNow = false;
+      var ptr = qs('.mp-dptr.go', win);
+      if (ptr && !T.fast) { var end = ptr.style.transform; ptr.style.transition = 'none'; ptr.style.transform = 'rotate(' + (parseFloat(end.slice(7)) - 720) + 'deg)'; void ptr.getBoundingClientRect(); ptr.style.transition = ''; ptr.style.transform = end; }
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() {
+      var st = P.n.v.length ? stats(P.n.v) : null;
+      return { mode: P.mode, sorted: P.s.ord.length, wrong: P.s.ord.filter(function (i) { return goes(DPC[i]) !== P.s.at[i]; }).length, counts: P.g.c.slice(), total: sum(P.g.c),
+        numbers: sorted(P.n.v), mean: st ? st.mean : null, median: st ? st.med : null, tries: P.c.n, did: P.c.cnt.slice(), last: last };
+    }
+    function cycleRule(k) {
+      var S = P.s, other = k === 'r1' ? S.r2 : S.r1, r = S[k];
+      do { r = (r + 1) % DRULE.length; } while (S.how !== 'groups' && r === other);
+      S[k] = r;
+    }
+    function clearSort() { P.s.at = DPC.map(function () { return null; }); P.s.ord = []; P.s.lp = -1; sel = -1; }
+    tray.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-pstb'), b = e.target.closest('button');
+      if (P.mode === 'sort') { if (!skip && sel >= 0) unplace(sel); skip = false; return; }
+      if (s) {
+        var id = s.getAttribute('data-st'), d = +s.getAttribute('data-d');
+        if (id[0] === 'g') return gNudge(+id.slice(1), d);
+        if (id === 'v') return act(function () { P.n.cur = clamp(P.n.cur + d, DSETS[P.n.set].lo, DSETS[P.n.set].hi); last = 'value'; });
+        if (id === 'x' || id === 'y') return act(function () { P.n[id] = clamp(P.n[id] + d, 100, 200); last = 'value'; });
+        return cNudge(id, d);
+      }
+      if (!b) return;
+      if (b.hasAttribute('data-cls')) return act(function () { P.g.cls = +b.getAttribute('data-cls'); last = 'class'; });
+      if (b.hasAttribute('data-by')) return act(function () { P.g.by = +b.getAttribute('data-by'); last = 'by'; });
+      if (b.hasAttribute('data-dev')) return act(function () { P.c.dev = b.getAttribute('data-dev'); resetCounts(); last = 'device'; });
+      if (b.hasAttribute('data-pair')) return act(function () { P.c.pair = +b.getAttribute('data-pair'); resetCounts(); last = 'pair'; });
+      var dd = b.getAttribute('data-do'), N = P.n, set = DSETS[N.set];
+      if (dd === 'tens' || dd === 'tenp') act(function () { N.cur = clamp(N.cur + (dd === 'tenp' ? 10 : -10), set.lo, set.hi); last = 'value'; });
+      if (dd === 'add') { if (N.v.length >= 40) { announce(T, 'The list holds up to 40 numbers.'); return; } nAdd(); }
+      if (dd === 'addpair') act(function () { if (N.pairs.length < 30) N.pairs.push([N.x, N.y]); last = 'addpair'; });
+      if (dd === 'random') act(function () {
+        var k = 20, R = Math.random;
+        if (g8 && N.two) { N.pairs = []; for (var i = 0; i < 12; i++) { var x = 140 + Math.round(R() * 35); N.pairs.push([x, clamp(x + Math.round((R() - 0.5) * 10), 100, 200)]); } }
+        else { N.prev = stats(N.v); N.v = []; for (var j = 0; j < k; j++) { var u = (R() + R() + R()) / 3; N.v.push(Math.round(set.lo + 10 + u * (set.hi - set.lo - 20))); } }
+        last = 'random';
+      });
+    });
+    qs('.mp-ddo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) { sel = -1; act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); } });
+    mat.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'), nv = e.target.closest('[data-nv]'), pi = e.target.closest('[data-pi]');
+      if (nv) return nAdd(+nv.getAttribute('data-nv'));
+      if (pi) return act(function () { P.n.pairs.splice(+pi.getAttribute('data-pi'), 1); last = 'takeoff'; });
+      if (!s) {
+        if (P.mode === 'sort' && !skip && sel >= 0 && e.target.closest('.mp-dsv')) placeAt(sel, regionAt(e.clientX, e.clientY));
+        skip = false;
+        return;
+      }
+      var a = s.getAttribute('data-a'), v = s.getAttribute('data-v');
+      if (a === 'back') return unplace(sel);
+      act(function () {
+        var G = P.g, N = P.n, C = P.c, R = Math.random;
+        if (a === 'how') { P.s.how = v; if (v !== 'groups' && P.s.r1 === P.s.r2) cycleRule('r2'); clearSort(); }
+        if (a === 'r1' || a === 'r2') { cycleRule(a); clearSort(); }
+        if (a === 'auto') { DPC.forEach(function (p, i) { if (P.s.at[i] == null) P.s.ord.push(i); P.s.at[i] = goes(p); }); P.s.lp = -1; sel = -1; }
+        if (a === 'clear' && P.mode === 'sort') clearSort();
+        if (a === 'view') (P.mode === 'graph' ? G.view : P.mode === 'nums' ? N.view : C.view)[v] = !(P.mode === 'graph' ? G.view : P.mode === 'nums' ? N.view : C.view)[v];
+        if (a === 'q') { G.sv = (G.sv + 1) % (g7 ? DSURV.length : DSURV.length - 1); G.c = sv().d.slice(); G.c2 = sv().e.slice(); }
+        if (a === 'key') G.key = G.key === 1 ? 2 : 1;
+        if (a === 'two') { G.two = !G.two; G.cls = 0; }
+        if (a === 'order') G.order = !G.order;
+        if (a === 'new') {
+          var per = g7 ? 200 : g4 ? 30 : 20;
+          [G.c, G.c2].forEach(function (c) { var w = c.map(function () { return 0.4 + R(); }), tw = sum(w), left = per; c.forEach(function (x, i) { c[i] = i === c.length - 1 ? left : Math.round(per * w[i] / tw); left -= c[i]; if (left < 0) { c[i] += left; left = 0; } }); });
+        }
+        if (a === 'clear' && P.mode === 'graph') { G.c = G.c.map(function () { return 0; }); G.c2 = G.c2.map(function () { return 0; }); }
+        if (a === 'ntwo') N.two = !N.two;
+        if (a === 'pclear') N.pairs = [];
+        if (a === 'set') { N.set = (N.set + 1) % DSETS.length; N.v = DSETS[N.set].d.slice(); N.cur = N.v[Math.floor(N.v.length / 2)]; N.prev = null; }
+        if (a === 'bin') N.bin = N.bin === 10 ? 5 : 10;
+        if (a === 'undoadd') { N.prev = stats(N.v); N.v.pop(); }
+        if (a === 'nclear') { N.prev = null; N.v = []; }
+        if (a === 'ctwo') { C.two = !C.two; resetCounts(); }
+        if (a === 'cclear') resetCounts();
+        last = a;
+      });
+      if (a === 'run') run(+v);
+    });
+    T.put = function (i, R) { placeAt(i, R || goes(DPC[i])); };
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); sel = -1; last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; sel = -1; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+  M.data = function (root, o) { return toolData(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -4338,6 +5115,8 @@
       '<circle cx="24" cy="24" r="17" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:2.5"/><path d="M24 24V12" style="stroke:var(--mp-hund,#2f62c4);stroke-width:2.5"/><path d="M24 24h8" style="stroke:var(--ink,#132039);stroke-width:3"/>'],
     ['scale', 'meas', 'Kitchen scale', 'Put 1 kg, 100 g and 10 g blocks on the scale.', {},
       '<rect x="8" y="12" width="32" height="4" rx="2" style="fill:var(--ink2,#55627a)"/><path d="M14 16h20l3 22H11Z" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><circle cx="24" cy="28" r="6" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:1.5"/><path d="M24 28l3-3" style="stroke:var(--bad,#b4283f);stroke-width:1.5"/>'],
+    ['data', 'meas', 'Data and chance', '', { tool: true },
+      '<path d="M6 40h36" style="stroke:var(--ink,#132039);stroke-width:2;stroke-linecap:round"/><rect x="9" y="24" width="7" height="16" rx="1.5" style="fill:#c0392b"/><rect x="20" y="12" width="7" height="28" rx="1.5" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="19" width="7" height="21" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['coins', 'meas', 'Coins and bills', 'Tap coins and bills to add them. Tap one on the mat to take it away.', { set: [5, 10, 25, 100, 200, 500, 1000, 2000] },
       '<circle cx="18" cy="26" r="11" style="fill:#d9b44a;stroke:#a8862a;stroke-width:1.5"/><circle cx="31" cy="21" r="10" style="fill:#dfe3ea;stroke:#9aa3b2;stroke-width:1.5"/><circle cx="31" cy="21" r="5.5" style="fill:#d9b44a"/>']
   ];
@@ -4388,5 +5167,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['balance', 'patterns', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'patterns', 'data', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();
