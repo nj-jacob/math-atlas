@@ -1101,6 +1101,37 @@ button.mp-fkp{cursor:pointer}
   .mp-gside .mp-pchip small{font-size:.58rem}
   .mp-grow:not(.side) .mp-gside{gap:6px 8px}
 }
+/* ---------- 3D solids and nets (Toolbox): solids to turn, cubes to stack with their views, nets that fold, volume by layers ---------- */
+.mp-s3t{--s3f:var(--mp-hund,#2f62c4);--s3b:#c25a12;--s3c:#7646bf;--s3u:var(--mp-tens,#2f9e44);--s3w:#3a8fd6;--s3g:color-mix(in srgb,var(--mline) 30%,var(--mcard))}
+.mp-s3w{display:flex;justify-content:center;width:100%;min-width:0}
+.mp-s3sv{touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.mp-s3f{stroke-width:1.2;stroke-linejoin:round}
+.mp-s3f.kf{fill:color-mix(in srgb,var(--s3f) var(--lit),#000);stroke:color-mix(in srgb,var(--s3f) 55%,#000)}
+.mp-s3f.kb{fill:color-mix(in srgb,var(--s3b) var(--lit),#000);stroke:color-mix(in srgb,var(--s3b) 55%,#000)}
+.mp-s3f.kc{fill:color-mix(in srgb,var(--s3c) var(--lit),#000);stroke:color-mix(in srgb,var(--s3c) var(--lit),#000)}
+.mp-s3f.ku{fill:color-mix(in srgb,var(--s3u) var(--lit),#000);stroke:color-mix(in srgb,var(--s3u) 50%,#000)}
+.mp-s3f.kw{fill:color-mix(in srgb,var(--s3w) var(--lit),#000);stroke:color-mix(in srgb,var(--s3w) var(--lit),#000)}
+.mp-s3f.kg{fill:var(--s3g);stroke:var(--mline);stroke-width:1.5}
+.mp-s3f.shell{fill-opacity:.12;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-opacity:.6}
+.mp-s3f.shell.kc{stroke-opacity:0}
+.mp-s3lab{font:800 13px var(--body,inherit);fill:#fff;paint-order:stroke;stroke:rgba(19,32,57,.55);stroke-width:3px;pointer-events:none}
+.mp-s3fold{display:flex;align-items:center;justify-content:center;gap:10px;width:100%;font-weight:700;color:var(--ink2,#55627a)}
+.mp-s3fold input{width:min(320px,60%);accent-color:var(--accent,#0b6e78)}
+.mp-s3vs{display:flex;flex-wrap:wrap;gap:10px 16px;justify-content:center;align-items:flex-start}
+.mp-grow.side .mp-s3vs{flex-direction:column;align-items:center}
+.mp-grow.side .mp-s3w{width:auto;flex:1 1 auto}
+.mp-grow.side .mp-s3vs{flex:none}
+.mp-s3v{margin:0;display:flex;flex-direction:column;align-items:center;gap:4px;padding:6px 8px;border-radius:12px;border:2px solid transparent}
+.mp-s3v.ok{border-color:var(--gcd,#1d8550)}
+.mp-s3v figcaption{font-size:.72rem;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink2,#55627a)}
+.mp-s3vp{display:flex;align-items:center;gap:6px}
+.mp-s3vp span{font-size:.7rem;font-weight:700;color:var(--at-ink3,#7b879c)}
+.mp-s3vc{fill:var(--mcard);stroke:var(--mline);stroke-width:1}
+.mp-s3vc.on{fill:var(--s3u)}
+.mp-s3list button{text-transform:none}
+@media (max-width:700px){
+  .mp-s3t .mp-snap{padding-inline:10px}
+}
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}
