@@ -98,7 +98,7 @@
           { q: 'Draw 3 × 6.', draw: { h: 56, key: ['groups', { g: 3, k: 6 }] }, eq: ['3 × 6 = []'], a: [18] },
           story('{a} puts 4 {many} in each of 5 {conts}. How many {many}?', '{many}', 20, '5 × 4'),
           { eq: ['5 × 5 = []', '6 × 2 = []'], a: [25, 12] },
-          { q: 'Circle the sum that means 4 groups of 6.', pick: { opts: ['4 + 6', '6 + 6 + 6 + 6', '4 + 4'], ans: 1, val: 24 } }]
+          { q: 'Circle the sum that means 4 groups of 6.', pick: { opts: ['4 + 6', '6 + 6 + 6 + 6', '4 + 4'], ans: 1, val: 24 }, wide: true }]
       },
       p3: {
         items: [G(6, 7), { eq: ['8 + 8 + 8 + 8 + 8 = []', '[] × [] = []'], a: [40, 5, 8, 40] },
@@ -111,7 +111,7 @@
         items: [{ q: 'Draw 4 × 3 and 3 × 4. How are they different?', draw: { h: 96, key: '4 groups of 3 and 3 groups of 4. Both make 12, but the groups are not the same.' } },
           { q: '{b} says 3 × 6 = 9. What went wrong?', lines: { n: 2, key: '{b} added 3 + 6. 3 × 6 is 3 groups of 6, which is 18.' } },
           { q: 'Write a story for 6 × 5.', lines: { n: 3, key: 'For example: {a} has 6 {conts} with 5 {many} in each. That makes 30 {many}.' } },
-          { q: 'Which is more?', pick: { opts: ['4 groups of 5', '5 groups of 3'], ans: 0, big: true } }]
+          { q: 'Which is more?', pick: { opts: ['4 groups of 5', '5 groups of 3'], ans: 0, big: true }, wide: true }]
       }
     },
 

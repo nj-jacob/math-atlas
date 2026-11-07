@@ -1,6 +1,6 @@
 /* Math Atlas worksheets (sheets.js): the Worksheets tab, the preview and printing.
    The display fonts are the worksheet themes' own (sheet-themes.js); the screens around the sheets use the site's look. */
-@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Serif+Display&family=Exo+2:wght@700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@700;800&family=DM+Serif+Display&family=Exo+2:wght@700;800&family=Fraunces:ital,opsz,wght@0,9..144,600;0,9..144,800;1,9..144,600&family=Josefin+Sans:wght@700&family=Kalam:wght@700&family=Playfair+Display:wght@700;800&family=Quicksand:wght@700&family=Roboto+Slab:wght@700;800&family=Comfortaa:wght@700&display=swap');
 html:not(.adult) .adult-only{display:none}
 .ws-ui{display:flex;flex-direction:column;gap:14px;margin:18px 0}
 .ws-ui p{margin:0}
@@ -29,10 +29,10 @@ html:not(.adult) .adult-only{display:none}
 .ws-thumb svg{aspect-ratio:612/792;height:auto;background:#fff;border-radius:2px;box-shadow:0 1px 2px rgba(19,32,57,.14),0 6px 16px rgba(19,32,57,.12)}
 @media print{
   @page{size:letter;margin:0}
-  html.ws-on body{background:#fff!important}
+  html.ws-on body{background:#fff!important;padding:0!important;margin:0!important}
   html.ws-on body > :not(main),html.ws-on .ws-ui,html.ws-on .crumb,html.ws-on .chead,html.ws-on .ls-tabs,html.ws-on .pn{display:none!important}
   html.ws-on main,html.ws-on main .wrap{padding:0!important;margin:0!important;max-width:none!important}
   html.ws-on .ws-pages{display:block;margin:0}
-  html.ws-on .ws-sheet{width:8.5in;height:11in;max-width:none;box-shadow:none;border-radius:0;break-after:page;page-break-after:always}
-  html.ws-on .ws-sheet:last-child{break-after:auto;page-break-after:auto}
+  html.ws-on .ws-sheet{width:8.5in;height:11in;max-width:none;box-shadow:none;border-radius:0}
+  html.ws-on .ws-sheet ~ .ws-sheet{break-before:page;page-break-before:always}
 }

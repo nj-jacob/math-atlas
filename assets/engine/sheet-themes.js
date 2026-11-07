@@ -151,19 +151,135 @@
     holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3" fill="none" stroke="' + BK.deep + '" stroke-width="1.2"/><rect x="' + (x - 3) + '" y="' + (y + h / 2 - 3) + '" width="3" height="6" fill="' + BK.deep + '"/><rect x="' + (x + w) + '" y="' + (y + h / 2 - 3) + '" width="3" height="6" fill="' + BK.deep + '"/>'; }
   });
 
-  /* ---------- the six themes still to be given their own look (plain look until then) ---------- */
-  [
-    { id: 'LK', name: 'At the lake', acc: '#0b6e78', tint: '#e3f1f2', w: { a: 'Mei', b: 'Arjun', one: 'fish', many: 'fish', cont: 'net', conts: 'nets' },
-      art: '<path d="M8 30 Q28 44 48 30 Z" fill="#0b6e78"/><path d="M33 11 L25 38" stroke="' + INK + '" stroke-width="2.5" stroke-linecap="round"/><path d="M10 45 Q15 42 20 45 T30 45 T40 45 T47 45" fill="none" stroke="#0b6e78" stroke-width="2" stroke-linecap="round"/>' },
-    { id: 'MK', name: "At the farmers' market", acc: '#3d7f3a', tint: '#e5f1e3', w: { a: 'Amara', b: 'Owen', one: 'apple', many: 'apples', cont: 'basket', conts: 'baskets' },
-      art: '<circle cx="21" cy="25" r="6" fill="#b4283f"/><circle cx="33" cy="24" r="6" fill="#3d7f3a"/><circle cx="27" cy="21" r="6" fill="#b4283f"/><path d="M11 28 L45 28 L41 44 L15 44 Z" fill="#fff" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/>' },
-    { id: 'MU', name: 'In music class', acc: '#a8326a', tint: '#f6e6ee', w: { a: 'Leila', b: 'Lucas', one: 'shaker', many: 'shakers', cont: 'box', conts: 'boxes' },
-      art: '<path d="M24 38 L24 14 L40 10 L40 34" fill="none" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="20" cy="38" rx="5.5" ry="4.2" fill="#a8326a"/><ellipse cx="36" cy="34" rx="5.5" ry="4.2" fill="#a8326a"/>' },
-    { id: 'GD', name: 'In the garden', acc: '#5b7f22', tint: '#eef3e1', w: { a: 'Sofia', b: 'Jayden', one: 'seed', many: 'seeds', cont: 'pot', conts: 'pots' },
-      art: '<path d="M18 32 L38 32 L35 46 L21 46 Z" fill="#b4531a"/><rect x="16" y="29" width="24" height="5" rx="2" fill="' + INK + '"/><path d="M28 29 L28 17" stroke="#5b7f22" stroke-width="2.6" stroke-linecap="round"/><path d="M28 21 Q20 20 19 12 Q27 13 28 21 Z M28 18 Q34 12 39 14 Q37 21 28 18 Z" fill="#5b7f22"/>' },
-    { id: 'TR', name: 'At the train yard', acc: '#4a5a78', tint: '#e9edf3', w: { a: 'Ethan', b: 'Chloe', one: 'log', many: 'logs', cont: 'car', conts: 'cars' },
-      art: '<rect x="11" y="22" width="34" height="14" rx="2" fill="#4a5a78"/><circle cx="18" cy="38" r="4" fill="' + INK + '"/><circle cx="38" cy="38" r="4" fill="' + INK + '"/><path d="M8 44 L48 44" stroke="' + INK + '" stroke-width="2"/>' },
-    { id: 'CO', name: 'At the coast', acc: '#1d6f96', tint: '#e2eff6', w: { a: 'Priya', b: 'Malik', one: 'shell', many: 'shells', cont: 'pail', conts: 'pails' },
-      art: '<path d="M17 24 L39 24 L36 42 L20 42 Z" fill="#1d6f96"/><path d="M19 24 Q28 10 37 24" fill="none" stroke="' + INK + '" stroke-width="2.2"/><path d="M8 48 Q13 45 18 48 T28 48 T38 48 T48 48" fill="none" stroke="#1d6f96" stroke-width="2" stroke-linecap="round"/>' }
-  ].forEach(function (t) { t.art = disc(t.tint) + t.art; S.theme(t); });
+  /* a heading with the title on the left and Name and Date on the right; used by themes that only change its decoration */
+  function simpleHead(h, font, weight, col, sub, x, y, max, noName) {
+    var size = h.fit(h.title, h.key ? 440 : max || 300, 28, font, weight);
+    return T(x || h.M, y || 62, h.title, { s: size, w: weight, f: col, fam: font }) + T(x || h.M, (y || 62) + 22, h.sub, { s: 13, f: sub, fam: font }) +
+      (h.key || noName ? '' : S.nameDate(392, 56, h.RIGHT));
+  }
+  function sectionLine(y, label, M, RIGHT, o) {
+    var txt = o.upper ? label.toUpperCase() : label, x = M + (o.icon ? 20 : 0), w = S.tw(txt, o.s, o.w, o.font) + (o.ls ? txt.length * o.ls : 0);
+    return (o.icon ? o.icon(M + 7, y - 5) : '') + T(x, y, txt, { s: o.s, w: o.w, f: o.col, fam: o.font, ls: o.ls }) +
+      '<line x1="' + (x + w + 10) + '" y1="' + (y - 5) + '" x2="' + RIGHT + '" y2="' + (y - 5) + '" stroke="' + o.line + '" stroke-width="1.2"' + (o.dash ? ' stroke-dasharray="' + o.dash + '" stroke-linecap="round"' : '') + '/>';
+  }
+  function wave(x0, x1, y, amp, len, col, sw) {
+    var d = 'M' + x0 + ' ' + y;
+    for (var x = x0; x + len <= x1 + 0.5; x += len) d += ' q' + len / 4 + ' ' + (-amp) + ' ' + len / 2 + ' 0 t' + len / 2 + ' 0';
+    return '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="' + (sw || 1.2) + '" stroke-linecap="round"/>';
+  }
+
+  /* ---------- At the lake: waves, a buoy for each number, fish in nets ---------- */
+  var LK = { teal: '#0b6e78', pale: '#d3e8ea', font: "'Josefin Sans', 'Trebuchet MS', sans-serif" };
+  S.theme({
+    id: 'LK', name: 'At the lake', acc: LK.teal, tint: '#e3f1f2', font: LK.font,
+    w: { a: 'Mei', b: 'Arjun', one: 'fish', many: 'fish', cont: 'net', conts: 'nets' },
+    art: disc('#e3f1f2') + '<path d="M8 30 Q28 44 48 30 Z" fill="' + LK.teal + '"/><path d="M33 11 L25 38" stroke="' + INK + '" stroke-width="2.5" stroke-linecap="round"/><path d="M10 45 Q15 42 20 45 T30 45 T40 45 T47 45" fill="none" stroke="' + LK.teal + '" stroke-width="2" stroke-linecap="round"/>',
+    frame: function (W, H) { return wave(40, W - 40, H - 52, 3, 28, LK.pale, 1.2) + wave(54, W - 54, H - 46, 3, 28, LK.pale, 1.2); },
+    head: function (h) { return simpleHead(h, LK.font, 700, INK, LK.teal) + wave(h.M, h.RIGHT, 104, 3, 24, LK.teal, 1.2); },
+    section: function (y, label, M, RIGHT) { return sectionLine(y, label, M, RIGHT, { s: 13, w: 700, font: LK.font, col: LK.teal, line: LK.pale, upper: 1, ls: 1.2, icon: function (x, yy) { return wave(x - 7, x + 7, yy + 1, 3, 7, LK.teal, 1.4); } }); },
+    band: function (x, y, w, h) { return wave(x, x + w, y + 2, 3, 24, LK.teal, 1.1) + wave(x, x + w, y + h - 2, 3, 24, LK.teal, 1.1); },
+    badge: function (cx, cy, n) { return '<circle cx="' + cx + '" cy="' + cy + '" r="11" fill="none" stroke="' + LK.teal + '" stroke-width="1.4"/><path d="M' + (cx - 11) + ' ' + (cy + 4) + ' L' + (cx + 11) + ' ' + (cy + 4) + '" stroke="' + LK.teal + '" stroke-width="1"/>' + T(cx, cy + 2.5, n, { s: 11, w: 700, f: LK.teal, a: 'middle', fam: LK.font }); },
+    glyph: function (cx, cy, r) { return '<path d="M' + (cx + r * 0.55) + ' ' + cy + ' L' + (cx + r * 1.2) + ' ' + (cy - r * 0.55) + ' L' + (cx + r * 1.2) + ' ' + (cy + r * 0.55) + ' Z" fill="' + LK.teal + '"/><ellipse cx="' + (cx - r * 0.15) + '" cy="' + cy + '" rx="' + r * 0.85 + '" ry="' + r * 0.6 + '" fill="#e3f1f2" stroke="' + LK.teal + '" stroke-width="1.1"/>'; },
+    holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="' + Math.min(14, h / 2) + '" fill="none" stroke="' + LK.teal + '" stroke-width="1.3" stroke-dasharray="1 3" stroke-linecap="round"/><line x1="' + (x + w / 2) + '" y1="' + y + '" x2="' + (x + w / 2 + 6) + '" y2="' + (y - 7) + '" stroke="' + LK.teal + '" stroke-width="1.2"/>'; }
+  });
+
+  /* ---------- At the farmers' market: a striped awning, price tags, apples in baskets ---------- */
+  var MK = { green: '#3d7f3a', pale: '#cfe3cc', red: '#b4283f', font: "'Kalam', 'Comic Sans MS', cursive" };
+  S.theme({
+    id: 'MK', name: "At the farmers' market", acc: MK.green, tint: '#e5f1e3', font: MK.font,
+    w: { a: 'Amara', b: 'Owen', one: 'apple', many: 'apples', cont: 'basket', conts: 'baskets' },
+    art: disc('#e5f1e3') + '<circle cx="21" cy="25" r="6" fill="' + MK.red + '"/><circle cx="33" cy="24" r="6" fill="' + MK.green + '"/><circle cx="27" cy="21" r="6" fill="' + MK.red + '"/><path d="M11 28 L45 28 L41 44 L15 44 Z" fill="#fff" stroke="' + INK + '" stroke-width="2.4" stroke-linejoin="round"/>',
+    frame: function (W) {
+      var d = 'M16 14 L' + (W - 16) + ' 14', out = '';
+      for (var x = 16; x < W - 16; x += 36) { d += ' M' + x + ' 14 a18 12 0 0 0 36 0'; out += '<line x1="' + (x + 18) + '" y1="14" x2="' + (x + 18) + '" y2="26" stroke="' + MK.pale + '" stroke-width="1.2"/>'; }
+      return out + '<path d="' + d + '" fill="none" stroke="' + MK.green + '" stroke-width="1.3"/>';
+    },
+    head: function (h) { return simpleHead(h, MK.font, 700, INK, MK.green, h.M, 68) + '<line x1="' + h.M + '" y1="106" x2="' + h.RIGHT + '" y2="106" stroke="' + MK.green + '" stroke-width="1.2"/>'; },
+    section: function (y, label, M, RIGHT) {
+      var w = S.tw(label, 16, 700, MK.font) + 30;
+      return '<path d="M' + M + ' ' + (y - 6) + ' L' + (M + 10) + ' ' + (y - 17) + ' L' + (M + w) + ' ' + (y - 17) + ' L' + (M + w) + ' ' + (y + 5) + ' L' + (M + 10) + ' ' + (y + 5) + ' Z" fill="none" stroke="' + MK.green + '" stroke-width="1.3" stroke-linejoin="round"/><circle cx="' + (M + 10) + '" cy="' + (y - 6) + '" r="2.2" fill="none" stroke="' + MK.green + '" stroke-width="1.1"/>' +
+        T(M + 18, y + 0.5, label, { s: 16, w: 700, f: MK.green, fam: MK.font }) + '<line x1="' + (M + w + 10) + '" y1="' + (y - 6) + '" x2="' + RIGHT + '" y2="' + (y - 6) + '" stroke="' + MK.pale + '" stroke-width="1.2"/>';
+    },
+    band: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3" fill="none" stroke="' + MK.green + '" stroke-width="1.1" stroke-dasharray="6 4"/>'; },
+    badge: function (cx, cy, n) { return '<path d="M' + (cx - 13) + ' ' + cy + ' L' + (cx - 6) + ' ' + (cy - 10) + ' L' + (cx + 12) + ' ' + (cy - 10) + ' L' + (cx + 12) + ' ' + (cy + 10) + ' L' + (cx - 6) + ' ' + (cy + 10) + ' Z" fill="none" stroke="' + MK.green + '" stroke-width="1.3" stroke-linejoin="round"/>' + T(cx + 2, cy + 4.5, n, { s: 13, w: 700, f: MK.green, a: 'middle' }); },
+    glyph: function (cx, cy, r) { return '<circle cx="' + cx + '" cy="' + (cy + r * 0.1) + '" r="' + r * 0.95 + '" fill="#f6dfe2" stroke="' + MK.red + '" stroke-width="1.1"/><path d="M' + cx + ' ' + (cy - r * 0.8) + ' l' + r * 0.25 + ' ' + (-r * 0.5) + '" stroke="' + INK + '" stroke-width="1"/><path d="M' + (cx + r * 0.2) + ' ' + (cy - r * 1.1) + ' q' + r * 0.5 + ' ' + (-r * 0.3) + ' ' + r * 0.7 + ' ' + r * 0.1 + ' q' + (-r * 0.4) + ' ' + r * 0.3 + ' ' + (-r * 0.7) + ' ' + (-r * 0.1) + ' Z" fill="' + MK.green + '"/>'; },
+    holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="5" fill="none" stroke="' + MK.green + '" stroke-width="1.3"/><path d="M' + (x + 8) + ' ' + y + ' Q' + (x + w / 2) + ' ' + (y - 12) + ' ' + (x + w - 8) + ' ' + y + '" fill="none" stroke="' + MK.green + '" stroke-width="1.2"/>'; }
+  });
+
+  /* ---------- In music class: a staff, note-head numbers, drums in boxes ---------- */
+  var MU = { plum: '#a8326a', pale: '#ecd3df', font: "'Playfair Display', Georgia, serif" };
+  function staff(x0, x1, y, col) { var o = ''; for (var i = 0; i < 5; i++) o += '<line x1="' + x0 + '" y1="' + (y + i * 4) + '" x2="' + x1 + '" y2="' + (y + i * 4) + '" stroke="' + col + '" stroke-width=".8"/>'; return o; }
+  function note(x, y, col) { return '<ellipse cx="' + x + '" cy="' + y + '" rx="4" ry="3" transform="rotate(-20 ' + x + ' ' + y + ')" fill="' + col + '"/><line x1="' + (x + 3.6) + '" y1="' + (y - 1) + '" x2="' + (x + 3.6) + '" y2="' + (y - 13) + '" stroke="' + col + '" stroke-width="1.1"/><path d="M' + (x + 3.6) + ' ' + (y - 13) + ' q4 3 4 8" fill="none" stroke="' + col + '" stroke-width="1.1"/>'; }
+  S.theme({
+    id: 'MU', name: 'In music class', acc: MU.plum, tint: '#f6e6ee', font: MU.font,
+    w: { a: 'Leila', b: 'Lucas', one: 'drum', many: 'drums', cont: 'box', conts: 'boxes' },
+    art: disc('#f6e6ee') + '<path d="M24 38 L24 14 L40 10 L40 34" fill="none" stroke="' + INK + '" stroke-width="2.6" stroke-linejoin="round"/><ellipse cx="20" cy="38" rx="5.5" ry="4.2" fill="' + MU.plum + '"/><ellipse cx="36" cy="34" rx="5.5" ry="4.2" fill="' + MU.plum + '"/>',
+    frame: function (W, H) { return staff(40, W - 40, H - 66, MU.pale) + '<line x1="' + (W - 40) + '" y1="' + (H - 66) + '" x2="' + (W - 40) + '" y2="' + (H - 50) + '" stroke="' + MU.pale + '" stroke-width="2.5"/>'; },
+    head: function (h) { return simpleHead(h, MU.font, 800, INK, MU.plum) + staff(h.M, h.RIGHT, 98, MU.pale) + note(h.RIGHT - 30, 106, MU.plum) + note(h.RIGHT - 16, 102, MU.plum); },
+    section: function (y, label, M, RIGHT) { return sectionLine(y, label, M, RIGHT, { s: 16, w: 700, font: MU.font, col: MU.plum, line: MU.pale, icon: function (x, yy) { return note(x - 3, yy + 5, MU.plum); } }); },
+    band: function (x, y, w, h) { return '<line x1="' + x + '" y1="' + y + '" x2="' + x + '" y2="' + (y + h) + '" stroke="' + MU.plum + '" stroke-width="1.2"/><line x1="' + (x + w - 6) + '" y1="' + y + '" x2="' + (x + w - 6) + '" y2="' + (y + h) + '" stroke="' + MU.plum + '" stroke-width="1.2"/><line x1="' + (x + w) + '" y1="' + y + '" x2="' + (x + w) + '" y2="' + (y + h) + '" stroke="' + MU.plum + '" stroke-width="3"/>' +
+      '<line x1="' + x + '" y1="' + y + '" x2="' + (x + w) + '" y2="' + y + '" stroke="' + MU.pale + '" stroke-width="1"/><line x1="' + x + '" y1="' + (y + h) + '" x2="' + (x + w) + '" y2="' + (y + h) + '" stroke="' + MU.pale + '" stroke-width="1"/>'; },
+    badge: function (cx, cy, n) { return '<ellipse cx="' + cx + '" cy="' + cy + '" rx="13" ry="9.5" transform="rotate(-20 ' + cx + ' ' + cy + ')" fill="none" stroke="' + MU.plum + '" stroke-width="1.4"/>' + T(cx, cy + 4.5, n, { s: 13, w: 700, f: MU.plum, a: 'middle', fam: MU.font }); },
+    glyph: function (cx, cy, r) { var w = r * 0.95, t = cy - r * 0.55, b = cy + r * 0.75; return '<path d="M' + (cx - w) + ' ' + t + ' L' + (cx - w) + ' ' + b + ' A' + w + ' ' + r * 0.3 + ' 0 0 0 ' + (cx + w) + ' ' + b + ' L' + (cx + w) + ' ' + t + '" fill="#f6e6ee" stroke="' + MU.plum + '" stroke-width="1.1"/><ellipse cx="' + cx + '" cy="' + t + '" rx="' + w + '" ry="' + r * 0.3 + '" fill="#fff" stroke="' + MU.plum + '" stroke-width="1.1"/><path d="M' + (cx - w) + ' ' + (t + r * 0.4) + ' L' + (cx - w / 3) + ' ' + (b - r * 0.1) + ' L' + (cx + w / 3) + ' ' + (t + r * 0.4) + ' L' + (cx + w) + ' ' + (b - r * 0.1) + '" fill="none" stroke="' + MU.plum + '" stroke-width=".8"/>'; },
+    holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2" fill="none" stroke="' + MU.plum + '" stroke-width="1.2"/><line x1="' + (x - 2) + '" y1="' + y + '" x2="' + (x + w + 2) + '" y2="' + y + '" stroke="' + MU.plum + '" stroke-width="2.2"/>'; }
+  });
+
+  /* ---------- In the garden: a vine, sprouts, seeds in pots ---------- */
+  var GD = { green: '#5b7f22', pale: '#dbe6c7', soil: '#8a5a2b', font: "'Quicksand', 'Trebuchet MS', sans-serif" };
+  function sprout(x, y, s, col) { return '<path d="M' + x + ' ' + y + ' L' + x + ' ' + (y - 9 * s) + '" stroke="' + col + '" stroke-width="1.2"/><path d="M' + x + ' ' + (y - 6 * s) + ' q' + (-6 * s) + ' ' + (-1 * s) + ' ' + (-7 * s) + ' ' + (-7 * s) + ' q' + (6 * s) + ' 0 ' + (7 * s) + ' ' + 7 * s + ' Z M' + x + ' ' + (y - 8 * s) + ' q' + (5 * s) + ' ' + (-5 * s) + ' ' + (8 * s) + ' ' + (-4 * s) + ' q' + (-2 * s) + ' ' + (5 * s) + ' ' + (-8 * s) + ' ' + (4 * s) + ' Z" fill="none" stroke="' + col + '" stroke-width="1.1" stroke-linejoin="round"/>'; }
+  S.theme({
+    id: 'GD', name: 'In the garden', acc: GD.green, tint: '#eef3e1', font: GD.font,
+    w: { a: 'Sofia', b: 'Jayden', one: 'seed', many: 'seeds', cont: 'pot', conts: 'pots' },
+    art: disc('#eef3e1') + '<path d="M18 32 L38 32 L35 46 L21 46 Z" fill="#b4531a"/><rect x="16" y="29" width="24" height="5" rx="2" fill="' + INK + '"/><path d="M28 29 L28 17" stroke="' + GD.green + '" stroke-width="2.6" stroke-linecap="round"/><path d="M28 21 Q20 20 19 12 Q27 13 28 21 Z M28 18 Q34 12 39 14 Q37 21 28 18 Z" fill="' + GD.green + '"/>',
+    frame: function (W, H) { var o = '<line x1="40" y1="' + (H - 48) + '" x2="' + (W - 40) + '" y2="' + (H - 48) + '" stroke="' + GD.pale + '" stroke-width="1.2"/>'; for (var x = 70; x < W - 40; x += 120) o += sprout(x, H - 48, 1.3, GD.green); return o; },
+    head: function (h) {
+      var vine = '<path d="M' + h.M + ' 104 C' + (h.M + 80) + ' 94 ' + (h.M + 160) + ' 114 ' + (h.M + 260) + ' 104 S ' + (h.M + 440) + ' 94 ' + h.RIGHT + ' 104" fill="none" stroke="' + GD.green + '" stroke-width="1.2"/>', l = '';
+      for (var i = 1; i < 6; i++) l += sprout(h.M + i * 88, 104 + (i % 2 ? 1 : -1), 0.8, GD.green);
+      return simpleHead(h, GD.font, 700, INK, GD.green) + vine + l;
+    },
+    section: function (y, label, M, RIGHT) { return sectionLine(y, label, M, RIGHT, { s: 15, w: 700, font: GD.font, col: GD.green, line: GD.pale, dash: '6 4', icon: function (x, yy) { return sprout(x, yy + 7, 1, GD.green); } }); },
+    band: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="18" fill="none" stroke="' + GD.green + '" stroke-width="1.1"/>' + sprout(x + w - 20, y + h - 6, 1.1, GD.green) + sprout(x + w - 34, y + h - 6, 0.8, GD.green); },
+    badge: function (cx, cy, n) { return '<path d="M' + (cx - 11) + ' ' + (cy - 8) + ' L' + (cx + 11) + ' ' + (cy - 8) + ' L' + (cx + 8) + ' ' + (cy + 11) + ' L' + (cx - 8) + ' ' + (cy + 11) + ' Z" fill="none" stroke="' + GD.soil + '" stroke-width="1.3" stroke-linejoin="round"/><line x1="' + (cx - 13) + '" y1="' + (cy - 8) + '" x2="' + (cx + 13) + '" y2="' + (cy - 8) + '" stroke="' + GD.soil + '" stroke-width="2"/>' + T(cx, cy + 6.5, n, { s: 12, w: 700, f: GD.soil, a: 'middle', fam: GD.font }); },
+    glyph: function (cx, cy, r) { return '<path d="M' + cx + ' ' + (cy - r * 1.05) + ' C' + (cx + r * 0.9) + ' ' + (cy - r * 0.3) + ' ' + (cx + r * 0.8) + ' ' + (cy + r * 0.9) + ' ' + cx + ' ' + (cy + r * 0.9) + ' C' + (cx - r * 0.8) + ' ' + (cy + r * 0.9) + ' ' + (cx - r * 0.9) + ' ' + (cy - r * 0.3) + ' ' + cx + ' ' + (cy - r * 1.05) + ' Z" fill="#eadcc6" stroke="' + GD.soil + '" stroke-width="1.1"/>'; },
+    holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3" fill="none" stroke="' + GD.soil + '" stroke-width="1.2"/><line x1="' + (x - 3) + '" y1="' + y + '" x2="' + (x + w + 3) + '" y2="' + y + '" stroke="' + GD.soil + '" stroke-width="2.4"/>'; }
+  });
+
+  /* ---------- At the train yard: a track, wheel numbers, logs in rail cars ---------- */
+  var TR = { slate: '#4a5a78', pale: '#d6dce6', font: "'Roboto Slab', Rockwell, serif" };
+  function track(x0, x1, y, col) { var o = '<line x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '" stroke="' + col + '" stroke-width="1.2"/><line x1="' + x0 + '" y1="' + (y + 6) + '" x2="' + x1 + '" y2="' + (y + 6) + '" stroke="' + col + '" stroke-width="1.2"/>'; for (var x = x0 + 4; x < x1; x += 12) o += '<line x1="' + x + '" y1="' + (y - 2) + '" x2="' + x + '" y2="' + (y + 8) + '" stroke="' + col + '" stroke-width="1"/>'; return o; }
+  S.theme({
+    id: 'TR', name: 'At the train yard', acc: TR.slate, tint: '#e9edf3', font: TR.font,
+    w: { a: 'Ethan', b: 'Chloe', one: 'log', many: 'logs', cont: 'car', conts: 'cars' },
+    art: disc('#e9edf3') + '<rect x="11" y="22" width="34" height="14" rx="2" fill="' + TR.slate + '"/><circle cx="18" cy="38" r="4" fill="' + INK + '"/><circle cx="38" cy="38" r="4" fill="' + INK + '"/><path d="M8 44 L48 44" stroke="' + INK + '" stroke-width="2"/>',
+    frame: function (W, H) { return track(40, W - 40, H - 56, TR.pale); },
+    head: function (h) {
+      return '<rect x="' + h.M + '" y="28" width="' + (h.RIGHT - h.M) + '" height="66" rx="4" fill="none" stroke="' + TR.slate + '" stroke-width="1.4"/>' +
+        [h.M + 40, h.M + 76, h.RIGHT - 76, h.RIGHT - 40].map(function (x) { return '<circle cx="' + x + '" cy="100" r="7" fill="#fff" stroke="' + TR.slate + '" stroke-width="1.3"/>'; }).join('') +
+        simpleHead(h, TR.font, 800, INK, TR.slate, h.M + 16, 60, 300, true) +
+        (h.key ? '' : '<line x1="372" y1="36" x2="372" y2="86" stroke="' + TR.pale + '" stroke-width="1.2"/>' + S.nameDate(384, 54, h.RIGHT - 14));
+    },
+    section: function (y, label, M, RIGHT) { return sectionLine(y, label, M, RIGHT, { s: 13, w: 800, font: TR.font, col: TR.slate, line: TR.pale, upper: 1, ls: 1, dash: '10 3' }); },
+    band: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="3" fill="none" stroke="' + TR.slate + '" stroke-width="1.2"/><circle cx="' + (x + 30) + '" cy="' + (y + h) + '" r="6" fill="#fff" stroke="' + TR.slate + '" stroke-width="1.2"/><circle cx="' + (x + w - 30) + '" cy="' + (y + h) + '" r="6" fill="#fff" stroke="' + TR.slate + '" stroke-width="1.2"/>'; },
+    badge: function (cx, cy, n) { return '<circle cx="' + cx + '" cy="' + cy + '" r="11" fill="none" stroke="' + TR.slate + '" stroke-width="1.4"/><circle cx="' + cx + '" cy="' + cy + '" r="8" fill="none" stroke="' + TR.pale + '" stroke-width="1"/>' + T(cx, cy + 4, n, { s: 11, w: 800, f: TR.slate, a: 'middle', fam: TR.font }); },
+    glyph: function (cx, cy, r) { return '<rect x="' + (cx - r * 1.1) + '" y="' + (cy - r * 0.5) + '" width="' + r * 2.2 + '" height="' + r + '" rx="' + r * 0.5 + '" fill="#efe6da" stroke="#7a5a3a" stroke-width="1.1"/><circle cx="' + (cx + r * 0.6) + '" cy="' + cy + '" r="' + r * 0.25 + '" fill="none" stroke="#7a5a3a" stroke-width=".9"/>'; },
+    holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="2" fill="none" stroke="' + TR.slate + '" stroke-width="1.3"/><circle cx="' + (x + 8) + '" cy="' + (y + h + 2) + '" r="3" fill="#fff" stroke="' + TR.slate + '" stroke-width="1.1"/><circle cx="' + (x + w - 8) + '" cy="' + (y + h + 2) + '" r="3" fill="#fff" stroke="' + TR.slate + '" stroke-width="1.1"/>'; }
+  });
+
+  /* ---------- At the coast: a sun, a shoreline, shells in pails ---------- */
+  var CO = { blue: '#1d6f96', pale: '#cfe2ec', sand: '#c79a4a', font: "'Comfortaa', 'Trebuchet MS', sans-serif" };
+  function sun(cx, cy, r, col) { var o = '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="none" stroke="' + col + '" stroke-width="1.3"/>'; for (var i = 0; i < 8; i++) { var a = i * Math.PI / 4; o += '<line x1="' + (cx + Math.cos(a) * (r + 3)).toFixed(1) + '" y1="' + (cy + Math.sin(a) * (r + 3)).toFixed(1) + '" x2="' + (cx + Math.cos(a) * (r + 7)).toFixed(1) + '" y2="' + (cy + Math.sin(a) * (r + 7)).toFixed(1) + '" stroke="' + col + '" stroke-width="1.2" stroke-linecap="round"/>'; } return o; }
+  function shell(cx, cy, r, col, fill) { var o = '<path d="M' + (cx - r) + ' ' + (cy + r * 0.2) + ' A' + r + ' ' + r + ' 0 0 1 ' + (cx + r) + ' ' + (cy + r * 0.2) + ' L' + cx + ' ' + (cy + r * 0.9) + ' Z" fill="' + (fill || 'none') + '" stroke="' + col + '" stroke-width="1.1" stroke-linejoin="round"/>'; for (var i = -1; i <= 1; i++) o += '<line x1="' + cx + '" y1="' + (cy + r * 0.9) + '" x2="' + (cx + i * r * 0.55) + '" y2="' + (cy - r * 0.6) + '" stroke="' + col + '" stroke-width=".8"/>'; return o; }
+  S.theme({
+    id: 'CO', name: 'At the coast', acc: CO.blue, tint: '#e2eff6', font: CO.font,
+    w: { a: 'Priya', b: 'Malik', one: 'shell', many: 'shells', cont: 'pail', conts: 'pails' },
+    art: disc('#e2eff6') + '<path d="M17 24 L39 24 L36 42 L20 42 Z" fill="' + CO.blue + '"/><path d="M19 24 Q28 10 37 24" fill="none" stroke="' + INK + '" stroke-width="2.2"/><path d="M8 48 Q13 45 18 48 T28 48 T38 48 T48 48" fill="none" stroke="' + CO.blue + '" stroke-width="2" stroke-linecap="round"/>',
+    frame: function (W, H) { return '<path d="M40 ' + (H - 50) + ' C' + W * 0.3 + ' ' + (H - 64) + ' ' + W * 0.6 + ' ' + (H - 40) + ' ' + (W - 40) + ' ' + (H - 54) + '" fill="none" stroke="' + CO.sand + '" stroke-width="1.1" opacity=".7"/>' + shell(W - 70, H - 64, 7, CO.sand); },
+    head: function (h) { return sun(h.M + 18, 58, 11, CO.sand) + simpleHead(h, CO.font, 700, INK, CO.blue, h.M + 46, 62, h.key ? 400 : 280) + wave(h.M, h.RIGHT, 104, 2.5, 40, CO.blue, 1.1); },
+    section: function (y, label, M, RIGHT) { return sectionLine(y, label, M, RIGHT, { s: 14, w: 700, font: CO.font, col: CO.blue, line: CO.pale, icon: function (x, yy) { return shell(x, yy - 2, 7, CO.blue); } }); },
+    band: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="10" fill="none" stroke="' + CO.pale + '" stroke-width="1.3"/>' + wave(x + 14, x + w - 14, y + h - 8, 2.5, 30, CO.blue, 1); },
+    card: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="10" fill="none" stroke="' + CO.pale + '" stroke-width="1.1"/>'; },
+    badge: function (cx, cy, n) { return '<circle cx="' + cx + '" cy="' + cy + '" r="11" fill="none" stroke="' + CO.blue + '" stroke-width="1.3" stroke-dasharray="3 2"/>' + T(cx, cy + 4, n, { s: 12, w: 700, f: CO.blue, a: 'middle', fam: CO.font }); },
+    glyph: function (cx, cy, r) { return shell(cx, cy - r * 0.15, r * 1.05, CO.blue, '#e2eff6'); },
+    holder: function (x, y, w, h) { return '<rect x="' + x + '" y="' + y + '" width="' + w + '" height="' + h + '" rx="4" fill="none" stroke="' + CO.blue + '" stroke-width="1.2"/><path d="M' + (x + 6) + ' ' + y + ' Q' + (x + w / 2) + ' ' + (y - 10) + ' ' + (x + w - 6) + ' ' + y + '" fill="none" stroke="' + CO.blue + '" stroke-width="1"/>'; }
+  });
 })();

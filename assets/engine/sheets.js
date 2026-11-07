@@ -158,7 +158,7 @@
   /* one row of an equation: numbers, symbols and words; [] is a box to write in */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 17;
-    s.split(' ').forEach(function (tok) {
+    s.split(' ').filter(Boolean).forEach(function (tok) {
       var comma = tok === '[],';
       if (comma) tok = '[]';
       if (tok === '[]') {
@@ -192,6 +192,7 @@
         out += T(px, cy + 21, words(o, th), { s: 16, w: 700 });
         px += ow + 34;
       });
+      if (px - 34 > ix + iw) S.overflow.push('the choices are too wide: ' + it.pick.opts.join(', '));
       cy += 38;
     }
     if (it.pick && !it.pickLast) pick();
@@ -290,7 +291,7 @@
     }
     if (y - 22 > BOTTOM) S.overflow.push(code + ' runs ' + Math.round(y - 22 - BOTTOM) + ' points past the bottom');
     if (key) {
-      var note = wrap('Watch for: ' + idea.watch, 11, RIGHT - M - 28);
+      var note = wrap(words('Watch for: ' + idea.watch, th), 11, RIGHT - M - 28);
       var codes = 'Ontario ' + c.exp.join(', ');
       out += '<rect x="' + M + '" y="' + (BOTTOM + 6) + '" width="' + (RIGHT - M) + '" height="' + (note.length * 15 + 28) + '" rx="8" fill="none" stroke="' + NOTE + '" stroke-width="1.3"/>';
       note.forEach(function (l, i) { out += T(M + 14, BOTTOM + 24 + i * 15, l, { s: 11 }); });
