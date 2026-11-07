@@ -618,6 +618,62 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox patterns: the page runs off the side of a phone screen');
   }
 
+  /* 3a11. Toolbox data and chance: Sort them all puts the 12 shapes in their places (Grade 1: 4 red, 8 not red; Grade 2 and up a Venn
+     diagram of red and triangle: 2 in the middle, 6 outside), and a big red triangle tapped into the middle is "red and a triangle";
+     the first survey reads apple (7) of 18 in Grades 1 and 2, soccer (12) of 36 in Grades 3 to 6, bus 84 of 200 = 42% in Grades 7 and 8,
+     and one more tally adds 1; Grade 4 and up: 118 to 140 has mean 1280 ÷ 10 = 128, median 127.5 and mode 124, range 22 from Grade 6, and
+     taking off 140 moves the mean to 126.7 in Grade 7; Grade 8 pairs read strong, positive; a 2-1-1 spinner gives red 1/2 (as likely as
+     not in Grades 1 to 3); 10 spins read 10 spins; Grade 6 and up a coin and a die have 12 outcomes, each 1/12, and the table counts every
+     try; Grade 8 two coins draw a tree with HH 1/4. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('data'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/data'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-datt .mp-read'), win = () => txt('.mp-datt .mp-pwin');
+    const has = async (t, f) => { for (let i = 0; i < 20; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox data: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-ddo [data-m=' + m + ']');
+    const snap = (a, v) => page.click('.mp-snap[data-a=' + a + ']' + (v != null ? '[data-v="' + v + '"]' : ''));
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await mode('sort'); await snap('auto');
+    await bad('12 of 12 sorted', 'Sort them all');
+    if (g === 1) { await bad('red4', 'red shapes', win); await bad('not red8', 'shapes that are not red', win); }
+    else {
+      await bad('the middle2', 'red triangles', win); await bad('outside6', 'shapes neither red nor triangles', win);
+      await snap('clear');
+      await page.click('.mp-dtp[data-p="11"]');
+      await page.waitForTimeout(80);
+      const xy = await page.evaluate(() => { const s = document.querySelector('.mp-dsv'), a = JSON.parse(s.dataset.anc).ab, b = s.getBoundingClientRect(); return [b.left + a[0] * b.width / s.viewBox.baseVal.width, b.top + a[1] * b.height / s.viewBox.baseVal.height]; });
+      await page.mouse.click(xy[0], xy[1]);
+      await bad('red and a triangle, so it goes in the middle', 'a big red triangle put in the middle');
+    }
+    await mode('graph');
+    const sv = g <= 2 ? ['apple (7)', 18] : g <= 6 ? ['soccer (12)', 36] : ['42%', 200];
+    await bad(sv[0], 'the first survey'); await bad(sv[1] + ' answered', 'the first survey');
+    await page.click('.mp-pstb[data-st=g0][data-d="1"]');
+    await bad((sv[1] + 1) + ' answered', 'one more tally');
+    if (g >= 4) {
+      await mode('nums');
+      if (g === 8) { await bad('strong, positive', 'height and arm span pairs'); await snap('ntwo'); }
+      await bad('from 118 to 140', 'the heights');
+      await bad('1280 ÷ 10 = 128', 'the mean of the heights', win); await bad('(127 + 128) ÷ 2 = 127.5', 'the median of the heights', win); await bad('mode124', 'the mode of the heights', win);
+      if (g >= 6) await bad('140 − 118 = 22', 'the range of the heights', win);
+      if (g === 7) { await page.click('.mp-dval[data-nv="140"]'); await bad('from 128 to 126.7', 'the mean after taking off 140'); }
+    }
+    await mode('chance');
+    await bad(g <= 3 ? 'red is as likely as not' : 'red should come up 1/2', 'a spinner with 2 red parts of 4');
+    await snap('run', 10); await bad('10 spins', '10 spins');
+    if (g >= 6) {
+      await snap('ctwo'); await bad('12 outcomes, each 1/12', 'a coin and a die');
+      await snap('run', 10); await bad('10 tries', '10 tries of a coin and a die');
+      const n = await page.evaluate(() => [...document.querySelectorAll('.mp-datt .mp-dtbl tbody td:not(.l)')].reduce((s, td) => s + +td.textContent, 0));
+      if (n !== 10) fail(where, 'Toolbox data: the coin and die table counts ' + n + ' tries, not 10');
+      if (g === 8) { await page.click('[data-pair="1"]'); await snap('view', 'tree'); await bad('HH 1/4', 'the tree for two coins', win); }
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox data: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
