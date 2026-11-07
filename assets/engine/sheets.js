@@ -27,7 +27,7 @@
   var S = (A.sheets = { chapters: {}, themes: [], overflow: [] });
   var W = 612, H = 792, M = 40, RIGHT = W - M, BOTTOM = 690, COLW = 254, GAP = 24, PAD = 32;
   var CUR = { th: null, plain: false }; /* the theme being drawn, and whether counting pictures use plain dots */
-  var INK = '#132039', INK2 = '#55627a', LINE = '#cdd5e1', KEY = '#b4283f', NOTE = '#fdf6dd';
+  var INK = '#132039', INK2 = '#55627a', LINE = '#cdd5e1', KEY = '#b4283f', NOTE = '#e4cf8a';
   var FONT = "'Atkinson Hyperlegible', system-ui, sans-serif", DISPLAY = "'Bricolage Grotesque', system-ui, sans-serif";
   var KINDS = [['learn', 'Learn', 'L'], ['p1', 'Practise 1', 'P1'], ['p2', 'Practise 2', 'P2'], ['p3', 'Practise 3', 'P3'], ['think', 'Think', 'T']];
   S.kinds = KINDS;
@@ -175,7 +175,7 @@
   /* ---------- one question, drawn in a cell of width w; returns { svg, h } ---------- */
   function item(it, n, x, y, w, key, th) {
     var out = '', cy = y, iw = w - PAD, ix = x + PAD, ans = (it.a || []).slice(), ai = 0;
-    out += th.badge ? th.badge(x + 11, y + 11, n) : '<circle cx="' + (x + 11) + '" cy="' + (y + 11) + '" r="11" fill="' + th.acc + '"/>' + T(x + 11, y + 16, n, { s: 12, w: 700, f: '#fff', a: 'middle' });
+    out += th.badge ? th.badge(x + 11, y + 11, n) : '<circle cx="' + (x + 11) + '" cy="' + (y + 11) + '" r="10.5" fill="none" stroke="' + th.acc + '" stroke-width="1.4"/>' + T(x + 11, y + 15.5, n, { s: 12, w: 700, f: th.acc, a: 'middle' });
     if (it.q) { wrap(words(it.q, th), 14, iw).forEach(function (l) { out += T(ix, cy + 16, l); cy += 19; }); cy += 6; }
     else cy += 0;
     if (it.pic) {
@@ -242,7 +242,7 @@
   function band(show, y, th) {
     var p = show.pic ? pic(show.pic, M + 22, y + 18, 250) : { svg: '', h: 0, w: 0 };
     var tx = p.w ? Math.max(M + 22 + p.w + 36, 300) : M + 24, lines = (show.eq || []), hText = (show.cap ? 24 : 0) + lines.length * 32;
-    var h = Math.max(p.h, hText) + 30, out = (th.band ? th.band(M, y, RIGHT - M, h) : '<rect x="' + M + '" y="' + y + '" width="' + (RIGHT - M) + '" height="' + h + '" rx="12" fill="' + th.tint + '"/>') + '<g class="show">' + p.svg + '</g>';
+    var h = Math.max(p.h, hText) + 30, out = (th.band ? th.band(M, y, RIGHT - M, h) : '<rect x="' + M + '" y="' + y + '" width="' + (RIGHT - M) + '" height="' + h + '" rx="12" fill="none" stroke="' + LINE + '" stroke-width="1.3"/>') + '<g class="show">' + p.svg + '</g>';
     var ty = y + h / 2 - hText / 2;
     if (show.cap) { out += T(tx, ty + 14, words(show.cap, th), { s: 14, f: INK2 }); ty += 24; }
     lines.forEach(function (l, i) { var last = i === lines.length - 1; out += T(tx, ty + 24, l, { s: last ? 26 : 19, w: last ? 800 : 700, d: last ? 1 : 0, c: 'showeq', fam: last ? th.font : null }); ty += 32; });
@@ -292,7 +292,7 @@
     if (key) {
       var note = wrap('Watch for: ' + idea.watch, 11, RIGHT - M - 28);
       var codes = 'Ontario ' + c.exp.join(', ');
-      out += '<rect x="' + M + '" y="' + (BOTTOM + 6) + '" width="' + (RIGHT - M) + '" height="' + (note.length * 15 + 28) + '" rx="8" fill="' + NOTE + '"/>';
+      out += '<rect x="' + M + '" y="' + (BOTTOM + 6) + '" width="' + (RIGHT - M) + '" height="' + (note.length * 15 + 28) + '" rx="8" fill="none" stroke="' + NOTE + '" stroke-width="1.3"/>';
       note.forEach(function (l, i) { out += T(M + 14, BOTTOM + 24 + i * 15, l, { s: 11 }); });
       out += T(M + 14, BOTTOM + 24 + note.length * 15, codes, { s: 11, w: 700 });
       if (note.length > 2) S.overflow.push(code + ' has a watch-for note longer than 2 lines');
@@ -301,7 +301,7 @@
       T(M, 768, 'Math Atlas · Grade ' + A.grade + ' · ' + plain(m.title), { s: 9, f: INK2 }) +
       T(RIGHT, 768, code + (key ? ' · score ____ of ' + (n - 1) : ''), { s: 9, f: INK2, a: 'end' });
     return '<svg class="ws-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + esc(title + ', ' + kd[1] + (key ? ', answer key' : '')) + '">' +
-      '<rect width="' + W + '" height="' + H + '" fill="' + (th.paper || '#fff') + '"/>' + out + '</svg>';
+      '<rect width="' + W + '" height="' + H + '" fill="#fff"/>' + out + '</svg>';
   };
   /* every sheet of a chapter, for the review page and the checks */
   S.list = function (chId) {
