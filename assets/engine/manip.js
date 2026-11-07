@@ -5564,6 +5564,481 @@
   }
   M.grid = function (root, o) { return toolGrid(root, o || {}); };
 
+  /* ================= 3D solids and nets (Toolbox) =================
+     Make: Solids (every grade: turn a solid by dragging; Show number gives its faces, edges and vertices, or in Grades 1 and 2 whether
+     it rolls, slides and stacks), Build (every grade: tap to stack cubes; top, front and side views from Grade 5, and a views puzzle from
+     Grade 6), Nets (Grade 6 and up: fold and unfold a net, with the area of each face and the surface area; a cylinder from Grade 7) and
+     Volume (Grade 7 and up: fill a prism or cylinder layer by layer, volume = base area × height). Solids with flat faces are drawn by
+     folding their nets, so a net and its solid are the same faces. */
+  var S3_ALL = {
+    cube: ['cube', 6, 12, 8, '6 squares'], box: ['rectangular prism', 6, 12, 8, '6 rectangles'], tprism: ['triangular prism', 5, 9, 6, '2 triangles and 3 rectangles'],
+    pprism: ['pentagonal prism', 7, 15, 10, '2 pentagons and 5 rectangles'], hprism: ['hexagonal prism', 8, 18, 12, '2 hexagons and 6 rectangles'],
+    spyr: ['square pyramid', 5, 8, 5, '1 square and 4 triangles'], tpyr: ['triangular pyramid', 4, 6, 4, '4 triangles'], hpyr: ['hexagonal pyramid', 7, 12, 7, '1 hexagon and 6 triangles'],
+    cyl: ['cylinder', 2, 2, 0, '2 circles and a curved surface'], cone: ['cone', 1, 1, 1, '1 circle and a curved surface'], sph: ['sphere', 0, 0, 0, 'one curved surface']
+  };
+  /* Grades 1 and 2: rolls, slides, stacks */
+  var S3_DO = { cube: 'slide and stack', box: 'slide and stack', tprism: 'slide and stack', pprism: 'slide and stack', hprism: 'slide and stack', spyr: 'slide', tpyr: 'slide', hpyr: 'slide',
+    cyl: 'roll, slide and stack', cone: 'roll and slide', sph: 'roll' };
+  /* views puzzles (Grade 6 and up): column heights on the 5 by 5 base, row by row from the back */
+  var S3_PUZ = [
+    [[0, 0, 0, 0, 0], [0, 1, 0, 0, 0], [0, 2, 1, 0, 0], [0, 3, 2, 1, 0], [0, 0, 0, 0, 0]],
+    [[0, 0, 0, 0, 0], [0, 2, 2, 0, 0], [0, 1, 0, 0, 0], [0, 1, 0, 0, 0], [0, 0, 0, 0, 0]],
+    [[0, 0, 0, 0, 0], [0, 0, 1, 0, 0], [0, 1, 3, 1, 0], [0, 0, 1, 0, 0], [0, 0, 0, 0, 0]]
+  ];
+  function toolSolid(root, o) {
+    var T = base(root, 'sol');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-s3t');
+    var gr = window.Atlas && +Atlas.grade || 0, g3 = !gr || gr >= 3, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7;
+    var MODES = [['solids', 'Solids'], ['build', 'Build']].concat(g6 ? [['nets', 'Nets']] : [], g7 ? [['vol', 'Volume']] : []);
+    var SOLIDS = g3 ? ['cube', 'box', 'tprism', 'pprism', 'hprism', 'spyr', 'tpyr', 'hpyr', 'cyl', 'cone', 'sph'] : ['cube', 'box', 'tprism', 'spyr', 'cyl', 'cone', 'sph'];
+    var NETS = ['cube', 'box', 'tprism', 'spyr', 'tpyr'].concat(g7 ? ['cyl'] : []), VOLS = ['box', 'tprism', 'cyl'];
+    var N = 5;
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-s3tr"></div><div class="mp-dmain"><div class="mp-cmode mp-s3do" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-s3tr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Solids: the solid; Build: the height of each column, take-off mode, the puzzle; Nets: the solid and its sizes;
+       Volume: the solid, its sizes and how many layers are filled. How it is turned and folded is not part of Undo. */
+    var P, shown = false, hist = [], last = '', yaw = -32, pitch = 24, fold = 0, anim = null;
+    function fresh() {
+      P = { mode: 'solids', pick: 'cube',
+        b: { h: blank(), take: false, puz: -1 },
+        n: { shape: 'box', l: 4, w: 3, h: 2, s: 4, sl: 5, L: 5, r: 2 },
+        v: { shape: 'box', l: 4, w: 3, h: 3, L: 4, r: 2, fill: 0 } };
+      fold = 0;
+    }
+    function blank() { var a = []; for (var i = 0; i < N; i++) { a.push([]); for (var j = 0; j < N; j++) a[i].push(0); } return a; }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis, extra) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (extra || '') + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function n1(v) { v = Math.round(v * 10) / 10; return fmt(v); }
+    function stp(id, lab, val) {
+      return '<div class="mp-dans mp-dbig"><small>' + lab + '</small><div class="mp-pstr"><button type="button" class="mp-pstb" data-st="' + id + '" data-d="-1" aria-label="' + lab + ': less">&minus;</button>' +
+        '<b>' + val + '</b><button type="button" class="mp-pstb" data-st="' + id + '" data-d="1" aria-label="' + lab + ': more">+</button></div></div>';
+    }
+
+    /* ======== nets that fold: each face is a flat polygon, the face it hangs from, the shared edge and how far it turns ======== */
+    function shoelace(q) { var a = 0; for (var i = 0; i < q.length; i++) { var p = q[i], r = q[(i + 1) % q.length]; a += p[0] * r[1] - r[0] * p[1]; } return Math.abs(a) / 2; }
+    function ngon(a, b, n, ext) {
+      /* a regular polygon with its first side from a to b, on the left of a to b */
+      var pts = [a, b], dx = b[0] - a[0], dy = b[1] - a[1], ang = Math.atan2(dy, dx), s = Math.hypot(dx, dy), p = b;
+      for (var i = 2; i < n; i++) { ang += ext || 2 * Math.PI / n; p = [p[0] + s * Math.cos(ang), p[1] + s * Math.sin(ang)]; pts.push(p); }
+      return pts;
+    }
+    function face(poly, par, h1, h2, deg, kind) { return { p: poly, par: par, a: h1, b: h2, deg: deg, k: kind || 'f' }; }
+    /* a prism from a row of side rectangles (widths and the turn between them) and two caps on the first rectangle's ends */
+    function prismNet(sides, L, cap, curved) {
+      var F = [];
+      F.push(face([[0, 0], [sides[0][0], 0], [sides[0][0], L], [0, L]], -1, null, null, 0, curved ? 'c' : 'f'));
+      var par = 0, x = sides[0][0];
+      for (var i = 1; i < sides.length; i++) {
+        var w = sides[i][0];
+        F.push(face([[x, 0], [x + w, 0], [x + w, L], [x, L]], par, [x, 0], [x, L], sides[i][1], curved ? 'c' : 'f'));
+        par = F.length - 1; x += w;
+      }
+      var w0 = sides[0][0];
+      F.push(face(cap([0, L], [w0, L]), 0, [0, L], [w0, L], 90, 'b'));
+      F.push(face(cap([w0, 0], [0, 0]), 0, [w0, 0], [0, 0], 90, 'b'));
+      return F;
+    }
+    function regPrism(n, s, L, curved) {
+      /* the caps hang from the middle strip; strips run out to both sides of it and roll up to close */
+      var F = prismNet([[s, 0]], L, function (a, b) { return ngon(a, b, n); }, curved), ext = 360 / n, right = Math.floor((n - 1) / 2);
+      var par = 0;
+      for (var i = 1; i <= right; i++) { F.push(face([[i * s, 0], [(i + 1) * s, 0], [(i + 1) * s, L], [i * s, L]], par, [i * s, 0], [i * s, L], ext, curved ? 'c' : 'f')); par = F.length - 1; }
+      par = 0;
+      for (var j = 1; j < n - right; j++) { F.push(face([[-j * s, 0], [(1 - j) * s, 0], [(1 - j) * s, L], [-j * s, L]], par, [(1 - j) * s, 0], [(1 - j) * s, L], ext, curved ? 'c' : 'f')); par = F.length - 1; }
+      return F;
+    }
+    /* stand a prism or cylinder on its end: its length becomes its height */
+    function upright(F) { F.forEach(function (f) { f.v = f.v.map(function (p) { return [p[0], p[2], p[1]]; }); }); return F; }
+    function pyrNet(n, s, slant, curved) {
+      /* base polygon, and a triangle on each side whose tip is slant away from the middle of that side */
+      var basep = ngon([0, 0], [s, 0], n), F = [face(basep.slice().reverse(), -1, null, null, 0, 'b')];
+      var r = s / (2 * Math.tan(Math.PI / n)), dih = Math.atan2(Math.sqrt(Math.max(0.01, slant * slant - r * r)), r) * 180 / Math.PI;
+      for (var i = 0; i < n; i++) {
+        var a = basep[i], b = basep[(i + 1) % n], mx = (a[0] + b[0]) / 2, my = (a[1] + b[1]) / 2, dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy);
+        /* outward is to the right of a to b (the base goes anticlockwise) */
+        var tip = [mx + dy / l * slant, my - dx / l * slant];
+        F.push(face([a, tip, b], 0, a, b, 180 - dih, curved ? 'c' : 'f'));
+      }
+      return F;
+    }
+    function boxNet(l, w, h) {
+      return [
+        face([[0, 0], [l, 0], [l, w], [0, w]], -1, null, null, 0),
+        face([[0, 0], [0, -h], [l, -h], [l, 0]], 0, [0, 0], [l, 0], 90),
+        face([[0, w], [l, w], [l, w + h], [0, w + h]], 0, [0, w], [l, w], 90),
+        face([[0, w + h], [l, w + h], [l, 2 * w + h], [0, 2 * w + h]], 2, [0, w + h], [l, w + h], 90),
+        face([[0, 0], [0, w], [-h, w], [-h, 0]], 0, [0, 0], [0, w], 90),
+        face([[l, 0], [l + h, 0], [l + h, w], [l, w]], 0, [l, 0], [l, w], 90)
+      ];
+    }
+    /* the triangular prism has a 3-4-5 right triangle at each end, so every area is a whole number */
+    function triNet(L) {
+      return prismNet([[4, 0], [3, 90], [5, 180 - Math.atan2(4, 3) * 180 / Math.PI]], L, function (a, b) {
+        return a[1] > 0 ? [a, b, [b[0], b[1] + 3]] : [a, b, [a[0], a[1] - 3]];
+      });
+    }
+    function netFor(shape, D) {
+      if (shape === 'cube') return boxNet(D.s || 3, D.s || 3, D.s || 3);
+      if (shape === 'box') return boxNet(D.l, D.w, D.h);
+      if (shape === 'tprism') return triNet(D.L);
+      if (shape === 'pprism') return regPrism(5, 2, 3.4);
+      if (shape === 'hprism') return regPrism(6, 1.8, 3.6);
+      if (shape === 'spyr') return pyrNet(4, D.s, D.sl);
+      if (shape === 'tpyr') return pyrNet(3, D.s, D.s * Math.sqrt(3) / 2);
+      if (shape === 'hpyr') return pyrNet(6, 1.8, 4);
+      if (shape === 'cyl') return regPrism(36, 2 * Math.PI * D.r / 36, D.h || D.L, true);
+      return null;
+    }
+    /* place every face in 3D for a fold from 0 (flat) to 1 (closed) */
+    function folded(F, t) {
+      var M3 = [];
+      function rot(a, b, deg, centroid) {
+        var ux = b[0] - a[0], uy = b[1] - a[1], l = Math.hypot(ux, uy); ux /= l; uy /= l;
+        /* turn so the face lifts up (+z): the axis is (from the edge to the face) × up */
+        var dx = centroid[0] - a[0], dy = centroid[1] - a[1], cr = ux * dy - uy * dx;
+        if (cr < 0) { ux = -ux; uy = -uy; }
+        var th = deg * Math.PI / 180, c = Math.cos(th), s = Math.sin(th), k = [ux, uy, 0];
+        return function (p) {
+          var v = [p[0] - a[0], p[1] - a[1], p[2]], d = k[0] * v[0] + k[1] * v[1], cx = k[1] * v[2] - 0, cy = -k[0] * v[2], cz = k[0] * v[1] - k[1] * v[0];
+          return [a[0] + v[0] * c + cx * s + k[0] * d * (1 - c), a[1] + v[1] * c + cy * s + k[1] * d * (1 - c), v[2] * c + cz * s];
+        };
+      }
+      F.forEach(function (f, i) {
+        if (f.par < 0) { M3[i] = function (p) { return p; }; return; }
+        var cen = f.p.reduce(function (s, q) { return [s[0] + q[0] / f.p.length, s[1] + q[1] / f.p.length]; }, [0, 0]);
+        var r = rot(f.a, f.b, f.deg * t, cen), up = M3[f.par];
+        M3[i] = function (p) { return up(r(p)); };
+      });
+      return F.map(function (f, i) { return { v: f.p.map(function (q) { return M3[i]([q[0], q[1], 0]); }), k: f.k, area: shoelace(f.p), i: i }; });
+    }
+    function coneMesh(r, h) {
+      var out = [], n = 36, base = [];
+      for (var i = 0; i < n; i++) { var a = 2 * Math.PI * i / n; base.push([r * Math.cos(a), r * Math.sin(a), 0]); }
+      out.push({ v: base.slice().reverse(), k: 'b' });
+      for (var j = 0; j < n; j++) out.push({ v: [base[j], base[(j + 1) % n], [0, 0, h]], k: 'c' });
+      return out;
+    }
+    function sphereMesh(r) {
+      var out = [], la = 12, lo = 24;
+      function p(i, j) { var th = Math.PI * i / la, ph = 2 * Math.PI * j / lo; return [r * Math.sin(th) * Math.cos(ph), r * Math.sin(th) * Math.sin(ph), r + r * Math.cos(th)]; }
+      for (var i = 0; i < la; i++) for (var j = 0; j < lo; j++) out.push({ v: [p(i, j), p(i + 1, j), p(i + 1, j + 1), p(i, j + 1)], k: 'c' });
+      return out;
+    }
+    function cubesMesh(H) {
+      /* only the faces of a cube that are not against another cube; the base squares carry their column too */
+      var out = [];
+      function at(i, j, z) { return i >= 0 && j >= 0 && i < N && j < N && z >= 0 && z < H[j][i]; }
+      for (var j = 0; j < N; j++) for (var i = 0; i < N; i++) {
+        var x = i, y = N - 1 - j, c = i + ',' + j;
+        out.push({ v: [[x, y, 0], [x + 1, y, 0], [x + 1, y + 1, 0], [x, y + 1, 0]], k: 'g', c: c, flat: true });
+        for (var z = 0; z < H[j][i]; z++) {
+          var top = z === H[j][i] - 1, f = function (q) { out.push({ v: q, k: 'u', c: c }); };
+          if (top) f([[x, y, z + 1], [x + 1, y, z + 1], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]]);
+          if (!at(i, j + 1, z)) f([[x, y, z], [x + 1, y, z], [x + 1, y, z + 1], [x, y, z + 1]]);
+          if (!at(i, j - 1, z)) f([[x, y + 1, z], [x + 1, y + 1, z], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]]);
+          if (!at(i - 1, j, z)) f([[x, y, z], [x, y + 1, z], [x, y + 1, z + 1], [x, y, z + 1]]);
+          if (!at(i + 1, j, z)) f([[x + 1, y, z], [x + 1, y + 1, z], [x + 1, y + 1, z + 1], [x + 1, y, z + 1]]);
+        }
+      }
+      return out;
+    }
+    /* draw faces turned by yaw and pitch, far faces first, lit from the upper left */
+    function render(faces, W, H, opt) {
+      opt = opt || {};
+      var cy = Math.cos(yaw * Math.PI / 180), sy = Math.sin(yaw * Math.PI / 180), cp = Math.cos(pitch * Math.PI / 180), sp = Math.sin(pitch * Math.PI / 180);
+      var lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+      faces.forEach(function (f) { f.v.forEach(function (p) { for (var d = 0; d < 3; d++) { lo[d] = Math.min(lo[d], p[d]); hi[d] = Math.max(hi[d], p[d]); } }); });
+      var c = opt.center || [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2];
+      function view(p) {
+        var x = p[0] - c[0], y = p[1] - c[1], z = p[2] - c[2], x1 = x * cy - y * sy, y1 = x * sy + y * cy;
+        return [x1, -(y1 * sp + z * cp), -y1 * cp + z * sp];
+      }
+      var pf = faces.map(function (f) {
+        var q = f.v.map(view), d = q.reduce(function (s, p) { return s + p[2]; }, 0) / q.length;
+        var a = [q[1][0] - q[0][0], q[1][1] - q[0][1], q[1][2] - q[0][2]], b = [q[2][0] - q[0][0], q[2][1] - q[0][1], q[2][2] - q[0][2]];
+        var nx = a[1] * b[2] - a[2] * b[1], ny = a[2] * b[0] - a[0] * b[2], nz = a[0] * b[1] - a[1] * b[0], nl = Math.hypot(nx, ny, nz) || 1;
+        nx /= nl; ny /= nl; nz /= nl;
+        if (nz < 0) { nx = -nx; ny = -ny; nz = -nz; }
+        var lit = 0.6 + 0.4 * Math.max(0, -0.45 * nx - 0.55 * ny + 0.7 * nz);
+        return { q: q, d: d + (f.flat ? -1e3 : 0), lit: lit, f: f };
+      });
+      pf.sort(function (a, b) { return a.d - b.d; });
+      var R = 0;
+      pf.forEach(function (p) { p.q.forEach(function (v) { R = Math.max(R, Math.abs(v[0]), Math.abs(v[1])); }); });
+      var k = opt.k || Math.min((W - 30) / (2 * R || 1), (H - 30) / (2 * R || 1), opt.kMax || 60);
+      var s = '<svg class="mp-dsvg mp-s3sv" width="' + W + '" height="' + H + '" viewBox="' + (-W / 2) + ' ' + (-H / 2) + ' ' + W + ' ' + H + '" role="img" aria-label="' + (opt.lab || 'Solid') + '">';
+      pf.forEach(function (p) {
+        var pts = p.q.map(function (v) { return (v[0] * k).toFixed(1) + ',' + (v[1] * k).toFixed(1); }).join(' '), cls = 'mp-s3f k' + p.f.k + (p.f.cls ? ' ' + p.f.cls : '');
+        var mix = Math.round(p.lit * 100);
+        s += '<polygon class="' + cls + '" points="' + pts + '"' + (p.f.c ? ' data-c="' + p.f.c + '"' : '') + ' style="--lit:' + mix + '%"/>';
+      });
+      if (opt.labels) pf.forEach(function (p) {
+        if (p.f.lab == null || p.f.flat) return;
+        var m = p.q.reduce(function (s2, v) { return [s2[0] + v[0] / p.q.length, s2[1] + v[1] / p.q.length]; }, [0, 0]);
+        s += '<text class="mp-s3lab" x="' + (m[0] * k).toFixed(1) + '" y="' + (m[1] * k + 4).toFixed(1) + '" text-anchor="middle">' + p.f.lab + '</text>';
+      });
+      return s + '</svg>';
+    }
+
+    /* ======== the four parts ======== */
+    function solidFaces(id) {
+      if (id === 'cone') return coneMesh(1.6, 3.4);
+      if (id === 'sph') return sphereMesh(1.8);
+      if (id === 'tprism') return upright(folded(regPrism(3, 2.6, 3.2), 1));
+      var F = folded(netFor(id, id === 'cube' ? { s: 3 } : id === 'box' ? { l: 4, w: 2.4, h: 2 } : id === 'spyr' ? { s: 3, sl: 3.3 } : id === 'tpyr' ? { s: 3.4 } : id === 'cyl' ? { r: 1.4, h: 3.2 } : {}), 1);
+      return id === 'cyl' || id === 'pprism' || id === 'hprism' ? upright(F) : F;
+    }
+    function drawSolids(W, H) {
+      return '<div class="mp-s3w">' + render(solidFaces(P.pick), W, H, { lab: S3_ALL[P.pick][0], kMax: 70 }) + '</div>';
+    }
+    function views(Hh) {
+      /* top: which squares are covered; front: tallest cube in each column across; side (from the right): tallest in each row */
+      var top = [], front = [], side = [];
+      for (var i = 0; i < N; i++) { front.push(0); side.push(0); }
+      for (var j = 0; j < N; j++) for (var i2 = 0; i2 < N; i2++) { front[i2] = Math.max(front[i2], Hh[j][i2]); side[N - 1 - j] = Math.max(side[N - 1 - j], Hh[j][i2]); }
+      for (var j2 = 0; j2 < N; j2++) top.push(Hh[j2].map(function (v) { return v > 0 ? 1 : 0; }));
+      return { top: top, front: front, side: side };
+    }
+    function viewSvg(kind, V, u, lab) {
+      var rows = kind === 'top' ? V.top : (function () { var m = 0, a = V[kind], g = []; a.forEach(function (v) { m = Math.max(m, v); }); m = Math.max(m, 3); for (var z = m - 1; z >= 0; z--) g.push(a.map(function (v) { return v > z ? 1 : 0; })); return g; })();
+      var W = N * u + 2, H = rows.length * u + 2, s = '<svg class="mp-dsvg mp-s3vw" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + lab + '">';
+      rows.forEach(function (r, y) { r.forEach(function (v, x) { s += '<rect class="mp-s3vc' + (v ? ' on' : '') + '" x="' + (1 + x * u) + '" y="' + (1 + y * u) + '" width="' + u + '" height="' + u + '"/>'; }); });
+      return s + '</svg>';
+    }
+    function sameView(a, b) { return JSON.stringify(a) === JSON.stringify(b); }
+    function drawBuild(W, H) {
+      var B = P.b, V = views(B.h), side = W >= 700, showV = g5, u = side ? (B.puz >= 0 ? 15 : 20) : B.puz >= 0 ? 9 : 12;
+      var pv = showV ? '<div class="mp-s3vs">' + [['top', 'Top'], ['front', 'Front'], ['side', 'Side']].map(function (k) {
+        var tgt = B.puz >= 0 ? views(S3_PUZ[B.puz]) : null;
+        return '<figure class="mp-s3v' + (tgt && sameView(tgt[k[0]], V[k[0]]) ? ' ok' : '') + '"><figcaption>' + k[1] + '</figcaption>' +
+          (tgt ? '<div class="mp-s3vp">' + viewSvg(k[0], tgt, u, k[1] + ' view to build') + '<span>yours</span>' + viewSvg(k[0], V, u, 'Your ' + k[1].toLowerCase() + ' view') + '</div>' : viewSvg(k[0], V, u, k[1] + ' view')) + '</figure>';
+      }).join('') + '</div>' : '';
+      var gw = side && showV ? W - (B.puz >= 0 ? 330 : 200) : W, gh = side || !showV ? H : H - (B.puz >= 0 ? 150 : 110);
+      return '<div class="mp-grow' + (side ? ' side' : '') + '"><div class="mp-s3w mp-s3build">' + render(cubesMesh(B.h), gw, Math.max(180, gh), { lab: 'Cubes', center: [N / 2, N / 2, 1.2], kMax: 60 }) + '</div>' + pv + '</div>';
+    }
+    function dims(shape, D) {
+      if (shape === 'cube') return { s: D.l };
+      return D;
+    }
+    function netFaces(Dn) {
+      var F = netFor(Dn.shape, dims(Dn.shape, Dn)), out = folded(F, fold);
+      if (shown) out.forEach(function (f, i) {
+        if (Dn.shape === 'cyl') f.lab = F[i].k === 'b' ? 'π × ' + Dn.r + '²' : (i === 0 ? '2π × ' + Dn.r + ' × ' + Dn.h : null);
+        else f.lab = n1(f.area);
+      });
+      return out;
+    }
+    function saOf(Dn) {
+      if (Dn.shape === 'cyl') { var b = Math.PI * Dn.r * Dn.r, sidep = 2 * Math.PI * Dn.r * Dn.h; return { total: 2 * b + sidep, eq: '2 × π × ' + Dn.r + '² + 2 × π × ' + Dn.r + ' × ' + Dn.h + ' ≈ ' + n1(2 * b) + ' + ' + n1(sidep) }; }
+      var F = netFor(Dn.shape, dims(Dn.shape, Dn)), ar = F.map(function (f) { return shoelace(f.p); }), tot = ar.reduce(function (s, a) { return s + a; }, 0);
+      /* group equal faces: 2 × 12 + 2 × 8 + 2 × 6 */
+      var g = [];
+      ar.forEach(function (a) { var r = Math.round(a * 10) / 10, e = g.filter(function (x) { return x[0] === r; })[0]; if (e) e[1]++; else g.push([r, 1]); });
+      return { total: tot, eq: g.map(function (x) { return (x[1] > 1 ? x[1] + ' × ' : '') + fmt(x[0]); }).join(' + ') };
+    }
+    function netSvg(W, H) {
+      /* one scale for every fold, from the flat net, so the net does not grow or shrink as it folds */
+      var F = netFor(P.n.shape, dims(P.n.shape, P.n)), lo = [1e9, 1e9], hi = [-1e9, -1e9];
+      F.forEach(function (f) { f.p.forEach(function (q) { lo = [Math.min(lo[0], q[0]), Math.min(lo[1], q[1])]; hi = [Math.max(hi[0], q[0]), Math.max(hi[1], q[1])]; }); });
+      var diag = Math.hypot(hi[0] - lo[0], hi[1] - lo[1]) || 1;
+      return render(netFaces(P.n), W, H, { labels: shown, lab: 'Net of a ' + S3_ALL[P.n.shape][0], k: Math.min((W - 20) / diag * 1.2, (H - 20) / diag * 1.2, 60) });
+    }
+    function drawNets(W, H) {
+      return '<div class="mp-s3w">' + netSvg(W, H) + '</div>' +
+        '<div class="mp-s3fold"><label for="mp-s3f">Fold</label><input id="mp-s3f" type="range" min="0" max="100" value="' + Math.round(fold * 100) + '"></div>';
+    }
+    function volParts(Dv) {
+      /* base area, height and the solid with the filled part */
+      if (Dv.shape === 'box') return { base: Dv.l * Dv.w, h: Dv.h, eqb: Dv.l + ' × ' + Dv.w };
+      if (Dv.shape === 'tprism') return { base: 6, h: Dv.L, eqb: '3 × 4 ÷ 2' };
+      return { base: Math.PI * Dv.r * Dv.r, h: Dv.h, eqb: 'π × ' + Dv.r + '²' };
+    }
+    function drawVol(W, H) {
+      var Dv = P.v, F, fill = Math.min(Dv.fill, volParts(Dv).h);
+      if (Dv.shape === 'box') F = folded(boxNet(Dv.l, Dv.w, Dv.h), 1);
+      else if (Dv.shape === 'tprism') F = upright(folded(triNet(Dv.L), 1));
+      else F = upright(folded(regPrism(36, 2 * Math.PI * Dv.r / 36, Dv.h, true), 1));
+      F.forEach(function (f) { f.cls = 'shell'; });
+      var all = F.slice();
+      if (fill > 0) {
+        if (Dv.shape === 'box') {
+          /* filled layers as unit cubes, so each layer can be counted */
+          for (var z = 0; z < fill; z++) for (var y = 0; y < Dv.w; y++) for (var x = 0; x < Dv.l; x++) {
+            var tp = z === fill - 1, cub = [];
+            if (tp) cub.push([[x, y, z + 1], [x + 1, y, z + 1], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]]);
+            if (y === 0) cub.push([[x, y, z], [x + 1, y, z], [x + 1, y, z + 1], [x, y, z + 1]]);
+            if (y === Dv.w - 1) cub.push([[x, y + 1, z], [x + 1, y + 1, z], [x + 1, y + 1, z + 1], [x, y + 1, z + 1]]);
+            if (x === 0) cub.push([[x, y, z], [x, y + 1, z], [x, y + 1, z + 1], [x, y, z + 1]]);
+            if (x === Dv.l - 1) cub.push([[x + 1, y, z], [x + 1, y + 1, z], [x + 1, y + 1, z + 1], [x + 1, y, z + 1]]);
+            cub.forEach(function (q) { all.push({ v: q, k: 'u' }); });
+          }
+        } else {
+          upright(Dv.shape === 'tprism' ? folded(triNet(fill), 1) : folded(regPrism(36, 2 * Math.PI * Dv.r / 36, fill, true), 1)).forEach(function (f) { f.k = 'w'; all.push(f); });
+        }
+      }
+      var lo = [1e9, 1e9, 1e9], hi = [-1e9, -1e9, -1e9];
+      F.forEach(function (f) { f.v.forEach(function (p) { for (var d = 0; d < 3; d++) { lo[d] = Math.min(lo[d], p[d]); hi[d] = Math.max(hi[d], p[d]); } }); });
+      return '<div class="mp-s3w">' + render(all, W, H, { lab: 'A ' + S3_ALL[Dv.shape][0] + ' being filled', center: [(lo[0] + hi[0]) / 2, (lo[1] + hi[1]) / 2, (lo[2] + hi[2]) / 2], kMax: 44 }) + '</div>';
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      if (P.mode === 'solids') return '<small>Solids</small><div class="mp-fkthings mp-s3list">' + SOLIDS.map(function (id) { return '<button type="button" data-pick="' + id + '" aria-pressed="' + (P.pick === id) + '">' + S3_ALL[id][0] + '</button>'; }).join('') + '</div>';
+      if (P.mode === 'build') return '<small>Tap the grid</small><div class="mp-fkthings"><button type="button" data-take="0" aria-pressed="' + !P.b.take + '">Add a cube</button><button type="button" data-take="1" aria-pressed="' + P.b.take + '">Take one off</button></div>';
+      var D = P.mode === 'nets' ? P.n : P.v, list = P.mode === 'nets' ? NETS : VOLS;
+      var h = '<small>Solid</small><div class="mp-fkthings mp-s3list">' + list.map(function (id) { return '<button type="button" data-shape="' + id + '" aria-pressed="' + (D.shape === id) + '">' + S3_ALL[id][0] + '</button>'; }).join('') + '</div><small>Size (cm)</small>';
+      if (D.shape === 'cube') h += stp('l', 'side', D.l);
+      if (D.shape === 'box') h += stp('l', 'length', D.l) + stp('w', 'width', D.w) + stp('h', 'height', D.h);
+      if (D.shape === 'tprism') h += stp('L', P.mode === 'vol' ? 'height' : 'length', D.L);
+      if (D.shape === 'spyr') h += stp('s', 'base side', D.s) + stp('sl', 'slant height', D.sl);
+      if (D.shape === 'tpyr') h += stp('s', 'side', D.s);
+      if (D.shape === 'cyl') h += stp('r', 'radius', D.r) + stp('h', 'height', D.h);
+      return h;
+    }
+    function count(Hh) { var c = 0; Hh.forEach(function (r) { r.forEach(function (v) { c += v; }); }); return c; }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var big = '', eq = '';
+      if (P.mode === 'solids') {
+        var s = S3_ALL[P.pick];
+        big = s[0];
+        if (!g3) eq = (s[1] ? '<b>' + s[1] + '</b> flat face' + (s[1] === 1 ? '' : 's') : 'no flat faces') + (/curved/.test(s[4]) || P.pick === 'sph' ? ' and a curved surface' : '') + '. It can <b>' + S3_DO[P.pick] + '</b>';
+        else if (P.pick === 'cyl' || P.pick === 'cone' || P.pick === 'sph') eq = s[4] + (P.pick === 'cyl' ? '; <b>2</b> curved edges, <b>0</b> vertices' : P.pick === 'cone' ? '; <b>1</b> curved edge, <b>1</b> vertex' : '; no edges or vertices');
+        else eq = '<b>' + s[1] + '</b> faces, <b>' + s[2] + '</b> edges, <b>' + s[3] + '</b> vertices. Faces: ' + s[4];
+      } else if (P.mode === 'build') {
+        var c = count(P.b.h);
+        big = g7 ? c + ' cm³' : pl(c, 'cube', 'cubes');
+        if (P.b.puz >= 0) {
+          var V = views(P.b.h), Tg = views(S3_PUZ[P.b.puz]), ok = ['top', 'front', 'side'].filter(function (k2) { return sameView(Tg[k2], V[k2]); });
+          eq = ok.length === 3 ? 'All three views match' : ok.length ? ok.map(function (k2) { return k2[0].toUpperCase() + k2.slice(1); }).join(' and ') + ' view' + (ok.length > 1 ? 's match' : ' matches') : 'No view matches yet';
+        } else if (g7) eq = 'each cube is 1 cm³';
+      } else if (P.mode === 'nets') {
+        var sa = saOf(P.n);
+        big = 'SA ' + (P.n.shape === 'cyl' || P.n.shape === 'tpyr' ? '≈ ' : '= ') + n1(sa.total) + ' cm²';
+        eq = sa.eq + ' = <b>' + n1(sa.total) + ' cm²</b>';
+      } else {
+        var vp = volParts(P.v), V2 = vp.base * vp.h, f2 = Math.min(P.v.fill, vp.h), approx = P.v.shape === 'cyl' ? '≈ ' : '= ';
+        big = 'V ' + approx + n1(V2) + ' cm³';
+        eq = 'base area ' + vp.eqb + ' ' + approx + n1(vp.base) + ' cm² × height ' + vp.h + ' cm ' + approx + '<b>' + n1(V2) + ' cm³</b> ' + approx + n1(V2) + ' mL';
+        if (f2) eq += '. <b>' + f2 + '</b> of ' + vp.h + ' layers filled: ' + n1(vp.base * f2) + ' cm³';
+      }
+      read.innerHTML = (big ? '<p class="mp-total"><span class="mp-num">' + big + '</span></p>' : '') + (eq ? '<p class="mp-ceq">' + eq + '</p>' : '');
+    }
+    function snaps() {
+      var h = btn('tl', '↺', null, false, ' aria-label="Turn left"') + btn('tr', '↻', null, false, ' aria-label="Turn right"') + btn('tu', 'Tip', null, false, ' aria-label="Tip it toward you"') + btn('td', 'Tip back', null, false, ' aria-label="Tip it away"');
+      if (P.mode === 'build') h += (g6 ? btn('puz', P.b.puz < 0 ? 'Views puzzle' : P.b.puz < S3_PUZ.length - 1 ? 'Next puzzle' : 'No puzzle') : '') + btn('bclear', 'Clear', null, !count(P.b.h));
+      if (P.mode === 'nets') h += btn('fold', 'Fold', null, fold >= 1) + btn('flat', 'Unfold', null, fold <= 0);
+      if (P.mode === 'vol') { var vp = volParts(P.v); h += btn('vfill', 'Fill a layer', null, P.v.fill >= vp.h) + btn('vempty', 'Empty', null, !P.v.fill); }
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      snaps();
+      qsa('.mp-s3do [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(260, sz[1] - 70);
+      var paint = function (h) { win.innerHTML = P.mode === 'solids' ? drawSolids(W, h) : P.mode === 'build' ? drawBuild(W, h) : P.mode === 'nets' ? drawNets(W, h - 44) : drawVol(W, h); };
+      paint(H);
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) paint(Math.max(200, H - over - 4));
+    }
+    function redrawWin() {
+      var r = qs('.mp-s3fold input', win), sv = qs('.mp-s3w', win);
+      if (!sv) return draw();
+      var sz = size(), W = Math.max(260, sz[0]), old = qs('svg', sv), Hh = old ? +old.getAttribute('height') : 300, Ww = old ? +old.getAttribute('width') : W;
+      sv.innerHTML = P.mode === 'solids' ? render(solidFaces(P.pick), Ww, Hh, { lab: S3_ALL[P.pick][0], kMax: 70 }) : P.mode === 'nets' ? netSvg(Ww, Hh) : '';
+      if (P.mode === 'build' || P.mode === 'vol') draw();
+      if (r) r.value = Math.round(fold * 100);
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, pick: P.pick, cubes: count(P.b.h), fold: fold, sa: P.mode === 'nets' ? saOf(P.n).total : null, fill: P.v.fill, last: last }; }
+    function animateFold(to) {
+      if (anim) clearInterval(anim);
+      if (T.fast) { fold = to; draw(); change(); return; }
+      anim = setInterval(function () {
+        fold += (to > fold ? 1 : -1) * 0.06;
+        if ((to - fold) * (to > 0.5 ? 1 : -1) <= 0) { fold = to; clearInterval(anim); anim = null; draw(); change(); return; }
+        redrawWin();
+      }, 30);
+    }
+    var LIM = { l: [1, 8], w: [1, 8], h: [1, 8], L: [1, 8], s: [1, 8], sl: [1, 9], r: [1, 5] };
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-pick')) return act(function () { P.pick = b.getAttribute('data-pick'); last = 'pick'; });
+      if (b.hasAttribute('data-take')) return act(function () { P.b.take = b.getAttribute('data-take') === '1'; last = 'take'; });
+      var D = P.mode === 'nets' ? P.n : P.v;
+      if (b.hasAttribute('data-shape')) return act(function () { D.shape = b.getAttribute('data-shape'); if (P.mode === 'nets') fold = 0; else D.fill = 0; last = 'shape'; });
+      if (b.classList.contains('mp-pstb')) {
+        var id = b.getAttribute('data-st'), d = +b.getAttribute('data-d');
+        return act(function () {
+          D[id] = clamp(D[id] + d, LIM[id][0], LIM[id][1]);
+          if (D.shape === 'spyr' && D.sl * 2 <= D.s) D.sl = Math.floor(D.s / 2) + 1;
+          if (P.mode === 'vol') D.fill = Math.min(D.fill, volParts(D).h);
+          last = 'size';
+        });
+      }
+    });
+    qs('.mp-s3do', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      if (a === 'tl' || a === 'tr') { yaw += a === 'tl' ? -30 : 30; draw(); return; }
+      if (a === 'tu' || a === 'td') { pitch = clamp(pitch + (a === 'tu' ? 15 : -15), -10, 85); draw(); return; }
+      if (a === 'fold') return animateFold(1);
+      if (a === 'flat') return animateFold(0);
+      act(function () {
+        if (a === 'bclear') P.b.h = blank();
+        if (a === 'puz') { P.b.puz = P.b.puz >= S3_PUZ.length - 1 ? -1 : P.b.puz + 1; P.b.h = blank(); }
+        if (a === 'vfill') P.v.fill++;
+        if (a === 'vempty') P.v.fill = 0;
+        last = a;
+      });
+    });
+    win.addEventListener('input', function (e) { if (e.target.matches('.mp-s3fold input')) { if (anim) { clearInterval(anim); anim = null; } fold = +e.target.value / 100; redrawWin(); } });
+    win.addEventListener('change', function (e) { if (e.target.matches('.mp-s3fold input')) { draw(); change(); } });
+    /* drag to turn; in Build a tap (no drag) adds or takes off a cube */
+    var drag = null;
+    win.addEventListener('pointerdown', function (e) {
+      if (!e.target.closest('.mp-s3sv')) return;
+      drag = { x: e.clientX, y: e.clientY, yaw: yaw, pitch: pitch, moved: false, c: e.target.getAttribute('data-c') };
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+      if (!drag.moved && Math.hypot(dx, dy) < 8) return;
+      drag.moved = true;
+      yaw = drag.yaw - dx * 0.5; pitch = clamp(drag.pitch + dy * 0.4, -10, 85);
+      redrawWin();
+    });
+    win.addEventListener('pointercancel', function () { drag = null; });
+    win.addEventListener('pointerup', function () {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (d.moved || P.mode !== 'build' || !d.c) return;
+      var ij = d.c.split(',').map(Number), col = P.b.h[ij[1]];
+      if (P.b.take) { if (col[ij[0]] > 0) act(function () { col[ij[0]]--; last = 'take'; }); }
+      else if (col[ij[0]] < 5) act(function () { col[ij[0]]++; last = 'add'; });
+      else announce(T, 'That tower is as tall as it goes.');
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+  M.solids = function (root, o) { return toolSolid(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -5592,6 +6067,8 @@
       '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
     ['grid', 'space', 'Grid and robot', '', { tool: true },
       '<rect x="5" y="5" width="38" height="38" rx="4" style="fill:var(--card,#fff);stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M17.7 5v38M30.3 5v38M5 17.7h38M5 30.3h38" style="stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M11 37V24h13V11" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/><rect x="30" y="5.5" width="12" height="12" rx="3" style="fill:#2f62c4"/><path d="M33 13l3-4.5 3 4.5Z" style="fill:#fff"/>'],
+    ['solids', 'space', '3D solids and nets', '', { tool: true },
+      '<path d="M24 6L40 15V33L24 42L8 33V15Z" style="fill:var(--mp-hund,#2f62c4)"/><path d="M24 6L40 15L24 24L8 15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 60%,#fff)"/><path d="M24 24V42L8 33V15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 75%,#000)"/>'],
     ['geoboard', 'space', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 },
       '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
     ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
@@ -5650,5 +6127,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['balance', 'patterns', 'data', 'grid', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

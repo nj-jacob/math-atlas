@@ -722,6 +722,52 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox grid: the page runs off the side of a phone screen');
   }
 
+  /* 3a13. Toolbox 3D solids and nets: a cylinder has 2 flat faces and can roll, slide and stack (Grades 1 and 2), and from Grade 3 a
+     triangular prism has 5 faces, 9 edges and 6 vertices; tapping the base 3 times stacks 3 cubes and Undo takes one back; from Grade 5
+     the top, front and side views are drawn; Grade 6 and up: the 4 × 3 × 2 box net has SA = 2 × 12 + 2 × 8 + 2 × 6 = 52 cm² and Fold
+     closes it; Grade 7 and up: filling a 4 × 3 × 3 box layer by layer reads V = 36 cm³ = 36 mL, and a cylinder of radius 2 and height 3
+     is about 37.7 cm³. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('solids'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/solids'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-s3t .mp-read');
+    const has = async (t, f) => { for (let i = 0; i < 30; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox solids: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-s3do [data-m=' + m + ']');
+    const snap = a => page.click('.mp-snap[data-a=' + a + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    if (g <= 2) { await page.click('[data-pick=cyl]'); await bad('2 flat faces and a curved surface. It can roll, slide and stack', 'a cylinder'); }
+    else { await page.click('[data-pick=tprism]'); await bad('5 faces, 9 edges, 6 vertices', 'a triangular prism'); }
+    await mode('build');
+    for (let i = 0; i < 3; i++) {
+      const bb = await page.locator('.mp-s3sv polygon.kg[data-c="2,2"]').boundingBox();
+      await page.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2);
+      await page.waitForTimeout(60);
+    }
+    await bad(g >= 7 ? '3 cm³' : '3 cubes', 'three taps on the same square');
+    await page.click('.tb-b[data-a=undo]');
+    await bad(g >= 7 ? '2 cm³' : '2 cubes', 'Undo after three cubes');
+    if (g >= 5 && (await page.locator('.mp-s3vw').count()) !== 3) fail(where, 'Toolbox solids: the top, front and side views are not all drawn');
+    if (g >= 6) {
+      await mode('nets');
+      await bad('2 × 12 + 2 × 8 + 2 × 6 = 52 cm²', 'the surface area of a 4 × 3 × 2 box');
+      await snap('fold');
+      let closed = false;
+      for (let i = 0; i < 30 && !closed; i++) { closed = await page.evaluate(() => document.querySelector('.mp-s3fold input').value === '100'); if (!closed) await page.waitForTimeout(100); }
+      if (!closed) fail(where, 'Toolbox solids: Fold does not close the net');
+    }
+    if (g >= 7) {
+      await mode('vol');
+      for (let i = 0; i < 3; i++) await snap('vfill');
+      await bad('= 36 cm³ = 36 mL. 3 of 3 layers filled', 'a 4 × 3 × 3 box filled layer by layer');
+      await page.click('[data-shape=cyl]');
+      await bad('V ≈ 37.7 cm³', 'a cylinder of radius 2 and height 3');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox solids: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
