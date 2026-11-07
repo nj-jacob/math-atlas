@@ -2934,6 +2934,7 @@
   M.cashHtml = cashHtml;
   M.coins = function (root, o) {
     o = o || {};
+    if (o.tool) return toolMoney(root, o);
     var T = base(root, 'coin'), set = o.set || [5, 10, 25, 100, 200], items = [], counted = 0;
     root.innerHTML = '<div class="mp-tray mp-ctray">' + set.map(function (v) { return '<button type="button" class="mp-cadd" data-v="' + v + '" aria-label="Add a ' + CASH[v].n + '">' + cashHtml(v) + '</button>'; }).join('') + '</div>' +
       '<div class="mp-acts"><button type="button" class="mp-act" data-a="sort">Sort, biggest first</button><button type="button" class="mp-act" data-a="count">Count it</button><button type="button" class="mp-act" data-a="clear">Clear</button></div>' +
@@ -3044,6 +3045,7 @@
      Tap the tray to add, tap a tile to take it away, "Remove zero pairs" cancels a positive and a negative tile. */
   M.tiles = function (root, o) {
     o = o || {};
+    if (o.tool) return toolTiles(root, o);
     var T = base(root, 'tile'), kinds = o.kinds || (o.ones ? ['one'] : o.x2 ? ['x2', 'x', 'one'] : ['x', 'one']), tiles = [];
     var LAB = { x2: 'x²', x: 'x', one: '1' };
     root.innerHTML = '<div class="mp-tray">' + kinds.map(function (k) {
@@ -3110,6 +3112,7 @@
   function dur(m) { var s = m < 0 ? '&minus;' : ''; m = Math.abs(m); var h = Math.floor(m / 60), r = m % 60; return s + (h ? h + ' h ' : '') + r + ' min'; }
   M.clock = function (root, o) {
     o = o || {};
+    if (o.tool) return toolClock(root, o);
     var T = base(root, 'clock'), start = o.t == null ? 540 : o.t, t = start, last = '';
     root.innerHTML = (o.controls === false ? '' : '<div class="mp-acts">' + abtn('-60', '&minus;1 hour') + abtn('-5', '&minus;5 min') + abtn('5', '+5 min') + abtn('60', '+1 hour') + abtn('reset', 'Start again') + '</div>') +
       '<div class="mp-clock"></div><div class="mp-read" aria-live="polite"></div>';
@@ -3206,6 +3209,7 @@
   var MB = { kg: 1000, h: 100, t: 10 }, MBL = { kg: '1 kg', h: '100 g', t: '10 g' };
   M.scale = function (root, o) {
     o = o || {};
+    if (o.tool) return toolMeas(root, o);
     var T = base(root, 'scale'), max = o.max || 5000, n = { kg: 0, h: 0, t: 0 }, last = '';
     root.innerHTML = '<div class="mp-acts">' + ['kg', 'h', 't'].map(function (k) { return abtn('+' + k, '+ ' + MBL[k]) + abtn('-' + k, '&minus; ' + MBL[k]); }).join('') + '</div><div class="mp-pan"></div><div class="mp-read" aria-live="polite"></div>';
     var pan = qs('.mp-pan', root), read = qs('.mp-read', root);
@@ -3261,6 +3265,7 @@
   function pcol(p) { return 'var(--mp-d' + (p < 0 ? 'm' + -p : p) + ',' + PC[p] + ')'; }
   M.disks = function (root, o) {
     o = o || {};
+    if (o.tool) return toolDisks(root, o);
     var T = base(root, 'disks'), places = o.places || [4, 3, 2, 1, 0], cnt = {}, lit = [], last = '', max = o.max || 19, mode = '';
     root.innerHTML = (o.controls ? '<div class="mp-tray">' + places.map(function (p) {
       return '<div class="mp-tg"><button type="button" class="mp-add" data-p="' + p + '" aria-label="Add a ' + plab(p) + ' disk"><i class="mp-dk sm" style="--c:' + pcol(p) + '"></i><span>+ ' + plab(p) + '</span></button>' +
@@ -6641,6 +6646,1436 @@
   }
 
 
+  /* ================= Measuring kit (Toolbox) =================
+     Measure: Length (every grade: Grades 1 to 3 line up cubes or paper clips, from Grade 2 a ruler in cm, with the thing moved off 0 to measure from another mark, from
+     Grade 4 in mm, from Grade 5 also in m), Mass (a pan balance: cubes in Grades 1 and 2, kg and g weights from Grade 3, kg as a decimal
+     from Grade 5), Capacity (fill a container and pour it into a measuring jug: cups in Grades 1 and 2, mL and L from Grade 3), Angles
+     (Grade 4 and up: drag an arm; compare with a right angle, a protractor to 180° from Grade 5 and to 360° from Grade 6) and Circles
+     (Grade 7 and up: drag the radius; the diameter, and the circle unrolled into a little more than 3 diameters). */
+  var MK_LEN = { /* name, cm (Grades 1 to 3), mm (Grade 4 and up) */
+    pencil: ['pencil', 12, 123], crayon: ['crayon', 8, 87], ribbon: ['ribbon', 14, 141], straw: ['straw', 13, 136], leaf: ['leaf', 6, 64]
+  };
+  var MK_MASS = { /* name, cubes (Grades 1 and 2), grams (Grade 3 and up) */
+    apple: ['apple', 15, 150], car: ['toy car', 8, 80], orange: ['orange', 20, 200], book: ['book', 40, 850], flour: ['bag of flour', 0, 1250], pumpkin: ['pumpkin', 0, 2500]
+  };
+  var MK_CAP = { /* name, cups (Grades 1 and 2), mL (Grade 3 and up) */
+    glass: ['glass', 1, 200], box: ['juice box', 0, 250], mug: ['mug', 2, 300], bowl: ['bowl', 3, 600], bottle: ['bottle', 4, 750], pot: ['pot', 8, 1500]
+  };
+  var MK_W = [['kg', 1000, '1 kg'], ['g500', 500, '500 g'], ['g100', 100, '100 g'], ['g50', 50, '50 g'], ['g10', 10, '10 g']];
+  var mkClip = 0;
+  function toolMeas(root, o) {
+    var T = base(root, 'meas');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-mkt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7;
+    var MODES = [['len', 'Length'], ['mass', 'Mass'], ['cap', 'Capacity']].concat(g4 ? [['ang', 'Angles']] : []).concat(g7 ? [['circ', 'Circles']] : []);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-mktr"></div><div class="mp-dmain"><div class="mp-cmode mp-mkdo" role="group" aria-label="Measure"><span>Measure</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-mktr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    var cid = 'mk' + (++mkClip);
+    /* state: the measure; Length: the thing, what measures it, how far from 0 it starts (cm); Mass: the thing, the weights on the pan;
+       Capacity: the container, how full it is, the jug, and what one full pour measured; Angles: the angle, right-angle card, protractor;
+       Circles: the radius, diameter, unrolled */
+    var P, shown = false, hist = [], last = '', geo = {};
+    function fresh() {
+      P = {
+        mode: 'len', len: { o: 'pencil', by: g2 ? 'ruler' : 'cubes', off: 0 }, mass: { o: 'apple', w: [] },
+        cap: { c: 'bottle', fill: 0, jug: 0, meas: null, over: false }, ang: { a: 50, right: false, prot: false }, circ: { r: 3, d: false, roll: false }
+      };
+    }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function d1(v) { return fmt(Math.round(v * 10) / 10); }
+    function svgOpen(W, H, label, cls) { return '<svg class="mp-dsvg mp-mksv' + (cls ? ' ' + cls : '') + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + label + '">'; }
+
+    /* ======== Length ======== */
+    function lenOf() { var t = MK_LEN[P.len.o]; return g4 ? t[2] / 10 : t[1]; } /* in cm */
+    function thing(k, x, y, w, h) {
+      /* a picture of the thing to measure, from x to x + w, centred on y */
+      var t = y - h / 2, b = y + h / 2;
+      if (k === 'pencil') {
+        var tip = Math.min(w * 0.16, h * 1.6), er = Math.min(w * 0.08, h);
+        return '<rect class="mp-mkpe" x="' + x + '" y="' + t + '" width="' + er + '" height="' + h + '" rx="3"/><rect class="mp-mkpb" x="' + (x + er) + '" y="' + t + '" width="' + (w - er - tip) + '" height="' + h + '"/>' +
+          '<polygon class="mp-mkpw" points="' + (x + w - tip) + ',' + t + ' ' + (x + w) + ',' + y + ' ' + (x + w - tip) + ',' + b + '"/><polygon class="mp-mkpl" points="' + (x + w - tip * 0.3) + ',' + (y - h * 0.15) + ' ' + (x + w) + ',' + y + ' ' + (x + w - tip * 0.3) + ',' + (y + h * 0.15) + '"/>';
+      }
+      if (k === 'crayon') {
+        var tp = Math.min(w * 0.18, h * 1.2);
+        return '<rect class="mp-mkcr" x="' + x + '" y="' + t + '" width="' + (w - tp) + '" height="' + h + '" rx="2"/><rect class="mp-mkcw" x="' + (x + w * 0.15) + '" y="' + t + '" width="' + (w * 0.5) + '" height="' + h + '"/>' +
+          '<polygon class="mp-mkcr" points="' + (x + w - tp) + ',' + (t + h * 0.1) + ' ' + (x + w) + ',' + (y - h * 0.12) + ' ' + (x + w) + ',' + (y + h * 0.12) + ' ' + (x + w - tp) + ',' + (b - h * 0.1) + '"/>';
+      }
+      if (k === 'ribbon') {
+        var n = h * 0.5;
+        return '<polygon class="mp-mkrb" points="' + x + ',' + t + ' ' + (x + w) + ',' + t + ' ' + (x + w - n) + ',' + y + ' ' + (x + w) + ',' + b + ' ' + x + ',' + b + ' ' + (x + n) + ',' + y + '"/>';
+      }
+      if (k === 'straw') {
+        var s = '<rect class="mp-mkst" x="' + x + '" y="' + (y - h * 0.3) + '" width="' + w + '" height="' + (h * 0.6) + '" rx="2"/>';
+        for (var i = 1; i * h < w; i += 2) s += '<rect class="mp-mkss" x="' + (x + i * h * 0.8) + '" y="' + (y - h * 0.3) + '" width="' + (h * 0.4) + '" height="' + (h * 0.6) + '"/>';
+        return s;
+      }
+      /* leaf: a stem on the left, the blade to the right end */
+      var st = w * 0.18;
+      return '<line class="mp-mkls" x1="' + x + '" y1="' + y + '" x2="' + (x + st) + '" y2="' + y + '"/><path class="mp-mklf" d="M' + (x + st) + ',' + y + ' Q' + (x + st + (w - st) * 0.45) + ',' + (t - h * 0.3) + ' ' + (x + w) + ',' + y + ' Q' + (x + st + (w - st) * 0.45) + ',' + (b + h * 0.3) + ' ' + (x + st) + ',' + y + 'Z"/>' +
+        '<line class="mp-mkls" x1="' + (x + st) + '" y1="' + y + '" x2="' + (x + w * 0.92) + '" y2="' + y + '"/>';
+    }
+    function rulerLen(W) { return W >= 560 ? 20 : 15; }
+    function drawLen(W, H) {
+      var L = P.len, len = lenOf(), RL = rulerLen(W), k = Math.max(14, Math.min(44, (W - 40) / (RL + 1))), rx = Math.max(20, (W - RL * k) / 2), x0 = rx + L.off * k, y = Math.max(50, H / 2 - 50);
+      geo = { k: k, RL: RL };
+      var s = svgOpen(W, Math.max(H, 220), 'Measure the length of a ' + MK_LEN[L.o][0]);
+      s += '<line class="mp-mkedge" x1="' + x0 + '" y1="' + (y - 34) + '" x2="' + x0 + '" y2="' + (y + 110) + '"/>';
+      s += '<g class="mp-mkobj" data-drag="obj">' + thing(L.o, x0, y, len * k, Math.max(14, Math.min(26, k * 0.7))) + '<rect class="mp-mkgrab" x="' + x0 + '" y="' + (y - 24) + '" width="' + len * k + '" height="48"/></g>';
+      var uy = y + 34;
+      if (L.by === 'ruler') {
+        var pad = 10, rh = 58;
+        s += '<g class="mp-mkrul"><rect class="mp-mkrr" x="' + (rx - pad) + '" y="' + uy + '" width="' + (RL * k + pad * 2) + '" height="' + rh + '" rx="6"/>';
+        for (var i = 0; i <= RL * (g4 ? 10 : 1); i++) {
+          var v = g4 ? i / 10 : i, X = rx + v * k, big = !g4 || i % 10 === 0, mid = g4 && i % 5 === 0;
+          s += '<line class="mp-mktk" x1="' + X.toFixed(1) + '" y1="' + uy + '" x2="' + X.toFixed(1) + '" y2="' + (uy + (big ? 20 : mid ? 13 : 8)) + '"/>';
+          if (big && (k >= 22 || v % 2 === 0)) s += '<text class="mp-mktx" x="' + X.toFixed(1) + '" y="' + (uy + 36) + '">' + v + '</text>';
+        }
+        s += '<text class="mp-mktx u" x="' + (rx + RL * k - 4) + '" y="' + (uy + rh - 8) + '">cm</text></g>';
+      } else {
+        var u = L.by === 'cubes' ? 2 : 3, n = Math.round(len / u);
+        for (var j = 0; j < n; j++) {
+          var ux = x0 + j * u * k;
+          s += L.by === 'cubes' ? '<rect class="mp-mkcube" x="' + (ux + 1) + '" y="' + uy + '" width="' + (u * k - 2) + '" height="' + (u * k - 2) + '" rx="3"/>'
+            : '<rect class="mp-mkclip" x="' + (ux + 2) + '" y="' + (uy + 4) + '" width="' + (u * k - 4) + '" height="' + Math.min(18, k * 0.9) + '" rx="' + Math.min(9, k * 0.45) + '"/><rect class="mp-mkclip in" x="' + (ux + 2 + k * 0.4) + '" y="' + (uy + 4 + Math.min(18, k * 0.9) * 0.3) + '" width="' + (u * k - 4 - k * 0.8) + '" height="' + Math.min(18, k * 0.9) * 0.4 + '" rx="3"/>';
+        }
+      }
+      return s + '</svg>';
+    }
+    function lenRead() {
+      var L = P.len, nm = MK_LEN[L.o][0], len = lenOf();
+      if (L.by !== 'ruler') {
+        var u = L.by === 'cubes' ? 2 : 3, n = Math.round(len / u), ex = n * u === len, unit = L.by === 'cubes' ? pl(n, 'cube', 'cubes') : pl(n, 'paper clip', 'paper clips');
+        return [(ex ? '' : 'about ') + unit, 'The ' + nm + ' is ' + (ex ? '' : 'about ') + 'as long as <b>' + unit + '</b>' + (g2 ? '. On a ruler it is <b>' + len + '</b> cm' : '')];
+      }
+      var a = L.off, b = L.off + len, eq;
+      if (g4) {
+        var mm = Math.round(len * 10);
+        eq = '<b>' + mm + '</b> mm = <b>' + d1(len) + '</b> cm' + (g5 ? ' = <b>' + fmt(mm / 1000) + '</b> m' : '');
+        eq += a ? '. From ' + d1(a) + ' to ' + d1(b) + ': ' + d1(b) + ' − ' + d1(a) + ' = ' + d1(len) + ' cm' : '. It starts at 0';
+        return [mm + ' mm', eq];
+      }
+      eq = a ? 'From ' + a + ' to ' + b + ': <b>' + b + ' − ' + a + ' = ' + len + '</b> cm' : 'The ' + nm + ' starts at 0 and ends at <b>' + b + '</b>';
+      return [len + ' cm', eq];
+    }
+
+    /* ======== Mass ======== */
+    function massOf() { var t = MK_MASS[P.mass.o]; return g3 ? t[2] : t[1]; }
+    function onPan() { return g3 ? P.mass.w.reduce(function (s, id) { return s + MK_W.filter(function (w) { return w[0] === id; })[0][1]; }, 0) : P.mass.w.length; }
+    function massPic(k, cx, by, s) {
+      /* the thing on the left pan, sitting on by, about s across */
+      if (k === 'apple' || k === 'orange') {
+        var r = s * (k === 'apple' ? 0.32 : 0.36);
+        return '<circle class="mp-mk' + k + '" cx="' + cx + '" cy="' + (by - r) + '" r="' + r + '"/>' + (k === 'apple' ? '<path class="mp-mkleaf" d="M' + cx + ',' + (by - 2 * r) + ' q' + r * 0.5 + ',' + (-r * 0.6) + ' ' + r * 0.8 + ',' + (-r * 0.3) + ' q' + (-r * 0.4) + ',' + r * 0.5 + ' ' + (-r * 0.8) + ',' + r * 0.3 + 'z"/>' : '');
+      }
+      if (k === 'car') {
+        var w = s * 0.7, h = s * 0.22;
+        return '<rect class="mp-mkcar" x="' + (cx - w / 2) + '" y="' + (by - h - s * 0.12) + '" width="' + w + '" height="' + h + '" rx="5"/><rect class="mp-mkcar" x="' + (cx - w * 0.25) + '" y="' + (by - h * 1.9 - s * 0.12) + '" width="' + (w * 0.5) + '" height="' + h + '" rx="5"/>' +
+          '<circle class="mp-mkwheel" cx="' + (cx - w * 0.28) + '" cy="' + (by - s * 0.1) + '" r="' + s * 0.1 + '"/><circle class="mp-mkwheel" cx="' + (cx + w * 0.28) + '" cy="' + (by - s * 0.1) + '" r="' + s * 0.1 + '"/>';
+      }
+      if (k === 'book') return '<rect class="mp-mkbook" x="' + (cx - s * 0.42) + '" y="' + (by - s * 0.24) + '" width="' + (s * 0.84) + '" height="' + (s * 0.24) + '" rx="3"/><rect class="mp-mkpage" x="' + (cx - s * 0.38) + '" y="' + (by - s * 0.2) + '" width="' + (s * 0.76) + '" height="' + (s * 0.16) + '"/>';
+      if (k === 'flour') return '<path class="mp-mkbag" d="M' + (cx - s * 0.3) + ',' + by + ' L' + (cx - s * 0.26) + ',' + (by - s * 0.62) + ' L' + (cx + s * 0.26) + ',' + (by - s * 0.62) + ' L' + (cx + s * 0.3) + ',' + by + 'Z"/><rect class="mp-mkbagl" x="' + (cx - s * 0.18) + '" y="' + (by - s * 0.4) + '" width="' + (s * 0.36) + '" height="' + (s * 0.16) + '" rx="3"/>';
+      return '<ellipse class="mp-mkpump" cx="' + cx + '" cy="' + (by - s * 0.26) + '" rx="' + (s * 0.42) + '" ry="' + (s * 0.26) + '"/><path class="mp-mkpumpl" d="M' + cx + ',' + (by - s * 0.52) + ' V' + by + ' M' + (cx - s * 0.2) + ',' + (by - s * 0.48) + ' Q' + (cx - s * 0.26) + ',' + (by - s * 0.26) + ' ' + (cx - s * 0.2) + ',' + (by - s * 0.03) + ' M' + (cx + s * 0.2) + ',' + (by - s * 0.48) + ' Q' + (cx + s * 0.26) + ',' + (by - s * 0.26) + ' ' + (cx + s * 0.2) + ',' + (by - s * 0.03) + '"/><rect class="mp-mkstem" x="' + (cx - 3) + '" y="' + (by - s * 0.62) + '" width="6" height="' + (s * 0.12) + '" rx="2"/>';
+    }
+    function weightPic(id, x, by, s, i) {
+      var w = MK_W.filter(function (q) { return q[0] === id; })[0], f = id === 'kg' ? 1 : id === 'g500' ? 0.85 : id === 'g100' ? 0.66 : id === 'g50' ? 0.56 : 0.46, h = s * f, ww = s * f * 0.9;
+      return '<g class="mp-mkwt' + (id === 'kg' || id === 'g500' ? ' big' : '') + '" data-w="' + i + '"><path d="M' + (x - ww / 2) + ',' + by + ' L' + (x - ww * 0.38) + ',' + (by - h * 0.8) + ' L' + (x - ww * 0.18) + ',' + (by - h * 0.8) + ' L' + (x - ww * 0.18) + ',' + (by - h) + ' L' + (x + ww * 0.18) + ',' + (by - h) + ' L' + (x + ww * 0.18) + ',' + (by - h * 0.8) + ' L' + (x + ww * 0.38) + ',' + (by - h * 0.8) + ' L' + (x + ww / 2) + ',' + by + 'Z"/>' +
+        '<text x="' + x + '" y="' + (by - h * 0.3) + '">' + w[2].replace(' ', '') + '</text></g>';
+    }
+    function drawMass(W, H) {
+      var M = P.mass, m = massOf(), r = onPan(), tilt = r ? clamp((m - r) / Math.max(m, r) * 14, -12, 12) : 12, cx = W / 2, bl = Math.min(W * 0.36, 250), py = 46;
+      var a = tilt * Math.PI / 180, lx = cx - bl * Math.cos(a), ly = py + bl * Math.sin(a), rx = cx + bl * Math.cos(a), ry = py - bl * Math.sin(a), hang = Math.min(110, H * 0.32), pw = Math.min(180, bl * 0.95);
+      var s = svgOpen(W, Math.max(H, 260), 'A pan balance');
+      var bb = Math.min(Math.max(H, 260) - 12, py + hang + 150);
+      s += '<polygon class="mp-mkbase" points="' + (cx - 40) + ',' + bb + ' ' + (cx + 40) + ',' + bb + ' ' + (cx + 8) + ',' + py + ' ' + (cx - 8) + ',' + py + '"/>';
+      [[lx, ly], [rx, ry]].forEach(function (p) { s += '<path class="mp-mkstr" d="M' + p[0] + ',' + p[1] + ' L' + (p[0] - pw / 2) + ',' + (p[1] + hang) + ' M' + p[0] + ',' + p[1] + ' L' + (p[0] + pw / 2) + ',' + (p[1] + hang) + '"/>'; });
+      s += '<line class="mp-mkbeam" x1="' + lx + '" y1="' + ly + '" x2="' + rx + '" y2="' + ry + '"/><circle class="mp-mkpiv" cx="' + cx + '" cy="' + py + '" r="7"/>';
+      /* the pointer shows which way it tips */
+      s += '<line class="mp-mkptr" x1="' + cx + '" y1="' + py + '" x2="' + (cx + 34 * Math.sin(-a)) + '" y2="' + (py - 34 * Math.cos(a)) + '"/>';
+      [[lx, ly], [rx, ry]].forEach(function (p) { s += '<path class="mp-mkpan" d="M' + (p[0] - pw / 2) + ',' + (p[1] + hang) + ' Q' + p[0] + ',' + (p[1] + hang + 26) + ' ' + (p[0] + pw / 2) + ',' + (p[1] + hang) + 'Z"/>'; });
+      s += massPic(M.o, lx, ly + hang, Math.min(pw, 150));
+      var bx = rx, by = ry + hang;
+      if (g3) {
+        var ws = M.w.map(function (id, i) { return [id, i]; }), sz = Math.min(46, pw / 3.4), per = Math.max(1, Math.floor(pw / (sz * 0.95))), rows = [];
+        ws.forEach(function (q, i) { (rows[Math.floor(i / per)] = rows[Math.floor(i / per)] || []).push(q); });
+        rows.forEach(function (row, ri) {
+          row.forEach(function (q, j) { s += weightPic(q[0], bx - (row.length - 1) * sz * 0.95 / 2 + j * sz * 0.95, by - ri * sz * 1.02, sz, q[1]); });
+        });
+      } else {
+        var cs = Math.min(18, pw / 6), pr = 5;
+        M.w.forEach(function (q, i) {
+          var c = i % pr, rr = Math.floor(i / pr);
+          s += '<rect class="mp-mkcube" data-w="' + i + '" x="' + (bx - pr * cs / 2 + c * cs) + '" y="' + (by - (rr + 1) * cs) + '" width="' + (cs - 1.5) + '" height="' + (cs - 1.5) + '" rx="2"/>';
+        });
+      }
+      return s + '</svg>';
+    }
+    function massRead() {
+      var nm = MK_MASS[P.mass.o][0], m = massOf(), r = onPan();
+      if (!r) return ['', ''];
+      var unit = function (v) { return g3 ? fmt(v) + ' g' : pl(v, 'cube', 'cubes'); };
+      if (r !== m) return [(m > r ? 'heavier' : 'lighter') + ' than ' + unit(r), 'The ' + nm + ' is <b>' + (m > r ? 'heavier' : 'lighter') + '</b> than ' + unit(r) + (m > r ? '. Add more' : '. Take some off')];
+      if (!g3) return [unit(m), 'The ' + nm + ' balances <b>' + unit(m) + '</b>'];
+      var parts = {}; P.mass.w.forEach(function (id) { parts[id] = (parts[id] || 0) + 1; });
+      var sum = MK_W.filter(function (w) { return parts[w[0]]; }).map(function (w) { return parts[w[0]] > 1 ? parts[w[0]] + ' × ' + w[2] : w[2]; }).join(' + ');
+      var eq = (P.mass.w.length > 1 ? sum + ' = ' : '') + '<b>' + fmt(m) + ' g</b>. The ' + nm + ' is ' + fmt(m) + ' g';
+      if (m >= 1000) eq += g5 ? ' = <b>' + fmt(m / 1000) + ' kg</b>' : ' = <b>' + Math.floor(m / 1000) + ' kg ' + (m % 1000 ? fmt(m % 1000) + ' g' : '') + '</b>';
+      return [fmt(m) + ' g', eq];
+    }
+
+    /* ======== Capacity ======== */
+    function capOf(c) { var t = MK_CAP[c]; return g3 ? t[2] : t[1] * 250; } /* in mL; Grades 1 and 2 count cups of 250 mL */
+    function jugCap() { return g3 ? 2000 : 2500; }
+    function contShape(k, x, by, w, h) {
+      /* the outline of a container: x is the middle, by the bottom */
+      if (k === 'glass') return 'M' + (x - w * 0.32) + ',' + (by - h * 0.62) + ' L' + (x + w * 0.32) + ',' + (by - h * 0.62) + ' L' + (x + w * 0.25) + ',' + by + ' L' + (x - w * 0.25) + ',' + by + 'Z';
+      if (k === 'box') return 'M' + (x - w * 0.26) + ',' + (by - h * 0.6) + ' H' + (x + w * 0.26) + ' V' + by + ' H' + (x - w * 0.26) + 'Z';
+      if (k === 'mug') return 'M' + (x - w * 0.3) + ',' + (by - h * 0.6) + ' H' + (x + w * 0.3) + ' V' + (by - 6) + ' Q' + (x + w * 0.3) + ',' + by + ' ' + (x + w * 0.24) + ',' + by + ' H' + (x - w * 0.24) + ' Q' + (x - w * 0.3) + ',' + by + ' ' + (x - w * 0.3) + ',' + (by - 6) + 'Z';
+      if (k === 'bowl') return 'M' + (x - w * 0.48) + ',' + (by - h * 0.45) + ' H' + (x + w * 0.48) + ' Q' + (x + w * 0.46) + ',' + by + ' ' + x + ',' + by + ' Q' + (x - w * 0.46) + ',' + by + ' ' + (x - w * 0.48) + ',' + (by - h * 0.45) + 'Z';
+      if (k === 'bottle') return 'M' + (x - w * 0.1) + ',' + (by - h) + ' H' + (x + w * 0.1) + ' V' + (by - h * 0.8) + ' Q' + (x + w * 0.26) + ',' + (by - h * 0.72) + ' ' + (x + w * 0.26) + ',' + (by - h * 0.56) + ' V' + by + ' H' + (x - w * 0.26) + ' V' + (by - h * 0.56) + ' Q' + (x - w * 0.26) + ',' + (by - h * 0.72) + ' ' + (x - w * 0.1) + ',' + (by - h * 0.8) + 'Z';
+      return 'M' + (x - w * 0.44) + ',' + (by - h * 0.66) + ' H' + (x + w * 0.44) + ' V' + (by - 8) + ' Q' + (x + w * 0.44) + ',' + by + ' ' + (x + w * 0.36) + ',' + by + ' H' + (x - w * 0.36) + ' Q' + (x - w * 0.44) + ',' + by + ' ' + (x - w * 0.44) + ',' + (by - 8) + 'Z';
+    }
+    function contTop(k, by, h) { return by - h * ({ glass: 0.62, box: 0.6, mug: 0.6, bowl: 0.45, bottle: 1, pot: 0.66 })[k]; }
+    function drawCap(W, H) {
+      var C = P.cap, cap = capOf(C.c), JC = jugCap(), Hh = Math.max(H, 260), by = Hh - 20, cw = Math.min(W * 0.4, 220), ch = Math.min(Hh - 50, 260), cx = W * 0.27, jx = W * 0.72, jw = Math.min(W * 0.26, 130), jh = Math.min(Hh - 50, 300);
+      var s = svgOpen(W, Hh, 'A ' + MK_CAP[C.c][0] + ' and a measuring jug');
+      /* the container, filled to its level */
+      var d = contShape(C.c, cx, by, cw, ch), top = contTop(C.c, by, ch), lv = by - (by - top) * (C.fill / cap);
+      s += '<clipPath id="' + cid + 'c"><path d="' + d + '"/></clipPath>';
+      if (C.fill) s += '<rect class="mp-mkwater" clip-path="url(#' + cid + 'c)" x="' + (cx - cw / 2) + '" y="' + lv + '" width="' + cw + '" height="' + (by - lv) + '"/>';
+      s += '<path class="mp-mkcont" d="' + d + '"/>';
+      if (C.c === 'mug') s += '<path class="mp-mkcont" d="M' + (cx + cw * 0.3) + ',' + (by - ch * 0.48) + ' q' + cw * 0.18 + ',0 ' + cw * 0.18 + ',' + ch * 0.16 + ' q0,' + ch * 0.16 + ' ' + (-cw * 0.18) + ',' + ch * 0.16 + '" fill="none"/>';
+      if (C.c === 'pot') s += '<path class="mp-mkcont" d="M' + (cx - cw * 0.44) + ',' + (by - ch * 0.56) + ' h-' + cw * 0.08 + ' M' + (cx + cw * 0.44) + ',' + (by - ch * 0.56) + ' h' + cw * 0.08 + '" fill="none"/>';
+      /* the measuring jug with its scale */
+      var jt = by - jh, lvl = by - jh * C.jug / JC;
+      s += '<clipPath id="' + cid + 'j"><rect x="' + (jx - jw / 2) + '" y="' + jt + '" width="' + jw + '" height="' + jh + '" rx="8"/></clipPath>';
+      if (C.jug) s += '<rect class="mp-mkwater" clip-path="url(#' + cid + 'j)" x="' + (jx - jw / 2) + '" y="' + lvl + '" width="' + jw + '" height="' + (by - lvl) + '"/>';
+      s += '<rect class="mp-mkjug" x="' + (jx - jw / 2) + '" y="' + jt + '" width="' + jw + '" height="' + jh + '" rx="8"/><path class="mp-mkjug" fill="none" d="M' + (jx + jw / 2) + ',' + (jt + jh * 0.15) + ' q' + jw * 0.35 + ',0 ' + jw * 0.35 + ',' + jh * 0.2 + ' v' + jh * 0.25 + ' q0,' + jh * 0.12 + ' ' + (-jw * 0.35) + ',' + jh * 0.12 + '"/>';
+      var step = g3 ? (g4 ? 50 : 100) : 250;
+      for (var v = step; v < JC; v += step) {
+        var Y = by - jh * v / JC, big = g3 ? v % 100 === 0 : true, lab = g3 ? v % (jh >= 260 ? 200 : 500) === 0 : true;
+        s += '<line class="mp-mktk" x1="' + (jx - jw / 2) + '" y1="' + Y.toFixed(1) + '" x2="' + (jx - jw / 2 + (big ? jw * 0.32 : jw * 0.18)) + '" y2="' + Y.toFixed(1) + '"/>';
+        if (lab) s += '<text class="mp-mktx l" x="' + (jx - jw / 2 + jw * 0.36) + '" y="' + (Y + 4).toFixed(1) + '">' + (g3 ? (v % 1000 === 0 ? v / 1000 + ' L' : v) : v / 250) + '</text>';
+      }
+      s += '<text class="mp-mktx u" x="' + (jx + jw / 2 - 6) + '" y="' + (jt + 18) + '">' + (g3 ? 'mL' : 'cups') + '</text>';
+      return s + '</svg>';
+    }
+    function capRead() {
+      var C = P.cap, nm = MK_CAP[C.c][0];
+      if (!C.jug && !C.fill) return ['', ''];
+      var amt = function (v) { return g3 ? fmt(v) + ' mL' : pl(v / 250, 'cup', 'cups'); };
+      var big = C.jug ? amt(C.jug) : '', eq = '';
+      if (C.meas != null) eq = 'The ' + nm + ' holds <b>' + amt(C.meas) + '</b>' + (g5 ? ' = <b>' + fmt(C.meas / 1000) + ' L</b>' : '');
+      else if (C.jug) eq = 'The jug has <b>' + amt(C.jug) + '</b>' + (g3 && C.jug >= 1000 ? ' = <b>' + (g5 ? fmt(C.jug / 1000) + ' L' : Math.floor(C.jug / 1000) + ' L' + (C.jug % 1000 ? ' ' + fmt(C.jug % 1000) + ' mL' : '')) + '</b>' : '');
+      if (!C.jug && C.fill) eq = 'The ' + nm + ' is full. Pour it into the jug';
+      if (C.over) eq += (eq ? '. ' : '') + 'The jug is full. Empty it to pour the rest';
+      return [big, eq];
+    }
+
+    /* ======== Angles ======== */
+    function drawAng(W, H) {
+      var A = P.ang, full = g6, Hh = Math.max(H, 240), R = full ? Math.min(W / 2 - 24, Hh / 2 - 20) : Math.min(W / 2 - 24, Hh - 40), vx = W / 2, vy = full ? Hh / 2 : Hh - 22;
+      geo = { vx: vx, vy: vy };
+      var s = svgOpen(W, Hh, 'An angle of ' + A.a + ' degrees', 'mp-mkang'), rad = A.a * Math.PI / 180, ex = vx + R * 0.92 * Math.cos(rad), ey = vy - R * 0.92 * Math.sin(rad);
+      if (A.prot && g5) {
+        if (full) s += '<circle class="mp-mkprot" cx="' + vx + '" cy="' + vy + '" r="' + R + '"/>';
+        else s += '<path class="mp-mkprot" d="M' + (vx - R) + ',' + vy + ' A' + R + ',' + R + ' 0 0 1 ' + (vx + R) + ',' + vy + 'Z"/>';
+        var every = R >= 170 ? 10 : full ? 30 : 20;
+        for (var d = 0; d <= (full ? 359 : 180); d++) {
+          var t = d * Math.PI / 180, l = d % 10 === 0 ? 16 : d % 5 === 0 ? 10 : 5, c = Math.cos(t), sn = Math.sin(t);
+          if (R < 150 && d % 5) continue;
+          s += '<line class="mp-mkptk" x1="' + (vx + R * c).toFixed(1) + '" y1="' + (vy - R * sn).toFixed(1) + '" x2="' + (vx + (R - l) * c).toFixed(1) + '" y2="' + (vy - (R - l) * sn).toFixed(1) + '"/>';
+          if (d % every === 0) {
+            s += '<text class="mp-mkptx" x="' + (vx + (R - 28) * c).toFixed(1) + '" y="' + (vy - (R - 28) * sn + 4).toFixed(1) + '">' + d + '</text>';
+            if (!full) s += '<text class="mp-mkptx o" x="' + (vx + (R - 46) * c).toFixed(1) + '" y="' + (vy - (R - 46) * sn + 4).toFixed(1) + '">' + (180 - d) + '</text>';
+          }
+        }
+      }
+      if (A.right) s += '<path class="mp-mkrc" d="M' + vx + ',' + (vy - R * 0.5) + ' V' + vy + ' H' + (vx + R * 0.5) + ' M' + vx + ',' + (vy - 26) + ' h26 v26"/>';
+      var ar = Math.min(46, R * 0.3), big = A.a > 180 ? 1 : 0;
+      if (A.a > 0 && A.a < 360) s += '<path class="mp-mkarc" d="M' + (vx + ar) + ',' + vy + ' A' + ar + ',' + ar + ' 0 ' + big + ' 0 ' + (vx + ar * Math.cos(rad)).toFixed(1) + ',' + (vy - ar * Math.sin(rad)).toFixed(1) + '"/>';
+      s += '<line class="mp-mkarm" x1="' + vx + '" y1="' + vy + '" x2="' + (vx + R * 0.92) + '" y2="' + vy + '"/><line class="mp-mkarm" x1="' + vx + '" y1="' + vy + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '"/>';
+      s += '<circle class="mp-mkvx" cx="' + vx + '" cy="' + vy + '" r="5"/><circle class="mp-mkhd" data-drag="arm" cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1) + '" r="13"/>';
+      return s + '</svg>';
+    }
+    function angName(a) { return a === 0 ? 'zero angle' : a < 90 ? 'acute angle' : a === 90 ? 'right angle' : a < 180 ? 'obtuse angle' : a === 180 ? 'straight angle' : a < 360 ? 'reflex angle' : 'full turn'; }
+    function angRead() {
+      var a = P.ang.a, nm = angName(a);
+      if (!g5) return [nm, a < 90 ? 'Less than a right angle' : a === 90 ? 'A square corner' : a < 180 ? 'More than a right angle, less than a straight line' : 'A straight line'];
+      var eq = nm.charAt(0).toUpperCase() + nm.slice(1) + (a < 90 ? ': less than 90°' : a === 90 ? ': exactly 90°' : a < 180 ? ': between 90° and 180°' : a === 180 ? ': exactly 180°' : a < 360 ? ': ' + a + '° = 360° − ' + (360 - a) + '°' : '');
+      return [a + '°', eq];
+    }
+
+    /* ======== Circles ======== */
+    function drawCirc(W, H) {
+      var C = P.circ, Hh = Math.max(H, 260), k = Math.max(8, Math.min(30, (W - 40) / (C.roll ? Math.PI * 10 + 1 : 10.5), (Hh - (C.roll ? 90 : 40)) / 10.5)), r = C.r * k, cx = W / 2, cy = 20 + 5 * k;
+      geo = { cx: cx, cy: cy, k: k };
+      var s = svgOpen(W, Hh, 'A circle with radius ' + C.r + ' cm'), hx = cx + r * Math.cos(-Math.PI / 6), hy = cy + r * Math.sin(-Math.PI / 6);
+      s += '<circle class="mp-mkcirc" cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
+      if (C.d) s += '<line class="mp-mkdia" x1="' + (cx - r) + '" y1="' + cy + '" x2="' + (cx + r) + '" y2="' + cy + '"/><text class="mp-mktx d" x="' + (cx - r / 2) + '" y="' + (cy + 18) + '">d</text>';
+      s += '<line class="mp-mkrad" x1="' + cx + '" y1="' + cy + '" x2="' + hx.toFixed(1) + '" y2="' + hy.toFixed(1) + '"/><text class="mp-mktx r" x="' + (cx + (hx - cx) / 2 - 4).toFixed(1) + '" y="' + (cy + (hy - cy) / 2 - 8).toFixed(1) + '">r</text>';
+      s += '<circle class="mp-mkvx" cx="' + cx + '" cy="' + cy + '" r="4"/><circle class="mp-mkhd" data-drag="rad" cx="' + hx.toFixed(1) + '" cy="' + hy.toFixed(1) + '" r="13"/>';
+      if (C.roll) {
+        /* the circle unrolled: a little more than 3 diameters */
+        var Cl = Math.PI * 2 * r, x0 = cx - Cl / 2, y = cy + r + 40, dd = 2 * r;
+        s += '<line class="mp-mkroll" x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + Cl) + '" y2="' + y + '"/>';
+        for (var i = 0; i < 3; i++) s += '<line class="mp-mkdia" x1="' + (x0 + i * dd + 2) + '" y1="' + (y + 12) + '" x2="' + (x0 + (i + 1) * dd - 2) + '" y2="' + (y + 12) + '"/><text class="mp-mktx d" x="' + (x0 + (i + 0.5) * dd) + '" y="' + (y + 30) + '">d</text>';
+        s += '<text class="mp-mktx d" x="' + (x0 + 3 * dd + (Cl - 3 * dd) / 2) + '" y="' + (y + 30) + '">+</text>';
+      }
+      return s + '</svg>';
+    }
+    function circRead() {
+      var r = P.circ.r, d = 2 * r, C = Math.PI * d, A = Math.PI * r * r;
+      return ['r = ' + d1(r) + ' cm', 'd = 2 × ' + d1(r) + ' = <b>' + d1(d) + '</b> cm. C = π × ' + d1(d) + ' ≈ <b>' + d1(C) + '</b> cm. A = π × ' + d1(r) + '² ≈ <b>' + d1(A) + '</b> cm²'];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'len') return '<small>Things</small>' + Object.keys(MK_LEN).map(function (k) { return '<button type="button" class="mp-mktb" data-o="' + k + '" aria-pressed="' + (P.len.o === k) + '"><svg width="52" height="22" viewBox="0 0 52 22" aria-hidden="true">' + thing(k, 2, 11, k === 'leaf' ? 30 : k === 'crayon' ? 36 : 48, 10) + '</svg><span>' + MK_LEN[k][0] + '</span></button>'; }).join('');
+      if (m === 'mass') {
+        return '<small>Things</small>' + Object.keys(MK_MASS).filter(function (k) { return g3 || MK_MASS[k][1]; }).map(function (k) { return '<button type="button" class="mp-mktb" data-o="' + k + '" aria-pressed="' + (P.mass.o === k) + '"><svg width="44" height="34" viewBox="0 0 44 34" aria-hidden="true">' + massPic(k, 22, 32, 40) + '</svg><span>' + MK_MASS[k][0] + '</span></button>'; }).join('') +
+          '<small>' + (g3 ? 'Weights' : 'Cubes') + '</small>' + (g3 ? MK_W.map(function (w) { return '<button type="button" class="mp-mktb w" data-w="' + w[0] + '">' + w[2] + '</button>'; }).join('') : '<button type="button" class="mp-mktb w" data-w="c1">1 cube</button><button type="button" class="mp-mktb w" data-w="c5">5 cubes</button>');
+      }
+      if (m === 'cap') return '<small>Containers</small>' + Object.keys(MK_CAP).filter(function (k) { return g3 || MK_CAP[k][1]; }).map(function (k) { return '<button type="button" class="mp-mktb" data-o="' + k + '" aria-pressed="' + (P.cap.c === k) + '"><svg width="40" height="36" viewBox="0 0 40 36" aria-hidden="true"><path class="mp-mkcont" d="' + contShape(k, 20, 34, 38, 32) + '"/></svg><span>' + MK_CAP[k][0] + '</span></button>'; }).join('');
+      if (m === 'ang') return '<small>Angles</small><p class="mp-fknote">Drag the dot to open or close the angle.</p>';
+      return '<small>Circles</small><p class="mp-fknote">Drag the dot to make the circle bigger or smaller.</p>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'len' ? lenRead() : m === 'mass' ? massRead() : m === 'cap' ? capRead() : m === 'ang' ? angRead() : circRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'len') {
+        if (!g4) h += btn('by-cubes', 'Cubes', P.len.by === 'cubes') + btn('by-clips', 'Paper clips', P.len.by === 'clips') + (g2 ? btn('by-ruler', 'Ruler', P.len.by === 'ruler') : '');
+        if (P.len.by === 'ruler') h += btn('rl', 'Move left', null, P.len.off <= 0) + btn('rr', 'Move right', null, P.len.off >= geo.RL - lenOf() - 0.05);
+      }
+      if (m === 'mass') h += btn('off', 'Take all off', null, !P.mass.w.length);
+      if (m === 'cap') h += btn('fill', 'Fill', null, P.cap.fill === capOf(P.cap.c)) + btn('pour', 'Pour into jug', null, !P.cap.fill || P.cap.jug >= jugCap()) + btn('empty', 'Empty jug', null, !P.cap.jug);
+      if (m === 'ang') h += btn('a-10', '−10°') + btn('a-1', '−1°') + btn('a1', '+1°') + btn('a10', '+10°') + btn('right', 'Right angle', P.ang.right) + (g5 ? btn('prot', 'Protractor', P.ang.prot) : '');
+      if (m === 'circ') h += btn('r-', 'Smaller', null, P.circ.r <= 1) + btn('r+', 'Bigger', null, P.circ.r >= 5) + btn('dia', 'Diameter', P.circ.d) + btn('roll', 'Unroll', P.circ.roll);
+      snapsEl.innerHTML = h;
+    }
+    function paintMode(W, H) { var m = P.mode; return m === 'len' ? drawLen(W, H) : m === 'mass' ? drawMass(W, H) : m === 'cap' ? drawCap(W, H) : m === 'ang' ? drawAng(W, H) : drawCirc(W, H); }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-mkdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(220, sz[1] - 70);
+      win.innerHTML = paintMode(W, H);
+      snaps();
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) win.innerHTML = paintMode(W, Math.max(200, H - over - 4));
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, last: last }; }
+    function setAng(a) { P.ang.a = g6 ? ((Math.round(a) % 360) + 360) % 360 : clamp(Math.round(a), 0, 180); }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-o],[data-w]'); if (!b) return;
+      act(function () {
+        var ob = b.getAttribute('data-o'), w = b.getAttribute('data-w');
+        if (ob && P.mode === 'len') { P.len.o = ob; P.len.off = Math.min(P.len.off, Math.max(0, rulerLen(size()[0]) - lenOf())); }
+        if (ob && P.mode === 'mass') { P.mass.o = ob; P.mass.w = []; }
+        if (ob && P.mode === 'cap') P.cap = { c: ob, fill: 0, jug: 0, meas: null, over: false };
+        if (w) {
+          var add = w === 'c5' ? ['c', 'c', 'c', 'c', 'c'] : w === 'c1' ? ['c'] : [w];
+          if (P.mass.w.length + add.length > 60) { announce(T, 'The pan holds up to 60.'); return; }
+          P.mass.w = P.mass.w.concat(add);
+        }
+        last = ob ? 'thing' : 'weight';
+      });
+    });
+    qs('.mp-mkdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      act(function () {
+        var C = P.cap;
+        if (a.indexOf('by-') === 0) { P.len.by = a.slice(3); P.len.off = 0; }
+        if (a === 'rl') P.len.off = Math.max(0, Math.round((P.len.off - 1) * 10) / 10);
+        if (a === 'rr') P.len.off = Math.min(geo.RL - lenOf(), Math.round((P.len.off + 1) * 10) / 10);
+        if (a === 'off') P.mass.w = [];
+        if (a === 'fill') { C.fill = capOf(C.c); C.full = true; C.over = false; }
+        if (a === 'pour') {
+          var amt = Math.min(C.fill, jugCap() - C.jug);
+          C.meas = C.full && !C.jug && amt === C.fill ? amt : null;
+          C.over = amt < C.fill; C.fill -= amt; C.jug += amt; C.full = false;
+        }
+        if (a === 'empty') { C.jug = 0; C.meas = null; C.over = false; }
+        if (/^a-?\d+$/.test(a)) setAng(P.ang.a + +a.slice(1));
+        if (a === 'right') P.ang.right = !P.ang.right;
+        if (a === 'prot') P.ang.prot = !P.ang.prot;
+        if (a === 'r-') P.circ.r = Math.max(1, P.circ.r - 0.5);
+        if (a === 'r+') P.circ.r = Math.min(5, P.circ.r + 0.5);
+        if (a === 'dia') P.circ.d = !P.circ.d;
+        if (a === 'roll') P.circ.roll = !P.circ.roll;
+        last = a;
+      });
+    });
+    /* drag the thing along the ruler, the arm of the angle, the radius; tap a weight on the pan to take it off */
+    var drag = null;
+    function svgPt(e) { var sv = qs('.mp-mksv', win), b = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal; return [(e.clientX - b.left) * vb.width / b.width, (e.clientY - b.top) * vb.height / b.height]; }
+    win.addEventListener('pointerdown', function (e) {
+      var w = e.target.closest('[data-w]');
+      if (w && P.mode === 'mass') { var i = +w.getAttribute('data-w'); act(function () { P.mass.w.splice(i, 1); last = 'takeoff'; }); return; }
+      var d = e.target.closest('[data-drag]'); if (!d) return;
+      e.preventDefault();
+      drag = { kind: d.getAttribute('data-drag'), p: svgPt(e), off: P.len.off, before: snapshot() };
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var p = svgPt(e);
+      if (drag.kind === 'obj') {
+        if (P.len.by !== 'ruler') return;
+        var st = g4 ? 0.1 : 1, v = clamp(drag.off + (p[0] - drag.p[0]) / geo.k, 0, geo.RL - lenOf());
+        v = Math.round(v / st) * st; v = Math.round(v * 10) / 10;
+        if (v !== P.len.off) { P.len.off = v; draw(); }
+      } else if (drag.kind === 'arm') {
+        var a = Math.atan2(geo.vy - p[1], p[0] - geo.vx) * 180 / Math.PI;
+        if (a < 0) a = g6 ? a + 360 : (a < -90 ? 180 : 0);
+        var was = P.ang.a; setAng(a); if (P.ang.a !== was) draw();
+      } else if (drag.kind === 'rad') {
+        var r = clamp(Math.round(Math.hypot(p[0] - geo.cx, p[1] - geo.cy) / geo.k * 2) / 2, 1, 5);
+        if (r !== P.circ.r) { P.circ.r = r; draw(); }
+      }
+    });
+    function endDrag() {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (snapshot() !== d.before) { hist.push(d.before); if (hist.length > 60) hist.shift(); last = d.kind; change(); }
+    }
+    win.addEventListener('pointerup', endDrag);
+    win.addEventListener('pointercancel', endDrag);
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
+  /* ================= Clock and calendar (Toolbox) =================
+     Show: Clock (every grade: drag the minute hand and the hour hand follows, or step the time; Grade 1 steps by half hours; Show
+     number adds the digital time and the time in words, with a.m. and p.m. from Grade 3; Run lets the second hand go), Stopwatch
+     (Grade 2 and up: time how long something takes in minutes and seconds), Elapsed (Grade 3 and up: a start and an end clock, and a
+     line that jumps to the next hour, then by hours, then by minutes) and Calendar (every grade: a month with its holidays and season;
+     tap two days to count the days and weeks between them). */
+  var CK_MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var CK_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function ckHolidays(y) {
+    /* holidays in Ontario: [month (0 to 11), day, name] */
+    function nth(m, wd, n) { var d = new Date(y, m, 1), first = (wd - d.getDay() + 7) % 7 + 1; return first + (n - 1) * 7; }
+    function easter() { var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451); return new Date(y, Math.floor((h + l - 7 * m + 114) / 31) - 1, (h + l - 7 * m + 114) % 31 + 1); }
+    var gf = easter(); gf.setDate(gf.getDate() - 2);
+    var vic = 24; while (new Date(y, 4, vic).getDay() !== 1) vic--;
+    return [[0, 1, 'New Year’s Day'], [1, nth(1, 1, 3), 'Family Day'], [gf.getMonth(), gf.getDate(), 'Good Friday'], [4, vic, 'Victoria Day'], [6, 1, 'Canada Day'], [7, nth(7, 1, 1), 'Civic Holiday'],
+      [8, nth(8, 1, 1), 'Labour Day'], [8, 30, 'National Day for Truth and Reconciliation'], [9, nth(9, 1, 2), 'Thanksgiving'], [10, 11, 'Remembrance Day'], [11, 25, 'Christmas Day'], [11, 26, 'Boxing Day']];
+  }
+  function ckSeason(m, d) { var v = m * 100 + d; return v >= 1221 || v < 220 ? 'winter' : v < 521 ? 'spring' : v < 822 ? 'summer' : 'fall'; }
+  function toolClock(root, o) {
+    var T = base(root, 'clk');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-ckt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3;
+    var MODES = [['clock', 'Clock']].concat(g2 ? [['sw', 'Stopwatch']] : []).concat(g3 ? [['el', 'Elapsed']] : []).concat([['cal', 'Calendar']]);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-cktr"></div><div class="mp-dmain"><div class="mp-cmode mp-ckdo" role="group" aria-label="Show"><span>Show</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-cktr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the mode; Clock: the time in seconds after midnight; Elapsed: the start and end in minutes, and which one the buttons move;
+       Calendar: the year and month shown and the days tapped. The stopwatch and the running clock tick outside the undo history. */
+    var P, shown = false, hist = [], last = '', geo = {}, tick = null, sw = { ms: 0, on: false, from: 0 };
+    var now = new Date();
+    function fresh() { P = { mode: 'clock', t: 9 * 3600, run: false, el: { a: 9 * 60 + 40, b: 11 * 60 + 15, w: 'b' }, cal: { y: now.getFullYear(), m: now.getMonth(), a: null, b: null } }; }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    function hm(min, ap) {
+      /* 9:40, or 9:40 a.m. */
+      var h = Math.floor(min / 60) % 24, m = min % 60, h12 = h % 12 || 12;
+      return h12 + ':' + two(m) + (ap ? (h < 12 ? ' a.m.' : ' p.m.') : '');
+    }
+    function words(min) {
+      var h = Math.floor(min / 60) % 12 || 12, n = h % 12 + 1, m = min % 60;
+      if (!m) return h + ' o’clock';
+      if (m === 15) return 'quarter past ' + h;
+      if (m === 30) return 'half past ' + h;
+      if (m === 45) return 'quarter to ' + n;
+      return m < 30 ? pl(m, 'minute', 'minutes') + ' after ' + h : pl(60 - m, 'minute', 'minutes') + ' to ' + n;
+    }
+    function dur(min) { var h = Math.floor(min / 60), m = min % 60; return (h ? h + ' h' : '') + (h && m ? ' ' : '') + (m || !h ? m + ' min' : ''); }
+
+    /* ======== Clock ======== */
+    function face(cx, cy, R, sec, cls, label) {
+      var s = '<g class="mp-ckface' + (cls ? ' ' + cls : '') + '"><circle class="mp-ckrim" cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>';
+      for (var i = 0; i < 60; i++) {
+        var b = (90 - i * 6) * Math.PI / 180, r1 = R * (i % 5 ? 0.92 : 0.86);
+        s += '<line class="mp-cktk' + (i % 5 ? '' : ' h') + '" x1="' + (cx + r1 * Math.cos(b)).toFixed(1) + '" y1="' + (cy - r1 * Math.sin(b)).toFixed(1) + '" x2="' + (cx + R * 0.97 * Math.cos(b)).toFixed(1) + '" y2="' + (cy - R * 0.97 * Math.sin(b)).toFixed(1) + '"/>';
+      }
+      for (i = 1; i <= 12; i++) { var a = (90 - i * 30) * Math.PI / 180; s += '<text class="mp-cknum" style="font-size:' + Math.max(12, R * 0.17).toFixed(0) + 'px" x="' + (cx + R * 0.7 * Math.cos(a)).toFixed(1) + '" y="' + (cy - R * 0.7 * Math.sin(a) + R * 0.06).toFixed(1) + '">' + i + '</text>'; }
+      var m = sec / 60 % 60, h = sec / 3600 % 12, am = (90 - m * 6) * Math.PI / 180, ah = (90 - h * 30) * Math.PI / 180, as = (90 - sec % 60 * 6) * Math.PI / 180;
+      s += '<line class="mp-ckhh" data-drag="' + (label ? '' : 'h') + '" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.5 * Math.cos(ah)).toFixed(1) + '" y2="' + (cy - R * 0.5 * Math.sin(ah)).toFixed(1) + '"/>';
+      s += '<line class="mp-ckmh" data-drag="' + (label ? '' : 'm') + '" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.8 * Math.cos(am)).toFixed(1) + '" y2="' + (cy - R * 0.8 * Math.sin(am)).toFixed(1) + '"/>';
+      if (!label && (P.run || g3)) s += '<line class="mp-cksh" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.86 * Math.cos(as)).toFixed(1) + '" y2="' + (cy - R * 0.86 * Math.sin(as)).toFixed(1) + '"/>';
+      s += '<circle class="mp-ckpin" cx="' + cx + '" cy="' + cy + '" r="' + Math.max(4, R * 0.04) + '"/>';
+      if (!label) s += '<circle class="mp-ckgrab" data-drag="m" cx="' + (cx + R * 0.8 * Math.cos(am)).toFixed(1) + '" cy="' + (cy - R * 0.8 * Math.sin(am)).toFixed(1) + '" r="16"/><circle class="mp-ckgrab" data-drag="h" cx="' + (cx + R * 0.5 * Math.cos(ah)).toFixed(1) + '" cy="' + (cy - R * 0.5 * Math.sin(ah)).toFixed(1) + '" r="16"/>';
+      return s + '</g>';
+    }
+    function drawClock(W, H) {
+      var Hh = Math.max(H, 240), R = Math.min(W / 2 - 16, Hh / 2 - 16, 230), cx = W / 2, cy = Hh / 2;
+      geo = { cx: cx, cy: cy };
+      return '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="A clock">' + face(cx, cy, R, P.t) + '</svg>';
+    }
+    function clockRead() {
+      var min = Math.floor(P.t / 60), s = P.t % 60;
+      var big = P.run ? hm(min).replace(/$/, ':' + two(s)) + (g3 ? (min < 720 ? ' a.m.' : ' p.m.') : '') : hm(min, g3);
+      return [big, 'It is <b>' + words(min) + '</b>' + (g3 && P.run ? ' and ' + pl(s, 'second', 'seconds') : '')];
+    }
+
+    /* ======== Stopwatch ======== */
+    function swNow() { return sw.on ? sw.ms + (Date.now() - sw.from) : sw.ms; }
+    function drawSw(W, H) {
+      var Hh = Math.max(H, 240), R = Math.min(W / 2 - 16, Hh / 2 - 16, 200), cx = W / 2, cy = Hh / 2, t = swNow() / 1000, a = (90 - (t % 60) * 6) * Math.PI / 180, s = '';
+      s += '<circle class="mp-ckrim" cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>';
+      for (var i = 0; i < 60; i++) {
+        var b = (90 - i * 6) * Math.PI / 180, r1 = R * (i % 5 ? 0.92 : 0.84);
+        s += '<line class="mp-cktk' + (i % 5 ? '' : ' h') + '" x1="' + (cx + r1 * Math.cos(b)).toFixed(1) + '" y1="' + (cy - r1 * Math.sin(b)).toFixed(1) + '" x2="' + (cx + R * 0.97 * Math.cos(b)).toFixed(1) + '" y2="' + (cy - R * 0.97 * Math.sin(b)).toFixed(1) + '"/>';
+        if (i % 5 === 0) s += '<text class="mp-cknum s" style="font-size:' + Math.max(11, R * 0.11).toFixed(0) + 'px" x="' + (cx + R * 0.72 * Math.cos(b)).toFixed(1) + '" y="' + (cy - R * 0.72 * Math.sin(b) + R * 0.04).toFixed(1) + '">' + i + '</text>';
+      }
+      /* the seconds so far, as a shaded wedge */
+      var f = t % 60;
+      if (f > 0.05) s += '<path class="mp-ckwedge" d="M' + cx + ',' + cy + ' L' + cx + ',' + (cy - R * 0.8) + ' A' + R * 0.8 + ',' + R * 0.8 + ' 0 ' + (f > 30 ? 1 : 0) + ' 1 ' + (cx + R * 0.8 * Math.cos(a)).toFixed(1) + ',' + (cy - R * 0.8 * Math.sin(a)).toFixed(1) + 'Z"/>';
+      s += '<line class="mp-cksh" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.86 * Math.cos(a)).toFixed(1) + '" y2="' + (cy - R * 0.86 * Math.sin(a)).toFixed(1) + '"/><circle class="mp-ckpin" cx="' + cx + '" cy="' + cy + '" r="5"/>';
+      return '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="A stopwatch">' + s + '</svg>';
+    }
+    function swRead() {
+      var t = Math.floor(swNow() / 1000), m = Math.floor(t / 60), s = t % 60;
+      if (!t && !sw.on) return ['', ''];
+      return [m + ':' + two(s), (m ? pl(m, 'minute', 'minutes') + ' ' : '') + pl(s, 'second', 'seconds') + (m ? ' = <b>' + t + '</b> seconds' : '')];
+    }
+
+    /* ======== Elapsed ======== */
+    function drawEl(W, H) {
+      var E = P.el, Hh = Math.max(H, 280), R = Math.max(44, Math.min(W * 0.23 - 14, (Hh - 120) / 2, 130)), cy = R + 26;
+      var s = '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Start and end clocks">';
+      [['a', W * 0.27, 'Start'], ['b', W * 0.73, 'End']].forEach(function (c) {
+        s += '<g class="mp-ckpick' + (E.w === c[0] ? ' on' : '') + '" data-pick="' + c[0] + '"><rect class="mp-ckbox" x="' + (c[1] - R - 10) + '" y="2" width="' + (2 * R + 20) + '" height="' + (2 * R + 46) + '" rx="16"/>' +
+          face(c[1], cy, R, E[c[0]] * 60, '', true) + '<text class="mp-cklab" x="' + c[1] + '" y="' + (2 * R + 42) + '">' + c[2] + (shown ? ': ' + hm(E[c[0]], g3) : '') + '</text></g>';
+      });
+      /* the open number line: to the next hour, whole hours, then the minutes left */
+      if (E.b > E.a) {
+        var J = jumps(), x0 = 24, x1 = W - 24, y = 2 * R + 100, tot = E.b - E.a, X = function (v) { return x0 + (v - E.a) / tot * (x1 - x0); };
+        s += '<line class="mp-ckline" x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '"/>';
+        var at = E.a;
+        J.forEach(function (j, i) {
+          var xa = X(at), xb = X(at + j), mid = (xa + xb) / 2, ht = Math.min(36, (xb - xa) / 2 + 8);
+          s += '<path class="mp-ckjump' + (j === 60 ? ' h' : '') + '" d="M' + xa.toFixed(1) + ',' + y + ' Q' + mid.toFixed(1) + ',' + (y - ht * 2) + ' ' + xb.toFixed(1) + ',' + y + '"/>';
+          if (shown) s += '<text class="mp-ckjl" x="' + mid.toFixed(1) + '" y="' + (y - ht - 6) + '">' + dur(j) + '</text>';
+          at += j;
+          if (i < J.length - 1) s += '<line class="mp-cktick" x1="' + xb.toFixed(1) + '" y1="' + (y - 7) + '" x2="' + xb.toFixed(1) + '" y2="' + (y + 7) + '"/>' + (shown && (xb - xa > 34 || i === 0) ? '<text class="mp-ckjt" x="' + xb.toFixed(1) + '" y="' + (y + 22) + '">' + hm(at) + '</text>' : '');
+        });
+        s += '<line class="mp-cktick e" x1="' + x0 + '" y1="' + (y - 9) + '" x2="' + x0 + '" y2="' + (y + 9) + '"/><line class="mp-cktick e" x1="' + x1 + '" y1="' + (y - 9) + '" x2="' + x1 + '" y2="' + (y + 9) + '"/>';
+      }
+      return s + '</svg>';
+    }
+    function jumps() {
+      var a = P.el.a, b = P.el.b, J = [], nx = Math.ceil(a / 60) * 60;
+      if (nx > a && nx <= b) { J.push(nx - a); a = nx; }
+      while (a + 60 <= b) { J.push(60); a += 60; }
+      if (b > a) J.push(b - a);
+      return J;
+    }
+    function elRead() {
+      var E = P.el;
+      if (E.b <= E.a) return ['', 'The end is not after the start. Move the end clock on'];
+      var J = jumps(), tot = E.b - E.a, parts = [], i = 0;
+      while (i < J.length) { if (J[i] === 60) { var n = 0; while (J[i] === 60) { n++; i++; } parts.push(n + ' h'); } else { parts.push(J[i] + ' min'); i++; } }
+      return [dur(tot), 'From ' + hm(E.a, g3) + ' to ' + hm(E.b, g3) + ': ' + (parts.length > 1 ? parts.join(' + ') + ' = ' : '') + '<b>' + dur(tot) + '</b>' + (tot >= 60 ? ' = ' + tot + ' min' : '')];
+    }
+
+    /* ======== Calendar ======== */
+    function drawCal(W, H) {
+      var C = P.cal, first = new Date(C.y, C.m, 1).getDay(), days = new Date(C.y, C.m + 1, 0).getDate(), rows = Math.ceil((first + days) / 7), Hh = Math.max(H, 260);
+      var cw = Math.min(84, (W - 16) / 7), ch = Math.min(64, (Hh - 70) / rows, cw * 0.9), x0 = (W - cw * 7) / 2, y0 = 52, hol = ckHolidays(C.y).filter(function (h) { return h[0] === C.m; });
+      var s = '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + (y0 + rows * ch + 8) + '" viewBox="0 0 ' + W + ' ' + (y0 + rows * ch + 8) + '" role="img" aria-label="' + CK_MON[C.m] + ' ' + C.y + '">';
+      s += '<text class="mp-ckmon" x="' + W / 2 + '" y="22">' + CK_MON[C.m] + ' ' + C.y + '</text>';
+      CK_DAY.forEach(function (d, i) { s += '<text class="mp-ckwd" x="' + (x0 + (i + 0.5) * cw) + '" y="' + (y0 - 8) + '">' + (cw < 56 ? d.slice(0, 3) : d.slice(0, 3)) + '</text>'; });
+      var lo = C.a != null && C.b != null ? Math.min(C.a, C.b) : null, hi = lo != null ? Math.max(C.a, C.b) : null;
+      for (var d = 1; d <= days; d++) {
+        var k = first + d - 1, x = x0 + (k % 7) * cw, y = y0 + Math.floor(k / 7) * ch, isH = hol.some(function (h) { return h[1] === d; }), today = C.y === now.getFullYear() && C.m === now.getMonth() && d === now.getDate();
+        var cls = 'mp-ckday' + (k % 7 === 0 || k % 7 === 6 ? ' we' : '') + (lo != null && d > lo && d < hi ? ' btw' : '') + (d === C.a || d === C.b ? ' on' : '') + (isH ? ' hol' : '') + (today ? ' today' : '');
+        s += '<g class="' + cls + '" data-d="' + d + '"><rect x="' + (x + 2) + '" y="' + (y + 2) + '" width="' + (cw - 4) + '" height="' + (ch - 4) + '" rx="8"/><text x="' + (x + 10) + '" y="' + (y + 20) + '">' + d + '</text>' + (isH ? '<circle cx="' + (x + cw - 12) + '" cy="' + (y + ch - 12) + '" r="4"/>' : '') + '</g>';
+      }
+      return s + '</svg>';
+    }
+    function calTray() {
+      var C = P.cal, hol = ckHolidays(C.y).filter(function (h) { return h[0] === C.m; });
+      return '<small>' + CK_MON[C.m] + '</small><p class="mp-fknote">Season: <b>' + ckSeason(C.m, 15) + '</b></p>' + (hol.length ? hol.map(function (h) { return '<p class="mp-fknote mp-ckhol"><b>' + CK_MON[C.m].slice(0, 3) + ' ' + h[1] + '</b> ' + h[2] + '</p>'; }).join('') : '<p class="mp-fknote">No holidays this month.</p>');
+    }
+    function calRead() {
+      var C = P.cal;
+      if (C.a == null) return ['', ''];
+      var name = function (d) { return CK_DAY[new Date(C.y, C.m, d).getDay()] + ', ' + CK_MON[C.m] + ' ' + d; };
+      if (C.b == null) {
+        var h = ckHolidays(C.y).filter(function (q) { return q[0] === C.m && q[1] === C.a; })[0];
+        return [name(C.a), (h ? '<b>' + h[2] + '</b>. ' : '') + 'It is ' + ckSeason(C.m, C.a) + '. Tap another day to count the days between'];
+      }
+      var n = Math.abs(C.b - C.a), w = Math.floor(n / 7), r = n % 7;
+      return [pl(n, 'day', 'days'), 'From ' + CK_MON[C.m] + ' ' + Math.min(C.a, C.b) + ' to ' + CK_MON[C.m] + ' ' + Math.max(C.a, C.b) + ': <b>' + pl(n, 'day', 'days') + '</b>' + (w ? ' = <b>' + pl(w, 'week', 'weeks') + (r ? ' ' + pl(r, 'day', 'days') : '') + '</b>' : '')];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'clock') return '<small>Clock</small><p class="mp-fknote">Drag the long hand. The short hand follows.</p>';
+      if (m === 'sw') return '<small>Stopwatch</small><p class="mp-fknote">Start it, do something, then stop it. How long did it take?</p>';
+      if (m === 'el') return '<small>Elapsed</small><p class="mp-fknote">Tap the start or end clock, then move its time.</p>';
+      return calTray();
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'clock' ? clockRead() : m === 'sw' ? swRead() : m === 'el' ? elRead() : calRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function steps() { return g2 ? [[-60, '−1 h'], [-5, '−5 min'], [-1, '−1 min'], [1, '+1 min'], [5, '+5 min'], [60, '+1 h']] : [[-60, '−1 h'], [-30, '−30 min'], [30, '+30 min'], [60, '+1 h']]; }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'clock' || m === 'el') h += steps().map(function (s) { return btn('t' + s[0], s[1]); }).join('');
+      if (m === 'clock') h += btn('run', 'Run', P.run);
+      if (m === 'sw') h += btn('sw', sw.on ? 'Stop' : 'Start') + btn('swr', 'Reset', null, sw.on || !sw.ms);
+      if (m === 'cal') h += btn('prev', 'Last month') + btn('next', 'Next month') + btn('cclear', 'Clear', null, P.cal.a == null);
+      snapsEl.innerHTML = h;
+    }
+    function paintMode(W, H) { var m = P.mode; return m === 'clock' ? drawClock(W, H) : m === 'sw' ? drawSw(W, H) : m === 'el' ? drawEl(W, H) : drawCal(W, H); }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-ckdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      snaps();
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(220, sz[1] - 70);
+      win.innerHTML = paintMode(W, H);
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) win.innerHTML = paintMode(W, Math.max(200, H - over - 4));
+      ticking();
+    }
+    /* the running clock and the stopwatch redraw once a second (or ten times a second for the stopwatch); stop when the tool is gone */
+    function ticking() {
+      var want = P.mode === 'clock' && P.run || P.mode === 'sw' && sw.on;
+      if (want && !tick) tick = setInterval(function () {
+        if (!root.isConnected) { clearInterval(tick); tick = null; sw.on = false; return; }
+        if (P.mode === 'clock' && P.run) P.t = (P.t + 1) % 86400;
+        draw();
+      }, P.mode === 'sw' ? 100 : 1000);
+      if (!want && tick) { clearInterval(tick); tick = null; }
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, t: P.t, last: last }; }
+    function stopTick() { if (tick) { clearInterval(tick); tick = null; } }
+    qs('.mp-ckdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) { stopTick(); act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); } });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      if (a === 'sw') { if (sw.on) { sw.ms += Date.now() - sw.from; sw.on = false; } else { sw.from = Date.now(); sw.on = true; } stopTick(); last = 'stopwatch'; draw(); change(); return; }
+      if (a === 'swr') { sw = { ms: 0, on: false, from: 0 }; draw(); change(); return; }
+      stopTick();
+      act(function () {
+        if (a.charAt(0) === 't' && a !== 'run') {
+          var d = +a.slice(1);
+          if (P.mode === 'clock') P.t = ((Math.floor(P.t / 60) + d) * 60 % 86400 + 86400) % 86400;
+          else { var k = P.el.w; P.el[k] = clamp(P.el[k] + d, 0, 1439); }
+        }
+        if (a === 'run') P.run = !P.run;
+        if (a === 'prev' || a === 'next') { var mm = P.cal.m + (a === 'next' ? 1 : -1); P.cal = { y: P.cal.y + Math.floor(mm / 12), m: (mm + 12) % 12, a: null, b: null }; }
+        if (a === 'cclear') { P.cal.a = null; P.cal.b = null; }
+        last = a;
+      });
+    });
+    /* drag a hand; tap a clock in Elapsed or a day on the calendar */
+    var drag = null;
+    function svgPt(e) { var sv = qs('.mp-cksv', win), b = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal; return [(e.clientX - b.left) * vb.width / b.width, (e.clientY - b.top) * vb.height / b.height]; }
+    win.addEventListener('pointerdown', function (e) {
+      var pk = e.target.closest('[data-pick]');
+      if (pk) { var w = pk.getAttribute('data-pick'); act(function () { P.el.w = w; last = 'pick'; }); return; }
+      var dy = e.target.closest('[data-d]');
+      if (dy) {
+        var d = +dy.getAttribute('data-d');
+        act(function () { var C = P.cal; if (C.a == null || C.b != null) { C.a = d; C.b = null; } else if (d !== C.a) C.b = d; last = 'day'; });
+        return;
+      }
+      var hd = e.target.closest('[data-drag]'), k = hd && hd.getAttribute('data-drag');
+      if (!k) return;
+      e.preventDefault();
+      if (P.run) P.run = false;
+      drag = { k: k, before: snapshot() };
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var p = svgPt(e), ang = (90 - Math.atan2(geo.cy - p[1], p[0] - geo.cx) * 180 / Math.PI + 360) % 360, min = Math.floor(P.t / 60), h = Math.floor(min / 60), m = min % 60, nt;
+      if (drag.k === 'm') {
+        var snapM = g3 ? 1 : g2 ? 5 : 30, nm = Math.round(ang / 6 / snapM) * snapM % 60;
+        if (m > 45 && nm < 15) h++; else if (m < 15 && nm > 45) h--;
+        nt = ((h * 60 + nm) % 1440 + 1440) % 1440;
+      } else {
+        /* the hour hand: keep the minutes, and stay in the same half of the day */
+        var nh = Math.floor(ang / 30) % 12, half = h >= 12 ? 12 : 0;
+        nt = (half + nh) * 60 + m;
+      }
+      if (nt * 60 !== P.t) { P.t = nt * 60; draw(); }
+    });
+    function endDrag() {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (snapshot() !== d.before) { hist.push(d.before); if (hist.length > 60) hist.shift(); last = 'hand'; change(); }
+    }
+    win.addEventListener('pointerup', endDrag);
+    win.addEventListener('pointercancel', endDrag);
+    T.undo = function () { if (!hist.length) return; stopTick(); P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { stopTick(); fresh(); sw = { ms: 0, on: false, from: 0 }; hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
+  /* ================= Money (Toolbox) =================
+     Do: Count (every grade: tap coins and bills onto the mat; Sort, Fewest coins and Break the biggest show the same amount other ways),
+     Shop (Grade 3 and up: pick things with price tags, pay, and count up the change; from Grade 5 prices in dollars and cents, 13% HST
+     and cash rounded to the nearest 5¢), Budget (Grade 5 and up: earn, spend, save and donate; a saving goal from Grade 6), Interest
+     (Grade 6 and up: simple interest year by year, and compound interest beside it in Grade 8) and Exchange (Grade 7 and up: Canadian
+     dollars to other money and back, at sample rates). */
+  var MN_SHOP = {
+    3: [['pencil', 45], ['eraser', 80], ['juice box', 95], ['ball', 400], ['book', 600], ['kite', 900]],
+    4: [['hat', 900], ['ball', 700], ['book', 1200], ['kite', 1500], ['puzzle', 1800], ['board game', 2400]],
+    5: [['snack', 215], ['notebook', 349], ['pens', 525], ['water bottle', 1250], ['headphones', 2795], ['backpack', 3499]]
+  };
+  var MN_FX = [['USD', 'US dollars', 0.72], ['EUR', 'euros', 0.66], ['GBP', 'British pounds', 0.56], ['MXN', 'Mexican pesos', 13.2], ['JPY', 'Japanese yen', 108]];
+  function toolMoney(root, o) {
+    var T = base(root, 'mny');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-mnt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var SET = [5, 10, 25, 100, 200, 500, 1000, 2000, 5000].concat(g2 ? [10000] : []);
+    var MODES = [['count', 'Count']].concat(g3 ? [['shop', 'Shop']] : []).concat(g5 ? [['bud', 'Budget']] : []).concat(g6 ? [['int', 'Interest']] : []).concat(g7 ? [['ex', 'Exchange']] : []);
+    var SHOP = MN_SHOP[g5 ? 5 : g4 ? 4 : 3];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-mntr"></div><div class="mp-dmain"><div class="mp-cmode mp-mndo" role="group" aria-label="Do"><span>Do</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-mntr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Count: the coins and bills on the mat (in cents); Shop: the things picked and the money paid; Budget: dollars a week
+       earned, spent, saved and donated, and the goal; Interest: the amount, the rate (%), the years, compound or not; Exchange: the amount,
+       the currency, which way */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { mode: 'count', c: [], shop: { cart: [], paid: [], tax: false }, bud: { inc: 20, sp: 10, sv: 8, dn: 2, goal: 120 }, int: { p: 500, r: 4, y: 3 }, ex: { amt: 50, cur: 'USD', back: false } }; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function money(c) { return '$' + (c / 100).toFixed(2).replace(/^(\d+)(\d{3})\./, '$1 $2.'); }
+    function amt(c) { return g5 ? money(c) : cents(c); }
+    function sum(L) { return L.reduce(function (s, v) { return s + v; }, 0); }
+    function fewest(c) { var out = []; SET.slice().reverse().forEach(function (v) { while (c >= v) { out.push(v); c -= v; } }); return out; }
+    function grouped(L) {
+      /* 2 × $2 + 3 × 25¢, biggest first */
+      var by = {}; L.forEach(function (v) { by[v] = (by[v] || 0) + 1; });
+      return Object.keys(by).map(Number).sort(function (a, b) { return b - a; }).map(function (v) { return (by[v] > 1 ? by[v] + ' × ' : '') + CASH[v].t; }).join(' + ');
+    }
+    function pile(L, attr) {
+      return '<div class="mp-mnpile">' + (L.length ? L.map(function (v, i) { return '<button type="button" class="mp-cash" ' + attr + '="' + i + '" aria-label="Take off a ' + CASH[v].n + '">' + cashHtml(v) + '</button>'; }).join('') : '<p class="mp-fknote">Tap coins and bills to put them here.</p>') + '</div>';
+    }
+    function step(a, label, v, unit) { return '<div class="mp-mnstep"><span>' + label + '</span><button type="button" class="mp-snap" data-a="' + a + '-">−</button><b>' + unit(v) + '</b><button type="button" class="mp-snap" data-a="' + a + '+">+</button></div>'; }
+    function dol(v) { return '$' + fmt(v); }
+
+    /* ======== Count ======== */
+    function countHtml() { return pile(P.c, 'data-ci'); }
+    function countRead() {
+      if (!P.c.length) return ['', ''];
+      var t = sum(P.c);
+      return [cents(t), (P.c.length > 1 ? grouped(P.c) + ' = ' : '') + '<b>' + cents(t) + '</b>' + (t >= 100 && t % 100 && g2 ? ' = ' + t + '¢' : '') + '. ' + pl(P.c.length, 'piece', 'pieces')];
+    }
+
+    /* ======== Shop ======== */
+    function shopTotals() {
+      var S = P.shop, cost = sum(S.cart.map(function (i) { return SHOP[i][1]; })), tax = g5 && S.tax ? Math.round(cost * 0.13) : 0, tot = cost + tax, cash = g5 ? Math.round(tot / 5) * 5 : tot, paid = sum(S.paid);
+      return { cost: cost, tax: tax, tot: tot, cash: cash, paid: paid };
+    }
+    function shopHtml() {
+      var S = P.shop, t = shopTotals();
+      var h = '<div class="mp-mnshop">' + SHOP.map(function (it, i) { return '<button type="button" class="mp-mntag" data-it="' + i + '"><span>' + it[0] + '</span><b>' + amt(it[1]) + '</b></button>'; }).join('') + '</div>';
+      h += '<div class="mp-mnrow"><small>Cart</small>' + (S.cart.length ? '<div class="mp-mnpills">' + S.cart.map(function (i, k) { return '<button type="button" class="mp-mncart" data-ct="' + k + '" aria-label="Take off the ' + SHOP[i][0] + '">' + SHOP[i][0] + ' <b>' + amt(SHOP[i][1]) + '</b></button>'; }).join('') + '</div>' : '<span class="mp-fknote">Tap a price tag to buy it.</span>') + '</div>';
+      h += '<div class="mp-mnpay"><div class="mp-mnrow"><small>Paid</small>' + pile(S.paid, 'data-pi') + '</div>';
+      if (S.cart.length && t.paid > t.cash) h += '<div class="mp-mnrow"><small>Change</small><div class="mp-mnpile">' + fewest(t.paid - t.cash).map(function (v) { return '<span class="mp-cash">' + cashHtml(v) + '</span>'; }).join('') + '</div></div>';
+      return h + '</div>';
+    }
+    function countUp(from, to) {
+      /* count up from the cost to the money paid, smallest coins first */
+      var L = fewest(to - from).reverse(), at = from;
+      return L.map(function (v) { at += v; return '+ ' + CASH[v].t + ' → ' + amt(at); }).join(', ');
+    }
+    function shopRead() {
+      var S = P.shop, t = shopTotals();
+      if (!S.cart.length) return ['', ''];
+      var eq = (S.cart.length > 1 ? S.cart.map(function (i) { return amt(SHOP[i][1]); }).join(' + ') + ' = ' : 'Cost ') + '<b>' + amt(t.cost) + '</b>';
+      if (t.tax) eq += '. HST 13%: ' + amt(t.cost) + ' × 0.13 ≈ ' + amt(t.tax) + ', total <b>' + amt(t.tot) + '</b>';
+      if (g5 && t.cash !== t.tot) eq += '. In cash it rounds to <b>' + amt(t.cash) + '</b>';
+      if (!t.paid) return [amt(t.tot), eq];
+      if (t.paid < t.cash) return [amt(t.tot), eq + '. Paid ' + amt(t.paid) + ': ' + amt(t.cash - t.paid) + ' more to pay'];
+      if (t.paid === t.cash) return [amt(t.tot), eq + '. Paid ' + amt(t.paid) + ': no change'];
+      return ['change ' + amt(t.paid - t.cash), eq + '. Paid ' + amt(t.paid) + ': ' + amt(t.paid) + ' − ' + amt(t.cash) + ' = <b>' + amt(t.paid - t.cash) + '</b>. Count up: ' + countUp(t.cash, t.paid)];
+    }
+
+    /* ======== Budget ======== */
+    function budHtml() {
+      var B = P.bud, out = B.sp + B.sv + B.dn, mx = Math.max(B.inc, out, 1), w = function (v) { return (v / mx * 100).toFixed(1) + '%'; };
+      var h = '<div class="mp-mnsteps">' + step('inc', 'Earn a week', B.inc, dol) + step('sp', 'Spend', B.sp, dol) + step('sv', 'Save', B.sv, dol) + step('dn', 'Donate', B.dn, dol) + (g6 ? step('goal', 'Saving goal', B.goal, dol) : '') + '</div>';
+      h += '<div class="mp-mnbars"><div class="mp-mnbar"><span>Earn</span><div><i class="in" style="width:' + w(B.inc) + '"></i></div></div><div class="mp-mnbar"><span>Use</span><div><i class="sp" style="width:' + w(B.sp) + '"></i><i class="sv" style="width:' + w(B.sv) + '"></i><i class="dn" style="width:' + w(B.dn) + '"></i></div></div></div>';
+      if (g6 && B.sv) {
+        var wk = Math.ceil(B.goal / B.sv), n = Math.min(wk, 52);
+        h += '<div class="mp-mngoal"><small>Saving week by week</small><div class="mp-mnweeks">';
+        for (var i = 1; i <= n; i++) h += '<i style="height:' + (Math.min(B.goal, i * B.sv) / B.goal * 100).toFixed(1) + '%"' + (i === wk ? ' class="hit"' : '') + '></i>';
+        h += '</div></div>';
+      }
+      return h;
+    }
+    function budRead() {
+      var B = P.bud, out = B.sp + B.sv + B.dn, eq = 'Spend ' + dol(B.sp) + ' + save ' + dol(B.sv) + ' + donate ' + dol(B.dn) + ' = <b>' + dol(out) + '</b> of ' + dol(B.inc);
+      var big = out === B.inc ? 'balanced' : out < B.inc ? dol(B.inc - out) + ' left over' : dol(out - B.inc) + ' over';
+      if (g6 && B.sv) { var wk = Math.ceil(B.goal / B.sv); eq += '. Saving ' + dol(B.sv) + ' a week, ' + dol(B.goal) + ' takes <b>' + pl(wk, 'week', 'weeks') + '</b> (' + dol(B.goal) + ' ÷ ' + dol(B.sv) + (B.goal % B.sv ? ' ≈ ' + fmt(Math.round(B.goal / B.sv * 10) / 10) : ' = ' + wk) + ')'; }
+      return [big, eq];
+    }
+
+    /* ======== Interest ======== */
+    function simple(y) { var I = P.int; return I.p * I.r / 100 * y; }
+    function comp(y) { var I = P.int; return I.p * Math.pow(1 + I.r / 100, y) - I.p; }
+    function intHtml() {
+      var I = P.int, top = I.p + Math.max(simple(I.y), g8 ? comp(I.y) : 0);
+      var h = '<div class="mp-mnsteps">' + step('p', 'Amount', I.p, dol) + step('r', 'Rate a year', I.r, function (v) { return fmt(v) + '%'; }) + step('y', 'Years', I.y, function (v) { return v; }) + '</div><div class="mp-mnyears">';
+      for (var y = 0; y <= I.y; y++) {
+        h += '<div class="mp-mnyr"><div class="mp-mncols"><i class="p" style="height:' + (I.p / top * 100).toFixed(1) + '%"><em style="height:' + (simple(y) / I.p * 100).toFixed(1) + '%"></em></i>' +
+          (g8 ? '<i class="p c" style="height:' + (I.p / top * 100).toFixed(1) + '%"><em style="height:' + (comp(y) / I.p * 100).toFixed(1) + '%"></em></i>' : '') + '</div><span>' + (y ? 'Year ' + y : 'Start') + '</span></div>';
+      }
+      return h + '</div>' + (g8 ? '<p class="mp-fknote mp-mnkey"><i class="s"></i> simple <i class="c"></i> compound</p>' : '');
+    }
+    function intRead() {
+      var I = P.int, s = simple(I.y), eq = 'Simple: ' + dol(I.p) + ' × ' + fmt(I.r) + '% × ' + I.y + ' = <b>' + money(Math.round(s * 100)) + '</b>, total ' + money(Math.round((I.p + s) * 100));
+      if (g8) { var c = comp(I.y); eq += '. Compound: ' + dol(I.p) + ' × ' + fmt(1 + I.r / 100) + '<sup>' + I.y + '</sup> ≈ <b>' + money(Math.round((I.p + c) * 100)) + '</b>, ' + money(Math.round((c - s) * 100)) + ' more'; }
+      return [money(Math.round(s * 100)) + ' interest', eq];
+    }
+
+    /* ======== Exchange ======== */
+    function fx() { return MN_FX.filter(function (f) { return f[0] === P.ex.cur; })[0]; }
+    function exHtml() {
+      var E = P.ex, f = fx(), res = E.back ? E.amt / f[2] : E.amt * f[2];
+      return '<div class="mp-mnsteps">' + step('amt', E.back ? 'Amount in ' + f[0] : 'Amount in CAD', E.amt, function (v) { return E.back ? fmt(v) + ' ' + f[0] : dol(v); }) + '</div>' +
+        '<div class="mp-mnex"><div class="mp-mnexb"><small>' + (E.back ? f[1] : 'Canadian dollars') + '</small><b>' + (E.back ? fmt(E.amt) + ' ' + f[0] : dol(E.amt) + ' CAD') + '</b></div><span aria-hidden="true">→</span><div class="mp-mnexb"><small>' + (E.back ? 'Canadian dollars' : f[1]) + '</small><b>' + (shown ? (E.back ? money(Math.round(res * 100)) + ' CAD' : fmt(Math.round(res * 100) / 100) + ' ' + f[0]) : '?') + '</b></div></div>' +
+        '<p class="mp-fknote">Sample rate: $1 CAD = ' + fmt(f[2]) + ' ' + f[0] + '. Real rates change every day.</p>';
+    }
+    function exRead() {
+      var E = P.ex, f = fx();
+      if (E.back) { var r = E.amt / f[2]; return [money(Math.round(r * 100)) + ' CAD', fmt(E.amt) + ' ' + f[0] + ' ÷ ' + fmt(f[2]) + ' ≈ <b>' + money(Math.round(r * 100)) + '</b> CAD']; }
+      var v = Math.round(E.amt * f[2] * 100) / 100;
+      return [fmt(v) + ' ' + f[0], dol(E.amt) + ' CAD × ' + fmt(f[2]) + ' = <b>' + fmt(v) + '</b> ' + f[0]];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'count' || m === 'shop') return '<small>' + (m === 'shop' ? 'Pay with' : 'Money') + '</small>' + SET.map(function (v) { return '<button type="button" class="mp-cadd" data-v="' + v + '" aria-label="Add a ' + CASH[v].n + '">' + cashHtml(v) + '</button>'; }).join('');
+      if (m === 'bud') return '<small>Budget</small><p class="mp-fknote">Share what you earn each week between spending, saving and donating.</p>';
+      if (m === 'int') return '<small>Interest</small><p class="mp-fknote">Money in a savings account earns interest each year.</p>';
+      return '<small>Exchange</small>' + MN_FX.map(function (f) { return '<button type="button" class="mp-mntb" data-cur="' + f[0] + '" aria-pressed="' + (P.ex.cur === f[0]) + '">' + f[0] + '<span>' + f[1] + '</span></button>'; }).join('');
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'count' ? countRead() : m === 'shop' ? shopRead() : m === 'bud' ? budRead() : m === 'int' ? intRead() : exRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'count') h += btn('sort', 'Sort', null, P.c.length < 2) + btn('few', 'Fewest coins', null, !P.c.length) + btn('brk', 'Break the biggest', null, !P.c.length || Math.max.apply(null, P.c) <= 5) + btn('clr', 'Clear', null, !P.c.length);
+      if (m === 'shop') h += (g5 ? btn('tax', 'Add HST', P.shop.tax) : '') + btn('pclr', 'Take back the money', null, !P.shop.paid.length) + btn('sclr', 'Start again', null, !P.shop.cart.length && !P.shop.paid.length);
+      if (m === 'ex') h += btn('back', 'Swap the way', P.ex.back);
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-mndo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var m = P.mode;
+      win.innerHTML = '<div class="mp-mnwin">' + (m === 'count' ? countHtml() : m === 'shop' ? shopHtml() : m === 'bud' ? budHtml() : m === 'int' ? intHtml() : exHtml()) + '</div>';
+      snaps();
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, total: sum(P.c), last: last }; }
+    var LIM = { inc: [5, 200, 1], sp: [0, 200, 1], sv: [0, 200, 1], dn: [0, 200, 1], goal: [10, 1000, 10], p: [100, 10000, 100], r: [0.5, 15, 0.5], y: [1, 10, 1], amt: [10, 1000, 10] };
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-v],[data-cur]'); if (!b) return;
+      act(function () {
+        if (b.hasAttribute('data-cur')) { P.ex.cur = b.getAttribute('data-cur'); last = 'currency'; return; }
+        var v = +b.getAttribute('data-v'), L = P.mode === 'shop' ? P.shop.paid : P.c;
+        if (L.length >= 40) { announce(T, 'The mat holds up to 40.'); return; }
+        L.push(v); last = 'add';
+      });
+    });
+    qs('.mp-mndo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    function onSnap(a) {
+      act(function () {
+        var S = P.shop, mm = /^(\w+)([+-])$/.exec(a);
+        if (mm && LIM[mm[1]]) {
+          var k = mm[1], L = LIM[k], obj = k in P.bud ? P.bud : k in P.int ? P.int : P.ex;
+          obj[k] = clamp(Math.round((obj[k] + (mm[2] === '+' ? L[2] : -L[2])) * 10) / 10, L[0], L[1]);
+        }
+        if (a === 'sort') P.c.sort(function (x, y) { return y - x; });
+        if (a === 'few') P.c = fewest(sum(P.c));
+        if (a === 'brk') {
+          var big = Math.max.apply(null, P.c), i = P.c.indexOf(big), smaller = SET.filter(function (v) { return v < big; }), out = [], c = big;
+          /* the biggest piece in the next smaller coins or bills: $2 is $1 + $1, 25¢ is 10¢ + 10¢ + 5¢ */
+          smaller.slice().reverse().forEach(function (v) { while (c >= v) { out.push(v); c -= v; } });
+          P.c.splice.apply(P.c, [i, 1].concat(out));
+        }
+        if (a === 'clr') P.c = [];
+        if (a === 'tax') S.tax = !S.tax;
+        if (a === 'pclr') S.paid = [];
+        if (a === 'sclr') { S.cart = []; S.paid = []; }
+        if (a === 'back') P.ex.back = !P.ex.back;
+        last = a;
+      });
+    }
+    snapsEl.addEventListener('click', function (e) { var s = e.target.closest('.mp-snap'); if (s) onSnap(s.getAttribute('data-a')); });
+    win.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (s) { onSnap(s.getAttribute('data-a')); return; }
+      var b = e.target.closest('[data-ci],[data-pi],[data-it],[data-ct]'); if (!b) return;
+      act(function () {
+        if (b.hasAttribute('data-ci')) P.c.splice(+b.getAttribute('data-ci'), 1);
+        if (b.hasAttribute('data-pi')) P.shop.paid.splice(+b.getAttribute('data-pi'), 1);
+        if (b.hasAttribute('data-it') && P.shop.cart.length < 6) P.shop.cart.push(+b.getAttribute('data-it'));
+        if (b.hasAttribute('data-ct')) P.shop.cart.splice(+b.getAttribute('data-ct'), 1);
+        last = 'tap';
+      });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+
+  /* ================= Algebra tiles (Toolbox) =================
+     Make: Expressions (Grade 5 and up: x tiles and unit tiles; Group like terms; give x a value to evaluate; negative tiles from Grade 7),
+     Equations (Grade 5 and up: tiles on both sides of =, add or take the same from both sides, Share the units among the x tiles, and check
+     the answer; negative tiles from Grade 7) and Integers (Grade 6 and up: yellow +1 and red −1 tiles, zero pairs, taking away (a zero pair
+     is added when there is nothing to take), and from Grade 8 a × b as groups put on or taken away). */
+  var AT_K = { x: ['x', 1, 'x'], nx: ['x', -1, '−x'], u: ['1', 1, '1'], nu: ['1', -1, '−1'] };
+  function toolTiles(root, o) {
+    var T = base(root, 'alg');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-att');
+    var gr = window.Atlas && +Atlas.grade || 0, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var MODES = [['ex', 'Expressions'], ['eq', 'Equations']].concat(g6 ? [['int', 'Integers']] : []);
+    var KINDS = g7 ? ['x', 'nx', 'u', 'nu'] : ['x', 'u'];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-attr"></div><div class="mp-dmain"><div class="mp-cmode mp-atdo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-attr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Expressions: the tiles in the order put down and the value of x; Equations: the tiles on each side, which side the
+       tray adds to, and whether the units are shared out; Integers: the +1 and −1 tiles, and a and b for a × b */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { mode: 'ex', ex: { t: [], xv: 3 }, eq: { L: [], R: [], to: 'L', share: false }, int: { p: 0, n: 0, a: 3, b: -2, made: '', ops: [] } }; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function tile(k, attr) { return '<button type="button" class="mp-at k' + k + '"' + (attr || '') + ' aria-label="' + AT_K[k][2] + ' tile">' + AT_K[k][2] + '</button>'; }
+    function count(L) { var c = { x: 0, u: 0 }; L.forEach(function (k) { c[AT_K[k][0] === 'x' ? 'x' : 'u'] += AT_K[k][1]; }); return c; }
+    function sn(n) { return n < 0 ? '−' + Math.abs(n) : String(n); }
+    function par(n) { return n < 0 ? '(' + sn(n) + ')' : String(n); }
+    function term(n, x) { return x ? (n === 1 ? 'x' : n === -1 ? '−x' : (n < 0 ? '−' : '') + Math.abs(n) + 'x') : (n < 0 ? '−' : '') + Math.abs(n); }
+    function simp(L) {
+      /* 2x + 3, x − 1, −x, 0 */
+      var c = count(L), s = '';
+      if (c.x) s = term(c.x, true);
+      if (c.u) s += s ? (c.u < 0 ? ' − ' : ' + ') + Math.abs(c.u) : term(c.u);
+      return s || '0';
+    }
+    function raw(L) {
+      /* the tiles as they lie: x + 1 + (−x) */
+      return L.map(function (k, i) { var t = AT_K[k][2]; return i ? ' + ' + (AT_K[k][1] < 0 ? '(' + t + ')' : t) : t; }).join('');
+    }
+    function sorted(L) { var c = count(L), out = []; for (var i = 0; i < Math.abs(c.x); i++) out.push(c.x > 0 ? 'x' : 'nx'); for (i = 0; i < Math.abs(c.u); i++) out.push(c.u > 0 ? 'u' : 'nu'); return out; }
+    function rowHtml(L, side) {
+      if (!L.length) return '<p class="mp-fknote">' + (side ? 'Empty' : 'Tap tiles in the tray to put them here.') + '</p>';
+      var xs = [], us = [];
+      L.forEach(function (k, i) { (AT_K[k][0] === 'x' ? xs : us).push(tile(k, ' data-ti="' + i + '"' + (side ? ' data-side="' + side + '"' : ''))); });
+      return '<div class="mp-atxs">' + xs.join('') + '</div><div class="mp-atus">' + us.join('') + '</div>';
+    }
+
+    /* ======== Expressions ======== */
+    function exHtml() { return '<div class="mp-atmat">' + rowHtml(P.ex.t) + '</div>' + (P.ex.t.some(function (k) { return AT_K[k][0] === 'x'; }) ? '<div class="mp-atxv"><span>Let x =</span>' + btn('xv-', '−') + '<b>' + sn(P.ex.xv) + '</b>' + btn('xv+', '+') + '</div>' : ''); }
+    function exRead() {
+      var L = P.ex.t;
+      if (!L.length) return ['', ''];
+      var c = count(L), s = simp(L), was = P.ex.was || raw(L), eq = (was !== s ? was + ' = ' : '') + '<b>' + s + '</b>';
+      if (c.x) {
+        var v = c.x * P.ex.xv + c.u, sub = (c.x === 1 ? '' : c.x === -1 ? '−' : c.x + ' × ') + par(P.ex.xv) + (c.u ? (c.u < 0 ? ' − ' : ' + ') + Math.abs(c.u) : '');
+        eq += '. If x = ' + sn(P.ex.xv) + ': ' + (sub !== sn(v) ? sub + ' = ' : '') + '<b>' + sn(v) + '</b>';
+      }
+      return [s, eq];
+    }
+
+    /* ======== Equations ======== */
+    function solved() {
+      /* the left is only x tiles of one sign and the right only units (or the other way round) */
+      var E = P.eq, l = count(E.L), r = count(E.R);
+      if (l.x && !l.u && !r.x) return { n: l.x, v: r.u };
+      if (r.x && !r.u && !l.x) return { n: r.x, v: l.u };
+      return null;
+    }
+    function eqHtml() {
+      var E = P.eq, sv = E.share && solved(), side = function (k) {
+        var L = E[k];
+        if (sv && L.every(function (q) { return AT_K[q][0] !== 'x'; }) && L.length) {
+          /* share the units into as many groups as there are x tiles */
+          var n = Math.abs(sv.n), per = L.length / n, g = '';
+          for (var i = 0; i < n; i++) g += '<div class="mp-atgrp">' + L.slice(i * per, (i + 1) * per).map(function (q) { return tile(q); }).join('') + '</div>';
+          return '<div class="mp-atgrps">' + g + '</div>';
+        }
+        return rowHtml(L, k);
+      };
+      return '<div class="mp-ateq"><div class="mp-atside' + (E.to !== 'R' ? ' to' : '') + '" data-to="L">' + side('L') + '</div><b class="mp-ateqs">=</b><div class="mp-atside' + (E.to !== 'L' ? ' to' : '') + '" data-to="R">' + side('R') + '</div></div>';
+    }
+    function eqRead() {
+      var E = P.eq;
+      if (!E.L.length && !E.R.length) return ['', ''];
+      var s = simp(E.L) + ' = ' + simp(E.R), sv = solved();
+      if (!sv) return [s, 'Do the same to both sides until x is alone'];
+      var v = sv.v / sv.n, ok = Math.abs(v - Math.round(v * 100) / 100) < 1e-9, vs = ok ? fmt(Math.round(v * 100) / 100) : sv.v + '/' + sv.n;
+      var eq = sv.n === 1 ? '<b>x = ' + sv.v + '</b>' : (E.share ? term(sv.n, true) + ' = ' + sv.v + ', so x = ' + sv.v + ' ÷ ' + (sv.n < 0 ? '(' + sv.n + ')' : sv.n) + ' = <b>' + vs + '</b>' : 'Share the ' + (sv.v ? Math.abs(sv.v) + ' ' : '') + 'units into ' + Math.abs(sv.n) + ' equal groups');
+      if (sv.n === 1 || E.share) {
+        /* check the answer in the equation as first built */
+        var first = E.start || null;
+        if (first) eq += '. Check: ' + check(first, v);
+      }
+      return [sv.n === 1 || E.share ? 'x = ' + vs : s, eq];
+    }
+    function check(st, v) {
+      var side = function (L) { var c = count(L), x = c.x ? (c.x === 1 ? '' : c.x === -1 ? '−' : c.x + ' × ') + fmt(v) : '', t = c.x * v + c.u; return [(x + (c.u ? (x ? (c.u < 0 ? ' − ' : ' + ') + Math.abs(c.u) : String(c.u)) : '')) || '0', t]; };
+      var a = side(st.L), b = side(st.R);
+      return a[0] + ' = ' + fmt(Math.round(a[1] * 100) / 100) + ' and ' + b[0] + ' = ' + fmt(Math.round(b[1] * 100) / 100) + (Math.abs(a[1] - b[1]) < 1e-9 ? ' ✓' : '');
+    }
+
+    /* ======== Integers ======== */
+    function intHtml() {
+      var I = P.int, z = Math.min(I.p, I.n), h = '<div class="mp-atint"><div class="mp-atrow">';
+      for (var i = 0; i < I.p; i++) h += tile('u', ' data-int="p"' + (i < z ? ' data-z="1"' : ''));
+      h += '</div><div class="mp-atrow">';
+      for (i = 0; i < I.n; i++) h += tile('nu', ' data-int="n"' + (i < z ? ' data-z="1"' : ''));
+      h += '</div></div>';
+      if (!I.p && !I.n) h = '<div class="mp-atint"><p class="mp-fknote">Tap +1 or −1 to put tiles here.</p></div>';
+      if (g8) h += '<div class="mp-atxv"><span>a</span>' + btn('a-', '−') + '<b>' + sn(I.a) + '</b>' + btn('a+', '+') + '<span>b</span>' + btn('b-', '−') + '<b>' + sn(I.b) + '</b>' + btn('b+', '+') + btn('times', 'Make a × b') + '</div>';
+      return h;
+    }
+    function opsText(ops) {
+      /* 2 − (−2), 5 + (−3): each run of tiles put on or taken away is one number */
+      return ops.map(function (q, i) { var v = q[1] * q[2]; return i ? (q[0] === '+' ? ' + ' : ' − ') + par(v) : (q[0] === '+' ? sn(v) : '0 − ' + par(v)); }).join('');
+    }
+    function intRead() {
+      var I = P.int, v = I.p - I.n, z = Math.min(I.p, I.n), zn = z ? '. ' + pl(z, 'zero pair', 'zero pairs') + ' make 0' : '';
+      if (I.made) return [sn(v), I.made + zn];
+      if (!I.p && !I.n && !I.ops.length) return ['', ''];
+      var ex = opsText(I.ops);
+      return [sn(v), (ex && ex !== sn(v) ? ex + ' = ' : '') + '<b>' + sn(v) + '</b>' + zn];
+    }
+    function op(kind, v) { var I = P.int, q = I.ops[I.ops.length - 1]; I.made = ''; if (q && q[0] === kind && q[1] === v) q[2]++; else I.ops.push([kind, v, 1]); }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      if (P.mode === 'int') return '<small>Tiles</small>' + tile('u', ' data-k="u"') + tile('nu', ' data-k="nu"');
+      return '<small>Tiles</small>' + KINDS.map(function (k) { return tile(k, ' data-k="' + k + '"'); }).join('');
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'ex' ? exRead() : m === 'eq' ? eqRead() : intRead();
+      /* negative numbers with a true minus sign */
+      read.innerHTML = ((r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '')).replace(/(^|[^\w])-(?=\d)/g, '$1−');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'ex') h += btn('group', 'Group like terms', null, P.ex.t.length < 2) + btn('exclr', 'Clear', null, !P.ex.t.length);
+      if (m === 'eq') {
+        var E = P.eq, sv = solved();
+        h += '<span class="mp-atto">Add to</span>' + btn('to-L', 'Left', E.to === 'L') + btn('to-R', 'Right', E.to === 'R') + btn('to-B', 'Both sides', E.to === 'B');
+        h += (g7 ? btn('eqzero', 'Remove zero pairs', null, !hasZero(E.L) && !hasZero(E.R)) : '') + btn('share', 'Share', E.share, !sv || Math.abs(sv.n) < 2 || sv.v % sv.n !== 0) + btn('eqclr', 'Clear', null, !E.L.length && !E.R.length);
+      }
+      if (m === 'int') h += btn('takep', 'Take away +1') + btn('taken', 'Take away −1') + btn('zero', 'Remove zero pairs', null, !Math.min(P.int.p, P.int.n)) + btn('intclr', 'Clear', null, !P.int.p && !P.int.n);
+      snapsEl.innerHTML = h;
+    }
+    function hasZero(L) { var c = { x: 0, nx: 0, u: 0, nu: 0 }; L.forEach(function (k) { c[k]++; }); return c.x && c.nx || c.u && c.nu; }
+    function zeroOut(L) { return sorted(L); }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-atdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var m = P.mode;
+      win.innerHTML = '<div class="mp-atwin">' + (m === 'ex' ? exHtml() : m === 'eq' ? eqHtml() : intHtml()) + '</div>';
+      snaps();
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, last: last }; }
+    function mark() { var E = P.eq; E.share = false; }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-k]'); if (!b) return;
+      var k = b.getAttribute('data-k');
+      act(function () {
+        if (P.mode === 'ex') { if (P.ex.t.length < 30) P.ex.t.push(k); P.ex.was = null; }
+        if (P.mode === 'eq') {
+          var E = P.eq;
+          /* building an equation (adding to one side) starts it again; adding to both sides is a step */
+          if (E.to === 'B') { if (E.L.length < 24 && E.R.length < 24) { E.L.push(k); E.R.push(k); } }
+          else if (E[E.to].length < 24) { E[E.to].push(k); E.start = null; }
+          mark();
+        }
+        if (P.mode === 'int' && P.int.p + P.int.n < 40) { if (P.int.made) P.int.ops = []; P.int[k === 'u' ? 'p' : 'n']++; op('+', k === 'u' ? 1 : -1); }
+        last = 'add';
+      });
+    });
+    qs('.mp-atdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    function startEq() { var E = P.eq; if (!E.start) E.start = { L: E.L.slice(), R: E.R.slice() }; }
+    function onSnap(a) {
+      act(function () {
+        var E = P.eq, I = P.int;
+        if (a === 'xv-' || a === 'xv+') P.ex.xv = clamp(P.ex.xv + (a === 'xv+' ? 1 : -1), g7 ? -10 : 0, 10);
+        if (a === 'group') { P.ex.was = P.ex.was || raw(P.ex.t); P.ex.t = sorted(P.ex.t); }
+        if (a === 'exclr') { P.ex.t = []; P.ex.was = null; }
+        if (a.indexOf('to-') === 0) { if (a === 'to-B') startEq(); E.to = a.slice(3); }
+        if (a === 'eqzero') { startEq(); E.L = zeroOut(E.L); E.R = zeroOut(E.R); mark(); }
+        if (a === 'share') { startEq(); E.share = !E.share; }
+        if (a === 'eqclr') { P.eq = { L: [], R: [], to: 'L', share: false }; }
+        if (a === 'takep' || a === 'taken') {
+          var key = a === 'takep' ? 'p' : 'n';
+          if (I.made) I.ops = [];
+          if (!I[key]) { I.p++; I.n++; announce(T, 'Added a zero pair, so there is one to take away.'); }
+          I[key]--; op('-', key === 'p' ? 1 : -1);
+        }
+        if (a === 'zero') { var z = Math.min(I.p, I.n); I.p -= z; I.n -= z; }
+        if (a === 'intclr') { I.p = 0; I.n = 0; I.made = ''; I.ops = []; }
+        if (/^[ab][+-]$/.test(a)) I[a[0]] = clamp(I[a[0]] + (a[1] === '+' ? 1 : -1), -6, 6);
+        if (a === 'times') {
+          /* a groups of b put on, or for negative a, taken away from zero pairs */
+          var tot = Math.abs(I.a * I.b), put = I.a >= 0;
+          I.p = 0; I.n = 0;
+          if (put) { if (I.b > 0) I.p = tot; else I.n = tot; }
+          else { if (I.b > 0) { I.n = tot; } else { I.p = tot; } }
+          I.ops = [];
+          I.made = (!I.a || !I.b ? '' : put ? I.a + ' groups of ' + sn(I.b) + ': ' : 'Start with ' + pl(tot, 'zero pair', 'zero pairs') + ', take away ' + Math.abs(I.a) + ' groups of ' + sn(I.b) + ': ') + par(I.a) + ' × ' + par(I.b) + ' = <b>' + sn(I.a * I.b) + '</b>';
+        }
+        last = a;
+      });
+    }
+    snapsEl.addEventListener('click', function (e) { var s = e.target.closest('.mp-snap'); if (s) onSnap(s.getAttribute('data-a')); });
+    win.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (s) { onSnap(s.getAttribute('data-a')); return; }
+      var t = e.target.closest('[data-ti],[data-int]');
+      if (!t) { var sd = e.target.closest('[data-to]'); if (sd && P.mode === 'eq' && P.eq.to !== 'B') act(function () { P.eq.to = sd.getAttribute('data-to'); last = 'side'; }); return; }
+      act(function () {
+        if (P.mode === 'ex') { P.ex.t.splice(+t.getAttribute('data-ti'), 1); P.ex.was = null; }
+        if (P.mode === 'int') { var w = t.getAttribute('data-int'); if (P.int.made) P.int.ops = []; P.int[w]--; op('-', w === 'p' ? 1 : -1); }
+        if (P.mode === 'eq') {
+          var E = P.eq, sd = t.getAttribute('data-side'), i = +t.getAttribute('data-ti'), k = E[sd][i];
+          if (E.to === 'B') {
+            /* take the same tile from both sides */
+            var o2 = sd === 'L' ? 'R' : 'L', j = E[o2].indexOf(k);
+            if (j < 0) { announce(T, 'There is no ' + AT_K[k][2] + ' on the other side. Add its opposite to both sides instead.'); return; }
+            startEq(); E[sd].splice(i, 1); E[o2].splice(j, 1);
+          } else { E[sd].splice(i, 1); E.start = null; }
+          mark();
+        }
+        last = 'take';
+      });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+
+  /* ================= Place value disks (Toolbox) =================
+     Columns by grade: to thousands in Grade 3, ten thousands to hundredths in Grade 4, hundred thousands to thousandths in Grade 5, and
+     millions to thousandths from Grade 6. Tap a disk in the tray to add it and a disk on the mat to take it off; Group 10 makes 1 of the
+     next place, Break turns the next disk tapped into 10 of the place to its right; × 10 and ÷ 10 (Grade 5 and up) slide every disk one
+     place. Show number gives the number, its expanded form, and from Grade 7 the expanded form with powers of ten. */
+  var DK_N = { 6: 'millions', 5: 'hundred thousands', 4: 'ten thousands', 3: 'thousands', 2: 'hundreds', 1: 'tens', 0: 'ones', '-1': 'tenths', '-2': 'hundredths', '-3': 'thousandths' };
+  var DK_C = { 6: '#1d6b2e', 5: 'var(--p6,#0b6e78)', 4: 'var(--p4,#7646bf)', 3: 'var(--p5,#c02e76)', 2: 'var(--mh)', 1: 'var(--mt)', 0: 'var(--mo)', '-1': 'var(--p3,#c25a12)', '-2': '#5b6b8a', '-3': '#8a5a2b' };
+  var DK_AB = { 6: 'M', 5: 'HTh', 4: 'TTh', 3: 'Th', 2: 'H', 1: 'T', 0: 'O', '-1': 't', '-2': 'h', '-3': 'th' };
+  var DK_SUP = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶' };
+  function toolDisks(root, o) {
+    var T = base(root, 'pvd');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-pdkt');
+    var gr = window.Atlas && +Atlas.grade || 0, g5 = !gr || gr >= 5, g7 = !gr || gr >= 7;
+    var hi = !gr || gr >= 6 ? 6 : gr === 5 ? 5 : gr === 4 ? 4 : 3, lo = !gr || gr >= 5 ? -3 : gr === 4 ? -2 : 0, PL = [];
+    for (var p = hi; p >= lo; p--) PL.push(p);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-pvtr"></div><div class="mp-dmain">' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-pvtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: how many disks in each place, whether the next tap breaks a disk, and the last × 10 or ÷ 10 */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { c: {}, brk: false, was: null, by: '', k: 1 }; PL.forEach(function (q) { P.c[q] = 0; }); }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function lab(q) { return q >= 0 ? fmt(Math.pow(10, q)) : '0.' + '00'.slice(0, -q - 1) + '1'; }
+    function disk(q, attr) { var t = lab(q).replace(/\s/g, ''); return '<button type="button" class="mp-pvd' + (t.length > 5 ? ' l7' : t.length > 3 ? ' l5' : '') + '" style="--c:' + DK_C[q] + '"' + (attr || '') + ' aria-label="a ' + lab(q) + ' disk">' + t + '</button>'; }
+    /* the value in thousandths, so decimals stay exact */
+    function value(c) { var v = 0; PL.forEach(function (q) { v += c[q] * Math.pow(10, q + 3); }); return v; }
+    function show(v) {
+      var w = Math.floor(v / 1000), f = v % 1000, s = fmt(w);
+      if (f) { var d = String(1000 + f).slice(1).replace(/0+$/, ''); s += '.' + d; }
+      return s;
+    }
+    function expanded(pw) {
+      return PL.filter(function (q) { return P.c[q]; }).map(function (q) { return P.c[q] + ' × ' + (pw && q > 0 ? '10' + DK_SUP[q] : lab(q)); }).join(' + ');
+    }
+    function matHtml() {
+      return '<div class="mp-pvcols" style="--n:' + PL.length + '">' + PL.map(function (q) {
+        var h = '<div class="mp-pvcol' + (q === 0 ? ' one' : '') + '" data-col="' + q + '"><span class="mp-pvh" style="--c:' + DK_C[q] + '"><span class="lg">' + DK_N[q] + '</span><span class="sm">' + DK_AB[q] + '</span></span><div class="mp-pvstack">';
+        for (var i = 0; i < P.c[q]; i++) h += disk(q, ' data-q="' + q + '"' + (i >= 10 ? ' data-over="1"' : ''));
+        return h + '</div><b class="mp-pvn">' + (shown ? P.c[q] : '') + '</b></div>';
+      }).join('') + '</div>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var v = value(P.c);
+      if (!v) { read.innerHTML = ''; return; }
+      var eq = expanded(false) + (g7 && PL.some(function (q) { return q > 0 && P.c[q]; }) ? '<br>= ' + expanded(true) : '');
+      if (P.was != null && P.by) eq = show(P.was) + ' ' + P.by + ' = <b>' + show(v) + '</b>. ' + eq;
+      if (PL.some(function (q) { return P.c[q] > 9; })) eq += '. A place has 10 or more: Group 10';
+      read.innerHTML = '<p class="mp-total"><span class="mp-num">' + show(v) + '</span></p><p class="mp-ceq">' + eq + '</p>';
+    }
+    function snaps() {
+      var any = PL.some(function (q) { return P.c[q]; }), over = PL.some(function (q) { return P.c[q] > 9 && q < hi; });
+      var h = btn('grp', 'Group 10', null, !over) + btn('brk', 'Break one', P.brk, !PL.some(function (q) { return P.c[q] && q > lo; }));
+      if (g5) h += btn('x10', '× 10', null, !any || P.c[hi] > 0) + btn('d10', '÷ 10', null, !any || P.c[lo] > 0);
+      snapsEl.innerHTML = h + btn('clr', 'Clear', null, !any);
+    }
+    function draw() {
+      tray.innerHTML = '<small>Disks</small>' + PL.map(function (q) { return disk(q, ' data-add="' + q + '"'); }).join('');
+      readout();
+      win.innerHTML = matHtml();
+      snaps();
+    }
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { value: value(P.c) / 1000, last: last }; }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-add]'); if (!b) return;
+      var q = +b.getAttribute('data-add');
+      act(function () { if (P.c[q] < 19) P.c[q]++; else announce(T, 'A place holds up to 19 disks.'); P.was = null; P.by = ''; last = 'add'; });
+    });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      act(function () {
+        if (a === 'grp') PL.forEach(function (q) { if (q < hi) while (P.c[q] >= 10) { P.c[q] -= 10; P.c[q + 1]++; } });
+        if (a === 'brk') P.brk = !P.brk;
+        if (a === 'x10' || a === 'd10') {
+          /* every disk slides one place: the digits move, the decimal point stays */
+          var n = {}, up = a === 'x10' ? 1 : -1;
+          PL.forEach(function (q) { n[q] = 0; });
+          PL.forEach(function (q) { if (P.c[q]) n[q + up] = P.c[q]; });
+          if (P.was == null || P.by.charAt(0) !== (up > 0 ? '×' : '÷')) { P.was = value(P.c); P.k = 1; }
+          P.k *= 10;
+          P.by = (up > 0 ? '× ' : '÷ ') + fmt(P.k);
+          P.c = n;
+        }
+        if (a === 'clr') { fresh(); }
+        if (a !== 'x10' && a !== 'd10' && a !== 'brk') { P.was = null; P.by = ''; }
+        last = a;
+      });
+    });
+    win.addEventListener('click', function (e) {
+      var d = e.target.closest('[data-q]'); if (!d) return;
+      var q = +d.getAttribute('data-q');
+      act(function () {
+        P.c[q]--;
+        if (P.brk && q > lo) { P.c[q - 1] = Math.min(P.c[q - 1] + 10, 29); P.brk = false; last = 'break'; } else last = 'take';
+        P.was = null; P.by = '';
+      });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+
+  /* ================= Times grid (Toolbox) =================
+     Show: Times grid (Grade 3 and up: tap a product to light its rectangle and every other place the same product is), Factors (Grade 4
+     and up: every rectangle of a number, its factor pairs, and from Grade 6 prime or composite), Primes (Grade 6 and up: cross out the
+     multiples of 2, 3, 5 and 7 on a 1 to 100 chart) and Squares (Grade 7 and up: a number as the biggest square it holds, square roots,
+     and a square root estimated between two whole numbers). */
+  function toolTimes(root, o) {
+    var T = base(root, 'tms');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-tmt');
+    var gr = window.Atlas && +Atlas.grade || 0, g4 = !gr || gr >= 4, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7;
+    var MODES = [['grid', 'Times grid']].concat(g4 ? [['fac', 'Factors']] : []).concat(g6 ? [['pri', 'Primes']] : []).concat(g7 ? [['sq', 'Squares']] : []);
+    var N = gr && gr < 4 ? 10 : 12, PR = [2, 3, 5, 7];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-tmtr"></div><div class="mp-dmain"><div class="mp-cmode mp-tmdo" role="group" aria-label="Show"><span>Show</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-tmtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the mode; Times grid: the cell picked; Factors: the number; Primes: how many of 2, 3, 5, 7 are crossed out; Squares: the number */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { mode: 'grid', a: 0, b: 0, n: 24, k: 0, s: 36 }; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function step(a, label, v, lo, hi) { return '<div class="mp-mnstep"><span>' + label + '</span>' + btn(a + '-10', '−10', null, v - 10 < lo) + btn(a + '-1', '−', null, v <= lo) + '<b>' + v + '</b>' + btn(a + '+1', '+', null, v >= hi) + btn(a + '+10', '+10', null, v + 10 > hi) + '</div>'; }
+    function factors(n) { var f = []; for (var i = 1; i <= n; i++) if (n % i === 0) f.push(i); return f; }
+
+    /* ======== Times grid ======== */
+    function gridHtml() {
+      var p = P.a * P.b, h = '<div class="mp-tmg" style="--n:' + (N + 1) + '"><span class="mp-tmc hd">×</span>';
+      for (var c = 1; c <= N; c++) h += '<span class="mp-tmc hd' + (c === P.b ? ' on' : '') + '">' + c + '</span>';
+      for (var r = 1; r <= N; r++) {
+        h += '<span class="mp-tmc hd' + (r === P.a ? ' on' : '') + '">' + r + '</span>';
+        for (c = 1; c <= N; c++) {
+          var inR = P.a && r <= P.a && c <= P.b, same = p && r * c === p, pick = r === P.a && c === P.b;
+          h += '<button type="button" class="mp-tmc' + (inR ? ' in' : '') + (same ? ' same' : '') + (pick ? ' pick' : '') + (r === c ? ' dia' : '') + '" data-rc="' + r + ',' + c + '">' + (shown || pick || same ? r * c : '') + '</button>';
+        }
+      }
+      return h + '</div>';
+    }
+    function gridRead() {
+      if (!P.a) return ['', ''];
+      var p = P.a * P.b, pl2 = [];
+      for (var r = 1; r <= N; r++) for (var c = 1; c <= N; c++) if (r * c === p) pl2.push(r + ' × ' + c);
+      return [P.a + ' × ' + P.b + ' = ' + p, P.a + ' rows of ' + P.b + (P.a !== P.b ? ', and turned, ' + P.b + ' × ' + P.a + ' = ' + p : ' make a square') + (pl2.length > 2 ? '. <b>' + p + '</b> is in ' + pl2.length + ' places: ' + pl2.join(', ') : '')];
+    }
+
+    /* ======== Factors ======== */
+    function facHtml() {
+      var n = P.n, F = factors(n), h = step('n', 'Number', n, 1, 100) + '<div class="mp-tmrects">';
+      F.filter(function (a) { return a <= n / a; }).forEach(function (a) {
+        var b = n / a, sz = Math.max(4, Math.min(14, Math.floor(220 / Math.max(b, 1))));
+        h += '<figure class="mp-tmrect"><div class="mp-tmdots" style="--c:' + b + ';--s:' + sz + 'px">' + new Array(n + 1).join('<i></i>') + '</div><figcaption>' + a + ' × ' + b + '</figcaption></figure>';
+      });
+      return h + '</div>';
+    }
+    function facRead() {
+      var n = P.n, F = factors(n), pairs = F.filter(function (a) { return a <= n / a; }).length;
+      var kind = n === 1 ? '1 is neither prime nor composite' : F.length === 2 ? n + ' is <b>prime</b>: only 1 × ' + n : n + ' is <b>composite</b>';
+      return [F.length + ' factors', 'Factors of ' + n + ': <b>' + F.join(', ') + '</b>. ' + pl(pairs, 'factor pair', 'factor pairs') + (g6 ? '. ' + kind : '')];
+    }
+
+    /* ======== Primes ======== */
+    function crossed(v) { for (var i = 0; i < P.k; i++) { var q = PR[i]; if (v !== q && v % q === 0) return q; } return 0; }
+    function priHtml() {
+      var h = '<div class="mp-tmp">';
+      for (var v = 1; v <= 100; v++) {
+        var x = crossed(v), pr = PR.slice(0, P.k).indexOf(v) >= 0 || P.k === 4 && !x && v > 1;
+        h += '<span class="mp-tmpc' + (v === 1 ? ' one' : '') + (x ? ' x x' + x : '') + (pr ? ' pr' : '') + '">' + v + '</span>';
+      }
+      return h + '</div>';
+    }
+    function priRead() {
+      if (!P.k) return ['', 'Cross out the multiples of 2 first. 2 stays: it is prime'];
+      var left = 0; for (var v = 2; v <= 100; v++) if (!crossed(v)) left++;
+      var done = PR.slice(0, P.k).join(', ');
+      return [P.k === 4 ? '25 primes' : left + ' left', 'Crossed out the multiples of ' + done + '. ' + (P.k === 4 ? 'Every number left is <b>prime</b>: 25 primes up to 100' : '<b>' + left + '</b> numbers left from 2 to 100')];
+    }
+
+    /* ======== Squares ======== */
+    function sqHtml() {
+      var n = P.s, r = Math.floor(Math.sqrt(n)), extra = n - r * r, sz = Math.max(8, Math.min(26, Math.floor(260 / (r + 1)))), h = step('s', 'Number', n, 1, 225);
+      h += '<div class="mp-tmsq" style="--s:' + sz + 'px"><div class="mp-tmdots sq" style="--c:' + r + '">' + new Array(r * r + 1).join('<i></i>') + '</div>';
+      if (extra) h += '<div class="mp-tmdots ex" style="--c:' + Math.ceil(extra / (r + 1)) + '">' + new Array(extra + 1).join('<i></i>') + '</div>';
+      return h + '</div>';
+    }
+    function sqRead() {
+      var n = P.s, r = Math.floor(Math.sqrt(n));
+      if (r * r === n) return ['√' + n + ' = ' + r, r + '² = ' + r + ' × ' + r + ' = <b>' + n + '</b>, so ' + n + ' is a perfect square and √' + n + ' = <b>' + r + '</b>'];
+      return ['√' + n + ' ≈ ' + fmt(Math.round(Math.sqrt(n) * 10) / 10), n + ' is between ' + r + '² = ' + r * r + ' and ' + (r + 1) + '² = ' + (r + 1) * (r + 1) + ', so √' + n + ' is between <b>' + r + '</b> and <b>' + (r + 1) + '</b>, about ' + fmt(Math.round(Math.sqrt(n) * 10) / 10)];
+    }
+
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'grid') return '<small>Times grid</small><p class="mp-fknote">Tap a square to see its rectangle.</p>';
+      if (m === 'fac') return '<small>Factors</small><p class="mp-fknote">Every rectangle you can make with this many squares.</p>';
+      if (m === 'pri') return '<small>Primes</small><p class="mp-fknote">A prime has exactly 2 factors: 1 and itself.</p>';
+      return '<small>Squares</small><p class="mp-fknote">The biggest square inside the number, and what is left.</p>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'grid' ? gridRead() : m === 'fac' ? facRead() : m === 'pri' ? priRead() : sqRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'grid') h += btn('gclr', 'Clear', null, !P.a);
+      if (m === 'pri') h += btn('next', P.k < 4 ? 'Cross out multiples of ' + PR[P.k] : 'All done', null, P.k >= 4) + btn('pclr', 'Start again', null, !P.k);
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-tmdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var m = P.mode;
+      win.innerHTML = '<div class="mp-tmwin">' + (m === 'grid' ? gridHtml() : m === 'fac' ? facHtml() : m === 'pri' ? priHtml() : sqHtml()) + '</div>';
+      snaps();
+    }
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, last: last }; }
+    qs('.mp-tmdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    function onSnap(a) {
+      act(function () {
+        var mm = /^([ns])([+-]\d+)$/.exec(a);
+        if (mm) { if (mm[1] === 'n') P.n = clamp(P.n + +mm[2], 1, 100); else P.s = clamp(P.s + +mm[2], 1, 225); }
+        if (a === 'gclr') { P.a = 0; P.b = 0; }
+        if (a === 'next' && P.k < 4) P.k++;
+        if (a === 'pclr') P.k = 0;
+        last = a;
+      });
+    }
+    snapsEl.addEventListener('click', function (e) { var s = e.target.closest('.mp-snap'); if (s) onSnap(s.getAttribute('data-a')); });
+    win.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (s) { onSnap(s.getAttribute('data-a')); return; }
+      var c = e.target.closest('[data-rc]'); if (!c) return;
+      var rc = c.getAttribute('data-rc').split(',').map(Number);
+      act(function () { if (P.a === rc[0] && P.b === rc[1]) { P.a = 0; P.b = 0; } else { P.a = rc[0]; P.b = rc[1]; } last = 'cell'; });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+  M.times = function (root, o) { return toolTimes(root, o || {}); };
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -6651,7 +8086,7 @@
       '<rect x="4" y="8" width="40" height="18" rx="2" style="fill:none;stroke:var(--ink,#132039);stroke-width:2"/><path d="M12 8v18M20 8v18M28 8v18M36 8v18M4 17h40" style="stroke:var(--ink,#132039);stroke-width:1.2"/><circle cx="8" cy="12.5" r="3" style="fill:#c0392b"/><circle cx="16" cy="12.5" r="3" style="fill:#c0392b"/><circle cx="24" cy="12.5" r="3" style="fill:var(--mp-ones,#e0a100)"/><circle cx="16" cy="37" r="6" style="fill:#c0392b"/><circle cx="31" cy="37" r="6" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['base10', 'num', 'Place value blocks', '', { drag: true, cols: ['k', 'h', 't', 'o'], readout: false, hideTotal: true, u: 34, uMax: 34, limit: 9999, max: { k: 9, h: 19, t: 19, o: 29 } },
       '<rect x="6" y="14" width="18" height="18" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="8" width="6" height="30" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="37" y="30" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['disks', 'num', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] },
+    ['disks', 'num', 'Place value disks', '', { tool: true },
       '<circle cx="15" cy="17" r="9" style="fill:var(--mp-hund,#2f62c4)"/><circle cx="33" cy="17" r="9" style="fill:var(--mp-tens,#2f9e44)"/><circle cx="24" cy="33" r="9" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['hundred', 'num', 'Number chart', '', { tool: true },
       '<g style="fill:var(--line,#dfe5ee)"><rect x="7" y="7" width="7" height="7" rx="1.5"/><rect x="25" y="7" width="7" height="7" rx="1.5"/><rect x="16" y="16" width="7" height="7" rx="1.5"/><rect x="34" y="16" width="7" height="7" rx="1.5"/><rect x="7" y="25" width="7" height="7" rx="1.5"/><rect x="25" y="25" width="7" height="7" rx="1.5"/><rect x="16" y="34" width="7" height="7" rx="1.5"/><rect x="34" y="34" width="7" height="7" rx="1.5"/></g><g style="fill:var(--accent,#0b6e78)"><rect x="16" y="7" width="7" height="7" rx="1.5"/><rect x="34" y="7" width="7" height="7" rx="1.5"/><rect x="7" y="16" width="7" height="7" rx="1.5"/><rect x="25" y="16" width="7" height="7" rx="1.5"/><rect x="16" y="25" width="7" height="7" rx="1.5"/><rect x="34" y="25" width="7" height="7" rx="1.5"/><rect x="7" y="34" width="7" height="7" rx="1.5"/><rect x="25" y="34" width="7" height="7" rx="1.5"/></g>'],
@@ -6661,11 +8096,13 @@
       '<rect x="5" y="15" width="38" height="18" rx="2" style="fill:var(--card,#fff);stroke:var(--accent,#0b6e78);stroke-width:2"/><rect x="5" y="15" width="19" height="18" rx="2" style="fill:#7646bf"/><path d="M24 15v18M14.5 15v18M33.5 15v18" style="stroke:var(--accent,#0b6e78);stroke-width:1.5"/>'],
     ['areagrid', 'parts', 'Arrays and area model', '', { tool: true },
       '<g style="fill:#c25a12"><rect x="7" y="9" width="9" height="9" rx="1"/><rect x="18" y="9" width="9" height="9" rx="1"/><rect x="29" y="9" width="9" height="9" rx="1"/><rect x="7" y="20" width="9" height="9" rx="1"/><rect x="18" y="20" width="9" height="9" rx="1"/><rect x="29" y="20" width="9" height="9" rx="1"/></g><g style="fill:var(--line,#dfe5ee)"><rect x="7" y="31" width="9" height="9" rx="1"/><rect x="18" y="31" width="9" height="9" rx="1"/><rect x="29" y="31" width="9" height="9" rx="1"/></g>'],
+    ['times', 'parts', 'Times grid', '', { tool: true },
+      '<rect x="6" y="6" width="36" height="36" rx="4" style="fill:var(--card,#fff);stroke:var(--ink2,#55627a);stroke-width:1.5"/><rect x="6" y="6" width="21" height="15" rx="2" style="fill:var(--mp-hund,#2f62c4);opacity:.75"/><path d="M6 15h36M6 24h36M6 33h36M15 6v36M24 6v36M33 6v36" style="stroke:var(--ink2,#55627a);stroke-width:1"/>'],
     ['balance', 'alg', 'Balance', '', { tool: true },
       '<path d="M24 12L18 40h12Z" style="fill:var(--line,#dfe5ee)"/><path d="M8 14h32" style="stroke:var(--ink,#132039);stroke-width:3;stroke-linecap:round"/><path d="M8 14l-5 12h10ZM40 14l-5 12h10Z" style="fill:none;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-linejoin:round"/><rect x="4" y="20" width="5" height="5" rx="1" style="fill:var(--mp-ones,#e0a100)"/><path d="M36 26q4-7 8 0Z" style="fill:#8a6a3b"/>'],
     ['patterns', 'alg', 'Pattern builder', '', { tool: true },
       '<circle cx="9" cy="16" r="5" style="fill:#c0392b"/><rect x="17" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="6" y="34" width="6" height="6" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="18" y="28" width="6" height="12" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="30" y="22" width="6" height="18" rx="1" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['tiles', 'alg', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true },
+    ['tiles', 'alg', 'Algebra tiles', '', { tool: true },
       '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
     ['grid', 'space', 'Grid and robot', '', { tool: true },
       '<rect x="5" y="5" width="38" height="38" rx="4" style="fill:var(--card,#fff);stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M17.7 5v38M30.3 5v38M5 17.7h38M5 30.3h38" style="stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M11 37V24h13V11" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/><rect x="30" y="5.5" width="12" height="12" rx="3" style="fill:#2f62c4"/><path d="M33 13l3-4.5 3 4.5Z" style="fill:#fff"/>'],
@@ -6673,13 +8110,13 @@
       '<path d="M24 6L40 15V33L24 42L8 33V15Z" style="fill:var(--mp-hund,#2f62c4)"/><path d="M24 6L40 15L24 24L8 15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 60%,#fff)"/><path d="M24 24V42L8 33V15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 75%,#000)"/>'],
     ['geoboard', 'space', 'Shape kit', '', { tool: true },
       '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
-    ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
+    ['clock', 'meas', 'Clock and calendar', '', { tool: true },
       '<circle cx="24" cy="24" r="17" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:2.5"/><path d="M24 24V12" style="stroke:var(--mp-hund,#2f62c4);stroke-width:2.5"/><path d="M24 24h8" style="stroke:var(--ink,#132039);stroke-width:3"/>'],
-    ['scale', 'meas', 'Kitchen scale', 'Put 1 kg, 100 g and 10 g blocks on the scale.', {},
-      '<rect x="8" y="12" width="32" height="4" rx="2" style="fill:var(--ink2,#55627a)"/><path d="M14 16h20l3 22H11Z" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><circle cx="24" cy="28" r="6" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:1.5"/><path d="M24 28l3-3" style="stroke:var(--bad,#b4283f);stroke-width:1.5"/>'],
+    ['scale', 'meas', 'Measuring kit', '', { tool: true },
+      '<rect x="4" y="16" width="40" height="16" rx="3" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><path d="M10 16v7M16 16v4M22 16v7M28 16v4M34 16v7M40 16v4" style="stroke:var(--ink2,#55627a);stroke-width:1.5"/>'],
     ['data', 'meas', 'Data and chance', '', { tool: true },
       '<path d="M6 40h36" style="stroke:var(--ink,#132039);stroke-width:2;stroke-linecap:round"/><rect x="9" y="24" width="7" height="16" rx="1.5" style="fill:#c0392b"/><rect x="20" y="12" width="7" height="28" rx="1.5" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="19" width="7" height="21" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['coins', 'meas', 'Coins and bills', 'Tap coins and bills to add them. Tap one on the mat to take it away.', { set: [5, 10, 25, 100, 200, 500, 1000, 2000] },
+    ['coins', 'meas', 'Money', '', { tool: true },
       '<circle cx="18" cy="26" r="11" style="fill:#d9b44a;stroke:#a8862a;stroke-width:1.5"/><circle cx="31" cy="21" r="10" style="fill:#dfe3ea;stroke:#9aa3b2;stroke-width:1.5"/><circle cx="31" cy="21" r="5.5" style="fill:#d9b44a"/>']
   ];
   function icon(b) { return '<svg class="tb-ic" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">' + b[5] + '</svg>'; }
@@ -6729,5 +8166,5 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
+  M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'times', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

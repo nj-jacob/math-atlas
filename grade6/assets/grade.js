@@ -2,7 +2,7 @@
    then Grade 6's own fraction text. */
 Atlas.setup({
   grade: 6,
-  tools: ['base10', 'disks', 'numberline', 'fractions', 'balance', 'patterns', 'data', 'grid', 'solids', 'tiles', 'areagrid', 'geoboard', 'scale', 'coins'],
+  tools: ['base10', 'disks', 'numberline', 'fractions', 'balance', 'patterns', 'data', 'grid', 'solids', 'tiles', 'areagrid', 'times', 'geoboard', 'scale', 'coins'],
   meta: [
     { id: 'numbers-integers', title: 'Big Numbers, Integers and Factors', sub: 'to one million, below zero, prime factors', strand: 'B', codes: 'B1.1, B1.2, B1.3, B2.2, B2.6',
       desc: 'Read numbers to one million, use negative numbers, divisibility rules and factor trees.' },

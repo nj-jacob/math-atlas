@@ -2,7 +2,7 @@
    then Grade 4's own fraction text. */
 Atlas.setup({
   grade: 4,
-  tools: ['base10', 'disks', 'clock', 'areagrid', 'scale', 'hundred', 'numberline', 'fractions', 'balance', 'patterns', 'data', 'grid', 'solids', 'coins', 'geoboard'],
+  tools: ['base10', 'disks', 'clock', 'areagrid', 'times', 'scale', 'hundred', 'numberline', 'fractions', 'balance', 'patterns', 'data', 'grid', 'solids', 'coins', 'geoboard'],
   meta: [
     { id: 'numbers', title: 'Numbers to 10 000', sub: 'read, build, compare and round', strand: 'B', codes: 'B1.1, B1.2, B1.3',
       desc: 'Place value to 10 000 with blocks and charts. Compare, order, and round to 10, 100 or 1000.' },
