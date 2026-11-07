@@ -1319,6 +1319,21 @@ button.mp-fkp{cursor:pointer}
 .mp-attr .mp-at.kx,.mp-attr .mp-at.knx{height:84px}
 @media (max-width:600px){.mp-at.kx,.mp-at.knx{height:84px;width:34px}.mp-at.ku,.mp-at.knu{width:34px;height:34px}.mp-ateq{flex-direction:column}.mp-ateqs{font-size:1.5rem}}
 
+/* ---------- Place value disks (Toolbox) ---------- */
+.mp-pvcols{display:grid;grid-template-columns:repeat(var(--n),minmax(58px,1fr));gap:4px;width:100%;min-width:calc(var(--n) * 62px);align-items:stretch}
+.mp-pdkt .mp-pwin{width:100%;overflow-x:auto}
+.mp-pvcol{display:flex;flex-direction:column;align-items:center;gap:6px;padding:6px 2px;border-radius:12px;background:color-mix(in srgb,var(--mline) 22%,var(--mcard));min-height:260px}
+.mp-pvcol.one{box-shadow:inset -3px 0 0 var(--mink)}
+.mp-pvh{font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;text-align:center;color:var(--c);line-height:1.1;min-height:2.3em;display:flex;align-items:center}
+.mp-pvstack{flex:1;display:flex;flex-wrap:wrap;align-content:flex-start;justify-content:center;gap:3px;max-width:96px}
+.mp-pvd{width:46px;height:46px;border-radius:50%;border:2px solid color-mix(in srgb,var(--c) 60%,#000);background:var(--c);color:#fff;font:800 .62rem var(--body,inherit);display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0;letter-spacing:-.02em}
+.mp-pvd.l5{font-size:.56rem}.mp-pvd.l7{font-size:.46rem;letter-spacing:-.04em}
+.mp-pvh .sm{display:none;text-transform:none}
+.mp-pvd[data-over]{box-shadow:0 0 0 3px var(--mcard),0 0 0 5px var(--bad,#b4283f)}
+.mp-pvn{font:800 1.3rem var(--display,inherit);color:var(--mink);min-height:1.4em}
+.mp-pvtr .mp-pvd{flex:0 0 auto;width:46px;height:46px}
+@media (max-width:600px){.mp-pvh .lg{display:none}.mp-pvh .sm{display:inline;font-size:.8rem}.mp-pvd{width:30px;height:30px;font-size:.5rem}.mp-pvd.l5{font-size:.38rem}.mp-pvd.l7{font-size:.3rem}.mp-pvcols{grid-template-columns:repeat(var(--n),minmax(44px,1fr));min-width:calc(var(--n) * 46px)}.mp-pvstack{max-width:66px}}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

@@ -811,7 +811,7 @@ async function checkGrade(browser, base, g) {
     const g = await page.evaluate(() => Atlas.grade);
     await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/geoboard'; });
     await page.waitForTimeout(150);
-    const read = () => page.evaluate(() => document.querySelector('.mp-sht .mp-read').textContent.replace(/ /g, ' '));
+    const read = () => page.evaluate(() => document.querySelector('.mp-sht .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
     const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
     const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox shape kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
     const pegs = async (...cs) => { for (const c of cs) await page.click('.mp-shhit[data-peg="' + c + '"]'); };
@@ -850,7 +850,7 @@ async function checkGrade(browser, base, g) {
     const g = await page.evaluate(() => Atlas.grade);
     await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/scale'; });
     await page.waitForTimeout(150);
-    const read = () => page.evaluate(() => document.querySelector('.mp-mkt .mp-read').textContent.replace(/ /g, ' '));
+    const read = () => page.evaluate(() => document.querySelector('.mp-mkt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
     const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
     const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox measuring kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
     const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
@@ -892,7 +892,7 @@ async function checkGrade(browser, base, g) {
     const g = await page.evaluate(() => Atlas.grade);
     await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/clock'; });
     await page.waitForTimeout(150);
-    const read = () => page.evaluate(() => document.querySelector('.mp-ckt .mp-read').textContent.replace(/ /g, ' '));
+    const read = () => page.evaluate(() => document.querySelector('.mp-ckt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
     const has = async t => { for (let i = 0; i < 20; i++) { const r = await read(); if (t instanceof RegExp ? t.test(r) : r.includes(t)) return true; await page.waitForTimeout(100); } return false; };
     const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox clock: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
     const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
@@ -918,7 +918,7 @@ async function checkGrade(browser, base, g) {
     const g = await page.evaluate(() => Atlas.grade);
     await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/coins'; });
     await page.waitForTimeout(150);
-    const read = () => page.evaluate(() => document.querySelector('.mp-mnt .mp-read').textContent.replace(/ /g, ' '));
+    const read = () => page.evaluate(() => document.querySelector('.mp-mnt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
     const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
     const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox money: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
     const snap = a => page.click('.mp-snap[data-a="' + a + '"]');
@@ -956,7 +956,7 @@ async function checkGrade(browser, base, g) {
     const g = await page.evaluate(() => Atlas.grade);
     await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/tiles'; });
     await page.waitForTimeout(150);
-    const read = () => page.evaluate(() => document.querySelector('.mp-att .mp-read').textContent.replace(/ /g, ' '));
+    const read = () => page.evaluate(() => document.querySelector('.mp-att .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
     const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
     const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox algebra tiles: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
     const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
@@ -984,6 +984,29 @@ async function checkGrade(browser, base, g) {
       if (g >= 8) { await snap('times'); await bad('3 × (−2) = −6', '3 groups of −2'); }
     }
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox algebra tiles: the page runs off the side of a phone screen');
+  }
+
+  /* 3a20. Toolbox place value disks: a thousand, two hundreds, a ten and 12 ones read 1 × 1000 + 2 × 100 + 1 × 10 + 12 × 1, and Group 10
+     makes 2 × 10 + 2 × 1; from Grade 4 breaking a hundred gives 10 × 10; from Grade 5 121.1 × 10 × 10 reads 121.1 × 100 = 12 110; from
+     Grade 7 a million and a ten thousand read 1 × 10⁶ + 1 × 10⁴. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('disks'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/disks'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-pdkt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox place value disks: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const add = async (q, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-pvtr [data-add="' + q + '"]'); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await add(3); await add(2, 2); await add(1); await add(0, 12);
+    await bad('1 × 1000 + 2 × 100 + 1 × 10 + 12 × 1', 'a thousand, two hundreds, a ten and 12 ones');
+    await snap('grp');
+    await bad('2 × 10 + 2 × 1', 'grouping 10 ones');
+    if (g >= 4) { await snap('clr'); await add(2); await snap('brk'); await page.click('.mp-pvstack [data-q="2"]'); await bad('10 × 10', 'breaking a hundred'); }
+    if (g >= 5) { await snap('clr'); await add(2); await add(1, 2); await add(0); await add(-1); await snap('x10', 2); await bad('121.1 × 100 = 12 110', '121.1 times 10 twice'); }
+    if (g >= 7) { await snap('clr'); await add(6); await add(4); await bad('1 × 10⁶ + 1 × 10⁴', 'a million and a ten thousand'); }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox place value disks: the page runs off the side of a phone screen');
   }
 
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */

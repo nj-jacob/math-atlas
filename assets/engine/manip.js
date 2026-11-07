@@ -3265,6 +3265,7 @@
   function pcol(p) { return 'var(--mp-d' + (p < 0 ? 'm' + -p : p) + ',' + PC[p] + ')'; }
   M.disks = function (root, o) {
     o = o || {};
+    if (o.tool) return toolDisks(root, o);
     var T = base(root, 'disks'), places = o.places || [4, 3, 2, 1, 0], cnt = {}, lit = [], last = '', max = o.max || 19, mode = '';
     root.innerHTML = (o.controls ? '<div class="mp-tray">' + places.map(function (p) {
       return '<div class="mp-tg"><button type="button" class="mp-add" data-p="' + p + '" aria-label="Add a ' + plab(p) + ' disk"><i class="mp-dk sm" style="--c:' + pcol(p) + '"></i><span>+ ' + plab(p) + '</span></button>' +
@@ -7820,6 +7821,116 @@
     return T;
   }
 
+  /* ================= Place value disks (Toolbox) =================
+     Columns by grade: to thousands in Grade 3, ten thousands to hundredths in Grade 4, hundred thousands to thousandths in Grade 5, and
+     millions to thousandths from Grade 6. Tap a disk in the tray to add it and a disk on the mat to take it off; Group 10 makes 1 of the
+     next place, Break turns the next disk tapped into 10 of the place to its right; × 10 and ÷ 10 (Grade 5 and up) slide every disk one
+     place. Show number gives the number, its expanded form, and from Grade 7 the expanded form with powers of ten. */
+  var DK_N = { 6: 'millions', 5: 'hundred thousands', 4: 'ten thousands', 3: 'thousands', 2: 'hundreds', 1: 'tens', 0: 'ones', '-1': 'tenths', '-2': 'hundredths', '-3': 'thousandths' };
+  var DK_C = { 6: '#1d6b2e', 5: 'var(--p6,#0b6e78)', 4: 'var(--p4,#7646bf)', 3: 'var(--p5,#c02e76)', 2: 'var(--mh)', 1: 'var(--mt)', 0: 'var(--mo)', '-1': 'var(--p3,#c25a12)', '-2': '#5b6b8a', '-3': '#8a5a2b' };
+  var DK_AB = { 6: 'M', 5: 'HTh', 4: 'TTh', 3: 'Th', 2: 'H', 1: 'T', 0: 'O', '-1': 't', '-2': 'h', '-3': 'th' };
+  var DK_SUP = { 0: '⁰', 1: '¹', 2: '²', 3: '³', 4: '⁴', 5: '⁵', 6: '⁶' };
+  function toolDisks(root, o) {
+    var T = base(root, 'pvd');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-pdkt');
+    var gr = window.Atlas && +Atlas.grade || 0, g5 = !gr || gr >= 5, g7 = !gr || gr >= 7;
+    var hi = !gr || gr >= 6 ? 6 : gr === 5 ? 5 : gr === 4 ? 4 : 3, lo = !gr || gr >= 5 ? -3 : gr === 4 ? -2 : 0, PL = [];
+    for (var p = hi; p >= lo; p--) PL.push(p);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-pvtr"></div><div class="mp-dmain">' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-pvtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: how many disks in each place, whether the next tap breaks a disk, and the last × 10 or ÷ 10 */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { c: {}, brk: false, was: null, by: '', k: 1 }; PL.forEach(function (q) { P.c[q] = 0; }); }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function lab(q) { return q >= 0 ? fmt(Math.pow(10, q)) : '0.' + '00'.slice(0, -q - 1) + '1'; }
+    function disk(q, attr) { var t = lab(q).replace(/\s/g, ''); return '<button type="button" class="mp-pvd' + (t.length > 5 ? ' l7' : t.length > 3 ? ' l5' : '') + '" style="--c:' + DK_C[q] + '"' + (attr || '') + ' aria-label="a ' + lab(q) + ' disk">' + t + '</button>'; }
+    /* the value in thousandths, so decimals stay exact */
+    function value(c) { var v = 0; PL.forEach(function (q) { v += c[q] * Math.pow(10, q + 3); }); return v; }
+    function show(v) {
+      var w = Math.floor(v / 1000), f = v % 1000, s = fmt(w);
+      if (f) { var d = String(1000 + f).slice(1).replace(/0+$/, ''); s += '.' + d; }
+      return s;
+    }
+    function expanded(pw) {
+      return PL.filter(function (q) { return P.c[q]; }).map(function (q) { return P.c[q] + ' × ' + (pw && q > 0 ? '10' + DK_SUP[q] : lab(q)); }).join(' + ');
+    }
+    function matHtml() {
+      return '<div class="mp-pvcols" style="--n:' + PL.length + '">' + PL.map(function (q) {
+        var h = '<div class="mp-pvcol' + (q === 0 ? ' one' : '') + '" data-col="' + q + '"><span class="mp-pvh" style="--c:' + DK_C[q] + '"><span class="lg">' + DK_N[q] + '</span><span class="sm">' + DK_AB[q] + '</span></span><div class="mp-pvstack">';
+        for (var i = 0; i < P.c[q]; i++) h += disk(q, ' data-q="' + q + '"' + (i >= 10 ? ' data-over="1"' : ''));
+        return h + '</div><b class="mp-pvn">' + (shown ? P.c[q] : '') + '</b></div>';
+      }).join('') + '</div>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var v = value(P.c);
+      if (!v) { read.innerHTML = ''; return; }
+      var eq = expanded(false) + (g7 && PL.some(function (q) { return q > 0 && P.c[q]; }) ? '<br>= ' + expanded(true) : '');
+      if (P.was != null && P.by) eq = show(P.was) + ' ' + P.by + ' = <b>' + show(v) + '</b>. ' + eq;
+      if (PL.some(function (q) { return P.c[q] > 9; })) eq += '. A place has 10 or more: Group 10';
+      read.innerHTML = '<p class="mp-total"><span class="mp-num">' + show(v) + '</span></p><p class="mp-ceq">' + eq + '</p>';
+    }
+    function snaps() {
+      var any = PL.some(function (q) { return P.c[q]; }), over = PL.some(function (q) { return P.c[q] > 9 && q < hi; });
+      var h = btn('grp', 'Group 10', null, !over) + btn('brk', 'Break one', P.brk, !PL.some(function (q) { return P.c[q] && q > lo; }));
+      if (g5) h += btn('x10', '× 10', null, !any || P.c[hi] > 0) + btn('d10', '÷ 10', null, !any || P.c[lo] > 0);
+      snapsEl.innerHTML = h + btn('clr', 'Clear', null, !any);
+    }
+    function draw() {
+      tray.innerHTML = '<small>Disks</small>' + PL.map(function (q) { return disk(q, ' data-add="' + q + '"'); }).join('');
+      readout();
+      win.innerHTML = matHtml();
+      snaps();
+    }
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { value: value(P.c) / 1000, last: last }; }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-add]'); if (!b) return;
+      var q = +b.getAttribute('data-add');
+      act(function () { if (P.c[q] < 19) P.c[q]++; else announce(T, 'A place holds up to 19 disks.'); P.was = null; P.by = ''; last = 'add'; });
+    });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      act(function () {
+        if (a === 'grp') PL.forEach(function (q) { if (q < hi) while (P.c[q] >= 10) { P.c[q] -= 10; P.c[q + 1]++; } });
+        if (a === 'brk') P.brk = !P.brk;
+        if (a === 'x10' || a === 'd10') {
+          /* every disk slides one place: the digits move, the decimal point stays */
+          var n = {}, up = a === 'x10' ? 1 : -1;
+          PL.forEach(function (q) { n[q] = 0; });
+          PL.forEach(function (q) { if (P.c[q]) n[q + up] = P.c[q]; });
+          if (P.was == null || P.by.charAt(0) !== (up > 0 ? '×' : '÷')) { P.was = value(P.c); P.k = 1; }
+          P.k *= 10;
+          P.by = (up > 0 ? '× ' : '÷ ') + fmt(P.k);
+          P.c = n;
+        }
+        if (a === 'clr') { fresh(); }
+        if (a !== 'x10' && a !== 'd10' && a !== 'brk') { P.was = null; P.by = ''; }
+        last = a;
+      });
+    });
+    win.addEventListener('click', function (e) {
+      var d = e.target.closest('[data-q]'); if (!d) return;
+      var q = +d.getAttribute('data-q');
+      act(function () {
+        P.c[q]--;
+        if (P.brk && q > lo) { P.c[q - 1] = Math.min(P.c[q - 1] + 10, 29); P.brk = false; last = 'break'; } else last = 'take';
+        P.was = null; P.by = '';
+      });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -7830,7 +7941,7 @@
       '<rect x="4" y="8" width="40" height="18" rx="2" style="fill:none;stroke:var(--ink,#132039);stroke-width:2"/><path d="M12 8v18M20 8v18M28 8v18M36 8v18M4 17h40" style="stroke:var(--ink,#132039);stroke-width:1.2"/><circle cx="8" cy="12.5" r="3" style="fill:#c0392b"/><circle cx="16" cy="12.5" r="3" style="fill:#c0392b"/><circle cx="24" cy="12.5" r="3" style="fill:var(--mp-ones,#e0a100)"/><circle cx="16" cy="37" r="6" style="fill:#c0392b"/><circle cx="31" cy="37" r="6" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['base10', 'num', 'Place value blocks', '', { drag: true, cols: ['k', 'h', 't', 'o'], readout: false, hideTotal: true, u: 34, uMax: 34, limit: 9999, max: { k: 9, h: 19, t: 19, o: 29 } },
       '<rect x="6" y="14" width="18" height="18" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="8" width="6" height="30" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="37" y="30" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['disks', 'num', 'Place value disks', 'Tap + to add disks. Tap a disk to light it and count. Group 10 disks into 1 of the next place, or break 1 into 10.', { controls: true, places: [3, 2, 1, 0, -1] },
+    ['disks', 'num', 'Place value disks', '', { tool: true },
       '<circle cx="15" cy="17" r="9" style="fill:var(--mp-hund,#2f62c4)"/><circle cx="33" cy="17" r="9" style="fill:var(--mp-tens,#2f9e44)"/><circle cx="24" cy="33" r="9" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['hundred', 'num', 'Number chart', '', { tool: true },
       '<g style="fill:var(--line,#dfe5ee)"><rect x="7" y="7" width="7" height="7" rx="1.5"/><rect x="25" y="7" width="7" height="7" rx="1.5"/><rect x="16" y="16" width="7" height="7" rx="1.5"/><rect x="34" y="16" width="7" height="7" rx="1.5"/><rect x="7" y="25" width="7" height="7" rx="1.5"/><rect x="25" y="25" width="7" height="7" rx="1.5"/><rect x="16" y="34" width="7" height="7" rx="1.5"/><rect x="34" y="34" width="7" height="7" rx="1.5"/></g><g style="fill:var(--accent,#0b6e78)"><rect x="16" y="7" width="7" height="7" rx="1.5"/><rect x="34" y="7" width="7" height="7" rx="1.5"/><rect x="7" y="16" width="7" height="7" rx="1.5"/><rect x="25" y="16" width="7" height="7" rx="1.5"/><rect x="16" y="25" width="7" height="7" rx="1.5"/><rect x="34" y="25" width="7" height="7" rx="1.5"/><rect x="7" y="34" width="7" height="7" rx="1.5"/><rect x="25" y="34" width="7" height="7" rx="1.5"/></g>'],
