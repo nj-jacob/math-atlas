@@ -1222,6 +1222,36 @@ button.mp-fkp{cursor:pointer}
 .mp-mktb[aria-pressed="true"]{border-color:var(--accent,#0b6e78);background:color-mix(in srgb,var(--accent,#0b6e78) 12%,var(--mcard))}
 .mp-mktb.w{min-height:40px;justify-content:center}
 
+/* ---------- Clock and calendar (Toolbox) ---------- */
+.mp-cksv{touch-action:none;-webkit-user-select:none;user-select:none}
+.mp-cksv text{font:700 13px var(--body,inherit);fill:var(--mink);text-anchor:middle;pointer-events:none}
+.mp-ckrim{fill:var(--mcard);stroke:var(--mink);stroke-width:5}
+.mp-cktk{stroke:var(--at-ink3,#7b879c);stroke-width:1.2}.mp-cktk.h{stroke:var(--mink);stroke-width:2.5}
+.mp-cksv .mp-cknum{font-family:var(--display,inherit);font-weight:700}.mp-cksv .mp-cknum.s{fill:var(--ink2,#55627a)}
+.mp-ckhh{stroke:var(--mink);stroke-width:9;stroke-linecap:round}
+.mp-ckmh{stroke:var(--mp-hund,#2f62c4);stroke-width:6;stroke-linecap:round}
+.mp-cksh{stroke:var(--bad,#b4283f);stroke-width:2;stroke-linecap:round}
+.mp-ckpin{fill:var(--mink)}
+.mp-ckgrab{fill:transparent;cursor:grab}
+.mp-ckwedge{fill:color-mix(in srgb,var(--bad,#b4283f) 14%,transparent)}
+.mp-ckbox{fill:transparent;stroke:var(--mline);stroke-width:2}
+.mp-ckpick{cursor:pointer}.mp-ckpick.on .mp-ckbox{stroke:var(--accent,#0b6e78);stroke-width:3;fill:color-mix(in srgb,var(--accent,#0b6e78) 6%,transparent)}
+.mp-cksv .mp-cklab{font-size:15px}
+.mp-ckline{stroke:var(--mink);stroke-width:3;stroke-linecap:round}
+.mp-cktick{stroke:var(--mink);stroke-width:2}.mp-cktick.e{stroke-width:3}
+.mp-ckjump{fill:none;stroke:#e07a1a;stroke-width:3}.mp-ckjump.h{stroke:var(--mp-hund,#2f62c4)}
+.mp-cksv .mp-ckjl{fill:var(--mink);font-size:13px}.mp-cksv .mp-ckjt{fill:var(--ink2,#55627a);font-size:12px}
+.mp-cksv .mp-ckmon{font:800 20px var(--display,inherit)}
+.mp-cksv .mp-ckwd{fill:var(--ink2,#55627a);font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+.mp-ckday{cursor:pointer}.mp-ckday rect{fill:var(--mcard);stroke:var(--mline);stroke-width:1.5}
+.mp-cksv .mp-ckday text{text-anchor:start;font-size:14px}
+.mp-ckday.we rect{fill:color-mix(in srgb,var(--mline) 30%,var(--mcard))}
+.mp-ckday.btw rect{fill:color-mix(in srgb,var(--accent,#0b6e78) 14%,var(--mcard))}
+.mp-ckday.on rect{fill:var(--accent,#0b6e78);stroke:var(--accent,#0b6e78)}.mp-cksv .mp-ckday.on text{fill:#fff}
+.mp-ckday.today rect{stroke:var(--mink);stroke-width:2.5}
+.mp-ckday circle{fill:var(--bad,#b4283f)}.mp-ckday.on circle{fill:#fff}
+.mp-ckhol{font-size:.82rem}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

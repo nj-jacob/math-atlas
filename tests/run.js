@@ -885,6 +885,30 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox measuring kit: the page runs off the side of a phone screen');
   }
 
+  /* 3a17. Toolbox clock and calendar: 9:00 plus 30 minutes reads half past 9 (Grade 1), plus 15 minutes reads quarter past 9 (Grade 2
+     and up, 9:15 a.m. from Grade 3); the stopwatch counts seconds (Grade 2 and up); from 9:40 to 11:15 jumps 20 min + 1 h + 15 min
+     = 1 h 35 min (Grade 3 and up); on the calendar the 3rd to the 17th is 14 days = 2 weeks. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('clock'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/clock'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-ckt .mp-read').textContent.replace(/ /g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { const r = await read(); if (t instanceof RegExp ? t.test(r) : r.includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox clock: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const mode = m => page.click('.mp-ckdo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    if (g === 1) { await snap('t30'); await bad('half past 9', '9:00 and 30 minutes'); }
+    else { await snap('t5', 3); await bad('quarter past 9', '9:00 and 15 minutes'); }
+    if (g >= 3) await bad('9:15 a.m.', '9:00 and 15 minutes');
+    if (g >= 2) { await mode('sw'); await snap('sw'); await page.waitForTimeout(1300); await snap('sw'); await bad(/[1-9] seconds?/, 'the stopwatch after a second'); }
+    if (g >= 3) { await mode('el'); await bad('20 min + 1 h + 15 min = 1 h 35 min', 'from 9:40 to 11:15'); }
+    await mode('cal');
+    for (const d of [3, 17]) await page.click('.mp-ckday[data-d="' + d + '"] rect');
+    await bad('14 days = 2 weeks', 'the 3rd to the 17th');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox clock: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {

@@ -2,7 +2,7 @@
    then Grade 1's own pictures and controls for its chapters. */
 Atlas.setup({
   grade: 1,
-  tools: ['counters', 'base10', 'hundred', 'numberline', 'fractions', 'areagrid', 'balance', 'patterns', 'data', 'grid', 'solids', 'coins', 'geoboard', 'scale'],
+  tools: ['counters', 'base10', 'hundred', 'numberline', 'fractions', 'areagrid', 'balance', 'patterns', 'data', 'grid', 'solids', 'coins', 'geoboard', 'scale', 'clock'],
   meta: [
     { id: 'counting', title: 'Counting to 50', sub: 'read, count, skip count, estimate', strand: 'B', codes: 'B1.1, B1.4, B1.5',
       desc: 'Ten frames, the number chart, counting by 2s, 5s and 10s, and good guesses.' },

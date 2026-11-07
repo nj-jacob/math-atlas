@@ -3110,6 +3110,7 @@
   function dur(m) { var s = m < 0 ? '&minus;' : ''; m = Math.abs(m); var h = Math.floor(m / 60), r = m % 60; return s + (h ? h + ' h ' : '') + r + ' min'; }
   M.clock = function (root, o) {
     o = o || {};
+    if (o.tool) return toolClock(root, o);
     var T = base(root, 'clock'), start = o.t == null ? 540 : o.t, t = start, last = '';
     root.innerHTML = (o.controls === false ? '' : '<div class="mp-acts">' + abtn('-60', '&minus;1 hour') + abtn('-5', '&minus;5 min') + abtn('5', '+5 min') + abtn('60', '+1 hour') + abtn('reset', 'Start again') + '</div>') +
       '<div class="mp-clock"></div><div class="mp-read" aria-live="polite"></div>';
@@ -7062,6 +7063,296 @@
     return T;
   }
 
+  /* ================= Clock and calendar (Toolbox) =================
+     Show: Clock (every grade: drag the minute hand and the hour hand follows, or step the time; Grade 1 steps by half hours; Show
+     number adds the digital time and the time in words, with a.m. and p.m. from Grade 3; Run lets the second hand go), Stopwatch
+     (Grade 2 and up: time how long something takes in minutes and seconds), Elapsed (Grade 3 and up: a start and an end clock, and a
+     line that jumps to the next hour, then by hours, then by minutes) and Calendar (every grade: a month with its holidays and season;
+     tap two days to count the days and weeks between them). */
+  var CK_MON = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  var CK_DAY = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  function ckHolidays(y) {
+    /* holidays in Ontario: [month (0 to 11), day, name] */
+    function nth(m, wd, n) { var d = new Date(y, m, 1), first = (wd - d.getDay() + 7) % 7 + 1; return first + (n - 1) * 7; }
+    function easter() { var a = y % 19, b = Math.floor(y / 100), c = y % 100, d = Math.floor(b / 4), e = b % 4, f = Math.floor((b + 8) / 25), g = Math.floor((b - f + 1) / 3), h = (19 * a + b - d - g + 15) % 30, i = Math.floor(c / 4), k = c % 4, l = (32 + 2 * e + 2 * i - h - k) % 7, m = Math.floor((a + 11 * h + 22 * l) / 451); return new Date(y, Math.floor((h + l - 7 * m + 114) / 31) - 1, (h + l - 7 * m + 114) % 31 + 1); }
+    var gf = easter(); gf.setDate(gf.getDate() - 2);
+    var vic = 24; while (new Date(y, 4, vic).getDay() !== 1) vic--;
+    return [[0, 1, 'New Year’s Day'], [1, nth(1, 1, 3), 'Family Day'], [gf.getMonth(), gf.getDate(), 'Good Friday'], [4, vic, 'Victoria Day'], [6, 1, 'Canada Day'], [7, nth(7, 1, 1), 'Civic Holiday'],
+      [8, nth(8, 1, 1), 'Labour Day'], [8, 30, 'National Day for Truth and Reconciliation'], [9, nth(9, 1, 2), 'Thanksgiving'], [10, 11, 'Remembrance Day'], [11, 25, 'Christmas Day'], [11, 26, 'Boxing Day']];
+  }
+  function ckSeason(m, d) { var v = m * 100 + d; return v >= 1221 || v < 220 ? 'winter' : v < 521 ? 'spring' : v < 822 ? 'summer' : 'fall'; }
+  function toolClock(root, o) {
+    var T = base(root, 'clk');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-ckt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3;
+    var MODES = [['clock', 'Clock']].concat(g2 ? [['sw', 'Stopwatch']] : []).concat(g3 ? [['el', 'Elapsed']] : []).concat([['cal', 'Calendar']]);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-cktr"></div><div class="mp-dmain"><div class="mp-cmode mp-ckdo" role="group" aria-label="Show"><span>Show</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-cktr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the mode; Clock: the time in seconds after midnight; Elapsed: the start and end in minutes, and which one the buttons move;
+       Calendar: the year and month shown and the days tapped. The stopwatch and the running clock tick outside the undo history. */
+    var P, shown = false, hist = [], last = '', geo = {}, tick = null, sw = { ms: 0, on: false, from: 0 };
+    var now = new Date();
+    function fresh() { P = { mode: 'clock', t: 9 * 3600, run: false, el: { a: 9 * 60 + 40, b: 11 * 60 + 15, w: 'b' }, cal: { y: now.getFullYear(), m: now.getMonth(), a: null, b: null } }; }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function two(n) { return (n < 10 ? '0' : '') + n; }
+    function hm(min, ap) {
+      /* 9:40, or 9:40 a.m. */
+      var h = Math.floor(min / 60) % 24, m = min % 60, h12 = h % 12 || 12;
+      return h12 + ':' + two(m) + (ap ? (h < 12 ? ' a.m.' : ' p.m.') : '');
+    }
+    function words(min) {
+      var h = Math.floor(min / 60) % 12 || 12, n = h % 12 + 1, m = min % 60;
+      if (!m) return h + ' o’clock';
+      if (m === 15) return 'quarter past ' + h;
+      if (m === 30) return 'half past ' + h;
+      if (m === 45) return 'quarter to ' + n;
+      return m < 30 ? pl(m, 'minute', 'minutes') + ' after ' + h : pl(60 - m, 'minute', 'minutes') + ' to ' + n;
+    }
+    function dur(min) { var h = Math.floor(min / 60), m = min % 60; return (h ? h + ' h' : '') + (h && m ? ' ' : '') + (m || !h ? m + ' min' : ''); }
+
+    /* ======== Clock ======== */
+    function face(cx, cy, R, sec, cls, label) {
+      var s = '<g class="mp-ckface' + (cls ? ' ' + cls : '') + '"><circle class="mp-ckrim" cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>';
+      for (var i = 0; i < 60; i++) {
+        var b = (90 - i * 6) * Math.PI / 180, r1 = R * (i % 5 ? 0.92 : 0.86);
+        s += '<line class="mp-cktk' + (i % 5 ? '' : ' h') + '" x1="' + (cx + r1 * Math.cos(b)).toFixed(1) + '" y1="' + (cy - r1 * Math.sin(b)).toFixed(1) + '" x2="' + (cx + R * 0.97 * Math.cos(b)).toFixed(1) + '" y2="' + (cy - R * 0.97 * Math.sin(b)).toFixed(1) + '"/>';
+      }
+      for (i = 1; i <= 12; i++) { var a = (90 - i * 30) * Math.PI / 180; s += '<text class="mp-cknum" style="font-size:' + Math.max(12, R * 0.17).toFixed(0) + 'px" x="' + (cx + R * 0.7 * Math.cos(a)).toFixed(1) + '" y="' + (cy - R * 0.7 * Math.sin(a) + R * 0.06).toFixed(1) + '">' + i + '</text>'; }
+      var m = sec / 60 % 60, h = sec / 3600 % 12, am = (90 - m * 6) * Math.PI / 180, ah = (90 - h * 30) * Math.PI / 180, as = (90 - sec % 60 * 6) * Math.PI / 180;
+      s += '<line class="mp-ckhh" data-drag="' + (label ? '' : 'h') + '" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.5 * Math.cos(ah)).toFixed(1) + '" y2="' + (cy - R * 0.5 * Math.sin(ah)).toFixed(1) + '"/>';
+      s += '<line class="mp-ckmh" data-drag="' + (label ? '' : 'm') + '" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.8 * Math.cos(am)).toFixed(1) + '" y2="' + (cy - R * 0.8 * Math.sin(am)).toFixed(1) + '"/>';
+      if (!label && (P.run || g3)) s += '<line class="mp-cksh" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.86 * Math.cos(as)).toFixed(1) + '" y2="' + (cy - R * 0.86 * Math.sin(as)).toFixed(1) + '"/>';
+      s += '<circle class="mp-ckpin" cx="' + cx + '" cy="' + cy + '" r="' + Math.max(4, R * 0.04) + '"/>';
+      if (!label) s += '<circle class="mp-ckgrab" data-drag="m" cx="' + (cx + R * 0.8 * Math.cos(am)).toFixed(1) + '" cy="' + (cy - R * 0.8 * Math.sin(am)).toFixed(1) + '" r="16"/><circle class="mp-ckgrab" data-drag="h" cx="' + (cx + R * 0.5 * Math.cos(ah)).toFixed(1) + '" cy="' + (cy - R * 0.5 * Math.sin(ah)).toFixed(1) + '" r="16"/>';
+      return s + '</g>';
+    }
+    function drawClock(W, H) {
+      var Hh = Math.max(H, 240), R = Math.min(W / 2 - 16, Hh / 2 - 16, 230), cx = W / 2, cy = Hh / 2;
+      geo = { cx: cx, cy: cy };
+      return '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="A clock">' + face(cx, cy, R, P.t) + '</svg>';
+    }
+    function clockRead() {
+      var min = Math.floor(P.t / 60), s = P.t % 60;
+      var big = P.run ? hm(min).replace(/$/, ':' + two(s)) + (g3 ? (min < 720 ? ' a.m.' : ' p.m.') : '') : hm(min, g3);
+      return [big, 'It is <b>' + words(min) + '</b>' + (g3 && P.run ? ' and ' + pl(s, 'second', 'seconds') : '')];
+    }
+
+    /* ======== Stopwatch ======== */
+    function swNow() { return sw.on ? sw.ms + (Date.now() - sw.from) : sw.ms; }
+    function drawSw(W, H) {
+      var Hh = Math.max(H, 240), R = Math.min(W / 2 - 16, Hh / 2 - 16, 200), cx = W / 2, cy = Hh / 2, t = swNow() / 1000, a = (90 - (t % 60) * 6) * Math.PI / 180, s = '';
+      s += '<circle class="mp-ckrim" cx="' + cx + '" cy="' + cy + '" r="' + R + '"/>';
+      for (var i = 0; i < 60; i++) {
+        var b = (90 - i * 6) * Math.PI / 180, r1 = R * (i % 5 ? 0.92 : 0.84);
+        s += '<line class="mp-cktk' + (i % 5 ? '' : ' h') + '" x1="' + (cx + r1 * Math.cos(b)).toFixed(1) + '" y1="' + (cy - r1 * Math.sin(b)).toFixed(1) + '" x2="' + (cx + R * 0.97 * Math.cos(b)).toFixed(1) + '" y2="' + (cy - R * 0.97 * Math.sin(b)).toFixed(1) + '"/>';
+        if (i % 5 === 0) s += '<text class="mp-cknum s" style="font-size:' + Math.max(11, R * 0.11).toFixed(0) + 'px" x="' + (cx + R * 0.72 * Math.cos(b)).toFixed(1) + '" y="' + (cy - R * 0.72 * Math.sin(b) + R * 0.04).toFixed(1) + '">' + i + '</text>';
+      }
+      /* the seconds so far, as a shaded wedge */
+      var f = t % 60;
+      if (f > 0.05) s += '<path class="mp-ckwedge" d="M' + cx + ',' + cy + ' L' + cx + ',' + (cy - R * 0.8) + ' A' + R * 0.8 + ',' + R * 0.8 + ' 0 ' + (f > 30 ? 1 : 0) + ' 1 ' + (cx + R * 0.8 * Math.cos(a)).toFixed(1) + ',' + (cy - R * 0.8 * Math.sin(a)).toFixed(1) + 'Z"/>';
+      s += '<line class="mp-cksh" x1="' + cx + '" y1="' + cy + '" x2="' + (cx + R * 0.86 * Math.cos(a)).toFixed(1) + '" y2="' + (cy - R * 0.86 * Math.sin(a)).toFixed(1) + '"/><circle class="mp-ckpin" cx="' + cx + '" cy="' + cy + '" r="5"/>';
+      return '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="A stopwatch">' + s + '</svg>';
+    }
+    function swRead() {
+      var t = Math.floor(swNow() / 1000), m = Math.floor(t / 60), s = t % 60;
+      if (!t && !sw.on) return ['', ''];
+      return [m + ':' + two(s), (m ? pl(m, 'minute', 'minutes') + ' ' : '') + pl(s, 'second', 'seconds') + (m ? ' = <b>' + t + '</b> seconds' : '')];
+    }
+
+    /* ======== Elapsed ======== */
+    function drawEl(W, H) {
+      var E = P.el, Hh = Math.max(H, 280), R = Math.max(44, Math.min(W * 0.23 - 14, (Hh - 120) / 2, 130)), cy = R + 26;
+      var s = '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + Hh + '" viewBox="0 0 ' + W + ' ' + Hh + '" role="img" aria-label="Start and end clocks">';
+      [['a', W * 0.27, 'Start'], ['b', W * 0.73, 'End']].forEach(function (c) {
+        s += '<g class="mp-ckpick' + (E.w === c[0] ? ' on' : '') + '" data-pick="' + c[0] + '"><rect class="mp-ckbox" x="' + (c[1] - R - 10) + '" y="2" width="' + (2 * R + 20) + '" height="' + (2 * R + 46) + '" rx="16"/>' +
+          face(c[1], cy, R, E[c[0]] * 60, '', true) + '<text class="mp-cklab" x="' + c[1] + '" y="' + (2 * R + 42) + '">' + c[2] + (shown ? ': ' + hm(E[c[0]], g3) : '') + '</text></g>';
+      });
+      /* the open number line: to the next hour, whole hours, then the minutes left */
+      if (E.b > E.a) {
+        var J = jumps(), x0 = 24, x1 = W - 24, y = 2 * R + 100, tot = E.b - E.a, X = function (v) { return x0 + (v - E.a) / tot * (x1 - x0); };
+        s += '<line class="mp-ckline" x1="' + x0 + '" y1="' + y + '" x2="' + x1 + '" y2="' + y + '"/>';
+        var at = E.a;
+        J.forEach(function (j, i) {
+          var xa = X(at), xb = X(at + j), mid = (xa + xb) / 2, ht = Math.min(36, (xb - xa) / 2 + 8);
+          s += '<path class="mp-ckjump' + (j === 60 ? ' h' : '') + '" d="M' + xa.toFixed(1) + ',' + y + ' Q' + mid.toFixed(1) + ',' + (y - ht * 2) + ' ' + xb.toFixed(1) + ',' + y + '"/>';
+          if (shown) s += '<text class="mp-ckjl" x="' + mid.toFixed(1) + '" y="' + (y - ht - 6) + '">' + dur(j) + '</text>';
+          at += j;
+          if (i < J.length - 1) s += '<line class="mp-cktick" x1="' + xb.toFixed(1) + '" y1="' + (y - 7) + '" x2="' + xb.toFixed(1) + '" y2="' + (y + 7) + '"/>' + (shown && (xb - xa > 34 || i === 0) ? '<text class="mp-ckjt" x="' + xb.toFixed(1) + '" y="' + (y + 22) + '">' + hm(at) + '</text>' : '');
+        });
+        s += '<line class="mp-cktick e" x1="' + x0 + '" y1="' + (y - 9) + '" x2="' + x0 + '" y2="' + (y + 9) + '"/><line class="mp-cktick e" x1="' + x1 + '" y1="' + (y - 9) + '" x2="' + x1 + '" y2="' + (y + 9) + '"/>';
+      }
+      return s + '</svg>';
+    }
+    function jumps() {
+      var a = P.el.a, b = P.el.b, J = [], nx = Math.ceil(a / 60) * 60;
+      if (nx > a && nx <= b) { J.push(nx - a); a = nx; }
+      while (a + 60 <= b) { J.push(60); a += 60; }
+      if (b > a) J.push(b - a);
+      return J;
+    }
+    function elRead() {
+      var E = P.el;
+      if (E.b <= E.a) return ['', 'The end is not after the start. Move the end clock on'];
+      var J = jumps(), tot = E.b - E.a, parts = [], i = 0;
+      while (i < J.length) { if (J[i] === 60) { var n = 0; while (J[i] === 60) { n++; i++; } parts.push(n + ' h'); } else { parts.push(J[i] + ' min'); i++; } }
+      return [dur(tot), 'From ' + hm(E.a, g3) + ' to ' + hm(E.b, g3) + ': ' + (parts.length > 1 ? parts.join(' + ') + ' = ' : '') + '<b>' + dur(tot) + '</b>' + (tot >= 60 ? ' = ' + tot + ' min' : '')];
+    }
+
+    /* ======== Calendar ======== */
+    function drawCal(W, H) {
+      var C = P.cal, first = new Date(C.y, C.m, 1).getDay(), days = new Date(C.y, C.m + 1, 0).getDate(), rows = Math.ceil((first + days) / 7), Hh = Math.max(H, 260);
+      var cw = Math.min(84, (W - 16) / 7), ch = Math.min(64, (Hh - 70) / rows, cw * 0.9), x0 = (W - cw * 7) / 2, y0 = 52, hol = ckHolidays(C.y).filter(function (h) { return h[0] === C.m; });
+      var s = '<svg class="mp-dsvg mp-cksv" width="' + W + '" height="' + (y0 + rows * ch + 8) + '" viewBox="0 0 ' + W + ' ' + (y0 + rows * ch + 8) + '" role="img" aria-label="' + CK_MON[C.m] + ' ' + C.y + '">';
+      s += '<text class="mp-ckmon" x="' + W / 2 + '" y="22">' + CK_MON[C.m] + ' ' + C.y + '</text>';
+      CK_DAY.forEach(function (d, i) { s += '<text class="mp-ckwd" x="' + (x0 + (i + 0.5) * cw) + '" y="' + (y0 - 8) + '">' + (cw < 56 ? d.slice(0, 3) : d.slice(0, 3)) + '</text>'; });
+      var lo = C.a != null && C.b != null ? Math.min(C.a, C.b) : null, hi = lo != null ? Math.max(C.a, C.b) : null;
+      for (var d = 1; d <= days; d++) {
+        var k = first + d - 1, x = x0 + (k % 7) * cw, y = y0 + Math.floor(k / 7) * ch, isH = hol.some(function (h) { return h[1] === d; }), today = C.y === now.getFullYear() && C.m === now.getMonth() && d === now.getDate();
+        var cls = 'mp-ckday' + (k % 7 === 0 || k % 7 === 6 ? ' we' : '') + (lo != null && d > lo && d < hi ? ' btw' : '') + (d === C.a || d === C.b ? ' on' : '') + (isH ? ' hol' : '') + (today ? ' today' : '');
+        s += '<g class="' + cls + '" data-d="' + d + '"><rect x="' + (x + 2) + '" y="' + (y + 2) + '" width="' + (cw - 4) + '" height="' + (ch - 4) + '" rx="8"/><text x="' + (x + 10) + '" y="' + (y + 20) + '">' + d + '</text>' + (isH ? '<circle cx="' + (x + cw - 12) + '" cy="' + (y + ch - 12) + '" r="4"/>' : '') + '</g>';
+      }
+      return s + '</svg>';
+    }
+    function calTray() {
+      var C = P.cal, hol = ckHolidays(C.y).filter(function (h) { return h[0] === C.m; });
+      return '<small>' + CK_MON[C.m] + '</small><p class="mp-fknote">Season: <b>' + ckSeason(C.m, 15) + '</b></p>' + (hol.length ? hol.map(function (h) { return '<p class="mp-fknote mp-ckhol"><b>' + CK_MON[C.m].slice(0, 3) + ' ' + h[1] + '</b> ' + h[2] + '</p>'; }).join('') : '<p class="mp-fknote">No holidays this month.</p>');
+    }
+    function calRead() {
+      var C = P.cal;
+      if (C.a == null) return ['', ''];
+      var name = function (d) { return CK_DAY[new Date(C.y, C.m, d).getDay()] + ', ' + CK_MON[C.m] + ' ' + d; };
+      if (C.b == null) {
+        var h = ckHolidays(C.y).filter(function (q) { return q[0] === C.m && q[1] === C.a; })[0];
+        return [name(C.a), (h ? '<b>' + h[2] + '</b>. ' : '') + 'It is ' + ckSeason(C.m, C.a) + '. Tap another day to count the days between'];
+      }
+      var n = Math.abs(C.b - C.a), w = Math.floor(n / 7), r = n % 7;
+      return [pl(n, 'day', 'days'), 'From ' + CK_MON[C.m] + ' ' + Math.min(C.a, C.b) + ' to ' + CK_MON[C.m] + ' ' + Math.max(C.a, C.b) + ': <b>' + pl(n, 'day', 'days') + '</b>' + (w ? ' = <b>' + pl(w, 'week', 'weeks') + (r ? ' ' + pl(r, 'day', 'days') : '') + '</b>' : '')];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'clock') return '<small>Clock</small><p class="mp-fknote">Drag the long hand. The short hand follows.</p>';
+      if (m === 'sw') return '<small>Stopwatch</small><p class="mp-fknote">Start it, do something, then stop it. How long did it take?</p>';
+      if (m === 'el') return '<small>Elapsed</small><p class="mp-fknote">Tap the start or end clock, then move its time.</p>';
+      return calTray();
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'clock' ? clockRead() : m === 'sw' ? swRead() : m === 'el' ? elRead() : calRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function steps() { return g2 ? [[-60, '−1 h'], [-5, '−5 min'], [-1, '−1 min'], [1, '+1 min'], [5, '+5 min'], [60, '+1 h']] : [[-60, '−1 h'], [-30, '−30 min'], [30, '+30 min'], [60, '+1 h']]; }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'clock' || m === 'el') h += steps().map(function (s) { return btn('t' + s[0], s[1]); }).join('');
+      if (m === 'clock') h += btn('run', 'Run', P.run);
+      if (m === 'sw') h += btn('sw', sw.on ? 'Stop' : 'Start') + btn('swr', 'Reset', null, sw.on || !sw.ms);
+      if (m === 'cal') h += btn('prev', 'Last month') + btn('next', 'Next month') + btn('cclear', 'Clear', null, P.cal.a == null);
+      snapsEl.innerHTML = h;
+    }
+    function paintMode(W, H) { var m = P.mode; return m === 'clock' ? drawClock(W, H) : m === 'sw' ? drawSw(W, H) : m === 'el' ? drawEl(W, H) : drawCal(W, H); }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-ckdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      snaps();
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(220, sz[1] - 70);
+      win.innerHTML = paintMode(W, H);
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) win.innerHTML = paintMode(W, Math.max(200, H - over - 4));
+      ticking();
+    }
+    /* the running clock and the stopwatch redraw once a second (or ten times a second for the stopwatch); stop when the tool is gone */
+    function ticking() {
+      var want = P.mode === 'clock' && P.run || P.mode === 'sw' && sw.on;
+      if (want && !tick) tick = setInterval(function () {
+        if (!root.isConnected) { clearInterval(tick); tick = null; sw.on = false; return; }
+        if (P.mode === 'clock' && P.run) P.t = (P.t + 1) % 86400;
+        draw();
+      }, P.mode === 'sw' ? 100 : 1000);
+      if (!want && tick) { clearInterval(tick); tick = null; }
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, t: P.t, last: last }; }
+    function stopTick() { if (tick) { clearInterval(tick); tick = null; } }
+    qs('.mp-ckdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) { stopTick(); act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); } });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      if (a === 'sw') { if (sw.on) { sw.ms += Date.now() - sw.from; sw.on = false; } else { sw.from = Date.now(); sw.on = true; } stopTick(); last = 'stopwatch'; draw(); change(); return; }
+      if (a === 'swr') { sw = { ms: 0, on: false, from: 0 }; draw(); change(); return; }
+      stopTick();
+      act(function () {
+        if (a.charAt(0) === 't' && a !== 'run') {
+          var d = +a.slice(1);
+          if (P.mode === 'clock') P.t = ((Math.floor(P.t / 60) + d) * 60 % 86400 + 86400) % 86400;
+          else { var k = P.el.w; P.el[k] = clamp(P.el[k] + d, 0, 1439); }
+        }
+        if (a === 'run') P.run = !P.run;
+        if (a === 'prev' || a === 'next') { var mm = P.cal.m + (a === 'next' ? 1 : -1); P.cal = { y: P.cal.y + Math.floor(mm / 12), m: (mm + 12) % 12, a: null, b: null }; }
+        if (a === 'cclear') { P.cal.a = null; P.cal.b = null; }
+        last = a;
+      });
+    });
+    /* drag a hand; tap a clock in Elapsed or a day on the calendar */
+    var drag = null;
+    function svgPt(e) { var sv = qs('.mp-cksv', win), b = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal; return [(e.clientX - b.left) * vb.width / b.width, (e.clientY - b.top) * vb.height / b.height]; }
+    win.addEventListener('pointerdown', function (e) {
+      var pk = e.target.closest('[data-pick]');
+      if (pk) { var w = pk.getAttribute('data-pick'); act(function () { P.el.w = w; last = 'pick'; }); return; }
+      var dy = e.target.closest('[data-d]');
+      if (dy) {
+        var d = +dy.getAttribute('data-d');
+        act(function () { var C = P.cal; if (C.a == null || C.b != null) { C.a = d; C.b = null; } else if (d !== C.a) C.b = d; last = 'day'; });
+        return;
+      }
+      var hd = e.target.closest('[data-drag]'), k = hd && hd.getAttribute('data-drag');
+      if (!k) return;
+      e.preventDefault();
+      if (P.run) P.run = false;
+      drag = { k: k, before: snapshot() };
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var p = svgPt(e), ang = (90 - Math.atan2(geo.cy - p[1], p[0] - geo.cx) * 180 / Math.PI + 360) % 360, min = Math.floor(P.t / 60), h = Math.floor(min / 60), m = min % 60, nt;
+      if (drag.k === 'm') {
+        var snapM = g3 ? 1 : g2 ? 5 : 30, nm = Math.round(ang / 6 / snapM) * snapM % 60;
+        if (m > 45 && nm < 15) h++; else if (m < 15 && nm > 45) h--;
+        nt = ((h * 60 + nm) % 1440 + 1440) % 1440;
+      } else {
+        /* the hour hand: keep the minutes, and stay in the same half of the day */
+        var nh = Math.floor(ang / 30) % 12, half = h >= 12 ? 12 : 0;
+        nt = (half + nh) * 60 + m;
+      }
+      if (nt * 60 !== P.t) { P.t = nt * 60; draw(); }
+    });
+    function endDrag() {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (snapshot() !== d.before) { hist.push(d.before); if (hist.length > 60) hist.shift(); last = 'hand'; change(); }
+    }
+    win.addEventListener('pointerup', endDrag);
+    win.addEventListener('pointercancel', endDrag);
+    T.undo = function () { if (!hist.length) return; stopTick(); P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { stopTick(); fresh(); sw = { ms: 0, on: false, from: 0 }; hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -7094,7 +7385,7 @@
       '<path d="M24 6L40 15V33L24 42L8 33V15Z" style="fill:var(--mp-hund,#2f62c4)"/><path d="M24 6L40 15L24 24L8 15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 60%,#fff)"/><path d="M24 24V42L8 33V15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 75%,#000)"/>'],
     ['geoboard', 'space', 'Shape kit', '', { tool: true },
       '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
-    ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
+    ['clock', 'meas', 'Clock and calendar', '', { tool: true },
       '<circle cx="24" cy="24" r="17" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:2.5"/><path d="M24 24V12" style="stroke:var(--mp-hund,#2f62c4);stroke-width:2.5"/><path d="M24 24h8" style="stroke:var(--ink,#132039);stroke-width:3"/>'],
     ['scale', 'meas', 'Measuring kit', '', { tool: true },
       '<rect x="4" y="16" width="40" height="16" rx="3" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><path d="M10 16v7M16 16v4M22 16v7M28 16v4M34 16v7M40 16v4" style="stroke:var(--ink2,#55627a);stroke-width:1.5"/>'],
