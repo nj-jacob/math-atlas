@@ -1149,6 +1149,28 @@ button.mp-fkp{cursor:pointer}
 .mp-artop{font:800 16px var(--display,inherit);fill:var(--mink)}
 .mp-arpt{font:800 17px var(--display,inherit);fill:#fff;paint-order:stroke;stroke:rgba(19,32,57,.35);stroke-width:3px}
 .mp-art .mp-arpt.rem{fill:var(--mink);stroke:none}
+/* ---------- Shape kit (Toolbox): pattern blocks and geoboard ---------- */
+.mp-sht{--shhex:#e0a100;--shtrap:#c8323c;--shrhom:#2f62c4;--shtri:#2f9e44;--shsq:#e07a1a;--shtan:#d9b98a;--shband:#c02e76}
+.mp-shsv{touch-action:none;-webkit-user-select:none;user-select:none}
+.mp-shb{stroke:color-mix(in srgb,var(--mink) 70%,transparent);stroke-width:1.5;stroke-linejoin:round;cursor:grab}
+.mp-shb.khex{fill:var(--shhex)}.mp-shb.ktrap{fill:var(--shtrap)}.mp-shb.krhom{fill:var(--shrhom)}.mp-shb.ktri{fill:var(--shtri)}.mp-shb.ksq{fill:var(--shsq)}.mp-shb.ktan{fill:var(--shtan)}
+.mp-shb.sel{stroke:var(--mink);stroke-width:3.5}
+.mp-shb.ghost{fill-opacity:.28;stroke-dasharray:5 4;pointer-events:none}
+.mp-shmir{stroke:var(--ink2,#55627a);stroke-width:2;stroke-dasharray:8 6}
+.mp-shbd{fill:color-mix(in srgb,var(--mline) 25%,var(--mcard));stroke:var(--mline);stroke-width:1.5}
+.mp-shpeg{fill:var(--ink2,#55627a);pointer-events:none}
+.mp-shpeg.on{fill:var(--shband)}
+.mp-shpeg.first{fill:var(--mcard);stroke:var(--shband);stroke-width:3}
+.mp-shhit{fill:transparent;cursor:pointer}
+.mp-shband{fill:color-mix(in srgb,var(--shband) 18%,transparent);stroke:var(--shband);stroke-width:4;stroke-linejoin:round;pointer-events:none}
+.mp-shband.open{fill:none}
+.mp-shdiag{fill:none;stroke:var(--mp-hund,#2f62c4);stroke-width:2.5;stroke-dasharray:7 5;pointer-events:none}
+.mp-shsq{fill:color-mix(in srgb,var(--mp-ones,#e0a100) 25%,transparent);stroke:var(--mp-ones,#e0a100);stroke-width:2;pointer-events:none}
+.mp-shra{fill:none;stroke:var(--mink);stroke-width:2;pointer-events:none}
+.mp-shtb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:12px;border:1px solid var(--mline);background:var(--mcard);color:var(--mink);font:700 .78rem var(--body,inherit);cursor:pointer}
+.mp-shtb{line-height:1.15}
+.mp-shtb span{font-size:.74rem}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

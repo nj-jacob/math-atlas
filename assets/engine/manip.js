@@ -2979,6 +2979,7 @@
      Reports sides, perimeter in units (straight sides) and area in squares. */
   M.geoboard = function (root, o) {
     o = o || {};
+    if (o.tool) return toolShape(root, o);
     var T = base(root, 'geo'), N = o.size || 5, pts = [], closed = false, G = 60, P = 30;
     root.innerHTML = '<div class="mp-acts"><button type="button" class="mp-act" data-a="undo">Undo</button><button type="button" class="mp-act" data-a="clear">Clear</button></div><div class="mp-gbox"></div><div class="mp-read" aria-live="polite"></div>';
     var box = qs('.mp-gbox', root), read = qs('.mp-read', root);
@@ -6312,6 +6313,334 @@
     return T;
   }
 
+  /* ================= Shape kit (Toolbox) =================
+     Make: Blocks (every grade: pattern blocks to put together, turn and flip, with a mirror line for matching halves; Show number counts
+     them and, from Grade 2, gives the area in green triangles) and Geoboard (every grade: tap pegs to stretch a band into a shape, drag a
+     corner to change it; the readout names the shape and gives its sides, and from Grade 3 its perimeter and area, from Grade 4 its angles
+     and parallel sides, from Grade 5 the triangle type and angles in degrees, from Grade 6 the quadrilateral and its diagonals, and in
+     Grade 8 the squares on the sides of a right triangle). */
+  var SH = Math.sqrt(3) / 2;
+  var PB = {
+    hex: ['hexagon', 6, [[0, 0], [1, 0], [1.5, SH], [1, 2 * SH], [0, 2 * SH], [-0.5, SH]]],
+    trap: ['trapezoid', 3, [[0, 0], [2, 0], [1.5, SH], [0.5, SH]]],
+    rhom: ['blue rhombus', 2, [[0, 0], [1, 0], [1.5, SH], [0.5, SH]]],
+    tri: ['triangle', 1, [[0, 0], [1, 0], [0.5, SH]]],
+    sq: ['square', 0, [[0, 0], [1, 0], [1, 1], [0, 1]]],
+    tan: ['tan rhombus', 0, [[0, 0], [1, 0], [1 + SH, 0.5], [SH, 0.5]]]
+  };
+  var PB_ORDER = ['hex', 'trap', 'rhom', 'tri', 'sq', 'tan'];
+  function toolShape(root, o) {
+    var T = base(root, 'shp');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-sht');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g8 = !gr || gr >= 8;
+    var MODES = [['blocks', 'Blocks'], ['geo', 'Geoboard']], NP = g3 ? 9 : 7;
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-shtr"></div><div class="mp-dmain"><div class="mp-cmode mp-shdo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-shtr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Blocks: each block (kind, middle x and y in block sides, turn in degrees, flipped), the one picked, the mirror;
+       Geoboard: the corners (pegs), closed or not, diagonals and squares on the sides */
+    var P, shown = false, hist = [], last = '', u = 50, view = [10, 7];
+    function fresh() { P = { mode: 'blocks', b: [], sel: -1, mirror: false, g: { pts: [], closed: false, diag: false, sq: false } }; }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function r1(v) { return fmt(Math.round(v * 10) / 10); }
+
+    /* ======== Blocks ======== */
+    function shapeOf(b) {
+      /* the block's corners on the mat (in block sides), turned about its middle and flipped */
+      var base0 = PB[b.k][2], cx = 0, cy = 0;
+      base0.forEach(function (p) { cx += p[0] / base0.length; cy += p[1] / base0.length; });
+      var a = b.a * Math.PI / 180, c = Math.cos(a), s = Math.sin(a);
+      return base0.map(function (p) { var x = p[0] - cx, y = cy - p[1]; if (b.f) x = -x; return [b.x + x * c - y * s, b.y + x * s + y * c]; });
+    }
+    function poly(q, cls, extra) { return '<polygon class="' + cls + '" points="' + q.map(function (p) { return (p[0] * u).toFixed(1) + ',' + (p[1] * u).toFixed(1); }).join(' ') + '"' + (extra || '') + '/>'; }
+    function drawBlocks(W, H) {
+      u = Math.max(34, Math.min(64, Math.floor(Math.min(W / 9, H / 6.5))));
+      view = [W / u, H / u];
+      var s = '<svg class="mp-dsvg mp-shsv" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="Pattern blocks">';
+      var mx = view[0] / 2;
+      if (P.mirror) s += '<line class="mp-shmir" x1="' + (mx * u) + '" x2="' + (mx * u) + '" y1="4" y2="' + (H - 4) + '"/>';
+      P.b.forEach(function (b, i) {
+        var q = shapeOf(b);
+        s += poly(q, 'mp-shb k' + b.k + (P.sel === i ? ' sel' : ''), ' data-i="' + i + '"');
+        if (P.mirror) s += poly(q.map(function (p) { return [2 * mx - p[0], p[1]]; }), 'mp-shb k' + b.k + ' ghost');
+      });
+      return s + '</svg>';
+    }
+    function snapBlock(i) {
+      /* if a corner lands close to a corner of another block, slide it the rest of the way */
+      var q = shapeOf(P.b[i]), best = null;
+      P.b.forEach(function (b, j) {
+        if (j === i) return;
+        shapeOf(b).forEach(function (p) { q.forEach(function (r) { var d = Math.hypot(p[0] - r[0], p[1] - r[1]); if (d < 0.28 && (!best || d < best[0])) best = [d, p[0] - r[0], p[1] - r[1]]; }); });
+      });
+      if (best) { P.b[i].x += best[1]; P.b[i].y += best[2]; }
+    }
+    function blocksRead() {
+      var L = P.b, n = L.length;
+      if (!n) return ['', ''];
+      var by = {};
+      L.forEach(function (b) { by[b.k] = (by[b.k] || 0) + 1; });
+      var list = PB_ORDER.filter(function (k) { return by[k]; }).map(function (k) { return '<b>' + by[k] + '</b> ' + PB[k][0] + (by[k] > 1 ? (k === 'rhom' || k === 'tan' ? 'es' : 's') : ''); }).join(', ');
+      var big = pl(n, 'block', 'blocks'), eq = list;
+      if (g2) {
+        var tri = 0, other = 0;
+        L.forEach(function (b) { if (PB[b.k][1]) tri += PB[b.k][1]; else other++; });
+        if (tri) eq += '. They cover the same as <b>' + tri + '</b> green triangle' + (tri === 1 ? '' : 's') + (other ? ' (not counting squares and tan rhombuses)' : '');
+      }
+      return [big, eq];
+    }
+
+    /* ======== Geoboard ======== */
+    function sides(Q) { return Q.map(function (p, i) { var q = Q[(i + 1) % Q.length]; return [q[0] - p[0], q[1] - p[1]]; }); }
+    function len(v) { return Math.hypot(v[0], v[1]); }
+    function areaOf(Q) { var s = 0; Q.forEach(function (p, i) { var q = Q[(i + 1) % Q.length]; s += p[0] * q[1] - q[0] * p[1]; }); return s / 2; }
+    function interior(Q) {
+      /* the inside angle at each corner, in degrees (more than 180 at a corner that points in) */
+      var sg = areaOf(Q) > 0 ? 1 : -1;
+      return Q.map(function (p, i) {
+        var a = Q[(i + Q.length - 1) % Q.length], b = Q[(i + 1) % Q.length], v1 = [a[0] - p[0], a[1] - p[1]], v2 = [b[0] - p[0], b[1] - p[1]];
+        var t = Math.atan2(v1[0] * v2[1] - v1[1] * v2[0], v1[0] * v2[0] + v1[1] * v2[1]) * 180 / Math.PI * sg;
+        if (t < 0) t += 360;
+        return 360 - t;
+      });
+    }
+    function par(v, w) { return Math.abs(v[0] * w[1] - v[1] * w[0]) < 1e-9; }
+    function simple(Q) {
+      /* no two sides cross */
+      function cross(a, b, c, d) {
+        function o(p, q, r) { var v = (q[0] - p[0]) * (r[1] - p[1]) - (q[1] - p[1]) * (r[0] - p[0]); return v > 0 ? 1 : v < 0 ? -1 : 0; }
+        return o(a, b, c) * o(a, b, d) < 0 && o(c, d, a) * o(c, d, b) < 0;
+      }
+      for (var i = 0; i < Q.length; i++) for (var j = i + 2; j < Q.length; j++) {
+        if (i === 0 && j === Q.length - 1) continue;
+        if (cross(Q[i], Q[(i + 1) % Q.length], Q[j], Q[(j + 1) % Q.length])) return false;
+      }
+      return true;
+    }
+    function nameOf(Q) {
+      var n = Q.length, S = sides(Q), L = S.map(len), A = interior(Q), right = A.filter(function (a) { return Math.abs(a - 90) < 0.01; }).length;
+      var names = { 3: 'triangle', 4: 'quadrilateral', 5: 'pentagon', 6: 'hexagon', 7: 'heptagon', 8: 'octagon' }, nm = names[n] || n + '-sided shape';
+      function eq(a, b) { return Math.abs(a - b) < 1e-9; }
+      if (n === 3 && g5) {
+        var e = (eq(L[0], L[1]) ? 1 : 0) + (eq(L[1], L[2]) ? 1 : 0) + (eq(L[0], L[2]) ? 1 : 0), big = Math.max.apply(null, A);
+        nm = (e === 3 ? 'equilateral' : e ? 'isosceles' : 'scalene') + ' ' + (Math.abs(big - 90) < 0.01 ? 'right' : big > 90 ? 'obtuse' : 'acute') + ' triangle';
+      }
+      if (n === 4 && (right === 4 || g4)) {
+        var p1 = par(S[0], S[2]), p2 = par(S[1], S[3]), all = eq(L[0], L[1]) && eq(L[1], L[2]) && eq(L[2], L[3]);
+        if (right === 4) nm = all ? 'square' : 'rectangle';
+        else if (g6) nm = all ? 'rhombus' : p1 && p2 ? 'parallelogram' : p1 || p2 ? 'trapezoid' : (eq(L[0], L[1]) && eq(L[2], L[3])) || (eq(L[1], L[2]) && eq(L[3], L[0])) ? 'kite' : 'quadrilateral';
+      }
+      return nm;
+    }
+    function geoRead() {
+      var G = P.g, Q = G.pts;
+      if (!G.closed) return [Q.length ? pl(Q.length, 'corner', 'corners') : '', Q.length ? 'Tap the first peg again to close the shape.' : ''];
+      if (!simple(Q)) return ['the band crosses itself', 'Drag a corner so no sides cross.'];
+      var S = sides(Q), L = S.map(len), A = interior(Q), ar = Math.abs(areaOf(Q)), straight = S.every(function (v) { return !v[0] || !v[1]; });
+      var big = nameOf(Q), eq = '<b>' + Q.length + '</b> sides, <b>' + Q.length + '</b> corners';
+      if (g3) {
+        var per = L.reduce(function (s, v) { return s + v; }, 0);
+        eq += '. Perimeter ' + (straight ? '<b>' + r1(per) + '</b>' : 'about <b>' + r1(per) + '</b>') + ' units, area <b>' + r1(ar) + '</b> square' + (ar === 1 ? '' : 's');
+      }
+      if (g4) {
+        var rt = A.filter(function (a) { return Math.abs(a - 90) < 0.01; }).length, ac = A.filter(function (a) { return a < 89.99; }).length, ob = A.filter(function (a) { return a > 90.01 && a < 179.99; }).length, rf = A.filter(function (a) { return a > 180.01; }).length;
+        var pp = 0; S.forEach(function (v, i) { for (var j = i + 1; j < S.length; j++) if (par(v, S[j])) pp++; });
+        eq += '. Angles: ' + [rt ? rt + ' right' : '', ac ? ac + ' acute' : '', ob ? ob + ' obtuse' : '', rf ? rf + ' reflex' : ''].filter(Boolean).join(', ') + (pp ? '. ' + pl(pp, 'pair', 'pairs') + ' of parallel sides' : '');
+      }
+      if (g5) eq += '. ' + A.map(function (a) { return Math.round(a) + '°'; }).join(' + ') + ' = ' + Math.round(A.reduce(function (s, v) { return s + v; }, 0)) + '°';
+      if (g6 && G.diag && Q.length === 4) {
+        var d1 = [Q[2][0] - Q[0][0], Q[2][1] - Q[0][1]], d2 = [Q[3][0] - Q[1][0], Q[3][1] - Q[1][1]], m1 = [(Q[0][0] + Q[2][0]) / 2, (Q[0][1] + Q[2][1]) / 2], m2 = [(Q[1][0] + Q[3][0]) / 2, (Q[1][1] + Q[3][1]) / 2];
+        var f = [];
+        if (Math.abs(len(d1) - len(d2)) < 1e-9) f.push('the same length');
+        if (Math.abs(d1[0] * d2[0] + d1[1] * d2[1]) < 1e-9) f.push('cross at right angles');
+        if (Math.abs(m1[0] - m2[0]) < 1e-9 && Math.abs(m1[1] - m2[1]) < 1e-9) f.push('cut each other in half');
+        eq += '. Diagonals: ' + (f.length ? f.join(', ') : 'none of these: same length, right angles, cut in half');
+      }
+      if (g8 && G.sq) { var pt = pyth(Q); if (pt) eq += '. ' + pt; }
+      return [big, eq];
+    }
+    function pyth(Q) {
+      if (Q.length !== 3) return '';
+      var S = sides(Q), A = interior(Q), k = -1;
+      A.forEach(function (a, i) { if (Math.abs(a - 90) < 0.01) k = i; });
+      if (k < 0) return 'Not a right triangle, so a² + b² is not c²';
+      /* the two sides that meet at the right angle, and the one across from it */
+      var a2 = Math.round(Math.pow(len(S[(k + 2) % 3]), 2)), b2 = Math.round(Math.pow(len(S[k]), 2)), c2 = Math.round(Math.pow(len(S[(k + 1) % 3]), 2));
+      return 'a² + b² = c²: <b>' + a2 + ' + ' + b2 + ' = ' + c2 + '</b>';
+    }
+    function drawGeo(W, H) {
+      var G = P.g, Q = G.pts, sqs = [];
+      if (G.closed && G.sq && g8 && Q.length === 3) {
+        /* the square on each side, drawn outward; the board shrinks so they fit */
+        var sg = areaOf(Q) > 0 ? 1 : -1;
+        Q.forEach(function (p, i) {
+          var q = Q[(i + 1) % 3], v = [q[0] - p[0], q[1] - p[1]], nrm = [v[1] * sg, -v[0] * sg];
+          sqs.push([p, q, [q[0] + nrm[0], q[1] + nrm[1]], [p[0] + nrm[0], p[1] + nrm[1]]]);
+        });
+      }
+      var lo = [0, 0], hi = [NP - 1, NP - 1];
+      sqs.forEach(function (c) { c.forEach(function (r) { lo = [Math.min(lo[0], r[0]), Math.min(lo[1], r[1])]; hi = [Math.max(hi[0], r[0]), Math.max(hi[1], r[1])]; }); });
+      var span = Math.max(hi[0] - lo[0], hi[1] - lo[1]), g = Math.max(sqs.length ? 18 : 32, Math.min(64, Math.min((W - 30) / span, (H - 30) / span))), S = span * g + 40;
+      var X = function (v) { return 20 + (v - lo[0]) * g + ((span - (hi[0] - lo[0])) * g) / 2; }, Y = function (v) { return 20 + (v - lo[1]) * g + ((span - (hi[1] - lo[1])) * g) / 2; };
+      var s = '<svg class="mp-dsvg mp-shsv mp-shgeo" width="' + S.toFixed(0) + '" height="' + S.toFixed(0) + '" viewBox="0 0 ' + S.toFixed(1) + ' ' + S.toFixed(1) + '" role="img" aria-label="Geoboard">';
+      s += '<rect class="mp-shbd" x="' + (X(0) - 16).toFixed(1) + '" y="' + (Y(0) - 16).toFixed(1) + '" width="' + ((NP - 1) * g + 32).toFixed(1) + '" height="' + ((NP - 1) * g + 32).toFixed(1) + '" rx="14"/>';
+      function pt(r) { return X(r[0]).toFixed(1) + ',' + Y(r[1]).toFixed(1); }
+      if (Q.length) {
+        var pts = Q.map(pt).join(' ');
+        sqs.forEach(function (c) { s += '<polygon class="mp-shsq" points="' + c.map(pt).join(' ') + '"/>'; });
+        s += G.closed ? '<polygon class="mp-shband" points="' + pts + '"/>' : '<polyline class="mp-shband open" points="' + pts + '"/>';
+        if (G.closed && G.diag && g6 && Q.length === 4) s += '<polyline class="mp-shdiag" points="' + pt(Q[0]) + ' ' + pt(Q[2]) + '"/><polyline class="mp-shdiag" points="' + pt(Q[1]) + ' ' + pt(Q[3]) + '"/>';
+        if (G.closed && g4 && shown && simple(Q)) {
+          /* a small square marks each right angle */
+          var A = interior(Q);
+          Q.forEach(function (p, i) {
+            if (Math.abs(A[i] - 90) > 0.01) return;
+            var a = Q[(i + Q.length - 1) % Q.length], b = Q[(i + 1) % Q.length], v1 = [a[0] - p[0], a[1] - p[1]], v2 = [b[0] - p[0], b[1] - p[1]], k1 = 0.3 / len(v1), k2 = 0.3 / len(v2);
+            var c1 = [p[0] + v1[0] * k1, p[1] + v1[1] * k1], c3 = [p[0] + v2[0] * k2, p[1] + v2[1] * k2], c2 = [c1[0] + v2[0] * k2, c1[1] + v2[1] * k2];
+            s += '<polyline class="mp-shra" points="' + [c1, c2, c3].map(pt).join(' ') + '"/>';
+          });
+        }
+      }
+      for (var y = 0; y < NP; y++) for (var x = 0; x < NP; x++) {
+        var on = Q.some(function (p) { return p[0] === x && p[1] === y; }), first = Q.length && Q[0][0] === x && Q[0][1] === y && !G.closed;
+        s += '<circle class="mp-shpeg' + (on ? ' on' : '') + (first ? ' first' : '') + '" cx="' + X(x).toFixed(1) + '" cy="' + Y(y).toFixed(1) + '" r="' + (on ? 7 : 4.5) + '"/><circle class="mp-shhit" data-peg="' + x + ',' + y + '" cx="' + X(x).toFixed(1) + '" cy="' + Y(y).toFixed(1) + '" r="' + Math.min(18, g / 2).toFixed(1) + '"/>';
+      }
+      return '<div class="mp-s3w">' + s + '</svg></div>';
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function blockIcon(k) {
+      var q = PB[k][2], xs = q.map(function (p) { return p[0]; }), ys = q.map(function (p) { return p[1]; }), mnx = Math.min.apply(null, xs), mny = Math.min.apply(null, ys), w = Math.max.apply(null, xs) - mnx, h = Math.max.apply(null, ys) - mny, sc = 30 / Math.max(w, h, 1);
+      return '<svg width="48" height="40" viewBox="-5 -3 40 34" aria-hidden="true"><polygon class="mp-shb k' + k + '" points="' + q.map(function (p) { return ((p[0] - mnx) * sc).toFixed(1) + ',' + ((h - (p[1] - mny)) * sc).toFixed(1); }).join(' ') + '"/></svg>';
+    }
+    function trayHtml() {
+      if (P.mode === 'blocks') return '<small>Blocks</small>' + PB_ORDER.map(function (k) { return '<button type="button" class="mp-shtb" data-k="' + k + '" aria-label="Add a ' + PB[k][0] + '">' + blockIcon(k) + '<span>' + PB[k][0] + '</span></button>'; }).join('');
+      return '<small>Geoboard</small><p class="mp-fknote">Tap pegs to stretch the band. Tap the first peg to close it. Drag a corner to move it.</p>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var r = P.mode === 'blocks' ? blocksRead() : geoRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var h = '';
+      if (P.mode === 'blocks') h += btn('turn', 'Turn', null, P.sel < 0) + btn('flip', 'Flip', null, P.sel < 0) + btn('del', 'Take off', null, P.sel < 0) + btn('mirror', 'Mirror', P.mirror) + btn('bclear', 'Clear', null, !P.b.length);
+      else h += (g6 ? btn('diag', 'Diagonals', P.g.diag, !P.g.closed || P.g.pts.length !== 4) : '') + (g8 ? btn('sq', 'Squares on sides', P.g.sq, !P.g.closed || P.g.pts.length !== 3) : '') + btn('gclear', 'Clear', null, !P.g.pts.length);
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      snaps();
+      qsa('.mp-shdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(240, sz[1] - 70);
+      var paint = function (h) { win.innerHTML = P.mode === 'blocks' ? drawBlocks(W, h) : drawGeo(W, h); };
+      paint(H);
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) paint(Math.max(200, H - over - 4));
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, blocks: P.b.length, corners: P.g.pts.length, closed: P.g.closed, last: last }; }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-k]'); if (!b) return;
+      act(function () {
+        var n = P.b.length, k = b.getAttribute('data-k');
+        if (n >= 60) { announce(T, 'The mat holds up to 60 blocks.'); return; }
+        /* new blocks go in a loose row near the top left, so they do not land on top of each other */
+        P.b.push({ k: k, x: 1.4 + (n % 6) * 1.3, y: 1.2 + Math.floor(n / 6) % 4 * 1.3, a: 0, f: false });
+        P.sel = P.b.length - 1; last = 'add';
+      });
+    });
+    qs('.mp-shdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      act(function () {
+        var B = P.b[P.sel];
+        if (a === 'turn' && B) { B.a = (B.a + 30) % 360; snapBlock(P.sel); }
+        if (a === 'flip' && B) B.f = !B.f;
+        if (a === 'del' && B) { P.b.splice(P.sel, 1); P.sel = -1; }
+        if (a === 'mirror') P.mirror = !P.mirror;
+        if (a === 'bclear') { P.b = []; P.sel = -1; }
+        if (a === 'diag') P.g.diag = !P.g.diag;
+        if (a === 'sq') P.g.sq = !P.g.sq;
+        if (a === 'gclear') P.g = { pts: [], closed: false, diag: P.g.diag, sq: P.g.sq };
+        last = a;
+      });
+    });
+    /* drag a block, or a corner of the band; a tap without a drag picks a block or adds a corner */
+    var drag = null;
+    function svgPt(e) { var sv = qs('.mp-shsv', win), b = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal; return [(e.clientX - b.left) * vb.width / b.width, (e.clientY - b.top) * vb.height / b.height]; }
+    win.addEventListener('pointerdown', function (e) {
+      var sv = e.target.closest('.mp-shsv'); if (!sv) return;
+      e.preventDefault();
+      var p = svgPt(e);
+      if (P.mode === 'blocks') {
+        var bi = e.target.getAttribute('data-i');
+        drag = { kind: 'b', i: bi == null ? -1 : +bi, p: p, moved: false, before: snapshot() };
+        if (bi != null) drag.o = [P.b[+bi].x, P.b[+bi].y];
+      } else {
+        var peg = e.target.getAttribute('data-peg');
+        if (!peg) return;
+        var xy = peg.split(',').map(Number), ci = -1;
+        P.g.pts.forEach(function (q, i) { if (q[0] === xy[0] && q[1] === xy[1]) ci = i; });
+        drag = { kind: 'g', peg: xy, ci: ci, p: p, moved: false, before: snapshot() };
+      }
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var p = svgPt(e), dx = p[0] - drag.p[0], dy = p[1] - drag.p[1];
+      if (!drag.moved && Math.hypot(dx, dy) < 6) return;
+      drag.moved = true;
+      if (drag.kind === 'b' && drag.i >= 0) {
+        var B = P.b[drag.i];
+        B.x = clamp(drag.o[0] + dx / u, 0.4, view[0] - 0.4); B.y = clamp(drag.o[1] + dy / u, 0.4, view[1] - 0.4); P.sel = drag.i;
+        var el = qs('[data-i="' + drag.i + '"]', win);
+        if (el) el.setAttribute('points', shapeOf(B).map(function (q) { return (q[0] * u).toFixed(1) + ',' + (q[1] * u).toFixed(1); }).join(' '));
+      }
+      if (drag.kind === 'g' && drag.ci >= 0 && P.g.closed) {
+        var hit = document.elementFromPoint(e.clientX, e.clientY), pg = hit && hit.getAttribute && hit.getAttribute('data-peg');
+        if (pg) { var xy = pg.split(',').map(Number); if (!P.g.pts.some(function (q, i) { return i !== drag.ci && q[0] === xy[0] && q[1] === xy[1]; })) { P.g.pts[drag.ci] = xy; draw(); } }
+      }
+    });
+    function endDrag() {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (d.kind === 'b') {
+        if (d.moved && d.i >= 0) snapBlock(d.i);
+        else P.sel = d.i;
+      } else if (!d.moved) {
+        var G = P.g, xy = d.peg;
+        if (!G.closed) {
+          if (G.pts.length >= 3 && G.pts[0][0] === xy[0] && G.pts[0][1] === xy[1]) G.closed = true;
+          else if (d.ci < 0 && G.pts.length < 12) G.pts.push(xy);
+        }
+      }
+      if (snapshot() !== d.before) { hist.push(d.before); if (hist.length > 60) hist.shift(); }
+      last = d.kind === 'b' ? (d.moved ? 'move' : 'pick') : d.moved ? 'corner' : 'peg';
+      draw(); change();
+    }
+    win.addEventListener('pointerup', endDrag);
+    win.addEventListener('pointercancel', endDrag);
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -6342,7 +6671,7 @@
       '<rect x="5" y="5" width="38" height="38" rx="4" style="fill:var(--card,#fff);stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M17.7 5v38M30.3 5v38M5 17.7h38M5 30.3h38" style="stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M11 37V24h13V11" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/><rect x="30" y="5.5" width="12" height="12" rx="3" style="fill:#2f62c4"/><path d="M33 13l3-4.5 3 4.5Z" style="fill:#fff"/>'],
     ['solids', 'space', '3D solids and nets', '', { tool: true },
       '<path d="M24 6L40 15V33L24 42L8 33V15Z" style="fill:var(--mp-hund,#2f62c4)"/><path d="M24 6L40 15L24 24L8 15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 60%,#fff)"/><path d="M24 24V42L8 33V15Z" style="fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 75%,#000)"/>'],
-    ['geoboard', 'space', 'Geoboard', 'Tap pegs to stretch a band into a shape.', { size: 5 },
+    ['geoboard', 'space', 'Shape kit', '', { tool: true },
       '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
     ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
       '<circle cx="24" cy="24" r="17" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:2.5"/><path d="M24 24V12" style="stroke:var(--mp-hund,#2f62c4);stroke-width:2.5"/><path d="M24 24h8" style="stroke:var(--ink,#132039);stroke-width:3"/>'],

@@ -803,6 +803,44 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox arrays: the page runs off the side of a phone screen');
   }
 
+  /* 3a15. Toolbox shape kit: a hexagon, a trapezoid and a triangle read 3 blocks, and from Grade 2 the same as 10 green triangles; on the
+     geoboard a 4 by 3 band reads rectangle, with perimeter 14 units and area 12 squares from Grade 3, 4 right angles from Grade 4 and
+     90° + 90° + 90° + 90° = 360° from Grade 5; from Grade 6 a diamond reads rhombus and its diagonals cross at right angles; in Grade 8
+     the squares on the sides of a 3, 4, 5 right triangle read 16 + 9 = 25. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('geoboard'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/geoboard'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-sht .mp-read').textContent.replace(/ /g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox shape kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const pegs = async (...cs) => { for (const c of cs) await page.click('.mp-shhit[data-peg="' + c + '"]'); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    for (const k of ['hex', 'trap', 'tri']) await page.click('.mp-shtb[data-k=' + k + ']');
+    await bad('3 blocks', 'a hexagon, a trapezoid and a triangle');
+    if (g >= 2) await bad('10 green triangles', 'a hexagon, a trapezoid and a triangle');
+    await page.click('.mp-shdo [data-m=geo]');
+    await pegs('1,1', '5,1', '5,4', '1,4', '1,1');
+    await bad('rectangle', 'a 4 by 3 band');
+    if (g >= 3) await bad('Perimeter 14 units, area 12 squares', 'a 4 by 3 band');
+    if (g >= 4) await bad('4 right', 'a 4 by 3 band');
+    if (g >= 5) await bad('90° + 90° + 90° + 90° = 360°', 'a 4 by 3 band');
+    if (g >= 6) {
+      await page.click('.mp-snap[data-a=gclear]');
+      await pegs('4,1', '6,4', '4,7', '2,4', '4,1');
+      await page.click('.mp-snap[data-a=diag]');
+      await bad('rhombus', 'a diamond band');
+      await bad('cross at right angles', 'the diagonals of a rhombus');
+    }
+    if (g >= 8) {
+      await page.click('.mp-snap[data-a=gclear]');
+      await pegs('2,6', '5,6', '2,2', '2,6');
+      await page.click('.mp-snap[data-a=sq]');
+      await bad('16 + 9 = 25', 'the squares on the sides of a 3, 4, 5 triangle');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox shape kit: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
