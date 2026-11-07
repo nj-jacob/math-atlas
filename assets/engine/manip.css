@@ -1171,6 +1171,57 @@ button.mp-fkp{cursor:pointer}
 .mp-shtb{line-height:1.15}
 .mp-shtb span{font-size:.74rem}
 
+/* ---------- Measuring kit (Toolbox): length, mass, capacity, angles, circles ---------- */
+.mp-mkt{--mkw:#3a8fd6;--mkwood:#e9c48a;--mkmetal:#8a93a3;--mkbrass:#c9a24a;--mkred:#c8323c}
+.mp-mksv{touch-action:none;-webkit-user-select:none;user-select:none}
+.mp-mksv text{font:700 12px var(--body,inherit);fill:var(--mink);text-anchor:middle;pointer-events:none}
+.mp-mkedge{stroke:var(--at-ink3,#7b879c);stroke-width:1.5;stroke-dasharray:4 4}
+.mp-mkpe{fill:#e8a0b4}.mp-mkpb{fill:var(--mp-ones,#e0a100)}.mp-mkpw{fill:var(--mkwood)}.mp-mkpl{fill:#3b3f47}
+.mp-mkcr{fill:#2f62c4}.mp-mkcw{fill:color-mix(in srgb,#2f62c4 55%,#fff)}
+.mp-mkrb{fill:var(--mkred)}
+.mp-mkst{fill:#fff;stroke:var(--mline)}.mp-mkss{fill:#c02e76}
+.mp-mklf{fill:#2f9e44}.mp-mkls{stroke:#1d6b2e;stroke-width:2}
+.mp-mkobj{cursor:grab}.mp-mkgrab{fill:transparent}
+.mp-mkrr{fill:color-mix(in srgb,var(--mkwood) 70%,var(--mcard));stroke:color-mix(in srgb,var(--mkwood) 50%,#000);stroke-width:1}
+.mp-mktk{stroke:var(--mink);stroke-width:1.2}
+.mp-mksv .mp-mktx.u,.mp-mksv .mp-mktx.l{text-anchor:start;font-size:11px}
+.mp-mksv .mp-mktx.u{text-anchor:end}
+.mp-mkcube{fill:var(--mp-ones,#e0a100);stroke:color-mix(in srgb,var(--mp-ones,#e0a100) 55%,#000);stroke-width:1}
+.mp-mkclip{fill:none;stroke:var(--mkmetal);stroke-width:2.5}.mp-mkclip.in{stroke-width:2}
+.mp-mkbase{fill:color-mix(in srgb,var(--mkmetal) 60%,var(--mcard))}
+.mp-mkbeam{stroke:var(--mink);stroke-width:7;stroke-linecap:round}
+.mp-mkpiv{fill:var(--mcard);stroke:var(--mink);stroke-width:3}
+.mp-mkptr{stroke:var(--bad,#b4283f);stroke-width:3;stroke-linecap:round}
+.mp-mkstr{stroke:var(--at-ink3,#7b879c);stroke-width:1.5;fill:none}
+.mp-mkpan{fill:color-mix(in srgb,var(--mkmetal) 45%,var(--mcard));stroke:var(--mkmetal);stroke-width:1.5}
+.mp-mkapple{fill:var(--mkred)}.mp-mkorange{fill:#e07a1a}.mp-mkleaf{fill:#2f9e44}
+.mp-mkcar{fill:#2f62c4}.mp-mkwheel{fill:#3b3f47}
+.mp-mkbook{fill:#7646bf}.mp-mkpage{fill:#fbf7ec}
+.mp-mkbag{fill:#f3ead7;stroke:#c8b48a;stroke-width:1.5}.mp-mkbagl{fill:#2f62c4}
+.mp-mkpump{fill:#e07a1a}.mp-mkpumpl{fill:none;stroke:color-mix(in srgb,#e07a1a 60%,#000);stroke-width:1.5}.mp-mkstem{fill:#1d6b2e}
+.mp-mkwt{cursor:pointer}.mp-mkwt path{fill:var(--mkbrass);stroke:color-mix(in srgb,var(--mkbrass) 55%,#000);stroke-width:1}
+.mp-mkwt.big path{fill:color-mix(in srgb,var(--mkmetal) 80%,#000)}.mp-mksv .mp-mkwt text{font-size:10px;fill:#1c2333}.mp-mksv .mp-mkwt.big text{fill:#fff}
+.mp-mkpan+g,.mp-mkcube[data-w]{cursor:pointer}
+.mp-mkwater{fill:color-mix(in srgb,var(--mkw) 55%,transparent)}
+.mp-mkcont{fill:color-mix(in srgb,var(--mkw) 6%,transparent);stroke:var(--mink);stroke-width:2.5;stroke-linejoin:round}
+.mp-mkjug{fill:color-mix(in srgb,var(--mkw) 5%,transparent);stroke:var(--mink);stroke-width:2.5}
+.mp-mkprot{fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 8%,transparent);stroke:var(--mp-hund,#2f62c4);stroke-width:1.5}
+.mp-mkptk{stroke:var(--mp-hund,#2f62c4);stroke-width:1}
+.mp-mksv .mp-mkptx{font-size:10px;fill:var(--mp-hund,#2f62c4)}.mp-mksv .mp-mkptx.o{fill:var(--at-ink3,#7b879c)}
+.mp-mkrc{fill:none;stroke:#2f9e44;stroke-width:3;stroke-dasharray:6 4}
+.mp-mkarc{fill:none;stroke:var(--mkred);stroke-width:3}
+.mp-mkarm{stroke:var(--mink);stroke-width:4;stroke-linecap:round}
+.mp-mkvx{fill:var(--mink)}
+.mp-mkhd{fill:var(--accent,#0b6e78);stroke:var(--mcard);stroke-width:3;cursor:grab}
+.mp-mkcirc{fill:color-mix(in srgb,var(--mp-hund,#2f62c4) 8%,transparent);stroke:var(--mp-hund,#2f62c4);stroke-width:3}
+.mp-mkrad{stroke:var(--accent,#0b6e78);stroke-width:3}
+.mp-mkdia{stroke:#e07a1a;stroke-width:4;stroke-linecap:round}
+.mp-mkroll{stroke:var(--mp-hund,#2f62c4);stroke-width:4;stroke-linecap:round}
+.mp-mksv .mp-mktx.d{fill:#b05a0c}.mp-mksv .mp-mktx.r{fill:var(--accent,#0b6e78)}
+.mp-mktb{display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 8px;border-radius:12px;border:1px solid var(--mline);background:var(--mcard);color:var(--mink);font:700 .74rem var(--body,inherit);line-height:1.15;cursor:pointer}
+.mp-mktb[aria-pressed="true"]{border-color:var(--accent,#0b6e78);background:color-mix(in srgb,var(--accent,#0b6e78) 12%,var(--mcard))}
+.mp-mktb.w{min-height:40px;justify-content:center}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

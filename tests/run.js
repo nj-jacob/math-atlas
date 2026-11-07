@@ -841,6 +841,50 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox shape kit: the page runs off the side of a phone screen');
   }
 
+  /* 3a16. Toolbox measuring kit: the pencil is 6 cubes long (Grade 1), 12 cm on the ruler (Grades 2 and 3, and 14 − 2 = 12 when it is
+     moved to start at 2) or 123 mm (Grade 4 and up, 0.123 m from Grade 5); on the pan balance the apple balances 15 cubes (Grades 1
+     and 2) or 100 g + 50 g = 150 g, and the bag of flour 1 kg 250 g (Grades 3 and 4) or 1.25 kg; the full bottle poured into the jug
+     holds 4 cups or 750 mL (0.75 L from Grade 5); from Grade 4 an angle of 90° is a right angle, and from Grade 6 one of 300° is
+     reflex; from Grade 7 a circle of radius 3 cm has C ≈ 18.8 cm and A ≈ 28.3 cm². */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('scale'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/scale'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-mkt .mp-read').textContent.replace(/ /g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox measuring kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const tray = async (sel, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-mktb' + sel); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await bad(g === 1 ? '6 cubes' : g <= 3 ? '12 cm' : '123 mm', 'the pencil');
+    if (g >= 5) await bad('0.123 m', 'the pencil');
+    if (g === 2 || g === 3) { await snap('rr', 2); await bad('14 − 2 = 12', 'the pencil moved to start at 2'); }
+    await page.click('.mp-mkdo [data-m=mass]');
+    if (g <= 2) { await tray('[data-w=c5]', 3); await bad('balances 15 cubes', 'the apple and 15 cubes'); }
+    else {
+      await tray('[data-w=g100]'); await tray('[data-w=g50]');
+      await bad('100 g + 50 g = 150 g', 'the apple');
+      await tray('[data-o=flour]'); await tray('[data-w=kg]'); await tray('[data-w=g100]', 2); await tray('[data-w=g50]');
+      await bad(g >= 5 ? '1.25 kg' : '1 kg 250 g', 'the bag of flour');
+    }
+    await page.click('.mp-mkdo [data-m=cap]');
+    await snap('fill'); await snap('pour');
+    await bad(g <= 2 ? 'holds 4 cups' : 'holds 750 mL', 'the bottle poured into the jug');
+    if (g >= 5) await bad('0.75 L', 'the bottle poured into the jug');
+    if (g >= 4) {
+      await page.click('.mp-mkdo [data-m=ang]');
+      await snap('a10', 4);
+      await bad(g === 4 ? 'right angle' : '90°', 'an angle of 90°');
+      if (g >= 6) { await snap('a10', 21); await bad('Reflex angle: 300°', 'an angle of 300°'); }
+    }
+    if (g >= 7) {
+      await page.click('.mp-mkdo [data-m=circ]');
+      await bad('C = π × 6 ≈ 18.8 cm', 'a circle of radius 3 cm');
+      await bad('28.3 cm²', 'a circle of radius 3 cm');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox measuring kit: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {

@@ -3206,6 +3206,7 @@
   var MB = { kg: 1000, h: 100, t: 10 }, MBL = { kg: '1 kg', h: '100 g', t: '10 g' };
   M.scale = function (root, o) {
     o = o || {};
+    if (o.tool) return toolMeas(root, o);
     var T = base(root, 'scale'), max = o.max || 5000, n = { kg: 0, h: 0, t: 0 }, last = '';
     root.innerHTML = '<div class="mp-acts">' + ['kg', 'h', 't'].map(function (k) { return abtn('+' + k, '+ ' + MBL[k]) + abtn('-' + k, '&minus; ' + MBL[k]); }).join('') + '</div><div class="mp-pan"></div><div class="mp-read" aria-live="polite"></div>';
     var pan = qs('.mp-pan', root), read = qs('.mp-read', root);
@@ -6641,6 +6642,426 @@
   }
 
 
+  /* ================= Measuring kit (Toolbox) =================
+     Measure: Length (every grade: Grades 1 to 3 line up cubes or paper clips, from Grade 2 a ruler in cm, with the thing moved off 0 to measure from another mark, from
+     Grade 4 in mm, from Grade 5 also in m), Mass (a pan balance: cubes in Grades 1 and 2, kg and g weights from Grade 3, kg as a decimal
+     from Grade 5), Capacity (fill a container and pour it into a measuring jug: cups in Grades 1 and 2, mL and L from Grade 3), Angles
+     (Grade 4 and up: drag an arm; compare with a right angle, a protractor to 180° from Grade 5 and to 360° from Grade 6) and Circles
+     (Grade 7 and up: drag the radius; the diameter, and the circle unrolled into a little more than 3 diameters). */
+  var MK_LEN = { /* name, cm (Grades 1 to 3), mm (Grade 4 and up) */
+    pencil: ['pencil', 12, 123], crayon: ['crayon', 8, 87], ribbon: ['ribbon', 14, 141], straw: ['straw', 13, 136], leaf: ['leaf', 6, 64]
+  };
+  var MK_MASS = { /* name, cubes (Grades 1 and 2), grams (Grade 3 and up) */
+    apple: ['apple', 15, 150], car: ['toy car', 8, 80], orange: ['orange', 20, 200], book: ['book', 40, 850], flour: ['bag of flour', 0, 1250], pumpkin: ['pumpkin', 0, 2500]
+  };
+  var MK_CAP = { /* name, cups (Grades 1 and 2), mL (Grade 3 and up) */
+    glass: ['glass', 1, 200], box: ['juice box', 0, 250], mug: ['mug', 2, 300], bowl: ['bowl', 3, 600], bottle: ['bottle', 4, 750], pot: ['pot', 8, 1500]
+  };
+  var MK_W = [['kg', 1000, '1 kg'], ['g500', 500, '500 g'], ['g100', 100, '100 g'], ['g50', 50, '50 g'], ['g10', 10, '10 g']];
+  var mkClip = 0;
+  function toolMeas(root, o) {
+    var T = base(root, 'meas');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-mkt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7;
+    var MODES = [['len', 'Length'], ['mass', 'Mass'], ['cap', 'Capacity']].concat(g4 ? [['ang', 'Angles']] : []).concat(g7 ? [['circ', 'Circles']] : []);
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-mktr"></div><div class="mp-dmain"><div class="mp-cmode mp-mkdo" role="group" aria-label="Measure"><span>Measure</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-mktr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    var cid = 'mk' + (++mkClip);
+    /* state: the measure; Length: the thing, what measures it, how far from 0 it starts (cm); Mass: the thing, the weights on the pan;
+       Capacity: the container, how full it is, the jug, and what one full pour measured; Angles: the angle, right-angle card, protractor;
+       Circles: the radius, diameter, unrolled */
+    var P, shown = false, hist = [], last = '', geo = {};
+    function fresh() {
+      P = {
+        mode: 'len', len: { o: 'pencil', by: g2 ? 'ruler' : 'cubes', off: 0 }, mass: { o: 'apple', w: [] },
+        cap: { c: 'bottle', fill: 0, jug: 0, meas: null, over: false }, ang: { a: 50, right: false, prot: false }, circ: { r: 3, d: false, roll: false }
+      };
+    }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function d1(v) { return fmt(Math.round(v * 10) / 10); }
+    function svgOpen(W, H, label, cls) { return '<svg class="mp-dsvg mp-mksv' + (cls ? ' ' + cls : '') + '" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + label + '">'; }
+
+    /* ======== Length ======== */
+    function lenOf() { var t = MK_LEN[P.len.o]; return g4 ? t[2] / 10 : t[1]; } /* in cm */
+    function thing(k, x, y, w, h) {
+      /* a picture of the thing to measure, from x to x + w, centred on y */
+      var t = y - h / 2, b = y + h / 2;
+      if (k === 'pencil') {
+        var tip = Math.min(w * 0.16, h * 1.6), er = Math.min(w * 0.08, h);
+        return '<rect class="mp-mkpe" x="' + x + '" y="' + t + '" width="' + er + '" height="' + h + '" rx="3"/><rect class="mp-mkpb" x="' + (x + er) + '" y="' + t + '" width="' + (w - er - tip) + '" height="' + h + '"/>' +
+          '<polygon class="mp-mkpw" points="' + (x + w - tip) + ',' + t + ' ' + (x + w) + ',' + y + ' ' + (x + w - tip) + ',' + b + '"/><polygon class="mp-mkpl" points="' + (x + w - tip * 0.3) + ',' + (y - h * 0.15) + ' ' + (x + w) + ',' + y + ' ' + (x + w - tip * 0.3) + ',' + (y + h * 0.15) + '"/>';
+      }
+      if (k === 'crayon') {
+        var tp = Math.min(w * 0.18, h * 1.2);
+        return '<rect class="mp-mkcr" x="' + x + '" y="' + t + '" width="' + (w - tp) + '" height="' + h + '" rx="2"/><rect class="mp-mkcw" x="' + (x + w * 0.15) + '" y="' + t + '" width="' + (w * 0.5) + '" height="' + h + '"/>' +
+          '<polygon class="mp-mkcr" points="' + (x + w - tp) + ',' + (t + h * 0.1) + ' ' + (x + w) + ',' + (y - h * 0.12) + ' ' + (x + w) + ',' + (y + h * 0.12) + ' ' + (x + w - tp) + ',' + (b - h * 0.1) + '"/>';
+      }
+      if (k === 'ribbon') {
+        var n = h * 0.5;
+        return '<polygon class="mp-mkrb" points="' + x + ',' + t + ' ' + (x + w) + ',' + t + ' ' + (x + w - n) + ',' + y + ' ' + (x + w) + ',' + b + ' ' + x + ',' + b + ' ' + (x + n) + ',' + y + '"/>';
+      }
+      if (k === 'straw') {
+        var s = '<rect class="mp-mkst" x="' + x + '" y="' + (y - h * 0.3) + '" width="' + w + '" height="' + (h * 0.6) + '" rx="2"/>';
+        for (var i = 1; i * h < w; i += 2) s += '<rect class="mp-mkss" x="' + (x + i * h * 0.8) + '" y="' + (y - h * 0.3) + '" width="' + (h * 0.4) + '" height="' + (h * 0.6) + '"/>';
+        return s;
+      }
+      /* leaf: a stem on the left, the blade to the right end */
+      var st = w * 0.18;
+      return '<line class="mp-mkls" x1="' + x + '" y1="' + y + '" x2="' + (x + st) + '" y2="' + y + '"/><path class="mp-mklf" d="M' + (x + st) + ',' + y + ' Q' + (x + st + (w - st) * 0.45) + ',' + (t - h * 0.3) + ' ' + (x + w) + ',' + y + ' Q' + (x + st + (w - st) * 0.45) + ',' + (b + h * 0.3) + ' ' + (x + st) + ',' + y + 'Z"/>' +
+        '<line class="mp-mkls" x1="' + (x + st) + '" y1="' + y + '" x2="' + (x + w * 0.92) + '" y2="' + y + '"/>';
+    }
+    function rulerLen(W) { return W >= 560 ? 20 : 15; }
+    function drawLen(W, H) {
+      var L = P.len, len = lenOf(), RL = rulerLen(W), k = Math.max(14, Math.min(44, (W - 40) / (RL + 1))), rx = Math.max(20, (W - RL * k) / 2), x0 = rx + L.off * k, y = Math.max(50, H / 2 - 50);
+      geo = { k: k, RL: RL };
+      var s = svgOpen(W, Math.max(H, 220), 'Measure the length of a ' + MK_LEN[L.o][0]);
+      s += '<line class="mp-mkedge" x1="' + x0 + '" y1="' + (y - 34) + '" x2="' + x0 + '" y2="' + (y + 110) + '"/>';
+      s += '<g class="mp-mkobj" data-drag="obj">' + thing(L.o, x0, y, len * k, Math.max(14, Math.min(26, k * 0.7))) + '<rect class="mp-mkgrab" x="' + x0 + '" y="' + (y - 24) + '" width="' + len * k + '" height="48"/></g>';
+      var uy = y + 34;
+      if (L.by === 'ruler') {
+        var pad = 10, rh = 58;
+        s += '<g class="mp-mkrul"><rect class="mp-mkrr" x="' + (rx - pad) + '" y="' + uy + '" width="' + (RL * k + pad * 2) + '" height="' + rh + '" rx="6"/>';
+        for (var i = 0; i <= RL * (g4 ? 10 : 1); i++) {
+          var v = g4 ? i / 10 : i, X = rx + v * k, big = !g4 || i % 10 === 0, mid = g4 && i % 5 === 0;
+          s += '<line class="mp-mktk" x1="' + X.toFixed(1) + '" y1="' + uy + '" x2="' + X.toFixed(1) + '" y2="' + (uy + (big ? 20 : mid ? 13 : 8)) + '"/>';
+          if (big && (k >= 22 || v % 2 === 0)) s += '<text class="mp-mktx" x="' + X.toFixed(1) + '" y="' + (uy + 36) + '">' + v + '</text>';
+        }
+        s += '<text class="mp-mktx u" x="' + (rx + RL * k - 4) + '" y="' + (uy + rh - 8) + '">cm</text></g>';
+      } else {
+        var u = L.by === 'cubes' ? 2 : 3, n = Math.round(len / u);
+        for (var j = 0; j < n; j++) {
+          var ux = x0 + j * u * k;
+          s += L.by === 'cubes' ? '<rect class="mp-mkcube" x="' + (ux + 1) + '" y="' + uy + '" width="' + (u * k - 2) + '" height="' + (u * k - 2) + '" rx="3"/>'
+            : '<rect class="mp-mkclip" x="' + (ux + 2) + '" y="' + (uy + 4) + '" width="' + (u * k - 4) + '" height="' + Math.min(18, k * 0.9) + '" rx="' + Math.min(9, k * 0.45) + '"/><rect class="mp-mkclip in" x="' + (ux + 2 + k * 0.4) + '" y="' + (uy + 4 + Math.min(18, k * 0.9) * 0.3) + '" width="' + (u * k - 4 - k * 0.8) + '" height="' + Math.min(18, k * 0.9) * 0.4 + '" rx="3"/>';
+        }
+      }
+      return s + '</svg>';
+    }
+    function lenRead() {
+      var L = P.len, nm = MK_LEN[L.o][0], len = lenOf();
+      if (L.by !== 'ruler') {
+        var u = L.by === 'cubes' ? 2 : 3, n = Math.round(len / u), ex = n * u === len, unit = L.by === 'cubes' ? pl(n, 'cube', 'cubes') : pl(n, 'paper clip', 'paper clips');
+        return [(ex ? '' : 'about ') + unit, 'The ' + nm + ' is ' + (ex ? '' : 'about ') + 'as long as <b>' + unit + '</b>' + (g2 ? '. On a ruler it is <b>' + len + '</b> cm' : '')];
+      }
+      var a = L.off, b = L.off + len, eq;
+      if (g4) {
+        var mm = Math.round(len * 10);
+        eq = '<b>' + mm + '</b> mm = <b>' + d1(len) + '</b> cm' + (g5 ? ' = <b>' + fmt(mm / 1000) + '</b> m' : '');
+        eq += a ? '. From ' + d1(a) + ' to ' + d1(b) + ': ' + d1(b) + ' − ' + d1(a) + ' = ' + d1(len) + ' cm' : '. It starts at 0';
+        return [mm + ' mm', eq];
+      }
+      eq = a ? 'From ' + a + ' to ' + b + ': <b>' + b + ' − ' + a + ' = ' + len + '</b> cm' : 'The ' + nm + ' starts at 0 and ends at <b>' + b + '</b>';
+      return [len + ' cm', eq];
+    }
+
+    /* ======== Mass ======== */
+    function massOf() { var t = MK_MASS[P.mass.o]; return g3 ? t[2] : t[1]; }
+    function onPan() { return g3 ? P.mass.w.reduce(function (s, id) { return s + MK_W.filter(function (w) { return w[0] === id; })[0][1]; }, 0) : P.mass.w.length; }
+    function massPic(k, cx, by, s) {
+      /* the thing on the left pan, sitting on by, about s across */
+      if (k === 'apple' || k === 'orange') {
+        var r = s * (k === 'apple' ? 0.32 : 0.36);
+        return '<circle class="mp-mk' + k + '" cx="' + cx + '" cy="' + (by - r) + '" r="' + r + '"/>' + (k === 'apple' ? '<path class="mp-mkleaf" d="M' + cx + ',' + (by - 2 * r) + ' q' + r * 0.5 + ',' + (-r * 0.6) + ' ' + r * 0.8 + ',' + (-r * 0.3) + ' q' + (-r * 0.4) + ',' + r * 0.5 + ' ' + (-r * 0.8) + ',' + r * 0.3 + 'z"/>' : '');
+      }
+      if (k === 'car') {
+        var w = s * 0.7, h = s * 0.22;
+        return '<rect class="mp-mkcar" x="' + (cx - w / 2) + '" y="' + (by - h - s * 0.12) + '" width="' + w + '" height="' + h + '" rx="5"/><rect class="mp-mkcar" x="' + (cx - w * 0.25) + '" y="' + (by - h * 1.9 - s * 0.12) + '" width="' + (w * 0.5) + '" height="' + h + '" rx="5"/>' +
+          '<circle class="mp-mkwheel" cx="' + (cx - w * 0.28) + '" cy="' + (by - s * 0.1) + '" r="' + s * 0.1 + '"/><circle class="mp-mkwheel" cx="' + (cx + w * 0.28) + '" cy="' + (by - s * 0.1) + '" r="' + s * 0.1 + '"/>';
+      }
+      if (k === 'book') return '<rect class="mp-mkbook" x="' + (cx - s * 0.42) + '" y="' + (by - s * 0.24) + '" width="' + (s * 0.84) + '" height="' + (s * 0.24) + '" rx="3"/><rect class="mp-mkpage" x="' + (cx - s * 0.38) + '" y="' + (by - s * 0.2) + '" width="' + (s * 0.76) + '" height="' + (s * 0.16) + '"/>';
+      if (k === 'flour') return '<path class="mp-mkbag" d="M' + (cx - s * 0.3) + ',' + by + ' L' + (cx - s * 0.26) + ',' + (by - s * 0.62) + ' L' + (cx + s * 0.26) + ',' + (by - s * 0.62) + ' L' + (cx + s * 0.3) + ',' + by + 'Z"/><rect class="mp-mkbagl" x="' + (cx - s * 0.18) + '" y="' + (by - s * 0.4) + '" width="' + (s * 0.36) + '" height="' + (s * 0.16) + '" rx="3"/>';
+      return '<ellipse class="mp-mkpump" cx="' + cx + '" cy="' + (by - s * 0.26) + '" rx="' + (s * 0.42) + '" ry="' + (s * 0.26) + '"/><path class="mp-mkpumpl" d="M' + cx + ',' + (by - s * 0.52) + ' V' + by + ' M' + (cx - s * 0.2) + ',' + (by - s * 0.48) + ' Q' + (cx - s * 0.26) + ',' + (by - s * 0.26) + ' ' + (cx - s * 0.2) + ',' + (by - s * 0.03) + ' M' + (cx + s * 0.2) + ',' + (by - s * 0.48) + ' Q' + (cx + s * 0.26) + ',' + (by - s * 0.26) + ' ' + (cx + s * 0.2) + ',' + (by - s * 0.03) + '"/><rect class="mp-mkstem" x="' + (cx - 3) + '" y="' + (by - s * 0.62) + '" width="6" height="' + (s * 0.12) + '" rx="2"/>';
+    }
+    function weightPic(id, x, by, s, i) {
+      var w = MK_W.filter(function (q) { return q[0] === id; })[0], f = id === 'kg' ? 1 : id === 'g500' ? 0.85 : id === 'g100' ? 0.66 : id === 'g50' ? 0.56 : 0.46, h = s * f, ww = s * f * 0.9;
+      return '<g class="mp-mkwt' + (id === 'kg' || id === 'g500' ? ' big' : '') + '" data-w="' + i + '"><path d="M' + (x - ww / 2) + ',' + by + ' L' + (x - ww * 0.38) + ',' + (by - h * 0.8) + ' L' + (x - ww * 0.18) + ',' + (by - h * 0.8) + ' L' + (x - ww * 0.18) + ',' + (by - h) + ' L' + (x + ww * 0.18) + ',' + (by - h) + ' L' + (x + ww * 0.18) + ',' + (by - h * 0.8) + ' L' + (x + ww * 0.38) + ',' + (by - h * 0.8) + ' L' + (x + ww / 2) + ',' + by + 'Z"/>' +
+        '<text x="' + x + '" y="' + (by - h * 0.3) + '">' + w[2].replace(' ', '') + '</text></g>';
+    }
+    function drawMass(W, H) {
+      var M = P.mass, m = massOf(), r = onPan(), tilt = r ? clamp((m - r) / Math.max(m, r) * 14, -12, 12) : 12, cx = W / 2, bl = Math.min(W * 0.36, 250), py = 46;
+      var a = tilt * Math.PI / 180, lx = cx - bl * Math.cos(a), ly = py + bl * Math.sin(a), rx = cx + bl * Math.cos(a), ry = py - bl * Math.sin(a), hang = Math.min(110, H * 0.32), pw = Math.min(180, bl * 0.95);
+      var s = svgOpen(W, Math.max(H, 260), 'A pan balance');
+      var bb = Math.min(Math.max(H, 260) - 12, py + hang + 150);
+      s += '<polygon class="mp-mkbase" points="' + (cx - 40) + ',' + bb + ' ' + (cx + 40) + ',' + bb + ' ' + (cx + 8) + ',' + py + ' ' + (cx - 8) + ',' + py + '"/>';
+      [[lx, ly], [rx, ry]].forEach(function (p) { s += '<path class="mp-mkstr" d="M' + p[0] + ',' + p[1] + ' L' + (p[0] - pw / 2) + ',' + (p[1] + hang) + ' M' + p[0] + ',' + p[1] + ' L' + (p[0] + pw / 2) + ',' + (p[1] + hang) + '"/>'; });
+      s += '<line class="mp-mkbeam" x1="' + lx + '" y1="' + ly + '" x2="' + rx + '" y2="' + ry + '"/><circle class="mp-mkpiv" cx="' + cx + '" cy="' + py + '" r="7"/>';
+      /* the pointer shows which way it tips */
+      s += '<line class="mp-mkptr" x1="' + cx + '" y1="' + py + '" x2="' + (cx + 34 * Math.sin(-a)) + '" y2="' + (py - 34 * Math.cos(a)) + '"/>';
+      [[lx, ly], [rx, ry]].forEach(function (p) { s += '<path class="mp-mkpan" d="M' + (p[0] - pw / 2) + ',' + (p[1] + hang) + ' Q' + p[0] + ',' + (p[1] + hang + 26) + ' ' + (p[0] + pw / 2) + ',' + (p[1] + hang) + 'Z"/>'; });
+      s += massPic(M.o, lx, ly + hang, Math.min(pw, 150));
+      var bx = rx, by = ry + hang;
+      if (g3) {
+        var ws = M.w.map(function (id, i) { return [id, i]; }), sz = Math.min(46, pw / 3.4), per = Math.max(1, Math.floor(pw / (sz * 0.95))), rows = [];
+        ws.forEach(function (q, i) { (rows[Math.floor(i / per)] = rows[Math.floor(i / per)] || []).push(q); });
+        rows.forEach(function (row, ri) {
+          row.forEach(function (q, j) { s += weightPic(q[0], bx - (row.length - 1) * sz * 0.95 / 2 + j * sz * 0.95, by - ri * sz * 1.02, sz, q[1]); });
+        });
+      } else {
+        var cs = Math.min(18, pw / 6), pr = 5;
+        M.w.forEach(function (q, i) {
+          var c = i % pr, rr = Math.floor(i / pr);
+          s += '<rect class="mp-mkcube" data-w="' + i + '" x="' + (bx - pr * cs / 2 + c * cs) + '" y="' + (by - (rr + 1) * cs) + '" width="' + (cs - 1.5) + '" height="' + (cs - 1.5) + '" rx="2"/>';
+        });
+      }
+      return s + '</svg>';
+    }
+    function massRead() {
+      var nm = MK_MASS[P.mass.o][0], m = massOf(), r = onPan();
+      if (!r) return ['', ''];
+      var unit = function (v) { return g3 ? fmt(v) + ' g' : pl(v, 'cube', 'cubes'); };
+      if (r !== m) return [(m > r ? 'heavier' : 'lighter') + ' than ' + unit(r), 'The ' + nm + ' is <b>' + (m > r ? 'heavier' : 'lighter') + '</b> than ' + unit(r) + (m > r ? '. Add more' : '. Take some off')];
+      if (!g3) return [unit(m), 'The ' + nm + ' balances <b>' + unit(m) + '</b>'];
+      var parts = {}; P.mass.w.forEach(function (id) { parts[id] = (parts[id] || 0) + 1; });
+      var sum = MK_W.filter(function (w) { return parts[w[0]]; }).map(function (w) { return parts[w[0]] > 1 ? parts[w[0]] + ' × ' + w[2] : w[2]; }).join(' + ');
+      var eq = (P.mass.w.length > 1 ? sum + ' = ' : '') + '<b>' + fmt(m) + ' g</b>. The ' + nm + ' is ' + fmt(m) + ' g';
+      if (m >= 1000) eq += g5 ? ' = <b>' + fmt(m / 1000) + ' kg</b>' : ' = <b>' + Math.floor(m / 1000) + ' kg ' + (m % 1000 ? fmt(m % 1000) + ' g' : '') + '</b>';
+      return [fmt(m) + ' g', eq];
+    }
+
+    /* ======== Capacity ======== */
+    function capOf(c) { var t = MK_CAP[c]; return g3 ? t[2] : t[1] * 250; } /* in mL; Grades 1 and 2 count cups of 250 mL */
+    function jugCap() { return g3 ? 2000 : 2500; }
+    function contShape(k, x, by, w, h) {
+      /* the outline of a container: x is the middle, by the bottom */
+      if (k === 'glass') return 'M' + (x - w * 0.32) + ',' + (by - h * 0.62) + ' L' + (x + w * 0.32) + ',' + (by - h * 0.62) + ' L' + (x + w * 0.25) + ',' + by + ' L' + (x - w * 0.25) + ',' + by + 'Z';
+      if (k === 'box') return 'M' + (x - w * 0.26) + ',' + (by - h * 0.6) + ' H' + (x + w * 0.26) + ' V' + by + ' H' + (x - w * 0.26) + 'Z';
+      if (k === 'mug') return 'M' + (x - w * 0.3) + ',' + (by - h * 0.6) + ' H' + (x + w * 0.3) + ' V' + (by - 6) + ' Q' + (x + w * 0.3) + ',' + by + ' ' + (x + w * 0.24) + ',' + by + ' H' + (x - w * 0.24) + ' Q' + (x - w * 0.3) + ',' + by + ' ' + (x - w * 0.3) + ',' + (by - 6) + 'Z';
+      if (k === 'bowl') return 'M' + (x - w * 0.48) + ',' + (by - h * 0.45) + ' H' + (x + w * 0.48) + ' Q' + (x + w * 0.46) + ',' + by + ' ' + x + ',' + by + ' Q' + (x - w * 0.46) + ',' + by + ' ' + (x - w * 0.48) + ',' + (by - h * 0.45) + 'Z';
+      if (k === 'bottle') return 'M' + (x - w * 0.1) + ',' + (by - h) + ' H' + (x + w * 0.1) + ' V' + (by - h * 0.8) + ' Q' + (x + w * 0.26) + ',' + (by - h * 0.72) + ' ' + (x + w * 0.26) + ',' + (by - h * 0.56) + ' V' + by + ' H' + (x - w * 0.26) + ' V' + (by - h * 0.56) + ' Q' + (x - w * 0.26) + ',' + (by - h * 0.72) + ' ' + (x - w * 0.1) + ',' + (by - h * 0.8) + 'Z';
+      return 'M' + (x - w * 0.44) + ',' + (by - h * 0.66) + ' H' + (x + w * 0.44) + ' V' + (by - 8) + ' Q' + (x + w * 0.44) + ',' + by + ' ' + (x + w * 0.36) + ',' + by + ' H' + (x - w * 0.36) + ' Q' + (x - w * 0.44) + ',' + by + ' ' + (x - w * 0.44) + ',' + (by - 8) + 'Z';
+    }
+    function contTop(k, by, h) { return by - h * ({ glass: 0.62, box: 0.6, mug: 0.6, bowl: 0.45, bottle: 1, pot: 0.66 })[k]; }
+    function drawCap(W, H) {
+      var C = P.cap, cap = capOf(C.c), JC = jugCap(), Hh = Math.max(H, 260), by = Hh - 20, cw = Math.min(W * 0.4, 220), ch = Math.min(Hh - 50, 260), cx = W * 0.27, jx = W * 0.72, jw = Math.min(W * 0.26, 130), jh = Math.min(Hh - 50, 300);
+      var s = svgOpen(W, Hh, 'A ' + MK_CAP[C.c][0] + ' and a measuring jug');
+      /* the container, filled to its level */
+      var d = contShape(C.c, cx, by, cw, ch), top = contTop(C.c, by, ch), lv = by - (by - top) * (C.fill / cap);
+      s += '<clipPath id="' + cid + 'c"><path d="' + d + '"/></clipPath>';
+      if (C.fill) s += '<rect class="mp-mkwater" clip-path="url(#' + cid + 'c)" x="' + (cx - cw / 2) + '" y="' + lv + '" width="' + cw + '" height="' + (by - lv) + '"/>';
+      s += '<path class="mp-mkcont" d="' + d + '"/>';
+      if (C.c === 'mug') s += '<path class="mp-mkcont" d="M' + (cx + cw * 0.3) + ',' + (by - ch * 0.48) + ' q' + cw * 0.18 + ',0 ' + cw * 0.18 + ',' + ch * 0.16 + ' q0,' + ch * 0.16 + ' ' + (-cw * 0.18) + ',' + ch * 0.16 + '" fill="none"/>';
+      if (C.c === 'pot') s += '<path class="mp-mkcont" d="M' + (cx - cw * 0.44) + ',' + (by - ch * 0.56) + ' h-' + cw * 0.08 + ' M' + (cx + cw * 0.44) + ',' + (by - ch * 0.56) + ' h' + cw * 0.08 + '" fill="none"/>';
+      /* the measuring jug with its scale */
+      var jt = by - jh, lvl = by - jh * C.jug / JC;
+      s += '<clipPath id="' + cid + 'j"><rect x="' + (jx - jw / 2) + '" y="' + jt + '" width="' + jw + '" height="' + jh + '" rx="8"/></clipPath>';
+      if (C.jug) s += '<rect class="mp-mkwater" clip-path="url(#' + cid + 'j)" x="' + (jx - jw / 2) + '" y="' + lvl + '" width="' + jw + '" height="' + (by - lvl) + '"/>';
+      s += '<rect class="mp-mkjug" x="' + (jx - jw / 2) + '" y="' + jt + '" width="' + jw + '" height="' + jh + '" rx="8"/><path class="mp-mkjug" fill="none" d="M' + (jx + jw / 2) + ',' + (jt + jh * 0.15) + ' q' + jw * 0.35 + ',0 ' + jw * 0.35 + ',' + jh * 0.2 + ' v' + jh * 0.25 + ' q0,' + jh * 0.12 + ' ' + (-jw * 0.35) + ',' + jh * 0.12 + '"/>';
+      var step = g3 ? (g4 ? 50 : 100) : 250;
+      for (var v = step; v < JC; v += step) {
+        var Y = by - jh * v / JC, big = g3 ? v % 100 === 0 : true, lab = g3 ? v % (jh >= 260 ? 200 : 500) === 0 : true;
+        s += '<line class="mp-mktk" x1="' + (jx - jw / 2) + '" y1="' + Y.toFixed(1) + '" x2="' + (jx - jw / 2 + (big ? jw * 0.32 : jw * 0.18)) + '" y2="' + Y.toFixed(1) + '"/>';
+        if (lab) s += '<text class="mp-mktx l" x="' + (jx - jw / 2 + jw * 0.36) + '" y="' + (Y + 4).toFixed(1) + '">' + (g3 ? (v % 1000 === 0 ? v / 1000 + ' L' : v) : v / 250) + '</text>';
+      }
+      s += '<text class="mp-mktx u" x="' + (jx + jw / 2 - 6) + '" y="' + (jt + 18) + '">' + (g3 ? 'mL' : 'cups') + '</text>';
+      return s + '</svg>';
+    }
+    function capRead() {
+      var C = P.cap, nm = MK_CAP[C.c][0];
+      if (!C.jug && !C.fill) return ['', ''];
+      var amt = function (v) { return g3 ? fmt(v) + ' mL' : pl(v / 250, 'cup', 'cups'); };
+      var big = C.jug ? amt(C.jug) : '', eq = '';
+      if (C.meas != null) eq = 'The ' + nm + ' holds <b>' + amt(C.meas) + '</b>' + (g5 ? ' = <b>' + fmt(C.meas / 1000) + ' L</b>' : '');
+      else if (C.jug) eq = 'The jug has <b>' + amt(C.jug) + '</b>' + (g3 && C.jug >= 1000 ? ' = <b>' + (g5 ? fmt(C.jug / 1000) + ' L' : Math.floor(C.jug / 1000) + ' L' + (C.jug % 1000 ? ' ' + fmt(C.jug % 1000) + ' mL' : '')) + '</b>' : '');
+      if (!C.jug && C.fill) eq = 'The ' + nm + ' is full. Pour it into the jug';
+      if (C.over) eq += (eq ? '. ' : '') + 'The jug is full. Empty it to pour the rest';
+      return [big, eq];
+    }
+
+    /* ======== Angles ======== */
+    function drawAng(W, H) {
+      var A = P.ang, full = g6, Hh = Math.max(H, 240), R = full ? Math.min(W / 2 - 24, Hh / 2 - 20) : Math.min(W / 2 - 24, Hh - 40), vx = W / 2, vy = full ? Hh / 2 : Hh - 22;
+      geo = { vx: vx, vy: vy };
+      var s = svgOpen(W, Hh, 'An angle of ' + A.a + ' degrees', 'mp-mkang'), rad = A.a * Math.PI / 180, ex = vx + R * 0.92 * Math.cos(rad), ey = vy - R * 0.92 * Math.sin(rad);
+      if (A.prot && g5) {
+        if (full) s += '<circle class="mp-mkprot" cx="' + vx + '" cy="' + vy + '" r="' + R + '"/>';
+        else s += '<path class="mp-mkprot" d="M' + (vx - R) + ',' + vy + ' A' + R + ',' + R + ' 0 0 1 ' + (vx + R) + ',' + vy + 'Z"/>';
+        var every = R >= 170 ? 10 : full ? 30 : 20;
+        for (var d = 0; d <= (full ? 359 : 180); d++) {
+          var t = d * Math.PI / 180, l = d % 10 === 0 ? 16 : d % 5 === 0 ? 10 : 5, c = Math.cos(t), sn = Math.sin(t);
+          if (R < 150 && d % 5) continue;
+          s += '<line class="mp-mkptk" x1="' + (vx + R * c).toFixed(1) + '" y1="' + (vy - R * sn).toFixed(1) + '" x2="' + (vx + (R - l) * c).toFixed(1) + '" y2="' + (vy - (R - l) * sn).toFixed(1) + '"/>';
+          if (d % every === 0) {
+            s += '<text class="mp-mkptx" x="' + (vx + (R - 28) * c).toFixed(1) + '" y="' + (vy - (R - 28) * sn + 4).toFixed(1) + '">' + d + '</text>';
+            if (!full) s += '<text class="mp-mkptx o" x="' + (vx + (R - 46) * c).toFixed(1) + '" y="' + (vy - (R - 46) * sn + 4).toFixed(1) + '">' + (180 - d) + '</text>';
+          }
+        }
+      }
+      if (A.right) s += '<path class="mp-mkrc" d="M' + vx + ',' + (vy - R * 0.5) + ' V' + vy + ' H' + (vx + R * 0.5) + ' M' + vx + ',' + (vy - 26) + ' h26 v26"/>';
+      var ar = Math.min(46, R * 0.3), big = A.a > 180 ? 1 : 0;
+      if (A.a > 0 && A.a < 360) s += '<path class="mp-mkarc" d="M' + (vx + ar) + ',' + vy + ' A' + ar + ',' + ar + ' 0 ' + big + ' 0 ' + (vx + ar * Math.cos(rad)).toFixed(1) + ',' + (vy - ar * Math.sin(rad)).toFixed(1) + '"/>';
+      s += '<line class="mp-mkarm" x1="' + vx + '" y1="' + vy + '" x2="' + (vx + R * 0.92) + '" y2="' + vy + '"/><line class="mp-mkarm" x1="' + vx + '" y1="' + vy + '" x2="' + ex.toFixed(1) + '" y2="' + ey.toFixed(1) + '"/>';
+      s += '<circle class="mp-mkvx" cx="' + vx + '" cy="' + vy + '" r="5"/><circle class="mp-mkhd" data-drag="arm" cx="' + ex.toFixed(1) + '" cy="' + ey.toFixed(1) + '" r="13"/>';
+      return s + '</svg>';
+    }
+    function angName(a) { return a === 0 ? 'zero angle' : a < 90 ? 'acute angle' : a === 90 ? 'right angle' : a < 180 ? 'obtuse angle' : a === 180 ? 'straight angle' : a < 360 ? 'reflex angle' : 'full turn'; }
+    function angRead() {
+      var a = P.ang.a, nm = angName(a);
+      if (!g5) return [nm, a < 90 ? 'Less than a right angle' : a === 90 ? 'A square corner' : a < 180 ? 'More than a right angle, less than a straight line' : 'A straight line'];
+      var eq = nm.charAt(0).toUpperCase() + nm.slice(1) + (a < 90 ? ': less than 90°' : a === 90 ? ': exactly 90°' : a < 180 ? ': between 90° and 180°' : a === 180 ? ': exactly 180°' : a < 360 ? ': ' + a + '° = 360° − ' + (360 - a) + '°' : '');
+      return [a + '°', eq];
+    }
+
+    /* ======== Circles ======== */
+    function drawCirc(W, H) {
+      var C = P.circ, Hh = Math.max(H, 260), k = Math.max(8, Math.min(30, (W - 40) / (C.roll ? Math.PI * 10 + 1 : 10.5), (Hh - (C.roll ? 90 : 40)) / 10.5)), r = C.r * k, cx = W / 2, cy = 20 + 5 * k;
+      geo = { cx: cx, cy: cy, k: k };
+      var s = svgOpen(W, Hh, 'A circle with radius ' + C.r + ' cm'), hx = cx + r * Math.cos(-Math.PI / 6), hy = cy + r * Math.sin(-Math.PI / 6);
+      s += '<circle class="mp-mkcirc" cx="' + cx + '" cy="' + cy + '" r="' + r + '"/>';
+      if (C.d) s += '<line class="mp-mkdia" x1="' + (cx - r) + '" y1="' + cy + '" x2="' + (cx + r) + '" y2="' + cy + '"/><text class="mp-mktx d" x="' + (cx - r / 2) + '" y="' + (cy + 18) + '">d</text>';
+      s += '<line class="mp-mkrad" x1="' + cx + '" y1="' + cy + '" x2="' + hx.toFixed(1) + '" y2="' + hy.toFixed(1) + '"/><text class="mp-mktx r" x="' + (cx + (hx - cx) / 2 - 4).toFixed(1) + '" y="' + (cy + (hy - cy) / 2 - 8).toFixed(1) + '">r</text>';
+      s += '<circle class="mp-mkvx" cx="' + cx + '" cy="' + cy + '" r="4"/><circle class="mp-mkhd" data-drag="rad" cx="' + hx.toFixed(1) + '" cy="' + hy.toFixed(1) + '" r="13"/>';
+      if (C.roll) {
+        /* the circle unrolled: a little more than 3 diameters */
+        var Cl = Math.PI * 2 * r, x0 = cx - Cl / 2, y = cy + r + 40, dd = 2 * r;
+        s += '<line class="mp-mkroll" x1="' + x0 + '" y1="' + y + '" x2="' + (x0 + Cl) + '" y2="' + y + '"/>';
+        for (var i = 0; i < 3; i++) s += '<line class="mp-mkdia" x1="' + (x0 + i * dd + 2) + '" y1="' + (y + 12) + '" x2="' + (x0 + (i + 1) * dd - 2) + '" y2="' + (y + 12) + '"/><text class="mp-mktx d" x="' + (x0 + (i + 0.5) * dd) + '" y="' + (y + 30) + '">d</text>';
+        s += '<text class="mp-mktx d" x="' + (x0 + 3 * dd + (Cl - 3 * dd) / 2) + '" y="' + (y + 30) + '">+</text>';
+      }
+      return s + '</svg>';
+    }
+    function circRead() {
+      var r = P.circ.r, d = 2 * r, C = Math.PI * d, A = Math.PI * r * r;
+      return ['r = ' + d1(r) + ' cm', 'd = 2 × ' + d1(r) + ' = <b>' + d1(d) + '</b> cm. C = π × ' + d1(d) + ' ≈ <b>' + d1(C) + '</b> cm. A = π × ' + d1(r) + '² ≈ <b>' + d1(A) + '</b> cm²'];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'len') return '<small>Things</small>' + Object.keys(MK_LEN).map(function (k) { return '<button type="button" class="mp-mktb" data-o="' + k + '" aria-pressed="' + (P.len.o === k) + '"><svg width="52" height="22" viewBox="0 0 52 22" aria-hidden="true">' + thing(k, 2, 11, k === 'leaf' ? 30 : k === 'crayon' ? 36 : 48, 10) + '</svg><span>' + MK_LEN[k][0] + '</span></button>'; }).join('');
+      if (m === 'mass') {
+        return '<small>Things</small>' + Object.keys(MK_MASS).filter(function (k) { return g3 || MK_MASS[k][1]; }).map(function (k) { return '<button type="button" class="mp-mktb" data-o="' + k + '" aria-pressed="' + (P.mass.o === k) + '"><svg width="44" height="34" viewBox="0 0 44 34" aria-hidden="true">' + massPic(k, 22, 32, 40) + '</svg><span>' + MK_MASS[k][0] + '</span></button>'; }).join('') +
+          '<small>' + (g3 ? 'Weights' : 'Cubes') + '</small>' + (g3 ? MK_W.map(function (w) { return '<button type="button" class="mp-mktb w" data-w="' + w[0] + '">' + w[2] + '</button>'; }).join('') : '<button type="button" class="mp-mktb w" data-w="c1">1 cube</button><button type="button" class="mp-mktb w" data-w="c5">5 cubes</button>');
+      }
+      if (m === 'cap') return '<small>Containers</small>' + Object.keys(MK_CAP).filter(function (k) { return g3 || MK_CAP[k][1]; }).map(function (k) { return '<button type="button" class="mp-mktb" data-o="' + k + '" aria-pressed="' + (P.cap.c === k) + '"><svg width="40" height="36" viewBox="0 0 40 36" aria-hidden="true"><path class="mp-mkcont" d="' + contShape(k, 20, 34, 38, 32) + '"/></svg><span>' + MK_CAP[k][0] + '</span></button>'; }).join('');
+      if (m === 'ang') return '<small>Angles</small><p class="mp-fknote">Drag the dot to open or close the angle.</p>';
+      return '<small>Circles</small><p class="mp-fknote">Drag the dot to make the circle bigger or smaller.</p>';
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'len' ? lenRead() : m === 'mass' ? massRead() : m === 'cap' ? capRead() : m === 'ang' ? angRead() : circRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'len') {
+        if (!g4) h += btn('by-cubes', 'Cubes', P.len.by === 'cubes') + btn('by-clips', 'Paper clips', P.len.by === 'clips') + (g2 ? btn('by-ruler', 'Ruler', P.len.by === 'ruler') : '');
+        if (P.len.by === 'ruler') h += btn('rl', 'Move left', null, P.len.off <= 0) + btn('rr', 'Move right', null, P.len.off >= geo.RL - lenOf() - 0.05);
+      }
+      if (m === 'mass') h += btn('off', 'Take all off', null, !P.mass.w.length);
+      if (m === 'cap') h += btn('fill', 'Fill', null, P.cap.fill === capOf(P.cap.c)) + btn('pour', 'Pour into jug', null, !P.cap.fill || P.cap.jug >= jugCap()) + btn('empty', 'Empty jug', null, !P.cap.jug);
+      if (m === 'ang') h += btn('a-10', '−10°') + btn('a-1', '−1°') + btn('a1', '+1°') + btn('a10', '+10°') + btn('right', 'Right angle', P.ang.right) + (g5 ? btn('prot', 'Protractor', P.ang.prot) : '');
+      if (m === 'circ') h += btn('r-', 'Smaller', null, P.circ.r <= 1) + btn('r+', 'Bigger', null, P.circ.r >= 5) + btn('dia', 'Diameter', P.circ.d) + btn('roll', 'Unroll', P.circ.roll);
+      snapsEl.innerHTML = h;
+    }
+    function paintMode(W, H) { var m = P.mode; return m === 'len' ? drawLen(W, H) : m === 'mass' ? drawMass(W, H) : m === 'cap' ? drawCap(W, H) : m === 'ang' ? drawAng(W, H) : drawCirc(W, H); }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-mkdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(220, sz[1] - 70);
+      win.innerHTML = paintMode(W, H);
+      snaps();
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) win.innerHTML = paintMode(W, Math.max(200, H - over - 4));
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, last: last }; }
+    function setAng(a) { P.ang.a = g6 ? ((Math.round(a) % 360) + 360) % 360 : clamp(Math.round(a), 0, 180); }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-o],[data-w]'); if (!b) return;
+      act(function () {
+        var ob = b.getAttribute('data-o'), w = b.getAttribute('data-w');
+        if (ob && P.mode === 'len') { P.len.o = ob; P.len.off = Math.min(P.len.off, Math.max(0, rulerLen(size()[0]) - lenOf())); }
+        if (ob && P.mode === 'mass') { P.mass.o = ob; P.mass.w = []; }
+        if (ob && P.mode === 'cap') P.cap = { c: ob, fill: 0, jug: 0, meas: null, over: false };
+        if (w) {
+          var add = w === 'c5' ? ['c', 'c', 'c', 'c', 'c'] : w === 'c1' ? ['c'] : [w];
+          if (P.mass.w.length + add.length > 60) { announce(T, 'The pan holds up to 60.'); return; }
+          P.mass.w = P.mass.w.concat(add);
+        }
+        last = ob ? 'thing' : 'weight';
+      });
+    });
+    qs('.mp-mkdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      act(function () {
+        var C = P.cap;
+        if (a.indexOf('by-') === 0) { P.len.by = a.slice(3); P.len.off = 0; }
+        if (a === 'rl') P.len.off = Math.max(0, Math.round((P.len.off - 1) * 10) / 10);
+        if (a === 'rr') P.len.off = Math.min(geo.RL - lenOf(), Math.round((P.len.off + 1) * 10) / 10);
+        if (a === 'off') P.mass.w = [];
+        if (a === 'fill') { C.fill = capOf(C.c); C.full = true; C.over = false; }
+        if (a === 'pour') {
+          var amt = Math.min(C.fill, jugCap() - C.jug);
+          C.meas = C.full && !C.jug && amt === C.fill ? amt : null;
+          C.over = amt < C.fill; C.fill -= amt; C.jug += amt; C.full = false;
+        }
+        if (a === 'empty') { C.jug = 0; C.meas = null; C.over = false; }
+        if (/^a-?\d+$/.test(a)) setAng(P.ang.a + +a.slice(1));
+        if (a === 'right') P.ang.right = !P.ang.right;
+        if (a === 'prot') P.ang.prot = !P.ang.prot;
+        if (a === 'r-') P.circ.r = Math.max(1, P.circ.r - 0.5);
+        if (a === 'r+') P.circ.r = Math.min(5, P.circ.r + 0.5);
+        if (a === 'dia') P.circ.d = !P.circ.d;
+        if (a === 'roll') P.circ.roll = !P.circ.roll;
+        last = a;
+      });
+    });
+    /* drag the thing along the ruler, the arm of the angle, the radius; tap a weight on the pan to take it off */
+    var drag = null;
+    function svgPt(e) { var sv = qs('.mp-mksv', win), b = sv.getBoundingClientRect(), vb = sv.viewBox.baseVal; return [(e.clientX - b.left) * vb.width / b.width, (e.clientY - b.top) * vb.height / b.height]; }
+    win.addEventListener('pointerdown', function (e) {
+      var w = e.target.closest('[data-w]');
+      if (w && P.mode === 'mass') { var i = +w.getAttribute('data-w'); act(function () { P.mass.w.splice(i, 1); last = 'takeoff'; }); return; }
+      var d = e.target.closest('[data-drag]'); if (!d) return;
+      e.preventDefault();
+      drag = { kind: d.getAttribute('data-drag'), p: svgPt(e), off: P.len.off, before: snapshot() };
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (!drag) return;
+      var p = svgPt(e);
+      if (drag.kind === 'obj') {
+        if (P.len.by !== 'ruler') return;
+        var st = g4 ? 0.1 : 1, v = clamp(drag.off + (p[0] - drag.p[0]) / geo.k, 0, geo.RL - lenOf());
+        v = Math.round(v / st) * st; v = Math.round(v * 10) / 10;
+        if (v !== P.len.off) { P.len.off = v; draw(); }
+      } else if (drag.kind === 'arm') {
+        var a = Math.atan2(geo.vy - p[1], p[0] - geo.vx) * 180 / Math.PI;
+        if (a < 0) a = g6 ? a + 360 : (a < -90 ? 180 : 0);
+        var was = P.ang.a; setAng(a); if (P.ang.a !== was) draw();
+      } else if (drag.kind === 'rad') {
+        var r = clamp(Math.round(Math.hypot(p[0] - geo.cx, p[1] - geo.cy) / geo.k * 2) / 2, 1, 5);
+        if (r !== P.circ.r) { P.circ.r = r; draw(); }
+      }
+    });
+    function endDrag() {
+      if (!drag) return;
+      var d = drag; drag = null;
+      if (snapshot() !== d.before) { hist.push(d.before); if (hist.length > 60) hist.shift(); last = d.kind; change(); }
+    }
+    win.addEventListener('pointerup', endDrag);
+    win.addEventListener('pointercancel', endDrag);
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -6675,8 +7096,8 @@
       '<g style="fill:var(--ink,#132039)"><circle cx="10" cy="10" r="2.2"/><circle cx="24" cy="10" r="2.2"/><circle cx="38" cy="10" r="2.2"/><circle cx="10" cy="24" r="2.2"/><circle cx="24" cy="24" r="2.2"/><circle cx="38" cy="24" r="2.2"/><circle cx="10" cy="38" r="2.2"/><circle cx="24" cy="38" r="2.2"/><circle cx="38" cy="38" r="2.2"/></g><path d="M24 10L38 38H10Z" style="fill:none;stroke:#c25a12;stroke-width:2.5;stroke-linejoin:round"/>'],
     ['clock', 'meas', 'Clock', 'Move the time forward or back and see how much time has passed.', { t: 540 },
       '<circle cx="24" cy="24" r="17" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:2.5"/><path d="M24 24V12" style="stroke:var(--mp-hund,#2f62c4);stroke-width:2.5"/><path d="M24 24h8" style="stroke:var(--ink,#132039);stroke-width:3"/>'],
-    ['scale', 'meas', 'Kitchen scale', 'Put 1 kg, 100 g and 10 g blocks on the scale.', {},
-      '<rect x="8" y="12" width="32" height="4" rx="2" style="fill:var(--ink2,#55627a)"/><path d="M14 16h20l3 22H11Z" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><circle cx="24" cy="28" r="6" style="fill:var(--card,#fff);stroke:var(--ink,#132039);stroke-width:1.5"/><path d="M24 28l3-3" style="stroke:var(--bad,#b4283f);stroke-width:1.5"/>'],
+    ['scale', 'meas', 'Measuring kit', '', { tool: true },
+      '<rect x="4" y="16" width="40" height="16" rx="3" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><path d="M10 16v7M16 16v4M22 16v7M28 16v4M34 16v7M40 16v4" style="stroke:var(--ink2,#55627a);stroke-width:1.5"/>'],
     ['data', 'meas', 'Data and chance', '', { tool: true },
       '<path d="M6 40h36" style="stroke:var(--ink,#132039);stroke-width:2;stroke-linecap:round"/><rect x="9" y="24" width="7" height="16" rx="1.5" style="fill:#c0392b"/><rect x="20" y="12" width="7" height="28" rx="1.5" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="19" width="7" height="21" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
     ['coins', 'meas', 'Coins and bills', 'Tap coins and bills to add them. Tap one on the mat to take it away.', { set: [5, 10, 25, 100, 200, 500, 1000, 2000] },
