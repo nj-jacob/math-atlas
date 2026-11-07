@@ -3045,6 +3045,7 @@
      Tap the tray to add, tap a tile to take it away, "Remove zero pairs" cancels a positive and a negative tile. */
   M.tiles = function (root, o) {
     o = o || {};
+    if (o.tool) return toolTiles(root, o);
     var T = base(root, 'tile'), kinds = o.kinds || (o.ones ? ['one'] : o.x2 ? ['x2', 'x', 'one'] : ['x', 'one']), tiles = [];
     var LAB = { x2: 'x²', x: 'x', one: '1' };
     root.innerHTML = '<div class="mp-tray">' + kinds.map(function (k) {
@@ -7578,6 +7579,247 @@
     return T;
   }
 
+  /* ================= Algebra tiles (Toolbox) =================
+     Make: Expressions (Grade 5 and up: x tiles and unit tiles; Group like terms; give x a value to evaluate; negative tiles from Grade 7),
+     Equations (Grade 5 and up: tiles on both sides of =, add or take the same from both sides, Share the units among the x tiles, and check
+     the answer; negative tiles from Grade 7) and Integers (Grade 6 and up: yellow +1 and red −1 tiles, zero pairs, taking away (a zero pair
+     is added when there is nothing to take), and from Grade 8 a × b as groups put on or taken away). */
+  var AT_K = { x: ['x', 1, 'x'], nx: ['x', -1, '−x'], u: ['1', 1, '1'], nu: ['1', -1, '−1'] };
+  function toolTiles(root, o) {
+    var T = base(root, 'alg');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-att');
+    var gr = window.Atlas && +Atlas.grade || 0, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var MODES = [['ex', 'Expressions'], ['eq', 'Equations']].concat(g6 ? [['int', 'Integers']] : []);
+    var KINDS = g7 ? ['x', 'nx', 'u', 'nu'] : ['x', 'u'];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-attr"></div><div class="mp-dmain"><div class="mp-cmode mp-atdo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-attr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Expressions: the tiles in the order put down and the value of x; Equations: the tiles on each side, which side the
+       tray adds to, and whether the units are shared out; Integers: the +1 and −1 tiles, and a and b for a × b */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { mode: 'ex', ex: { t: [], xv: 3 }, eq: { L: [], R: [], to: 'L', share: false }, int: { p: 0, n: 0, a: 3, b: -2, made: '', ops: [] } }; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function tile(k, attr) { return '<button type="button" class="mp-at k' + k + '"' + (attr || '') + ' aria-label="' + AT_K[k][2] + ' tile">' + AT_K[k][2] + '</button>'; }
+    function count(L) { var c = { x: 0, u: 0 }; L.forEach(function (k) { c[AT_K[k][0] === 'x' ? 'x' : 'u'] += AT_K[k][1]; }); return c; }
+    function sn(n) { return n < 0 ? '−' + Math.abs(n) : String(n); }
+    function par(n) { return n < 0 ? '(' + sn(n) + ')' : String(n); }
+    function term(n, x) { return x ? (n === 1 ? 'x' : n === -1 ? '−x' : (n < 0 ? '−' : '') + Math.abs(n) + 'x') : (n < 0 ? '−' : '') + Math.abs(n); }
+    function simp(L) {
+      /* 2x + 3, x − 1, −x, 0 */
+      var c = count(L), s = '';
+      if (c.x) s = term(c.x, true);
+      if (c.u) s += s ? (c.u < 0 ? ' − ' : ' + ') + Math.abs(c.u) : term(c.u);
+      return s || '0';
+    }
+    function raw(L) {
+      /* the tiles as they lie: x + 1 + (−x) */
+      return L.map(function (k, i) { var t = AT_K[k][2]; return i ? ' + ' + (AT_K[k][1] < 0 ? '(' + t + ')' : t) : t; }).join('');
+    }
+    function sorted(L) { var c = count(L), out = []; for (var i = 0; i < Math.abs(c.x); i++) out.push(c.x > 0 ? 'x' : 'nx'); for (i = 0; i < Math.abs(c.u); i++) out.push(c.u > 0 ? 'u' : 'nu'); return out; }
+    function rowHtml(L, side) {
+      if (!L.length) return '<p class="mp-fknote">' + (side ? 'Empty' : 'Tap tiles in the tray to put them here.') + '</p>';
+      var xs = [], us = [];
+      L.forEach(function (k, i) { (AT_K[k][0] === 'x' ? xs : us).push(tile(k, ' data-ti="' + i + '"' + (side ? ' data-side="' + side + '"' : ''))); });
+      return '<div class="mp-atxs">' + xs.join('') + '</div><div class="mp-atus">' + us.join('') + '</div>';
+    }
+
+    /* ======== Expressions ======== */
+    function exHtml() { return '<div class="mp-atmat">' + rowHtml(P.ex.t) + '</div>' + (P.ex.t.some(function (k) { return AT_K[k][0] === 'x'; }) ? '<div class="mp-atxv"><span>Let x =</span>' + btn('xv-', '−') + '<b>' + sn(P.ex.xv) + '</b>' + btn('xv+', '+') + '</div>' : ''); }
+    function exRead() {
+      var L = P.ex.t;
+      if (!L.length) return ['', ''];
+      var c = count(L), s = simp(L), was = P.ex.was || raw(L), eq = (was !== s ? was + ' = ' : '') + '<b>' + s + '</b>';
+      if (c.x) {
+        var v = c.x * P.ex.xv + c.u, sub = (c.x === 1 ? '' : c.x === -1 ? '−' : c.x + ' × ') + par(P.ex.xv) + (c.u ? (c.u < 0 ? ' − ' : ' + ') + Math.abs(c.u) : '');
+        eq += '. If x = ' + sn(P.ex.xv) + ': ' + (sub !== sn(v) ? sub + ' = ' : '') + '<b>' + sn(v) + '</b>';
+      }
+      return [s, eq];
+    }
+
+    /* ======== Equations ======== */
+    function solved() {
+      /* the left is only x tiles of one sign and the right only units (or the other way round) */
+      var E = P.eq, l = count(E.L), r = count(E.R);
+      if (l.x && !l.u && !r.x) return { n: l.x, v: r.u };
+      if (r.x && !r.u && !l.x) return { n: r.x, v: l.u };
+      return null;
+    }
+    function eqHtml() {
+      var E = P.eq, sv = E.share && solved(), side = function (k) {
+        var L = E[k];
+        if (sv && L.every(function (q) { return AT_K[q][0] !== 'x'; }) && L.length) {
+          /* share the units into as many groups as there are x tiles */
+          var n = Math.abs(sv.n), per = L.length / n, g = '';
+          for (var i = 0; i < n; i++) g += '<div class="mp-atgrp">' + L.slice(i * per, (i + 1) * per).map(function (q) { return tile(q); }).join('') + '</div>';
+          return '<div class="mp-atgrps">' + g + '</div>';
+        }
+        return rowHtml(L, k);
+      };
+      return '<div class="mp-ateq"><div class="mp-atside' + (E.to !== 'R' ? ' to' : '') + '" data-to="L">' + side('L') + '</div><b class="mp-ateqs">=</b><div class="mp-atside' + (E.to !== 'L' ? ' to' : '') + '" data-to="R">' + side('R') + '</div></div>';
+    }
+    function eqRead() {
+      var E = P.eq;
+      if (!E.L.length && !E.R.length) return ['', ''];
+      var s = simp(E.L) + ' = ' + simp(E.R), sv = solved();
+      if (!sv) return [s, 'Do the same to both sides until x is alone'];
+      var v = sv.v / sv.n, ok = Math.abs(v - Math.round(v * 100) / 100) < 1e-9, vs = ok ? fmt(Math.round(v * 100) / 100) : sv.v + '/' + sv.n;
+      var eq = sv.n === 1 ? '<b>x = ' + sv.v + '</b>' : (E.share ? term(sv.n, true) + ' = ' + sv.v + ', so x = ' + sv.v + ' ÷ ' + (sv.n < 0 ? '(' + sv.n + ')' : sv.n) + ' = <b>' + vs + '</b>' : 'Share the ' + (sv.v ? Math.abs(sv.v) + ' ' : '') + 'units into ' + Math.abs(sv.n) + ' equal groups');
+      if (sv.n === 1 || E.share) {
+        /* check the answer in the equation as first built */
+        var first = E.start || null;
+        if (first) eq += '. Check: ' + check(first, v);
+      }
+      return [sv.n === 1 || E.share ? 'x = ' + vs : s, eq];
+    }
+    function check(st, v) {
+      var side = function (L) { var c = count(L), x = c.x ? (c.x === 1 ? '' : c.x === -1 ? '−' : c.x + ' × ') + fmt(v) : '', t = c.x * v + c.u; return [(x + (c.u ? (x ? (c.u < 0 ? ' − ' : ' + ') + Math.abs(c.u) : String(c.u)) : '')) || '0', t]; };
+      var a = side(st.L), b = side(st.R);
+      return a[0] + ' = ' + fmt(Math.round(a[1] * 100) / 100) + ' and ' + b[0] + ' = ' + fmt(Math.round(b[1] * 100) / 100) + (Math.abs(a[1] - b[1]) < 1e-9 ? ' ✓' : '');
+    }
+
+    /* ======== Integers ======== */
+    function intHtml() {
+      var I = P.int, z = Math.min(I.p, I.n), h = '<div class="mp-atint"><div class="mp-atrow">';
+      for (var i = 0; i < I.p; i++) h += tile('u', ' data-int="p"' + (i < z ? ' data-z="1"' : ''));
+      h += '</div><div class="mp-atrow">';
+      for (i = 0; i < I.n; i++) h += tile('nu', ' data-int="n"' + (i < z ? ' data-z="1"' : ''));
+      h += '</div></div>';
+      if (!I.p && !I.n) h = '<div class="mp-atint"><p class="mp-fknote">Tap +1 or −1 to put tiles here.</p></div>';
+      if (g8) h += '<div class="mp-atxv"><span>a</span>' + btn('a-', '−') + '<b>' + sn(I.a) + '</b>' + btn('a+', '+') + '<span>b</span>' + btn('b-', '−') + '<b>' + sn(I.b) + '</b>' + btn('b+', '+') + btn('times', 'Make a × b') + '</div>';
+      return h;
+    }
+    function opsText(ops) {
+      /* 2 − (−2), 5 + (−3): each run of tiles put on or taken away is one number */
+      return ops.map(function (q, i) { var v = q[1] * q[2]; return i ? (q[0] === '+' ? ' + ' : ' − ') + par(v) : (q[0] === '+' ? sn(v) : '0 − ' + par(v)); }).join('');
+    }
+    function intRead() {
+      var I = P.int, v = I.p - I.n, z = Math.min(I.p, I.n), zn = z ? '. ' + pl(z, 'zero pair', 'zero pairs') + ' make 0' : '';
+      if (I.made) return [sn(v), I.made + zn];
+      if (!I.p && !I.n && !I.ops.length) return ['', ''];
+      var ex = opsText(I.ops);
+      return [sn(v), (ex && ex !== sn(v) ? ex + ' = ' : '') + '<b>' + sn(v) + '</b>' + zn];
+    }
+    function op(kind, v) { var I = P.int, q = I.ops[I.ops.length - 1]; I.made = ''; if (q && q[0] === kind && q[1] === v) q[2]++; else I.ops.push([kind, v, 1]); }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      if (P.mode === 'int') return '<small>Tiles</small>' + tile('u', ' data-k="u"') + tile('nu', ' data-k="nu"');
+      return '<small>Tiles</small>' + KINDS.map(function (k) { return tile(k, ' data-k="' + k + '"'); }).join('');
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'ex' ? exRead() : m === 'eq' ? eqRead() : intRead();
+      /* negative numbers with a true minus sign */
+      read.innerHTML = ((r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '')).replace(/(^|[^\w])-(?=\d)/g, '$1−');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'ex') h += btn('group', 'Group like terms', null, P.ex.t.length < 2) + btn('exclr', 'Clear', null, !P.ex.t.length);
+      if (m === 'eq') {
+        var E = P.eq, sv = solved();
+        h += '<span class="mp-atto">Add to</span>' + btn('to-L', 'Left', E.to === 'L') + btn('to-R', 'Right', E.to === 'R') + btn('to-B', 'Both sides', E.to === 'B');
+        h += (g7 ? btn('eqzero', 'Remove zero pairs', null, !hasZero(E.L) && !hasZero(E.R)) : '') + btn('share', 'Share', E.share, !sv || Math.abs(sv.n) < 2 || sv.v % sv.n !== 0) + btn('eqclr', 'Clear', null, !E.L.length && !E.R.length);
+      }
+      if (m === 'int') h += btn('takep', 'Take away +1') + btn('taken', 'Take away −1') + btn('zero', 'Remove zero pairs', null, !Math.min(P.int.p, P.int.n)) + btn('intclr', 'Clear', null, !P.int.p && !P.int.n);
+      snapsEl.innerHTML = h;
+    }
+    function hasZero(L) { var c = { x: 0, nx: 0, u: 0, nu: 0 }; L.forEach(function (k) { c[k]++; }); return c.x && c.nx || c.u && c.nu; }
+    function zeroOut(L) { return sorted(L); }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-atdo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var m = P.mode;
+      win.innerHTML = '<div class="mp-atwin">' + (m === 'ex' ? exHtml() : m === 'eq' ? eqHtml() : intHtml()) + '</div>';
+      snaps();
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, last: last }; }
+    function mark() { var E = P.eq; E.share = false; }
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-k]'); if (!b) return;
+      var k = b.getAttribute('data-k');
+      act(function () {
+        if (P.mode === 'ex') { if (P.ex.t.length < 30) P.ex.t.push(k); P.ex.was = null; }
+        if (P.mode === 'eq') {
+          var E = P.eq;
+          /* building an equation (adding to one side) starts it again; adding to both sides is a step */
+          if (E.to === 'B') { if (E.L.length < 24 && E.R.length < 24) { E.L.push(k); E.R.push(k); } }
+          else if (E[E.to].length < 24) { E[E.to].push(k); E.start = null; }
+          mark();
+        }
+        if (P.mode === 'int' && P.int.p + P.int.n < 40) { if (P.int.made) P.int.ops = []; P.int[k === 'u' ? 'p' : 'n']++; op('+', k === 'u' ? 1 : -1); }
+        last = 'add';
+      });
+    });
+    qs('.mp-atdo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    function startEq() { var E = P.eq; if (!E.start) E.start = { L: E.L.slice(), R: E.R.slice() }; }
+    function onSnap(a) {
+      act(function () {
+        var E = P.eq, I = P.int;
+        if (a === 'xv-' || a === 'xv+') P.ex.xv = clamp(P.ex.xv + (a === 'xv+' ? 1 : -1), g7 ? -10 : 0, 10);
+        if (a === 'group') { P.ex.was = P.ex.was || raw(P.ex.t); P.ex.t = sorted(P.ex.t); }
+        if (a === 'exclr') { P.ex.t = []; P.ex.was = null; }
+        if (a.indexOf('to-') === 0) { if (a === 'to-B') startEq(); E.to = a.slice(3); }
+        if (a === 'eqzero') { startEq(); E.L = zeroOut(E.L); E.R = zeroOut(E.R); mark(); }
+        if (a === 'share') { startEq(); E.share = !E.share; }
+        if (a === 'eqclr') { P.eq = { L: [], R: [], to: 'L', share: false }; }
+        if (a === 'takep' || a === 'taken') {
+          var key = a === 'takep' ? 'p' : 'n';
+          if (I.made) I.ops = [];
+          if (!I[key]) { I.p++; I.n++; announce(T, 'Added a zero pair, so there is one to take away.'); }
+          I[key]--; op('-', key === 'p' ? 1 : -1);
+        }
+        if (a === 'zero') { var z = Math.min(I.p, I.n); I.p -= z; I.n -= z; }
+        if (a === 'intclr') { I.p = 0; I.n = 0; I.made = ''; I.ops = []; }
+        if (/^[ab][+-]$/.test(a)) I[a[0]] = clamp(I[a[0]] + (a[1] === '+' ? 1 : -1), -6, 6);
+        if (a === 'times') {
+          /* a groups of b put on, or for negative a, taken away from zero pairs */
+          var tot = Math.abs(I.a * I.b), put = I.a >= 0;
+          I.p = 0; I.n = 0;
+          if (put) { if (I.b > 0) I.p = tot; else I.n = tot; }
+          else { if (I.b > 0) { I.n = tot; } else { I.p = tot; } }
+          I.ops = [];
+          I.made = (!I.a || !I.b ? '' : put ? I.a + ' groups of ' + sn(I.b) + ': ' : 'Start with ' + pl(tot, 'zero pair', 'zero pairs') + ', take away ' + Math.abs(I.a) + ' groups of ' + sn(I.b) + ': ') + par(I.a) + ' × ' + par(I.b) + ' = <b>' + sn(I.a * I.b) + '</b>';
+        }
+        last = a;
+      });
+    }
+    snapsEl.addEventListener('click', function (e) { var s = e.target.closest('.mp-snap'); if (s) onSnap(s.getAttribute('data-a')); });
+    win.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (s) { onSnap(s.getAttribute('data-a')); return; }
+      var t = e.target.closest('[data-ti],[data-int]');
+      if (!t) { var sd = e.target.closest('[data-to]'); if (sd && P.mode === 'eq' && P.eq.to !== 'B') act(function () { P.eq.to = sd.getAttribute('data-to'); last = 'side'; }); return; }
+      act(function () {
+        if (P.mode === 'ex') { P.ex.t.splice(+t.getAttribute('data-ti'), 1); P.ex.was = null; }
+        if (P.mode === 'int') { var w = t.getAttribute('data-int'); if (P.int.made) P.int.ops = []; P.int[w]--; op('-', w === 'p' ? 1 : -1); }
+        if (P.mode === 'eq') {
+          var E = P.eq, sd = t.getAttribute('data-side'), i = +t.getAttribute('data-ti'), k = E[sd][i];
+          if (E.to === 'B') {
+            /* take the same tile from both sides */
+            var o2 = sd === 'L' ? 'R' : 'L', j = E[o2].indexOf(k);
+            if (j < 0) { announce(T, 'There is no ' + AT_K[k][2] + ' on the other side. Add its opposite to both sides instead.'); return; }
+            startEq(); E[sd].splice(i, 1); E[o2].splice(j, 1);
+          } else { E[sd].splice(i, 1); E.start = null; }
+          mark();
+        }
+        last = 'take';
+      });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -7602,7 +7844,7 @@
       '<path d="M24 12L18 40h12Z" style="fill:var(--line,#dfe5ee)"/><path d="M8 14h32" style="stroke:var(--ink,#132039);stroke-width:3;stroke-linecap:round"/><path d="M8 14l-5 12h10ZM40 14l-5 12h10Z" style="fill:none;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-linejoin:round"/><rect x="4" y="20" width="5" height="5" rx="1" style="fill:var(--mp-ones,#e0a100)"/><path d="M36 26q4-7 8 0Z" style="fill:#8a6a3b"/>'],
     ['patterns', 'alg', 'Pattern builder', '', { tool: true },
       '<circle cx="9" cy="16" r="5" style="fill:#c0392b"/><rect x="17" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="11" width="10" height="10" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="6" y="34" width="6" height="6" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="18" y="28" width="6" height="12" rx="1" style="fill:var(--mp-ones,#e0a100)"/><rect x="30" y="22" width="6" height="18" rx="1" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['tiles', 'alg', 'Algebra tiles', 'Add positive and negative tiles. Remove zero pairs.', { x2: true },
+    ['tiles', 'alg', 'Algebra tiles', '', { tool: true },
       '<rect x="5" y="9" width="20" height="20" rx="2" style="fill:var(--mp-hund,#2f62c4)"/><rect x="28" y="9" width="7" height="20" rx="1.5" style="fill:var(--mp-tens,#2f9e44)"/><rect x="38" y="9" width="7" height="7" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/><rect x="38" y="20" width="7" height="7" rx="1.5" style="fill:var(--bad,#b4283f)"/>'],
     ['grid', 'space', 'Grid and robot', '', { tool: true },
       '<rect x="5" y="5" width="38" height="38" rx="4" style="fill:var(--card,#fff);stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M17.7 5v38M30.3 5v38M5 17.7h38M5 30.3h38" style="stroke:var(--line,#dfe5ee);stroke-width:1.5"/><path d="M11 37V24h13V11" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round"/><rect x="30" y="5.5" width="12" height="12" rx="3" style="fill:#2f62c4"/><path d="M33 13l3-4.5 3 4.5Z" style="fill:#fff"/>'],

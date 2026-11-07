@@ -1294,6 +1294,31 @@ button.mp-fkp{cursor:pointer}
 .mp-mntb[aria-pressed="true"]{border-color:var(--accent,#0b6e78);background:color-mix(in srgb,var(--accent,#0b6e78) 12%,var(--mcard))}
 .mp-mnt .mp-mntr .mp-cadd{flex:0 0 auto}
 
+/* ---------- Algebra tiles (Toolbox): expressions, equations, integers ---------- */
+.mp-att{--atx:#2f9e44;--atu:#e0a100;--atn:#c8323c}
+.mp-atwin{display:flex;flex-direction:column;align-items:center;gap:16px;width:100%;min-width:0}
+.mp-at{display:inline-flex;align-items:center;justify-content:center;border:1.5px solid color-mix(in srgb,var(--mink) 55%,transparent);border-radius:6px;font:800 .95rem var(--display,inherit);color:#fff;cursor:pointer;padding:0}
+.mp-at.ku,.mp-at.knu{width:40px;height:40px}.mp-at.kx,.mp-at.knx{width:40px;height:104px}
+.mp-at.kx{background:var(--atx)}.mp-at.ku{background:var(--atu);color:#1c2333}.mp-at.knx,.mp-at.knu{background:var(--atn)}
+.mp-at[data-z]{box-shadow:0 0 0 3px var(--mcard),0 0 0 5px var(--at-ink3,#7b879c)}
+.mp-atmat,.mp-atside,.mp-atint{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:center;gap:10px;min-height:130px;padding:14px;border-radius:14px;border:2px dashed var(--mline);width:100%;max-width:640px}
+.mp-atxs,.mp-atus{display:flex;flex-wrap:wrap;gap:6px;align-items:flex-end;justify-content:center}
+.mp-atus{max-width:236px}
+.mp-ateq{display:flex;align-items:stretch;gap:10px;width:100%}
+.mp-ateq .mp-atside{flex:1 1 0;min-width:0;max-width:none;cursor:pointer}
+.mp-atside.to{border-color:var(--accent,#0b6e78);background:color-mix(in srgb,var(--accent,#0b6e78) 5%,transparent)}
+.mp-ateqs{align-self:center;font:800 2rem var(--display,inherit);color:var(--mink)}
+.mp-atgrps{display:flex;flex-wrap:wrap;gap:10px;justify-content:center}
+.mp-atgrp{display:flex;flex-wrap:wrap;gap:4px;max-width:132px;padding:6px;border-radius:10px;border:2px solid var(--accent,#0b6e78)}
+.mp-atint{flex-direction:column;align-items:center}
+.mp-atrow{display:flex;flex-wrap:wrap;gap:6px;justify-content:center;min-height:40px}
+.mp-atxv{display:flex;align-items:center;flex-wrap:wrap;justify-content:center;gap:8px}
+.mp-atxv span,.mp-atto{font-weight:700;color:var(--ink2,#55627a);font-size:.88rem}
+.mp-atxv b{min-width:2em;text-align:center;font:800 1.2rem var(--display,inherit);color:var(--mink)}
+.mp-attr .mp-at{flex:0 0 auto}
+.mp-attr .mp-at.kx,.mp-attr .mp-at.knx{height:84px}
+@media (max-width:600px){.mp-at.kx,.mp-at.knx{height:84px;width:34px}.mp-at.ku,.mp-at.knu{width:34px;height:34px}.mp-ateq{flex-direction:column}.mp-ateqs{font-size:1.5rem}}
+
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}

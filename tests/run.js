@@ -949,6 +949,43 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox money: the page runs off the side of a phone screen');
   }
 
+  /* 3a19. Toolbox algebra tiles: x + 1 + x + 1 + 1 is 2x + 3, which is 9 when x = 3; from Grade 7 x + 1 + (−x) + x + (−1) groups to x;
+     2x + 3 = 7 with 3 taken from both sides is 2x = 4, and Share gives x = 2 with a check (7 = 7); from Grade 6 five +1 tiles and three
+     −1 tiles are 5 + (−3) = 2; from Grade 7 taking away two −1 tiles from 2 is 2 − (−2) = 4; in Grade 8 3 × (−2) = −6. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('tiles'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/tiles'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-att .mp-read').textContent.replace(/ /g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox algebra tiles: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const put = async (...ks) => { for (const k of ks) await page.click('.mp-attr [data-k="' + k + '"]'); };
+    const mode = m => page.click('.mp-atdo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await put('x', 'u', 'x', 'u', 'u');
+    await bad('= 2x + 3', 'two x tiles and three units');
+    await bad('2 × 3 + 3 = 9', 'two x tiles and three units with x = 3');
+    if (g >= 7) { await snap('exclr'); await put('x', 'u', 'nx', 'x', 'nu'); await snap('group'); await bad('x + 1 + (−x) + x + (−1) = x', 'grouping like terms'); }
+    await mode('eq');
+    await put('x', 'x', 'u', 'u', 'u'); await snap('to-R'); await put('u', 'u', 'u', 'u', 'u', 'u', 'u');
+    await bad('2x + 3 = 7', 'the equation built');
+    await snap('to-B');
+    for (let i = 0; i < 3; i++) await page.click('.mp-atside[data-to=L] .mp-at.ku');
+    await bad('2x = 4', '3 taken from both sides');
+    await snap('share');
+    await bad('x = 4 ÷ 2 = 2', 'sharing 4 units between 2 x tiles');
+    await bad('7 = 7', 'the check');
+    if (g >= 6) {
+      await mode('int');
+      await put('u', 'u', 'u', 'u', 'u', 'nu', 'nu', 'nu');
+      await bad('5 + (−3) = 2', 'five +1 tiles and three −1 tiles');
+      if (g >= 7) { await snap('intclr'); await put('u', 'u'); await snap('taken', 2); await bad('2 − (−2) = 4', 'taking two −1 tiles from 2'); }
+      if (g >= 8) { await snap('times'); await bad('3 × (−2) = −6', '3 groups of −2'); }
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox algebra tiles: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
