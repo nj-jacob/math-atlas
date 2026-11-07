@@ -768,6 +768,41 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox solids: the page runs off the side of a phone screen');
   }
 
+  /* 3a14. Toolbox arrays and area model: 3 rows of 4 reads 3 rows of 4 is 12 (Grade 1), 3 groups of 4 is 12 (Grade 2) or 3 × 4 = 12
+     with 12 ÷ 3 = 4 (Grade 3 and up); from Grade 3 one more column and a split after column 3 read 3 × 5 = 3 × 3 + 3 × 2; covering
+     squares with A rectangle reads 12 squares, or 12 cm² with perimeter 14 cm from Grade 3 and 4 × 3 = 12 from Grade 4; Grade 4 and up:
+     the area model shows the partial products (34 × 6 = 180 + 24 = 204 in Grade 4, 23 × 14 = 200 + 80 + 30 + 12 = 322 from Grade 5)
+     and 97 ÷ 4 or 384 ÷ 12 with its quotient chunks. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('areagrid'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/areagrid'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-art .mp-read');
+    const has = async (t, f) => { for (let i = 0; i < 20; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox arrays: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-ardo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await bad(g === 1 ? '3 rows of 4 is 12' : g === 2 ? '3 groups of 4 is 12' : '12 ÷ 3 = 4', 'an array of 3 rows of 4');
+    if (g >= 3) {
+      await page.click('.mp-pstb[data-st=c][data-d="1"]');
+      await page.click('.mp-arcut[data-cut="3"]');
+      await bad('3 × 5 = 3 × 3 + 3 × 2 = 9 + 6 = 15', 'a 3 by 5 array split after column 3');
+    }
+    await mode('cover');
+    await page.click('.mp-snap[data-a=rect]');
+    await bad(g >= 3 ? 'perimeter 14 cm' : '12 squares', 'a 4 by 3 rectangle of squares');
+    if (g >= 4) await bad('4 × 3 = 12', 'a 4 by 3 rectangle of squares');
+    if (g >= 4) {
+      await mode('model');
+      await bad(g === 4 ? '34 × 6 = 204' : '23 × 14 = 322', 'the area model');
+      await bad(g === 4 ? '180 + 24 = 204' : '200 + 80 + 30 + 12 = 322', 'the partial products');
+      await page.click('[data-op=d]');
+      await bad(g === 4 ? '96 ÷ 4 = 24' : '384 ÷ 12 = 32', 'dividing with the area model');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox arrays: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {

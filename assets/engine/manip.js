@@ -3157,6 +3157,7 @@
   /* ================= Area grid ================= */
   M.areagrid = function (root, o) {
     o = o || {};
+    if (o.tool) return toolArea(root, o);
     var T = base(root, 'area'), C = o.cols || 10, Rw = o.rows || 6, unit = o.unit || 'cm', on = {}, last = '';
     root.innerHTML = '<div class="mp-acts">' + abtn('clear', 'Clear') + '</div><div class="mp-agrid" style="grid-template-columns:repeat(' + C + ',minmax(0,1fr));gap:2px;max-width:' + (C * 46) + 'px"></div><div class="mp-read" aria-live="polite"></div>';
     var g = qs('.mp-agrid', root), read = qs('.mp-read', root), h = '';
@@ -6039,6 +6040,278 @@
   }
   M.solids = function (root, o) { return toolSolid(root, o || {}); };
 
+  /* ================= Arrays and area model (Toolbox) =================
+     Make: Arrays (every grade: rows and columns of dots, seen as equal groups; from Grade 3 the times and division facts, Turn it, and
+     Split it into two parts by tapping between columns), Cover (every grade: paint squares to cover a shape; square centimetres and the
+     perimeter from Grade 3, length × width for a rectangle from Grade 4) and Area model (Grade 4 and up: multiply or divide with a
+     rectangle cut by place value; two-digit by two-digit from Grade 5, a decimal tenth from Grade 6, decimals by decimals from Grade 7). */
+  function toolArea(root, o) {
+    var T = base(root, 'arr');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-art');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7;
+    var MODES = [['arr', 'Arrays'], ['cover', 'Cover']].concat(g4 ? [['model', 'Area model']] : []);
+    var GC = 12, GR = 8;
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-artr"></div><div class="mp-dmain"><div class="mp-cmode mp-ardo" role="group" aria-label="Make"><span>Make</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-artr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Arrays: rows, columns, groups or array, where it is split; Cover: the squares covered; Area model: multiply or
+       divide, the two numbers (or the total and the divisor) and whether they step in tenths */
+    var P, shown = false, hist = [], last = '';
+    function fresh() {
+      P = { mode: 'arr', a: { r: 3, c: 4, groups: !g3, split: 0 }, cv: { on: {} },
+        m: { op: 'x', a: g5 ? 23 : 34, b: g5 ? 14 : 6, n: g5 ? 384 : 96, d: g5 ? 12 : 4, dec: false } };
+    }
+    function size() { var cs = getComputedStyle(mat); return [(mat.clientWidth || 700) - parseFloat(cs.paddingLeft) - parseFloat(cs.paddingRight), (mat.clientHeight || 500) - parseFloat(cs.paddingTop) - parseFloat(cs.paddingBottom)]; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function stp(id, lab, val) {
+      return '<div class="mp-dans mp-dbig"><small>' + lab + '</small><div class="mp-pstr"><button type="button" class="mp-pstb" data-st="' + id + '" data-d="-1" aria-label="' + lab + ': less">&minus;</button>' +
+        '<b>' + val + '</b><button type="button" class="mp-pstb" data-st="' + id + '" data-d="1" aria-label="' + lab + ': more">+</button></div></div>';
+    }
+    function r2(v) { return Math.round(v * 1000) / 1000; }
+    function f(v) { return fmt(r2(v)); }
+    function svgOpen(W, H, lab) { return '<svg class="mp-dsvg mp-arsv" width="' + W + '" height="' + H + '" viewBox="0 0 ' + W + ' ' + H + '" role="img" aria-label="' + lab + '">'; }
+
+    /* ======== Arrays ======== */
+    function drawArr(W, H) {
+      var A = P.a, side = A.groups ? 1.5 : 1, u = Math.max(16, Math.min(64, Math.floor((W - 40) / (A.c + (A.split ? 0.8 : 0))), Math.floor((H - 40) / (A.r * side))));
+      var gap = A.split ? u * 0.8 : 0, Wd = A.c * u + gap + 24, Hd = A.r * u * side + 24, s = svgOpen(Wd, Hd, A.r + ' rows of ' + A.c);
+      for (var i = 0; i < A.r; i++) {
+        var y = 12 + i * u * side + u / 2 + (A.groups ? u * 0.25 : 0);
+        if (A.groups) s += '<rect class="mp-argrp" x="6" y="' + (y - u * 0.62).toFixed(1) + '" width="' + (A.c * u + gap + 12) + '" height="' + (u * 1.24).toFixed(1) + '" rx="' + (u * 0.62).toFixed(1) + '"/>';
+        for (var j = 0; j < A.c; j++) {
+          var x = 12 + j * u + u / 2 + (A.split && j >= A.split ? gap : 0);
+          s += '<circle class="mp-ardot' + (A.split && j >= A.split ? ' b' : '') + '" cx="' + x.toFixed(1) + '" cy="' + y.toFixed(1) + '" r="' + (u * 0.36).toFixed(1) + '"/>';
+        }
+      }
+      /* tap targets between columns, to split the array there */
+      if (g3 && !A.groups) for (var k = 1; k < A.c; k++) {
+        var gx = 12 + k * u + (A.split && k > A.split ? gap : 0) + (A.split === k ? gap / 2 : 0);
+        s += '<rect class="mp-arcut' + (A.split === k ? ' on' : '') + '" data-cut="' + k + '" x="' + (gx - 8).toFixed(1) + '" y="4" width="16" height="' + (Hd - 8) + '" rx="8"><title>Split after column ' + k + '</title></rect>';
+      }
+      return '<div class="mp-s3w">' + s + '</svg></div>' + (g3 && !A.groups && !A.split ? '<p class="mp-fknote">Tap between two columns to split the array.</p>' : '');
+    }
+    function arrRead() {
+      var A = P.a, n = A.r * A.c;
+      if (!g2) return [n + '', '<b>' + A.r + '</b> rows of <b>' + A.c + '</b> is <b>' + n + '</b>'];
+      if (!g3) return [A.r + ' groups of ' + A.c + ' is ' + n, n + ' shared into ' + A.r + ' equal groups is <b>' + A.c + '</b> in each'];
+      var big = A.r + ' × ' + A.c + ' = ' + n, eq = A.c + ' × ' + A.r + ' = ' + n + ', ' + n + ' ÷ ' + A.r + ' = ' + A.c + ', ' + n + ' ÷ ' + A.c + ' = ' + A.r;
+      if (A.split) { var c2 = A.c - A.split; eq = A.r + ' × ' + A.c + ' = <b>' + A.r + ' × ' + A.split + '</b> + <b>' + A.r + ' × ' + c2 + '</b> = ' + A.r * A.split + ' + ' + A.r * c2 + ' = <b>' + n + '</b>'; }
+      return [big, eq];
+    }
+
+    /* ======== Cover ======== */
+    function cells() { return Object.keys(P.cv.on).map(function (k) { return k.split(',').map(Number); }); }
+    function perim(L) {
+      var p = 0, on = P.cv.on;
+      L.forEach(function (q) { [[1, 0], [-1, 0], [0, 1], [0, -1]].forEach(function (d) { if (!on[(q[0] + d[0]) + ',' + (q[1] + d[1])]) p++; }); });
+      return p;
+    }
+    function rectOf(L) {
+      if (!L.length) return null;
+      var xs = L.map(function (q) { return q[0]; }), ys = L.map(function (q) { return q[1]; }), l = Math.max.apply(null, xs) - Math.min.apply(null, xs) + 1, w = Math.max.apply(null, ys) - Math.min.apply(null, ys) + 1;
+      return l * w === L.length ? [l, w] : null;
+    }
+    function drawCover(W, H) {
+      var u = Math.max(22, Math.min(56, Math.floor((W - 8) / GC), Math.floor((H - 8) / GR))), s = svgOpen(GC * u + 2, GR * u + 2, 'Squares to cover');
+      for (var y = 0; y < GR; y++) for (var x = 0; x < GC; x++) s += '<rect class="mp-arsq' + (P.cv.on[x + ',' + y] ? ' on' : '') + '" data-sq="' + x + ',' + y + '" x="' + (1 + x * u) + '" y="' + (1 + y * u) + '" width="' + u + '" height="' + u + '"/>';
+      return '<div class="mp-s3w">' + s + '</svg></div>';
+    }
+    function coverRead() {
+      var L = cells(), n = L.length, rc = rectOf(L), unit = g3 ? ' cm²' : '';
+      if (!n) return ['', ''];
+      var big = g3 ? n + unit : pl(n, 'square', 'squares'), eq = '';
+      if (g3) eq = 'perimeter <b>' + perim(L) + ' cm</b>';
+      if (g4 && rc) eq += (eq ? '. ' : '') + 'a rectangle: <b>' + rc[0] + ' × ' + rc[1] + ' = ' + n + '</b>';
+      return [big, eq];
+    }
+
+    /* ======== Area model ======== */
+    /* place-value parts: 345 is 300, 40, 5; 2.3 is 2 and 0.3 */
+    function parts(v) {
+      var out = [], s = String(r2(v)), dot = s.indexOf('.'), ip = dot < 0 ? s : s.slice(0, dot), fp = dot < 0 ? '' : s.slice(dot + 1);
+      for (var i = 0; i < ip.length; i++) { var d = +ip[i]; if (d) out.push(d * Math.pow(10, ip.length - 1 - i)); }
+      for (var j = 0; j < fp.length; j++) { var e = +fp[j]; if (e) out.push(r2(e / Math.pow(10, j + 1))); }
+      return out.length ? out : [0];
+    }
+    function widths(L, total) {
+      /* each part gets room by its size, but never too thin to read */
+      var sum = L.reduce(function (s, v) { return s + v; }, 0) || 1, min = 70, free = Math.max(0, total - min * L.length);
+      return L.map(function (v) { return min + free * v / sum; });
+    }
+    function quotientChunks(n, d) {
+      /* take away the biggest place-value chunk of the divisor each time: 384 ÷ 12 is 30 × 12, then 2 × 12 */
+      var out = [], left = n;
+      for (var pv = Math.pow(10, String(Math.floor(n / d)).length - 1); pv >= 1; pv /= 10) {
+        var k = Math.floor(left / (d * pv));
+        if (k) { out.push(k * pv); left -= k * pv * d; }
+      }
+      return { q: out, rem: left };
+    }
+    function drawModel(W, H) {
+      var Mm = P.m, s, Wd = Math.min(W - 10, 760), Hd = Math.min(H - 10, 420);
+      if (Mm.op === 'x') {
+        var A = parts(Mm.a), B = parts(Mm.b), cw = widths(A, Wd - 70), rh = widths(B, Hd - 50), x0 = 60, y0 = 34;
+        s = svgOpen(Wd, Hd, Mm.a + ' times ' + Mm.b);
+        var x = x0;
+        A.forEach(function (a, i) {
+          s += '<text class="mp-artop" x="' + (x + cw[i] / 2).toFixed(1) + '" y="22" text-anchor="middle">' + f(a) + '</text>';
+          var y = y0;
+          B.forEach(function (b, j) {
+            if (i === 0) s += '<text class="mp-artop" x="' + (x0 - 10) + '" y="' + (y + rh[j] / 2 + 6).toFixed(1) + '" text-anchor="end">' + f(b) + '</text>';
+            s += '<rect class="mp-arpart p' + ((i * B.length + j) % 4) + '" x="' + x.toFixed(1) + '" y="' + y.toFixed(1) + '" width="' + cw[i].toFixed(1) + '" height="' + rh[j].toFixed(1) + '"/>';
+            if (shown) s += '<text class="mp-arpt" x="' + (x + cw[i] / 2).toFixed(1) + '" y="' + (y + rh[j] / 2 + 6).toFixed(1) + '" text-anchor="middle">' + f(a * b) + '</text>';
+            y += rh[j];
+          });
+          x += cw[i];
+        });
+        return '<div class="mp-s3w">' + s + '</svg></div>';
+      }
+      var Q = quotientChunks(Mm.n, Mm.d), cols = Q.q.concat(Q.rem ? ['r'] : []), tw = widths(cols.map(function (q) { return q === 'r' ? Q.rem / Mm.d : q; }), Wd - 70), hh = Math.min(Hd - 60, 160), xx = 60;
+      s = svgOpen(Wd, hh + 60, Mm.n + ' divided by ' + Mm.d);
+      s += '<text class="mp-artop" x="50" y="' + (34 + hh / 2 + 6) + '" text-anchor="end">' + Mm.d + '</text>';
+      cols.forEach(function (q, i) {
+        var rem = q === 'r';
+        s += '<rect class="mp-arpart ' + (rem ? 'rem' : 'p' + (i % 4)) + '" x="' + xx.toFixed(1) + '" y="34" width="' + tw[i].toFixed(1) + '" height="' + hh + '"/>';
+        s += '<text class="mp-artop" x="' + (xx + tw[i] / 2).toFixed(1) + '" y="22" text-anchor="middle">' + (rem ? 'left' : shown ? f(q) : '?') + '</text>';
+        if (shown) s += '<text class="mp-arpt' + (rem ? ' rem' : '') + '" x="' + (xx + tw[i] / 2).toFixed(1) + '" y="' + (34 + hh / 2 + 6) + '" text-anchor="middle">' + (rem ? Q.rem : f(q * Mm.d)) + '</text>';
+        xx += tw[i];
+      });
+      return '<div class="mp-s3w">' + s + '</svg></div>';
+    }
+    function modelRead() {
+      var Mm = P.m;
+      if (Mm.op === 'x') {
+        var A = parts(Mm.a), B = parts(Mm.b), pp = [];
+        A.forEach(function (a) { B.forEach(function (b) { pp.push(r2(a * b)); }); });
+        return [f(Mm.a) + ' × ' + f(Mm.b) + ' = ' + f(Mm.a * Mm.b), pp.map(f).join(' + ') + ' = <b>' + f(Mm.a * Mm.b) + '</b>'];
+      }
+      var Q = quotientChunks(Mm.n, Mm.d), q = Q.q.reduce(function (s, v) { return s + v; }, 0);
+      var big = Mm.n + ' ÷ ' + Mm.d + ' = ' + q + (Q.rem ? ' R ' + Q.rem : '');
+      var eq = Q.q.map(function (k) { return Mm.d + ' × ' + k + ' = ' + Mm.d * k; }).join(', ') + (Q.rem ? ', and <b>' + Q.rem + '</b> left over' : '') + '. ' + Q.q.join(' + ') + ' = <b>' + q + '</b>';
+      if (Q.rem) eq += '. As a fraction: <b>' + q + ' ' + Q.rem + '/' + Mm.d + '</b>';
+      return [big, eq];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      if (P.mode === 'arr') return '<small>Array</small>' + stp('r', g3 ? 'rows' : 'groups', P.a.r) + stp('c', g3 ? 'columns' : 'in each', P.a.c);
+      if (P.mode === 'cover') return '<small>Cover</small><p class="mp-fknote">Tap or drag over the squares. Tap a covered square to clear it.</p>';
+      var Mm = P.m, h = '<small>Do</small><div class="mp-fkthings"><button type="button" data-op="x" aria-pressed="' + (Mm.op === 'x') + '">Multiply</button><button type="button" data-op="d" aria-pressed="' + (Mm.op === 'd') + '">Divide</button></div>';
+      if (Mm.op === 'x') h += stp('a', 'first number', f(Mm.a)) + stp('b', 'second number', f(Mm.b)) + (g6 ? '<div class="mp-fkthings"><button type="button" data-dec="1" aria-pressed="' + Mm.dec + '">Tenths</button></div>' : '');
+      else h += stp('n', 'number to share', Mm.n) + stp('d', 'divide by', Mm.d);
+      return h;
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var r = P.mode === 'arr' ? arrRead() : P.mode === 'cover' ? coverRead() : modelRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var h = '';
+      if (P.mode === 'arr') h += (g3 ? btn('groups', 'Groups', P.a.groups) + btn('turn', 'Turn it') + btn('unsplit', 'Join', null, !P.a.split) : '');
+      if (P.mode === 'cover') h += btn('rect', 'A rectangle') + btn('cclear', 'Clear', null, !cells().length);
+      if (P.mode === 'model' && P.m.op === 'x') h += btn('swap', 'Swap');
+      snapsEl.innerHTML = h;
+      snapsEl.hidden = !h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      snaps();
+      qsa('.mp-ardo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var sz = size(), W = Math.max(260, sz[0]), H = Math.max(240, sz[1] - 70);
+      var paint = function (h) { win.innerHTML = P.mode === 'arr' ? drawArr(W, h) : P.mode === 'cover' ? drawCover(W, h) : drawModel(W, h); };
+      paint(H);
+      var over = mat.scrollHeight - mat.clientHeight;
+      if (over > 0) paint(Math.max(180, H - over - 4));
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { var rc = rectOf(cells()); return { mode: P.mode, rows: P.a.r, cols: P.a.c, split: P.a.split, covered: cells().length, rect: rc, last: last }; }
+    var LIM = { r: [1, 12], c: [1, 12] };
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('button'); if (!b) return;
+      if (b.hasAttribute('data-op')) return act(function () { P.m.op = b.getAttribute('data-op'); last = 'op'; });
+      if (b.hasAttribute('data-dec')) return act(function () { P.m.dec = !P.m.dec; if (!P.m.dec) { P.m.a = Math.max(1, Math.round(P.m.a)); P.m.b = Math.max(1, Math.round(P.m.b)); } else if (g7) { P.m.a = 1.2; P.m.b = 2.3; } else P.m.b = 0.6; last = 'tenths'; });
+      if (!b.classList.contains('mp-pstb')) return;
+      var id = b.getAttribute('data-st'), d = +b.getAttribute('data-d');
+      act(function () {
+        var Mm = P.m;
+        if (id === 'r' || id === 'c') { P.a[id] = clamp(P.a[id] + d, LIM[id][0], LIM[id][1]); P.a.split = Math.min(P.a.split, P.a.c - 1); if (P.a.split < 1) P.a.split = 0; }
+        /* sizes the grade works with: one digit times up to three digits in Grade 4, then two by two digits, then tenths */
+        var maxA = g5 && !g6 ? 99 : 999, maxB = g5 ? 99 : 9;
+        if (id === 'a' || id === 'b') {
+          var tenth = Mm.dec && (id === 'b' || g7), stepv = tenth ? 0.1 : 1, big = id === 'a' ? (Mm.dec && g7 ? 9.9 : maxA) : (tenth ? 9.9 : maxB);
+          Mm[id] = r2(clamp(Mm[id] + d * stepv, tenth ? 0.1 : 1, big));
+        }
+        if (id === 'n') Mm.n = clamp(Mm.n + d, 10, 999);
+        if (id === 'd') Mm.d = clamp(Mm.d + d, 2, g5 ? 99 : 9);
+        last = 'size';
+      });
+    });
+    qs('.mp-ardo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    snapsEl.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (!s) return;
+      var a = s.getAttribute('data-a');
+      act(function () {
+        var A = P.a;
+        if (a === 'groups') A.groups = !A.groups;
+        if (a === 'turn') { var t = A.r; A.r = A.c; A.c = t; A.split = 0; }
+        if (a === 'unsplit') A.split = 0;
+        if (a === 'cclear') P.cv.on = {};
+        if (a === 'rect') { P.cv.on = {}; for (var y = 1; y <= 3; y++) for (var x = 1; x <= 4; x++) P.cv.on[x + ',' + y] = 1; }
+        if (a === 'swap') { var t2 = P.m.a; P.m.a = P.m.b; P.m.b = t2; }
+        last = a;
+      });
+    });
+    win.addEventListener('click', function (e) {
+      var c = e.target.closest('[data-cut]');
+      if (c && P.mode === 'arr') act(function () { var k = +c.getAttribute('data-cut'); P.a.split = P.a.split === k ? 0 : k; last = 'split'; });
+    });
+    /* Cover: tap a square, or drag across squares to paint them all the same way */
+    var paintTo = null, before = null;
+    function sqAt(e) { var el = document.elementFromPoint(e.clientX, e.clientY); return el && el.closest && el.closest('[data-sq]'); }
+    win.addEventListener('pointerdown', function (e) {
+      var q = e.target.closest('[data-sq]'); if (!q || P.mode !== 'cover') return;
+      e.preventDefault();
+      before = snapshot();
+      var k = q.getAttribute('data-sq');
+      paintTo = !P.cv.on[k];
+      if (paintTo) P.cv.on[k] = 1; else delete P.cv.on[k];
+      q.classList.toggle('on', paintTo);
+      if (win.setPointerCapture) try { win.setPointerCapture(e.pointerId); } catch (er) { /* a pointer that is already gone */ }
+    });
+    win.addEventListener('pointermove', function (e) {
+      if (paintTo == null) return;
+      var q = sqAt(e); if (!q) return;
+      var k = q.getAttribute('data-sq');
+      if (!!P.cv.on[k] === paintTo) return;
+      if (paintTo) P.cv.on[k] = 1; else delete P.cv.on[k];
+      q.classList.toggle('on', paintTo);
+    });
+    function endPaint() {
+      if (paintTo == null) return;
+      paintTo = null;
+      if (snapshot() !== before) { hist.push(before); if (hist.length > 60) hist.shift(); }
+      last = 'cover'; readout(); snaps(); change();
+    }
+    win.addEventListener('pointerup', endPaint);
+    win.addEventListener('pointercancel', endPaint);
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    var lw = 0;
+    if (window.ResizeObserver) new ResizeObserver(function () { var w = mat.clientWidth; if (w && w !== lw) { lw = w; draw(); } }).observe(mat); else window.addEventListener('resize', draw);
+    T.reset();
+    return T;
+  }
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -6057,7 +6330,7 @@
       '<path d="M5 31h38M8 27v8M18 27v8M28 27v8M38 27v8" style="stroke:var(--ink,#132039);stroke-width:2"/><path d="M8 27Q13 13 18 27M18 27Q23 13 28 27" style="fill:none;stroke:var(--accent,#0b6e78);stroke-width:2.5"/>'],
     ['fractions', 'parts', 'Fraction kit', '', { tool: true },
       '<rect x="5" y="15" width="38" height="18" rx="2" style="fill:var(--card,#fff);stroke:var(--accent,#0b6e78);stroke-width:2"/><rect x="5" y="15" width="19" height="18" rx="2" style="fill:#7646bf"/><path d="M24 15v18M14.5 15v18M33.5 15v18" style="stroke:var(--accent,#0b6e78);stroke-width:1.5"/>'],
-    ['areagrid', 'parts', 'Area grid', 'Tap squares to cover a shape and count its area.', { cols: 10, rows: 6 },
+    ['areagrid', 'parts', 'Arrays and area model', '', { tool: true },
       '<g style="fill:#c25a12"><rect x="7" y="9" width="9" height="9" rx="1"/><rect x="18" y="9" width="9" height="9" rx="1"/><rect x="29" y="9" width="9" height="9" rx="1"/><rect x="7" y="20" width="9" height="9" rx="1"/><rect x="18" y="20" width="9" height="9" rx="1"/><rect x="29" y="20" width="9" height="9" rx="1"/></g><g style="fill:var(--line,#dfe5ee)"><rect x="7" y="31" width="9" height="9" rx="1"/><rect x="18" y="31" width="9" height="9" rx="1"/><rect x="29" y="31" width="9" height="9" rx="1"/></g>'],
     ['balance', 'alg', 'Balance', '', { tool: true },
       '<path d="M24 12L18 40h12Z" style="fill:var(--line,#dfe5ee)"/><path d="M8 14h32" style="stroke:var(--ink,#132039);stroke-width:3;stroke-linecap:round"/><path d="M8 14l-5 12h10ZM40 14l-5 12h10Z" style="fill:none;stroke:var(--ink2,#55627a);stroke-width:1.5;stroke-linejoin:round"/><rect x="4" y="20" width="5" height="5" rx="1" style="fill:var(--mp-ones,#e0a100)"/><path d="M36 26q4-7 8 0Z" style="fill:#8a6a3b"/>'],

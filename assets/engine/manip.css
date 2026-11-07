@@ -1132,6 +1132,23 @@ button.mp-fkp{cursor:pointer}
 @media (max-width:700px){
   .mp-s3t .mp-snap{padding-inline:10px}
 }
+/* ---------- Arrays and area model (Toolbox): arrays of dots, covering squares, the area model for multiplying and dividing ---------- */
+.mp-art{--ara:var(--mp-hund,#2f62c4);--arb:#c25a12}
+.mp-arsv{touch-action:none;-webkit-user-select:none;user-select:none}
+.mp-ardot{fill:var(--ara)}.mp-ardot.b{fill:var(--arb)}
+.mp-argrp{fill:color-mix(in srgb,var(--ara) 8%,transparent);stroke:color-mix(in srgb,var(--ara) 45%,transparent);stroke-width:2}
+.mp-arcut{fill:transparent;cursor:pointer}
+.mp-arcut:hover{fill:color-mix(in srgb,var(--arb) 12%,transparent)}
+.mp-arcut.on{fill:color-mix(in srgb,var(--arb) 18%,transparent)}
+.mp-arsq{fill:var(--mcard);stroke:var(--mline);stroke-width:1.2;cursor:pointer}
+.mp-arsq.on{fill:color-mix(in srgb,var(--arb) 80%,var(--mcard));stroke:color-mix(in srgb,var(--arb) 60%,#000)}
+.mp-arpart{stroke:var(--mcard);stroke-width:3}
+.mp-arpart.p0{fill:color-mix(in srgb,var(--ara) 75%,var(--mcard))}.mp-arpart.p1{fill:color-mix(in srgb,var(--arb) 75%,var(--mcard))}
+.mp-arpart.p2{fill:color-mix(in srgb,var(--mp-tens,#2f9e44) 75%,var(--mcard))}.mp-arpart.p3{fill:color-mix(in srgb,#7646bf 75%,var(--mcard))}
+.mp-arpart.rem{fill:var(--mcard);stroke:var(--ink2,#55627a);stroke-dasharray:6 4;stroke-width:2}
+.mp-artop{font:800 16px var(--display,inherit);fill:var(--mink)}
+.mp-arpt{font:800 17px var(--display,inherit);fill:#fff;paint-order:stroke;stroke:rgba(19,32,57,.35);stroke-width:3px}
+.mp-art .mp-arpt.rem{fill:var(--mink);stroke:none}
 /* ---------- Toolbox page: one tool fills the screen under a slim bar ---------- */
 html.tool-view header.bar,html.tool-view footer.site,html.tool-view .skip{display:none}
 html.tool-view main#app{padding:0}
