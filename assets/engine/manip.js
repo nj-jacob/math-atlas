@@ -2934,6 +2934,7 @@
   M.cashHtml = cashHtml;
   M.coins = function (root, o) {
     o = o || {};
+    if (o.tool) return toolMoney(root, o);
     var T = base(root, 'coin'), set = o.set || [5, 10, 25, 100, 200], items = [], counted = 0;
     root.innerHTML = '<div class="mp-tray mp-ctray">' + set.map(function (v) { return '<button type="button" class="mp-cadd" data-v="' + v + '" aria-label="Add a ' + CASH[v].n + '">' + cashHtml(v) + '</button>'; }).join('') + '</div>' +
       '<div class="mp-acts"><button type="button" class="mp-act" data-a="sort">Sort, biggest first</button><button type="button" class="mp-act" data-a="count">Count it</button><button type="button" class="mp-act" data-a="clear">Clear</button></div>' +
@@ -7353,6 +7354,230 @@
     return T;
   }
 
+  /* ================= Money (Toolbox) =================
+     Do: Count (every grade: tap coins and bills onto the mat; Sort, Fewest coins and Break the biggest show the same amount other ways),
+     Shop (Grade 3 and up: pick things with price tags, pay, and count up the change; from Grade 5 prices in dollars and cents, 13% HST
+     and cash rounded to the nearest 5¢), Budget (Grade 5 and up: earn, spend, save and donate; a saving goal from Grade 6), Interest
+     (Grade 6 and up: simple interest year by year, and compound interest beside it in Grade 8) and Exchange (Grade 7 and up: Canadian
+     dollars to other money and back, at sample rates). */
+  var MN_SHOP = {
+    3: [['pencil', 45], ['eraser', 80], ['juice box', 95], ['ball', 400], ['book', 600], ['kite', 900]],
+    4: [['hat', 900], ['ball', 700], ['book', 1200], ['kite', 1500], ['puzzle', 1800], ['board game', 2400]],
+    5: [['snack', 215], ['notebook', 349], ['pens', 525], ['water bottle', 1250], ['headphones', 2795], ['backpack', 3499]]
+  };
+  var MN_FX = [['USD', 'US dollars', 0.72], ['EUR', 'euros', 0.66], ['GBP', 'British pounds', 0.56], ['MXN', 'Mexican pesos', 13.2], ['JPY', 'Japanese yen', 108]];
+  function toolMoney(root, o) {
+    var T = base(root, 'mny');
+    root.classList.add('mp-tool', 'mp-fkt', 'mp-patt', 'mp-datt', 'mp-mnt');
+    var gr = window.Atlas && +Atlas.grade || 0, g2 = !gr || gr >= 2, g3 = !gr || gr >= 3, g4 = !gr || gr >= 4, g5 = !gr || gr >= 5, g6 = !gr || gr >= 6, g7 = !gr || gr >= 7, g8 = !gr || gr >= 8;
+    var SET = [5, 10, 25, 100, 200, 500, 1000, 2000, 5000].concat(g2 ? [10000] : []);
+    var MODES = [['count', 'Count']].concat(g3 ? [['shop', 'Shop']] : []).concat(g5 ? [['bud', 'Budget']] : []).concat(g6 ? [['int', 'Interest']] : []).concat(g7 ? [['ex', 'Exchange']] : []);
+    var SHOP = MN_SHOP[g5 ? 5 : g4 ? 4 : 3];
+    root.innerHTML = '<div class="mp-dwrap"><div class="mp-dtray mp-fktray mp-ptray mp-gtr mp-mntr"></div><div class="mp-dmain"><div class="mp-cmode mp-mndo" role="group" aria-label="Do"><span>Do</span>' +
+      MODES.map(function (m) { return '<button type="button" data-m="' + m[0] + '">' + m[1] + '</button>'; }).join('') + '</div>' +
+      '<div class="mp-read" aria-live="polite"></div><div class="mp-mat mp-fkmat mp-pmat"><div class="mp-pwin"></div><div class="mp-snaps"></div></div><p class="mp-live sr" aria-live="polite"></p></div></div>';
+    var tray = qs('.mp-mntr', root), mat = qs('.mp-pmat', root), win = qs('.mp-pwin', mat), read = qs('.mp-read', root), snapsEl = qs('.mp-snaps', mat);
+    /* state: the move; Count: the coins and bills on the mat (in cents); Shop: the things picked and the money paid; Budget: dollars a week
+       earned, spent, saved and donated, and the goal; Interest: the amount, the rate (%), the years, compound or not; Exchange: the amount,
+       the currency, which way */
+    var P, shown = false, hist = [], last = '';
+    function fresh() { P = { mode: 'count', c: [], shop: { cart: [], paid: [], tax: false }, bud: { inc: 20, sp: 10, sv: 8, dn: 2, goal: 120 }, int: { p: 500, r: 4, y: 3 }, ex: { amt: 50, cur: 'USD', back: false } }; }
+    function btn(a, t, on, dis) { return '<button type="button" class="mp-snap" data-a="' + a + '"' + (on != null ? ' aria-pressed="' + on + '"' : '') + (dis ? ' disabled' : '') + '>' + t + '</button>'; }
+    function money(c) { return '$' + (c / 100).toFixed(2).replace(/^(\d+)(\d{3})\./, '$1 $2.'); }
+    function amt(c) { return g5 ? money(c) : cents(c); }
+    function sum(L) { return L.reduce(function (s, v) { return s + v; }, 0); }
+    function fewest(c) { var out = []; SET.slice().reverse().forEach(function (v) { while (c >= v) { out.push(v); c -= v; } }); return out; }
+    function grouped(L) {
+      /* 2 × $2 + 3 × 25¢, biggest first */
+      var by = {}; L.forEach(function (v) { by[v] = (by[v] || 0) + 1; });
+      return Object.keys(by).map(Number).sort(function (a, b) { return b - a; }).map(function (v) { return (by[v] > 1 ? by[v] + ' × ' : '') + CASH[v].t; }).join(' + ');
+    }
+    function pile(L, attr) {
+      return '<div class="mp-mnpile">' + (L.length ? L.map(function (v, i) { return '<button type="button" class="mp-cash" ' + attr + '="' + i + '" aria-label="Take off a ' + CASH[v].n + '">' + cashHtml(v) + '</button>'; }).join('') : '<p class="mp-fknote">Tap coins and bills to put them here.</p>') + '</div>';
+    }
+    function step(a, label, v, unit) { return '<div class="mp-mnstep"><span>' + label + '</span><button type="button" class="mp-snap" data-a="' + a + '-">−</button><b>' + unit(v) + '</b><button type="button" class="mp-snap" data-a="' + a + '+">+</button></div>'; }
+    function dol(v) { return '$' + fmt(v); }
+
+    /* ======== Count ======== */
+    function countHtml() { return pile(P.c, 'data-ci'); }
+    function countRead() {
+      if (!P.c.length) return ['', ''];
+      var t = sum(P.c);
+      return [cents(t), (P.c.length > 1 ? grouped(P.c) + ' = ' : '') + '<b>' + cents(t) + '</b>' + (t >= 100 && t % 100 && g2 ? ' = ' + t + '¢' : '') + '. ' + pl(P.c.length, 'piece', 'pieces')];
+    }
+
+    /* ======== Shop ======== */
+    function shopTotals() {
+      var S = P.shop, cost = sum(S.cart.map(function (i) { return SHOP[i][1]; })), tax = g5 && S.tax ? Math.round(cost * 0.13) : 0, tot = cost + tax, cash = g5 ? Math.round(tot / 5) * 5 : tot, paid = sum(S.paid);
+      return { cost: cost, tax: tax, tot: tot, cash: cash, paid: paid };
+    }
+    function shopHtml() {
+      var S = P.shop, t = shopTotals();
+      var h = '<div class="mp-mnshop">' + SHOP.map(function (it, i) { return '<button type="button" class="mp-mntag" data-it="' + i + '"><span>' + it[0] + '</span><b>' + amt(it[1]) + '</b></button>'; }).join('') + '</div>';
+      h += '<div class="mp-mnrow"><small>Cart</small>' + (S.cart.length ? '<div class="mp-mnpills">' + S.cart.map(function (i, k) { return '<button type="button" class="mp-mncart" data-ct="' + k + '" aria-label="Take off the ' + SHOP[i][0] + '">' + SHOP[i][0] + ' <b>' + amt(SHOP[i][1]) + '</b></button>'; }).join('') + '</div>' : '<span class="mp-fknote">Tap a price tag to buy it.</span>') + '</div>';
+      h += '<div class="mp-mnpay"><div class="mp-mnrow"><small>Paid</small>' + pile(S.paid, 'data-pi') + '</div>';
+      if (S.cart.length && t.paid > t.cash) h += '<div class="mp-mnrow"><small>Change</small><div class="mp-mnpile">' + fewest(t.paid - t.cash).map(function (v) { return '<span class="mp-cash">' + cashHtml(v) + '</span>'; }).join('') + '</div></div>';
+      return h + '</div>';
+    }
+    function countUp(from, to) {
+      /* count up from the cost to the money paid, smallest coins first */
+      var L = fewest(to - from).reverse(), at = from;
+      return L.map(function (v) { at += v; return '+ ' + CASH[v].t + ' → ' + amt(at); }).join(', ');
+    }
+    function shopRead() {
+      var S = P.shop, t = shopTotals();
+      if (!S.cart.length) return ['', ''];
+      var eq = (S.cart.length > 1 ? S.cart.map(function (i) { return amt(SHOP[i][1]); }).join(' + ') + ' = ' : 'Cost ') + '<b>' + amt(t.cost) + '</b>';
+      if (t.tax) eq += '. HST 13%: ' + amt(t.cost) + ' × 0.13 ≈ ' + amt(t.tax) + ', total <b>' + amt(t.tot) + '</b>';
+      if (g5 && t.cash !== t.tot) eq += '. In cash it rounds to <b>' + amt(t.cash) + '</b>';
+      if (!t.paid) return [amt(t.tot), eq];
+      if (t.paid < t.cash) return [amt(t.tot), eq + '. Paid ' + amt(t.paid) + ': ' + amt(t.cash - t.paid) + ' more to pay'];
+      if (t.paid === t.cash) return [amt(t.tot), eq + '. Paid ' + amt(t.paid) + ': no change'];
+      return ['change ' + amt(t.paid - t.cash), eq + '. Paid ' + amt(t.paid) + ': ' + amt(t.paid) + ' − ' + amt(t.cash) + ' = <b>' + amt(t.paid - t.cash) + '</b>. Count up: ' + countUp(t.cash, t.paid)];
+    }
+
+    /* ======== Budget ======== */
+    function budHtml() {
+      var B = P.bud, out = B.sp + B.sv + B.dn, mx = Math.max(B.inc, out, 1), w = function (v) { return (v / mx * 100).toFixed(1) + '%'; };
+      var h = '<div class="mp-mnsteps">' + step('inc', 'Earn a week', B.inc, dol) + step('sp', 'Spend', B.sp, dol) + step('sv', 'Save', B.sv, dol) + step('dn', 'Donate', B.dn, dol) + (g6 ? step('goal', 'Saving goal', B.goal, dol) : '') + '</div>';
+      h += '<div class="mp-mnbars"><div class="mp-mnbar"><span>Earn</span><div><i class="in" style="width:' + w(B.inc) + '"></i></div></div><div class="mp-mnbar"><span>Use</span><div><i class="sp" style="width:' + w(B.sp) + '"></i><i class="sv" style="width:' + w(B.sv) + '"></i><i class="dn" style="width:' + w(B.dn) + '"></i></div></div></div>';
+      if (g6 && B.sv) {
+        var wk = Math.ceil(B.goal / B.sv), n = Math.min(wk, 52);
+        h += '<div class="mp-mngoal"><small>Saving week by week</small><div class="mp-mnweeks">';
+        for (var i = 1; i <= n; i++) h += '<i style="height:' + (Math.min(B.goal, i * B.sv) / B.goal * 100).toFixed(1) + '%"' + (i === wk ? ' class="hit"' : '') + '></i>';
+        h += '</div></div>';
+      }
+      return h;
+    }
+    function budRead() {
+      var B = P.bud, out = B.sp + B.sv + B.dn, eq = 'Spend ' + dol(B.sp) + ' + save ' + dol(B.sv) + ' + donate ' + dol(B.dn) + ' = <b>' + dol(out) + '</b> of ' + dol(B.inc);
+      var big = out === B.inc ? 'balanced' : out < B.inc ? dol(B.inc - out) + ' left over' : dol(out - B.inc) + ' over';
+      if (g6 && B.sv) { var wk = Math.ceil(B.goal / B.sv); eq += '. Saving ' + dol(B.sv) + ' a week, ' + dol(B.goal) + ' takes <b>' + pl(wk, 'week', 'weeks') + '</b> (' + dol(B.goal) + ' ÷ ' + dol(B.sv) + (B.goal % B.sv ? ' ≈ ' + fmt(Math.round(B.goal / B.sv * 10) / 10) : ' = ' + wk) + ')'; }
+      return [big, eq];
+    }
+
+    /* ======== Interest ======== */
+    function simple(y) { var I = P.int; return I.p * I.r / 100 * y; }
+    function comp(y) { var I = P.int; return I.p * Math.pow(1 + I.r / 100, y) - I.p; }
+    function intHtml() {
+      var I = P.int, top = I.p + Math.max(simple(I.y), g8 ? comp(I.y) : 0);
+      var h = '<div class="mp-mnsteps">' + step('p', 'Amount', I.p, dol) + step('r', 'Rate a year', I.r, function (v) { return fmt(v) + '%'; }) + step('y', 'Years', I.y, function (v) { return v; }) + '</div><div class="mp-mnyears">';
+      for (var y = 0; y <= I.y; y++) {
+        h += '<div class="mp-mnyr"><div class="mp-mncols"><i class="p" style="height:' + (I.p / top * 100).toFixed(1) + '%"><em style="height:' + (simple(y) / I.p * 100).toFixed(1) + '%"></em></i>' +
+          (g8 ? '<i class="p c" style="height:' + (I.p / top * 100).toFixed(1) + '%"><em style="height:' + (comp(y) / I.p * 100).toFixed(1) + '%"></em></i>' : '') + '</div><span>' + (y ? 'Year ' + y : 'Start') + '</span></div>';
+      }
+      return h + '</div>' + (g8 ? '<p class="mp-fknote mp-mnkey"><i class="s"></i> simple <i class="c"></i> compound</p>' : '');
+    }
+    function intRead() {
+      var I = P.int, s = simple(I.y), eq = 'Simple: ' + dol(I.p) + ' × ' + fmt(I.r) + '% × ' + I.y + ' = <b>' + money(Math.round(s * 100)) + '</b>, total ' + money(Math.round((I.p + s) * 100));
+      if (g8) { var c = comp(I.y); eq += '. Compound: ' + dol(I.p) + ' × ' + fmt(1 + I.r / 100) + '<sup>' + I.y + '</sup> ≈ <b>' + money(Math.round((I.p + c) * 100)) + '</b>, ' + money(Math.round((c - s) * 100)) + ' more'; }
+      return [money(Math.round(s * 100)) + ' interest', eq];
+    }
+
+    /* ======== Exchange ======== */
+    function fx() { return MN_FX.filter(function (f) { return f[0] === P.ex.cur; })[0]; }
+    function exHtml() {
+      var E = P.ex, f = fx(), res = E.back ? E.amt / f[2] : E.amt * f[2];
+      return '<div class="mp-mnsteps">' + step('amt', E.back ? 'Amount in ' + f[0] : 'Amount in CAD', E.amt, function (v) { return E.back ? fmt(v) + ' ' + f[0] : dol(v); }) + '</div>' +
+        '<div class="mp-mnex"><div class="mp-mnexb"><small>' + (E.back ? f[1] : 'Canadian dollars') + '</small><b>' + (E.back ? fmt(E.amt) + ' ' + f[0] : dol(E.amt) + ' CAD') + '</b></div><span aria-hidden="true">→</span><div class="mp-mnexb"><small>' + (E.back ? 'Canadian dollars' : f[1]) + '</small><b>' + (shown ? (E.back ? money(Math.round(res * 100)) + ' CAD' : fmt(Math.round(res * 100) / 100) + ' ' + f[0]) : '?') + '</b></div></div>' +
+        '<p class="mp-fknote">Sample rate: $1 CAD = ' + fmt(f[2]) + ' ' + f[0] + '. Real rates change every day.</p>';
+    }
+    function exRead() {
+      var E = P.ex, f = fx();
+      if (E.back) { var r = E.amt / f[2]; return [money(Math.round(r * 100)) + ' CAD', fmt(E.amt) + ' ' + f[0] + ' ÷ ' + fmt(f[2]) + ' ≈ <b>' + money(Math.round(r * 100)) + '</b> CAD']; }
+      var v = Math.round(E.amt * f[2] * 100) / 100;
+      return [fmt(v) + ' ' + f[0], dol(E.amt) + ' CAD × ' + fmt(f[2]) + ' = <b>' + fmt(v) + '</b> ' + f[0]];
+    }
+
+    /* ======== tray, readout, snaps ======== */
+    function trayHtml() {
+      var m = P.mode;
+      if (m === 'count' || m === 'shop') return '<small>' + (m === 'shop' ? 'Pay with' : 'Money') + '</small>' + SET.map(function (v) { return '<button type="button" class="mp-cadd" data-v="' + v + '" aria-label="Add a ' + CASH[v].n + '">' + cashHtml(v) + '</button>'; }).join('');
+      if (m === 'bud') return '<small>Budget</small><p class="mp-fknote">Share what you earn each week between spending, saving and donating.</p>';
+      if (m === 'int') return '<small>Interest</small><p class="mp-fknote">Money in a savings account earns interest each year.</p>';
+      return '<small>Exchange</small>' + MN_FX.map(function (f) { return '<button type="button" class="mp-mntb" data-cur="' + f[0] + '" aria-pressed="' + (P.ex.cur === f[0]) + '">' + f[0] + '<span>' + f[1] + '</span></button>'; }).join('');
+    }
+    function readout() {
+      if (!shown) { read.innerHTML = ''; return; }
+      var m = P.mode, r = m === 'count' ? countRead() : m === 'shop' ? shopRead() : m === 'bud' ? budRead() : m === 'int' ? intRead() : exRead();
+      read.innerHTML = (r[0] ? '<p class="mp-total"><span class="mp-num">' + r[0] + '</span></p>' : '') + (r[1] ? '<p class="mp-ceq">' + r[1] + '</p>' : '');
+    }
+    function snaps() {
+      var m = P.mode, h = '';
+      if (m === 'count') h += btn('sort', 'Sort', null, P.c.length < 2) + btn('few', 'Fewest coins', null, !P.c.length) + btn('brk', 'Break the biggest', null, !P.c.length || Math.max.apply(null, P.c) <= 5) + btn('clr', 'Clear', null, !P.c.length);
+      if (m === 'shop') h += (g5 ? btn('tax', 'Add HST', P.shop.tax) : '') + btn('pclr', 'Take back the money', null, !P.shop.paid.length) + btn('sclr', 'Start again', null, !P.shop.cart.length && !P.shop.paid.length);
+      if (m === 'ex') h += btn('back', 'Swap the way', P.ex.back);
+      snapsEl.innerHTML = h;
+    }
+    function draw() {
+      tray.innerHTML = trayHtml();
+      readout();
+      qsa('.mp-mndo [data-m]', root).forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-m') === P.mode)); });
+      var m = P.mode;
+      win.innerHTML = '<div class="mp-mnwin">' + (m === 'count' ? countHtml() : m === 'shop' ? shopHtml() : m === 'bud' ? budHtml() : m === 'int' ? intHtml() : exHtml()) + '</div>';
+      snaps();
+    }
+
+    /* ---- moves ---- */
+    function snapshot() { return JSON.stringify(P); }
+    function act(fn) { var b = snapshot(); fn(); if (snapshot() !== b) { hist.push(b); if (hist.length > 60) hist.shift(); } draw(); change(); }
+    function change() { if (o.onChange) o.onChange(state(), T); }
+    function state() { return { mode: P.mode, total: sum(P.c), last: last }; }
+    var LIM = { inc: [5, 200, 1], sp: [0, 200, 1], sv: [0, 200, 1], dn: [0, 200, 1], goal: [10, 1000, 10], p: [100, 10000, 100], r: [0.5, 15, 0.5], y: [1, 10, 1], amt: [10, 1000, 10] };
+    tray.addEventListener('click', function (e) {
+      var b = e.target.closest('[data-v],[data-cur]'); if (!b) return;
+      act(function () {
+        if (b.hasAttribute('data-cur')) { P.ex.cur = b.getAttribute('data-cur'); last = 'currency'; return; }
+        var v = +b.getAttribute('data-v'), L = P.mode === 'shop' ? P.shop.paid : P.c;
+        if (L.length >= 40) { announce(T, 'The mat holds up to 40.'); return; }
+        L.push(v); last = 'add';
+      });
+    });
+    qs('.mp-mndo', root).addEventListener('click', function (e) { var b = e.target.closest('[data-m]'); if (b) act(function () { P.mode = b.getAttribute('data-m'); last = 'mode'; }); });
+    function onSnap(a) {
+      act(function () {
+        var S = P.shop, mm = /^(\w+)([+-])$/.exec(a);
+        if (mm && LIM[mm[1]]) {
+          var k = mm[1], L = LIM[k], obj = k in P.bud ? P.bud : k in P.int ? P.int : P.ex;
+          obj[k] = clamp(Math.round((obj[k] + (mm[2] === '+' ? L[2] : -L[2])) * 10) / 10, L[0], L[1]);
+        }
+        if (a === 'sort') P.c.sort(function (x, y) { return y - x; });
+        if (a === 'few') P.c = fewest(sum(P.c));
+        if (a === 'brk') {
+          var big = Math.max.apply(null, P.c), i = P.c.indexOf(big), smaller = SET.filter(function (v) { return v < big; }), out = [], c = big;
+          /* the biggest piece in the next smaller coins or bills: $2 is $1 + $1, 25¢ is 10¢ + 10¢ + 5¢ */
+          smaller.slice().reverse().forEach(function (v) { while (c >= v) { out.push(v); c -= v; } });
+          P.c.splice.apply(P.c, [i, 1].concat(out));
+        }
+        if (a === 'clr') P.c = [];
+        if (a === 'tax') S.tax = !S.tax;
+        if (a === 'pclr') S.paid = [];
+        if (a === 'sclr') { S.cart = []; S.paid = []; }
+        if (a === 'back') P.ex.back = !P.ex.back;
+        last = a;
+      });
+    }
+    snapsEl.addEventListener('click', function (e) { var s = e.target.closest('.mp-snap'); if (s) onSnap(s.getAttribute('data-a')); });
+    win.addEventListener('click', function (e) {
+      var s = e.target.closest('.mp-snap'); if (s) { onSnap(s.getAttribute('data-a')); return; }
+      var b = e.target.closest('[data-ci],[data-pi],[data-it],[data-ct]'); if (!b) return;
+      act(function () {
+        if (b.hasAttribute('data-ci')) P.c.splice(+b.getAttribute('data-ci'), 1);
+        if (b.hasAttribute('data-pi')) P.shop.paid.splice(+b.getAttribute('data-pi'), 1);
+        if (b.hasAttribute('data-it') && P.shop.cart.length < 6) P.shop.cart.push(+b.getAttribute('data-it'));
+        if (b.hasAttribute('data-ct')) P.shop.cart.splice(+b.getAttribute('data-ct'), 1);
+        last = 'tap';
+      });
+    });
+    T.undo = function () { if (!hist.length) return; P = JSON.parse(hist.pop()); last = 'undo'; draw(); change(); };
+    T.canUndo = function () { return hist.length > 0; };
+    T.showNumbers = function (on) { shown = !!on; draw(); change(); };
+    T.state = state;
+    T.reset = function () { fresh(); hist = []; draw(); };
+    T.reset();
+    return T;
+  }
+
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
      ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
@@ -7391,7 +7616,7 @@
       '<rect x="4" y="16" width="40" height="16" rx="3" style="fill:var(--line,#dfe5ee);stroke:var(--ink2,#55627a);stroke-width:1.5"/><path d="M10 16v7M16 16v4M22 16v7M28 16v4M34 16v7M40 16v4" style="stroke:var(--ink2,#55627a);stroke-width:1.5"/>'],
     ['data', 'meas', 'Data and chance', '', { tool: true },
       '<path d="M6 40h36" style="stroke:var(--ink,#132039);stroke-width:2;stroke-linecap:round"/><rect x="9" y="24" width="7" height="16" rx="1.5" style="fill:#c0392b"/><rect x="20" y="12" width="7" height="28" rx="1.5" style="fill:var(--mp-hund,#2f62c4)"/><rect x="31" y="19" width="7" height="21" rx="1.5" style="fill:var(--mp-ones,#e0a100)"/>'],
-    ['coins', 'meas', 'Coins and bills', 'Tap coins and bills to add them. Tap one on the mat to take it away.', { set: [5, 10, 25, 100, 200, 500, 1000, 2000] },
+    ['coins', 'meas', 'Money', '', { tool: true },
       '<circle cx="18" cy="26" r="11" style="fill:#d9b44a;stroke:#a8862a;stroke-width:1.5"/><circle cx="31" cy="21" r="10" style="fill:#dfe3ea;stroke:#9aa3b2;stroke-width:1.5"/><circle cx="31" cy="21" r="5.5" style="fill:#d9b44a"/>']
   ];
   function icon(b) { return '<svg class="tb-ic" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">' + b[5] + '</svg>'; }

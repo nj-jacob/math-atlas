@@ -909,6 +909,46 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox clock: the page runs off the side of a phone screen');
   }
 
+  /* 3a18. Toolbox money: $1, two quarters, a dime and a nickel make $1.65; from Grade 2 four quarters trade for 1 piece and a loonie
+     breaks into 4 × 25¢; in the shop (Grade 3 and up) the change is counted (45¢ + 80¢ paid with $2 is 75¢; $9 + $7 paid with $20 is
+     $4; from Grade 5 a $2.15 snack with 13% HST is $2.43, $2.45 in cash, and $5 gives $2.55 back); from Grade 5 a budget balances and
+     from Grade 6 saving $8 a week reaches $120 in 15 weeks; from Grade 6 simple interest on $500 at 4% for 3 years is $60.00, and in
+     Grade 8 compound interest makes $562.43; from Grade 7 $50 CAD is 36 USD at the sample rate. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('coins'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/coins'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-mnt .mp-read').textContent.replace(/ /g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox money: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = a => page.click('.mp-snap[data-a="' + a + '"]');
+    const add = async (...vs) => { for (const v of vs) await page.click('.mp-mntr .mp-cadd[data-v="' + v + '"]'); };
+    const mode = m => page.click('.mp-mndo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await add(100, 25, 25, 10, 5);
+    await bad('$1 + 2 × 25¢ + 10¢ + 5¢ = $1.65', 'a loonie, two quarters, a dime and a nickel');
+    if (g >= 2) {
+      await snap('clr'); await add(25, 25, 25, 25); await snap('few');
+      await bad('1 piece', 'four quarters traded for the fewest coins');
+      await snap('brk');
+      await bad('4 × 25¢ = $1', 'a loonie broken into quarters');
+    }
+    if (g >= 3) {
+      await mode('shop');
+      if (g === 3) { await page.click('.mp-mntag[data-it="0"]'); await page.click('.mp-mntag[data-it="1"]'); await add(200); await bad('$2 − $1.25 = 75¢', 'a 45¢ pencil and an 80¢ eraser paid with $2'); }
+      if (g === 4) { await page.click('.mp-mntag[data-it="0"]'); await page.click('.mp-mntag[data-it="1"]'); await add(2000); await bad('$20 − $16 = $4', 'a $9 hat and a $7 ball paid with $20'); }
+      if (g >= 5) {
+        await page.click('.mp-mntag[data-it="0"]'); await snap('tax'); await add(500);
+        await bad('total $2.43', 'a $2.15 snack with HST');
+        await bad('$5.00 − $2.45 = $2.55', 'a $2.15 snack with HST paid with $5');
+      }
+    }
+    if (g >= 5) { await mode('bud'); await bad('balanced', 'the budget'); if (g >= 6) await bad('takes 15 weeks', 'saving $8 a week for $120'); }
+    if (g >= 6) { await mode('int'); await bad('$500 × 4% × 3 = $60.00', 'simple interest'); if (g >= 8) await bad('$562.43', 'compound interest'); }
+    if (g >= 7) { await mode('ex'); await bad('$50 CAD × 0.72 = 36 USD', 'changing $50 to US dollars'); }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox money: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
