@@ -678,7 +678,7 @@
       } else if (it.pic && it.pic[0] === 'balance' && pc.heavy !== undefined && o.indexOf(it.pic[1].l) >= 0) {
         /* the side that goes down is the heavier one */
         if (pc.heavy === null || o[pk.ans] !== pc.heavy) say('the heavier one is ' + pc.heavy + ', not ' + o[pk.ans]);
-      } else if (o.indexOf('mass') >= 0 && o.indexOf('capacity') >= 0) {
+      } else if (!pk.size && o.indexOf('mass') >= 0 && o.indexOf('capacity') >= 0) {
         const q = it.q.toLowerCase(), hit = Object.keys(MEASURE).filter(k => MEASURE[k].test(q));
         if (hit.length !== 1) say('cannot tell mass, capacity or time from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is about ' + hit[0] + ', not ' + o[pk.ans]);
       } else if (it.chain) {
