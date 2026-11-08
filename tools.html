@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en-CA" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="icon" href="assets/icon.svg" type="image/svg+xml">
+<title>Toolbox · Atlas</title>
+<meta name="description" content="Hands-on tools for Ontario math and language, Grades 1 to 8: blocks, number lines, fraction kits, sound boards, word and sentence builders.">
+<meta name="theme-color" content="#ffffff">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/engine/manip.css">
+<link rel="stylesheet" href="assets/home.css">
+</head>
+<body class="home">
+<a class="skip" href="#main">Skip to content</a>
+<header class="top"><div class="hwrap">
+  <a class="brand" href="./" aria-label="Atlas home"><i aria-hidden="true">A</i><span>Atlas</span></a>
+  <nav class="jump" aria-label="Main"><a href="./" id="nav-plan">Home</a><a href="curriculum.html">Curriculum</a><a href="tools.html" aria-current="page">Toolbox</a></nav>
+  <div class="acct" id="acct">
+    <a class="hbtn" id="signin-btn" href="family.html" aria-haspopup="dialog" aria-expanded="false" aria-controls="signin">Sign in</a>
+  </div>
+</div></header>
+
+<main id="main" tabindex="-1">
+  <section class="hero"><div class="hwrap">
+    <p class="eyebrow">Toolbox</p>
+    <h1>Hands-on tools</h1>
+    <p class="lede">Build, move and explore. Free play, alone or with a grown-up.</p>
+    <div class="tabs" role="tablist" aria-label="Subject">
+      <button type="button" role="tab" id="t-math" data-s="math" aria-controls="tbx" aria-selected="true">Math</button>
+      <button type="button" role="tab" id="t-language" data-s="language" aria-controls="tbx" aria-selected="false" tabindex="-1">Language</button>
+    </div>
+  </div></section>
+
+  <div class="hwrap layout">
+    <section class="tbx" id="tbx" role="tabpanel" aria-labelledby="t-math">
+      <div class="tbx-g" role="group" aria-label="Grade"></div>
+      <div class="tb-list" id="tbx-list"><p class="loading">Loading the tools…</p></div>
+    </section>
+  </div>
+</main>
+
+<footer class="foot"><div class="hwrap">
+  <p>Atlas is a free study aid that follows the Ontario Mathematics curriculum (2020) and Language curriculum (2023), Grades 1 to 8. It does not replace a teacher's assessment.</p>
+  <p>Each tool opens in its grade, with that grade's numbers, words and choices.</p>
+</div></footer>
+<script src="assets/engine/manip.js"></script>
+<script type="module" src="assets/home.js"></script>
+<script type="module" src="assets/toolbox.js"></script>
+</body>
+</html>

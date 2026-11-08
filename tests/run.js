@@ -18,7 +18,9 @@
       check-ups and the plan show, and practice keeps saving under the same keys in the same shape.
    Also in 1: the Math Plan placement check is taken many times by pretend students and must find their true level.
    6. Parent pages: the Language placement check results (assets/langplace.js) are drawn for finished, older, unfinished
-      and missing checks, on a phone-size screen, with nothing missing or cut off. */
+      and missing checks, on a phone-size screen, with nothing missing or cut off.
+   7. Toolbox: each grade's #tools lists all its tools and each tool goes back to that list; the site's Toolbox page
+      (tools.html) shows each grade's Math tools on phone, iPad and laptop, and a tool opened from it goes back there. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { chromium } = require('playwright');
 const startServer = require('./server');
@@ -1376,6 +1378,51 @@ async function checkLangPlace(browser, base) {
   log('Language placement on the parent pages: ' + Object.keys(out).length + ' cases drawn.');
 }
 
+async function checkToolbox(browser, base) {
+  const w = 'Toolbox pages';
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, r => r.abort());
+  const runsOff = () => page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1);
+  for (const g of GRADES) {
+    await page.goto(base + '/grade' + g + '/index.html#tools');
+    await page.waitForSelector('.tb-all');
+    const r = await page.evaluate(() => ({ cards: document.querySelectorAll('.tb-all .tb-card').length, tools: Atlas.tools.length, full: document.documentElement.classList.contains('tool-view') }));
+    if (r.cards !== r.tools) fail(w, 'Grade ' + g + ' Toolbox lists ' + r.cards + ' of its ' + r.tools + ' tools');
+    if (r.full) fail(w, 'Grade ' + g + ' Toolbox list hides the header');
+    if (await runsOff()) fail(w, 'Grade ' + g + ' Toolbox list runs off the side of a phone screen');
+    await page.click('.tb-all .tb-card');
+    await page.waitForSelector('.tb-bar');
+    if ((await page.getAttribute('.tb-back', 'href')) !== '#tools') fail(w, 'a Grade ' + g + ' tool does not go back to the Toolbox list');
+  }
+  for (const vp of [{ width: 390, height: 844 }, { width: 820, height: 1180 }, { width: 1366, height: 768 }]) {
+    await page.setViewportSize(vp);
+    await page.goto(base + '/tools.html');
+    for (const g of GRADES) {
+      await page.click('.tbx-g [data-g="' + g + '"]');
+      await page.waitForSelector('#tbx-list .tb-card[href^="grade' + g + '/"]');
+      const n = await page.evaluate(() => document.querySelectorAll('#tbx-list .tb-card').length), want = await page.evaluate(async g => {
+        const t = await (await fetch('grade' + g + '/assets/grade.js')).text();
+        return (/tools:\s*\[([^\]]*)\]/.exec(t)[1].match(/'\w+'/g) || []).length;
+      }, g);
+      if (n !== want) fail(w, 'the Toolbox page shows ' + n + ' of Grade ' + g + '\'s ' + want + ' Math tools');
+      if (await runsOff()) fail(w, 'the Toolbox page runs off the side at ' + vp.width + ' px (Grade ' + g + ')');
+    }
+  }
+  await page.click('#tbx-list .tb-card');
+  await page.waitForSelector('.tb-bar');
+  if ((await page.getAttribute('.tb-back', 'href')) !== '../tools.html') fail(w, 'a tool opened from the Toolbox page does not go back there');
+  await page.click('.tb-back');
+  await page.waitForSelector('#tbx-list .tb-card');
+  await page.goto(base + '/index.html');
+  if (!(await page.$('a[href="tools.html"]'))) fail(w, 'the home page has no link to the Toolbox page');
+  errors.forEach(e => fail(w, 'page error: ' + e));
+  await ctx.close();
+  log('Toolbox pages: every grade\'s tool list and the site Toolbox page checked on phone, iPad and laptop.');
+}
+
 (async () => {
   const t0 = Date.now();
   repoRules();
@@ -1392,6 +1439,7 @@ async function checkLangPlace(browser, base) {
     try { await checkSaved(browser, url, g); } catch (e) { fail('grade ' + g + ' saved progress', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   }
   try { await checkLangPlace(browser, url); } catch (e) { fail('Language placement on the parent pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
+  try { await checkToolbox(browser, url); } catch (e) { fail('Toolbox pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   await browser.close(); srv.close();
   log('');
   if (problems.length) {

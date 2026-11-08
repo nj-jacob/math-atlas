@@ -799,8 +799,8 @@
       if (target) { target.scrollIntoView(); return; }
     }
     lastPage = id;
-    /* the Toolbox fills the screen under its own slim bar */
-    document.documentElement.classList.toggle('tool-view', id === 'tools');
+    /* a Toolbox tool fills the screen under its own slim bar; #tools alone lists every tool */
+    document.documentElement.classList.toggle('tool-view', id === 'tools' && !!sub);
     if (id === 'check-up') checkup(app, sub);
     else if (id === 'progress' && Atlas.lessons) Atlas.lessons.progress(app);
     else if (id === 'tools' && window.Manip) Manip.toolbox(app, sub, Atlas.tools);

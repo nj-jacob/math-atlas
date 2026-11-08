@@ -1,6 +1,6 @@
-/* Atlas top bar and home page, loaded by index.html and curriculum.html: the sign-in pop-over, the account menu,
+/* Atlas top bar and home page, loaded by index.html, curriculum.html and tools.html: the sign-in pop-over, the account menu,
    the Math plan and Language panels (home page only) and the "Your grade" tag on the curriculum list (curriculum page only).
-   Both pages are plain HTML that works even if this file cannot load. */
+   All three pages are plain HTML that works even if this file cannot load. */
 import { placeState, placeLine, placeLink } from './langplace.js';
 const $ = (s, r) => (r || document).querySelector(s);
 const $$ = (s, r) => Array.from((r || document).querySelectorAll(s));

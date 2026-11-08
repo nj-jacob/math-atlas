@@ -89,6 +89,8 @@ button.link{font:inherit;background:none;border:0;padding:0;color:var(--accent);
 .layout{display:grid;gap:24px;padding-top:28px;padding-bottom:56px;align-items:start}
 @media (min-width:900px){.layout.two{grid-template-columns:1fr 1fr}}
 .layout:not(.two)>.planp{max-width:760px}
+.layout.two>.tbp{grid-column:1/-1}
+.tbp p{margin:0;color:var(--ink2);font-size:.95rem}
 /* side by side, the two subject panels are the same height with their buttons on one line */
 @media (min-width:900px){.layout.two{align-items:stretch}.layout.two .panel{display:flex;flex-direction:column}.layout.two .panel>div:last-child{flex:1;display:flex;flex-direction:column}.layout.two .panel>div:last-child>.acts:last-child{margin-top:auto;padding-top:18px}}
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow);padding:26px}
@@ -187,13 +189,23 @@ h3.sh{font-size:1rem;font-family:var(--body);font-weight:700;margin:18px 0 8px;c
 .foot p{max-width:80ch}
 
 @media (max-width:600px){
-  .top .hwrap{gap:10px}
-  .brand span,.who .nm{display:none}
-  .jump{margin-left:0}
+  /* phone: Atlas and the account on top, the page links on their own row below */
+  .top .hwrap{flex-wrap:wrap;gap:0 10px;min-height:58px;padding-top:7px}
+  .who .nm{display:none}
+  .jump{order:3;width:100%;margin:0 0 6px -10px}
   .jump a{padding:8px 10px}
-  .top .hwrap{min-height:58px}
-  .pop{top:66px;right:12px}
+  .pop{top:108px;right:12px}
+  html{scroll-padding-top:116px}
   .hero{padding:30px 0 28px}
   .lede{font-size:1.02rem}
 }
 @media print{.top,.pop,.scrim,.acts,.gacts{display:none}.grade{break-inside:avoid}}
+
+/* Toolbox page (tools.html); the shelves and cards are the grade Toolbox's own (engine/manip.css) */
+.tbx-g{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:0 0 14px}
+.tbx-gl{font-weight:700;color:var(--ink2);margin-right:6px}
+.tbx-g button{font:inherit;font-weight:700;min-width:44px;min-height:44px;border-radius:12px;border:1px solid var(--line2);background:var(--card);color:var(--ink);cursor:pointer}
+.tbx-g button[aria-pressed="true"]{background:var(--ink);border-color:var(--ink);color:#fff}
+.tbx .tb-list{margin-top:0;box-shadow:var(--shadow)}
+.tbx .tb-shelf h3 i{background:var(--accent)}
+.tbx .tb-s-num{background:var(--sB)}.tbx .tb-s-parts{background:var(--sC)}.tbx .tb-s-alg{background:var(--sD)}.tbx .tb-s-space{background:var(--sE)}
