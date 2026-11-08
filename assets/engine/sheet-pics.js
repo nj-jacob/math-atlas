@@ -5,6 +5,7 @@
    light shade, so the paper stays white. The answer checks read the same options (tests/verify/sheets.js).
 
      blocks    { h, t, o, small }                     base ten blocks: flats, rods and cubes
+     pv        { n, blank }                           a place value chart (Hundreds, Tens, Ones; Thousands from 1000); blank: the digits are lines
      tenframe  { a, b }                               two ten frames with a and b counters
      col       { a, b, op: '+' | '−' }                a sum in columns; every digit of the answer is a line to write on
      frac      { n, k, shape: 'bar' | 'circle', uneven: [cuts from 0 to 1] }   a whole cut in n parts, k shaded
@@ -50,6 +51,20 @@
     for (var q = 0; q < p.o; q++) out += r(cx + (q % 3) * (u + 4), y + s - (Math.floor(q / 3) + 1) * (u + 4) + 4, u + 1, u + 1, { s: INK2 });
     cx += Math.min(p.o, 3) * (u + 4);
     return { svg: out, h: s, w: cx - x };
+  };
+  /* a place value chart: Hundreds, Tens, Ones (and Thousands from 1000); blank: the digits are lines to write on */
+  P.pv = function (p, x, y, w, key, th, ans) {
+    var ds = String(p.n).split(''), heads = ['Thousands', 'Hundreds', 'Tens', 'Ones'].slice(4 - Math.max(3, ds.length)), cw = Math.min(64, (w - 4) / heads.length), out = '', used = 0;
+    while (ds.length < heads.length) ds.unshift('0');
+    heads.forEach(function (hd, i) {
+      var cx = x + i * cw + cw / 2;
+      out += T(cx, y + 12, hd, { s: 10, w: 700, f: INK2, a: 'middle' });
+      if (i) out += ln(x + i * cw, y, x + i * cw, y + 50, { s: LINE, sw: 0.8 });
+      if (p.blank) { out += blank(cx, y + 44, cw - 22, key, ans && ans[used], 18); used++; }
+      else out += T(cx, y + 40, ds[i], { s: 20, w: 700, a: 'middle' });
+    });
+    out += ln(x, y + 18, x + heads.length * cw, y + 18, { s: LINE, sw: 0.8 });
+    return { svg: out, h: 50, w: heads.length * cw, used: used };
   };
   P.tenframe = function (p, x, y) {
     var out = '', c = 15;

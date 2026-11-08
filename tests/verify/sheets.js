@@ -14,11 +14,47 @@
   /* sheet maths into plain maths: × ÷ −, and "3 groups of 4", "3 rows of 4", "3 jumps of 4" mean 3 × 4; other words go */
   function norm(s) {
     return String(s).replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
-      .replace(/[A-Za-z’'?.:]+/g, ' ').replace(/\s+/g, ' ').trim();
+      .replace(/(\d+) hundreds?\b/g, '($1*100) +').replace(/(\d+) tens?\b/g, '($1*10) +').replace(/(\d+) ones?\b/g, '$1 +')
+      .replace(/[A-Za-z’'?.:]+/g, ' ').replace(/\+\s*(?=[=<>]|$)/g, '').replace(/\s+/g, ' ').trim();
+  }
+  /* a number written in words, such as "three hundred forty-two", or NaN */
+  const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
+  const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
+  function fromWords(w) {
+    let n = 0, part = 0;
+    for (const t of String(w).toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean)) {
+      if (ONES.indexOf(t) >= 0) part += ONES.indexOf(t);
+      else if (TENS.indexOf(t) >= 2) part += 10 * TENS.indexOf(t);
+      else if (t === 'hundred') part *= 100;
+      else if (t === 'thousand') { n += part * 1000; part = 0; }
+      else if (t !== 'and') return NaN;
+    }
+    return n + part;
+  }
+  /* a number in words, written the Canadian school way: 342 is "three hundred forty-two" */
+  function toWords(n) {
+    if (n === 1000) return 'one thousand';
+    const h = Math.floor(n / 100), r = n % 100, out = [];
+    if (h) out.push(ONES[h] + ' hundred');
+    if (r >= 20) out.push(TENS[Math.floor(r / 10)] + (r % 10 ? '-' + ONES[r % 10] : ''));
+    else if (r || !h) out.push(ONES[r]);
+    return out.join(' ');
+  }
+  /* is a row of numbers joined by < and > (such as "345 < 354 < 400") true? null when it cannot be read */
+  function order(st) {
+    const parts = norm(st).split(/([<>])/);
+    if (parts.length < 3) return null;
+    for (let i = 0; i + 2 < parts.length; i += 2) {
+      const a = val(parts[i]), b = val(parts[i + 2]);
+      if (isNaN(a) || isNaN(b)) return null;
+      if (parts[i + 1] === '<' ? !(a < b) : !(a > b)) return false;
+    }
+    return true;
   }
   const nums = s => (String(s).match(/\d+/g) || []).map(Number);
   /* is a statement such as "4 × 7 = 7 × 4" or "18 ÷ 2 = 8." true? null when it cannot be read */
   function truth(st) {
+    if (!/=/.test(st) && /[<>]/.test(st)) return order(st);
     const sides = norm(st).split('=');
     if (sides.length !== 2) return null;
     const a = val(sides[0]), b = val(sides[1]);
@@ -53,7 +89,8 @@
     cups: o => ({ total: o.n }),
     col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
     tally: o => (o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : null),
-    nl: o => ((o.ask || []).length ? { blanks: o.ask.length, own: (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) } : null),
+    nl: o => ({ total: o.pt != null ? o.pt : undefined, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
+    pv: o => ({ total: o.n, blanks: o.blank ? Math.max(3, String(o.n).length) : 0, own: o.blank ? (o, a) => (+a.join('') === o.n ? [] : ['the chart digits ' + a.join('') + ' are not ' + o.n]) : null }),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
       return n ? { blanks: n, own: (o, a) => o.list.flatMap((p, i) => (parts[i].own ? parts[i].own(p[1], a.splice(0, parts[i].blanks)) : [])) } : null; }
   };
@@ -62,7 +99,7 @@
   window.__picSamples = {
     groups: [{ g: 3, k: 4 }], array: [{ r: 3, c: 5 }], dots: [{ t: 12 }], line: [{ n: 3, step: 5, max: 20 }], share: [{ t: 12, g: 3 }],
     table: [{ head: ['{conts}', '{many}'], rows: [[1, 5], [2, '[]']] }, [10]],
-    blocks: [{ h: 3, t: 4, o: 5 }], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
+    blocks: [{ h: 3, t: 4, o: 5 }], pv: [{ n: 307, blank: true }, [3, 0, 7]], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
     wholes: [{ n: 5 }], pat: [{ seq: 'cstcst', blanks: 2, next: 'cs', core: 3 }], clock: [{ h: 3, m: 40, blank: true }],
     coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2 }],
     tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'prism', 'pyramid', 'cylinder'], letters: true }],
@@ -91,17 +128,46 @@
       return a.shift() + (t === '[],' ? ',' : '');
     }).join(' '));
     if (a.length) say(a.length + ' answer(s) left over with no box');
-    filled.forEach(row => {
-      if (/,/.test(row)) {
+    const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
+    filled.forEach((row, ri) => {
+      const blanks = /\[\]/.test(raw[ri]);
+      let worth;
+      if (it.round) {
+        /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up) */
         const n = nums(row);
-        if (n.length < 2 || n.some((x, i) => i > 1 && x - n[i - 1] !== n[1] - n[0])) say('the count does not go up by the same step: ' + row);
-        return;
-      }
-      if (!/=/.test(row)) return;
-      const sides = norm(row).split('='), v = sides.map(val);
-      if (v.some(isNaN)) say('cannot read the sum: ' + row);
-      else if (v.some(x => x !== v[0])) say('the sum is not true: ' + row);
+        if (n.length !== 2 || Math.round(n[0] / it.round) * it.round !== n[1]) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
+      } else if ((worth = row.match(/^The (\d) in (\d+) is worth (\d+)$/))) {
+        /* "The 7 in 472 is worth []": the digit's place gives its value */
+        const d = worth[1], s2 = worth[2], at = s2.indexOf(d);
+        if (at < 0 || s2.lastIndexOf(d) !== at) say('the digit ' + d + ' is not in ' + s2 + ' exactly once');
+        else if (+d * Math.pow(10, s2.length - 1 - at) !== +worth[3]) say('the ' + d + ' in ' + s2 + ' is worth ' + (+d * Math.pow(10, s2.length - 1 - at)) + ', not ' + worth[3]);
+      } else if (/,/.test(row)) {
+        const n = nums(row);
+        const step = it.by != null ? it.by : n[1] - n[0];
+        if (n.length < (it.by != null ? 2 : 3)) say('a count needs 3 numbers, or a "by" step, to be checked: ' + row);
+        else if (n.some((x, i) => i > 0 && x - n[i - 1] !== step)) say('the count does not go up by the same step: ' + row);
+      } else if (/=/.test(row)) {
+        const sides = norm(row).split('='), v = sides.map(val);
+        if (v.some(isNaN)) say('cannot read the sum: ' + row);
+        else if (v.some(x => x !== v[0])) say('the sum is not true: ' + row);
+      } else if (/[<>]/.test(row)) {
+        const t = order(row);
+        if (t === null) say('cannot read the comparison: ' + row);
+        else if (!t) say('the comparison is not true: ' + row);
+      } else if (raw[ri].trim() === '[]') {
+        /* a bare answer: the number the picture shows, or the number written in words */
+        const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
+        if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
+        else if (pc && pc.total != null) { if (pc.total !== v) say('the picture shows ' + pc.total + ', not ' + v); }
+        else if (!it.calc) say('nothing checks the answer ' + v);
+      } else if (blanks && !it.calc) say('nothing checks this row: ' + raw[ri]);
     });
+    /* the answers are these numbers, in some order (putting numbers in order) */
+    if (it.set && ansAll.slice().sort((x, y) => x - y).join() !== it.set.slice().sort((x, y) => x - y).join()) say('the answers ' + ansAll.join(', ') + ' are not the numbers ' + it.set.join(', '));
+    /* expanded form: every answer is one digit followed by zeros, each in a different place */
+    if (it.expanded && (ansAll.some(v => !/^[1-9]0*$/.test(String(v))) || new Set(ansAll.map(v => String(v).length)).size !== ansAll.length)) say('the expanded form ' + ansAll.join(' + ') + ' is not one part for each place');
+    /* a number to write in words: the key's words are the number */
+    if (it.spell != null && (!it.lines || it.lines.key !== toWords(it.spell))) say(it.spell + ' in words is "' + toWords(it.spell) + '", not "' + (it.lines && it.lines.key) + '"');
     /* 3. the picture matches the sum: its total is in the first sum, and a times sum uses its two numbers */
     const first = filled.filter(r => /=/.test(r))[0];
     if (pc && first) {
@@ -142,6 +208,12 @@
       } else if (it.odd) {
         const ok = o.map(truth);
         if (ok[pk.ans] !== false || ok.filter(x => x === false).length !== 1) say('the odd one out is not the only wrong fact');
+      } else if (pk.round) {
+        const ok = o.map(x => Math.round(+x / pk.round.to) * pk.round.to === pk.round.val);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice rounds to ' + pk.round.val);
+      } else if (pk.small) {
+        const v = o.map(x => val(norm(x)));
+        if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the smallest: ' + o.join(', '));
       } else if (pk.big) {
         const v = o.map(x => val(norm(x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled choice is not the biggest: ' + o.join(', '));
