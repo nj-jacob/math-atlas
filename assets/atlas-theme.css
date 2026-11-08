@@ -93,28 +93,29 @@ html body .hero h1,html body .hero h1 *{background-image:none!important;text-sha
 html body .hero h1 *{background-color:transparent!important}
 
 /* ---------- 9. Header layout (same in every grade) ----------
-   Computer: All grades | Grade N Math Atlas | Chapters ... | Sign in, then the display buttons.
+   Computer: All grades | Grade N Math Atlas .......... Sign in
+             Chapters  Check-up  My progress  Toolbox  Fact sheet ..... Text  Grown-up view
    Phone:    Grade N Math Atlas ..... All grades
              Chapters  Check-up  My progress  Toolbox  Fact sheet   (one row; wraps to two on narrow phones)
              Text  Grown-up view .......... Sign in */
 html body .bar .wrap{display:grid!important;grid-template-columns:auto auto minmax(0,1fr) auto;
-  grid-template-areas:"home brand nav acct" "tools tools tools tools";align-items:center;gap:6px 14px;min-height:0;padding-top:10px;padding-bottom:10px}
+  grid-template-areas:"home brand . acct" "nav nav nav tools";align-items:center;gap:6px 14px;min-height:0;padding-top:10px;padding-bottom:10px}
 html body .bar .athome{grid-area:home;display:inline-flex;align-items:center;gap:6px;min-height:40px;padding:6px 12px;border-radius:99px;
   border:1px solid var(--at-line2);background:var(--card);color:var(--ink)!important;font-weight:700;font-size:.88rem;text-decoration:none;white-space:nowrap}
 html body .bar .athome span{font-size:1.2rem;line-height:1;margin-top:-2px}
 html body .bar .athome:hover{border-color:var(--ink2);background:var(--paper)}
 html body .bar .brand{grid-area:brand;display:flex;align-items:center;gap:10px;font-size:1.1rem;white-space:nowrap;margin:0}
-html body .bar nav{grid-area:nav;display:flex!important;flex-wrap:nowrap!important;justify-content:flex-end;gap:2px!important;margin:0;min-width:0;
+html body .bar nav{grid-area:nav;display:flex!important;flex-wrap:nowrap!important;justify-content:flex-start;gap:2px!important;margin:0 0 0 -10px;min-width:0;
   overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch}
 html body .bar nav::-webkit-scrollbar{display:none}
 html body .bar nav a{white-space:nowrap!important;padding:8px 10px!important;font-size:.93rem!important;border:0!important;line-height:1.2}
 html body .bar .tools{grid-area:tools;display:flex!important;flex-wrap:wrap;gap:6px;margin:0}
 html body .bar .acct{grid-area:acct;justify-self:end;margin:0;white-space:nowrap}
 html body .bar .acct a{font-weight:700;color:var(--accent)!important}
-html body .bar .wrap:not(:has(.athome)){grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"brand nav acct" "tools tools tools"}
+html body .bar .wrap:not(:has(.athome)){grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"brand . acct" "nav nav tools"}
 @media (max-width:980px){
   html body .bar .wrap{grid-template-columns:auto minmax(0,1fr) auto;grid-template-areas:"home brand acct" "nav nav nav" "tools tools tools"}
-  html body .bar nav{justify-content:flex-start;margin:0 -6px}
+  html body .bar nav{margin:0 -6px}
 }
 @media (max-width:640px){
   html body .bar{position:static!important}
