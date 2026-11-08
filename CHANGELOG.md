@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-08
+- **Worksheets for Grade 5 Shapes and Grids**: 8 ideas, 40 sheets (400 with the themes), each with an answer key: sorting triangles by sides and by angles, the missing angle, which three sides make a triangle, congruent shapes, front and side views of cube buildings, reading and plotting points, and slides and flips on a grid. New pictures: triangles, cube building plans and coordinate grids.
 - **Worksheets for Grade 5 Data and Probability**: 7 ideas, 35 sheets (350 with the themes), each with an answer key: fair samples, relative frequency, choosing and reading graphs (double and stacked bars, line graphs), graphs that mislead, mean, median, mode and range, probability from 0 to 1, and expected and actual results. New pictures: double, stacked and broken-scale bar graphs, line graphs and spinners.
 - **Worksheets for Grade 5 Patterns, Equations and Code**: 7 ideas, 35 sheets (350 with the themes), each with an answer key: repeating, growing and shrinking patterns, a rule for any figure, counting by tenths and hundredths, expressions, equations, inequalities, and tracing code with loops and conditions. New pictures: a growing pattern of tiles and a short program.
 - **Worksheets for Grade 5 Ratios and Rates**: 6 ideas, 30 sheets (300 with the themes), each with an answer key: writing ratios, part to part and part to whole, equivalent ratios, rates, the rate for 1 and better buys, and ratio tables. A new picture shows a ratio as groups of circles and squares.

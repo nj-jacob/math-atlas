@@ -26,6 +26,15 @@
                                 starts the scale above 0 (a graph that misleads), with a zigzag on the axis
      lineg { cats, vals, min, max, step, title, h }   a line graph: a point for each category, joined in order
      spin  { parts }            a spinner cut into equal parts, each labelled (['R', 'R', 'B'] is 2 parts R and 1 part B)
+     tri   { sides: [a, b, c] } or { angles: [A, B, C] }, show: 'sides' | 'angles', ask: 0 | 1 | 2, marks
+                                a triangle drawn from its side lengths or its angles (in degrees); show writes the
+                                lengths (cm) or the angles, ask leaves one angle as "?", marks draws ticks on equal sides
+                                and a square in a right angle
+     heights { g: [[2, 1], [1, 0]] }   a top view of cube stacks: the number in each square is how tall it is (0 is empty);
+                                the front is the bottom edge and the right side is the right edge
+     coord { n, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
+                                a coordinate grid from 0 to n: labelled points, a shape, the shape after a move (dashed), a
+                                dashed mirror line, and points or a shape drawn only on the key
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
@@ -341,5 +350,76 @@
     });
     out += line(cx, cy, cx + R * 0.32 * Math.cos(-0.6), cy + R * 0.32 * Math.sin(-0.6), { sw: 2 }) + '<circle cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + INK + '"/>';
     return { svg: out, h: 2 * R + 4, w: 2 * R + 4 };
+  };
+
+  /* a triangle from 3 sides (law of cosines) or 3 angles (sides in proportion to the sines), scaled to fit */
+  P.tri = function (p, x, y, w) {
+    var rad = Math.PI / 180, sd = p.sides, an = p.angles;
+    if (!sd) { sd = [Math.sin(an[0] * rad), Math.sin(an[1] * rad), Math.sin(an[2] * rad)]; }
+    /* vertices: A at the origin, B along the base (side c = AB), C from the angle at A */
+    var a = sd[0], b = sd[1], c = sd[2], A = Math.acos((b * b + c * c - a * a) / (2 * b * c));
+    var pts = [[0, 0], [c, 0], [b * Math.cos(A), -b * Math.sin(A)]];
+    var xs = pts.map(function (q) { return q[0]; }), ys = pts.map(function (q) { return q[1]; });
+    var minx = Math.min.apply(null, xs), maxx = Math.max.apply(null, xs), miny = Math.min.apply(null, ys), maxy = Math.max.apply(null, ys);
+    var k = Math.min((Math.min(w, 200) - 40) / (maxx - minx), (p.show === 'angles' ? 70 : 44) / (maxy - miny || 1)), ox = x + 20 - minx * k, oy = y + 16 - miny * k;
+    var V = pts.map(function (q) { return [ox + q[0] * k, oy + q[1] * k]; }), out = '<path d="M' + V.map(function (v) { return v[0].toFixed(1) + ' ' + v[1].toFixed(1); }).join(' L') + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+    var cx = (V[0][0] + V[1][0] + V[2][0]) / 3, cy = (V[0][1] + V[1][1] + V[2][1]) / 3;
+    /* the angles at A, B, C (vertex i is opposite side i: V0 = A opposite a) */
+    var angs = an || [0, 1, 2].map(function (i) { var s1 = sd[i], s2 = sd[(i + 1) % 3], s3 = sd[(i + 2) % 3]; return Math.acos((s2 * s2 + s3 * s3 - s1 * s1) / (2 * s2 * s3)) / rad; });
+    /* side i joins the two vertices that are not vertex i */
+    var mid = function (i) { var u = V[(i + 1) % 3], v = V[(i + 2) % 3]; return [(u[0] + v[0]) / 2, (u[1] + v[1]) / 2]; };
+    if (p.show === 'sides') [0, 1, 2].forEach(function (i) { var m = mid(i), dx = m[0] - cx, dy = m[1] - cy, d = Math.sqrt(dx * dx + dy * dy) || 1; out += T(m[0] + dx / d * 17, m[1] + dy / d * 17 + 4, p.sides[i] + ' cm', { s: 10.5, f: INK2, a: 'middle' }); });
+    if (p.show === 'angles') [0, 1, 2].forEach(function (i) { var v = V[i], dx = cx - v[0], dy = cy - v[1]; out += T(v[0] + dx * 0.42, v[1] + dy * 0.42 + 4, p.ask === i ? '?' : Math.round(angs[i]) + '°', { s: 10.5, w: p.ask === i ? 700 : 400, f: p.ask === i ? INK : INK2, a: 'middle' }); });
+    if (p.marks) {
+      var L = [0, 1, 2].map(function (i) { return Math.round(sd[i] * 1000); });
+      [0, 1, 2].forEach(function (i) {
+        var same = L.filter(function (v) { return v === L[i]; }).length;
+        if (same < 2) return;
+        var m = mid(i), u = V[(i + 1) % 3], v = V[(i + 2) % 3], dx = v[0] - u[0], dy = v[1] - u[1], d = Math.sqrt(dx * dx + dy * dy), nx = -dy / d * 4, ny = dx / d * 4;
+        var ticks = same === 3 ? 1 : 2;
+        for (var t = 0; t < ticks; t++) { var off = (t - (ticks - 1) / 2) * 3, px = m[0] + dx / d * off, py = m[1] + dy / d * off; out += line(px - nx, py - ny, px + nx, py + ny, { sw: 1.1 }); }
+      });
+      angs.forEach(function (g, i) {
+        if (Math.abs(g - 90) > 0.5) return;
+        var v = V[i], u1 = V[(i + 1) % 3], u2 = V[(i + 2) % 3], e = function (u) { var dx = u[0] - v[0], dy = u[1] - v[1], d = Math.sqrt(dx * dx + dy * dy); return [dx / d * 8, dy / d * 8]; }, a1 = e(u1), a2 = e(u2);
+        out += '<path d="M' + (v[0] + a1[0]) + ' ' + (v[1] + a1[1]) + ' L' + (v[0] + a1[0] + a2[0]) + ' ' + (v[1] + a1[1] + a2[1]) + ' L' + (v[0] + a2[0]) + ' ' + (v[1] + a2[1]) + '" fill="none" stroke="' + INK + '" stroke-width="1"/>';
+      });
+    }
+    var maxY = Math.max(V[0][1], V[1][1], V[2][1]);
+    return { svg: out, h: maxY - y + 18, w: Math.min(w, 220) };
+  };
+
+  /* a top view of cube stacks: a grid of squares with the height of each stack written in it */
+  P.heights = function (p, x, y) {
+    var sz = 20, out = '';
+    p.g.forEach(function (row, r) {
+      row.forEach(function (v, c) {
+        out += '<rect x="' + (x + c * sz) + '" y="' + (y + r * sz) + '" width="' + sz + '" height="' + sz + '" fill="' + (v ? '#dfe5ee' : '#fff') + '" stroke="' + INK2 + '" stroke-width="1"/>';
+        if (v) out += T(x + c * sz + sz / 2, y + r * sz + sz / 2 + 5, v, { s: 13, w: 700, a: 'middle' });
+      });
+    });
+    var wd = p.g[0].length * sz;
+    out += T(x + wd / 2, y + p.g.length * sz + 14, 'front', { s: 9.5, f: INK2, a: 'middle' }) + T(x + wd + 5, y + p.g.length * sz / 2 + 4, 'side', { s: 9.5, f: INK2 });
+    return { svg: out, h: p.g.length * sz + 18, w: wd + 30 };
+  };
+
+  /* a coordinate grid from 0 to n with labelled points and shapes */
+  P.coord = function (p, x, y, w, key) {
+    var n = p.n || 8, u = Math.min(11, (Math.min(w, 220) - 24) / n), ox = x + 18, oy = y + 6 + n * u, out = '';
+    var X = function (v) { return ox + v * u; }, Y = function (v) { return oy - v * u; };
+    for (var i = 0; i <= n; i++) {
+      out += line(X(i), Y(0), X(i), Y(n), { s: LINE, sw: 0.7 }) + line(X(0), Y(i), X(n), Y(i), { s: LINE, sw: 0.7 });
+      out += T(X(i), Y(0) + 12, i, { s: 8.5, f: INK2, a: 'middle' }) + (i ? T(X(0) - 5, Y(i) + 3, i, { s: 8.5, f: INK2, a: 'end' }) : '');
+    }
+    out += line(X(0), Y(0), X(n), Y(0), { sw: 1.2 }) + line(X(0), Y(0), X(0), Y(n), { sw: 1.2 });
+    function shape(list, col, dash) { return '<path d="M' + list.map(function (q) { return X(q[0]) + ' ' + Y(q[1]); }).join(' L') + ' Z" fill="' + (dash ? 'none' : '#dfe5ee') + '" fill-opacity="0.8" stroke="' + col + '" stroke-width="1.4"' + (dash ? ' stroke-dasharray="4 3"' : '') + '/>'; }
+    function dot(q, col) { return '<circle cx="' + X(q[0]) + '" cy="' + Y(q[1]) + '" r="3.2" fill="' + col + '"/>' + (q[2] ? T(X(q[0]) + 5, Y(q[1]) - 5, q[2], { s: 10.5, w: 700, f: col }) : ''); }
+    if (p.mirror) out += p.mirror.x != null ? line(X(p.mirror.x), Y(0), X(p.mirror.x), Y(n), { sw: 1.6 }).replace('/>', ' stroke-dasharray="5 3"/>') : line(X(0), Y(p.mirror.y), X(n), Y(p.mirror.y), { sw: 1.6 }).replace('/>', ' stroke-dasharray="5 3"/>');
+    if (p.shape) out += shape(p.shape, INK);
+    if (p.after) out += shape(p.after, INK, true);
+    if (key && p.keyShape) out += shape(p.keyShape, KEY, true);
+    (p.pts || []).forEach(function (q) { out += dot(q, INK); });
+    if (key) (p.plot || []).forEach(function (q) { out += dot(q, KEY); });
+    return { svg: out, h: n * u + 22, w: n * u + 24 };
   };
 })();
