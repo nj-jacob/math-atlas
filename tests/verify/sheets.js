@@ -100,6 +100,110 @@
     };
     return d < 0 || !run(String(code).split(',')) ? null : [x, y];
   }
+  /* 3D objects: flat faces, edges, vertices, curved surfaces, points; prism, pyramid or neither (cones and cylinders are
+     described with words, so their edges and vertices are never asked) */
+  const SOLID = {
+    cube: { f: 6, e: 12, v: 8, c: 0, p: 0, kind: 'prism', sq: 1, sqonly: 1 }, prism: { f: 6, e: 12, v: 8, c: 0, p: 0, kind: 'prism', sq: 0 },
+    tri: { f: 5, e: 9, v: 6, c: 0, p: 0, kind: 'prism', sq: 0 }, pyramid: { f: 5, e: 8, v: 5, c: 0, p: 1, kind: 'pyramid', sq: 1 },
+    tpyr: { f: 4, e: 6, v: 4, c: 0, p: 1, kind: 'pyramid', sq: 0 }, cylinder: { f: 2, c: 1, p: 0, kind: 'neither', roll: 1 },
+    cone: { f: 1, c: 1, p: 1, kind: 'neither', roll: 1 }, sphere: { f: 0, c: 1, p: 0, kind: 'neither', roll: 1 }
+  };
+  const SOLID_BY = { cube: 'cube', 'rectangular prism': 'prism', 'triangular prism': 'tri', 'square-based pyramid': 'pyramid', 'triangular pyramid': 'tpyr', cylinder: 'cylinder', cone: 'cone', sphere: 'sphere' };
+  /* a choice names an object, or is a letter for one of the pictured objects */
+  const solidOf = (x, it) => (/^[A-H]$/.test(x) && it.pic ? [].concat(it.pic[1].list || [])[x.charCodeAt(0) - 65] : SOLID_BY[x]);
+  const fits = (k, clue) => !!SOLID[k] && Object.keys(clue).every(c => SOLID[k][c] === clue[c]);
+  /* directions: a compass turn, and walking on a map with columns A, B, C ... and rows 1, 2, 3 ... from the bottom */
+  const DIRS = ['north', 'east', 'south', 'west'];
+  const turnBy = t => (/half turn/.test(t) ? 2 : /full turn/.test(t) ? 4 : /quarter turn right/.test(t) ? 1 : /quarter turn left/.test(t) ? 3 : null);
+  const facing = (from, moves) => moves.split(',').map(t => t.trim()).filter(Boolean).reduce((d, t) => (d == null || turnBy(t) == null ? null : (d + turnBy(t)) % 4), DIRS.indexOf(from));
+  const walkCode = c => String(c).replace(/forward (\d+)/g, 'move $1').replace(/quarter turn (right|left)/g, 'turn $1').replace(/half turn/g, 'turn right, turn right');
+  function walk(m, code) {
+    const end = robot(m.start, walkCode(code)), steps = (String(code).match(/forward (\d+)/g) || []).reduce((t, f) => t + +f.split(' ')[1], 0);
+    const d = facing(DIRS[['^', '>', 'v', '<'].indexOf(m.start[2])], String(code).split(',').filter(t => /turn/.test(t)).join(','));
+    return end && { cell: 'ABCDEFGHIJ'[end[0]] + (m.rows - end[1]), steps, dir: DIRS[d], inside: end[0] >= 0 && end[1] >= 0 && end[0] < m.cols && end[1] < m.rows };
+  }
+  /* lengths: "4 cm 3 mm", "2 m 40 cm" in millimetres; a side may add lengths (4 cm + 5 cm); null when not a length */
+  const MM = { mm: 1, cm: 10, m: 1000, km: 1000000 };
+  const toMM = s => {
+    const terms = String(s).trim().split(' + '), one = t => { const re = /(\d+(?:\.\d+)?) ?(mm|cm|m|km)\b/g; return re.test(t) && !t.replace(re, '').trim() ? [...t.matchAll(re)].reduce((n, q) => n + +q[1] * MM[q[2]], 0) : null; };
+    const v = terms.map(one); return v.some(x => x === null) ? null : v.reduce((a, b) => a + b, 0);
+  };
+  /* the perimeter of squares on a grid: every square edge that does not touch another square */
+  const cellPerim = cells => cells.reduce((t, c) => { const [x, y] = c.split(',').map(Number); return t + [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => cells.indexOf((x + dx) + ',' + (y + dy)) < 0).length; }, 0);
+  /* an ellipse on a grid: squares more than half covered (by sampling), and squares too close to half to call */
+  function blobEstimate(o) {
+    let n = 0, unsure = 0;
+    for (let c = 0; c < o.cols; c++) for (let r = 0; r < o.rows; r++) {
+      let inside = 0;
+      for (let i = 0; i < 20; i++) for (let j = 0; j < 20; j++) { const px = c + (i + 0.5) / 20, py = r + (j + 0.5) / 20; if (((px - o.cx) / o.rx) ** 2 + ((py - o.cy) / o.ry) ** 2 <= 1) inside++; }
+      const f = inside / 400; if (f > 0.5) n++; if (f > 0.35 && f < 0.65) unsure++;
+    }
+    return { n, unsure };
+  }
+  /* the unit for a length (in mm): smaller than a fingernail mm, smaller than a big step cm, smaller than a long walk m, else km */
+  const unitFor = mm => (mm < 10 ? 'mm' : mm < 1000 ? 'cm' : mm < 1000000 ? 'm' : 'km');
+  /* perimeter or area: words that go around the edge, or cover the inside */
+  const AROUND = /fence|border|frame|edge|trim|around|lace|rope|path round/, INSIDE = /carpet|paint|cover|tile|grass|seed|paper|rug|wrap|floor/;
+  /* a time on a clock in minutes after 12:00 (a 12-hour clock): "3:25", "4 o'clock", "25 minutes past 4", "quarter past 8",
+     "half past 8", "quarter to 9"; null when not a time */
+  function clockMin(t) {
+    const s = String(t).trim(), h = n => (+n % 12) * 60; let m;
+    if ((m = s.match(/^(\d{1,2}):(\d\d)$/)) && +m[2] < 60) return h(m[1]) + +m[2];
+    if ((m = s.match(/^(\d{1,2}) o'clock$/))) return h(m[1]);
+    if ((m = s.match(/^(\d+) minutes past (\d{1,2})$/))) return h(m[2]) + +m[1];
+    if ((m = s.match(/^quarter past (\d{1,2})$/))) return h(m[1]) + 15;
+    if ((m = s.match(/^half past (\d{1,2})$/))) return h(m[1]) + 30;
+    if ((m = s.match(/^quarter to (\d{1,2})$/))) return (h(m[1]) + 720 - 15) % 720;
+    return null;
+  }
+  /* an amount of time in seconds: "2 hours", "3 minutes 10 seconds", or a timer "2:10" (minutes and seconds); null if not */
+  const SEC = { second: 1, minute: 60, hour: 3600, day: 86400 };
+  const toSec = t => {
+    const s = String(t).trim(), tm = s.match(/^(\d+):(\d\d)$/), re = /(\d+) (second|minute|hour|day)s?\b/g;
+    if (tm) return +tm[1] * 60 + +tm[2];
+    return re.test(s) && !s.replace(re, '').trim() ? [...s.matchAll(re)].reduce((n, q) => n + +q[1] * SEC[q[2]], 0) : null;
+  };
+  /* mass, capacity or time: the words that tell which one a question is about */
+  const MEASURE = { mass: /heav|weigh|light|balance/, capacity: /hold|fill|pour|cups? of|full/, time: /long does|how long|minutes|seconds|hours|take/ };
+  /* data: is a label true of a number ("even", "odd", "more than 15", "less than 10", "multiple of 5", "has a 5") or of an
+     attribute block ('cdB': c circle, q square, t triangle; d shaded, w white; B big, s small)? "not ..." turns it round; null if unknown */
+  function holds(label, x) {
+    const l = String(label).trim(); let m;
+    if (/^not /.test(l)) { const t = holds(l.slice(4), x); return t === null ? null : !t; }
+    if (typeof x === 'number') {
+      if (l === 'even' || l === 'odd') return x % 2 === (l === 'even' ? 0 : 1);
+      if ((m = l.match(/^more than (\d+)$/))) return x > +m[1];
+      if ((m = l.match(/^less than (\d+)$/))) return x < +m[1];
+      if ((m = l.match(/^multiple of (\d+)$/))) return x % +m[1] === 0;
+      if ((m = l.match(/^has a (\d)$/))) return String(x).indexOf(m[1]) >= 0;
+      return null;
+    }
+    const b = { circle: [0, 'c'], square: [0, 'q'], triangle: [0, 't'], shaded: [1, 'd'], white: [1, 'w'], big: [2, 'B'], small: [2, 's'] }[l];
+    return b ? x[b[0]] === b[1] : null;
+  }
+  /* where a number goes: Venn parts [a only, both, b only, neither]; Carroll cells [a and b, a only, b only, neither] by row and column */
+  const vennPart = (o, x) => (holds(o.a, x) ? (holds(o.b, x) ? 1 : 0) : holds(o.b, x) ? 2 : 3);
+  const carrollCell = (o, x) => (holds(o.a, x) ? 0 : 2) + (holds(o.b, x) ? 0 : 1);
+  function sorted(o, groups, where, name) {
+    const bad = [], all = groups.flat();
+    if (all.some(x => holds(o.a, x) === null || holds(o.b, x) === null)) return ['cannot read the labels ' + o.a + ' and ' + o.b];
+    groups.forEach((g, i) => g.forEach(x => { if (where(o, x) !== i) bad.push(x + ' is in the wrong part of the ' + name); }));
+    if (o.list && o.list.slice().sort().join() !== all.slice().sort().join()) bad.push('the ' + name + ' does not hold exactly the numbers to sort');
+    return bad;
+  }
+  /* the mode(s) of a list: 'none' when nothing repeats, else the values that appear most, joined with "and" */
+  function modeOf(v) {
+    const c = {}; v.forEach(x => { c[x] = (c[x] || 0) + 1; });
+    const top = Math.max(...Object.values(c));
+    return top < 2 ? 'none' : Object.keys(c).filter(k => c[k] === top).map(Number).sort((x, y) => x - y).join(' and ');
+  }
+  /* chance words: compare the count of one colour (k) with all of them (n) */
+  const chanceWord = (k, n) => (k === 0 ? 'impossible' : k === n ? 'certain' : 2 * k < n ? 'unlikely' : 2 * k === n ? 'equally likely' : 'likely');
+  /* kinds of data: a survey question with number answers starts "How many", "How far" ...; the way data is collected */
+  const QUANT = /^how (many|much|far|long|tall|old|heavy|fast|high)\b/i;
+  const COLLECT = { interview: /\bask/, observation: /\bwatch|\blook at|\bcount the .* (pass|go by|in the)/, experiment: /\btest|\btry|\bdrop|\broll|\btoss|\bflip|\bbounce/ };
+  /* mean or mode: the words that ask for one */
+  const STAT = { mean: /fair|share|even(ly| out)|level|same number/, mode: /most (common|often|popular)|appears most|shows up most/ };
   /* how many right angles a shape's corners make: at each corner the two sides meet square on */
   const rights = sh => sh.filter((p, i) => { const a = sh[(i + sh.length - 1) % sh.length], b = sh[(i + 1) % sh.length]; return (a[0] - p[0]) * (b[0] - p[0]) + (a[1] - p[1]) * (b[1] - p[1]) === 0; }).length;
   /* the shape names a repeating pattern uses */
@@ -107,6 +211,7 @@
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
      own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
      Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
+  const dataOf = o => Object.fromEntries(o.cats.map((c, i) => [c, o.vals[i]]));
   const READ = {
     groups: o => { const c = o.counts || Array(o.g).fill(o.k); return { total: c.reduce((x, y) => x + y, 0), pair: o.counts ? null : [o.g, o.k], counts: c }; },
     array: o => ({ total: o.r * o.c, pair: [o.r, o.c] }),
@@ -142,13 +247,31 @@
     blocks: o => ({ total: 100 * o.h + 10 * o.t + o.o }),
     tenframe: o => ({ total: o.a + o.b }),
     coins: o => ({ total: o.list.reduce((x, y) => x + y, 0) }),
-    clock: o => (o.blank ? null : { time: o.h * 60 + o.m }),
-    area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length }),
+    area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length, area: o.rect ? o.rect[0] * o.rect[1] : o.cells.length, perim: o.rect ? 2 * (o.rect[0] + o.rect[1]) : cellPerim(o.cells) }),
+    rect: o => ({ perim: 2 * (o.a + o.b), area: o.a * o.b }),
+    poly: o => (o.sides.indexOf('?') < 0 ? { perim: o.sides.reduce((x, y) => x + y, 0) } : { known: o.sides.filter(v => v !== '?').reduce((x, y) => x + y, 0) }),
+    ruler: o => ({ len: o.len * 10 }),
+    clock: o => Object.assign({ time: (o.h % 12) * 60 + o.m }, o.blank ? { blanks: 0, own: () => [] } : {}),
+    balance: o => { const n = typeof o.l === 'number' ? o.l : typeof o.r === 'number' ? o.r : null;
+      return { heavy: o.tilt === 1 ? o.r : o.tilt === -1 ? o.l : null, total: o.tilt === 0 && n !== null ? n : undefined }; },
+    units: o => ({ total: o.n, pair: [o.n, o.unit ? parseFloat(o.unit) : null] }),
+    blob: o => ({ total: blobEstimate(o).n, own: o => (blobEstimate(o).unsure ? [blobEstimate(o).unsure + ' squares of the curved shape are too close to half to call'] : []), blanks: 0 }),
     wholes: o => ({ total: o.n }),
     cups: o => ({ total: o.n }),
     col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
-    tally: o => (o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]), data: o.vals } : { data: o.vals }),
-    bar: o => ({ data: o.vals.filter(v => v != null) }),
+    tally: o => Object.assign({ data: o.vals, byCat: dataOf(o) }, o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : {}),
+    bar: o => Object.assign({ data: o.vals.filter(v => v != null), byCat: dataOf(o), step: o.step, parts: { title: !!o.title, ylab: !!o.ylab, src: !!o.src } }, o.hide ? { blanks: 0, own: () => [] } : {}),
+    /* every value is a whole or half number of pictures */
+    picto: o => ({ byCat: dataOf(o), parts: { title: !!o.title }, blanks: 0, own: o => o.vals.filter(v => (2 * v) % o.key !== 0).map(v => v + ' is not a whole or half number of pictures of ' + o.key) }),
+    venn: o => (o.parts ? { list: o.parts.flat(), blanks: 0, own: o => sorted(o, o.parts, vennPart, 'Venn diagram') } : null),
+    carroll: o => (o.cells ? { list: o.cells.flat(), blanks: 0, own: o => sorted(o, o.cells, carrollCell, 'Carroll diagram') } : null),
+    tray: o => ({ list: o.list }),
+    /* the leaves of a tree diagram, left to right: first sort, then second sort */
+    tree: o => ({ list: o.tray, blanks: o.blank ? 4 : 0, own: o.blank ? (o, a) => { const want = o.by[0].flatMap(x => o.by[1].map(y => o.tray.filter(b => holds(x, b) && holds(y, b)).length)); return a.join() === want.join() ? [] : ['the tree leaves are ' + want.join(', ') + ', not ' + a.join(', ')]; } : null }),
+    plot: o => ({ list: o.v }),
+    towers: o => ({ list: o.v }),
+    bag: o => ({ chance: o.c }),
+    spinner: o => ({ chance: o.parts.reduce((c, x) => Object.assign(c, { [x]: (c[x] || 0) + 1 }), {}) }),
     nl: o => ({ total: o.pt != null ? o.pt : undefined, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
     pv: o => ({ total: o.n, blanks: o.blank ? Math.max(3, String(o.n).length) : 0, own: o.blank ? (o, a) => (+a.join('') === o.n ? [] : ['the chart digits ' + a.join('') + ' are not ' + o.n]) : null }),
     /* sheet-pics-upper.js */
@@ -212,11 +335,17 @@
     table: [{ head: ['{conts}', '{many}'], rows: [[1, 5], [2, '[]']] }, [10]],
     blocks: [{ h: 3, t: 4, o: 5 }], pv: [{ n: 307, blank: true }, [3, 0, 7]], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
     wholes: [{ n: 5 }], pat: [{ seq: 'cstcst', blanks: 2, next: 'cs', core: 3 }], clock: [{ h: 3, m: 40, blank: true }],
-    coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2 }],
-    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'prism', 'pyramid', 'cylinder'], letters: true }],
+    coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2, title: 'Votes', ylab: 'Votes', src: 'Room 4', hide: [1] }],
+    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'tpyr', 'pyramid', 'cylinder'], letters: true }],
     area: [{ cols: 8, rows: 4, rect: [5, 3] }], rect: [{ a: 6, b: 3, unit: 'cm', all: true }], ruler: [{ len: 7, from: 0 }],
     balance: [{ l: 6, r: '{one}', tilt: 0 }], cups: [{ n: 6 }], nl: [{ min: 300, max: 400, tick: 10, lab: 50, pt: 370, ask: [330] }, [330]],
-    map: [{ cols: 7, rows: 4, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'red', b: 'round' }],
+    map: [{ cols: 7, rows: 4, grid: true, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'even', b: 'more than 15', parts: [[6, 12], [18, 24], [17], [9, 3]], list: [6, 18, 9, 24, 3, 12, 17], blank: true }],
+    carroll: [{ a: 'even', b: 'more than 10', cells: [[12, 20], [4], [15], [7, 9]] }], tray: [{ list: ['cdB', 'qws', 'tdB', 'cws'] }],
+    tree: [{ tray: ['cdB', 'qws', 'cds', 'cws', 'qdB'], by: [['circle', 'square'], ['shaded', 'white']], blank: true }, [2, 1, 1, 1]],
+    picto: [{ title: 'Favourite fruit', cats: ['Apple', 'Pear'], vals: [7, 4], key: 2 }], plot: [{ lo: 2, hi: 9, v: [3, 5, 8, 5, 3, 6] }],
+    towers: [{ v: [2, 8, 5], line: 5 }], bag: [{ c: { red: 2, blue: 6 } }], spinner: [{ parts: ['red', 'blue', 'blue', 'blue'] }],
+    poly: [{ sides: [4, 5, '?'] }], blob: [{ cols: 8, rows: 5, cx: 4, cy: 2.5, rx: 3.2, ry: 2.1 }], units: [{ n: 6, unit: '4 cm' }],
+    stack: [{ list: ['tri', 'cube'] }], box: [{ l: 4, d: 2, h: 3 }], compass: [{ face: 'east' }],
     row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }],
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
@@ -225,6 +354,15 @@
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
+  /* it.look: { op: 'value' | 'total' | 'more', a: [categories], b: [categories], at }: the sum of a (or of everything for a
+     total), or a take away b. at: which picture of a row. null when a category is not in the data */
+  function dataVal(it) {
+    const p = it.look.at != null ? it.pic[1].list[it.look.at] : it.pic, d = (picture(p) || {}).byCat;
+    if (!d) return null;
+    const sum = l => (l.some(c => d[c] === undefined) ? NaN : l.reduce((t, c) => t + d[c], 0)), a = sum(it.look.a || Object.keys(d));
+    const v = it.look.op === 'more' ? a - sum(it.look.b) : a;
+    return isNaN(v) ? null : v;
+  }
 
 
   window.__sheetCheck = function (it) {
@@ -244,14 +382,23 @@
       return t.replace('[]', a.shift());
     }).join(' '));
     if (a.length) say(a.length + ' answer(s) left over with no box');
+    /* the marbles or spinner parts: from the picture, or it.chances when the question says them ("5 red and 1 blue") */
+    const chances = (pc && pc.chance) || it.chances;
+    if (it.chances) Object.keys(it.chances).forEach(c => { if (!new RegExp('\\b' + it.chances[c] + ' ' + c + '\\b').test(it.q)) say('the question does not say ' + it.chances[c] + ' ' + c); });
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
     const byItem = !!(it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
+      /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
+      if (pc && pc.byCat && !it.look && !/:/.test(row)) {
+        const d = pc.byCat, re = new RegExp('\\b(' + Object.keys(d).sort((x, y) => y.length - x.length).join('|') + '|in all)\\b', 'g');
+        if (re.test(row)) row = row.replace(re, m => (m === 'in all' ? '(' + Object.values(d).join(' + ') + ')' : d[m]));
+      }
       let worth;
       let est;
+      let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
@@ -271,6 +418,76 @@
         const m = it.pic[1], end = robot(m.start, row), mark = (m.marks || []).find(k => k[2] === it.robot.to);
         if (!end) say('cannot read the code: ' + row);
         else if (!mark || end[0] !== mark[0] || end[1] !== mark[1]) say('the code ' + row + ' stops at ' + end.join(',') + ', not at ' + it.robot.to);
+      } else if (it.cnt && /^\d+( [a-z]+)?$/.test(row)) {
+        /* how many of the things sorted fit every label */
+        const list = it.cnt.of || pc.list, n = +row.split(' ')[0];
+        if (list.some(x => it.cnt.is.some(l => holds(l, x) === null))) say('cannot read the labels ' + it.cnt.is.join(', '));
+        else if (list.filter(x => it.cnt.is.every(l => holds(l, x))).length !== n) say(list.filter(x => it.cnt.is.every(l => holds(l, x))).length + ' are ' + it.cnt.is.join(' and ') + ', not ' + n);
+      } else if (it.look && /^\d+( [a-z]+)?$/.test(row)) {
+        /* a value read from a graph or table, a total, or how many more */
+        const want = dataVal(it), n = +row.split(' ')[0];
+        if (want === null) say('cannot read the data for ' + JSON.stringify(it.look)); else if (want !== n) say('the data give ' + want + ', not ' + n);
+      } else if (it.vals && (st = row.match(/^(.*?) ?(mean|mode|modes)( =|:) (.+)$/))) {
+        /* the mean (a fair share: the total shared equally) or the mode (the value that appears most) */
+        const v = st[1] ? (it.vals.g || {})[st[1]] : it.vals.v || pc.list;
+        if (!v) say('no data for ' + row);
+        else {
+          const want = st[2] === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v);
+          if (String(want) !== st[4].trim()) say('the ' + st[2] + ' of ' + v.join(', ') + ' is ' + want + ', not ' + st[4]);
+        }
+      } else if (it.predict && (st = row.match(/^about (\d+)/))) {
+        /* a fair prediction: the share of the spins or picks that this colour is of the whole */
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = it.predict.n * (c[it.predict.of] || 0) / n;
+        if (want !== +st[1]) say('in ' + it.predict.n + ' tries, expect about ' + want + ' ' + it.predict.of + ', not ' + st[1]);
+      } else if (it.solid && /^\d+ [a-z ]+$/.test(row)) {
+        /* "[] flat faces", "[] edges" ...: the objects' own counts, added up for a structure */
+        const what = row.replace(/^\d+ /, '').replace(/^flat /, '')[0], all = [].concat(it.solid), n = +row.split(' ')[0];
+        const want = what === 'o' ? all.length : all.reduce((t, k) => t + (SOLID[k] ? SOLID[k][what] : NaN), 0);
+        if (want !== n) say(all.join(' and ') + ': ' + row.replace(/^\d+ /, '') + ' is ' + want + ', not ' + n);
+      } else if (it.walk || it.turn || it.turnTo) {
+        /* a walk on the map (where you end, how far, which way you face) or a turn on the compass */
+        const w = it.walk && walk(it.pic[1], it.walk === true ? filled.join(', ') : it.walk), v = row.replace(/^(facing|at) /, '');
+        if (it.walk === true) { if (ri) return; if (!w || !w.inside || w.cell !== it.to) say('the directions ' + filled.join(', ') + ' end at ' + (w && w.cell) + ', not ' + it.to); return; }
+        if (it.walk && !w) say('cannot read the walk: ' + it.walk);
+        else if (/^[A-J]\d+$/.test(v)) { if (v !== w.cell || !w.inside) say('the walk ends at ' + w.cell + ', not ' + v); }
+        else if (/^\d+ squares?$/.test(v)) { if (+v.split(' ')[0] !== w.steps) say('the walk is ' + w.steps + ' squares, not ' + v); }
+        else if (/^\d+ quarter turns?$/.test(v)) {
+          const k = [1, 2, 3, 4].find(n => (DIRS.indexOf(it.turnTo.from) + n * (it.turnTo.dir === 'left' ? 3 : 1)) % 4 === DIRS.indexOf(it.turnTo.to));
+          if (k !== +v.split(' ')[0]) say('from ' + it.turnTo.from + ' to ' + it.turnTo.to + ' is ' + k + ' quarter turns ' + it.turnTo.dir + ', not ' + v);
+        } else if (DIRS.indexOf(v) >= 0) {
+          const want = w ? w.dir : DIRS[facing(it.turn.from, it.turn.moves)];
+          if (v !== want) say('you face ' + want + ', not ' + v);
+        } else say('nothing checks this row: ' + raw[ri]);
+      } else if (pc && pc.time != null && clockMin(row) !== null) {
+        /* a time read from the clock, in any of the ways we say it */
+        if (clockMin(row) !== pc.time) say('the clock shows ' + Math.floor(pc.time / 60 || 12) + ':' + String(pc.time % 60).padStart(2, '0') + ', not ' + row);
+      } else if (row.split(' = ').length === 2 && row.split(' = ').every(x => clockMin(x) !== null)) {
+        /* a time said two ways: "quarter to 3 = 2:45" */
+        const [x, y] = row.split(' = ').map(clockMin);
+        if (x !== y) say('not the same time: ' + row);
+      } else if (it.span && /^\d+ minutes$/.test(row)) {
+        /* how long from one time to another (counting on, not subtracting like plain numbers) */
+        const want = (clockMin(it.span[1]) - clockMin(it.span[0]) + 720) % 720;
+        if (want !== +row.split(' ')[0]) say('from ' + it.span.join(' to ') + ' is ' + want + ' minutes, not ' + row);
+      } else if (/ = /.test(row) && row.split(' = ').length === 2 && toSec(row.split(' = ')[0]) !== null && toSec(row.split(' = ')[1]) !== null) {
+        /* amounts of time: "2 hours = 120 minutes", "2:10 = 130 seconds" */
+        const [a, b] = row.split(' = ').map(toSec);
+        if (a !== b) say('not true: ' + row);
+      } else if (it.find && pc && /^\d+( [a-z²]+)+$/.test(row)) {
+        /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
+        const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
+        if (want !== n) say('the ' + it.find + ' is ' + want + ', not ' + n);
+      } else if (!it.cong && !/[×÷+−]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
+        /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" */
+        const m = row.split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
+        if (m.length !== 3 || a === null || b === null) say('cannot read the lengths: ' + row);
+        else if (!(m[1] === '=' ? a === b : m[1] === '<' ? a < b : a > b)) say('not true: ' + row);
+      } else if ((it.len != null || (pc && pc.len != null)) && toMM(row) !== null) {
+        /* a measured length, in any units */
+        const want = it.len != null ? it.len : pc.len;
+        if (toMM(row) !== want) say('the length is ' + want + ' mm, not ' + row);
+      } else if (it.cong) {
+        /* congruent: checked below, from the lengths */
       } else if (/≠/.test(row)) {
         const sides = norm(row).split('≠').map(val);
         if (sides.some(isNaN)) say('cannot read: ' + row); else if (sides[0] === sides[1]) say('both sides are ' + sides[0] + ': ' + row);
@@ -336,7 +553,7 @@
         if (t === null) say('cannot read the comparison: ' + row);
         else if (!t) say('the comparison is not true: ' + row);
       } else if (/^\[\]( [^\s\d\[\]=<>,]+)?$/.test(raw[ri].trim())) {
-        /* a bare answer, with or without its unit ("[] °"): the number the picture shows, or the number written in words */
+        /* a bare answer, with or without its unit ("[] °"): the number the picture shows (unless a story sum checks it), or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
         if (it.digits) {
           /* the greatest or least number made from these digits, not starting with 0 */
@@ -354,10 +571,27 @@
           const t = truth(it.letter.replace(/\b[a-z]\b/g, String(v)));
           if (t !== true) say('with ' + v + ' for the letter, "' + it.letter + '" is not true');
         } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
-        else if (pc && pc.total != null) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
+        else if (pc && pc.total != null && !it.calc) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
         else if (!it.calc && !byItem) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc && !byItem) say('nothing checks this row: ' + raw[ri]);
     });
+    /* a clock to draw the hands on: the time asked for is the time on the key */
+    if (it.pic && it.pic[0] === 'clock' && it.pic[1].blank) {
+      const asked = (it.q || '').match(/\d{1,2}:\d\d|quarter (past|to) \d{1,2}|half past \d{1,2}|\d{1,2} o'clock/);
+      if (!asked || clockMin(asked[0]) !== pc.time) say('the clock to draw does not match the time asked for: ' + it.q);
+    }
+    /* a graph to draw from data in the question: the key draws each value the question gives */
+    if (it.pic && ((it.pic[0] === 'picto' && it.pic[1].blank) || (it.pic[0] === 'bar' && it.pic[1].hide))) {
+      const p = it.pic[1];
+      p.cats.forEach((c, i) => { if ((it.pic[0] === 'picto' || p.hide.indexOf(i) >= 0) && !new RegExp('\\b' + c + ':? ' + p.vals[i] + '\\b').test(it.q)) say('the question does not give ' + c + ' ' + p.vals[i] + ' for the key to draw'); });
+    }
+    /* congruent faces or boxes: with the blanks filled in, the two lists of lengths match once sorted */
+    if (it.cong) {
+      const q = ansAll.slice(), b = it.cong.b.map(x => (x === '?' ? +q.shift() : x)), srt = l => l.slice().sort((x, y) => x - y).join();
+      if (it.cong.b.indexOf('?') >= 0 && srt(it.cong.a) !== srt(b)) say(it.cong.a.join(' by ') + ' and ' + b.join(' by ') + ' are not congruent');
+    }
+    /* directions written on the key take you to the place asked for */
+    if (it.give) { const w = walk(it.pic[1], it.lines.key); if (!w || !w.inside || w.cell !== it.give) say('the key directions end at ' + (w && w.cell) + ', not ' + it.give); }
     /* the answers are these numbers, in some order (putting numbers in order) */
     if (it.set && ansAll.map(num).sort((x, y) => x - y).join() !== it.set.map(num).sort((x, y) => x - y).join()) say('the answers ' + ansAll.join(', ') + ' are not the numbers ' + it.set.join(', '));
     /* expanded form: every answer is one digit followed by zeros, each in a different place */
@@ -391,6 +625,146 @@
       const o = pk.opts, yes = pk.ans === 0;
       if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
+      } else if (pk.region != null || pk.cell != null) {
+        /* where a number goes in the Venn or Carroll diagram (its labels, or pk.a and pk.b when there is no picture) */
+        const p = it.pic ? it.pic[1] : pk, x = pk.region != null ? pk.region : pk.cell;
+        const want = pk.region != null ? [p.a + ' only', 'both', p.b + ' only', 'neither'] : ['top left', 'top right', 'bottom left', 'bottom right'];
+        const at = pk.region != null ? vennPart(p, x) : carrollCell(p, x);
+        if (holds(p.a, x) === null || holds(p.b, x) === null) say('cannot read the labels ' + p.a + ' and ' + p.b);
+        else if (o.join() !== want.join() || pk.ans !== at) say(x + ' goes in "' + want[at] + '", not "' + o[pk.ans] + '"');
+      } else if (pk.kindOf) {
+        const want = QUANT.test(pk.kindOf) ? 'numbers' : 'words';
+        if (o[pk.ans] !== want) say('"' + pk.kindOf + '" has ' + want + ' for answers, not ' + o[pk.ans]);
+      } else if (o.indexOf('interview') >= 0 && o.indexOf('experiment') >= 0) {
+        const q = it.q.toLowerCase(), hit = Object.keys(COLLECT).filter(k => COLLECT[k].test(q));
+        if (hit.length !== 1) say('cannot tell how the data is collected from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is an ' + hit[0] + ', not an ' + o[pk.ans]);
+      } else if (it.look && /most|least/.test(it.look.op)) {
+        /* the one category with the most (or least) */
+        const d = (picture(it.pic) || {}).byCat || {}, v = o.map(c => d[c]), best = it.look.op === 'most' ? Math.max(...v) : Math.min(...v);
+        if (v.some(x => x === undefined) || v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + it.look.op + ' is not only ' + o[pk.ans] + ': ' + v.join(', '));
+      } else if (it.look && o[0] === 'true') {
+        const want = dataVal(it) === it.look.say;
+        if (want !== yes) say('the data give ' + dataVal(it) + ', so "' + it.look.say + '" is ' + want);
+      } else if (pk.scale) {
+        /* the step the graph's scale counts by */
+        const ok = o.map(x => nums(x)[0] === pc.step);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('the scale counts by ' + pc.step + ', not ' + o[pk.ans]);
+      } else if (pk.scaleFor) {
+        /* the smallest step that shows the biggest count in 10 lines or fewer */
+        const s = o.map(x => nums(x)[0]), fit = s.filter(x => pk.scaleFor / x <= 10), want = Math.min(...fit);
+        if (s[pk.ans] !== want) say('for a biggest count of ' + pk.scaleFor + ', count by ' + want + 's, not ' + o[pk.ans]);
+      } else if (pk.missing) {
+        /* the one part the graph does not have */
+        const key = { title: 'title', label: 'ylab', source: 'src' }, has = pc.parts, gone = o.filter(x => has[key[x]] === false);
+        if (o.some(x => has[key[x]] === undefined) || gone.length !== 1 || gone[0] !== o[pk.ans]) say('the graph is missing ' + gone.join(' and ') + ', not ' + o[pk.ans]);
+      } else if (o.indexOf('mean') >= 0 && o.indexOf('mode') >= 0) {
+        const q = it.q.toLowerCase(), hit = Object.keys(STAT).filter(k => STAT[k].test(q));
+        if (hit.length !== 1) say('cannot tell mean or mode from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this asks for the ' + hit[0] + ', not the ' + o[pk.ans]);
+      } else if (pk.sameStat) {
+        const g = Object.values(it.vals.g), f = v => (pk.sameStat === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v)), want = f(g[0]) === f(g[1]);
+        if (want !== yes) say('the ' + pk.sameStat + 's are ' + f(g[0]) + ' and ' + f(g[1]) + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.chanceOf) {
+        /* how likely one colour is, from the counts in the bag or on the spinner */
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = chanceWord(c[pk.chanceOf.of] || 0, n);
+        if (pk.chanceOf.say ? (want === pk.chanceOf.say) !== yes : o[pk.ans] !== want) say(pk.chanceOf.of + ' is ' + want + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.likely) {
+        /* the one colour most (or least) likely */
+        const c = chances, v = o.map(x => c[x] || 0), best = pk.likely === 'most' ? Math.max(...v) : Math.min(...v);
+        if (v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + pk.likely + ' likely colour is not only ' + o[pk.ans]);
+      } else if (it.fair) {
+        /* a game is fair when each player's colour has the same chance */
+        const c = chances, want = (c[it.fair[0]] || 0) === (c[it.fair[1]] || 0);
+        if (want !== yes) say('the game is ' + (want ? '' : 'not ') + 'fair, but the key circles ' + o[pk.ans]);
+      } else if (it.pic && it.pic[0] === 'balance' && pc.heavy !== undefined && o.indexOf(it.pic[1].l) >= 0) {
+        /* the side that goes down is the heavier one */
+        if (pc.heavy === null || o[pk.ans] !== pc.heavy) say('the heavier one is ' + pc.heavy + ', not ' + o[pk.ans]);
+      } else if (!pk.size && o.indexOf('mass') >= 0 && o.indexOf('capacity') >= 0) {
+        const q = it.q.toLowerCase(), hit = Object.keys(MEASURE).filter(k => MEASURE[k].test(q));
+        if (hit.length !== 1) say('cannot tell mass, capacity or time from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is about ' + hit[0] + ', not ' + o[pk.ans]);
+      } else if (it.chain) {
+        /* things from heaviest to lightest: the lightest is last */
+        const want = /lightest/.test(it.q) ? it.chain[it.chain.length - 1] : it.chain[0];
+        if (o[pk.ans] !== want) say('the answer is ' + want + ', not ' + o[pk.ans]);
+      } else if (it.tool3) {
+        const want = { mass: 'balance', capacity: 'cup', time: 'clock' }[it.tool3];
+        if (o[pk.ans] !== want) say(it.tool3 + ' is measured with a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.dur != null) {
+        /* the unit for how long something takes (in seconds): under a minute and a half seconds, under an hour and a half minutes, else hours */
+        const want = pk.dur < 90 ? 'seconds' : pk.dur < 5400 ? 'minutes' : 'hours';
+        if (o[pk.ans] !== want) say('something lasting ' + pk.dur + ' seconds is timed in ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.lenMM != null) {
+        /* the unit that suits a length */
+        if (o[pk.ans] !== unitFor(pk.lenMM) || o.filter(x => x === unitFor(pk.lenMM)).length !== 1) say('a length of ' + pk.lenMM + ' mm is measured in ' + unitFor(pk.lenMM) + ', not ' + o[pk.ans]);
+      } else if (o.indexOf('perimeter') >= 0 && o.indexOf('area') >= 0) {
+        const q = it.q.toLowerCase(), want = AROUND.test(q) && !INSIDE.test(q) ? 'perimeter' : INSIDE.test(q) && !AROUND.test(q) ? 'area' : null;
+        if (!want) say('cannot tell perimeter or area from: ' + it.q); else if (o[pk.ans] !== want) say('this needs the ' + want + ', not the ' + o[pk.ans]);
+      } else if (pk.perim) {
+        /* the one rectangle ("4 by 2") with this perimeter */
+        const ok = o.map(x => { const [a, b] = x.split(' by ').map(Number); return 2 * (a + b) === pk.perim; });
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one rectangle has a perimeter of ' + pk.perim + ': ' + o.join(', '));
+      } else if (pk.areaUnit != null) {
+        /* square centimetres for things smaller than about a big book page, square metres for floors and fields */
+        const want = pk.areaUnit < 2000 ? 'cm²' : 'm²';
+        if (o[pk.ans] !== want) say('an area of ' + pk.areaUnit + ' cm² is measured in ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.cover) {
+        /* gaps leave space uncounted (too small); overlaps, cups not filled to the top and spills need extra units (too big) */
+        const want = pk.cover === 'gaps' ? 'too small' : 'too big';
+        if (o[pk.ans] !== want) say('tiles with ' + pk.cover + ' give an area that is ' + want + ', not ' + o[pk.ans]);
+      } else if (it.same && it.pic && it.pic[0] === 'row') {
+        /* do the pictures in the row cover the same area? */
+        const t = it.pic[1].list.map(q => picture(q).total), all = t.every(v => v === t[0]);
+        if (all !== yes) say('the areas are ' + t.join(' and ') + ', but the key circles ' + o[pk.ans]);
+      } else if (it.cmp) {
+        /* who or what is longer: the first choice goes with the first length */
+        const a = toMM(it.cmp[0]), b = toMM(it.cmp[1]);
+        if (a === null || b === null || a === b || (a > b ? 0 : 1) !== pk.ans) say('of ' + it.cmp.join(' and ') + ', the longer is not ' + o[pk.ans]);
+      } else if (it.count) {
+        /* the bigger unit is the one that fits fewer times along the same length */
+        const want = Object.keys(it.count).sort((x, y) => it.count[x] - it.count[y])[0];
+        if (o[pk.ans] !== want) say('the unit that fits fewer times is ' + want + ', not ' + o[pk.ans]);
+      } else if (it.tool) {
+        const want = it.tool === 'curve' ? 'string' : 'ruler';
+        if (o[pk.ans] !== want) say('a ' + it.tool + ' edge is measured with a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.longest) {
+        const v = o.map(toMM);
+        if (v.some(x => x === null) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled length is not the longest: ' + o.join(', '));
+      } else if (pk.shortest) {
+        const v = o.map(toMM);
+        if (v.some(x => x === null) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled length is not the shortest: ' + o.join(', '));
+      } else if (pk.clue) {
+        /* exactly one choice is an object that fits every part of the clue */
+        const ok = o.map(x => fits(solidOf(x, it), pk.clue));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice fits ' + JSON.stringify(pk.clue) + ': ' + o.join(', '));
+      } else if (pk.part != null) {
+        /* the object at this place in a structure (0: the top) */
+        const want = it.pic[1].list[pk.part];
+        if (solidOf(o[pk.ans], it) !== want || o.filter(x => solidOf(x, it) === want).length !== 1) say('part ' + (pk.part + 1) + ' of the structure is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.claim) {
+        /* true or false: the object (pk.claim.s) has these counts */
+        const c = Object.assign({}, pk.claim); delete c.s;
+        if (fits(pk.claim.s, c) !== yes) say(JSON.stringify(pk.claim) + ' is ' + fits(pk.claim.s, c) + ', but the key circles ' + o[pk.ans]);
+      } else if (it.solid && !Array.isArray(it.solid) && /^(prism|pyramid|neither)$/.test(o[pk.ans])) {
+        if (SOLID[it.solid].kind !== o[pk.ans]) say('a ' + it.solid + ' is ' + SOLID[it.solid].kind + ', not ' + o[pk.ans]);
+      } else if (pk.same) {
+        /* the one choice congruent to pk.same: the same lengths once sorted */
+        const srt = l => l.slice().sort((x, y) => x - y).join(), ok = pk.dims.map(d => srt(d) === srt(pk.same));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is congruent to ' + pk.same.join(' by '));
+      } else if (it.cong && o[0] === 'yes') {
+        /* "Are A and B congruent?": yes when their lengths match once sorted */
+        const srt = l => l.slice().sort((x, y) => x - y).join(), want = srt(it.cong.a) === srt(it.cong.b);
+        if (want !== yes) say(it.cong.a.join(' by ') + ' and ' + it.cong.b.join(' by ') + (want ? ' are' : ' are not') + ' congruent');
+      } else if (it.turn && DIRS.indexOf(o[pk.ans]) >= 0) {
+        const want = DIRS[facing(it.turn.from, it.turn.moves)];
+        if (o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say('you face ' + want + ', not ' + o[pk.ans]);
+      } else if (it.turnTo) {
+        /* exactly one turn takes you from one way to the other */
+        const ok = o.map(t => DIRS[facing(it.turnTo.from, t)] === it.turnTo.to);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one turn goes from ' + it.turnTo.from + ' to ' + it.turnTo.to);
+      } else if (it.walk && it.pic && it.pic[0] === 'map') {
+        /* the circled place is where the walk ends */
+        const m = it.pic[1], w = walk(m, it.walk), hit = w && (m.marks || []).filter(k => 'ABCDEFGHIJ'[k[0]] + (m.rows - k[1]) === w.cell);
+        if (!w) say('cannot read the walk: ' + it.walk);
+        else if (!hit.length || hit[0][2] !== o[pk.ans]) say('the walk ends at ' + w.cell + ', not at ' + o[pk.ans]);
       } else if (it.tf) {
         const t = truth(it.tf);
         if (t === null) say('cannot read the statement: ' + it.tf);

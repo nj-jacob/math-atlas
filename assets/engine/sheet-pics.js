@@ -14,17 +14,33 @@
      clock     { h, m, blank }                        a clock face; blank: no hands (the key draws them)
      coins     { list: [cents, ...] }                 Canadian coins and bills as outlines
      tag       { t, p }                               a price tag: a label and cents
-     bar       { cats, vals, max, step }              a bar graph (a val of null leaves that bar to draw)
+     bar       { cats, vals, max, step, title, ylab, src, hide: [i] }   a bar graph (a val of null leaves that bar to draw; hide: drawn on the key only)
      tally     { cats, vals, head, blank }            a tally table; blank: the counts are lines to write on
-     solids    { list: ['cube', 'prism', 'pyramid', 'cylinder', 'cone', 'sphere', 'tri'], letters }
+     solids    { list: ['cube', 'prism', 'pyramid', 'tpyr', 'cylinder', 'cone', 'sphere', 'tri'], letters }   prism: rectangular; pyramid: square-based; tpyr: triangular pyramid; tri: triangular prism
+     stack     { list: [top, ..., bottom] }           a structure taken apart: the same object names as solids
+     box       { l, d, h }                            a box of cubes: l long, d deep, h tall
+     compass   { face: 'north' | 'east' | 'south' | 'west' }   N, E, S and W, with an arrow for the way someone faces
      area      { cols, rows, cells: ['c,r', ...] | rect: [c, r] }   squares on a grid, some shaded
      rect      { a, b, unit, all }                    a rectangle with its side lengths (not to scale)
-     ruler     { len, from, max }                     a cm ruler with a ribbon of len cm above it
+     ruler     { len, from, max }                     a cm ruler (with mm marks) and a ribbon of len cm above it, starting at from
+     poly      { sides: [3, 4, '?'], unit }           a shape with its side lengths written on (not to scale)
+     blob      { cols, rows, cx, cy, rx, ry }         an ellipse on a grid of squares (centre and radii in squares), to estimate its area
+     units     { n, unit }                            a ribbon with n units of the same size end to end under it
      balance   { l, r, tilt: -1 | 0 | 1 }             a pan balance with cubes (numbers) or words on each side
      cups      { n }                                  n cups in a row
      nl        { min, max, tick, lab, pt, ptl, ask: [values], jumps: [[from, to, 'label']] }   a number line; ask: lines under those ticks
-     map       { cols, rows, marks: [[c, r, 'label']], start: [c, r, '>'], path: [[c, r], ...] }   a grid map; the key draws the path
-     venn      { a, b }                               a two-circle Venn diagram
+     map       { cols, rows, marks: [[c, r, 'label']], start: [c, r, '>'], path: [[c, r], ...], grid }   a grid map; the key draws the path;
+                                                      grid: columns A, B, C ... and rows 1, 2, 3 ... from the bottom
+     venn      { a, b, parts: [[a only], [both], [b only], [neither]], list, blank }   a two-circle Venn diagram, with numbers in it;
+                                                      blank: "Sort:" the list above, and the key writes the numbers in
+     carroll   { a, b, cells: [[a and b], [a only], [b only], [neither]], list, blank }   a Carroll diagram (rows a, columns b)
+     tray      { list: ['cdB', ...] }                 attribute blocks: c circle, q square, t triangle; d shaded, w white; B big, s small
+     tree      { tray, by: [[sort, sort], [sort, sort]], blank }   a tray of blocks and a tree diagram with a count at each leaf
+     picto     { cats, vals, key, unit, title, blank }   a pictograph: each circle means key, half a circle half of it
+     plot      { lo, hi, v: [values] }                a line plot: an × for each value
+     towers    { v: [heights], line }                 towers of cubes; line: a dashed line at that height
+     bag       { c: { red, blue, green, yellow } }    a bag of lettered marbles
+     spinner   { parts: ['red', 'blue', ...] }        a spinner in equal lettered parts
      row       { list: [pic, pic], labels, gap }      pictures side by side */
 (function () {
   'use strict';
@@ -170,16 +186,19 @@
     out += T(x + 22, y + 13, p.t, { s: 10, f: INK2 }) + T(x + 22, y + 28, cash(p.p), { s: 14, w: 700 });
     return { svg: out, h: 32, w: w };
   };
-  P.bar = function (p, x, y, w) {
-    var gx = x + 26, gw = Math.min(w - 32, 260), gh = p.h || 110, top = y + 6, out = '', bw = gw / p.cats.length;
+  P.bar = function (p, x, y, w, key, th) {
+    var lab = p.ylab ? 16 : 0, gx = x + 26 + lab, gw = Math.min(w - 32 - lab, 260), gh = p.h || 110, top = y + 6 + (p.title ? 18 : 0), out = '', bw = gw / p.cats.length, hide = p.hide || [];
+    if (p.title) out += T(gx + gw / 2, y + 12, D.words(p.title, th), { s: 12, w: 700, a: 'middle' });
+    if (p.ylab) out += '<g transform="rotate(-90 ' + (x + 8) + ' ' + (top + gh / 2) + ')">' + T(x + 8, top + gh / 2 + 4, D.words(p.ylab, th), { s: 10, f: INK2, a: 'middle' }) + '</g>';
     for (var v = 0; v <= p.max; v += p.step) { var ly = top + gh - v / p.max * gh; out += ln(gx, ly, gx + gw, ly, { s: LINE, sw: 0.7 }) + T(gx - 6, ly + 4, v, { s: 9, f: INK2, a: 'end' }); }
     p.cats.forEach(function (c, i) {
-      var bh = p.vals[i] / p.max * gh;
-      if (p.vals[i] != null) out += r(gx + i * bw + bw * 0.2, top + gh - bh, bw * 0.6, bh, { f: SHADE, s: INK2, sw: 1 });
-      out += T(gx + i * bw + bw / 2, top + gh + 14, c, { s: 10, a: 'middle', f: INK2 });
+      var bh = p.vals[i] / p.max * gh, hid = hide.indexOf(i) >= 0;
+      if (p.vals[i] != null && (!hid || key)) out += r(gx + i * bw + bw * 0.2, top + gh - bh, bw * 0.6, bh, hid ? { f: 'none', s: KEY, sw: 1.6 } : { f: SHADE, s: INK2, sw: 1 });
+      out += T(gx + i * bw + bw / 2, top + gh + 14, D.words(c, th), { s: 10, a: 'middle', f: INK2 });
     });
     out += ln(gx, top, gx, top + gh, { sw: 1.3 }) + ln(gx, top + gh, gx + gw, top + gh, { sw: 1.3 });
-    return { svg: out, h: gh + 22, w: gw + 26 };
+    if (p.src) out += T(gx + gw, top + gh + 30, 'Source: ' + D.words(p.src, th), { s: 9, f: INK2, a: 'end', i: true });
+    return { svg: out, h: top - y + gh + (p.src ? 34 : 22), w: gw + 26 + lab };
   };
   P.tally = function (p, x, y, w, key, th, ans) {
     var out = '', rh = 26, c1 = 84, c2 = 90, c3 = 50, used = 0;
@@ -205,6 +224,11 @@
     if (k === 'pyramid') {
       var a = [x, y + s * 0.8], b = [x + s * 0.7, y + s * 0.95], c = [x + s, y + s * 0.7], dd = [x + s * 0.3, y + s * 0.6], t = [x + s * 0.5, y];
       out += path('M' + a + ' L' + b + ' L' + c + ' L' + t + ' Z M' + t + ' L' + b, o) + path('M' + a + ' L' + dd + ' L' + c + ' M' + dd + ' L' + t, d);
+      return { svg: out, w: s, h: s * 0.95 };
+    }
+    if (k === 'tpyr') {
+      var pa = [x, y + s * 0.8], pb = [x + s * 0.62, y + s * 0.95], pc = [x + s, y + s * 0.68], pt = [x + s * 0.48, y];
+      out += path('M' + pa + ' L' + pb + ' L' + pc + ' L' + pt + ' Z M' + pt + ' L' + pb, o) + path('M' + pa + ' L' + pc, d);
       return { svg: out, w: s, h: s * 0.95 };
     }
     if (k === 'cylinder') {
@@ -237,6 +261,32 @@
     });
     return { svg: out, h: h + (p.letters ? 26 : 4), w: cx - x - 22 };
   };
+  /* a structure taken apart: its objects from top to bottom, lifted a little apart and centred */
+  P.stack = function (p, x, y) {
+    var s = p.s || 46, parts = p.list.map(function (k) { return solid(k, 0, 0, s); }), mw = Math.max.apply(null, parts.map(function (o) { return o.w; })), out = '', cy = y;
+    p.list.forEach(function (k, i) { out += solid(k, x + (mw - parts[i].w) / 2, cy, s).svg; cy += parts[i].h + 10; });
+    return { svg: out, h: cy - y - 10, w: mw };
+  };
+  /* a box built from l long, d deep and h tall cubes, drawn at a slant */
+  P.box = function (p, x, y) {
+    var u = p.u || 14, dx = u * 0.5, dy = u * 0.4, top = y + p.d * dy, out = '', i;
+    out += r(x, top, p.l * u, p.h * u, { s: INK, sw: 1.3 });
+    for (i = 1; i < p.l; i++) out += ln(x + i * u, top, x + i * u, top + p.h * u, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.h; i++) out += ln(x, top + i * u, x + p.l * u, top + i * u, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.d; i++) out += ln(x + i * dx, top - i * dy, x + p.l * u + i * dx, top - i * dy, { s: LINE, sw: 0.7 }) + ln(x + p.l * u + i * dx, top - i * dy, x + p.l * u + i * dx, top - i * dy + p.h * u, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.l; i++) out += ln(x + i * u, top, x + i * u + p.d * dx, top - p.d * dy, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.h; i++) out += ln(x + p.l * u, top + i * u, x + p.l * u + p.d * dx, top + i * u - p.d * dy, { s: LINE, sw: 0.7 });
+    var bx = x + p.l * u, ex = p.d * dx, ey = p.d * dy;
+    out += path('M' + x + ' ' + top + ' L' + (x + ex) + ' ' + y + ' L' + (bx + ex) + ' ' + y + ' L' + (bx + ex) + ' ' + (top + p.h * u - ey) + ' L' + bx + ' ' + (top + p.h * u) + ' M' + bx + ' ' + top + ' L' + (bx + ex) + ' ' + y, { s: INK, sw: 1.3 });
+    return { svg: out, h: p.h * u + ey, w: p.l * u + ex };
+  };
+  /* a compass: north, east, south and west, with an arrow for the way someone faces */
+  P.compass = function (p, x, y) {
+    var R = 24, cx = x + R + 14, cy = y + R + 14, out = circ(cx, cy, R, { s: LINE, sw: 1 });
+    [['N', 0, -1], ['E', 1, 0], ['S', 0, 1], ['W', -1, 0]].forEach(function (c) { out += ln(cx + c[1] * (R - 5), cy + c[2] * (R - 5), cx + c[1] * R, cy + c[2] * R, { s: INK2 }) + T(cx + c[1] * (R + 9), cy + c[2] * (R + 9) + 4, c[0], { s: 11, w: 700, a: 'middle' }); });
+    if (p.face) out += shape({ north: '^', east: '>', south: 'v', west: '<' }[p.face], cx, cy, R * 1.3);
+    return { svg: out, h: 2 * R + 28, w: 2 * R + 28 };
+  };
   P.area = function (p, x, y) {
     var u = p.u || 15, out = '';
     for (var i = 0; i < p.rows; i++) for (var j = 0; j < p.cols; j++) {
@@ -249,7 +299,7 @@
     var w = p.w || 120, h = p.h || 64, top = p.all ? 16 : 0, out = r(x + 50, y + 4 + top, w, h, { s: INK, sw: 1.5 });
     out += T(x + 50 + w / 2, y + top + h + 22, p.a + ' ' + p.unit, { s: 12, w: 700, a: 'middle' }) + T(x + 44, y + top + 4 + h / 2 + 4, p.b + ' ' + p.unit, { s: 12, w: 700, a: 'end' });
     if (p.all) out += T(x + 50 + w / 2, y + 12, p.a + ' ' + p.unit, { s: 12, w: 700, a: 'middle' }) + T(x + 56 + w, y + top + 4 + h / 2 + 4, p.b + ' ' + p.unit, { s: 12, w: 700 });
-    return { svg: out, h: h + 28 + top, w: w + 100 };
+    return { svg: out, h: h + 28 + top, w: w + (p.all ? 100 : 54) };
   };
   P.ruler = function (p, x, y, w) {
     var max = p.max || 12, cm = Math.min(18, (w - 10) / max), out = '', ry = y + 20;
@@ -257,6 +307,33 @@
     out += r(x, ry, max * cm + 4, 30, { rx: 3, s: INK2 });
     for (var i = 0; i <= max * 10; i++) { var tx = x + 2 + i * cm / 10, big = i % 10 === 0; out += ln(tx, ry, tx, ry + (big ? 11 : i % 5 === 0 ? 8 : 4), { s: big ? INK : INK2, sw: big ? 1 : 0.5 }); if (big) out += T(tx, ry + 24, i / 10, { s: 9, a: 'middle' }); }
     return { svg: out, h: 52, w: max * cm + 4 };
+  };
+  /* a shape with its side lengths written on (not to scale): 3 sides a triangle, 4 a four-sided shape, 5 or more a polygon;
+     a side can be '?' */
+  P.poly = function (p, x, y, w) {
+    var n = p.sides.length, R = 26, pw = Math.min(w, 2 * R * 1.25 + 80), cx = x + pw / 2, cy = y + R + 14, pts = [], out = '', i;
+    for (i = 0; i < n; i++) { var a = -Math.PI / 2 + (i + 0.5 - (n === 4 ? 0 : 0.5)) * 2 * Math.PI / n; pts.push([cx + R * 1.25 * Math.cos(a), cy + R * Math.sin(a)]); }
+    out += path('M' + pts.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z', { s: INK, sw: 1.5 });
+    for (i = 0; i < n; i++) {
+      var A = pts[i], B = pts[(i + 1) % n], mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, dx = mx - cx, dy = my - cy, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      out += T((mx + dx / d * 16).toFixed(1), (my + dy / d * 14 + 4).toFixed(1), p.sides[i] + (p.sides[i] === '?' ? '' : ' ' + (p.unit || 'cm')), { s: 11, w: 700, a: 'middle' });
+    }
+    return { svg: out, h: 2 * R + 28, w: pw };
+  };
+  /* a curved shape (an ellipse) on a grid of squares, to estimate its area */
+  P.blob = function (p, x, y) {
+    var u = p.u || 14, out = '';
+    for (var i = 0; i <= p.rows; i++) out += ln(x, y + i * u, x + p.cols * u, y + i * u, { s: LINE, sw: 0.7 });
+    for (var j = 0; j <= p.cols; j++) out += ln(x + j * u, y, x + j * u, y + p.rows * u, { s: LINE, sw: 0.7 });
+    out += '<ellipse cx="' + (x + p.cx * u) + '" cy="' + (y + p.cy * u) + '" rx="' + p.rx * u + '" ry="' + p.ry * u + '" fill="' + SHADE + '" fill-opacity=".6" stroke="' + INK + '" stroke-width="1.5"/>';
+    return { svg: out, h: p.rows * u, w: p.cols * u };
+  };
+  /* a ribbon len cm long with n units of the same size laid end to end under it (unit: its label, such as '4 cm') */
+  P.units = function (p, x, y, w) {
+    var cw = Math.min(w - 4, 210), seg = cw / p.n, out = r(x, y, cw, 10, { rx: 3, f: SHADE, s: INK2 });
+    for (var i = 0; i < p.n; i++) out += r(x + i * seg + 1, y + 16, seg - 2, 10, { rx: 2, s: INK2, sw: 1 });
+    if (p.unit) out += T(x + seg / 2, y + 42, p.unit, { s: 10, w: 700, f: INK2, a: 'middle' }) + ln(x + 1, y + 30, x + seg - 1, y + 30, { s: INK2, sw: 0.8 });
+    return { svg: out, h: p.unit ? 46 : 28, w: cw };
   };
   P.balance = function (p, x, y, w, key, th) {
     var cx = x + 96, t = (p.tilt || 0) * 10, out = '';
@@ -292,18 +369,130 @@
     return { svg: out, h: 60, w: w, used: used };
   };
   P.map = function (p, x, y, w, key, th) {
-    var u = p.u || 26, out = '';
+    var u = p.u || 26, out = '', x00 = x;
+    if (p.grid) {
+      x += 16;
+      for (var gi = 0; gi < p.cols; gi++) out += T(x + gi * u + u / 2, y + p.rows * u + 14, 'ABCDEFGHIJ'[gi], { s: 10, w: 700, f: INK2, a: 'middle' });
+      for (var gj = 0; gj < p.rows; gj++) out += T(x - 8, y + gj * u + u / 2 + 4, p.rows - gj, { s: 10, w: 700, f: INK2, a: 'middle' });
+    }
     for (var i = 0; i <= p.rows; i++) out += ln(x, y + i * u, x + p.cols * u, y + i * u, { s: LINE, sw: 0.8 });
     for (var j = 0; j <= p.cols; j++) out += ln(x + j * u, y, x + j * u, y + p.rows * u, { s: LINE, sw: 0.8 });
+    if (key && p.path) out += path('M' + p.path.map(function (q) { return (x + q[0] * u + u / 2) + ' ' + (y + q[1] * u + u / 2); }).join(' L'), { s: KEY, sw: 1.8 });
     (p.marks || []).forEach(function (m) { out += circ(x + m[0] * u + u / 2, y + m[1] * u + u / 2, u * 0.38, { s: INK2 }) + T(x + m[0] * u + u / 2, y + m[1] * u + u / 2 + 4, D.words(m[2], th), { s: 10, w: 700, a: 'middle' }); });
     if (p.start) out += shape(p.start[2], x + p.start[0] * u + u / 2, y + p.start[1] * u + u / 2, u * 0.8);
-    if (key && p.path) out += path('M' + p.path.map(function (q) { return (x + q[0] * u + u / 2) + ' ' + (y + q[1] * u + u / 2); }).join(' L'), { s: KEY, sw: 1.8 });
-    return { svg: out, h: p.rows * u, w: p.cols * u };
+    return { svg: out, h: p.rows * u + (p.grid ? 18 : 0), w: p.cols * u + x - x00 };
   };
+  /* numbers set out in a small block centred on (cx, cy) */
+  function heap(list, cx, cy, per, col) {
+    var out = '', rows = Math.ceil(list.length / per);
+    list.forEach(function (n, i) { var c = i % per, k = Math.floor(i / per), inRow = Math.min(per, list.length - k * per); out += T(cx + (c - (inRow - 1) / 2) * 24, cy + (k - (rows - 1) / 2) * 18 + 5, n, { s: 13, w: 700, a: 'middle', f: col || INK }); });
+    return out;
+  }
+  /* the numbers to sort, written above a blank diagram */
+  function toSort(list, x, y) { return T(x, y + 12, 'Sort: ' + list.join(', '), { s: 13, w: 700 }); }
   P.venn = function (p, x, y, w, key, th) {
-    var R = p.R || Math.min(70, w / 3.2), cx = x + Math.min(w, 3.2 * R) / 2, out = '<ellipse cx="' + (cx - R * 0.55) + '" cy="' + (y + R + 18) + '" rx="' + R + '" ry="' + R * 0.85 + '" fill="none" stroke="' + INK + '" stroke-width="1.4"/><ellipse cx="' + (cx + R * 0.55) + '" cy="' + (y + R + 18) + '" rx="' + R + '" ry="' + R * 0.85 + '" fill="none" stroke="' + INK + '" stroke-width="1.4"/>';
-    out += T(cx - R * 0.9, y + 10, D.words(p.a, th), { s: 12, w: 700, a: 'middle' }) + T(cx + R * 0.9, y + 10, D.words(p.b, th), { s: 12, w: 700, a: 'middle' });
-    return { svg: out, h: 2 * R * 0.85 + 24, w: Math.min(w, 3.2 * R) };
+    var top = p.blank ? y + 22 : y, R = p.R || Math.min(64, w / 3.4), bw = Math.min(w, 3.4 * R), cx = x + bw / 2, cy = top + R + 18, out = p.blank ? toSort(p.list, x, y) : '';
+    if (p.parts) out += r(x, top + 16, bw, 2 * R * 0.85 + 30, { s: INK2, sw: 1 });
+    out += '<ellipse cx="' + (cx - R * 0.55) + '" cy="' + cy + '" rx="' + R + '" ry="' + R * 0.85 + '" fill="none" stroke="' + INK + '" stroke-width="1.4"/><ellipse cx="' + (cx + R * 0.55) + '" cy="' + cy + '" rx="' + R + '" ry="' + R * 0.85 + '" fill="none" stroke="' + INK + '" stroke-width="1.4"/>';
+    out += T(cx - R * 0.9, top + 10, D.words(p.a, th), { s: 12, w: 700, a: 'middle' }) + T(cx + R * 0.9, top + 10, D.words(p.b, th), { s: 12, w: 700, a: 'middle' });
+    if (p.parts && (!p.blank || key)) {
+      var col = p.blank ? KEY : INK;
+      out += heap(p.parts[0], cx - R * 1.0, cy, 2, col) + heap(p.parts[1], cx, cy, 1, col) + heap(p.parts[2], cx + R * 1.0, cy, 2, col);
+      out += heap(p.parts[3], cx, top + 2 * R * 0.85 + 36, 6, col);
+    }
+    return { svg: out, h: top - y + 2 * R * 0.85 + (p.parts ? 48 : 24), w: bw };
+  };
+  /* a Carroll diagram: rows a / not a, columns b / not b; cells: [top left, top right, bottom left, bottom right] */
+  P.carroll = function (p, x, y, w, key, th) {
+    var top = p.blank ? y + 22 : y, lw = 64, cw = Math.min(80, (w - lw - 2) / 2), hh = 32, ch = p.ch || 46, out = p.blank ? toSort(p.list, x, y) : '';
+    function label(s, cx, cy, width, a) { var l = D.wrap(s, 12, width); l.forEach(function (t, i) { out += T(cx, cy + (i - (l.length - 1) / 2) * 13 + 4, t, { s: 11, w: 700, a: a, f: INK2 }); }); }
+    [D.words(p.b, th), 'not ' + D.words(p.b, th)].forEach(function (h, i) { label(h, x + lw + i * cw + cw / 2, top + hh / 2, cw - 6, 'middle'); });
+    [D.words(p.a, th), 'not ' + D.words(p.a, th)].forEach(function (h, i) { label(h, x + 2, top + hh + i * ch + ch / 2, lw - 6); });
+    out += r(x + lw, top + hh, 2 * cw, 2 * ch, { s: INK }) + ln(x + lw + cw, top + hh, x + lw + cw, top + hh + 2 * ch) + ln(x + lw, top + hh + ch, x + lw + 2 * cw, top + hh + ch);
+    if (p.cells && (!p.blank || key)) p.cells.forEach(function (c, i) { out += heap(c, x + lw + (i % 2) * cw + cw / 2, top + hh + Math.floor(i / 2) * ch + ch / 2, 3, p.blank ? KEY : INK); });
+    return { svg: out, h: top - y + hh + 2 * ch, w: lw + 2 * cw };
+  };
+  /* attribute blocks: 'c' circle, 'q' square, 't' triangle; then 'd' shaded or 'w' white; then 'B' big or 's' small */
+  function block(code, cx, cy) {
+    var s = code[2] === 'B' ? 11 : 7, o = { f: code[1] === 'd' ? '#aab4c4' : '#fff', s: INK, sw: 1.2 };
+    if (code[0] === 'c') return circ(cx, cy, s, o);
+    if (code[0] === 'q') return r(cx - s, cy - s, 2 * s, 2 * s, o);
+    return path('M' + (cx - s * 1.1) + ' ' + (cy + s) + ' L' + (cx + s * 1.1) + ' ' + (cy + s) + ' L' + cx + ' ' + (cy - s) + ' Z', o);
+  }
+  P.tray = function (p, x, y, w) {
+    var per = Math.max(1, Math.floor((w - 4) / 28)), rows = Math.ceil(p.list.length / per), out = '';
+    p.list.forEach(function (b, i) { out += block(b, x + 14 + (i % per) * 28, y + 13 + Math.floor(i / per) * 28); });
+    return { svg: out, h: rows * 28, w: Math.min(p.list.length, per) * 28 };
+  };
+  /* a tree diagram under a tray of blocks: by: [[two first sorts], [two second sorts]]; each leaf's count is a line on blank */
+  P.tree = function (p, x, y, w, key, th, ans) {
+    var t = P.tray({ list: p.tray }, x, y, w), out = t.svg, top = y + t.h + 8, lw = Math.min(54, (w - 4) / 4), used = 0, rootX = x + 2 * lw;
+    out += T(rootX, top + 12, 'all', { s: 11, w: 700, a: 'middle', f: INK2 });
+    p.by[0].forEach(function (a, i) {
+      var ax = x + lw * (2 * i + 1);
+      out += ln(rootX, top + 16, ax, top + 32, { s: INK2, sw: 1 }) + T(ax, top + 44, a, { s: 11, w: 700, a: 'middle' });
+      p.by[1].forEach(function (b, j) {
+        var bx = x + lw * (2 * i + j) + lw / 2, n = p.tray.filter(function (c) { return has(c, a) && has(c, b); }).length;
+        out += ln(ax, top + 48, bx, top + 64, { s: INK2, sw: 1 }) + T(bx, top + 76, b, { s: 10, a: 'middle', f: INK2 });
+        if (p.blank) { out += blank(bx, top + 102, 30, key, ans && ans[used], 14); used++; } else out += T(bx, top + 98, n, { s: 14, w: 700, a: 'middle' });
+      });
+    });
+    return { svg: out, h: top - y + 106, w: 4 * lw, used: used };
+  };
+  function has(code, word) { return { circle: code[0] === 'c', square: code[0] === 'q', triangle: code[0] === 't', shaded: code[1] === 'd', white: code[1] === 'w', big: code[2] === 'B', small: code[2] === 's' }[word]; }
+  /* a pictograph: each circle means key; half a circle means half the key; blank: the key draws the circles */
+  P.picto = function (p, x, y, w, key, th) {
+    var lw = 62, top = y + (p.title ? 18 : 0), rh = 24, out = '';
+    if (p.title) out += T(x, y + 12, D.words(p.title, th), { s: 12, w: 700 });
+    p.cats.forEach(function (c, i) {
+      var ry = top + i * rh, k = p.vals[i] / p.key, col = p.blank ? KEY : INK2;
+      out += T(x, ry + 16, D.words(c, th), { s: 12 }) + ln(x + lw - 6, ry + 2, x + lw - 6, ry + rh - 2, { s: LINE, sw: 0.8 });
+      if (!p.blank || key) for (var j = 0; j < k; j++) {
+        var cx = x + lw + 9 + j * 20, cy = ry + 12;
+        out += k - j >= 1 ? circ(cx, cy, 8, { f: p.blank ? 'none' : SHADE, s: col }) : path('M' + cx + ' ' + (cy - 8) + ' A8 8 0 0 0 ' + cx + ' ' + (cy + 8) + ' Z', { f: p.blank ? 'none' : SHADE, s: col });
+      }
+    });
+    var ky = top + p.cats.length * rh + 8;
+    out += circ(x + 9, ky + 6, 7, { f: SHADE, s: INK2 }) + T(x + 22, ky + 11, 'means ' + p.key + ' ' + (p.unit || 'votes'), { s: 11, w: 700, f: INK2 });
+    return { svg: out, h: ky - y + 16, w: Math.min(w, lw + 9 + 20 * Math.max.apply(null, p.vals.map(function (v) { return Math.ceil(v / p.key); }))) };
+  };
+  /* a line plot: an X over the number line for each value */
+  P.plot = function (p, x, y, w) {
+    var n = p.hi - p.lo, u = Math.min(30, (w - 20) / n), x0 = x + 10, most = 0, cnt = {}, out = '';
+    p.v.forEach(function (v) { cnt[v] = (cnt[v] || 0) + 1; most = Math.max(most, cnt[v]); });
+    var ly = y + most * 14 + 6;
+    out += ln(x0 - 6, ly, x0 + n * u + 6, ly, { sw: 1.3 });
+    for (var t = p.lo; t <= p.hi; t++) { var tx = x0 + (t - p.lo) * u; out += ln(tx, ly - 4, tx, ly + 4, { sw: 1 }) + T(tx, ly + 17, t, { s: 10, f: INK2, a: 'middle' }); for (var k = 0; k < (cnt[t] || 0); k++) out += T(tx, ly - 4 - k * 14, '×', { s: 14, w: 700, a: 'middle' }); }
+    return { svg: out, h: ly - y + 22, w: n * u + 20 };
+  };
+  /* towers of cubes; line: a dashed line at that height (the fair share) */
+  P.towers = function (p, x, y) {
+    var s = 8, top = Math.max.apply(null, p.v.concat(p.line || 0)), out = '';
+    p.v.forEach(function (v, i) { for (var k = 0; k < v; k++) out += r(x + i * 26, y + (top - k - 1) * s, 18, s, { f: SHADE, s: INK2, sw: 0.9 }); out += T(x + i * 26 + 9, y + top * s + 13, v, { s: 11, w: 700, a: 'middle', f: INK2 }); });
+    if (p.line) out += ln(x, y + (top - p.line) * s, x + p.v.length * 26 - 6, y + (top - p.line) * s, { s: INK, d: '4 3' });
+    return { svg: out, h: top * s + 16, w: p.v.length * 26 };
+  };
+  /* a bag of marbles: counts by colour, each marble lettered (R red, B blue, G green, Y yellow) */
+  P.bag = function (p, x, y) {
+    var list = [], out = '';
+    ['red', 'blue', 'green', 'yellow'].forEach(function (c) { for (var i = 0; i < (p.c[c] || 0); i++) list.push(c); });
+    var per = Math.min(6, Math.max(3, Math.ceil(Math.sqrt(list.length * 1.6)))), rows = Math.ceil(list.length / per), bw = per * 22 + 20, bh = Math.max(1, rows) * 22 + 20;
+    out += path('M' + (x + 8) + ' ' + (y + 12) + ' Q' + x + ' ' + (y + bh) + ' ' + (x + bw / 2) + ' ' + (y + bh + 4) + ' Q' + (x + bw) + ' ' + (y + bh) + ' ' + (x + bw - 8) + ' ' + (y + 12) + ' Z', { s: INK2 });
+    list.forEach(function (c, i) { var cx = x + 21 + (i % per) * 22, cy = y + 24 + Math.floor(i / per) * 22; out += circ(cx, cy, 9, { f: c === 'red' ? SHADE : '#fff', s: INK }) + T(cx, cy + 4, c[0].toUpperCase(), { s: 10, w: 700, a: 'middle' }); });
+    return { svg: out, h: bh + 6, w: bw };
+  };
+  /* a spinner cut in equal parts, each lettered with its colour */
+  P.spinner = function (p, x, y) {
+    var R = 30, cx = x + R + 2, cy = y + R + 2, n = p.parts.length, out = circ(cx, cy, R, { s: INK, sw: 1.4 });
+    p.parts.forEach(function (c, i) {
+      var a0 = (i / n) * 2 * Math.PI - Math.PI / 2, a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2, am = (a0 + a1) / 2;
+      if (c === 'red') out += path('M' + cx + ' ' + cy + ' L' + (cx + R * Math.cos(a0)) + ' ' + (cy + R * Math.sin(a0)) + ' A' + R + ' ' + R + ' 0 0 1 ' + (cx + R * Math.cos(a1)) + ' ' + (cy + R * Math.sin(a1)) + ' Z', { f: SHADE, s: INK, sw: 1 });
+      else out += ln(cx, cy, cx + R * Math.cos(a0), cy + R * Math.sin(a0), { sw: 1 });
+      out += T(cx + R * 0.68 * Math.cos(am), cy + R * 0.68 * Math.sin(am) + 4, c[0].toUpperCase(), { s: 10, w: 700, a: 'middle' });
+    });
+    if (n === 1) out = circ(cx, cy, R, { f: p.parts[0] === 'red' ? SHADE : '#fff', s: INK, sw: 1.4 }) + T(cx, cy + 16, p.parts[0][0].toUpperCase(), { s: 11, w: 700, a: 'middle' });
+    out += ln(cx, cy, cx, cy - R * 0.45, { sw: 2 }) + circ(cx, cy, 3, { f: INK });
+    return { svg: out, h: 2 * R + 4, w: 2 * R + 4 };
   };
   P.row = function (p, x, y, w, key, th, ans) {
     var cx = x, h = 0, out = '', used = 0, gap = p.gap || 16, each = (w - (p.list.length - 1) * gap) / p.list.length;

@@ -33,7 +33,11 @@ const GRADES = ONLY || [1, 2, 3, 4, 5, 6, 7, 8];
 const TRIES = QUICK ? 12 : 40;
 const problems = [];
 function fail(where, what) { problems.push(where + ': ' + what); }
-function log(s) { process.stdout.write(s + '\n'); }
+function log(s) { process.stdout.write(s + '\n'); quietSince = Date.now(); }
+/* a slow step names itself: after 90 s with nothing logged, say which step is running (once a minute) */
+let quietSince = Date.now(), step = '';
+function mark(s) { step = s; }
+setInterval(() => { if (Date.now() - quietSince > 90000) { process.stdout.write('  ... still on ' + step + '\n'); quietSince = Date.now() - 30000; } }, 10000).unref();
 
 /* ---------- 1. repository rules ---------- */
 function repoRules() {
@@ -123,6 +127,7 @@ async function checkGrade(browser, base, g) {
   await page.waitForFunction(() => window.Atlas && Atlas.chapters && Object.keys(Atlas.chapters).length > 0, null, { timeout: 15000 });
   await page.evaluate(() => { try { localStorage.clear(); } catch (e) {} });
 
+  mark('grade ' + g + ', check 2 (questions)');
   /* 2. questions */
   const gen = await page.evaluate(TRIES => {
     const out = { problems: [], made: 0, types: {}, shapes: {} };
@@ -211,6 +216,7 @@ async function checkGrade(browser, base, g) {
   }, TRIES);
   gen.problems.forEach(p => fail(where, p));
 
+  mark('grade ' + g + ', check 3 (pages)');
   /* 3. pages */
   const routes = await page.evaluate(() => {
     const r = ['home', 'check-up', 'progress', 'tools'].concat((Atlas.tools || []).map(t => 'tools/' + t));
@@ -232,6 +238,7 @@ async function checkGrade(browser, base, g) {
     if (errs.length > before) fail(where, 'page #' + r + ' has an error: ' + errs.slice(before).join(' / '));
   }
 
+  mark('grade ' + g + ', check 3b (Worksheets)');
   /* 3b. Worksheets: every sheet in every theme, with and without its answer key, is drawn and must fit its page
      (nothing past the bottom, no text outside the page or its question's column, no unfilled words); every question's
      key is worked out again by verify/sheets.js; the Worksheets tab opens on a phone without running off the side;
@@ -252,50 +259,61 @@ async function checkGrade(browser, base, g) {
       return want.filter(f => !document.fonts.check(f));
     });
     if (fontsOk.length) fail(where + ' worksheets', 'the sheet fonts did not load (' + fontsOk.join(', ') + '), so the page sizes cannot be checked. Is the internet reachable?');
-    const ws = await sp.evaluate(chs => {
-      const S = Atlas.sheets, out = [];
-      let pages = 0;
-      const box = document.createElement('div');
-      box.style.cssText = 'position:absolute;left:0;top:0;width:612px;height:792px';
-      document.body.appendChild(box);
-      for (const ch of chs) for (const s of S.list(ch)) for (const t of S.themes) {
-        S.items(ch, s.slug, s.kind, t.id).items.forEach((it, i) => window.__sheetCheck(it).forEach(m => out.push(ch + ' sheet ' + s.slug + '/' + s.kind + ' (' + t.id + ') question ' + (i + 1) + ': ' + m)));
-        for (const key of [false, true]) {
-          S.overflow.length = 0;
-          const svg = S.page(ch, s.slug, s.kind, t.id, key), code = S.code(ch, s.slug, s.kind, S.themeById(t.id)) + (key ? ' key' : '');
-          pages++;
-          S.overflow.forEach(m => out.push(code + ': ' + m));
-          box.innerHTML = svg;
-          box.querySelectorAll('text').forEach(el => {
-            if (/\{\w+\}|undefined|NaN/.test(el.textContent)) out.push(code + ': "' + el.textContent + '" has unfilled words, "undefined" or "NaN"');
-            const b = el.getBBox(), cell = el.closest('.it');
-            if (b.x < 0 || b.y < 0 || b.x + b.width > 612 || b.y + b.height > 792) out.push(code + ': "' + el.textContent + '" runs off the page');
-            else if (cell && !el.closest('.pic') && (b.x < +cell.dataset.x0 - 1 || b.x + b.width > +cell.dataset.x1 + 1)) out.push(code + ': "' + el.textContent + '" runs out of question ' + cell.dataset.n);
-          });
+    /* one chapter at a time, so a slow chapter shows in the log; the pictures' own examples are checked with the last */
+    const ws = { out: [], more: 0, pages: 0 };
+    for (const [ci, ch] of sheetChapters.entries()) {
+      const t0 = Date.now();
+      mark('grade ' + g + ', worksheets of ' + ch);
+      const r = await sp.evaluate(([chs, pics]) => {
+        const S = Atlas.sheets, out = [];
+        let pages = 0;
+        const box = document.createElement('div');
+        box.style.cssText = 'position:absolute;left:0;top:0;width:612px;height:792px';
+        document.body.appendChild(box);
+        for (const ch of chs) for (const s of S.list(ch)) for (const t of S.themes) {
+          S.items(ch, s.slug, s.kind, t.id).items.forEach((it, i) => window.__sheetCheck(it).forEach(m => out.push(ch + ' sheet ' + s.slug + '/' + s.kind + ' (' + t.id + ') question ' + (i + 1) + ': ' + m)));
+          for (const key of [false, true]) {
+            S.overflow.length = 0;
+            const svg = S.page(ch, s.slug, s.kind, t.id, key), code = S.code(ch, s.slug, s.kind, S.themeById(t.id)) + (key ? ' key' : '');
+            pages++;
+            S.overflow.forEach(m => out.push(code + ': ' + m));
+            box.innerHTML = svg;
+            box.querySelectorAll('text').forEach(el => {
+              if (/\{\w+\}|undefined|NaN/.test(el.textContent)) out.push(code + ': "' + el.textContent + '" has unfilled words, "undefined" or "NaN"');
+              const b = el.getBBox(), cell = el.closest('.it');
+              if (b.x < 0 || b.y < 0 || b.x + b.width > 612 || b.y + b.height > 792) out.push(code + ': "' + el.textContent + '" runs off the page');
+              else if (cell && !el.closest('.pic') && (b.x < +cell.dataset.x0 - 1 || b.x + b.width > +cell.dataset.x1 + 1)) out.push(code + ': "' + el.textContent + '" runs out of question ' + cell.dataset.n);
+            });
+          }
         }
-      }
-      /* every picture has an example that draws inside a question's column, with numbers and no "undefined" */
-      const th = S.themes[0];
-      Object.keys(S.pics).forEach(name => {
-        const ex = window.__picSamples[name];
-        if (!ex) { out.push('the worksheet picture "' + name + '" has no example in verify/sheets.js'); return; }
-        for (const key of [false, true]) {
-          let r;
-          try { r = S.draw.pic([name, ex[0]], 70, 20, 228, key, th, (ex[1] || []).slice()); } catch (e) { out.push('the worksheet picture "' + name + '" stopped: ' + e.message); return; }
-          box.innerHTML = '<svg viewBox="0 0 612 792" width="612" height="792">' + r.svg + '</svg>';
-          const b = box.querySelector('svg').getBBox();
-          if (/undefined|NaN/.test(r.svg) || !(r.h > 0)) out.push('the worksheet picture "' + name + '" draws "undefined", "NaN" or nothing');
-          if (b.x < 69 || b.x + b.width > 299) out.push('the worksheet picture "' + name + '" runs out of its column (' + Math.round(b.x) + ' to ' + Math.round(b.x + b.width) + ')');
+        if (pics) {
+        /* every picture has an example that draws inside a question's column, with numbers and no "undefined" */
+        const th = S.themes[0];
+        Object.keys(S.pics).forEach(name => {
+          const ex = window.__picSamples[name];
+          if (!ex) { out.push('the worksheet picture "' + name + '" has no example in verify/sheets.js'); return; }
+          for (const key of [false, true]) {
+            let r;
+            try { r = S.draw.pic([name, ex[0]], 70, 20, 228, key, th, (ex[1] || []).slice()); } catch (e) { out.push('the worksheet picture "' + name + '" stopped: ' + e.message); return; }
+            box.innerHTML = '<svg viewBox="0 0 612 792" width="612" height="792">' + r.svg + '</svg>';
+            const b = box.querySelector('svg').getBBox();
+            if (/undefined|NaN/.test(r.svg) || !(r.h > 0)) out.push('the worksheet picture "' + name + '" draws "undefined", "NaN" or nothing');
+            if (b.x < 69 || b.x + b.width > 299) out.push('the worksheet picture "' + name + '" runs out of its column (' + Math.round(b.x) + ' to ' + Math.round(b.x + b.width) + ')');
+          }
+        });
         }
-      });
-      box.remove();
-      return { out: out.slice(0, 60), more: Math.max(0, out.length - 60), pages };
-    }, sheetChapters);
-    ws.out.forEach(p => fail(where + ' worksheets', p));
-    if (ws.more) fail(where + ' worksheets', ws.more + ' more problems');
+        box.remove();
+        return { out: out.slice(0, 60), more: Math.max(0, out.length - 60), pages };
+      }, [[ch], ci === sheetChapters.length - 1]);
+      ws.out.push(...r.out); ws.more += r.more; ws.pages += r.pages;
+      log('Grade ' + g + ' worksheets, ' + ch + ': ' + r.pages + ' pages in ' + Math.round((Date.now() - t0) / 1000) + ' s.');
+    }
+    ws.out.slice(0, 60).forEach(p => fail(where + ' worksheets', p));
+    if (ws.more || ws.out.length > 60) fail(where + ' worksheets', ws.more + Math.max(0, ws.out.length - 60) + ' more problems');
     log('Grade ' + g + ' worksheets: ' + ws.pages + ' pages drawn and checked.');
     await sp.evaluate(() => { localStorage.setItem('atlas:adult', '1'); document.documentElement.classList.add('adult'); });
     for (const ch of sheetChapters) {
+      mark('grade ' + g + ', worksheet pages of ' + ch + ' (preview and print)');
       const first = await sp.evaluate(ch => Atlas.sheets.list(ch)[0], ch);
       for (const r of [ch + '/sheets', ch + '/sheets/all', ch + '/sheets/' + first.slug + '/' + first.kind]) {
         const before = errs.length;
@@ -314,6 +332,7 @@ async function checkGrade(browser, base, g) {
     await sctx.close();
   }
 
+  mark('grade ' + g + ', check 3a (Toolbox blocks)');
   /* 3a. Toolbox blocks: tap and drag blocks onto the mat, drag a one into Tens to snap 10 ones into a ten,
      drag a block off the mat to put it back, and undo. Nothing may run off the side of the screen. */
   /* a tool can redraw (for example when its number appears), so wait for the thing to drag to be on screen */
@@ -346,6 +365,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox blocks: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a2 (Toolbox number line)');
   /* 3a2. Toolbox number line: put a marker on the line, jump by 10 twice, tap the line to zoom in, zoom out and undo. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('numberline'))) {
     await page.evaluate(() => { location.hash = '#tools/numberline'; });
@@ -368,6 +388,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox number line: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a3 (Toolbox counters)');
   /* 3a3. Toolbox counters: tap counters onto two ten-frames, turn one over, share them into groups, drag one off and undo. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('counters'))) {
     await page.evaluate(() => { location.hash = '#tools/counters'; });
@@ -390,6 +411,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox counters: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a4 (Toolbox number chart)');
   /* 3a4. Toolbox number chart: skip count by 5, jump from 23 to 47, undo. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('hundred'))) {
     await page.evaluate(() => { location.hash = '#tools/hundred'; });
@@ -407,6 +429,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox number chart: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a5 (Toolbox fraction kit)');
   /* 3a5. Toolbox fraction kit: tap three fourths, split them into eighths, undo, pack seven fourths into wholes, share 7 by 2, drag a piece on. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('fractions'))) {
     await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/fractions'; });
@@ -437,6 +460,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a6 (Toolbox fraction kit)');
   /* 3a6. Toolbox fraction kit, Grades 4 and up: decimal pieces on the grid and in symbols, Groups of, Count to 10; Join, Combine and Fit into
      from Grade 5; same-size pieces and typed numbers in Line up from Grade 6. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('fractions') && Atlas.grade >= 4)) {
@@ -492,6 +516,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a7 (Toolbox fraction kit)');
   /* 3a7. Toolbox fraction kit, Grades 7 and 8: Times with the Area window, Fit into an amount, Find one between, negative
      fractions in Line up; Grade 8 also a mixed number times a fraction, and typed percents over 100% and under 1%. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('fractions') && Atlas.grade >= 7)) {
@@ -544,6 +569,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox fraction kit: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a8 (Toolbox fraction kit)');
   /* 3a8. Toolbox fraction kit, Ratio (Grade 3 and up): scaling up a ratio in groups; Grade 4 a rate; Grade 6 part of the whole
      and the price for 1; Grade 7 adding the same to both (off the graph's line); Grade 8 comparing two mixes and a missing number. */
   if (await page.evaluate(() => (Atlas.tools || []).includes('fractions') && Atlas.grade >= 3)) {
@@ -599,6 +625,7 @@ async function checkGrade(browser, base, g) {
     await go('ratio');
   }
 
+  mark('grade ' + g + ', check 3a9 (Toolbox balance)');
   /* 3a9. Toolbox balance: 5 + 3 balances 4 + 4, Make it balance shows what the lighter side needs, 3 × 4 = 6 + 6 (Grade 3 and
      up); Grade 4 and up tries numbers in x + 3 < 9, and Grades 4 to 6 solve a new puzzle by taking the same from both sides; Grade 6 and up
      types 2x + 3 = 11, Grade 7 3x + 2 = x + 8 and Grade 8 x + 4 = -2 (with balloons), and solves each. */
@@ -657,6 +684,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox balance: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a10 (Toolbox pattern builder)');
   /* 3a10. Toolbox pattern builder: a core of 3 shapes repeated 3 times reads A B B; from Grade 3 the table says position 7 of
      A B C is a red circle; numbers start at 2 and add 2 (2, 4, 6, …); Grade 4 and up grow tiles (2, 4, 6, 8 in Grade 4, 18, 15, 12, 9 in
      Grade 5, 4, 7, 10, 13 in Grade 6 and up) with a table and graph; Grade 6 and up show the rule 3n + 1 and step 20 (61); Grade 7 and up
@@ -704,6 +732,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox patterns: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a11 (Toolbox data and chance)');
   /* 3a11. Toolbox data and chance: Sort them all puts the 12 shapes in their places (Grade 1: 4 red, 8 not red; Grade 2 and up a Venn
      diagram of red and triangle: 2 in the middle, 6 outside), and a big red triangle tapped into the middle is "red and a triangle";
      the first survey reads apple (7) of 18 in Grades 1 and 2, soccer (12) of 36 in Grades 3 to 6, bus 84 of 200 = 42% in Grades 7 and 8,
@@ -760,6 +789,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox data: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a12 (Toolbox grid and robot)');
   /* 3a12. Toolbox grid and robot: Grades 1 and 2: arrows right, right, up, up, right put the robot 3 right and 2 up from the start;
      Grade 3 and up: repeat 4 times (forward, forward, turn right) is 8 steps and 4 turns and ends back at the start; Grades 1 to 3: on the
      map, the school to the swings is 5 right, 2 up; Grade 4 and up: plotting (1, 4) and then (5, 2) reads 4 right, 2 down, the starting
@@ -808,6 +838,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox grid: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a13 (Toolbox 3D solids and nets)');
   /* 3a13. Toolbox 3D solids and nets: a cylinder has 2 flat faces and can roll, slide and stack (Grades 1 and 2), and from Grade 3 a
      triangular prism has 5 faces, 9 edges and 6 vertices; tapping the base 3 times stacks 3 cubes and Undo takes one back; from Grade 5
      the top, front and side views are drawn; Grade 6 and up: the 4 × 3 × 2 box net has SA = 2 × 12 + 2 × 8 + 2 × 6 = 52 cm² and Fold
@@ -854,6 +885,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox solids: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a14 (Toolbox arrays and area model)');
   /* 3a14. Toolbox arrays and area model: 3 rows of 4 reads 3 rows of 4 is 12 (Grade 1), 3 groups of 4 is 12 (Grade 2) or 3 × 4 = 12
      with 12 ÷ 3 = 4 (Grade 3 and up); from Grade 3 one more column and a split after column 3 read 3 × 5 = 3 × 3 + 3 × 2; covering
      squares with A rectangle reads 12 squares, or 12 cm² with perimeter 14 cm from Grade 3 and 4 × 3 = 12 from Grade 4; Grade 4 and up:
@@ -889,6 +921,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox arrays: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a15 (Toolbox shape kit)');
   /* 3a15. Toolbox shape kit: a hexagon, a trapezoid and a triangle read 3 blocks, and from Grade 2 the same as 10 green triangles; on the
      geoboard a 4 by 3 band reads rectangle, with perimeter 14 units and area 12 squares from Grade 3, 4 right angles from Grade 4 and
      90° + 90° + 90° + 90° = 360° from Grade 5; from Grade 6 a diamond reads rhombus and its diagonals cross at right angles; in Grade 8
@@ -927,6 +960,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox shape kit: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a16 (Toolbox measuring kit)');
   /* 3a16. Toolbox measuring kit: the pencil is 6 cubes long (Grade 1), 12 cm on the ruler (Grades 2 and 3, and 14 − 2 = 12 when it is
      moved to start at 2) or 123 mm (Grade 4 and up, 0.123 m from Grade 5); on the pan balance the apple balances 15 cubes (Grades 1
      and 2) or 100 g + 50 g = 150 g, and the bag of flour 1 kg 250 g (Grades 3 and 4) or 1.25 kg; the full bottle poured into the jug
@@ -971,6 +1005,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox measuring kit: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a17 (Toolbox clock and calendar)');
   /* 3a17. Toolbox clock and calendar: 9:00 plus 30 minutes reads half past 9 (Grade 1), plus 15 minutes reads quarter past 9 (Grade 2
      and up, 9:15 a.m. from Grade 3); the stopwatch counts seconds (Grade 2 and up); from 9:40 to 11:15 jumps 20 min + 1 h + 15 min
      = 1 h 35 min (Grade 3 and up); on the calendar the 3rd to the 17th is 14 days = 2 weeks. */
@@ -995,6 +1030,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox clock: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a18 (Toolbox money)');
   /* 3a18. Toolbox money: $1, two quarters, a dime and a nickel make $1.65; from Grade 2 four quarters trade for 1 piece and a loonie
      breaks into 4 × 25¢; in the shop (Grade 3 and up) the change is counted (45¢ + 80¢ paid with $2 is 75¢; $9 + $7 paid with $20 is
      $4; from Grade 5 a $2.15 snack with 13% HST is $2.43, $2.45 in cash, and $5 gives $2.55 back); from Grade 5 a budget balances and
@@ -1035,6 +1071,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox money: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a19 (Toolbox algebra tiles)');
   /* 3a19. Toolbox algebra tiles: x + 1 + x + 1 + 1 is 2x + 3, which is 9 when x = 3; from Grade 7 x + 1 + (−x) + x + (−1) groups to x;
      2x + 3 = 7 with 3 taken from both sides is 2x = 4, and Share gives x = 2 with a check (7 = 7); from Grade 6 five +1 tiles and three
      −1 tiles are 5 + (−3) = 2; from Grade 7 taking away two −1 tiles from 2 is 2 − (−2) = 4; in Grade 8 3 × (−2) = −6. */
@@ -1072,6 +1109,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox algebra tiles: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a20 (Toolbox place value disks)');
   /* 3a20. Toolbox place value disks: a thousand, two hundreds, a ten and 12 ones read 1 × 1000 + 2 × 100 + 1 × 10 + 12 × 1, and Group 10
      makes 2 × 10 + 2 × 1; from Grade 4 breaking a hundred gives 10 × 10; from Grade 5 121.1 × 10 × 10 reads 121.1 × 100 = 12 110; from
      Grade 7 a million and a ten thousand read 1 × 10⁶ + 1 × 10⁴. */
@@ -1095,6 +1133,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox place value disks: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3a21 (Toolbox times grid)');
   /* 3a21. Toolbox times grid: tapping 4 × 6 reads 24, which is in 4 places on the Grade 3 grid (to 10 × 10) and 6 places from Grade 4
      (to 12 × 12); from Grade 4 the factors of 24 are 1, 2, 3, 4, 6, 8, 12, 24, and from Grade 6 23 is prime; from Grade 6 crossing out
      the multiples of 2, 3, 5 and 7 leaves 25 primes; from Grade 7 √36 = 6 and √40 is between 6 and 7. */
@@ -1120,6 +1159,7 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox times grid: the page runs off the side of a phone screen');
   }
 
+  mark('grade ' + g + ', check 3b (full chapters)');
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
@@ -1167,6 +1207,7 @@ async function checkGrade(browser, base, g) {
     if (r) fail(where, cid + ' warm-up: ' + r);
   }
 
+  mark('grade ' + g + ', check 4 (answering on a phone-size screen)');
   /* 4. answering on a phone-size screen */
   const skills = await page.evaluate(() => Object.entries(Atlas.chapters).flatMap(([id, ch]) => (ch.practice || []).map(sk => [id, sk.id])));
   let answered = 0;
@@ -1394,6 +1435,7 @@ async function checkToolbox(browser, base) {
       log('Grade ' + g + ': ' + s.made + ' questions made and checked, ' + s.routes + ' pages opened, ' + s.answered + ' answered on a phone screen. ' +
         'Types: ' + Object.entries(s.types).map(([k, v]) => k + ' ' + v).join(', ') + '. ' + (problems.length - before ? (problems.length - before) + ' problems.' : 'All good.'));
     } catch (e) { fail('grade ' + g, 'the check itself stopped: ' + e.message.split('\n')[0]); }
+    mark('grade ' + g + ', saved progress');
     try { await checkSaved(browser, url, g); } catch (e) { fail('grade ' + g + ' saved progress', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   }
   try { await checkLangPlace(browser, url); } catch (e) { fail('Language placement on the parent pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
