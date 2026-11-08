@@ -14,14 +14,22 @@
   /* sheet maths into plain maths: × ÷ −, 12 500 as 12500, 2 3/4 as (2 + 3/4), 1/4 as (1/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
      and "3 groups of 4", "3 rows of 4", "3 jumps of 4" mean 3 × 4; other words go */
   const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1, tenth: 0.1, hundredth: 0.01 };
+  /* a row with two or more different metric units (3.5 m = 350 cm, 1 kg 200 g = 1200 g) is put into one unit per kind:
+     every amount becomes its number times the unit's size in metres, grams or litres */
+  const MU = { mm: 0.001, cm: 0.01, m: 1, km: 1000, mg: 0.001, g: 1, kg: 1000, mL: 0.001, L: 1 };
+  function metric(s) {
+    const re = /(\d+(?:\.\d+)?) ?(mm|cm|km|m|mg|kg|g|mL|L)(?![\w²³])/g;
+    if (new Set([...s.matchAll(re)].map(m => m[2])).size < 2) return s;
+    return s.replace(re, (m, n, u) => '(' + n + ' * ' + MU[u] + ')').replace(/\) \(/g, ') + (');
+  }
   function norm(s) {
-    return String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1')
+    return metric(String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1'))
       .replace(/(^|[^\d.\/])(\d+) (\d+)\/(\d+)/g, (m, pre, w, n, d) => pre + '(' + w + ' + ' + n + '/' + d + ')')
       .replace(/(^|[^\d.(])(\d+)\/(\d+)(?![\d.])/g, '$1($2/$3)')
       .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
       .replace(/\$/g, '').replace(/ ?%/g, ' / 100').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
-      .replace(/[A-Za-z’'?:]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
+      .replace(/[A-Za-z’'?:²³°]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
   }
   const nums = s => (String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/\d+(\.\d+)?/g) || []).map(Number);
   /* two values are the same when they differ only by rounding (0.1 + 0.2 and 0.3) */
@@ -174,6 +182,14 @@
     /* a coordinate grid: its labelled points; points to plot are drawn on the key, so they need no answer */
     coord: o => Object.assign({ pts: Object.fromEntries((o.pts || []).map(q => [q[2], [q[0], q[1]]])) }, o.plot || o.keyShape ? { blanks: 0, own: () => [] } : {}),
     code: () => null,
+    /* an angle: its size; a flat shape: its area (or its perimeter, with ask), its base and height for a times sum, and
+       its perimeter when its sides are known (a rectangle, or a parallelogram with its slanted side); a triangle's
+       story sum may halve, so 2 counts as one of its numbers */
+    angle: o => ({ total: o.deg, deg: o.deg }),
+    plane: o => {
+      const area = o.kind === 'tri' ? o.b * o.h / 2 : o.b * o.h, perim = o.kind === 'rect' ? 2 * (o.b + o.h) : o.kind === 'para' && o.s ? 2 * (o.b + o.s) : null;
+      return { total: o.ask === 'perim' ? perim : area, perim: perim, pair: o.kind === 'tri' ? null : [o.b, o.h], data: [o.b, o.h].concat(o.s ? [o.s] : [], o.kind === 'tri' ? [2] : []) };
+    },
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
@@ -196,7 +212,7 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -291,8 +307,8 @@
         const t = order(row);
         if (t === null) say('cannot read the comparison: ' + row);
         else if (!t) say('the comparison is not true: ' + row);
-      } else if (raw[ri].trim() === '[]') {
-        /* a bare answer: the number the picture shows, or the number written in words */
+      } else if (/^\[\]( [^\s\d\[\]=<>,]+)?$/.test(raw[ri].trim())) {
+        /* a bare answer, with or without its unit ("[] °"): the number the picture shows, or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
         if (it.digits) {
           /* the greatest or least number made from these digits, not starting with 0 */
@@ -331,6 +347,8 @@
       const d = norm(first).match(/^(\d+) \/ (\d+) =/);
       if (d && pc.share && +d[2] !== pc.share) say('the sharing sum ' + first + ' does not share into ' + pc.share);
     }
+    /* 3b. a shape with a perimeter: every sum that adds (5 + 3 + 5 + 3, 2 × (5 + 3)) works out to it */
+    if (pc && pc.perim != null) filled.filter(r => /=/.test(r) && /\+/.test(r)).forEach(r => { if (!same(val(norm(r).split('=')[0]), pc.perim)) say('the perimeter is ' + pc.perim + ', not ' + r); });
     /* 4. a story: its answer follows from the numbers in it */
     if (it.calc) {
       const v = val(norm(it.calc));
@@ -487,6 +505,29 @@
         const forms = cs => [0, 1, 2, 3].flatMap(t => [false, true].map(f => norm2(cs.map(([a, b]) => { let p = f ? [-a, b] : [a, b]; for (let k = 0; k < t; k++) p = [-p[1], p[0]]; return p; }))));
         const cong = forms(sets[0]).includes(norm2(sets[1]));
         if ((o[pk.ans] === 'yes') !== cong) say('the shapes are ' + (cong ? '' : 'not ') + 'congruent, but the key circles ' + o[pk.ans]);
+      } else if (pk.angle) {
+        /* name an angle by its size: the picture decides */
+        const g = pc && pc.deg, want = g < 90 ? 'acute' : g === 90 ? 'right' : g < 180 ? 'obtuse' : g === 180 ? 'straight' : 'reflex';
+        if (g == null) say('an angle choice has no angle');
+        else if (o[pk.ans] !== want) say('a ' + g + '° angle is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.near) {
+        /* the choice closest to the angle drawn (a benchmark, or the right scale of a protractor) */
+        const g = pc && pc.total, d = o.map(x => Math.abs(num(x) - g));
+        if (g == null) say('a "closest" choice has no picture to measure');
+        else if (d.some((x, i) => i !== pk.ans && x <= d[pk.ans])) say('the circled ' + o[pk.ans] + ' is not the only closest to ' + g + ': ' + o.join(', '));
+      } else if (pk.size) {
+        /* a metric unit or an estimate for a thing whose real size is pk.size, in metres (m), grams (g) or litres (L):
+           a unit fits when the number is not tiny or huge (mm under 1 cm, cm under 1 m, m under 1 km, then km; g under
+           1 kg; mL under 1 L); an estimate is the one closest to the real size, by how many times too big or too small */
+        const [u, v] = Object.entries(pk.size)[0];
+        if (o.every(x => MU[x] != null)) {
+          const fit = u === 'm' ? (v < 0.01 ? 'mm' : v < 1 ? 'cm' : v < 1000 ? 'm' : 'km') : u === 'g' ? (v < 1000 ? 'g' : 'kg') : v < 1 ? 'mL' : 'L';
+          if (o[pk.ans] !== fit || o.filter(x => x === fit).length !== 1) say('the unit that fits ' + v + ' ' + u + ' is ' + fit + ', not ' + o[pk.ans]);
+        } else {
+          const d = o.map(x => { const m = String(x).match(/^(\d+(?:\.\d+)?) ?(mm|cm|km|m|mg|kg|g|mL|L)$/); return m ? Math.abs(Math.log(+m[1] * MU[m[2]] / v)) : NaN; });
+          if (d.some(isNaN)) say('cannot read the estimates ' + o.join(', '));
+          else if (d.some((x, i) => i !== pk.ans && x <= d[pk.ans])) say('the circled ' + o[pk.ans] + ' is not the closest to ' + v + ' ' + u);
+        }
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
