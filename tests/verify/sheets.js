@@ -126,6 +126,17 @@
     dbar: o => ({ data: [].concat(...o.sets).filter(v => v != null), sets: o.sets, min: o.min || 0 }),
     lineg: o => ({ data: o.vals, min: o.min || 0 }),
     spin: o => ({ parts: o.parts }),
+    /* a triangle: its angles (worked out from its sides when it is drawn from sides) and its kinds */
+    tri: o => {
+      const r = Math.PI / 180, sd = o.sides, ang = o.angles || [0, 1, 2].map(i => Math.acos((sd[(i + 1) % 3] ** 2 + sd[(i + 2) % 3] ** 2 - sd[i] ** 2) / (2 * sd[(i + 1) % 3] * sd[(i + 2) % 3])) / r);
+      const len = sd || ang.map(g => Math.sin(g * r)), eq = new Set(len.map(v => Math.round(v * 1e6))).size, big = Math.max(...ang);
+      return { angles: ang, ask: o.ask, kinds: { sides: eq === 1 ? 'equilateral' : eq === 2 ? 'isosceles' : 'scalene', angles: Math.abs(big - 90) < 1e-6 ? 'right' : big > 90 ? 'obtuse' : 'acute' } };
+    },
+    /* a top view of stacks: the front view is the tallest in each column; the right side view, front to back, the
+       tallest in each row from the bottom row up */
+    heights: o => ({ total: o.g.flat().reduce((x, y) => x + y, 0), views: { front: o.g[0].map((_, c) => Math.max(...o.g.map(r => r[c]))), side: o.g.map(r => Math.max(...r)).reverse() } }),
+    /* a coordinate grid: its labelled points; points to plot are drawn on the key, so they need no answer */
+    coord: o => Object.assign({ pts: Object.fromEntries((o.pts || []).map(q => [q[2], [q[0], q[1]]])) }, o.plot || o.keyShape ? { blanks: 0, own: () => [] } : {}),
     code: () => null,
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
@@ -149,7 +160,7 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -175,14 +186,14 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks);
+    const byItem = !!(it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
-      if (it.prob) return;
+      if (it.prob || it.pt || it.move || it.view) return;
       const rat = row.match(/\d+ ?: ?\d+/g);
       if (rat) {
         /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
@@ -336,6 +347,20 @@
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice makes ' + pk.val);
       } else if (o[0] === 'yes' && pc && pc.counts) {
         if (pc.counts.every(x => x === pc.counts[0]) !== yes) say('equal groups: the key is wrong');
+      } else if (pk.tri) {
+        /* name a triangle by its sides or angles: the picture decides */
+        /* the triangle is the picture, or it.tri (its sides or angles, which must be in the question) */
+        const tk = (pc && pc.kinds) || (it.tri && picture(['tri', it.tri]).kinds);
+        if (it.tri) (it.tri.sides || it.tri.angles).forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the triangle\'s ' + n + ' is not in the question'); });
+        if (!tk) say('a triangle choice has no triangle');
+        else if (o[pk.ans] !== tk[pk.tri]) say('by its ' + pk.tri + ' the triangle is ' + tk[pk.tri] + ', not ' + o[pk.ans]);
+      } else if (pk.cong) {
+        /* two shapes on grids: congruent when one can be turned or flipped onto the other */
+        const sets = it.pic[1].list.map(q => q[1].cells.map(c => c.split(',').map(Number)));
+        const norm2 = cs => { const mx = Math.min(...cs.map(c => c[0])), my = Math.min(...cs.map(c => c[1])); return cs.map(c => (c[0] - mx) + ',' + (c[1] - my)).sort().join(' '); };
+        const forms = cs => [0, 1, 2, 3].flatMap(t => [false, true].map(f => norm2(cs.map(([a, b]) => { let p = f ? [-a, b] : [a, b]; for (let k = 0; k < t; k++) p = [-p[1], p[0]]; return p; }))));
+        const cong = forms(sets[0]).includes(norm2(sets[1]));
+        if ((o[pk.ans] === 'yes') !== cong) say('the shapes are ' + (cong ? '' : 'not ') + 'congruent, but the key circles ' + o[pk.ans]);
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
@@ -408,6 +433,22 @@
     if (it.looks && pc && pc.sets) {
       const v = pc.sets[0], r = (v[it.looks[0]] - pc.min) / (v[it.looks[1]] - pc.min);
       if (!same(r, last)) say('that bar looks ' + r + ' times as tall, not ' + ansAll[ansAll.length - 1]);
+    }
+    /* shapes: an angle left as "?" in a triangle, a view of stacks, a point read from a grid, and a point moved by a
+       slide or a flip (over the line x = k or y = k) */
+    if (pc && pc.ask != null && pc.angles && !same(Math.round(pc.angles[pc.ask]), last)) say('the missing angle is ' + Math.round(pc.angles[pc.ask]) + '°, not ' + ansAll[ansAll.length - 1]);
+    if (it.view && pc && pc.views) {
+      /* view is 'front', 'side' or a list of both, answered in order */
+      const want = [].concat(it.view).flatMap(v => pc.views[v]);
+      if (ansAll.join() !== want.join()) say('the ' + [].concat(it.view).join(' and ') + ' view' + (Array.isArray(it.view) ? 's are ' : ' is ') + want.join(', ') + ', not ' + ansAll.join(', '));
+    }
+    const at = q => (typeof q === 'string' ? pc && pc.pts && pc.pts[q] : q);
+    if (it.pt) { const q = at(it.pt); if (!q || ansAll.slice(-2).join() !== q.join()) say('point ' + it.pt + ' is at (' + (q || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')'); }
+    if (it.move) {
+      const q = at(it.move.pt), m = it.move, to = !q ? null : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
+      if (!to || ansAll.slice(-2).join() !== to.join()) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
+      if (m.slide && m.slide.some(v => v && nums(it.q).indexOf(Math.abs(v)) < 0)) say('the slide ' + m.slide.join(', ') + ' is not in the question');
+      if (m.flip && nums(it.q).indexOf(m.flip.x != null ? m.flip.x : m.flip.y) < 0) say('the flip line is not in the question');
     }
     /* probability on a spinner of equal parts: ways it can happen ÷ all the parts; with trials, how many to expect */
     const parts = pc && pc.parts, chance = l => parts.filter(x => x === l).length / parts.length;
