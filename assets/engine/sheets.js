@@ -180,10 +180,12 @@
       var fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
       if (fr && (tok === '[]' || !fr[1] !== !fr[2])) {
         /* a blank, or a blank for one part of a fraction: 3/[] or []/8 */
-        var short = tok !== '[]', bl = ans[k] == null ? (short ? 28 : BL) : Math.max(short ? 28 : BL, tw(fmt(ans[k]), big, 700) + 10);
+        /* the line grows only when the answer would not fit on it even in smaller type; the key's answer shrinks to fit */
+        var short = tok !== '[]', base = short ? 28 : BL, aw = ans[k] == null ? 0 : tw(fmt(ans[k]), big, 700);
+        var bl = Math.max(base, aw * 12 / big + 6), fs = Math.min(big, big * (bl - 6) / (aw || 1));
         if (fr[1]) { out += T(cx, y + 21, fr[1], { s: big, w: 700 }); cx += tw(fr[1], big, 700) + 2; }
         out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + bl) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
-        if (key) out += T(cx + bl / 2, y + 21, fmt(ans[k]), { s: big, w: 700, f: KEY, a: 'middle' });
+        if (key) out += T(cx + bl / 2, y + 21, fmt(ans[k]), { s: fs, w: 700, f: KEY, a: 'middle' });
         k++; cx += bl + (fr[2] ? 2 : 7);
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }

@@ -78,6 +78,28 @@
     const a = val(sides[0]), b = val(sides[1]);
     return isNaN(a) || isNaN(b) ? null : same(a, b);
   }
+  /* run robot code such as "move 3, turn right, repeat 2: move 1, turn left" from start [column, row, '>' | 'v' | '<' | '^'];
+     "repeat N:" repeats the rest of the code. Returns the square [column, row] where it stops, or null when unreadable */
+  function robot(start, code) {
+    const D = ['>', 'v', '<', '^'], step = { '>': [1, 0], 'v': [0, 1], '<': [-1, 0], '^': [0, -1] };
+    let x = start[0], y = start[1], d = D.indexOf(start[2]);
+    const run = list => {
+      for (let i = 0; i < list.length; i++) {
+        const c = list[i].trim();
+        if (!c) continue;
+        const rep = c.match(/^repeat (\d+)(?: times)?:\s*(.*)$/), mv = c.match(/^move (\d+)$/);
+        if (rep) { const body = [rep[2]].concat(list.slice(i + 1)); for (let k = 0; k < +rep[1]; k++) if (!run(body)) return false; return true; }
+        if (mv) { x += step[D[d]][0] * +mv[1]; y += step[D[d]][1] * +mv[1]; }
+        else if (c === 'turn right') d = (d + 1) % 4;
+        else if (c === 'turn left') d = (d + 3) % 4;
+        else return false;
+      }
+      return true;
+    };
+    return d < 0 || !run(String(code).split(',')) ? null : [x, y];
+  }
+  /* the shape names a repeating pattern uses */
+  const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
      own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
      Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
@@ -88,16 +110,30 @@
     share: o => ({ total: o.t, share: o.g }),
     dots: o => ({ total: o.t }),
     /* a table's blanks: every filled row keeps the same "for every 1" amount */
+    /* a table's blanks: every filled row keeps the same "for every 1" amount; diff: the second column grows by the same
+       amount each row (a growing pattern); rule: '+ 3' or '× 2', the second column is the first with the rule applied */
     table: o => ({ blanks: o.rows.flat().filter(x => x === '[]').length, own: (o, a) => {
       const bad = []; let rate = null;
-      o.rows.forEach(r => {
-        const v = r.map(x => (x === '[]' ? a.shift() : x));
-        if (v.some(x => typeof x !== 'number')) { bad.push('a table blank has no answer'); return; }
-        const k = v[1] / v[0];
-        if (rate === null) rate = k; else if (k !== rate) bad.push('table row ' + v.join(' and ') + ' does not keep ' + rate + ' for every 1');
+      const rows = o.rows.map(r => r.map(x => (x === '[]' ? a.shift() : x)));
+      if (rows.some(v => v.some(x => typeof x !== 'number'))) return ['a table blank has no answer'];
+      rows.forEach((v, i) => {
+        if (o.rule) { const w = val(norm(v[0] + ' ' + o.rule)); if (w !== v[1]) bad.push('table row ' + v.join(' and ') + ': ' + v[0] + ' ' + o.rule + ' is ' + w); }
+        else if (o.diff) { if (i > 1 && v[1] - rows[i - 1][1] !== rows[1][1] - rows[0][1]) bad.push('table row ' + v.join(' and ') + ' does not grow by the same amount'); }
+        else { const k = v[1] / v[0]; if (rate === null) rate = k; else if (k !== rate) bad.push('table row ' + v.join(' and ') + ' does not keep ' + rate + ' for every 1'); }
       });
       return bad;
     } }),
+    /* a repeating row of shapes: the shapes on the key continue the core, and the boxed core is the part that repeats */
+    pat: o => {
+      const s = o.seq, per = [...Array(s.length).keys()].map(p => p + 1).find(p => p < s.length && [...s].every((c, i) => c === s[i % p]));
+      return { own: () => {
+        const bad = [];
+        if (o.core && o.core !== per) bad.push('the boxed core is ' + o.core + ' long, but the pattern repeats every ' + per);
+        if (o.next) { if (!per) bad.push('the pattern ' + s + ' does not repeat'); else [...o.next].forEach((c, i) => { if (c !== s[(s.length + i) % per]) bad.push('shape ' + (i + 1) + ' to draw is ' + c + ', not ' + s[(s.length + i) % per]); }); }
+        if (o.blanks && (!o.next || o.next.length !== o.blanks)) bad.push('the key does not draw every missing shape');
+        return bad;
+      }, blanks: 0 };
+    },
     /* sheet-pics.js */
     blocks: o => ({ total: 100 * o.h + 10 * o.t + o.o }),
     tenframe: o => ({ total: o.a + o.b }),
@@ -206,12 +242,23 @@
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
+      let est;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
       const rat = row.match(/\d+ ?: ?\d+/g);
-      if (rat) {
+      if (it.robot && it.robot.to) {
+        /* code with blanks filled in, one line per row: it must take the robot from the start to the square marked "to" */
+        if (ri) return;
+        row = filled.join(', ');
+        const m = it.pic[1], end = robot(m.start, row), mark = (m.marks || []).find(k => k[2] === it.robot.to);
+        if (!end) say('cannot read the code: ' + row);
+        else if (!mark || end[0] !== mark[0] || end[1] !== mark[1]) say('the code ' + row + ' stops at ' + end.join(',') + ', not at ' + it.robot.to);
+      } else if (/≠/.test(row)) {
+        const sides = norm(row).split('≠').map(val);
+        if (sides.some(isNaN)) say('cannot read: ' + row); else if (sides[0] === sides[1]) say('both sides are ' + sides[0] + ': ' + row);
+      } else if (rat) {
         /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
            its own is the one the item asks for: of names its two terms from the picture's or the story's parts (a, b or all) */
         const r = rat.map(x => x.split(':').map(Number));
@@ -222,6 +269,10 @@
           if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
         } else if (r.length < 2) say('nothing checks the ratio ' + row);
         if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
+      } else if (it.est && (est = row.match(/^(\d+) ([+−]) (\d+) is about (\d+)$/))) {
+        /* "389 + 212 is about []": round each number to the nearest 10 or 100 first, then add or subtract */
+        const r = n => Math.round(+n / it.est) * it.est, want = est[2] === '+' ? r(est[1]) + r(est[3]) : r(est[1]) - r(est[3]);
+        if (want !== +est[4]) say('rounding first, ' + est[1] + ' ' + est[2] + ' ' + est[3] + ' is about ' + want + ', not ' + est[4]);
       } else if (it.round && !/=/.test(row)) {
         /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up); a sum in the same
            question (the change from a rounded cash total) is worked out below like any other */
@@ -259,7 +310,22 @@
       } else if (/^\[\]( [^\s\d\[\]=<>,]+)?$/.test(raw[ri].trim())) {
         /* a bare answer, with or without its unit ("[] °"): the number the picture shows, or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
-        if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
+        if (it.digits) {
+          /* the greatest or least number made from these digits, not starting with 0 */
+          const perms = d => (d.length < 2 ? [d] : d.flatMap((x, i) => perms(d.slice(0, i).concat(d.slice(i + 1))).map(r => [x].concat(r))));
+          const made = perms(it.digits).filter(p => p[0] !== 0).map(p => +p.join(''));
+          const want = it.most ? Math.max(...made) : Math.min(...made);
+          if (want !== v) say('the ' + (it.most ? 'greatest' : 'least') + ' number from ' + it.digits.join(', ') + ' is ' + want + ', not ' + v);
+        } else if (it.edge) {
+          /* the least or greatest whole number that rounds to val */
+          const fits = []; for (let n = 0; n <= 1100; n++) if (Math.round(n / it.edge.to) * it.edge.to === it.edge.val) fits.push(n);
+          const want = it.edge.end === 'least' ? fits[0] : fits[fits.length - 1];
+          if (want !== v) say('the ' + it.edge.end + ' number that rounds to ' + it.edge.val + ' is ' + want + ', not ' + v);
+        } else if (it.letter) {
+          /* the number a letter stands for: put it in, and the statement must be true */
+          const t = truth(it.letter.replace(/\b[a-z]\b/g, String(v)));
+          if (t !== true) say('with ' + v + ' for the letter, "' + it.letter + '" is not true');
+        } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
         else if (pc && pc.total != null) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
         else if (!it.calc && !byItem) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc && !byItem) say('nothing checks this row: ' + raw[ri]);
@@ -295,7 +361,7 @@
     const pk = it.pick;
     if (pk) {
       const o = pk.opts, yes = pk.ans === 0;
-      if (o[0] === '×' && o[1] === '÷') {
+      if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
       } else if (it.tf) {
         const t = truth(it.tf);
@@ -326,7 +392,8 @@
         const worth = o.map(x => { const d = String(x).replace(/\D/g, ''), at = d.indexOf(String(pk.digit.d)); return at < 0 ? 0 : pk.digit.d * Math.pow(10, d.length - 1 - at); });
         if (worth[pk.ans] !== pk.digit.worth || worth.filter(v => v === pk.digit.worth).length !== 1) say('not exactly one choice has a ' + pk.digit.d + ' worth ' + pk.digit.worth);
       } else if (pk.round) {
-        const ok = o.map(x => same(Math.round(num(x) / pk.round.to) * pk.round.to, pk.round.val));
+        const rnd = (x, r) => same(Math.round(num(x) / r.to) * r.to, r.val);
+        const ok = o.map(x => rnd(x, pk.round) && (!pk.also || rnd(x, pk.also)));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice rounds to ' + pk.round.val);
       } else if (pk.diff) {
         const v = o.map(num), odd = v.map((x, i) => v.filter((y, j) => j !== i && same(x, y)).length === 0);
@@ -344,6 +411,61 @@
         const am = pk.more || pk.less, v = am.map(x => val(norm(x))), sg = pk.more ? 1 : -1;
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && sg * x >= sg * v[pk.ans])) say('the circled one does not have the ' + (pk.more ? 'most' : 'least') + ': ' + am.join(', '));
         am.forEach(x => nums(x).forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the amount ' + x + ' uses ' + n + ', which is not in the question'); }));
+      } else if (it.robot && it.robot.code) {
+        /* where the robot stops is the circled mark */
+        const m = it.pic[1], end = robot(m.start, it.robot.code), hit = end && (m.marks || []).filter(k => k[0] === end[0] && k[1] === end[1]);
+        if (!end) say('cannot read the code: ' + it.robot.code);
+        else if (!hit.length || hit[0][2] !== o[pk.ans]) say('the robot stops at ' + end.join(',') + (hit.length ? ' (' + hit[0][2] + ')' : ' (no mark)') + ', not at ' + o[pk.ans]);
+      } else if (pk.nth) {
+        /* the shape at place n of a repeating pattern */
+        const sh = pk.nth.seq[(pk.nth.n - 1) % pk.nth.seq.length];
+        if (SHAPES[sh] !== o[pk.ans] || o.filter(x => x === SHAPES[sh]).length !== 1) say('shape ' + pk.nth.n + ' of ' + pk.nth.seq + ' is a ' + SHAPES[sh] + ', not ' + o[pk.ans]);
+      } else if (pk.rule) {
+        /* the rule of a growing or shrinking pattern: "add 3" or "take away 5" */
+        const q = pk.rule, d = q[1] - q[0], ok = q.every((x, i) => !i || x - q[i - 1] === d);
+        const right = d > 0 ? 'add ' + d : 'take away ' + -d;
+        if (!ok) say('the pattern ' + q.join(', ') + ' has no one rule'); else if (o[pk.ans] !== right || o.filter(x => x === right).length !== 1) say('the rule of ' + q.join(', ') + ' is "' + right + '", not "' + o[pk.ans] + '"');
+      } else if (pk.kind) {
+        /* repeating (a core comes back) or growing (the same change each time) */
+        const q = pk.kind, rep = [...Array(q.length).keys()].some(p => p > 0 && p < q.length && q.every((x, i) => x === q[i % p]));
+        const grow = q.every((x, i) => !i || x - q[i - 1] === q[1] - q[0]) && q[1] !== q[0];
+        const want = rep ? 'repeating' : grow ? 'growing' : null;
+        if (!want || o[pk.ans] !== want) say(q.join(', ') + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.core || pk.struct) {
+        /* shapes written as symbols: the one pattern with this core length, or this letter structure (A B B ...) */
+        const letters = x => { const seen = []; return [...x].map(c => { if (seen.indexOf(c) < 0) seen.push(c); return 'ABCDEFG'[seen.indexOf(c)]; }).join(''); };
+        const per = x => [...Array(x.length).keys()].map(q => q + 1).find(q => [...x].every((c, i) => c === x[i % q]));
+        const ok = o.map(x => (pk.core ? per([...x]) === pk.core && per([...x]) < [...x].length : letters(x).startsWith(pk.struct) && per([...x]) === pk.struct.length));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one pattern has ' + (pk.core ? 'a core of ' + pk.core : 'the structure ' + pk.struct));
+      } else if (pk.turn) {
+        /* arrows turning a quarter turn each time: right (clockwise) or left */
+        const D = ['^', '>', 'v', '<'], t = [...pk.turn].map(c => D.indexOf(c)), steps = t.slice(1).map((x, i) => (x - t[i] + 4) % 4);
+        const want = steps.every(x => x === 1) ? 'right' : steps.every(x => x === 3) ? 'left' : null;
+        if (o[pk.ans] !== want) say('the arrows ' + pk.turn + ' turn ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.heavy) {
+        const l = val(norm(pk.heavy[0])), r = val(norm(pk.heavy[1])), want = l > r ? 'left' : r > l ? 'right' : null;
+        if (o[pk.ans] !== want) say('the side that goes down is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.machine) {
+        /* the one rule that turns every In into its Out */
+        const ok = o.map(r => pk.machine.every(io => val(norm(io[0] + ' ' + r)) === io[1]));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one rule fits the machine');
+      } else if (it.oneRule) {
+        const q = it.oneRule, one = q.every((x, i) => !i || x - q[i - 1] === q[1] - q[0]);
+        if (one !== yes) say(q.join(', ') + (one ? ' has' : ' has no') + ' one rule, but the key circles ' + o[pk.ans]);
+      } else if (pk.place) {
+        /* the one number where digit d is worth v */
+        const ok = o.map(x => x.split(pk.place.d).length === 2 && pk.place.d * Math.pow(10, x.length - 1 - x.indexOf(String(pk.place.d))) === pk.place.v);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice has its ' + pk.place.d + ' worth ' + pk.place.v);
+      } else if (pk.blocks) {
+        /* the number that needs the most base ten blocks: the most when its digits are added */
+        const n = o.map(x => String(x).split('').reduce((t, d) => t + +d, 0));
+        if (n.some((x, i) => i !== pk.ans && x >= n[pk.ans])) say('the circled number does not need the most blocks: ' + o.join(', '));
+      } else if (pk.seq) {
+        const ok = o.map(x => +x >= pk.seq.from && (+x - pk.seq.from) % pk.seq.by === 0);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in the count from ' + pk.seq.from + ' by ' + pk.seq.by);
+      } else if (pk.between) {
+        const ok = o.map(x => +x > pk.between[0] && +x < pk.between[1]);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is between ' + pk.between.join(' and '));
       } else if (pk.small) {
         const v = o.map(x => val(norm(x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the least: ' + o.join(', '));

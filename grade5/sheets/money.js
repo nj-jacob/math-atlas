@@ -34,8 +34,8 @@
   /* the price for one */
   function UR(price, n, what) { return { q: n + ' ' + what + ' for $' + M(price) + '. Price for one?', eq: [M(price) + ' ÷ ' + n + ' = []'], a: [M(price / n)] }; }
   function BB(a, b, what) {
-    var ua = a[1] / a[0], ub = b[1] / b[0];
-    return { q: 'Better buy: ' + a[0] + ' ' + what + ' for $' + M(a[1]) + ' or ' + b[0] + ' ' + what + ' for $' + M(b[1]) + '?', pick: { opts: [a[0] + ' for $' + M(a[1]), b[0] + ' for $' + M(b[1])], ans: ua < ub ? 0 : 1, less: [M(a[1]) + ' / ' + a[0], M(b[1]) + ' / ' + b[0]] }, wide: true };
+    var ua = a[1] / a[0], ub = b[1] / b[0], u = what.length < 3 ? ' ' + what : '';
+    return { q: 'Better buy: ' + a[0] + ' ' + what + ' for $' + M(a[1]) + ' or ' + b[0] + ' ' + what + ' for $' + M(b[1]) + '?', pick: { opts: [a[0] + u + ' for $' + M(a[1]), b[0] + u + ' for $' + M(b[1])], ans: ua < ub ? 0 : 1, less: [M(a[1]) + ' / ' + a[0], M(b[1]) + ' / ' + b[0]] }, wide: true };
   }
   function GV(service) {
     var L = { passports: 0, 'the armed forces': 0, 'national parks': 0, 'coins and bills': 0, 'mail delivery': 0, hospitals: 1, schools: 1, highways: 1, "driver's licences": 1, 'health cards': 1 };
@@ -182,6 +182,8 @@
       p3: {
         items: [{ q: 'Owe $200 at 2% a month. Month 1:', eq: ['200 × 2% = []', '200 + [] = []'], a: [4, 4, 204] },
           { q: 'Pay $104. Month 2:', eq: ['204 − 104 = []', '100 × 2% = []'], a: [100, 2] },
+          { q: 'Owe $102. Pay $52. Month 3:', eq: ['102 − 52 = []', '50 × 2% = []'], a: [50, 1] },
+          story('The interest was $4, then $2, then $1. How much interest in all?', '$', 7, '4 + 2 + 1'),
           { q: 'Both debts grow by 2% a month: one is $300, the other $100. Which adds less interest this month?', pick: { opts: ['$300 debt', '$100 debt'], ans: 1, less: ['300 × 2%', '100 × 2%'] }, wide: true }]
       },
       think: {
