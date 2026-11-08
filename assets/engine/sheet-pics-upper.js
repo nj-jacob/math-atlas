@@ -1,0 +1,190 @@
+/* Math Atlas worksheets: pictures for Grades 4 to 8, added to the shared picture table of sheets.js (Atlas.sheets.pics).
+   The Grade 1 to 3 pictures are in sheet-pics.js. Each picture is used in a sheet as pic: ['<name>', options] and is drawn
+   from (x, y) within width w; it returns { svg, h, w } and, when its blanks take answers, used: how many it took.
+     amodel { a, b, fill }     an area model: a split by place value across the top, b down the side; each part
+                                product is a blank (answers in order, one column at a time) or, with fill: true, written in
+     mult  { a, b }             the standard algorithm: a over × b, one line per digit of b, then the total
+                                (answers in order: the lines, then the total; one line only when b has one digit)
+     shareR { t, g }            t things to share into g plates; the key draws each share and the leftovers in a
+                                dashed "left over" ring (t ÷ g = [] R [])
+     chunks { t, d, steps }     a bar for t cut into chunks of groups of d (steps: [20, 2] is 20 groups, then 2 groups);
+                                each chunk shows how many groups above it and how much it takes below it
+     disks { n } or { list: [[1000, 3], [100, 12]] }   place value disks: the digits of n, or a count of each disk
+     hill  { lo, hi, n, ask }   rounding: a hill from lo to hi with its top at halfway and n marked on it
+                                (ask: true leaves n unmarked for the child to mark; the key marks it)
+     grid  { n, cells, unit, ask }  a 10 by 10 grid with n squares shaded (cells: 10 for tenths strips; unit labels a
+                                square; ask: how many the child shades, drawn in on the key)
+     pv    { n, shift, dir }    a place value chart with n in it; with shift, a second row shows n × 10^shift
+                                (dir 'x') or n ÷ 10^shift (dir 'd'), drawn only on the answer key
+   Numbers of 5 or more digits are written with a space (12 500), using S.fmt from sheets.js. The answer checks are in tests/verify/sheets.js. */
+(function () {
+  'use strict';
+  var S = window.Atlas && Atlas.sheets;
+  if (!S || !S.pics) return;
+  var P = S.pics, D = S.draw, fmt = S.fmt, T = D.T, tw = D.tw, INK = D.INK, INK2 = D.INK2, LINE = D.LINE, KEY = D.KEY;
+
+  /* the place value parts of a whole number, biggest first: 234 gives [200, 30, 4] (zero parts are left out) */
+  function parts(n) {
+    var s = String(n), out = [];
+    s.split('').forEach(function (d, i) { if (d !== '0') out.push(+d * Math.pow(10, s.length - 1 - i)); });
+    return out;
+  }
+  S.parts = parts;
+  function line(x1, y1, x2, y2, o) { o = o || {}; return '<line x1="' + x1 + '" y1="' + y1 + '" x2="' + x2 + '" y2="' + y2 + '" stroke="' + (o.s || INK) + '" stroke-width="' + (o.sw || 1.2) + '"/>'; }
+  function blank(cx, y, wd) { return '<line class="blank" x1="' + (cx - wd / 2) + '" y1="' + y + '" x2="' + (cx + wd / 2) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="1.3"/>'; }
+
+  /* an area model: one column per part of a, one row per part of b; wider parts get wider cells */
+  P.amodel = function (p, x, y, w, key) {
+    var top = parts(p.a), side = parts(p.b), lab = 34, head = 18, rh = 30, out = '', used = 0;
+    var avail = Math.min(w, 300) - lab, minW = 54, weights = top.map(function (v) { return Math.max(1, Math.log(v) / Math.LN10 + 1); });
+    var sum = weights.reduce(function (s, v) { return s + v; }, 0);
+    var widths = weights.map(function (v) { return Math.max(minW, avail * v / sum); });
+    var total = widths.reduce(function (s, v) { return s + v; }, 0);
+    if (total > avail) widths = widths.map(function (v) { return v * avail / total; });
+    var x0 = x + lab, y0 = y + head, cx = x0;
+    top.forEach(function (v, i) { out += T(cx + widths[i] / 2, y + 13, fmt(v), { s: 12, w: 700, f: INK2, a: 'middle' }); cx += widths[i]; });
+    side.forEach(function (v, j) { out += T(x0 - 6, y0 + j * rh + rh / 2 + 4, fmt(v), { s: 12, w: 700, f: INK2, a: 'end' }); });
+    cx = x0;
+    top.forEach(function (tv, i) {
+      side.forEach(function (sv, j) {
+        var cy = y0 + j * rh, mid = cx + widths[i] / 2, prod = fmt(tv * sv);
+        out += '<rect x="' + cx + '" y="' + cy + '" width="' + widths[i] + '" height="' + rh + '" fill="#fff" stroke="' + INK2 + '" stroke-width="1.1"/>';
+        if (p.fill) out += T(mid, cy + rh / 2 + 5, prod, { s: 13, w: 700, a: 'middle' });
+        else {
+          out += blank(mid, cy + rh - 8, Math.min(widths[i] - 12, 44));
+          if (key) out += T(mid, cy + rh - 12, prod, { s: 13, w: 700, f: KEY, a: 'middle' });
+          used++;
+        }
+      });
+      cx += widths[i];
+    });
+    return { svg: out, h: head + side.length * rh, w: cx - x, used: used };
+  };
+
+  /* the standard algorithm for a × b, lined up by place value */
+  P.mult = function (p, x, y, w, key) {
+    var bd = String(p.b).split('').reverse(), lines = bd.length > 1 ? bd.map(function (d, i) { return p.a * +d * Math.pow(10, i); }) : [];
+    var all = lines.concat([p.a * p.b]), digits = String(p.a * p.b).length + 1, d = 15, right = x + 28 + digits * d, out = '', ry = y + 18;
+    function num(v, yy, colour) { String(v).split('').reverse().forEach(function (ch, i) { out += T(right - i * d - d / 2, yy, ch, { s: 18, w: 700, f: colour || INK, a: 'middle' }); }); }
+    num(p.a, ry); ry += 22;
+    num(p.b, ry); out += T(right - digits * d - 4, ry, '×', { s: 18, w: 700, a: 'middle' });
+    out += line(x + 14, ry + 7, right + 2, ry + 7, { sw: 1.5 }); ry += 28;
+    all.forEach(function (v, i) {
+      if (i === all.length - 1 && lines.length) { out += line(x + 14, ry - 15, right + 2, ry - 15, { sw: 1.5 }); ry += 6; }
+      out += blank(right - String(v).length * d / 2 - 2, ry + 6, String(v).length * d + 8);
+      if (key) num(v, ry, KEY);
+      ry += 26;
+    });
+    return { svg: out, h: ry - y - 10, w: right - x + 4, used: all.length };
+  };
+
+  /* sharing with leftovers: t things in rows, g plates and a dashed ring for what is left over */
+  P.shareR = function (p, x, y, w, key) {
+    var out = '', per = Math.min(p.t, Math.floor((w - 6) / 14)), each = Math.floor(p.t / p.g), left = p.t % p.g;
+    for (var i = 0; i < p.t; i++) out += '<circle cx="' + (x + 6 + (i % per) * 14) + '" cy="' + (y + 6 + Math.floor(i / per) * 14) + '" r="4.4" fill="' + INK + '"/>';
+    var top = y + Math.ceil(p.t / per) * 14 + 10, n = p.g + 1, pr = Math.min(18, (w - 8 * (n - 1)) / n / 2);
+    function dots(cx, cy, k) {
+      var s = '';
+      for (var d = 0; d < k; d++) { var ang = d / k * Math.PI * 2, rr = k > 1 ? pr * 0.55 : 0; s += '<circle cx="' + (cx + Math.cos(ang) * rr) + '" cy="' + (cy + Math.sin(ang) * rr) + '" r="3.2" fill="' + KEY + '"/>'; }
+      return s;
+    }
+    for (var j = 0; j < n; j++) {
+      var cx = x + pr + j * (pr * 2 + 8), cy = top + pr, last = j === p.g;
+      out += '<circle class="plate" cx="' + cx + '" cy="' + cy + '" r="' + pr + '" fill="#fff" stroke="' + INK2 + '" stroke-width="1.2"' + (last ? ' stroke-dasharray="3 3"' : '') + '/>';
+      if (key) out += dots(cx, cy, last ? left : each);
+    }
+    out += T(x + p.g * (pr * 2 + 8) + pr, top + pr * 2 + 13, 'left over', { s: 9, f: INK2, a: 'middle' });
+    return { svg: out, h: top - y + pr * 2 + 16, w: n * (pr * 2 + 8) - 8 };
+  };
+
+  /* dividing in chunks: one bar for the total, cut where each chunk of groups ends */
+  P.chunks = function (p, x, y, w) {
+    var bw = Math.min(w, 300) - 4, h = 26, out = '', cx = x, ty = y + 12, MIN = 56;
+    /* each chunk is as wide as its share of the bar, but never too narrow to read */
+    var widths = p.steps.map(function (g) { return bw * g * p.d / p.t; }), small = widths.filter(function (v) { return v < MIN; }).length;
+    var big = widths.reduce(function (s, v) { return s + (v < MIN ? 0 : v); }, 0), scale = (bw - small * MIN) / big;
+    p.steps.forEach(function (g, i) {
+      var cw = widths[i] < MIN ? MIN : widths[i] * scale;
+      out += '<rect x="' + cx + '" y="' + ty + '" width="' + cw + '" height="' + h + '" fill="#fff" stroke="' + INK2 + '" stroke-width="1.2"/>';
+      out += T(cx + cw / 2, y + 8, g + (g === 1 ? ' group' : ' groups'), { s: 10, f: INK2, a: 'middle' });
+      out += T(cx + cw / 2, ty + 18, fmt(g * p.d), { s: 12, w: 700, a: 'middle' });
+      cx += cw;
+    });
+    out += T(x, ty + h + 15, '0', { s: 10, f: INK2 }) + T(x + bw, ty + h + 15, fmt(p.t), { s: 10, f: INK2, a: 'end' });
+    return { svg: out, h: h + 32, w: bw };
+  };
+
+  /* place value disks: one row of disks per place, biggest place first, with its value on each disk */
+  P.disks = function (p, x, y, w) {
+    var list = p.list || parts(p.n).map(function (v) { var pl = Math.pow(10, String(v).length - 1); return [pl, v / pl]; });
+    var r = 13, gap = 3, out = '', cy = y + r, most = 0;
+    list.forEach(function (row) {
+      var per = Math.max(1, Math.floor((w - 4) / (2 * r + gap))), lines = Math.ceil(row[1] / per);
+      for (var i = 0; i < row[1]; i++) {
+        var cx = x + r + (i % per) * (2 * r + gap), yy = cy + Math.floor(i / per) * (2 * r + gap), lab = fmt(row[0]);
+        out += '<circle cx="' + cx + '" cy="' + yy + '" r="' + r + '" fill="#fff" stroke="' + INK2 + '" stroke-width="1.1"/>' + T(cx, yy + 3.5, lab, { s: lab.length > 4 ? 6.5 : lab.length > 3 ? 8 : lab.length > 2 ? 9 : 10.5, w: 700, a: 'middle' });
+      }
+      most = Math.max(most, Math.min(row[1], per));
+      cy += lines * (2 * r + gap) + 5;
+    });
+    return { svg: out, h: cy - y - r - 5, w: most * (2 * r + gap) };
+  };
+
+  /* rounding on a hill: lo at the left foot, hi at the right foot, halfway at the top */
+  P.hill = function (p, x, y, w, key) {
+    var bw = Math.min(w, 260) - 30, x0 = x + 15, base = y + 54, top = y + 14, out = '';
+    function at(v) { var t = (v - p.lo) / (p.hi - p.lo); return { x: x0 + t * bw, y: base - (base - top) * Math.sin(Math.PI * t) }; }
+    var d = 'M' + x0 + ' ' + base;
+    for (var i = 1; i <= 40; i++) { var q = at(p.lo + (p.hi - p.lo) * i / 40); d += ' L' + q.x.toFixed(1) + ' ' + q.y.toFixed(1); }
+    out += '<path d="' + d + '" fill="none" stroke="' + INK2 + '" stroke-width="1.4"/>';
+    out += '<line x1="' + x0 + '" y1="' + base + '" x2="' + (x0 + bw) + '" y2="' + base + '" stroke="' + LINE + '" stroke-width="1"/>';
+    [[p.lo, 'start'], [(p.lo + p.hi) / 2, 'middle'], [p.hi, 'end']].forEach(function (m) {
+      var q = at(m[0]);
+      out += T(m[1] === 'middle' ? q.x : m[1] === 'start' ? x0 - 6 : x0 + bw + 6, m[1] === 'middle' ? q.y - 5 : base + 15, fmt(m[0]), { s: 10, f: INK2, a: m[1] });
+    });
+    /* n's label goes under the line, or above its dot when it is near a foot (where the end labels are) */
+    if (!p.ask || key) {
+      var n = at(p.n), c = p.ask ? KEY : INK, t = (p.n - p.lo) / (p.hi - p.lo), near = t < 0.22 || t > 0.78;
+      out += '<circle cx="' + n.x + '" cy="' + n.y + '" r="4.5" fill="' + c + '"/>' + T(n.x, near ? n.y - 9 : base + 15, fmt(p.n), { s: 11, w: 700, f: c, a: 'middle' });
+    }
+    return { svg: out, h: 72, w: bw + 30 };
+  };
+
+  /* a hundred grid, or ten tenths strips (cells: 10), with n parts shaded */
+  P.grid = function (p, x, y, w, key) {
+    var cells = p.cells || 100, u = Math.min(11, (Math.min(w, 140) - 2) / 10), out = '', SH = '#dfe5ee', KS = '#f2d4da';
+    var fill = function (i) { return i < p.n ? SH : key && p.ask && i < p.n + p.ask ? KS : '#fff'; };
+    if (cells === 10) for (var c = 0; c < 10; c++) out += '<rect x="' + (x + c * u) + '" y="' + y + '" width="' + u + '" height="' + 10 * u + '" fill="' + fill(c) + '" stroke="' + INK2 + '" stroke-width=".8"/>';
+    else for (var i = 0; i < 100; i++) out += '<rect x="' + (x + (i % 10) * u) + '" y="' + (y + Math.floor(i / 10) * u) + '" width="' + u + '" height="' + u + '" fill="' + fill(i) + '" stroke="' + (fill(i) !== '#fff' ? INK2 : LINE) + '" stroke-width=".7"/>';
+    out += '<rect x="' + x + '" y="' + y + '" width="' + 10 * u + '" height="' + 10 * u + '" fill="none" stroke="' + INK + '" stroke-width="1.2"/>';
+    if (p.unit) out += T(x + 10 * u + 8, y + u, 'each square = ' + p.unit, { s: 10, f: INK2 });
+    return { svg: out, h: 10 * u, w: 10 * u + (p.unit ? 8 + tw('each square = ' + p.unit, 10) : 0) };
+  };
+
+  /* a place value chart: columns from the biggest place needed down to the smallest */
+  var NAMES = { 5: 'HTh', 4: 'TTh', 3: 'Th', 2: 'H', 1: 'T', 0: 'O', '-1': 't', '-2': 'h', '-3': 'th' };
+  function places(v) {
+    var s = String(v).split('.'), hi = s[0].replace(/^0+(?=\d)/, '').length - 1, lo = s[1] ? -s[1].length : 0, out = {};
+    s[0].split('').forEach(function (ch, i) { out[hi - i] = ch; });
+    (s[1] || '').split('').forEach(function (ch, i) { out[-1 - i] = ch; });
+    return { hi: hi, lo: lo, d: out };
+  }
+  P.pv = function (p, x, y, w, key) {
+    var shift = p.shift || 0, res = shift ? (p.dir === 'd' ? p.n / Math.pow(10, shift) : p.n * Math.pow(10, shift)) : null;
+    res = res === null ? null : +res.toFixed(6);
+    var a = places(p.n), b = res === null ? null : places(res), hi = Math.max(a.hi, b ? b.hi : 0), lo = Math.min(a.lo, b ? b.lo : 0);
+    var cw = Math.min(30, (w - 4) / (hi - lo + 1)), rh = 28, out = '', rows = b ? 2 : 1;
+    for (var k = hi; k >= lo; k--) {
+      var cx = x + (hi - k) * cw;
+      out += T(cx + cw / 2, y + 12, NAMES[k], { s: 10, w: 700, f: INK2, a: 'middle' });
+      for (var r = 0; r < rows; r++) {
+        var cy = y + 18 + r * rh, src = r ? b : a, ch = src.d[k];
+        out += '<rect x="' + cx + '" y="' + cy + '" width="' + cw + '" height="' + rh + '" fill="#fff" stroke="' + (k === 0 ? INK2 : LINE) + '" stroke-width="1"/>';
+        if (ch == null && k >= 0 && k < src.hi && !(r && !key)) ch = '0';
+        if (ch != null && (!r || key)) out += T(cx + cw / 2, cy + 20, ch, { s: 16, w: 700, f: r ? KEY : INK, a: 'middle' });
+      }
+      if (k === 0 && lo < 0) for (var q = 0; q < rows; q++) out += '<circle cx="' + (cx + cw) + '" cy="' + (y + 18 + q * rh + rh - 5) + '" r="2" fill="' + INK + '"/>';
+    }
+    return { svg: out, h: 18 + rows * rh, w: (hi - lo + 1) * cw };
+  };
+})();
