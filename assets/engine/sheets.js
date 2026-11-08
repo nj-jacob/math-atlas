@@ -181,7 +181,7 @@
     out += T(x - 12, y + 22, n, { s: 26, w: 400, f: th.acc, a: 'end', fam: th.font });
     if (it.q) { wrap(words(it.q, th), 14, w).forEach(function (l) { out += T(x, cy + 16, l); cy += 19; }); cy += 6; }
     if (it.pic) {
-      var p = pic(it.pic, x, cy + (it.q ? 0 : 4), w, key, th, it.pic[0] === 'table' ? ans : null);
+      var p = pic(it.pic, x, cy + (it.q ? 0 : 4), w, key, th, ans);
       out += '<g class="pic">' + p.svg + '</g>';
       if (p.used) ans = ans.slice(p.used);
       cy += p.h + (it.q ? 12 : 16);
@@ -272,6 +272,10 @@
   }
   S.T = T;
   S.tw = tw;
+  /* for picture files loaded after this one (sheet-pics.js, sheet-pics-upper.js): add S.pics.<name> = function (p, x, y, w, key, th, ans)
+     returning { svg, h, w, used } (used: how many answers its own blanks took, from the start of ans) */
+  S.pics = PIC;
+  S.draw = { T: T, tw: tw, wrap: wrap, words: words, obj: obj, holder: holder, rule: rule, pic: pic, INK: INK, INK2: INK2, LINE: LINE, KEY: KEY, DOT: DOT, FONT: FONT, BL: BL };
   function concept(chId, slug) { return A.lessons.flat(chId).filter(function (c) { return c.slug === slug; })[0]; }
   S.code = function (chId, slug, kind, th) {
     var d = S.chapters[chId], ideas = Object.keys(d.ideas), kd = KINDS.filter(function (k) { return k[0] === kind; })[0];
