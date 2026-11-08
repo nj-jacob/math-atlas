@@ -22,7 +22,10 @@
      compass   { face: 'north' | 'east' | 'south' | 'west' }   N, E, S and W, with an arrow for the way someone faces
      area      { cols, rows, cells: ['c,r', ...] | rect: [c, r] }   squares on a grid, some shaded
      rect      { a, b, unit, all }                    a rectangle with its side lengths (not to scale)
-     ruler     { len, from, max }                     a cm ruler with a ribbon of len cm above it
+     ruler     { len, from, max }                     a cm ruler (with mm marks) and a ribbon of len cm above it, starting at from
+     poly      { sides: [3, 4, '?'], unit }           a shape with its side lengths written on (not to scale)
+     blob      { cols, rows, cx, cy, rx, ry }         an ellipse on a grid of squares (centre and radii in squares), to estimate its area
+     units     { n, unit }                            a ribbon with n units of the same size end to end under it
      balance   { l, r, tilt: -1 | 0 | 1 }             a pan balance with cubes (numbers) or words on each side
      cups      { n }                                  n cups in a row
      nl        { min, max, tick, lab, pt, ptl, ask: [values], jumps: [[from, to, 'label']] }   a number line; ask: lines under those ticks
@@ -292,6 +295,33 @@
     out += r(x, ry, max * cm + 4, 30, { rx: 3, s: INK2 });
     for (var i = 0; i <= max * 10; i++) { var tx = x + 2 + i * cm / 10, big = i % 10 === 0; out += ln(tx, ry, tx, ry + (big ? 11 : i % 5 === 0 ? 8 : 4), { s: big ? INK : INK2, sw: big ? 1 : 0.5 }); if (big) out += T(tx, ry + 24, i / 10, { s: 9, a: 'middle' }); }
     return { svg: out, h: 52, w: max * cm + 4 };
+  };
+  /* a shape with its side lengths written on (not to scale): 3 sides a triangle, 4 a four-sided shape, 5 or more a polygon;
+     a side can be '?' */
+  P.poly = function (p, x, y, w) {
+    var n = p.sides.length, R = 26, pw = Math.min(w, 2 * R * 1.25 + 80), cx = x + pw / 2, cy = y + R + 14, pts = [], out = '', i;
+    for (i = 0; i < n; i++) { var a = -Math.PI / 2 + (i + 0.5 - (n === 4 ? 0 : 0.5)) * 2 * Math.PI / n; pts.push([cx + R * 1.25 * Math.cos(a), cy + R * Math.sin(a)]); }
+    out += path('M' + pts.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z', { s: INK, sw: 1.5 });
+    for (i = 0; i < n; i++) {
+      var A = pts[i], B = pts[(i + 1) % n], mx = (A[0] + B[0]) / 2, my = (A[1] + B[1]) / 2, dx = mx - cx, dy = my - cy, d = Math.sqrt(dx * dx + dy * dy) || 1;
+      out += T((mx + dx / d * 16).toFixed(1), (my + dy / d * 14 + 4).toFixed(1), p.sides[i] + (p.sides[i] === '?' ? '' : ' ' + (p.unit || 'cm')), { s: 11, w: 700, a: 'middle' });
+    }
+    return { svg: out, h: 2 * R + 28, w: pw };
+  };
+  /* a curved shape (an ellipse) on a grid of squares, to estimate its area */
+  P.blob = function (p, x, y) {
+    var u = p.u || 14, out = '';
+    for (var i = 0; i <= p.rows; i++) out += ln(x, y + i * u, x + p.cols * u, y + i * u, { s: LINE, sw: 0.7 });
+    for (var j = 0; j <= p.cols; j++) out += ln(x + j * u, y, x + j * u, y + p.rows * u, { s: LINE, sw: 0.7 });
+    out += '<ellipse cx="' + (x + p.cx * u) + '" cy="' + (y + p.cy * u) + '" rx="' + p.rx * u + '" ry="' + p.ry * u + '" fill="' + SHADE + '" fill-opacity=".6" stroke="' + INK + '" stroke-width="1.5"/>';
+    return { svg: out, h: p.rows * u, w: p.cols * u };
+  };
+  /* a ribbon len cm long with n units of the same size laid end to end under it (unit: its label, such as '4 cm') */
+  P.units = function (p, x, y, w) {
+    var cw = Math.min(w - 4, 210), seg = cw / p.n, out = r(x, y, cw, 10, { rx: 3, f: SHADE, s: INK2 });
+    for (var i = 0; i < p.n; i++) out += r(x + i * seg + 1, y + 16, seg - 2, 10, { rx: 2, s: INK2, sw: 1 });
+    if (p.unit) out += T(x + seg / 2, y + 42, p.unit, { s: 10, w: 700, f: INK2, a: 'middle' }) + ln(x + 1, y + 30, x + seg - 1, y + 30, { s: INK2, sw: 0.8 });
+    return { svg: out, h: p.unit ? 46 : 28, w: cw };
   };
   P.balance = function (p, x, y, w, key, th) {
     var cx = x + 96, t = (p.tilt || 0) * 10, out = '';

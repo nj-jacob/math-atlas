@@ -102,6 +102,28 @@
     const d = facing(DIRS[['^', '>', 'v', '<'].indexOf(m.start[2])], String(code).split(',').filter(t => /turn/.test(t)).join(','));
     return end && { cell: 'ABCDEFGHIJ'[end[0]] + (m.rows - end[1]), steps, dir: DIRS[d], inside: end[0] >= 0 && end[1] >= 0 && end[0] < m.cols && end[1] < m.rows };
   }
+  /* lengths: "4 cm 3 mm", "2 m 40 cm" in millimetres; a side may add lengths (4 cm + 5 cm); null when not a length */
+  const MM = { mm: 1, cm: 10, m: 1000, km: 1000000 };
+  const toMM = s => {
+    const terms = String(s).trim().split(' + '), one = t => { const re = /(\d+(?:\.\d+)?) ?(mm|cm|m|km)\b/g; return re.test(t) && !t.replace(re, '').trim() ? [...t.matchAll(re)].reduce((n, q) => n + +q[1] * MM[q[2]], 0) : null; };
+    const v = terms.map(one); return v.some(x => x === null) ? null : v.reduce((a, b) => a + b, 0);
+  };
+  /* the perimeter of squares on a grid: every square edge that does not touch another square */
+  const cellPerim = cells => cells.reduce((t, c) => { const [x, y] = c.split(',').map(Number); return t + [[1, 0], [-1, 0], [0, 1], [0, -1]].filter(([dx, dy]) => cells.indexOf((x + dx) + ',' + (y + dy)) < 0).length; }, 0);
+  /* an ellipse on a grid: squares more than half covered (by sampling), and squares too close to half to call */
+  function blobEstimate(o) {
+    let n = 0, unsure = 0;
+    for (let c = 0; c < o.cols; c++) for (let r = 0; r < o.rows; r++) {
+      let inside = 0;
+      for (let i = 0; i < 20; i++) for (let j = 0; j < 20; j++) { const px = c + (i + 0.5) / 20, py = r + (j + 0.5) / 20; if (((px - o.cx) / o.rx) ** 2 + ((py - o.cy) / o.ry) ** 2 <= 1) inside++; }
+      const f = inside / 400; if (f > 0.5) n++; if (f > 0.35 && f < 0.65) unsure++;
+    }
+    return { n, unsure };
+  }
+  /* the unit for a length (in mm): smaller than a fingernail mm, smaller than a big step cm, smaller than a long walk m, else km */
+  const unitFor = mm => (mm < 10 ? 'mm' : mm < 1000 ? 'cm' : mm < 1000000 ? 'm' : 'km');
+  /* perimeter or area: words that go around the edge, or cover the inside */
+  const AROUND = /fence|border|frame|edge|trim|around|lace|rope|path round/, INSIDE = /carpet|paint|cover|tile|grass|seed|paper|rug|wrap|floor/;
   /* the shape names a repeating pattern uses */
   const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
@@ -142,7 +164,12 @@
     blocks: o => ({ total: 100 * o.h + 10 * o.t + o.o }),
     tenframe: o => ({ total: o.a + o.b }),
     coins: o => ({ total: o.list.reduce((x, y) => x + y, 0) }),
-    area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length }),
+    area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length, area: o.rect ? o.rect[0] * o.rect[1] : o.cells.length, perim: o.rect ? 2 * (o.rect[0] + o.rect[1]) : cellPerim(o.cells) }),
+    rect: o => ({ perim: 2 * (o.a + o.b), area: o.a * o.b }),
+    poly: o => (o.sides.indexOf('?') < 0 ? { perim: o.sides.reduce((x, y) => x + y, 0) } : { known: o.sides.filter(v => v !== '?').reduce((x, y) => x + y, 0) }),
+    ruler: o => ({ len: o.len * 10 }),
+    units: o => ({ total: o.n, pair: [o.n, o.unit ? parseFloat(o.unit) : null] }),
+    blob: o => ({ total: blobEstimate(o).n, own: o => (blobEstimate(o).unsure ? [blobEstimate(o).unsure + ' squares of the curved shape are too close to half to call'] : []), blanks: 0 }),
     wholes: o => ({ total: o.n }),
     cups: o => ({ total: o.n }),
     col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
@@ -164,6 +191,7 @@
     area: [{ cols: 8, rows: 4, rect: [5, 3] }], rect: [{ a: 6, b: 3, unit: 'cm', all: true }], ruler: [{ len: 7, from: 0 }],
     balance: [{ l: 6, r: '{one}', tilt: 0 }], cups: [{ n: 6 }], nl: [{ min: 300, max: 400, tick: 10, lab: 50, pt: 370, ask: [330] }, [330]],
     map: [{ cols: 7, rows: 4, grid: true, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'red', b: 'round' }],
+    poly: [{ sides: [4, 5, '?'] }], blob: [{ cols: 8, rows: 5, cx: 4, cy: 2.5, rx: 3.2, ry: 2.1 }], units: [{ n: 6, unit: '4 cm' }],
     stack: [{ list: ['tri', 'cube'] }], box: [{ l: 4, d: 2, h: 3 }], compass: [{ face: 'east' }],
     row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }]
   };
@@ -218,6 +246,19 @@
           const want = w ? w.dir : DIRS[facing(it.turn.from, it.turn.moves)];
           if (v !== want) say('you face ' + want + ', not ' + v);
         } else say('nothing checks this row: ' + raw[ri]);
+      } else if (it.find && pc && /^\d+( [a-z²]+)+$/.test(row)) {
+        /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
+        const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
+        if (want !== n) say('the ' + it.find + ' is ' + want + ', not ' + n);
+      } else if (!it.cong && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
+        /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" */
+        const m = row.split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
+        if (m.length !== 3 || a === null || b === null) say('cannot read the lengths: ' + row);
+        else if (!(m[1] === '=' ? a === b : m[1] === '<' ? a < b : a > b)) say('not true: ' + row);
+      } else if ((it.len != null || (pc && pc.len != null)) && toMM(row) !== null) {
+        /* a measured length, in any units */
+        const want = it.len != null ? it.len : pc.len;
+        if (toMM(row) !== want) say('the length is ' + want + ' mm, not ' + row);
       } else if (it.cong) {
         /* congruent: checked below, from the lengths */
       } else if (/≠/.test(row)) {
@@ -307,6 +348,44 @@
       const o = pk.opts, yes = pk.ans === 0;
       if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
+      } else if (pk.size != null) {
+        /* the unit that suits a length */
+        if (o[pk.ans] !== unitFor(pk.size) || o.filter(x => x === unitFor(pk.size)).length !== 1) say('a length of ' + pk.size + ' mm is measured in ' + unitFor(pk.size) + ', not ' + o[pk.ans]);
+      } else if (o.indexOf('perimeter') >= 0 && o.indexOf('area') >= 0) {
+        const q = it.q.toLowerCase(), want = AROUND.test(q) && !INSIDE.test(q) ? 'perimeter' : INSIDE.test(q) && !AROUND.test(q) ? 'area' : null;
+        if (!want) say('cannot tell perimeter or area from: ' + it.q); else if (o[pk.ans] !== want) say('this needs the ' + want + ', not the ' + o[pk.ans]);
+      } else if (pk.perim) {
+        /* the one rectangle ("4 by 2") with this perimeter */
+        const ok = o.map(x => { const [a, b] = x.split(' by ').map(Number); return 2 * (a + b) === pk.perim; });
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one rectangle has a perimeter of ' + pk.perim + ': ' + o.join(', '));
+      } else if (pk.areaUnit != null) {
+        /* square centimetres for things smaller than about a big book page, square metres for floors and fields */
+        const want = pk.areaUnit < 2000 ? 'cm²' : 'm²';
+        if (o[pk.ans] !== want) say('an area of ' + pk.areaUnit + ' cm² is measured in ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.cover) {
+        const want = pk.cover === 'gaps' ? 'too small' : 'too big';
+        if (o[pk.ans] !== want) say('tiles with ' + pk.cover + ' give an area that is ' + want + ', not ' + o[pk.ans]);
+      } else if (it.same && it.pic && it.pic[0] === 'row') {
+        /* do the pictures in the row cover the same area? */
+        const t = it.pic[1].list.map(q => picture(q).total), all = t.every(v => v === t[0]);
+        if (all !== yes) say('the areas are ' + t.join(' and ') + ', but the key circles ' + o[pk.ans]);
+      } else if (it.cmp) {
+        /* who or what is longer: the first choice goes with the first length */
+        const a = toMM(it.cmp[0]), b = toMM(it.cmp[1]);
+        if (a === null || b === null || a === b || (a > b ? 0 : 1) !== pk.ans) say('of ' + it.cmp.join(' and ') + ', the longer is not ' + o[pk.ans]);
+      } else if (it.count) {
+        /* the bigger unit is the one that fits fewer times along the same length */
+        const want = Object.keys(it.count).sort((x, y) => it.count[x] - it.count[y])[0];
+        if (o[pk.ans] !== want) say('the unit that fits fewer times is ' + want + ', not ' + o[pk.ans]);
+      } else if (it.tool) {
+        const want = it.tool === 'curve' ? 'string' : 'ruler';
+        if (o[pk.ans] !== want) say('a ' + it.tool + ' edge is measured with a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.longest) {
+        const v = o.map(toMM);
+        if (v.some(x => x === null) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled length is not the longest: ' + o.join(', '));
+      } else if (pk.shortest) {
+        const v = o.map(toMM);
+        if (v.some(x => x === null) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled length is not the shortest: ' + o.join(', '));
       } else if (pk.clue) {
         /* exactly one choice is an object that fits every part of the clue */
         const ok = o.map(x => fits(solidOf(x, it), pk.clue));
