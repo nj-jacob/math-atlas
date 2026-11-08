@@ -63,6 +63,14 @@
     return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + (o.s || 14) + '" font-weight="' + (o.w || 400) + '"' +
       (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + esc(s) + '</text>';
   }
+  /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are */
+  function fmt(n) {
+    if (typeof n !== 'number') return n;
+    var parts = String(n).split('.'), whole = parts[0];
+    if (whole.replace('-', '').length >= 5) whole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    return whole + (parts[1] != null ? '.' + parts[1] : '');
+  }
+  S.fmt = fmt;
   function words(s, th) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return th.w[k] != null ? th.w[k] : m; }); }
   function rep(g, k) { var a = []; for (var i = 0; i < g; i++) a.push(k); return a; }
   /* one thing to count: the theme's own picture (a puck, a jar ...), or a plain dot on Practise 3 and Think */
@@ -150,7 +158,7 @@
       out += '<line x1="' + x + '" y1="' + ry + '" x2="' + (x + cw * 2) + '" y2="' + ry + '" stroke="' + LINE + '" stroke-width="1"/>';
       row.forEach(function (v, c) {
         var cx = x + c * cw + cw / 2;
-        if (v === '[]') { out += '<line class="blank" x1="' + (cx - 20) + '" y1="' + (ry + 24) + '" x2="' + (cx + 20) + '" y2="' + (ry + 24) + '" stroke="' + INK + '" stroke-width="1.3"/>'; if (key) out += T(cx, ry + 20, ans[k], { s: 15, w: 700, f: KEY, a: 'middle' }); k++; }
+        if (v === '[]') { out += '<line class="blank" x1="' + (cx - 20) + '" y1="' + (ry + 24) + '" x2="' + (cx + 20) + '" y2="' + (ry + 24) + '" stroke="' + INK + '" stroke-width="1.3"/>'; if (key) out += T(cx, ry + 20, fmt(ans[k]), { s: 15, w: 700, f: KEY, a: 'middle' }); k++; }
         else out += T(cx, ry + 20, v, { s: 15, w: 700, a: 'middle' });
       });
     });
@@ -159,18 +167,30 @@
   };
   function pic(spec, x, y, w, key, th, ans) { return PIC[spec[0]](spec[1], x, y, w, key, th, ans); }
 
-  /* one row of an equation: numbers, symbols and words; [] is a short line to write on */
+  /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer;
+     3/[] and []/8 put the line in one part of a fraction; a blank may sit in brackets: 2 × ([] + []) */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
-    s.split(' ').filter(Boolean).forEach(function (tok) {
+    s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
+      var open = /^\(.*\[\]/.test(tok), close = /\[\].*\)$/.test(tok);
+      if (open) { out += T(cx, y + 21, '(', { s: 14, f: INK2 }); cx += tw('(', 14) + 2; tok = tok.slice(1); }
+      if (close) tok = tok.slice(0, -1);
       var comma = tok === '[],';
       if (comma) tok = '[]';
-      if (tok === '[]') {
-        out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + BL) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
-        if (key) out += T(cx + BL / 2, y + 21, ans[k], { s: big, w: 700, f: KEY, a: 'middle' });
-        k++; cx += BL + 7;
+      var fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
+      if (fr && (tok === '[]' || !fr[1] !== !fr[2])) {
+        /* a blank, or a blank for one part of a fraction: 3/[] or []/8 */
+        /* the line grows only when the answer would not fit on it even in smaller type; the key's answer shrinks to fit */
+        var short = tok !== '[]', base = short ? 28 : BL, aw = ans[k] == null ? 0 : tw(fmt(ans[k]), big, 700);
+        var bl = Math.max(base, aw * 12 / big + 6), fs = Math.min(big, big * (bl - 6) / (aw || 1));
+        if (fr[1]) { out += T(cx, y + 21, fr[1], { s: big, w: 700 }); cx += tw(fr[1], big, 700) + 2; }
+        out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + bl) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
+        if (key) out += T(cx + bl / 2, y + 21, fmt(ans[k]), { s: fs, w: 700, f: KEY, a: 'middle' });
+        k++; cx += bl + (fr[2] ? 2 : 7);
+        if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
-      } else if (/^[\d,]+$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+        if (close) { out += T(cx - 4, y + 21, ')', { s: 14, f: INK2 }); cx += tw(')', 14) + 3; }
+      } else if (/^\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
@@ -179,7 +199,7 @@
   function item(it, n, x, y, w, key, th) {
     var out = '', cy = y, ans = (it.a || []).slice(), ai = 0;
     out += T(x - 12, y + 22, n, { s: 26, w: 400, f: th.acc, a: 'end', fam: th.font });
-    if (it.q) { wrap(words(it.q, th), 14, w).forEach(function (l) { out += T(x, cy + 16, l); cy += 19; }); cy += 6; }
+    if (it.q) { wrap(words(it.q, th).replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0'), 14, w).forEach(function (l) { out += T(x, cy + 16, l); cy += 19; }); cy += 6; }
     if (it.pic) {
       var p = pic(it.pic, x, cy + (it.q ? 0 : 4), w, key, th, ans);
       out += '<g class="pic">' + p.svg + '</g>';
@@ -190,11 +210,13 @@
       var px = x;
       it.pick.opts.forEach(function (o, i) {
         var ow = tw(words(o, th), 16, 700);
+        /* choices that do not fit on one line go on to the next */
+        if (i && px + ow > x + w) { px = x; cy += 34; }
         if (key && i === it.pick.ans) out += '<ellipse cx="' + (px + ow / 2) + '" cy="' + (cy + 15) + '" rx="' + (ow / 2 + 11) + '" ry="14" fill="none" stroke="' + KEY + '" stroke-width="1.8"/>';
         out += T(px, cy + 21, words(o, th), { s: 16, w: 700 });
         px += ow + 34;
       });
-      if (px - 34 > x + w) S.overflow.push('the choices are too wide: ' + it.pick.opts.join(', '));
+      if (px - 34 > x + w) S.overflow.push('a choice is too wide: ' + it.pick.opts.join(', '));
       cy += 36;
     }
     if (it.pick && !it.pickLast) pick();
