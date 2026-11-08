@@ -124,6 +124,27 @@
   const unitFor = mm => (mm < 10 ? 'mm' : mm < 1000 ? 'cm' : mm < 1000000 ? 'm' : 'km');
   /* perimeter or area: words that go around the edge, or cover the inside */
   const AROUND = /fence|border|frame|edge|trim|around|lace|rope|path round/, INSIDE = /carpet|paint|cover|tile|grass|seed|paper|rug|wrap|floor/;
+  /* a time on a clock in minutes after 12:00 (a 12-hour clock): "3:25", "4 o'clock", "25 minutes past 4", "quarter past 8",
+     "half past 8", "quarter to 9"; null when not a time */
+  function clockMin(t) {
+    const s = String(t).trim(), h = n => (+n % 12) * 60; let m;
+    if ((m = s.match(/^(\d{1,2}):(\d\d)$/)) && +m[2] < 60) return h(m[1]) + +m[2];
+    if ((m = s.match(/^(\d{1,2}) o'clock$/))) return h(m[1]);
+    if ((m = s.match(/^(\d+) minutes past (\d{1,2})$/))) return h(m[2]) + +m[1];
+    if ((m = s.match(/^quarter past (\d{1,2})$/))) return h(m[1]) + 15;
+    if ((m = s.match(/^half past (\d{1,2})$/))) return h(m[1]) + 30;
+    if ((m = s.match(/^quarter to (\d{1,2})$/))) return (h(m[1]) + 720 - 15) % 720;
+    return null;
+  }
+  /* an amount of time in seconds: "2 hours", "3 minutes 10 seconds", or a timer "2:10" (minutes and seconds); null if not */
+  const SEC = { second: 1, minute: 60, hour: 3600, day: 86400 };
+  const toSec = t => {
+    const s = String(t).trim(), tm = s.match(/^(\d+):(\d\d)$/), re = /(\d+) (second|minute|hour|day)s?\b/g;
+    if (tm) return +tm[1] * 60 + +tm[2];
+    return re.test(s) && !s.replace(re, '').trim() ? [...s.matchAll(re)].reduce((n, q) => n + +q[1] * SEC[q[2]], 0) : null;
+  };
+  /* mass, capacity or time: the words that tell which one a question is about */
+  const MEASURE = { mass: /heav|weigh|light|balance/, capacity: /hold|fill|pour|cups? of|full/, time: /long does|how long|minutes|seconds|hours|take/ };
   /* the shape names a repeating pattern uses */
   const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
@@ -168,6 +189,9 @@
     rect: o => ({ perim: 2 * (o.a + o.b), area: o.a * o.b }),
     poly: o => (o.sides.indexOf('?') < 0 ? { perim: o.sides.reduce((x, y) => x + y, 0) } : { known: o.sides.filter(v => v !== '?').reduce((x, y) => x + y, 0) }),
     ruler: o => ({ len: o.len * 10 }),
+    clock: o => Object.assign({ time: (o.h % 12) * 60 + o.m }, o.blank ? { blanks: 0, own: () => [] } : {}),
+    balance: o => { const n = typeof o.l === 'number' ? o.l : typeof o.r === 'number' ? o.r : null;
+      return { heavy: o.tilt === 1 ? o.r : o.tilt === -1 ? o.l : null, total: o.tilt === 0 && n !== null ? n : undefined }; },
     units: o => ({ total: o.n, pair: [o.n, o.unit ? parseFloat(o.unit) : null] }),
     blob: o => ({ total: blobEstimate(o).n, own: o => (blobEstimate(o).unsure ? [blobEstimate(o).unsure + ' squares of the curved shape are too close to half to call'] : []), blanks: 0 }),
     wholes: o => ({ total: o.n }),
@@ -246,6 +270,21 @@
           const want = w ? w.dir : DIRS[facing(it.turn.from, it.turn.moves)];
           if (v !== want) say('you face ' + want + ', not ' + v);
         } else say('nothing checks this row: ' + raw[ri]);
+      } else if (pc && pc.time != null && clockMin(row) !== null) {
+        /* a time read from the clock, in any of the ways we say it */
+        if (clockMin(row) !== pc.time) say('the clock shows ' + Math.floor(pc.time / 60 || 12) + ':' + String(pc.time % 60).padStart(2, '0') + ', not ' + row);
+      } else if (row.split(' = ').length === 2 && row.split(' = ').every(x => clockMin(x) !== null)) {
+        /* a time said two ways: "quarter to 3 = 2:45" */
+        const [x, y] = row.split(' = ').map(clockMin);
+        if (x !== y) say('not the same time: ' + row);
+      } else if (it.span && /^\d+ minutes$/.test(row)) {
+        /* how long from one time to another (counting on, not subtracting like plain numbers) */
+        const want = (clockMin(it.span[1]) - clockMin(it.span[0]) + 720) % 720;
+        if (want !== +row.split(' ')[0]) say('from ' + it.span.join(' to ') + ' is ' + want + ' minutes, not ' + row);
+      } else if (/ = /.test(row) && row.split(' = ').length === 2 && toSec(row.split(' = ')[0]) !== null && toSec(row.split(' = ')[1]) !== null) {
+        /* amounts of time: "2 hours = 120 minutes", "2:10 = 130 seconds" */
+        const [a, b] = row.split(' = ').map(toSec);
+        if (a !== b) say('not true: ' + row);
       } else if (it.find && pc && /^\d+( [a-z²]+)+$/.test(row)) {
         /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
         const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
@@ -313,6 +352,11 @@
         else if (!it.calc) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc) say('nothing checks this row: ' + raw[ri]);
     });
+    /* a clock to draw the hands on: the time asked for is the time on the key */
+    if (it.pic && it.pic[0] === 'clock' && it.pic[1].blank) {
+      const asked = (it.q || '').match(/\d{1,2}:\d\d|quarter (past|to) \d{1,2}|half past \d{1,2}|\d{1,2} o'clock/);
+      if (!asked || clockMin(asked[0]) !== pc.time) say('the clock to draw does not match the time asked for: ' + it.q);
+    }
     /* congruent faces or boxes: with the blanks filled in, the two lists of lengths match once sorted */
     if (it.cong) {
       const q = ansAll.slice(), b = it.cong.b.map(x => (x === '?' ? +q.shift() : x)), srt = l => l.slice().sort((x, y) => x - y).join();
@@ -348,6 +392,23 @@
       const o = pk.opts, yes = pk.ans === 0;
       if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
+      } else if (it.pic && it.pic[0] === 'balance' && pc.heavy !== undefined && o.indexOf(it.pic[1].l) >= 0) {
+        /* the side that goes down is the heavier one */
+        if (pc.heavy === null || o[pk.ans] !== pc.heavy) say('the heavier one is ' + pc.heavy + ', not ' + o[pk.ans]);
+      } else if (o.indexOf('mass') >= 0 && o.indexOf('capacity') >= 0) {
+        const q = it.q.toLowerCase(), hit = Object.keys(MEASURE).filter(k => MEASURE[k].test(q));
+        if (hit.length !== 1) say('cannot tell mass, capacity or time from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is about ' + hit[0] + ', not ' + o[pk.ans]);
+      } else if (it.chain) {
+        /* things from heaviest to lightest: the lightest is last */
+        const want = /lightest/.test(it.q) ? it.chain[it.chain.length - 1] : it.chain[0];
+        if (o[pk.ans] !== want) say('the answer is ' + want + ', not ' + o[pk.ans]);
+      } else if (it.tool3) {
+        const want = { mass: 'balance', capacity: 'cup', time: 'clock' }[it.tool3];
+        if (o[pk.ans] !== want) say(it.tool3 + ' is measured with a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.dur != null) {
+        /* the unit for how long something takes (in seconds): under a minute and a half seconds, under an hour and a half minutes, else hours */
+        const want = pk.dur < 90 ? 'seconds' : pk.dur < 5400 ? 'minutes' : 'hours';
+        if (o[pk.ans] !== want) say('something lasting ' + pk.dur + ' seconds is timed in ' + want + ', not ' + o[pk.ans]);
       } else if (pk.size != null) {
         /* the unit that suits a length */
         if (o[pk.ans] !== unitFor(pk.size) || o.filter(x => x === unitFor(pk.size)).length !== 1) say('a length of ' + pk.size + ' mm is measured in ' + unitFor(pk.size) + ', not ' + o[pk.ans]);
@@ -363,6 +424,7 @@
         const want = pk.areaUnit < 2000 ? 'cm²' : 'm²';
         if (o[pk.ans] !== want) say('an area of ' + pk.areaUnit + ' cm² is measured in ' + want + ', not ' + o[pk.ans]);
       } else if (pk.cover) {
+        /* gaps leave space uncounted (too small); overlaps, cups not filled to the top and spills need extra units (too big) */
         const want = pk.cover === 'gaps' ? 'too small' : 'too big';
         if (o[pk.ans] !== want) say('tiles with ' + pk.cover + ' give an area that is ' + want + ', not ' + o[pk.ans]);
       } else if (it.same && it.pic && it.pic[0] === 'row') {
