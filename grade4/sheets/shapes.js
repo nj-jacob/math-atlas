@@ -255,7 +255,7 @@
         show: { cap: '3 across is 1 from the line at 4 across', eq: ['(3, 2) → (5, 2)'] },
         together: [MV([2, 3, 'A'], { flip: { x: 4 } }, null), MV([5, 1, 'B'], { flip: { y: 3 } }, null)],
         cue: 'Count to the mirror line. Count the same on the other side.',
-        own: [MV([1, 6, 'C'], { flip: { x: 3 } }, null), MV([6, 7, 'D'], { flip: { y: 5 } }, null)]
+        own: [MT([1, 6, 'C'], { flip: { x: 3 } }, 'Flip over a mirror line going up through 3 across.'), MT([6, 7, 'D'], { flip: { y: 5 } }, 'Flip over a mirror line going across through 5 up.')]
       },
       p1: {
         show: { cap: '2 from the line at 3 up, so 2 on the other side', eq: ['(4, 1) → (4, 5)'] },

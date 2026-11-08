@@ -58,7 +58,7 @@
         items: [SH('st', 3, 2), RP([3, 6], 3, 2), SH('cct', 2, 3), RP([5, 5, 1], 2, 3), RP([8, 2, 6], 2, 3), RP([1, 2], 3, 2)]
       },
       p2: {
-        items: [SH('stc', 2, 3), RP([4, 0, 0], 2, 3), SH('ccss', 2, 2), RP([7, 3, 3, 1], 2, 2), RP([6, 2], 3, 2),
+        items: [SH('stc', 2, 3), RP([4, 0, 0], 2, 3), RP([7, 3, 3, 1], 2, 2), RP([6, 2], 3, 2),
           { q: 'Which shape is 10th in this pattern?', pic: ['pat', { seq: 'cstcst', core: 3 }], pick: { opts: ['circle', 'square', 'triangle'], ans: 0, term: { core: ['circle', 'square', 'triangle'], n: 10 } } }]
       },
       p3: {
