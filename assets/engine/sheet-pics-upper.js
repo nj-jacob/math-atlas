@@ -32,6 +32,12 @@
                                 and a square in a right angle
      heights { g: [[2, 1], [1, 0]] }   a top view of cube stacks: the number in each square is how tall it is (0 is empty);
                                 the front is the bottom edge and the right side is the right edge
+     angle { deg, rot, bench, prot, from }   an angle of deg degrees, turned by rot, with a dashed square corner to
+                                compare (bench); prot: on a protractor (outer scale from the left, inner from the right),
+                                from: 'left' puts the first arm on the left
+     plane { kind: 'rect' | 'para' | 'tri', b, h, off, s, unit, ask }   a rectangle, parallelogram or triangle with its
+                                base and dashed height; off: how far along the top (or top corner) sits; s: the slanted
+                                side; ask: 'perim' when the question is its perimeter
      coord { n, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
                                 a coordinate grid from 0 to n: labelled points, a shape, the shape after a move (dashed), a
                                 dashed mirror line, and points or a shape drawn only on the key
@@ -421,5 +427,73 @@
     (p.pts || []).forEach(function (q) { out += dot(q, INK); });
     if (key) (p.plot || []).forEach(function (q) { out += dot(q, KEY); });
     return { svg: out, h: n * u + 22, w: n * u + 24 };
+  };
+
+  /* an angle: two arms from a vertex, deg apart. Plain, it has an arc (a square for 90°), can be turned by rot and can
+     show a dashed square corner to compare with (bench). With prot it sits on a protractor: the outer scale counts from
+     the left, the inner scale from the right, and from: 'left' puts the first arm on the left */
+  P.angle = function (p, x, y) {
+    var rad = Math.PI / 180, out = '', g = p.deg;
+    var dir = function (a, r) { return [Math.cos(a * rad) * r, -Math.sin(a * rad) * r]; };
+    if (p.prot) {
+      var R = 76, cx = x + R + 12, cy = y + R + 14, a1 = p.from === 'left' ? 180 : 0, a2 = p.from === 'left' ? 180 - g : g;
+      out += '<path d="M' + (cx - R) + ' ' + cy + ' A' + R + ' ' + R + ' 0 0 1 ' + (cx + R) + ' ' + cy + ' Z" fill="#f6f7f9" stroke="' + INK2 + '" stroke-width="1"/>';
+      for (var d = 0; d <= 180; d += 5) {
+        var t1 = dir(d, R), t2 = dir(d, R - (d % 10 ? 3 : 6));
+        out += line(cx + t1[0], cy + t1[1], cx + t2[0], cy + t2[1], { s: INK2, sw: d % 10 ? 0.6 : 0.9 });
+        if (d % 20) continue;
+        var o1 = dir(d, R - 13), o2 = dir(d, R - 25);
+        var up = d === 0 || d === 180 ? -6 : 3;
+        out += T(cx + o1[0], cy + o1[1] + up, 180 - d, { s: 8, f: INK, a: 'middle' }) + T(cx + o2[0], cy + o2[1] + up, d, { s: 7, f: INK2, a: 'middle' });
+      }
+      [a1, a2].forEach(function (a) { var e = dir(a, R + 12); out += line(cx, cy, cx + e[0], cy + e[1], { sw: 1.6 }); });
+      out += '<circle cx="' + cx + '" cy="' + cy + '" r="2.4" fill="' + INK + '"/>';
+      return { svg: out, h: R + 22, w: 2 * R + 24 };
+    }
+    var L = 64, rot = p.rot || 0, b1 = rot, b2 = rot + g, A = dir(b1, L), B = dir(b2, L), pts = [[0, 0], A, B];
+    var C = p.bench && g !== 90 ? dir(b1 + 90, L * 0.8) : null;
+    if (C) pts.push(C);
+    var minx = Math.min.apply(null, pts.map(function (q) { return q[0]; })), miny = Math.min.apply(null, pts.map(function (q) { return q[1]; }));
+    var maxx = Math.max.apply(null, pts.map(function (q) { return q[0]; })), maxy = Math.max.apply(null, pts.map(function (q) { return q[1]; }));
+    var vx = x + 6 - minx, vy = y + 6 - miny;
+    if (C) {
+      var s1 = dir(b1, 9), s2 = dir(b1 + 90, 9);
+      out += '<line x1="' + vx + '" y1="' + vy + '" x2="' + (vx + C[0]) + '" y2="' + (vy + C[1]) + '" stroke="' + INK2 + '" stroke-width="1" stroke-dasharray="4 3"/>';
+      out += '<path d="M' + (vx + s1[0]) + ' ' + (vy + s1[1]) + ' L' + (vx + s1[0] + s2[0]) + ' ' + (vy + s1[1] + s2[1]) + ' L' + (vx + s2[0]) + ' ' + (vy + s2[1]) + '" fill="none" stroke="' + INK2 + '" stroke-width="0.9"/>';
+    }
+    if (g === 90) {
+      var q1 = dir(b1, 10), q2 = dir(b2, 10);
+      out += '<path d="M' + (vx + q1[0]) + ' ' + (vy + q1[1]) + ' L' + (vx + q1[0] + q2[0]) + ' ' + (vy + q1[1] + q2[1]) + ' L' + (vx + q2[0]) + ' ' + (vy + q2[1]) + '" fill="none" stroke="' + INK + '" stroke-width="1"/>';
+    } else {
+      var r1 = dir(b1, 15), r2 = dir(b2, 15);
+      out += '<path d="M' + (vx + r1[0]) + ' ' + (vy + r1[1]) + ' A15 15 0 ' + (g > 180 ? 1 : 0) + ' 0 ' + (vx + r2[0]) + ' ' + (vy + r2[1]) + '" fill="none" stroke="' + INK + '" stroke-width="1"/>';
+    }
+    out += line(vx, vy, vx + A[0], vy + A[1], { sw: 1.6 }) + line(vx, vy, vx + B[0], vy + B[1], { sw: 1.6 }) + '<circle cx="' + vx + '" cy="' + vy + '" r="2.2" fill="' + INK + '"/>';
+    return { svg: out, h: maxy - miny + 12, w: maxx - minx + 12 };
+  };
+
+  /* a flat shape with its base and height (not to scale): a rectangle, a parallelogram whose top is moved off along
+     the base, or a triangle whose top corner is off along the base. The height is dashed with a square corner; s labels
+     the slanted side of a parallelogram or triangle */
+  P.plane = function (p, x, y, w) {
+    var b = p.b, h = p.h, u = ' ' + (p.unit || 'cm'), off = p.kind === 'rect' ? 0 : p.off != null ? p.off : Math.round(b / 3);
+    var span = p.kind === 'para' ? b + off : b, k = Math.min((Math.min(w, 230) - 70) / span, 56 / h, 14), ox = x + 54, oy = y + 6 + h * k;
+    /* a tall shape is widened a little (up to 10 points a unit) so it does not become a sliver; it is not to scale */
+    var kx = Math.max(k, Math.min((Math.min(w, 230) - 70) / span, 10));
+    var X = function (v) { return ox + v * kx; }, Y = function (v) { return oy - v * k; };
+    var pts = p.kind === 'rect' ? [[0, 0], [b, 0], [b, h], [0, h]] : p.kind === 'para' ? [[0, 0], [b, 0], [b + off, h], [off, h]] : [[0, 0], [b, 0], [off, h]];
+    var out = '<path d="M' + pts.map(function (q) { return X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); }).join(' L') + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/>';
+    out += T(X(b / 2), oy + 16, b + u, { s: 11.5, w: 700, a: 'middle' });
+    if (p.kind === 'rect') out += T(ox - 6, Y(h / 2) + 4, h + u, { s: 11.5, w: 700, a: 'end' });
+    else {
+      out += '<line x1="' + X(off) + '" y1="' + Y(h) + '" x2="' + X(off) + '" y2="' + oy + '" stroke="' + INK2 + '" stroke-width="1.1" stroke-dasharray="4 3"/>';
+      out += '<path d="M' + (X(off) + 7) + ' ' + oy + ' L' + (X(off) + 7) + ' ' + (oy - 7) + ' L' + X(off) + ' ' + (oy - 7) + '" fill="none" stroke="' + INK2 + '" stroke-width="0.9"/>';
+      /* the height's label goes on the roomier side of the dashed line, on a white patch so a side never runs through it */
+      var tri = p.kind === 'tri', at = tri ? h / 3 : h / 2, left = tri && off > (b - off), lw = tw(h + u, 11.5, 700) + 6;
+      var lx = left ? X(off) - 5 - lw : X(off) + 5;
+      out += '<rect x="' + lx + '" y="' + (Y(at) - 9) + '" width="' + lw + '" height="16" fill="#fff"/>' + T(lx + 3, Y(at) + 4, h + u, { s: 11.5, w: 700 });
+      if (p.s) out += T(X(off / 2) - 7, Y(h / 2) + 4, p.s + u, { s: 11.5, f: INK2, a: 'end' });
+    }
+    return { svg: out, h: h * k + 24, w: span * kx + 54 + 10 };
   };
 })();
