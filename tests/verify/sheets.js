@@ -193,10 +193,11 @@
         if (at < 0 || s2.lastIndexOf(d) !== at) say('the digit ' + d + ' is not in ' + s2 + ' exactly once');
         else if (+d * Math.pow(10, s2.length - 1 - at) !== +worth[3]) say('the ' + d + ' in ' + s2 + ' is worth ' + (+d * Math.pow(10, s2.length - 1 - at)) + ', not ' + worth[3]);
       } else if (/,/.test(row)) {
-        const n = nums(row);
+        /* a count: each term is a number or a fraction (1/4, 2/4, 3/4), and every step is the same */
+        const terms = row.split(',').map(t => val(norm(t))), n = terms.some(isNaN) ? nums(row) : terms;
         const step = it.by != null ? it.by : n[1] - n[0];
         if (n.length < (it.by != null ? 2 : 3)) say('a count needs 3 numbers, or a "by" step, to be checked: ' + row);
-        else if (n.some((x, i) => i > 0 && x - n[i - 1] !== step)) say('the count does not go up by the same step: ' + row);
+        else if (n.some((x, i) => i > 0 && !same(x - n[i - 1], step))) say('the count does not go up by the same step: ' + row);
       } else if (/=/.test(row)) {
         const rem = norm(row).match(/^(\d+) \/ (\d+) = (\d+) R (\d+)$/);
         if (rem) {
@@ -269,6 +270,10 @@
       } else if (it.odd) {
         const ok = o.map(truth);
         if (ok[pk.ans] !== false || ok.filter(x => x === false).length !== 1) say('the odd one out is not the only wrong fact');
+      } else if (pk.equal) {
+        /* "Equal parts?" under a fraction picture: yes unless the picture is cut unevenly */
+        const ev = !(it.pic && it.pic[0] === 'frac' && it.pic[1].uneven);
+        if (o[pk.ans] !== (ev ? 'yes' : 'no')) say('the parts are ' + (ev ? '' : 'not ') + 'equal, but the key circles ' + o[pk.ans]);
       } else if (pk.nw != null) {
         const ok = o.map(x => num(x) === fromWords(pk.nw));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + pk.nw);
