@@ -213,7 +213,8 @@
   P.solids = function (p, x, y, w) {
     var s = p.s || 56, out = '', cx = x, h = 0;
     var need = p.list.reduce(function (t, k) { return t + solid(k, 0, 0, s).w + 22; }, -22);
-    if (need > w) s = s * w / need;
+    var gaps = 22 * (p.list.length - 1);
+    if (need > w) s = s * (w - gaps) / (need - gaps) * 0.97;
     p.list.forEach(function (k, i) {
       var o = solid(k, cx, y, s); out += o.svg;
       if (p.letters) out += T(cx + o.w / 2, y + s + 22, String.fromCharCode(65 + i), { s: 12, w: 700, f: INK2, a: 'middle' });
