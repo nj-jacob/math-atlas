@@ -174,7 +174,7 @@
     const pk = it.pick;
     if (pk) {
       const o = pk.opts, yes = pk.ans === 0;
-      if (o[0] === '×' && o[1] === '÷') {
+      if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
       } else if (it.tf) {
         const t = truth(it.tf);
@@ -194,6 +194,12 @@
       } else if (it.odd) {
         const ok = o.map(truth);
         if (ok[pk.ans] !== false || ok.filter(x => x === false).length !== 1) say('the odd one out is not the only wrong fact');
+      } else if (pk.nw != null) {
+        const ok = o.map(x => num(x) === fromWords(pk.nw));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + pk.nw);
+      } else if (pk.wn != null) {
+        const ok = o.map(x => fromWords(x) === pk.wn);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice says ' + pk.wn + ' in words');
       } else if (pk.cmp) {
         const x = num(pk.cmp[0]), y = num(pk.cmp[1]), want = x < y ? '<' : x > y ? '>' : '=';
         if (o[pk.ans] !== want) say(pk.cmp.join(' and ') + ': the sign is ' + want + ', not ' + o[pk.ans]);
