@@ -2,7 +2,7 @@
    then Grade 7's own fraction text, typed-answer rules and page motion. */
 Atlas.setup({
   grade: 7,
-  tools: ['numberline', 'fractions', 'balance', 'patterns', 'tiles', 'areagrid', 'scale', 'coins', 'geoboard', 'disks'],
+  tools: ['numberline', 'fractions', 'balance', 'patterns', 'data', 'grid', 'solids', 'tiles', 'areagrid', 'times', 'scale', 'coins', 'geoboard', 'disks'],
   meta: [
     { id: 'powers-factors', title: 'Powers, Roots and Factors', sub: 'big numbers, exponents, square roots, GCF and LCM', strand: 'B', codes: 'B1.1, B1.2, B2.6, B2.7',
       desc: 'Numbers to one billion, powers of ten, perfect squares, square roots, common factors and common multiples.' },

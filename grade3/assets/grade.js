@@ -1,7 +1,7 @@
 /* Grade 3 settings for the shared grade app (assets/engine/site.js): chapters, home page text and options. */
 Atlas.setup({
   grade: 3,
-  tools: ['base10', 'disks', 'clock', 'areagrid', 'counters', 'hundred', 'numberline', 'fractions', 'balance', 'patterns', 'coins', 'geoboard'],
+  tools: ['base10', 'disks', 'clock', 'areagrid', 'times', 'counters', 'hundred', 'numberline', 'fractions', 'balance', 'patterns', 'data', 'grid', 'solids', 'coins', 'geoboard', 'scale'],
   meta: [
     { id: 'numbers-1000', title: 'Numbers to 1000', sub: 'hundreds, tens and ones', strand: 'B', codes: 'B1.1 to B1.5',
       desc: 'Build, read and write numbers to 1000. Skip count, compare and round.' },

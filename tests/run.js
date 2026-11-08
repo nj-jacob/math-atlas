@@ -688,6 +688,422 @@ async function checkGrade(browser, base, g) {
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox patterns: the page runs off the side of a phone screen');
   }
 
+  /* 3a11. Toolbox data and chance: Sort them all puts the 12 shapes in their places (Grade 1: 4 red, 8 not red; Grade 2 and up a Venn
+     diagram of red and triangle: 2 in the middle, 6 outside), and a big red triangle tapped into the middle is "red and a triangle";
+     the first survey reads apple (7) of 18 in Grades 1 and 2, soccer (12) of 36 in Grades 3 to 6, bus 84 of 200 = 42% in Grades 7 and 8,
+     and one more tally adds 1; Grade 4 and up: 118 to 140 has mean 1280 ÷ 10 = 128, median 127.5 and mode 124, range 22 from Grade 6, and
+     taking off 140 moves the mean to 126.7 in Grade 7; Grade 8 pairs read strong, positive; a 2-1-1 spinner gives red 1/2 (as likely as
+     not in Grades 1 to 3); 10 spins read 10 spins; Grade 6 and up a coin and a die have 12 outcomes, each 1/12, and the table counts every
+     try; Grade 8 two coins draw a tree with HH 1/4. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('data'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/data'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-datt .mp-read'), win = () => txt('.mp-datt .mp-pwin');
+    const has = async (t, f) => { for (let i = 0; i < 20; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox data: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-ddo [data-m=' + m + ']');
+    const snap = (a, v) => page.click('.mp-snap[data-a=' + a + ']' + (v != null ? '[data-v="' + v + '"]' : ''));
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await mode('sort'); await snap('auto');
+    await bad('12 of 12 sorted', 'Sort them all');
+    if (g === 1) { await bad('red4', 'red shapes', win); await bad('not red8', 'shapes that are not red', win); }
+    else {
+      await bad('the middle2', 'red triangles', win); await bad('outside6', 'shapes neither red nor triangles', win);
+      await snap('clear');
+      await page.click('.mp-dtp[data-p="11"]');
+      await page.waitForTimeout(80);
+      const xy = await page.evaluate(() => { const s = document.querySelector('.mp-dsv'), a = JSON.parse(s.dataset.anc).ab, b = s.getBoundingClientRect(); return [b.left + a[0] * b.width / s.viewBox.baseVal.width, b.top + a[1] * b.height / s.viewBox.baseVal.height]; });
+      await page.mouse.click(xy[0], xy[1]);
+      await bad('red and a triangle, so it goes in the middle', 'a big red triangle put in the middle');
+    }
+    await mode('graph');
+    const sv = g <= 2 ? ['apple (7)', 18] : g <= 6 ? ['soccer (12)', 36] : ['42%', 200];
+    await bad(sv[0], 'the first survey'); await bad(sv[1] + ' answered', 'the first survey');
+    await page.click('.mp-pstb[data-st=g0][data-d="1"]');
+    await bad((sv[1] + 1) + ' answered', 'one more tally');
+    if (g >= 4) {
+      await mode('nums');
+      if (g === 8) { await bad('strong, positive', 'height and arm span pairs'); await snap('ntwo'); }
+      await bad('from 118 to 140', 'the heights');
+      await bad('1280 ÷ 10 = 128', 'the mean of the heights', win); await bad('(127 + 128) ÷ 2 = 127.5', 'the median of the heights', win); await bad('mode124', 'the mode of the heights', win);
+      if (g >= 6) await bad('140 − 118 = 22', 'the range of the heights', win);
+      if (g === 7) { await page.click('.mp-dval[data-nv="140"]'); await bad('from 128 to 126.7', 'the mean after taking off 140'); }
+    }
+    await mode('chance');
+    await bad(g <= 3 ? 'red is as likely as not' : 'red should come up 1/2', 'a spinner with 2 red parts of 4');
+    await snap('run', 10); await bad('10 spins', '10 spins');
+    if (g >= 6) {
+      await snap('ctwo'); await bad('12 outcomes, each 1/12', 'a coin and a die');
+      await snap('run', 10); await bad('10 tries', '10 tries of a coin and a die');
+      const n = await page.evaluate(() => [...document.querySelectorAll('.mp-datt .mp-dtbl tbody td:not(.l)')].reduce((s, td) => s + +td.textContent, 0));
+      if (n !== 10) fail(where, 'Toolbox data: the coin and die table counts ' + n + ' tries, not 10');
+      if (g === 8) { await page.click('[data-pair="1"]'); await snap('view', 'tree'); await bad('HH 1/4', 'the tree for two coins', win); }
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox data: the page runs off the side of a phone screen');
+  }
+
+  /* 3a12. Toolbox grid and robot: Grades 1 and 2: arrows right, right, up, up, right put the robot 3 right and 2 up from the start;
+     Grade 3 and up: repeat 4 times (forward, forward, turn right) is 8 steps and 4 turns and ends back at the start; Grades 1 to 3: on the
+     map, the school to the swings is 5 right, 2 up; Grade 4 and up: plotting (1, 4) and then (5, 2) reads 4 right, 2 down, the starting
+     slide (3 right, 1 down) takes A (3, 4) to A′ (6, 3) in Grades 4 and 5 and A (1, 2) to A′ (4, 1) from Grade 6, and in Grade 8 a quarter
+     turn about (0, 0) takes A to (2, −1) with the rule (x, y) → (y, −x). */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('grid'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/grid'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-grt .mp-read'), win = () => txt('.mp-grt .mp-pwin');
+    const has = async (t, f) => { for (let i = 0; i < 60; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox grid: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-gdo [data-m=' + m + ']');
+    const blk = b => page.click('.mp-gtb[data-b=' + b + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    if (g <= 2) {
+      for (const b of ['R', 'R', 'U', 'U', 'R']) await blk(b);
+      await page.click('.mp-snap[data-a=go]');
+      await bad('3 right and 2 up from the start', 'arrows right, right, up, up, right');
+    } else {
+      await blk('REP');
+      for (let n = await page.evaluate(() => +document.querySelector('.mp-grn b').textContent); n < 4; n++) await page.click('.mp-grn [data-d="1"]');
+      for (const b of ['F', 'F', 'TR']) await blk(b);
+      await page.click('.mp-snap[data-a=go]');
+      await bad('8 steps and 4 turns. It is back at the start', 'repeat 4 times (forward, forward, turn right)');
+    }
+    if (g <= 3) {
+      await mode('map');
+      await page.click('.mp-gpl[data-pl=school]'); await page.click('.mp-gpl[data-pl=swings]');
+      await bad('5 right, 2 up', 'the school to the swings');
+    } else {
+      await mode('plot');
+      await page.click('[data-do=plot]');
+      for (let i = 0; i < 4; i++) await page.click('.mp-pstb[data-st=x][data-d="1"]');
+      for (let i = 0; i < 2; i++) await page.click('.mp-pstb[data-st=y][data-d="-1"]');
+      await page.click('[data-do=plot]');
+      await bad('B (5, 2)', 'the second point'); await bad('4 right, 2 down', 'from (1, 4) to (5, 2)');
+      await mode('move');
+      await bad(g <= 5 ? 'A (3, 4) goes to A′ (6, 3)' : 'A (1, 2) goes to A′ (4, 1)', 'a slide 3 right, 1 down');
+      if (g === 8) {
+        await page.click('[data-mv=turn]'); await page.click('[data-about="1"]');
+        await bad('A (1, 2) goes to A′ (2, −1)', 'a quarter turn about (0, 0)'); await bad('(x, y) → (y, −x)', 'the rule for a quarter turn', win);
+      }
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox grid: the page runs off the side of a phone screen');
+  }
+
+  /* 3a13. Toolbox 3D solids and nets: a cylinder has 2 flat faces and can roll, slide and stack (Grades 1 and 2), and from Grade 3 a
+     triangular prism has 5 faces, 9 edges and 6 vertices; tapping the base 3 times stacks 3 cubes and Undo takes one back; from Grade 5
+     the top, front and side views are drawn; Grade 6 and up: the 4 × 3 × 2 box net has SA = 2 × 12 + 2 × 8 + 2 × 6 = 52 cm² and Fold
+     closes it; Grade 7 and up: filling a 4 × 3 × 3 box layer by layer reads V = 36 cm³ = 36 mL, and a cylinder of radius 2 and height 3
+     is about 37.7 cm³. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('solids'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/solids'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-s3t .mp-read');
+    const has = async (t, f) => { for (let i = 0; i < 30; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox solids: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-s3do [data-m=' + m + ']');
+    const snap = a => page.click('.mp-snap[data-a=' + a + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    if (g <= 2) { await page.click('[data-pick=cyl]'); await bad('2 flat faces and a curved surface. It can roll, slide and stack', 'a cylinder'); }
+    else { await page.click('[data-pick=tprism]'); await bad('5 faces, 9 edges, 6 vertices', 'a triangular prism'); }
+    await mode('build');
+    for (let i = 0; i < 3; i++) {
+      const bb = await page.locator('.mp-s3sv polygon.kg[data-c="2,2"]').boundingBox();
+      await page.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2);
+      await page.waitForTimeout(60);
+    }
+    await bad(g >= 7 ? '3 cm³' : '3 cubes', 'three taps on the same square');
+    await page.click('.tb-b[data-a=undo]');
+    await bad(g >= 7 ? '2 cm³' : '2 cubes', 'Undo after three cubes');
+    if (g >= 5 && (await page.locator('.mp-s3vw').count()) !== 3) fail(where, 'Toolbox solids: the top, front and side views are not all drawn');
+    if (g >= 6) {
+      await mode('nets');
+      await bad('2 × 12 + 2 × 8 + 2 × 6 = 52 cm²', 'the surface area of a 4 × 3 × 2 box');
+      await snap('fold');
+      let closed = false;
+      for (let i = 0; i < 30 && !closed; i++) { closed = await page.evaluate(() => document.querySelector('.mp-s3fold input').value === '100'); if (!closed) await page.waitForTimeout(100); }
+      if (!closed) fail(where, 'Toolbox solids: Fold does not close the net');
+    }
+    if (g >= 7) {
+      await mode('vol');
+      for (let i = 0; i < 3; i++) await snap('vfill');
+      await bad('= 36 cm³ = 36 mL. 3 of 3 layers filled', 'a 4 × 3 × 3 box filled layer by layer');
+      await page.click('[data-shape=cyl]');
+      await bad('V ≈ 37.7 cm³', 'a cylinder of radius 2 and height 3');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox solids: the page runs off the side of a phone screen');
+  }
+
+  /* 3a14. Toolbox arrays and area model: 3 rows of 4 reads 3 rows of 4 is 12 (Grade 1), 3 groups of 4 is 12 (Grade 2) or 3 × 4 = 12
+     with 12 ÷ 3 = 4 (Grade 3 and up); from Grade 3 one more column and a split after column 3 read 3 × 5 = 3 × 3 + 3 × 2; covering
+     squares with A rectangle reads 12 squares, or 12 cm² with perimeter 14 cm from Grade 3 and 4 × 3 = 12 from Grade 4; Grade 4 and up:
+     the area model shows the partial products (34 × 6 = 180 + 24 = 204 in Grade 4, 23 × 14 = 200 + 80 + 30 + 12 = 322 from Grade 5)
+     and 97 ÷ 4 or 384 ÷ 12 with its quotient chunks. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('areagrid'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/areagrid'; });
+    await page.waitForTimeout(150);
+    const txt = sel => page.evaluate(s => document.querySelector(s).textContent.replace(/ /g, ' '), sel);
+    const read = () => txt('.mp-art .mp-read');
+    const has = async (t, f) => { for (let i = 0; i < 20; i++) { if ((await f()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what, f = read) => { if (!(await has(t, f))) fail(where, 'Toolbox arrays: ' + what + ' does not read ' + t + ' (' + (await f()) + ')'); };
+    const mode = m => page.click('.mp-ardo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await bad(g === 1 ? '3 rows of 4 is 12' : g === 2 ? '3 groups of 4 is 12' : '12 ÷ 3 = 4', 'an array of 3 rows of 4');
+    if (g >= 3) {
+      await page.click('.mp-pstb[data-st=c][data-d="1"]');
+      await page.click('.mp-arcut[data-cut="3"]');
+      await bad('3 × 5 = 3 × 3 + 3 × 2 = 9 + 6 = 15', 'a 3 by 5 array split after column 3');
+    }
+    await mode('cover');
+    await page.click('.mp-snap[data-a=rect]');
+    await bad(g >= 3 ? 'perimeter 14 cm' : '12 squares', 'a 4 by 3 rectangle of squares');
+    if (g >= 4) await bad('4 × 3 = 12', 'a 4 by 3 rectangle of squares');
+    if (g >= 4) {
+      await mode('model');
+      await bad(g === 4 ? '34 × 6 = 204' : '23 × 14 = 322', 'the area model');
+      await bad(g === 4 ? '180 + 24 = 204' : '200 + 80 + 30 + 12 = 322', 'the partial products');
+      await page.click('[data-op=d]');
+      await bad(g === 4 ? '96 ÷ 4 = 24' : '384 ÷ 12 = 32', 'dividing with the area model');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox arrays: the page runs off the side of a phone screen');
+  }
+
+  /* 3a15. Toolbox shape kit: a hexagon, a trapezoid and a triangle read 3 blocks, and from Grade 2 the same as 10 green triangles; on the
+     geoboard a 4 by 3 band reads rectangle, with perimeter 14 units and area 12 squares from Grade 3, 4 right angles from Grade 4 and
+     90° + 90° + 90° + 90° = 360° from Grade 5; from Grade 6 a diamond reads rhombus and its diagonals cross at right angles; in Grade 8
+     the squares on the sides of a 3, 4, 5 right triangle read 16 + 9 = 25. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('geoboard'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/geoboard'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-sht .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox shape kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const pegs = async (...cs) => { for (const c of cs) await page.click('.mp-shhit[data-peg="' + c + '"]'); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    for (const k of ['hex', 'trap', 'tri']) await page.click('.mp-shtb[data-k=' + k + ']');
+    await bad('3 blocks', 'a hexagon, a trapezoid and a triangle');
+    if (g >= 2) await bad('10 green triangles', 'a hexagon, a trapezoid and a triangle');
+    await page.click('.mp-shdo [data-m=geo]');
+    await pegs('1,1', '5,1', '5,4', '1,4', '1,1');
+    await bad('rectangle', 'a 4 by 3 band');
+    if (g >= 3) await bad('Perimeter 14 units, area 12 squares', 'a 4 by 3 band');
+    if (g >= 4) await bad('4 right', 'a 4 by 3 band');
+    if (g >= 5) await bad('90° + 90° + 90° + 90° = 360°', 'a 4 by 3 band');
+    if (g >= 6) {
+      await page.click('.mp-snap[data-a=gclear]');
+      await pegs('4,1', '6,4', '4,7', '2,4', '4,1');
+      await page.click('.mp-snap[data-a=diag]');
+      await bad('rhombus', 'a diamond band');
+      await bad('cross at right angles', 'the diagonals of a rhombus');
+    }
+    if (g >= 8) {
+      await page.click('.mp-snap[data-a=gclear]');
+      await pegs('2,6', '5,6', '2,2', '2,6');
+      await page.click('.mp-snap[data-a=sq]');
+      await bad('16 + 9 = 25', 'the squares on the sides of a 3, 4, 5 triangle');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox shape kit: the page runs off the side of a phone screen');
+  }
+
+  /* 3a16. Toolbox measuring kit: the pencil is 6 cubes long (Grade 1), 12 cm on the ruler (Grades 2 and 3, and 14 − 2 = 12 when it is
+     moved to start at 2) or 123 mm (Grade 4 and up, 0.123 m from Grade 5); on the pan balance the apple balances 15 cubes (Grades 1
+     and 2) or 100 g + 50 g = 150 g, and the bag of flour 1 kg 250 g (Grades 3 and 4) or 1.25 kg; the full bottle poured into the jug
+     holds 4 cups or 750 mL (0.75 L from Grade 5); from Grade 4 an angle of 90° is a right angle, and from Grade 6 one of 300° is
+     reflex; from Grade 7 a circle of radius 3 cm has C ≈ 18.8 cm and A ≈ 28.3 cm². */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('scale'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/scale'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-mkt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox measuring kit: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const tray = async (sel, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-mktb' + sel); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await bad(g === 1 ? '6 cubes' : g <= 3 ? '12 cm' : '123 mm', 'the pencil');
+    if (g >= 5) await bad('0.123 m', 'the pencil');
+    if (g === 2 || g === 3) { await snap('rr', 2); await bad('14 − 2 = 12', 'the pencil moved to start at 2'); }
+    await page.click('.mp-mkdo [data-m=mass]');
+    if (g <= 2) { await tray('[data-w=c5]', 3); await bad('balances 15 cubes', 'the apple and 15 cubes'); }
+    else {
+      await tray('[data-w=g100]'); await tray('[data-w=g50]');
+      await bad('100 g + 50 g = 150 g', 'the apple');
+      await tray('[data-o=flour]'); await tray('[data-w=kg]'); await tray('[data-w=g100]', 2); await tray('[data-w=g50]');
+      await bad(g >= 5 ? '1.25 kg' : '1 kg 250 g', 'the bag of flour');
+    }
+    await page.click('.mp-mkdo [data-m=cap]');
+    await snap('fill'); await snap('pour');
+    await bad(g <= 2 ? 'holds 4 cups' : 'holds 750 mL', 'the bottle poured into the jug');
+    if (g >= 5) await bad('0.75 L', 'the bottle poured into the jug');
+    if (g >= 4) {
+      await page.click('.mp-mkdo [data-m=ang]');
+      await snap('a10', 4);
+      await bad(g === 4 ? 'right angle' : '90°', 'an angle of 90°');
+      if (g >= 6) { await snap('a10', 21); await bad('Reflex angle: 300°', 'an angle of 300°'); }
+    }
+    if (g >= 7) {
+      await page.click('.mp-mkdo [data-m=circ]');
+      await bad('C = π × 6 ≈ 18.8 cm', 'a circle of radius 3 cm');
+      await bad('28.3 cm²', 'a circle of radius 3 cm');
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox measuring kit: the page runs off the side of a phone screen');
+  }
+
+  /* 3a17. Toolbox clock and calendar: 9:00 plus 30 minutes reads half past 9 (Grade 1), plus 15 minutes reads quarter past 9 (Grade 2
+     and up, 9:15 a.m. from Grade 3); the stopwatch counts seconds (Grade 2 and up); from 9:40 to 11:15 jumps 20 min + 1 h + 15 min
+     = 1 h 35 min (Grade 3 and up); on the calendar the 3rd to the 17th is 14 days = 2 weeks. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('clock'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/clock'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-ckt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { const r = await read(); if (t instanceof RegExp ? t.test(r) : r.includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox clock: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const mode = m => page.click('.mp-ckdo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    if (g === 1) { await snap('t30'); await bad('half past 9', '9:00 and 30 minutes'); }
+    else { await snap('t5', 3); await bad('quarter past 9', '9:00 and 15 minutes'); }
+    if (g >= 3) await bad('9:15 a.m.', '9:00 and 15 minutes');
+    if (g >= 2) { await mode('sw'); await snap('sw'); await page.waitForTimeout(1300); await snap('sw'); await bad(/[1-9] seconds?/, 'the stopwatch after a second'); }
+    if (g >= 3) { await mode('el'); await bad('20 min + 1 h + 15 min = 1 h 35 min', 'from 9:40 to 11:15'); }
+    await mode('cal');
+    for (const d of [3, 17]) await page.click('.mp-ckday[data-d="' + d + '"] rect');
+    await bad('14 days = 2 weeks', 'the 3rd to the 17th');
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox clock: the page runs off the side of a phone screen');
+  }
+
+  /* 3a18. Toolbox money: $1, two quarters, a dime and a nickel make $1.65; from Grade 2 four quarters trade for 1 piece and a loonie
+     breaks into 4 × 25¢; in the shop (Grade 3 and up) the change is counted (45¢ + 80¢ paid with $2 is 75¢; $9 + $7 paid with $20 is
+     $4; from Grade 5 a $2.15 snack with 13% HST is $2.43, $2.45 in cash, and $5 gives $2.55 back); from Grade 5 a budget balances and
+     from Grade 6 saving $8 a week reaches $120 in 15 weeks; from Grade 6 simple interest on $500 at 4% for 3 years is $60.00, and in
+     Grade 8 compound interest makes $562.43; from Grade 7 $50 CAD is 36 USD at the sample rate. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('coins'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/coins'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-mnt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox money: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = a => page.click('.mp-snap[data-a="' + a + '"]');
+    const add = async (...vs) => { for (const v of vs) await page.click('.mp-mntr .mp-cadd[data-v="' + v + '"]'); };
+    const mode = m => page.click('.mp-mndo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await add(100, 25, 25, 10, 5);
+    await bad('$1 + 2 × 25¢ + 10¢ + 5¢ = $1.65', 'a loonie, two quarters, a dime and a nickel');
+    if (g >= 2) {
+      await snap('clr'); await add(25, 25, 25, 25); await snap('few');
+      await bad('1 piece', 'four quarters traded for the fewest coins');
+      await snap('brk');
+      await bad('4 × 25¢ = $1', 'a loonie broken into quarters');
+    }
+    if (g >= 3) {
+      await mode('shop');
+      if (g === 3) { await page.click('.mp-mntag[data-it="0"]'); await page.click('.mp-mntag[data-it="1"]'); await add(200); await bad('$2 − $1.25 = 75¢', 'a 45¢ pencil and an 80¢ eraser paid with $2'); }
+      if (g === 4) { await page.click('.mp-mntag[data-it="0"]'); await page.click('.mp-mntag[data-it="1"]'); await add(2000); await bad('$20 − $16 = $4', 'a $9 hat and a $7 ball paid with $20'); }
+      if (g >= 5) {
+        await page.click('.mp-mntag[data-it="0"]'); await snap('tax'); await add(500);
+        await bad('total $2.43', 'a $2.15 snack with HST');
+        await bad('$5.00 − $2.45 = $2.55', 'a $2.15 snack with HST paid with $5');
+      }
+    }
+    if (g >= 5) { await mode('bud'); await bad('balanced', 'the budget'); if (g >= 6) await bad('takes 15 weeks', 'saving $8 a week for $120'); }
+    if (g >= 6) { await mode('int'); await bad('$500 × 4% × 3 = $60.00', 'simple interest'); if (g >= 8) await bad('$562.43', 'compound interest'); }
+    if (g >= 7) { await mode('ex'); await bad('$50 CAD × 0.72 = 36 USD', 'changing $50 to US dollars'); }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox money: the page runs off the side of a phone screen');
+  }
+
+  /* 3a19. Toolbox algebra tiles: x + 1 + x + 1 + 1 is 2x + 3, which is 9 when x = 3; from Grade 7 x + 1 + (−x) + x + (−1) groups to x;
+     2x + 3 = 7 with 3 taken from both sides is 2x = 4, and Share gives x = 2 with a check (7 = 7); from Grade 6 five +1 tiles and three
+     −1 tiles are 5 + (−3) = 2; from Grade 7 taking away two −1 tiles from 2 is 2 − (−2) = 4; in Grade 8 3 × (−2) = −6. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('tiles'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/tiles'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-att .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox algebra tiles: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const put = async (...ks) => { for (const k of ks) await page.click('.mp-attr [data-k="' + k + '"]'); };
+    const mode = m => page.click('.mp-atdo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await put('x', 'u', 'x', 'u', 'u');
+    await bad('= 2x + 3', 'two x tiles and three units');
+    await bad('2 × 3 + 3 = 9', 'two x tiles and three units with x = 3');
+    if (g >= 7) { await snap('exclr'); await put('x', 'u', 'nx', 'x', 'nu'); await snap('group'); await bad('x + 1 + (−x) + x + (−1) = x', 'grouping like terms'); }
+    await mode('eq');
+    await put('x', 'x', 'u', 'u', 'u'); await snap('to-R'); await put('u', 'u', 'u', 'u', 'u', 'u', 'u');
+    await bad('2x + 3 = 7', 'the equation built');
+    await snap('to-B');
+    for (let i = 0; i < 3; i++) await page.click('.mp-atside[data-to=L] .mp-at.ku');
+    await bad('2x = 4', '3 taken from both sides');
+    await snap('share');
+    await bad('x = 4 ÷ 2 = 2', 'sharing 4 units between 2 x tiles');
+    await bad('7 = 7', 'the check');
+    if (g >= 6) {
+      await mode('int');
+      await put('u', 'u', 'u', 'u', 'u', 'nu', 'nu', 'nu');
+      await bad('5 + (−3) = 2', 'five +1 tiles and three −1 tiles');
+      if (g >= 7) { await snap('intclr'); await put('u', 'u'); await snap('taken', 2); await bad('2 − (−2) = 4', 'taking two −1 tiles from 2'); }
+      if (g >= 8) { await snap('times'); await bad('3 × (−2) = −6', '3 groups of −2'); }
+    }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox algebra tiles: the page runs off the side of a phone screen');
+  }
+
+  /* 3a20. Toolbox place value disks: a thousand, two hundreds, a ten and 12 ones read 1 × 1000 + 2 × 100 + 1 × 10 + 12 × 1, and Group 10
+     makes 2 × 10 + 2 × 1; from Grade 4 breaking a hundred gives 10 × 10; from Grade 5 121.1 × 10 × 10 reads 121.1 × 100 = 12 110; from
+     Grade 7 a million and a ten thousand read 1 × 10⁶ + 1 × 10⁴. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('disks'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/disks'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-pdkt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox place value disks: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const add = async (q, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-pvtr [data-add="' + q + '"]'); };
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await add(3); await add(2, 2); await add(1); await add(0, 12);
+    await bad('1 × 1000 + 2 × 100 + 1 × 10 + 12 × 1', 'a thousand, two hundreds, a ten and 12 ones');
+    await snap('grp');
+    await bad('2 × 10 + 2 × 1', 'grouping 10 ones');
+    if (g >= 4) { await snap('clr'); await add(2); await snap('brk'); await page.click('.mp-pvstack [data-q="2"]'); await bad('10 × 10', 'breaking a hundred'); }
+    if (g >= 5) { await snap('clr'); await add(2); await add(1, 2); await add(0); await add(-1); await snap('x10', 2); await bad('121.1 × 100 = 12 110', '121.1 times 10 twice'); }
+    if (g >= 7) { await snap('clr'); await add(6); await add(4); await bad('1 × 10⁶ + 1 × 10⁴', 'a million and a ten thousand'); }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox place value disks: the page runs off the side of a phone screen');
+  }
+
+  /* 3a21. Toolbox times grid: tapping 4 × 6 reads 24, which is in 4 places on the Grade 3 grid (to 10 × 10) and 6 places from Grade 4
+     (to 12 × 12); from Grade 4 the factors of 24 are 1, 2, 3, 4, 6, 8, 12, 24, and from Grade 6 23 is prime; from Grade 6 crossing out
+     the multiples of 2, 3, 5 and 7 leaves 25 primes; from Grade 7 √36 = 6 and √40 is between 6 and 7. */
+  if (await page.evaluate(() => (Atlas.tools || []).includes('times'))) {
+    const g = await page.evaluate(() => Atlas.grade);
+    await page.evaluate(() => { location.hash = '#home'; location.hash = '#tools/times'; });
+    await page.waitForTimeout(150);
+    const read = () => page.evaluate(() => document.querySelector('.mp-tmt .mp-read').textContent.replace(/[\u00a0\u202f]/g, ' '));
+    const has = async t => { for (let i = 0; i < 20; i++) { if ((await read()).includes(t)) return true; await page.waitForTimeout(100); } return false; };
+    const bad = async (t, what) => { if (!(await has(t))) fail(where, 'Toolbox times grid: ' + what + ' does not read ' + t + ' (' + (await read()) + ')'); };
+    const snap = async (a, n = 1) => { for (let i = 0; i < n; i++) await page.click('.mp-snap[data-a="' + a + '"]'); };
+    const mode = m => page.click('.mp-tmdo [data-m=' + m + ']');
+    if (await page.getAttribute('.tb-b[data-a=show]', 'aria-checked') !== 'true') await page.click('.tb-b[data-a=show]');
+    await page.click('.mp-tmc[data-rc="4,6"]');
+    await bad('4 × 6 = 24', 'tapping 4 × 6');
+    await bad(g === 3 ? '24 is in 4 places' : '24 is in 6 places', 'the products that are 24');
+    if (g >= 4) { await mode('fac'); await bad('Factors of 24: 1, 2, 3, 4, 6, 8, 12, 24', 'the factors of 24'); }
+    if (g >= 6) {
+      await snap('n-1'); await bad('23 is prime', 'the factors of 23');
+      await mode('pri'); await snap('next', 4); await bad('25 primes up to 100', 'the sieve to 100');
+    }
+    if (g >= 7) { await mode('sq'); await bad('√36 = 6', 'the square root of 36'); await snap('s+1', 4); await bad('between 6 and 7', 'the square root of 40'); }
+    if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox times grid: the page runs off the side of a phone screen');
+  }
+
   /* 3b. full chapters: work through every Together problem the way a child would (one wrong step first), and the warm-up */
   const fullIdeas = await page.evaluate(() => Object.entries(Atlas.chapters).filter(([, ch]) => ch.full).flatMap(([id, ch]) => ch.lessons.flatMap(ls => ls.concepts.map(c => [id, c.slug || c.id]))));
   for (const [cid, slug] of fullIdeas) {
