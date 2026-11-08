@@ -8077,8 +8077,11 @@
   M.times = function (root, o) { return toolTimes(root, o || {}); };
 
   /* ================= Toolbox page (#tools) =================
-     Manip.toolbox(app, sub, ids): one tool fills the screen under a slim bar; the Tools menu groups the grade's tools on shelves.
-     ids is the grade's list (Atlas.tools); unset shows every tool. A tool that has undo() or showNumbers() gets those buttons. */
+     Manip.toolbox(app, sub, ids): #tools shows every tool of the grade on shelves; #tools/<id> fills the screen with one tool
+     under a slim bar (back to all tools, Undo, Show number, Tools menu). ids is the grade's list (Atlas.tools); unset shows
+     every tool. A tool that has undo() or showNumbers() gets those buttons.
+     Manip.shelves(ids, href, cur) draws the shelves, also for the site's own Toolbox page (tools.html), which opens a tool in a
+     grade and sets atlas:toolbox in this tab's session storage so that tool's back button returns there. */
   var SHELVES = [['num', 'Numbers'], ['parts', 'Parts and groups'], ['alg', 'Patterns and equations'], ['space', 'Shapes and space'], ['meas', 'Measure, money and data']];
   /* [id, shelf, name, one line on how to use it (none when the tool shows its own), options, icon] */
   var BOX = [
@@ -8122,20 +8125,33 @@
   function icon(b) { return '<svg class="tb-ic" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">' + b[5] + '</svg>'; }
   var SVG_UNDO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var SVG_MENU = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
-  M.toolbox = function (app, sub, ids) {
+  M.shelves = function (ids, href, cur) {
     var box = ids ? BOX.filter(function (b) { return ids.indexOf(b[0]) >= 0; }) : BOX;
-    var cur = box.filter(function (b) { return b[0] === sub; })[0] || box[0], t = null;
+    return SHELVES.map(function (s) {
+      var on = box.filter(function (b) { return b[1] === s[0]; });
+      if (!on.length) return '';
+      return '<section class="tb-shelf"><h3><i class="tb-s-' + s[0] + '"></i>' + s[1] + '</h3><div class="tb-cards">' + on.map(function (b) {
+        return '<a class="tb-card" href="' + href(b[0]) + '"' + (b[0] === cur ? ' aria-current="page"' : '') + '>' + icon(b) + '<span>' + b[2] + '</span></a>';
+      }).join('') + '</div></section>';
+    }).join('');
+  };
+  function toolHref(id) { return '#tools/' + id; }
+  function fromBox(on) {
+    try { if (on === false) sessionStorage.removeItem('atlas:toolbox'); return sessionStorage.getItem('atlas:toolbox') === '1'; } catch (e) { return false; }
+  }
+  M.toolbox = function (app, sub, ids) {
+    var cur = (ids ? BOX.filter(function (b) { return ids.indexOf(b[0]) >= 0; }) : BOX).filter(function (b) { return b[0] === sub; })[0], t = null;
     var grade = window.Atlas && Atlas.grade ? '<span class="tb-g">Grade ' + Atlas.grade + '</span>' : '';
+    if (!cur) {
+      fromBox(false);
+      app.innerHTML = '<div class="wrap tb-all"><p class="crumb"><a href="#home">All chapters</a></p><header class="chead"><h1>Toolbox</h1>' +
+        '<p class="lede">Hands-on tools to build, move and explore. Pick one.</p></header><div class="tb-list">' + M.shelves(ids, toolHref) + '</div></div>';
+      return null;
+    }
+    var back = fromBox() ? '<a class="tb-back" href="../tools.html" aria-label="Back to the Toolbox">' : '<a class="tb-back" href="#tools" aria-label="Back to all tools">';
     var menu = '<dialog class="tb-menu" aria-labelledby="tbmh"><div class="tb-mh"><h2 id="tbmh">Tools</h2>' + grade +
-      '<button type="button" class="tb-x" aria-label="Close">&#10005;</button></div>' +
-      SHELVES.map(function (s) {
-        var on = box.filter(function (b) { return b[1] === s[0]; });
-        if (!on.length) return '';
-        return '<section class="tb-shelf"><h3><i class="tb-s-' + s[0] + '"></i>' + s[1] + '</h3><div class="tb-cards">' + on.map(function (b) {
-          return '<a class="tb-card" href="#tools/' + b[0] + '"' + (b === cur ? ' aria-current="page"' : '') + '>' + icon(b) + '<span>' + b[2] + '</span></a>';
-        }).join('') + '</div></section>';
-      }).join('') + '</dialog>';
-    app.innerHTML = '<div class="tb"><div class="tb-bar"><a class="tb-back" href="#home" aria-label="Back to the chapters">&#8249;</a><h1>' + cur[2] + '</h1><span class="tb-sp"></span>' +
+      '<button type="button" class="tb-x" aria-label="Close">&#10005;</button></div>' + M.shelves(ids, toolHref, cur[0]) + '</dialog>';
+    app.innerHTML = '<div class="tb"><div class="tb-bar">' + back + '&#8249;</a><h1>' + cur[2] + '</h1><span class="tb-sp"></span>' +
       '<button type="button" class="tb-b" data-a="undo" hidden>' + SVG_UNDO + '<span>Undo</span></button>' +
       '<button type="button" class="tb-b" data-a="show" role="switch" aria-checked="false" hidden><span>Show number</span><i class="tb-sw" aria-hidden="true"></i></button>' +
       '<button type="button" class="tb-b" data-a="menu" aria-haspopup="dialog">' + SVG_MENU + '<span>Tools</span></button></div>' +
