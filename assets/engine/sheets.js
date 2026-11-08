@@ -63,6 +63,14 @@
     return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + (o.s || 14) + '" font-weight="' + (o.w || 400) + '"' +
       (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + esc(s) + '</text>';
   }
+  /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are */
+  function fmt(n) {
+    if (typeof n !== 'number') return n;
+    var parts = String(n).split('.'), whole = parts[0];
+    if (whole.replace('-', '').length >= 5) whole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    return whole + (parts[1] != null ? '.' + parts[1] : '');
+  }
+  S.fmt = fmt;
   function words(s, th) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return th.w[k] != null ? th.w[k] : m; }); }
   function rep(g, k) { var a = []; for (var i = 0; i < g; i++) a.push(k); return a; }
   /* one thing to count: the theme's own picture (a puck, a jar ...), or a plain dot on Practise 3 and Think */
@@ -150,7 +158,7 @@
       out += '<line x1="' + x + '" y1="' + ry + '" x2="' + (x + cw * 2) + '" y2="' + ry + '" stroke="' + LINE + '" stroke-width="1"/>';
       row.forEach(function (v, c) {
         var cx = x + c * cw + cw / 2;
-        if (v === '[]') { out += '<line class="blank" x1="' + (cx - 20) + '" y1="' + (ry + 24) + '" x2="' + (cx + 20) + '" y2="' + (ry + 24) + '" stroke="' + INK + '" stroke-width="1.3"/>'; if (key) out += T(cx, ry + 20, ans[k], { s: 15, w: 700, f: KEY, a: 'middle' }); k++; }
+        if (v === '[]') { out += '<line class="blank" x1="' + (cx - 20) + '" y1="' + (ry + 24) + '" x2="' + (cx + 20) + '" y2="' + (ry + 24) + '" stroke="' + INK + '" stroke-width="1.3"/>'; if (key) out += T(cx, ry + 20, fmt(ans[k]), { s: 15, w: 700, f: KEY, a: 'middle' }); k++; }
         else out += T(cx, ry + 20, v, { s: 15, w: 700, a: 'middle' });
       });
     });
@@ -159,18 +167,19 @@
   };
   function pic(spec, x, y, w, key, th, ans) { return PIC[spec[0]](spec[1], x, y, w, key, th, ans); }
 
-  /* one row of an equation: numbers, symbols and words; [] is a short line to write on */
+  /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
-    s.split(' ').filter(Boolean).forEach(function (tok) {
+    s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
       var comma = tok === '[],';
       if (comma) tok = '[]';
       if (tok === '[]') {
-        out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + BL) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
-        if (key) out += T(cx + BL / 2, y + 21, ans[k], { s: big, w: 700, f: KEY, a: 'middle' });
-        k++; cx += BL + 7;
+        var bl = ans[k] == null ? BL : Math.max(BL, tw(fmt(ans[k]), big, 700) + 10);
+        out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + bl) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
+        if (key) out += T(cx + bl / 2, y + 21, fmt(ans[k]), { s: big, w: 700, f: KEY, a: 'middle' });
+        k++; cx += bl + 7;
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
-      } else if (/^[\d,]+$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      } else if (/^\$?[\d,.\/\u00a0]*\d[\d,.\/\u00a0%]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
@@ -179,7 +188,7 @@
   function item(it, n, x, y, w, key, th) {
     var out = '', cy = y, ans = (it.a || []).slice(), ai = 0;
     out += T(x - 12, y + 22, n, { s: 26, w: 400, f: th.acc, a: 'end', fam: th.font });
-    if (it.q) { wrap(words(it.q, th), 14, w).forEach(function (l) { out += T(x, cy + 16, l); cy += 19; }); cy += 6; }
+    if (it.q) { wrap(words(it.q, th).replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0'), 14, w).forEach(function (l) { out += T(x, cy + 16, l); cy += 19; }); cy += 6; }
     if (it.pic) {
       var p = pic(it.pic, x, cy + (it.q ? 0 : 4), w, key, th, ans);
       out += '<g class="pic">' + p.svg + '</g>';
