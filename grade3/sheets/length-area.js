@@ -12,7 +12,7 @@
   /* "2 m 40 cm" in millimetres */
   function mm(s) { var t = 0; s.replace(/(\d+) (mm|cm|m|km)/g, function (x, n, u) { t += +n * MM[u]; }); return t; }
   /* which unit suits it (size in mm) */
-  function UN(thing, size) { var u = size < 10 ? 'mm' : size < 1000 ? 'cm' : size < 1000000 ? 'm' : 'km', o = ['mm', 'cm', 'm', 'km']; return { q: 'Which unit for ' + thing + '?', pick: { opts: o, ans: o.indexOf(u), size: size } }; }
+  function UN(thing, size) { var u = size < 10 ? 'mm' : size < 1000 ? 'cm' : size < 1000000 ? 'm' : 'km', o = ['mm', 'cm', 'm', 'km']; return { q: 'Which unit for ' + thing + '?', pick: { opts: o, ans: o.indexOf(u), lenMM: size } }; }
   /* read a ruler: the ribbon is len cm long and starts at from */
   function RL(len, from, max) { return { q: 'How long is the ribbon?', pic: ['ruler', { len: len, from: from || 0, max: max || 10 }], eq: ['[] cm'], a: [len] }; }
   /* read a ruler in millimetres (len like 4.3) */

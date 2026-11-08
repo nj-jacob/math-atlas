@@ -49,7 +49,7 @@
   function val(p, cats) { var d = p[1]; return sum(cats.map(function (c) { return d.vals[d.cats.indexOf(c)]; })); }
   function RD(p, q, unit, a, b) {
     var d = { op: b ? 'more' : a && a.length === 1 ? 'value' : 'total' }; if (a) d.a = a; if (b) d.b = b;
-    return { q: q, pic: p, eq: ['[] ' + unit], a: [b ? val(p, a) - val(p, b) : val(p, a || p[1].cats)], data: d };
+    return { q: q, pic: p, eq: ['[] ' + unit], a: [b ? val(p, a) - val(p, b) : val(p, a || p[1].cats)], look: d };
   }
   /* rows that name the categories: 'Winter = [] votes', 'Summer − Spring = []', 'in all = []' */
   function RR(p, q, rows) {
@@ -61,18 +61,18 @@
     }) };
   }
   function wide(it) { it.wide = true; return it; }
-  function MO(p, q, op, opts) { var v = opts.map(function (c) { return val(p, [c]); }), best = op === 'most' ? Math.max.apply(null, v) : Math.min.apply(null, v); return { q: q, pic: p, pick: { opts: opts, ans: v.indexOf(best) }, data: { op: op } }; }
-  function TF(p, q, say, a, b) { var real = b ? val(p, a) - val(p, b) : val(p, a); return { q: q, pic: p, pick: { opts: ['true', 'false'], ans: real === say ? 0 : 1 }, data: { op: b ? 'more' : 'value', a: a, b: b, say: say } }; }
+  function MO(p, q, op, opts) { var v = opts.map(function (c) { return val(p, [c]); }), best = op === 'most' ? Math.max.apply(null, v) : Math.min.apply(null, v); return { q: q, pic: p, pick: { opts: opts, ans: v.indexOf(best) }, look: { op: op } }; }
+  function TF(p, q, say, a, b) { var real = b ? val(p, a) - val(p, b) : val(p, a); return { q: q, pic: p, pick: { opts: ['true', 'false'], ans: real === say ? 0 : 1 }, look: { op: b ? 'more' : 'value', a: a, b: b, say: say } }; }
   function TL(cats, vals, head) { return ['tally', { cats: cats, vals: vals, head: head }]; }
   function PG(title, cats, vals, key, unit) { return ['picto', { title: title, cats: cats, vals: vals, key: key, unit: unit }]; }
   function BG(title, cats, vals, max, step, more) { var o = { title: title, cats: cats, vals: vals, max: max, step: step, h: 76 }; for (var k in more || {}) o[k] = more[k]; return ['bar', o]; }
   /* the mean and the mode */
   function modeOf(v) { var c = {}, top = 0, m = []; v.forEach(function (x) { c[x] = (c[x] || 0) + 1; top = Math.max(top, c[x]); }); for (var k in c) if (c[k] === top) m.push(+k); return top < 2 ? 'none' : m.sort(function (x, y) { return x - y; }).join(' and '); }
-  function MD(v, q, p) { var m = modeOf(v), two = / and /.test(m); return { q: q || 'Find the mode: ' + v.join(', ') + '.', pic: p, eq: [two ? 'modes: [] and []' : 'mode = []'], a: two ? m.split(' and ').map(Number) : [m === 'none' ? 'none' : +m], stat: { v: v } }; }
-  function MN(v, q, p, steps) { return { q: q || 'Find the mean of ' + v.join(', ') + '.', pic: p, eq: (steps ? [v.join(' + ') + ' = []'] : []).concat(['mean = []']), a: (steps ? [sum(v)] : []).concat([sum(v) / v.length]), stat: { v: v } }; }
+  function MD(v, q, p) { var m = modeOf(v), two = / and /.test(m); return { q: q || 'Find the mode: ' + v.join(', ') + '.', pic: p, eq: [two ? 'modes: [] and []' : 'mode = []'], a: two ? m.split(' and ').map(Number) : [m === 'none' ? 'none' : +m], vals: { v: v } }; }
+  function MN(v, q, p, steps) { return { q: q || 'Find the mean of ' + v.join(', ') + '.', pic: p, eq: (steps ? [v.join(' + ') + ' = []'] : []).concat(['mean = []']), a: (steps ? [sum(v)] : []).concat([sum(v) / v.length]), vals: { v: v } }; }
   function MM(q, ans) { return { q: q, pick: { opts: ['mean', 'mode'], ans: ans === 'mean' ? 0 : 1 } }; }
-  function GR(n1, v1, n2, v2, q) { var g = {}; g[n1] = v1; g[n2] = v2; return { q: q || n1 + ': ' + v1.join(', ') + '. ' + n2 + ': ' + v2.join(', ') + '.', eq: [n1 + ' mean = []', n2 + ' mean = []'], a: [sum(v1) / v1.length, sum(v2) / v2.length], stat: { g: g }, wide: true }; }
-  function SAME(n1, v1, n2, v2, what) { var g = {}, f = function (v) { return what === 'mean' ? sum(v) / v.length : modeOf(v); }; g[n1] = v1; g[n2] = v2; return { q: n1 + ': ' + v1.join(', ') + '. ' + n2 + ': ' + v2.join(', ') + '. The same ' + what + '?', pick: { opts: ['yes', 'no'], ans: f(v1) === f(v2) ? 0 : 1, sameStat: what }, stat: { g: g }, wide: true }; }
+  function GR(n1, v1, n2, v2, q) { var g = {}; g[n1] = v1; g[n2] = v2; return { q: q || n1 + ': ' + v1.join(', ') + '. ' + n2 + ': ' + v2.join(', ') + '.', eq: [n1 + ' mean = []', n2 + ' mean = []'], a: [sum(v1) / v1.length, sum(v2) / v2.length], vals: { g: g }, wide: true }; }
+  function SAME(n1, v1, n2, v2, what) { var g = {}, f = function (v) { return what === 'mean' ? sum(v) / v.length : modeOf(v); }; g[n1] = v1; g[n2] = v2; return { q: n1 + ': ' + v1.join(', ') + '. ' + n2 + ': ' + v2.join(', ') + '. The same ' + what + '?', pick: { opts: ['yes', 'no'], ans: f(v1) === f(v2) ? 0 : 1, sameStat: what }, vals: { g: g }, wide: true }; }
   /* chance: a bag of marbles or a spinner */
   function cw(k, n) { return k === 0 ? 'impossible' : k === n ? 'certain' : 2 * k < n ? 'unlikely' : 2 * k === n ? 'equally likely' : 'likely'; }
   function count(p) { var c = p[0] === 'bag' ? p[1].c : {}; if (p[0] === 'spinner') p[1].parts.forEach(function (x) { c[x] = (c[x] || 0) + 1; }); return c; }
@@ -80,13 +80,13 @@
   /* the same, with the marbles told in words: 'A bag has 5 red and 1 blue.' */
   function CB(c, of, opts) {
     var k = Object.keys(c), said = k.map(function (x) { return c[x] + ' ' + x; }).join(' and '), o = opts || W4;
-    return { q: 'A bag has ' + said + '. Getting ' + of + ' is…', pick: { opts: o, ans: o.indexOf(cw(c[of] || 0, total(c))), chance: { of: of } }, chances: c, wide: true };
+    return { q: 'A bag has ' + said + '. Getting ' + of + ' is…', pick: { opts: o, ans: o.indexOf(cw(c[of] || 0, total(c))), chanceOf: { of: of } }, chances: c, wide: true };
   }
   function BAG(c) { return ['bag', { c: c }]; }
   function SPN(parts) { return ['spinner', { parts: parts }]; }
   var W4 = ['impossible', 'unlikely', 'likely', 'certain'];
-  function CW(p, of, opts, q) { var c = count(p); return { q: q || (p[0] === 'bag' ? 'Pick one without looking. Getting ' : 'Spin once. Landing on ') + of + ' is…', pic: p, pick: { opts: opts || W4, ans: (opts || W4).indexOf(cw(c[of] || 0, total(c))), chance: { of: of } }, wide: true }; }
-  function CT(p, of, say, q) { var c = count(p); return { q: q, pic: p, pick: { opts: ['true', 'false'], ans: cw(c[of] || 0, total(c)) === say ? 0 : 1, chance: { of: of, say: say } } }; }
+  function CW(p, of, opts, q) { var c = count(p); return { q: q || (p[0] === 'bag' ? 'Pick one without looking. Getting ' : 'Spin once. Landing on ') + of + ' is…', pic: p, pick: { opts: opts || W4, ans: (opts || W4).indexOf(cw(c[of] || 0, total(c))), chanceOf: { of: of } }, wide: true }; }
+  function CT(p, of, say, q) { var c = count(p); return { q: q, pic: p, pick: { opts: ['true', 'false'], ans: cw(c[of] || 0, total(c)) === say ? 0 : 1, chanceOf: { of: of, say: say } } }; }
   function LK(p, which, opts, q) { var c = count(p), v = opts.map(function (o) { return c[o] || 0; }); return { q: q || 'Which colour is ' + which + ' likely?', pic: p, pick: { opts: opts, ans: v.indexOf(which === 'most' ? Math.max.apply(null, v) : Math.min.apply(null, v)), likely: which } }; }
   function PD(p, n, of, q) { var c = count(p); return { q: q || (p[0] === 'bag' ? 'Pick and put back ' : 'Spin ') + n + ' times. About how many ' + of + '?', pic: p, eq: ['about [] times'], a: [n * (c[of] || 0) / total(c)], predict: { n: n, of: of } }; }
   function FAIR(p, x, y, q) { var c = count(p); x = x || 'red'; y = y || 'blue'; return { q: q || '{a} wins on ' + x + ', {b} on ' + y + '. Is it fair?', pic: p, pick: { opts: ['yes', 'no'], ans: (c[x] || 0) === (c[y] || 0) ? 0 : 1 }, fair: [x, y] }; }
@@ -374,8 +374,8 @@
           RR(PG('Club choice', ['Chess', 'Art', 'Drums'], [15, 25, 10], 5), 'How many want Chess or Drums?', ['Chess + Drums = []'])]
       },
       p2: {
-        items: [{ q: 'Two rooms, two scales. How many chose Hockey in Room 6?', pic: ['row', { list: [BG('Room 5', ['Hockey', 'Soccer', 'Swim'], [8, 6, 4], 10, 2), BG('Room 6', ['Hockey', 'Soccer', 'Swim'], [15, 10, 5], 20, 5)] }], eq: ['[] votes'], a: [15], data: { op: 'value', a: ['Hockey'], at: 1 }, wide: true },
-          { q: 'How many chose Soccer in Room 5?', pic: ['row', { list: [BG('Room 5', ['Hockey', 'Soccer', 'Swim'], [8, 6, 4], 10, 2), BG('Room 6', ['Hockey', 'Soccer', 'Swim'], [15, 10, 5], 20, 5)] }], eq: ['[] votes'], a: [6], data: { op: 'value', a: ['Soccer'], at: 0 }, wide: true }]
+        items: [{ q: 'Two rooms, two scales. How many chose Hockey in Room 6?', pic: ['row', { list: [BG('Room 5', ['Hockey', 'Soccer', 'Swim'], [8, 6, 4], 10, 2), BG('Room 6', ['Hockey', 'Soccer', 'Swim'], [15, 10, 5], 20, 5)] }], eq: ['[] votes'], a: [15], look: { op: 'value', a: ['Hockey'], at: 1 }, wide: true },
+          { q: 'How many chose Soccer in Room 5?', pic: ['row', { list: [BG('Room 5', ['Hockey', 'Soccer', 'Swim'], [8, 6, 4], 10, 2), BG('Room 6', ['Hockey', 'Soccer', 'Swim'], [15, 10, 5], 20, 5)] }], eq: ['[] votes'], a: [6], look: { op: 'value', a: ['Soccer'], at: 0 }, wide: true }]
       },
       p3: {
         items: [RR(BG('Canoe trips', ['May', 'Jun', 'Jul', 'Aug'], [25, 45, 70, 55], 80, 10), 'Summer camp runs in Jul and Aug. How many trips is that? How many more than May and Jun?', ['Jul + Aug = []', 'May + Jun = []', 'Jul + Aug − May − Jun = []']),
@@ -456,9 +456,9 @@
       goal: 'I can find the mean and the mode, and tell them apart.',
       learn: {
         show: { cap: '2, 3, 3, 8', eq: ['mode = 3', 'mean = 16 ÷ 4 = 4'] },
-        together: [{ q: 'Find the mean and the mode of 5, 6, 6, 7.', eq: ['mean = []', 'mode = []'], a: [6, 6], stat: { v: [5, 6, 6, 7] } }, { q: 'Find the mean and the mode of 1, 4, 4, 7.', eq: ['mean = []', 'mode = []'], a: [4, 4], stat: { v: [1, 4, 4, 7] } }],
+        together: [{ q: 'Find the mean and the mode of 5, 6, 6, 7.', eq: ['mean = []', 'mode = []'], a: [6, 6], vals: { v: [5, 6, 6, 7] } }, { q: 'Find the mean and the mode of 1, 4, 4, 7.', eq: ['mean = []', 'mode = []'], a: [4, 4], vals: { v: [1, 4, 4, 7] } }],
         cue: 'Mode: the value that repeats most. Mean: add, then share.',
-        own: [{ q: 'Find the mean and the mode of 2, 2, 5, 7.', eq: ['mean = []', 'mode = []'], a: [4, 2], stat: { v: [2, 2, 5, 7] } }, { q: 'Find the mean and the mode of 3, 9, 9, 3, 6, 6, 6.', eq: ['mean = []', 'mode = []'], a: [6, 6], stat: { v: [3, 9, 9, 3, 6, 6, 6] } }]
+        own: [{ q: 'Find the mean and the mode of 2, 2, 5, 7.', eq: ['mean = []', 'mode = []'], a: [4, 2], vals: { v: [2, 2, 5, 7] } }, { q: 'Find the mean and the mode of 3, 9, 9, 3, 6, 6, 6.', eq: ['mean = []', 'mode = []'], a: [6, 6], vals: { v: [3, 9, 9, 3, 6, 6, 6] } }]
       },
       p1: {
         items: [MM('Share the snacks out fairly. Mean or mode?', 'mean'), MM('The shoe size most common in class. Mean or mode?', 'mode'),
@@ -466,14 +466,14 @@
           MN([3, 4, 8]), MD([3, 4, 4, 8])]
       },
       p2: {
-        items: [{ q: '2, 3, 3, 8: how much bigger is the mean than the mode?', eq: ['mean = []', 'mode = []', '[] − [] = []'], a: [4, 3, 4, 3, 1], stat: { v: [2, 3, 3, 8] } },
-          { q: '1, 1, 4, 6: how much bigger is the mean than the mode?', eq: ['mean = []', 'mode = []', '[] − [] = []'], a: [3, 1, 3, 1, 2], stat: { v: [1, 1, 4, 6] } },
+        items: [{ q: '2, 3, 3, 8: how much bigger is the mean than the mode?', eq: ['mean = []', 'mode = []', '[] − [] = []'], a: [4, 3, 4, 3, 1], vals: { v: [2, 3, 3, 8] } },
+          { q: '1, 1, 4, 6: how much bigger is the mean than the mode?', eq: ['mean = []', 'mode = []', '[] − [] = []'], a: [3, 1, 3, 1, 2], vals: { v: [1, 1, 4, 6] } },
           MM('Each child gets the same number of stickers. Mean or mode?', 'mean'), MM('The most popular lunch. Mean or mode?', 'mode'),
-          { q: 'Find the mean and the mode of 6, 2, 6, 10.', eq: ['mean = []', 'mode = []'], a: [6, 6], stat: { v: [6, 2, 6, 10] } }, { q: 'Find the mean and the mode of 9, 1, 2, 1, 4, 1.', eq: ['mean = []', 'mode = []'], a: [3, 1], stat: { v: [9, 1, 2, 1, 4, 1] } }]
+          { q: 'Find the mean and the mode of 6, 2, 6, 10.', eq: ['mean = []', 'mode = []'], a: [6, 6], vals: { v: [6, 2, 6, 10] } }, { q: 'Find the mean and the mode of 9, 1, 2, 1, 4, 1.', eq: ['mean = []', 'mode = []'], a: [3, 1], vals: { v: [9, 1, 2, 1, 4, 1] } }]
       },
       p3: {
-        items: [{ q: 'Find the mean and the mode of 10, 4, 10, 8.', eq: ['mean = []', 'mode = []'], a: [8, 10], stat: { v: [10, 4, 10, 8] } },
-          { q: 'Find the mean and the mode of 5, 1, 9, 5.', eq: ['mean = []', 'mode = []'], a: [5, 5], stat: { v: [5, 1, 9, 5] } },
+        items: [{ q: 'Find the mean and the mode of 10, 4, 10, 8.', eq: ['mean = []', 'mode = []'], a: [8, 10], vals: { v: [10, 4, 10, 8] } },
+          { q: 'Find the mean and the mode of 5, 1, 9, 5.', eq: ['mean = []', 'mode = []'], a: [5, 5], vals: { v: [5, 1, 9, 5] } },
           { q: '{a} says the mean of 2, 2, 8 is 2, because 2 appears most. Fix it.', lines: { n: 2, key: '2 is the mode. The mean is 12 ÷ 3 = 4.' }, wide: true }]
       },
       think: {
@@ -500,7 +500,7 @@
       p2: {
         items: [GR('Room C', [2, 4, 4, 5, 10], 'Room D', [1, 3, 4, 4, 3]), SAME('Room C', [2, 4, 4, 5, 10], 'Room D', [1, 3, 4, 4, 3], 'mode'),
           SAME('Room C', [2, 4, 4, 5, 10], 'Room D', [1, 3, 4, 4, 3], 'mean'),
-          { q: 'Hours outside. Town: 2, 3, 4. Farm: 5, 6, 7. How much bigger is the farm mean?', eq: ['Town mean = []', 'Farm mean = []', '[] − [] = []'], a: [3, 6, 6, 3, 3], stat: { g: { Town: [2, 3, 4], Farm: [5, 6, 7] } }, wide: true }]
+          { q: 'Hours outside. Town: 2, 3, 4. Farm: 5, 6, 7. How much bigger is the farm mean?', eq: ['Town mean = []', 'Farm mean = []', '[] − [] = []'], a: [3, 6, 6, 3, 3], vals: { g: { Town: [2, 3, 4], Farm: [5, 6, 7] } }, wide: true }]
       },
       p3: {
         items: [GR('Juniors', [6, 8, 7, 7], 'Seniors', [9, 10, 8, 9]), SAME('Juniors', [6, 8, 7, 7], 'Seniors', [9, 10, 8, 9], 'mode'),

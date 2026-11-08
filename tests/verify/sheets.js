@@ -346,13 +346,13 @@
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
-  /* it.data: { op: 'value' | 'total' | 'more', a: [categories], b: [categories], at }: the sum of a (or of everything for a
+  /* it.look: { op: 'value' | 'total' | 'more', a: [categories], b: [categories], at }: the sum of a (or of everything for a
      total), or a take away b. at: which picture of a row. null when a category is not in the data */
   function dataVal(it) {
-    const p = it.data.at != null ? it.pic[1].list[it.data.at] : it.pic, d = (picture(p) || {}).byCat;
+    const p = it.look.at != null ? it.pic[1].list[it.look.at] : it.pic, d = (picture(p) || {}).byCat;
     if (!d) return null;
-    const sum = l => (l.some(c => d[c] === undefined) ? NaN : l.reduce((t, c) => t + d[c], 0)), a = sum(it.data.a || Object.keys(d));
-    const v = it.data.op === 'more' ? a - sum(it.data.b) : a;
+    const sum = l => (l.some(c => d[c] === undefined) ? NaN : l.reduce((t, c) => t + d[c], 0)), a = sum(it.look.a || Object.keys(d));
+    const v = it.look.op === 'more' ? a - sum(it.look.b) : a;
     return isNaN(v) ? null : v;
   }
 
@@ -383,8 +383,8 @@
     const byItem = !!(it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
-      /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in */
-      if (pc && pc.byCat && !it.data) {
+      /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
+      if (pc && pc.byCat && !it.look && !/:/.test(row)) {
         const d = pc.byCat, re = new RegExp('\\b(' + Object.keys(d).sort((x, y) => y.length - x.length).join('|') + '|in all)\\b', 'g');
         if (re.test(row)) row = row.replace(re, m => (m === 'in all' ? '(' + Object.values(d).join(' + ') + ')' : d[m]));
       }
@@ -408,13 +408,13 @@
         const list = it.cnt.of || pc.list, n = +row.split(' ')[0];
         if (list.some(x => it.cnt.is.some(l => holds(l, x) === null))) say('cannot read the labels ' + it.cnt.is.join(', '));
         else if (list.filter(x => it.cnt.is.every(l => holds(l, x))).length !== n) say(list.filter(x => it.cnt.is.every(l => holds(l, x))).length + ' are ' + it.cnt.is.join(' and ') + ', not ' + n);
-      } else if (it.data && /^\d+( [a-z]+)?$/.test(row)) {
+      } else if (it.look && /^\d+( [a-z]+)?$/.test(row)) {
         /* a value read from a graph or table, a total, or how many more */
         const want = dataVal(it), n = +row.split(' ')[0];
-        if (want === null) say('cannot read the data for ' + JSON.stringify(it.data)); else if (want !== n) say('the data give ' + want + ', not ' + n);
-      } else if (it.stat && (st = row.match(/^(.*?) ?(mean|mode|modes)( =|:) (.+)$/))) {
+        if (want === null) say('cannot read the data for ' + JSON.stringify(it.look)); else if (want !== n) say('the data give ' + want + ', not ' + n);
+      } else if (it.vals && (st = row.match(/^(.*?) ?(mean|mode|modes)( =|:) (.+)$/))) {
         /* the mean (a fair share: the total shared equally) or the mode (the value that appears most) */
-        const v = st[1] ? (it.stat.g || {})[st[1]] : it.stat.v || pc.list;
+        const v = st[1] ? (it.vals.g || {})[st[1]] : it.vals.v || pc.list;
         if (!v) say('no data for ' + row);
         else {
           const want = st[2] === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v);
@@ -462,7 +462,7 @@
         /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
         const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
         if (want !== n) say('the ' + it.find + ' is ' + want + ', not ' + n);
-      } else if (!it.cong && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
+      } else if (!it.cong && !/[×÷+−]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
         /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" */
         const m = row.split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
         if (m.length !== 3 || a === null || b === null) say('cannot read the lengths: ' + row);
@@ -526,7 +526,7 @@
         if (t === null) say('cannot read the comparison: ' + row);
         else if (!t) say('the comparison is not true: ' + row);
       } else if (/^\[\]( [^\s\d\[\]=<>,]+)?$/.test(raw[ri].trim())) {
-        /* a bare answer, with or without its unit ("[] °"): the number the picture shows, or the number written in words */
+        /* a bare answer, with or without its unit ("[] °"): the number the picture shows (unless a story sum checks it), or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
         if (it.digits) {
           /* the greatest or least number made from these digits, not starting with 0 */
@@ -544,7 +544,7 @@
           const t = truth(it.letter.replace(/\b[a-z]\b/g, String(v)));
           if (t !== true) say('with ' + v + ' for the letter, "' + it.letter + '" is not true');
         } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
-        else if (pc && pc.total != null) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
+        else if (pc && pc.total != null && !it.calc) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
         else if (!it.calc && !byItem) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc && !byItem) say('nothing checks this row: ' + raw[ri]);
     });
@@ -611,13 +611,13 @@
       } else if (o.indexOf('interview') >= 0 && o.indexOf('experiment') >= 0) {
         const q = it.q.toLowerCase(), hit = Object.keys(COLLECT).filter(k => COLLECT[k].test(q));
         if (hit.length !== 1) say('cannot tell how the data is collected from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is an ' + hit[0] + ', not an ' + o[pk.ans]);
-      } else if (it.data && /most|least/.test(it.data.op)) {
+      } else if (it.look && /most|least/.test(it.look.op)) {
         /* the one category with the most (or least) */
-        const d = (picture(it.pic) || {}).byCat || {}, v = o.map(c => d[c]), best = it.data.op === 'most' ? Math.max(...v) : Math.min(...v);
-        if (v.some(x => x === undefined) || v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + it.data.op + ' is not only ' + o[pk.ans] + ': ' + v.join(', '));
-      } else if (it.data && o[0] === 'true') {
-        const want = dataVal(it) === it.data.say;
-        if (want !== yes) say('the data give ' + dataVal(it) + ', so "' + it.data.say + '" is ' + want);
+        const d = (picture(it.pic) || {}).byCat || {}, v = o.map(c => d[c]), best = it.look.op === 'most' ? Math.max(...v) : Math.min(...v);
+        if (v.some(x => x === undefined) || v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + it.look.op + ' is not only ' + o[pk.ans] + ': ' + v.join(', '));
+      } else if (it.look && o[0] === 'true') {
+        const want = dataVal(it) === it.look.say;
+        if (want !== yes) say('the data give ' + dataVal(it) + ', so "' + it.look.say + '" is ' + want);
       } else if (pk.scale) {
         /* the step the graph's scale counts by */
         const ok = o.map(x => nums(x)[0] === pc.step);
@@ -634,12 +634,12 @@
         const q = it.q.toLowerCase(), hit = Object.keys(STAT).filter(k => STAT[k].test(q));
         if (hit.length !== 1) say('cannot tell mean or mode from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this asks for the ' + hit[0] + ', not the ' + o[pk.ans]);
       } else if (pk.sameStat) {
-        const g = Object.values(it.stat.g), f = v => (pk.sameStat === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v)), want = f(g[0]) === f(g[1]);
+        const g = Object.values(it.vals.g), f = v => (pk.sameStat === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v)), want = f(g[0]) === f(g[1]);
         if (want !== yes) say('the ' + pk.sameStat + 's are ' + f(g[0]) + ' and ' + f(g[1]) + ', but the key circles ' + o[pk.ans]);
-      } else if (pk.chance) {
+      } else if (pk.chanceOf) {
         /* how likely one colour is, from the counts in the bag or on the spinner */
-        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = chanceWord(c[pk.chance.of] || 0, n);
-        if (pk.chance.say ? (want === pk.chance.say) !== yes : o[pk.ans] !== want) say(pk.chance.of + ' is ' + want + ', but the key circles ' + o[pk.ans]);
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = chanceWord(c[pk.chanceOf.of] || 0, n);
+        if (pk.chanceOf.say ? (want === pk.chanceOf.say) !== yes : o[pk.ans] !== want) say(pk.chanceOf.of + ' is ' + want + ', but the key circles ' + o[pk.ans]);
       } else if (pk.likely) {
         /* the one colour most (or least) likely */
         const c = chances, v = o.map(x => c[x] || 0), best = pk.likely === 'most' ? Math.max(...v) : Math.min(...v);
@@ -665,9 +665,9 @@
         /* the unit for how long something takes (in seconds): under a minute and a half seconds, under an hour and a half minutes, else hours */
         const want = pk.dur < 90 ? 'seconds' : pk.dur < 5400 ? 'minutes' : 'hours';
         if (o[pk.ans] !== want) say('something lasting ' + pk.dur + ' seconds is timed in ' + want + ', not ' + o[pk.ans]);
-      } else if (pk.size != null) {
+      } else if (pk.lenMM != null) {
         /* the unit that suits a length */
-        if (o[pk.ans] !== unitFor(pk.size) || o.filter(x => x === unitFor(pk.size)).length !== 1) say('a length of ' + pk.size + ' mm is measured in ' + unitFor(pk.size) + ', not ' + o[pk.ans]);
+        if (o[pk.ans] !== unitFor(pk.lenMM) || o.filter(x => x === unitFor(pk.lenMM)).length !== 1) say('a length of ' + pk.lenMM + ' mm is measured in ' + unitFor(pk.lenMM) + ', not ' + o[pk.ans]);
       } else if (o.indexOf('perimeter') >= 0 && o.indexOf('area') >= 0) {
         const q = it.q.toLowerCase(), want = AROUND.test(q) && !INSIDE.test(q) ? 'perimeter' : INSIDE.test(q) && !AROUND.test(q) ? 'area' : null;
         if (!want) say('cannot tell perimeter or area from: ' + it.q); else if (o[pk.ans] !== want) say('this needs the ' + want + ', not the ' + o[pk.ans]);
