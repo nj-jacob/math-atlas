@@ -10,7 +10,7 @@
      col       { a, b, op: '+' | '−' }                a sum in columns; every digit of the answer is a line to write on
      frac      { n, k, shape: 'bar' | 'circle', uneven: [cuts from 0 to 1] }   a whole cut in n parts, k shaded
      wholes    { n }                                  n whole things in a row (pancakes, pizzas)
-     pat       { seq: 'csts..', blanks, next, core }  a row of shapes (c s t d, C shaded, > < ^ v arrows), blanks to fill
+     pat       { seq, blanks, next, core }            a row of shapes (c s t d, C S shaded, > < ^ v arrows); blanks to fill, next and core on the key
      clock     { h, m, blank }                        a clock face; blank: no hands (the key draws them)
      coins     { list: [cents, ...] }                 Canadian coins and bills as outlines
      tag       { t, p }                               a price tag: a label and cents
@@ -131,7 +131,7 @@
       out += r(bx, y + 4, sp - 4, s + 4, { rx: 4, s: INK2, d: '3 3' });
       if (key && p.next) out += shape(p.next[b], bx + (sp - 4) / 2, y + s / 2 + 6, sz, KEY);
     }
-    if (p.core) out += r(x + 1, y, p.core * sp - 2, s + 12, { rx: 6, s: KEY, f: 'none', sw: 1.4, d: '5 3' });
+    if (p.core && key) out += r(x + 1, y, p.core * sp - 2, s + 12, { rx: 6, s: KEY, f: 'none', sw: 1.4, d: '5 3' });
     return { svg: out, h: s + 12, w: all * sp };
   };
   P.clock = function (p, x, y, w, key) {
@@ -266,9 +266,9 @@
       var px = cx + s[0], py = y + 30 + s[2];
       out += ln(px, py, px - 18, py + 18, { s: INK2, sw: 1 }) + ln(px, py, px + 18, py + 18, { s: INK2, sw: 1 }) + path('M' + (px - 26) + ' ' + (py + 18) + ' L' + (px + 26) + ' ' + (py + 18) + ' Q' + px + ' ' + (py + 32) + ' ' + (px - 26) + ' ' + (py + 18), { s: INK });
       if (typeof s[1] === 'number') for (var i = 0; i < s[1]; i++) out += r(px - 20 + (i % 4) * 10, py + 8 - Math.floor(i / 4) * 10, 9, 9, { s: INK2, sw: 0.9 });
-      else if (s[1]) out += T(px, py + 11, D.words(s[1], th), { s: 11, w: 700, a: 'middle' });
+      else if (s[1]) out += T(px, py + 48, D.words(s[1], th), { s: 13, w: 700, a: 'middle' });
     });
-    return { svg: out, h: 80, w: 192 };
+    return { svg: out, h: typeof p.l === 'number' ? 80 : 92, w: 192 };
   };
   P.cups = function (p, x, y) {
     var out = '';

@@ -59,12 +59,12 @@
       },
       p2: {
         items: [SH('stc', 2, 3), RP([4, 0, 0], 2, 3), SH('ccss', 2, 2), RP([7, 3, 3, 1], 2, 2), RP([6, 2], 3, 2),
-          { q: 'Which shape is 10th in this pattern?', pic: ['pat', { seq: 'cstcst', core: 3 }], pick: { opts: ['circle', 'square', 'triangle'], ans: 0, nth: { core: ['circle', 'square', 'triangle'], n: 10 } } }]
+          { q: 'Which shape is 10th in this pattern?', pic: ['pat', { seq: 'cstcst', core: 3 }], pick: { opts: ['circle', 'square', 'triangle'], ans: 0, term: { core: ['circle', 'square', 'triangle'], n: 10 } } }]
       },
       p3: {
         items: [SH('Ctsd', 2, 2), RP([1, 2, 3, 2], 2, 3), RP([10, 20, 30], 2, 3),
-          { q: 'Which shape is 12th in this pattern?', pic: ['pat', { seq: 'scsc', core: 2 }], pick: { opts: ['square', 'circle'], ans: 1, nth: { core: ['square', 'circle'], n: 12 } } },
-          { q: 'Which number is 9th?', eq: ['5, 1, 8, 5, 1, 8, ...'], core: 3, pick: { opts: ['5', '1', '8'], ans: 2, nth: { core: ['5', '1', '8'], n: 9 } } },
+          { q: 'Which shape is 12th in this pattern?', pic: ['pat', { seq: 'scsc', core: 2 }], pick: { opts: ['square', 'circle'], ans: 1, term: { core: ['square', 'circle'], n: 12 } } },
+          { q: 'Which number is 9th?', eq: ['5, 1, 8, 5, 1, 8, ...'], core: 3, pick: { opts: ['5', '1', '8'], ans: 2, term: { core: ['5', '1', '8'], n: 9 } } },
           RP([0, 5, 5], 2, 3)]
       },
       think: {
