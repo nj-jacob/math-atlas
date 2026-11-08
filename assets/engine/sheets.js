@@ -3,20 +3,23 @@
    sheets/<chapter>.js holds that chapter's written questions:
 
      Atlas.sheets.register('multiply-divide', { code: 'MD', ideas: { <idea slug>: idea, ... } });
-     idea = { watch: 'what to watch for (answer key only)',
-              learn:  { show, together: [item, item], cue: 'thinking cue', own: [item x 4] },
+     idea = { watch: 'what to watch for (answer key only)', goal: 'I can ... (under the title)',
+              learn:  { show, together: [item, item], cue: 'the tip, shown beside the example on every sheet of the idea', own: [item x 4] },
               p1: { show, items: [item x 6] }, p2: { show, items }, p3: { items },   (practise at 3 levels)
               think: { items: [item x 4 to 6] } }
-     show = { pic, cap, eq: ['4 + 4 + 4 = 12', '3 × 4 = 12'] }   the "Watch me" (learn) or "Remember" band
+     show = { pic, cap, eq: ['4 + 4 + 4 = 12', '3 × 4 = 12'] }   the "Watch me" (learn) or "Example" at the top
      item = { q: 'words, with theme words like {a} {many}', pic: ['groups' | 'array' | 'line' | 'share' | 'table', options],
-              eq: ['[] × [] = []', ...], a: [answers for every [] in eq, in order], pick: { opts: [...], ans: index },
+              eq: ['[] × [] = []', ...] ([] is a line to write on), a: [answers for every [] in eq, in order], pick: { opts: [...], ans: index },
               draw: { h, key: pic or 'words' }, lines: { n, key: 'a good answer' }, wide: true (both columns),
               calc: '4 × 5' (a story's sum, for the answer check), tf: '3 × 6 = 6 × 3' (the statement a true/false pick is about) }
    Theme words: {a} and {b} (two names), {one} and {many} (the things), {cont} and {conts} (what holds them).
    Every theme uses the same numbers and layout, so no theme is harder than another.
 
    A sheet is drawn as one Letter page (612 x 792 points) in SVG, so it prints exactly as it looks on screen.
-   Its answer key is the same page with the answers in red, a "watch for" note and the Ontario codes.
+   The look is "Editorial" (Noel's choice, 2026-11-08): a large title in the theme's face with the goal under it, the example
+   with the tip beside it, questions in two columns with their numbers hanging in the margin and hairlines between rows,
+   answers written on short lines, and a "How did it feel?" check-in at the bottom. No boxes around questions.
+   Its answer key is the same page with the answers in red, a "watch for" note, the Ontario codes and a score line.
    Sheet numbers (G3-MD-07-P2-RK) name the grade, chapter, idea, kind and theme, so a sheet always prints the same.
    The answer checks are in tests/verify/sheets.js; tests/run.js draws every sheet in every theme and checks it fits. */
 (function () {
@@ -25,10 +28,10 @@
   if (!A || !A.lessons) return;
   var $ = A.$;
   var S = (A.sheets = { chapters: {}, themes: [], overflow: [] });
-  var W = 612, H = 792, M = 40, RIGHT = W - M, BOTTOM = 690, COLW = 254, GAP = 24, PAD = 32;
+  var W = 612, H = 792, M = 40, RIGHT = W - M, BOTTOM = 686, COL1 = M + 30, COLW = 228, COL2 = RIGHT - COLW, SIDEW = 150, BL = 40;
   var CUR = { th: null, plain: false }; /* the theme being drawn, and whether counting pictures use plain dots */
-  var INK = '#132039', INK2 = '#55627a', LINE = '#cdd5e1', KEY = '#b4283f', NOTE = '#e4cf8a';
-  var FONT = "'Atkinson Hyperlegible', system-ui, sans-serif", DISPLAY = "'Bricolage Grotesque', system-ui, sans-serif";
+  var INK = '#132039', INK2 = '#55627a', LINE = '#cdd5e1', KEY = '#b4283f', DOT = '#b9c2d0';
+  var FONT = "'Atkinson Hyperlegible', system-ui, sans-serif";
   var KINDS = [['learn', 'Learn', 'L'], ['p1', 'Practise 1', 'P1'], ['p2', 'Practise 2', 'P2'], ['p3', 'Practise 3', 'P3'], ['think', 'Think', 'T']];
   S.kinds = KINDS;
 
@@ -45,18 +48,19 @@
     ctx2d.font = (weight || 400) + ' ' + size + 'px ' + (family || FONT);
     return ctx2d.measureText(String(s)).width;
   }
-  function wrap(s, size, width) {
+  function wrap(s, size, width, family) {
     var lines = [], cur = '';
     String(s).split(' ').forEach(function (w) {
       var t = cur ? cur + ' ' + w : w;
-      if (cur && tw(t, size) > width) { lines.push(cur); cur = w; } else cur = t;
+      if (cur && tw(t, size, 400, family) > width) { lines.push(cur); cur = w; } else cur = t;
     });
     if (cur) lines.push(cur);
     return lines;
   }
+  /* a line of text; the font and colour go in a style so the site's own "svg text" rule cannot replace them */
   function T(x, y, s, o) {
     o = o || {};
-    return '<text x="' + x + '" y="' + y + '" font-family="' + (o.fam || (o.d ? DISPLAY : FONT)) + '" font-size="' + (o.s || 14) + '" font-weight="' + (o.w || 400) + '" fill="' + (o.f || INK) + '"' +
+    return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + (o.s || 14) + '" font-weight="' + (o.w || 400) + '"' +
       (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + esc(s) + '</text>';
   }
   function words(s, th) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return th.w[k] != null ? th.w[k] : m; }); }
@@ -108,7 +112,7 @@
   };
   /* a number line from 0 to max with n jumps of size step drawn from 0 (n: 0 for an empty line) */
   PIC.line = function (p, x, y, w) {
-    var max = p.max, u = (w - 16) / max, x0 = x + 6, ly = y + 34, out = '', lab = p.labels || p.step;
+    var max = p.max, u = (w - 16) / max, x0 = x + 6, ly = y + 29, out = '', lab = p.labels || p.step;
     out += '<line x1="' + x0 + '" y1="' + ly + '" x2="' + (x0 + max * u) + '" y2="' + ly + '" stroke="' + INK + '" stroke-width="1.3"/>';
     var tick = max > 50 ? 10 : max > 30 ? 5 : 1;
     for (var t = 0; t <= max; t += tick) {
@@ -118,9 +122,9 @@
     }
     for (var j = 0; j < (p.n || 0); j++) {
       var a = x0 + j * p.step * u, b = x0 + (j + 1) * p.step * u;
-      out += '<path class="jump" d="M' + a + ' ' + (ly - 2) + ' Q' + (a + b) / 2 + ' ' + (ly - 30) + ' ' + b + ' ' + (ly - 2) + '" fill="none" stroke="' + INK2 + '" stroke-width="1.4"/>';
+      out += '<path class="jump" d="M' + a + ' ' + (ly - 2) + ' Q' + (a + b) / 2 + ' ' + (ly - 26) + ' ' + b + ' ' + (ly - 2) + '" fill="none" stroke="' + INK2 + '" stroke-width="1.4"/>';
     }
-    return { svg: out, h: 58, w: w };
+    return { svg: out, h: 52, w: w };
   };
   /* sharing: t dots to share, and g empty plates to draw them on (the key draws them in) */
   PIC.share = function (p, x, y, w, key) {
@@ -146,7 +150,7 @@
       out += '<line x1="' + x + '" y1="' + ry + '" x2="' + (x + cw * 2) + '" y2="' + ry + '" stroke="' + LINE + '" stroke-width="1"/>';
       row.forEach(function (v, c) {
         var cx = x + c * cw + cw / 2;
-        if (v === '[]') { out += '<rect x="' + (cx - 20) + '" y="' + (ry + 3) + '" width="40" height="24" rx="4" fill="#fff" stroke="' + INK + '" stroke-width="1.2"/>'; if (key) out += T(cx, ry + 20, ans[k], { s: 15, w: 700, f: KEY, a: 'middle' }); k++; }
+        if (v === '[]') { out += '<line class="blank" x1="' + (cx - 20) + '" y1="' + (ry + 24) + '" x2="' + (cx + 20) + '" y2="' + (ry + 24) + '" stroke="' + INK + '" stroke-width="1.3"/>'; if (key) out += T(cx, ry + 20, ans[k], { s: 15, w: 700, f: KEY, a: 'middle' }); k++; }
         else out += T(cx, ry + 20, v, { s: 15, w: 700, a: 'middle' });
       });
     });
@@ -155,152 +159,168 @@
   };
   function pic(spec, x, y, w, key, th, ans) { return PIC[spec[0]](spec[1], x, y, w, key, th, ans); }
 
-  /* one row of an equation: numbers, symbols and words; [] is a box to write in */
+  /* one row of an equation: numbers, symbols and words; [] is a short line to write on */
   function eqRow(s, x, y, key, ans, size) {
-    var out = '', cx = x, k = 0, big = size || 17;
+    var out = '', cx = x, k = 0, big = size || 18;
     s.split(' ').filter(Boolean).forEach(function (tok) {
       var comma = tok === '[],';
       if (comma) tok = '[]';
       if (tok === '[]') {
-        out += '<rect x="' + cx + '" y="' + y + '" width="38" height="30" rx="5" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>';
-        if (key) out += T(cx + 19, y + 21, ans[k], { s: big, w: 700, f: KEY, a: 'middle' });
-        k++; cx += 45;
-        if (comma) { out += T(cx - 5, y + 21, ',', { s: big, w: 700 }); cx += 6; }
-      } else if (/^[\d,]+$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 8; }
-      else { out += T(cx, y + 21, tok, { s: 15, f: INK2 }); cx += tw(tok, 15) + 8; }
+        out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + BL) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
+        if (key) out += T(cx + BL / 2, y + 21, ans[k], { s: big, w: 700, f: KEY, a: 'middle' });
+        k++; cx += BL + 7;
+        if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
+      } else if (/^[\d,]+$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
-    return { svg: out, w: cx - 8 - x, used: k };
+    return { svg: out, w: cx - 7 - x, used: k };
   }
-
-  /* ---------- one question, drawn in a cell of width w; returns { svg, h } ---------- */
+  /* ---------- one question: its number hangs to the left of x, its parts are drawn from (x, y) within width w ---------- */
   function item(it, n, x, y, w, key, th) {
-    var out = '', cy = y, iw = w - PAD, ix = x + PAD, ans = (it.a || []).slice(), ai = 0;
-    out += th.badge ? th.badge(x + 11, y + 11, n) : '<circle cx="' + (x + 11) + '" cy="' + (y + 11) + '" r="10.5" fill="none" stroke="' + th.acc + '" stroke-width="1.4"/>' + T(x + 11, y + 15.5, n, { s: 12, w: 700, f: th.acc, a: 'middle' });
-    if (it.q) { wrap(words(it.q, th), 14, iw).forEach(function (l) { out += T(ix, cy + 16, l); cy += 19; }); cy += 6; }
-    else cy += 0;
+    var out = '', cy = y, ans = (it.a || []).slice(), ai = 0;
+    out += T(x - 12, y + 22, n, { s: 26, w: 400, f: th.acc, a: 'end', fam: th.font });
+    if (it.q) { wrap(words(it.q, th), 14, w).forEach(function (l) { out += T(x, cy + 16, l); cy += 19; }); cy += 6; }
     if (it.pic) {
-      var p = pic(it.pic, ix, cy + (it.q ? 0 : 2), iw, key, th, it.pic[0] === 'table' ? ans : null);
+      var p = pic(it.pic, x, cy + (it.q ? 0 : 4), w, key, th, it.pic[0] === 'table' ? ans : null);
       out += '<g class="pic">' + p.svg + '</g>';
-      if (p.used) { ans = ans.slice(p.used); }
-      cy += p.h + 12;
+      if (p.used) ans = ans.slice(p.used);
+      cy += p.h + (it.q ? 12 : 16);
     }
     function pick() {
-      var px = ix;
+      var px = x;
       it.pick.opts.forEach(function (o, i) {
         var ow = tw(words(o, th), 16, 700);
         if (key && i === it.pick.ans) out += '<ellipse cx="' + (px + ow / 2) + '" cy="' + (cy + 15) + '" rx="' + (ow / 2 + 11) + '" ry="14" fill="none" stroke="' + KEY + '" stroke-width="1.8"/>';
         out += T(px, cy + 21, words(o, th), { s: 16, w: 700 });
         px += ow + 34;
       });
-      if (px - 34 > ix + iw) S.overflow.push('the choices are too wide: ' + it.pick.opts.join(', '));
-      cy += 38;
+      if (px - 34 > x + w) S.overflow.push('the choices are too wide: ' + it.pick.opts.join(', '));
+      cy += 36;
     }
     if (it.pick && !it.pickLast) pick();
     if (it.draw) {
-      var dh = it.draw.h || 80;
-      out += '<rect x="' + ix + '" y="' + cy + '" width="' + Math.min(iw, 230) + '" height="' + dh + '" rx="8" fill="none" stroke="' + LINE + '" stroke-width="1.2" stroke-dasharray="5 4"/>';
+      var dh = it.draw.h || 80, dw = Math.min(w, 260), dots = '';
+      for (var gy = cy + 7; gy < cy + dh; gy += 14) for (var gx = x + 7; gx < x + dw; gx += 14) dots += '<circle cx="' + gx + '" cy="' + gy + '" r=".9" fill="' + DOT + '"/>';
+      out += '<g class="draw">' + dots + '</g>';
       if (key && it.draw.key) {
-        if (typeof it.draw.key === 'string') wrap(words(it.draw.key, th), 12, Math.min(iw, 230) - 16).forEach(function (l, i) { out += T(ix + 8, cy + 20 + i * 16, l, { s: 12, f: KEY }); });
-        else out += '<g opacity=".9">' + pic(it.draw.key, ix + 8, cy + 8, Math.min(iw, 230) - 16, true, th).svg.replace(/fill="#132039"/g, 'fill="' + KEY + '"') + '</g>';
+        if (typeof it.draw.key === 'string') wrap(words(it.draw.key, th), 12, dw - 16).forEach(function (l, i) { out += T(x + 8, cy + 20 + i * 16, l, { s: 12, f: KEY }); });
+        else out += '<g opacity=".9">' + pic(it.draw.key, x + 8, cy + 8, dw - 16, true, th).svg.replace(/fill="#132039"/g, 'fill="' + KEY + '"') + '</g>';
       }
       cy += dh + 10;
     }
-    var cols = it.cols || 1, cw = iw / cols, per = Math.ceil((it.eq || []).length / cols);
+    var cols = it.cols || 1, cw = w / cols, per = Math.ceil((it.eq || []).length / cols);
     (it.eq || []).forEach(function (row, i) {
-      var c = Math.floor(i / per), r = eqRow(words(row, th), ix + c * cw, cy + (i % per) * 38, key, ans.slice(ai));
+      var c = Math.floor(i / per), r = eqRow(words(row, th), x + c * cw, cy + (i % per) * 36, key, ans.slice(ai));
       out += r.svg; ai += r.used;
       if (r.w > cw - (cols > 1 ? 12 : 0)) S.overflow.push('a sum is too wide: ' + row);
     });
-    cy += per * 38;
+    cy += per * 36;
     if (it.pick && it.pickLast) pick();
     if (it.lines) {
-      cy += 8;
-      for (var i = 0; i < it.lines.n; i++) out += '<line x1="' + ix + '" y1="' + (cy + 18 + i * 28) + '" x2="' + (ix + iw - 6) + '" y2="' + (cy + 18 + i * 28) + '" stroke="' + LINE + '" stroke-width="1.2"/>';
-      if (key && it.lines.key) wrap(words(it.lines.key, th), 12, iw - 10).forEach(function (l, j) { out += T(ix + 2, cy + 14 + j * 28, l, { s: 12, f: KEY }); });
+      cy += 6;
+      for (var i = 0; i < it.lines.n; i++) out += '<line x1="' + x + '" y1="' + (cy + 18 + i * 28) + '" x2="' + (x + w - 6) + '" y2="' + (cy + 18 + i * 28) + '" stroke="' + LINE + '" stroke-width="1.1"/>';
+      if (key && it.lines.key) wrap(words(it.lines.key, th), 12, w - 10).forEach(function (l, j) { out += T(x + 2, cy + 14 + j * 28, l, { s: 12, f: KEY }); });
       cy += it.lines.n * 28 + 4;
     }
-    var h = cy - y;
-    return { svg: '<g class="it" data-n="' + n + '" data-x0="' + x + '" data-x1="' + (x + w) + '">' + (th.card ? th.card(x - 8, y - 10, w + 16, h + 16) : '') + out + '</g>', h: h };
+    return { svg: '<g class="it" data-n="' + n + '" data-x0="' + (x - 30) + '" data-x1="' + (x + w) + '">' + out + '</g>', h: cy - y };
   }
 
-  /* questions in two columns; an item with wide: true takes the whole row */
+  /* questions in two columns, each number hanging in the gap to its left; a hairline between rows; wide: true takes the row */
   function grid(list, y, n0, key, th) {
     var out = '', n = n0, i = 0;
     while (i < list.length) {
       var row = list[i].wide ? [list[i]] : [list[i]].concat(list[i + 1] && !list[i + 1].wide ? [list[i + 1]] : []);
-      var hs = row.map(function (it, c) { var r = item(it, n + c, M + c * (COLW + GAP), y, row.length === 1 && it.wide ? RIGHT - M : COLW, key, th); out += r.svg; return r.h; });
+      if (i > 0) out += rule(y - 11);
+      var hs = row.map(function (it, c) { var r = item(it, n + c, c ? COL2 : COL1, y, row.length === 1 && it.wide ? RIGHT - COL1 : COLW, key, th); out += r.svg; return r.h; });
       n += row.length; i += row.length;
-      y += Math.max.apply(null, hs) + (th.card ? 24 : 22);
+      y += Math.max.apply(null, hs) + 22;
     }
     return { svg: out, y: y, n: n };
   }
-  function section(y, label, th) {
-    if (th.section) return th.section(y, label, M, RIGHT);
-    var lw = tw(label.toUpperCase(), 11, 700, DISPLAY) + label.length * 1.4;
-    return T(M, y, label.toUpperCase(), { s: 11, w: 700, f: th.acc, ls: 1.4, d: 1 }) + '<line x1="' + (M + lw + 10) + '" y1="' + (y - 4) + '" x2="' + RIGHT + '" y2="' + (y - 4) + '" stroke="' + LINE + '" stroke-width="1"/>';
+  function rule(y, x0) { return '<line x1="' + (x0 || M) + '" y1="' + y + '" x2="' + RIGHT + '" y2="' + y + '" stroke="' + LINE + '" stroke-width=".8"/>'; }
+  /* a small spaced-out label, such as WATCH ME or ON YOUR OWN */
+  function label(x, y, s, colour) { return T(x, y, s.toUpperCase(), { s: 9, w: 700, f: colour, ls: 1.4 }); }
+  /* a side note on the right: a label and a few short lines */
+  function note(x, y, w, head, text, th, colour) {
+    var out = label(x, y, head, colour || th.acc), cy = y + 4;
+    wrap(text, 11.5, w).forEach(function (l) { out += T(x, cy + 14, l, { s: 11.5, f: colour === KEY ? INK : INK2 }); cy += 15.5; });
+    return { svg: out, y: cy };
   }
-  /* the Watch me / Remember band: picture on the left, the sum on the right */
-  function band(show, y, th) {
-    var p = show.pic ? pic(show.pic, M + 22, y + 18, 250, false, th, []) : { svg: '', h: 0, w: 0 };
-    var tx = p.w ? Math.max(M + 22 + p.w + 36, 300) : M + 24, lines = (show.eq || []), hText = (show.cap ? 24 : 0) + lines.length * 32;
-    var h = Math.max(p.h, hText) + 30, out = (th.band ? th.band(M, y, RIGHT - M, h) : '<rect x="' + M + '" y="' + y + '" width="' + (RIGHT - M) + '" height="' + h + '" rx="12" fill="none" stroke="' + LINE + '" stroke-width="1.3"/>') + '<g class="show">' + p.svg + '</g>';
-    var ty = y + h / 2 - hText / 2;
-    if (show.cap) { out += T(tx, ty + 14, words(show.cap, th), { s: 14, f: INK2 }); ty += 24; }
-    lines.forEach(function (l, i) { var last = i === lines.length - 1; out += T(tx, ty + 24, l, { s: last ? 26 : 19, w: last ? 800 : 700, d: last ? 1 : 0, c: 'showeq', fam: last ? th.font : null }); ty += 32; });
-    lines.forEach(function (l, i) { var last = i === lines.length - 1; if (tx + tw(l, last ? 26 : 19, last ? 800 : 700, last ? th.font || DISPLAY : FONT) > RIGHT - 8) S.overflow.push('the band is too wide: ' + l); });
+  /* the Watch me or Example: picture, then the sum beside it (or under it), with the tip as a side note on the right */
+  function band(show, tip, y, th, head) {
+    var right = tip ? RIGHT - SIDEW - 24 : RIGHT, p = show.pic ? pic(show.pic, M, y, 250, false, th, []) : { svg: '', h: 0, w: 0 };
+    var lines = show.eq || [], sizes = lines.map(function (l, i) { return i === lines.length - 1 ? 24 : 17; });
+    var fam = function (i) { return i === lines.length - 1 ? th.font : FONT; };
+    var textW = Math.max.apply(null, [show.cap ? tw(words(show.cap, th), 13) : 0].concat(lines.map(function (l, i) { return tw(l, sizes[i], 700, fam(i)); })));
+    var hText = (show.cap ? 22 : 0) + lines.length * 30, beside = !p.w || M + p.w + 28 + textW <= right;
+    var tx = beside && p.w ? M + p.w + 28 : M, ty = beside ? y + Math.max(0, p.h / 2 - hText / 2) : y + p.h + 12, out = label(M, y - 12, head, th.acc) + '<g class="show">' + p.svg + '</g>';
+    if (show.cap) { out += T(tx, ty + 13, words(show.cap, th), { s: 13, f: INK2 }); ty += 22; }
+    lines.forEach(function (l, i) {
+      out += T(tx, ty + 22, l, { s: sizes[i], w: 700, c: 'showeq', fam: i === lines.length - 1 ? th.font : null });
+      if (tx + tw(l, sizes[i], 700, fam(i)) > right) S.overflow.push('the example is too wide: ' + l);
+      ty += 30;
+    });
+    var h = Math.max(beside ? p.h : 0, ty - y);
+    if (tip) { var nt = note(RIGHT - SIDEW, y - 12, SIDEW, 'Tip', tip, th); out += nt.svg; h = Math.max(h, nt.y - y); }
     return { svg: out, h: h };
   }
 
   /* ---------- a whole page ---------- */
   function nameDate(x, y, right, colour) {
-    return T(x, y, 'Name', { s: 11, f: colour || INK2 }) + '<line x1="' + (x + 34) + '" y1="' + (y + 2) + '" x2="' + right + '" y2="' + (y + 2) + '" stroke="' + (colour || INK2) + '" stroke-width="1"/>' +
-      T(x, y + 26, 'Date', { s: 11, f: colour || INK2 }) + '<line x1="' + (x + 34) + '" y1="' + (y + 28) + '" x2="' + right + '" y2="' + (y + 28) + '" stroke="' + (colour || INK2) + '" stroke-width="1"/>';
+    return T(x, y, 'Name', { s: 10, f: colour || INK2 }) + '<line x1="' + (x + 32) + '" y1="' + (y + 2) + '" x2="' + right + '" y2="' + (y + 2) + '" stroke="' + (colour || INK2) + '" stroke-width=".8"/>' +
+      T(x, y + 24, 'Date', { s: 10, f: colour || INK2 }) + '<line x1="' + (x + 32) + '" y1="' + (y + 26) + '" x2="' + right + '" y2="' + (y + 26) + '" stroke="' + (colour || INK2) + '" stroke-width=".8"/>';
   }
-  S.nameDate = nameDate;
   S.T = T;
   S.tw = tw;
-  function defaultHead(hd, th) {
-    var size = hd.fit(hd.title, hd.key ? 420 : 300, 24);
-    return '<g transform="translate(' + M + ' 34)">' + th.art + '</g>' + T(M + 70, 60, hd.title, { s: size, w: 800, d: 1 }) + T(M + 70, 82, hd.sub, { s: 13, f: INK2 }) +
-      (hd.key ? '' : nameDate(392, 58, RIGHT)) + '<line x1="' + M + '" y1="104" x2="' + RIGHT + '" y2="104" stroke="' + INK + '" stroke-width="1.5"/>';
-  }
   function concept(chId, slug) { return A.lessons.flat(chId).filter(function (c) { return c.slug === slug; })[0]; }
   S.code = function (chId, slug, kind, th) {
     var d = S.chapters[chId], ideas = Object.keys(d.ideas), kd = KINDS.filter(function (k) { return k[0] === kind; })[0];
     return 'G' + A.grade + '-' + d.code + '-' + ('0' + (ideas.indexOf(slug) + 1)).slice(-2) + '-' + kd[2] + '-' + th.id;
   };
   S.themeById = function (id) { return S.themes.filter(function (t) { return t.id === id; })[0] || S.themes[0]; };
+  /* the heading: the theme's mark, a small line naming the chapter and kind, the title in the theme's face, and the goal */
+  function heading(title, kicker, goal, key, th) {
+    var size = 34, max = key ? RIGHT - M : 330;
+    while (tw(title, size, 700, th.font) > max && size > 18) size--;
+    var out = '<g transform="translate(' + M + ' 28) scale(.5)">' + th.mark + '</g>' + label(M + 36, 47, kicker, th.acc) +
+      T(M, 92, title, { s: size, w: 700, fam: th.font }) + (goal ? T(M, 116, goal, { s: 13, i: 1, f: INK2 }) : '');
+    if (!key) out += nameDate(392, 52, RIGHT);
+    return out + '<line x1="' + M + '" y1="134" x2="' + RIGHT + '" y2="134" stroke="' + INK + '" stroke-width="1.2"/>';
+  }
   S.page = function (chId, slug, kind, themeId, key) {
     var d = S.chapters[chId], idea = d.ideas[slug], spec = idea[kind], c = concept(chId, slug), th = S.themeById(themeId);
     var m = A.meta.filter(function (x) { return x.id === chId; })[0], code = S.code(chId, slug, kind, th), kd = KINDS.filter(function (k) { return k[0] === kind; })[0];
-    var title = plain(c.title), out = '', y, n = 1;
+    var title = plain(c.title), tip = idea.learn && idea.learn.cue ? words(idea.learn.cue, th) : '', out = '', y = 168, n = 1;
     CUR.th = th; CUR.plain = kind === 'p3' || kind === 'think';
-    var head = { title: key ? 'Answer key: ' + title : title, sub: key ? th.name + ' \u00b7 ' + kd[1] + ' \u00b7 for grown-ups' : th.name, key: !!key, M: M, RIGHT: RIGHT,
-      fit: function (s, max, size, family, weight) { while (tw(s, size, weight || 800, family || DISPLAY) > max && size > 14) size--; return size; } };
     if (th.frame) out += th.frame(W, H, M, RIGHT);
-    out += th.head ? th.head(head) : defaultHead(head, th);
-    y = 134;
+    out += heading(key ? 'Answer key: ' + title : title, plain(m.title) + ' · ' + kd[1] + (key ? ' · for grown-ups' : ''), idea.goal, key, th);
+    if (spec.show) {
+      var b = band(spec.show, tip, y, th, kind === 'learn' ? 'Watch me' : 'Example'); out += b.svg; y += b.h + 16;
+      out += rule(y - 2, M); y += 26;
+    } else if (tip) {
+      var nt = note(M, y - 12, RIGHT - M, 'Tip', tip, th); out += nt.svg; y = nt.y + 10;
+      out += rule(y - 2, M); y += 26;
+    }
     if (kind === 'learn') {
-      out += section(y, 'Watch me', th); var b = band(spec.show, y + 12, th); out += b.svg; y += b.h + 38;
-      out += section(y, 'Together', th); var g1 = grid(spec.together, y + 16, n, key, th); out += g1.svg; y = g1.y - 8; n = g1.n;
-      if (spec.cue) { out += T(M, y, words(spec.cue, th), { s: 12, i: 1, f: INK2 }); y += 28; }
-      out += section(y, 'On your own', th); var g2 = grid(spec.own, y + 16, n, key, th); out += g2.svg; y = g2.y; n = g2.n;
+      out += label(M, y - 12, 'Together', th.acc);
+      var g1 = grid(spec.together, y + 4, n, key, th); out += g1.svg; n = g1.n; y = g1.y + 2;
+      out += rule(y - 13, M) + label(M, y + 2, 'On your own', th.acc);
+      var g2 = grid(spec.own, y + 18, n, key, th); out += g2.svg; y = g2.y; n = g2.n;
     } else {
-      if (spec.show) { out += section(y, 'Remember', th); var b2 = band(spec.show, y + 12, th); out += b2.svg; y += b2.h + 38; out += section(y, 'On your own', th); y += 16; }
       var g3 = grid(spec.items, y, n, key, th); out += g3.svg; y = g3.y; n = g3.n;
     }
-    if (y - 22 > BOTTOM) S.overflow.push(code + ' runs ' + Math.round(y - 22 - BOTTOM) + ' points past the bottom');
+    if (y - 26 > BOTTOM) S.overflow.push(code + ' runs ' + Math.round(y - 26 - BOTTOM) + ' points past the bottom');
+    out += '<line x1="' + M + '" y1="' + (BOTTOM + 10) + '" x2="' + RIGHT + '" y2="' + (BOTTOM + 10) + '" stroke="' + INK + '" stroke-width="1"/>';
     if (key) {
-      var note = wrap(words('Watch for: ' + idea.watch, th), 11, RIGHT - M - 28);
-      var codes = 'Ontario ' + c.exp.join(', ');
-      out += '<rect x="' + M + '" y="' + (BOTTOM + 6) + '" width="' + (RIGHT - M) + '" height="' + (note.length * 15 + 28) + '" rx="8" fill="none" stroke="' + NOTE + '" stroke-width="1.3"/>';
-      note.forEach(function (l, i) { out += T(M + 14, BOTTOM + 24 + i * 15, l, { s: 11 }); });
-      out += T(M + 14, BOTTOM + 24 + note.length * 15, codes, { s: 11, w: 700 });
-      if (note.length > 2) S.overflow.push(code + ' has a watch-for note longer than 2 lines');
+      var w = note(M, BOTTOM + 28, RIGHT - M - 110, 'Watch for', words(idea.watch, th), th, KEY);
+      out += w.svg + label(RIGHT - 90, BOTTOM + 28, 'Ontario', KEY) + T(RIGHT - 90, BOTTOM + 46, c.exp.join(', '), { s: 11.5 }) + T(RIGHT - 90, BOTTOM + 64, 'Score ____ of ' + (n - 1), { s: 11.5, f: INK2 });
+      if (w.y > BOTTOM + 66) S.overflow.push(code + ' has a watch-for note longer than 2 lines');
+    } else {
+      var fx = M + tw('How did it feel?', 12, 700) + 18;
+      out += T(M, BOTTOM + 30, 'How did it feel?', { s: 12, w: 700 });
+      ['I could explain it', 'One more go', 'I need help'].forEach(function (f) { out += '<circle cx="' + (fx + 5) + '" cy="' + (BOTTOM + 26) + '" r="5" fill="none" stroke="' + INK2 + '" stroke-width=".9"/>' + T(fx + 15, BOTTOM + 30, f, { s: 11.5, f: INK2 }); fx += tw(f, 11.5) + 34; });
     }
-    out += '<line x1="' + M + '" y1="752" x2="' + RIGHT + '" y2="752" stroke="' + LINE + '" stroke-width="1"/>' +
-      T(M, 768, 'Math Atlas · Grade ' + A.grade + ' · ' + plain(m.title), { s: 9, f: INK2 }) +
-      T(RIGHT, 768, code + (key ? ' · score ____ of ' + (n - 1) : ''), { s: 9, f: INK2, a: 'end' });
+    out += T(M, 774, ('Math Atlas · Grade ' + A.grade + ' · ' + th.name).toUpperCase(), { s: 8, w: 700, f: INK2, ls: 1 }) + T(RIGHT, 774, code, { s: 8, w: 700, f: INK2, a: 'end', ls: 1 });
     return '<svg class="ws-svg" viewBox="0 0 ' + W + ' ' + H + '" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="' + esc(title + ', ' + kd[1] + (key ? ', answer key' : '')) + '">' +
       '<rect width="' + W + '" height="' + H + '" fill="#fff"/>' + out + '</svg>';
   };
@@ -317,11 +337,16 @@
     return { show: sp.show || null, items: all.map(function (it) { var c = JSON.parse(JSON.stringify(it)); ['q', 'calc'].forEach(function (f) { if (c[f]) c[f] = words(c[f], th); }); if (c.eq) c.eq = c.eq.map(function (r) { return words(r, th); }); return c; }) };
   };
 
+  /* the fonts a sheet is drawn in, so the page can wait for them (and the checks can make sure they loaded) */
+  S.fontList = function () {
+    return ["400 14px 'Atkinson Hyperlegible'", "700 14px 'Atkinson Hyperlegible'", "italic 400 13px 'Atkinson Hyperlegible'"].concat(S.themes.map(function (t) { return '700 24px ' + t.font; }));
+  };
+
   /* ---------- the Worksheets tab (grown-up view) ---------- */
   function pref(k, v) { try { if (v === undefined) return localStorage.getItem('atlas:sheet-' + k); localStorage.setItem('atlas:sheet-' + k, v); } catch (e) { return null; } return v; }
   function fonts() {
     if (!document.fonts || !document.fonts.load) return Promise.resolve();
-    var wait = Promise.all(["400 14px 'Atkinson Hyperlegible'", "700 14px 'Atkinson Hyperlegible'", "800 24px 'Bricolage Grotesque'"].concat(S.themes.map(function (t) { return t.font ? '800 24px ' + t.font : null; }).filter(Boolean)).map(function (f) { return document.fonts.load(f).catch(function () {}); }));
+    var wait = Promise.all(S.fontList().map(function (f) { return document.fonts.load(f).catch(function () {}); }));
     return Promise.race([wait, new Promise(function (r) { setTimeout(r, 1500); })]);
   }
   function chips(th) {

@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-08
+- **Worksheets: a new premium look** (Editorial, chosen by Noel). Each sheet now opens with a large title and an "I can" goal, shows the example with a tip beside it, sets the questions in two calm columns with large numbers in the margin and fine lines between them, and has children write answers on short lines instead of in boxes. A "How did it feel?" check-in closes each sheet; the answer key shows what to watch for, the Ontario codes and a score line there. The ten themes keep their own font, colour, pictures and a small line drawing.
+
 ## 2026-11-07
 - **Printable worksheets** (Grade 3 Multiplying and Dividing first): grown-ups get a Worksheets tab on the chapter. Each of the 19 ideas has 5 sheets, from most help to least: Learn (Watch me, Together, On your own), Practise 1, 2 and 3, and Think. Each prints in 10 themes (rink, sugar bush, planetarium, bakery, lake, market, music class, garden, train yard, coast), each with its own look on white paper, the same numbers in every theme. An answer key can print as page 2, with what to watch for and the Ontario codes. "See every sheet at once" shows the whole set. New checks draw all 1 900 pages and work out every answer again.
 

@@ -46,6 +46,7 @@
 
     equal: {
       watch: 'counting only one group, or calling groups equal when one has more. Ask: "Does every group have the same number?"',
+      goal: 'I can tell if groups are equal and find how many in all.',
       learn: {
         show: { pic: ['groups', { g: 2, k: 4 }], cap: '2 {conts}, 4 {many} in each', eq: ['4 + 4 = 8', '2 groups of 4 = 8'] },
         together: [{ pic: ['groups', { g: 2, k: 5 }], eq: ['5 + 5 = []', '2 groups of 5 = []'], a: [10, 10] },
@@ -83,6 +84,7 @@
 
     times: {
       watch: 'adding the two numbers (3 × 4 = 7). Ask: "How many groups? How many in each?" Then draw the groups.',
+      goal: 'I can write equal groups as a times sum.',
       learn: {
         show: { pic: ['groups', { g: 5, k: 2 }], cap: '5 {conts}, 2 {many} in each', eq: ['2 + 2 + 2 + 2 + 2 = 10', '5 × 2 = 10'] },
         together: [{ pic: ['groups', { g: 2, k: 5 }], eq: ['5 + 5 = []', '2 × 5 = []'], a: [10, 10] }, G(3, 4)],
@@ -117,6 +119,7 @@
 
     rows: {
       watch: 'counting one row and one column and adding them (4 + 6). Run a finger along each row while counting by the number in a row.',
+      goal: 'I can write a times sum for an array.',
       learn: {
         show: { pic: ['array', { r: 3, c: 5 }], cap: '3 rows of 5', eq: ['5, 10, 15', '3 × 5 = 15'] },
         together: [{ pic: ['array', { r: 2, c: 4 }], eq: ['4, []', '2 × 4 = []'], a: [8, 8] }, AR(3, 3)],
@@ -148,6 +151,7 @@
 
     turn: {
       watch: 'thinking 6 × 4 must be bigger than 4 × 6. Build one array, count it, turn the paper, and count again.',
+      goal: 'I can turn an array around and get the same answer.',
       learn: {
         show: { pic: ['array', { r: 2, c: 5 }], cap: 'Turn it: 5 rows of 2', eq: ['2 × 5 = 10', '5 × 2 = 10'] },
         together: [{ pic: ['array', { r: 3, c: 4 }], eq: ['3 × 4 = []', '4 × 3 = []'], a: [12, 12] }, { pic: ['array', { r: 2, c: 6 }], eq: ['2 × 6 = []', '6 × [] = 12'], a: [12, 2] }],
@@ -178,6 +182,7 @@
 
     split: {
       watch: 'finding only one part, or adding the numbers of rows (5 + 2) instead of the parts. Cover one part, say its fact, then the other.',
+      goal: 'I can split a hard fact into two easy ones.',
       learn: {
         show: { pic: ['array', { r: 7, c: 4, split: 5 }], cap: 'Cut after 5 rows', eq: ['20 + 8 = 28', '7 × 4 = 28'] },
         together: [{ pic: ['array', { r: 6, c: 2, split: 5 }], eq: ['10 + [] = []', '6 × 2 = []'], a: [2, 12, 12] },
@@ -210,6 +215,7 @@
 
     skip: {
       watch: 'counting the tick marks instead of the jumps, or starting the count at 1. Count the jumps out loud: one 5, two 5s ...',
+      goal: 'I can jump on a number line to multiply.',
       learn: {
         show: { pic: ['line', { max: 20, step: 5, n: 4 }], cap: '4 jumps of 5', eq: ['5, 10, 15, 20', '4 × 5 = 20'] },
         together: [{ pic: ['line', { max: 10, step: 2, n: 3 }], eq: ['2, 4, []', '3 × 2 = []'], a: [6, 6] }, LN(3, 10, 50)],
@@ -240,6 +246,7 @@
 
     turnfacts: {
       watch: 'counting by the bigger number (7, 14, 21 ...) when a 2, 5 or 10 fact is hidden. Ask: "Which number can we count by?"',
+      goal: 'I can turn a fact around to count by 2s, 5s or 10s.',
       learn: {
         show: { cap: '7 × 5: turn it, then count by 5s.', eq: ['5 × 7 = 35', '7 × 5 = 35'] },
         together: [{ eq: ['6 × 2 = 2 × []', '6 × 2 = []'], a: [6, 12] }, { eq: ['8 × 5 = 5 × []', '8 × 5 = []'], a: [8, 40] }],
@@ -272,6 +279,7 @@
 
     patterns: {
       watch: 'skipping a number when counting by 5s or 10s. The 5 facts end in 5 or 0, the 10 facts end in 0, and the 2 facts are even.',
+      goal: 'I can use the patterns in the 2, 5 and 10 facts.',
       learn: {
         show: { cap: 'The 5 facts end in 5 or 0.', eq: ['5, 10, 15, 20, 25'] },
         together: [{ q: 'Count by 10s.', eq: ['10, 20, [], 40, []'], a: [30, 50] }, { q: 'Count by 2s.', eq: ['2, 4, 6, [], []'], a: [8, 10] }],
@@ -306,6 +314,7 @@
 
     near: {
       watch: 'adding 1 instead of one whole group (6 × 5 = 30, so 7 × 5 = 31). Draw the extra group.',
+      goal: 'I can add or take away one group to find a fact.',
       learn: {
         show: { pic: ['groups', { g: 4, k: 5 }], cap: '4 × 5 = 20, and one more group of 5', eq: ['20 + 5 = 25', '5 × 5 = 25'] },
         together: [{ eq: ['5 × 2 = 10', '6 × 2 = 10 + []', '6 × 2 = []'], a: [2, 12] }, { eq: ['10 × 5 = 50', '9 × 5 = 50 − []', '9 × 5 = []'], a: [5, 45] }],
@@ -336,6 +345,7 @@
 
     share: {
       watch: 'giving more to one group, or not checking that every group has the same. Share one at a time, round and round, then count one group.',
+      goal: 'I can share things out equally.',
       learn: {
         show: { pic: ['groups', { g: 3, k: 4 }], cap: '12 shared into 3 {conts}', eq: ['12 ÷ 3 = 4'] },
         together: [SH(6, 2), SH(8, 4, true)],
@@ -370,6 +380,7 @@
 
     group: {
       watch: 'mixing up "how many groups" with "how many in each". Ask: "Do we know how big a group is, or how many groups there are?"',
+      goal: 'I can make equal groups to divide.',
       learn: {
         show: { pic: ['groups', { g: 3, k: 5 }], cap: '15 {many}, 5 in each {cont}', eq: ['15 ÷ 5 = 3'] },
         together: [DT(8, 4), DT(10, 2)],
@@ -404,6 +415,7 @@
 
     which: {
       watch: 'choosing by a key word instead of the story. Ask: "Do we know the total? Then divide. Do we need the total? Then multiply."',
+      goal: 'I can tell if a story needs × or ÷.',
       learn: {
         show: { cap: 'Need the total? Multiply. Know the total? Divide.', eq: ['4 × 5 = 20', '20 ÷ 4 = 5'] },
         together: [{ q: '{a} puts 5 {many} in each of 3 {conts}. How many {many}?', pick: { opts: ['×', '÷'], ans: 0 }, eq: ['[] {many}'], a: [15], calc: '3 × 5' },
@@ -445,6 +457,7 @@
 
     four: {
       watch: 'writing a division in the wrong order (3 ÷ 12). The total comes first in a division.',
+      goal: 'I can write four facts from three numbers.',
       learn: {
         show: { pic: ['array', { r: 3, c: 4 }], cap: '3, 4 and 12', eq: ['3 × 4 = 12', '12 ÷ 3 = 4'] },
         together: [{ pic: ['array', { r: 2, c: 5 }], eq: ['2 × 5 = []', '10 ÷ 2 = []'], a: [10, 5] }, { pic: ['array', { r: 3, c: 5 }], eq: ['3 × 5 = []', '15 ÷ [] = 5'], a: [15, 3] }],
@@ -477,6 +490,7 @@
 
     check: {
       watch: 'checking with the wrong two numbers (multiplying the total). Multiply the answer by the number you divided by: you should get the total back.',
+      goal: 'I can check a division with a times fact.',
       learn: {
         show: { cap: 'Check 20 ÷ 4 = 5: does 5 × 4 make 20?', eq: ['5 × 4 = 20'] },
         together: [{ eq: ['12 ÷ 2 = 6', 'Check: 6 × 2 = []'], a: [12] }, { eq: ['15 ÷ 5 = 3', 'Check: 3 × [] = []'], a: [5, 15] }],
@@ -507,8 +521,9 @@
 
     ratio: {
       watch: 'adding 1 to both numbers, or adding to the wrong column. Read the table across: 1 and 5, 2 and 10.',
+      goal: 'I can use "for every 1, there are 2, 5 or 10".',
       learn: {
-        show: { pic: ['table', { head: ['{conts}', '{many}'], rows: [[1, 5], [2, 10], [3, 15]] }], cap: 'For every 1 {cont}, 5 {many}', eq: ['3 × 5 = 15'] },
+        show: { pic: ['table', { head: ['{conts}', '{many}'], rows: [[1, 5], [2, 10]] }], cap: 'For every 1 {cont}, 5 {many}', eq: ['2 × 5 = 10'] },
         together: [TB('2 {many} for every {cont}.', [[1, 2], [2, '[]'], [3, '[]']], [4, 6]), TB('10 {many} for every {cont}.', [[1, 10], [2, '[]'], [4, '[]']], [20, 40])],
         cue: 'Multiply the number of {conts} by 2, 5 or 10.',
         own: [TB('5 {many} for every {cont}.', [[1, 5], [2, '[]'], [4, '[]']], [10, 20]), story('2 {many} in each {cont}. How many in 6 {conts}?', '{many}', 12, '6 × 2')]
@@ -543,6 +558,7 @@
 
     back: {
       watch: 'multiplying when the total is already known (20 {many}, 5 for each: 100). Ask: "Do we know the total? How many 5s make it?"',
+      goal: 'I can work back from a total.',
       learn: {
         show: { pic: ['table', { head: ['{conts}', '{many}'], rows: [[1, 5], [2, 10], [3, 15]] }], cap: '15 {many}, 5 for every {cont}', eq: ['15 ÷ 5 = 3'] },
         together: [TB('2 {many} for every {cont}. 8 {many} in all.', [[1, 2], ['[]', 8]], [4]), TB('10 {many} for every {cont}. 30 {many} in all.', [[1, 10], ['[]', 30]], [3])],
@@ -578,6 +594,7 @@
 
     facts: {
       watch: 'counting on fingers every time. Practise a few facts each day and say the whole fact out loud: "6 fives are 30".',
+      goal: 'I know the 2, 5 and 10 facts.',
       learn: {
         show: { cap: 'Not sure? Count by 5s.', eq: ['5, 10, 15, 20, 25, 30', '6 × 5 = 30'] },
         together: [{ eq: ['3 × 5 = []', '4 × 5 = []'], a: [15, 20] }, { eq: ['6 × 2 = []', '7 × 2 = []'], a: [12, 14] }],
@@ -609,6 +626,7 @@
 
     divfacts: {
       watch: 'counting down instead of using a times fact. Ask: "What times 5 makes 35?"',
+      goal: 'I can divide by thinking of the times fact.',
       learn: {
         show: { cap: 'What times 5 makes 35?', eq: ['7 × 5 = 35', '35 ÷ 5 = 7'] },
         together: [{ eq: ['[] × 2 = 12', '12 ÷ 2 = []'], a: [6, 6] }, { eq: ['[] × 10 = 50', '50 ÷ 10 = []'], a: [5, 5] }],
@@ -640,6 +658,7 @@
 
     mixed: {
       watch: 'guessing the harder facts (6s, 7s, 8s and 9s). Use a strategy: turn it, split it at 5, or add or take away a group.',
+      goal: 'I can do times and division facts to 10 × 10.',
       learn: {
         show: { cap: '7 × 6: split it at 5.', eq: ['30 + 12 = 42', '7 × 6 = 42'] },
         together: [{ eq: ['6 × 7 = 5 × 7 + []', '6 × 7 = []'], a: [7, 42] }, { eq: ['9 × 8 = 10 × 8 − []', '9 × 8 = []'], a: [8, 72] }],

@@ -245,7 +245,7 @@ async function checkGrade(browser, base, g) {
     await sp.goto(base + '/grade' + g + '/index.html#home');
     await sp.waitForFunction(() => window.Atlas && Atlas.sheets && Atlas.sheets.themes.length, null, { timeout: 15000 });
     const fontsOk = await sp.evaluate(async () => {
-      const want = ["400 14px 'Atkinson Hyperlegible'", "700 14px 'Atkinson Hyperlegible'", "800 24px 'Bricolage Grotesque'"].concat(Atlas.sheets.themes.filter(t => t.font).map(t => '800 24px ' + t.font));
+      const want = Atlas.sheets.fontList();
       await Promise.race([Promise.all(want.map(f => document.fonts.load(f).catch(() => {}))), new Promise(r => setTimeout(r, 10000))]);
       return want.filter(f => !document.fonts.check(f));
     });
