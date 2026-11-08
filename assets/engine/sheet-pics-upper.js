@@ -366,9 +366,10 @@
     var lh = 18, sw = 30, top = y + (p.title ? 16 : 0), out = p.title ? T(x, y + 10, p.title, { s: 10.5, w: 700, f: INK2 }) : '', wid = 0;
     out += T(x + sw - 6, top + 11, 'Stem', { s: 9, f: INK2, a: 'end' }) + T(x + sw + 8, top + 11, 'Leaf', { s: 9, f: INK2 });
     for (var st = lo; st <= hi; st++) {
-      var ry = top + 16 + (st - lo) * lh, leaves = d.filter(function (v) { return Math.floor(v / 10) === st; }).map(function (v) { return v % 10; }).join('  ');
-      out += T(x + sw - 6, ry + 13, String(st), { s: 13, w: 700, a: 'end' }) + T(x + sw + 8, ry + 13, leaves, { s: 13, w: 700 });
-      wid = Math.max(wid, sw + 8 + tw(leaves, 13, 700));
+      var ry = top + 16 + (st - lo) * lh, leaves = d.filter(function (v) { return Math.floor(v / 10) === st; }).map(function (v) { return v % 10; });
+      out += T(x + sw - 6, ry + 13, String(st), { s: 13, w: 700, a: 'end' });
+      leaves.forEach(function (l, i) { out += T(x + sw + 8 + i * 14, ry + 13, String(l), { s: 13, w: 700 }); });
+      wid = Math.max(wid, sw + 8 + leaves.length * 14);
     }
     var bot = top + 16 + (hi - lo + 1) * lh + 4;
     out += line(x + sw, top + 14, x + sw, bot, { sw: 1.3 }) + line(x, top + 16, x + Math.min(w, Math.max(wid, 110)), top + 16, { s: LINE, sw: 1 });

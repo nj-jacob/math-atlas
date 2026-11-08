@@ -61,7 +61,7 @@
       learn: {
         show: { cap: 'Stem 3, leaf 4 means 34', eq: ['3 | 4 → 34'] },
         together: [SC([12, 15, 21, 26, 26, 30], 'count'), SC([41, 43, 47, 52, 58], 'greatest')],
-        cue: 'Read a stem with each leaf: stem 3, leaf 4 is 34.',
+        cue: 'Each leaf is one value. Count every leaf, even when two are the same.',
         own: [SC([30, 32, 35, 44, 46, 51], 'least'), SC([60, 61, 67, 72, 75, 75, 80], 'count')]
       },
       p1: {

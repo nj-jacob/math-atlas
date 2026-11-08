@@ -665,9 +665,10 @@
     if (it.simplest) (it.a || []).filter(v => /\//.test(v)).forEach(v => { const [n, d] = String(v).split(' ').pop().split('/').map(Number); for (let f = 2; f <= Math.min(n, d); f++) if (n % f === 0 && d % f === 0) say(v + ' is not in simplest form'); });
     /* a shape pattern: the shapes to draw next carry on its core */
     if (it.pic && it.pic[0] === 'pat' && it.pic[1].next) {
-      const p = it.pic[1], c = p.seq.slice(0, p.core);
-      if (p.seq.split('').some((ch, i) => ch !== c[i % p.core])) say('the shapes ' + p.seq + ' do not repeat the core ' + c);
-      if (p.next.split('').some((ch, i) => ch !== c[(p.seq.length + i) % p.core])) say('the next shapes ' + p.next + ' do not carry on the core ' + c);
+      const p = it.pic[1], per = [...Array(p.seq.length).keys()].map(k => k + 1).find(k => p.seq.split('').every((ch, i) => ch === p.seq[i % k]));
+      const c = p.seq.slice(0, per);
+      if (p.core && p.core !== per) say('the core of ' + p.seq + ' is ' + per + ' long, not ' + p.core);
+      if (p.next.split('').some((ch, i) => ch !== c[(p.seq.length + i) % per])) say('the next shapes ' + p.next + ' do not carry on the core ' + c);
     }
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
     if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
