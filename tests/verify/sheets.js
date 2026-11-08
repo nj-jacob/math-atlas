@@ -11,12 +11,13 @@
     if (!s || !OPS.test(s)) return NaN;
     try { const v = Function('"use strict"; return (' + s + ');')(); return typeof v === 'number' && isFinite(v) ? v : NaN; } catch (e) { return NaN; }
   }
-  /* sheet maths into plain maths: × ÷ −, 12 500 as 12500, 2 3/4 as (2 + 3/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
+  /* sheet maths into plain maths: × ÷ −, 12 500 as 12500, 2 3/4 as (2 + 3/4), 1/4 as (1/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
      and "3 groups of 4", "3 rows of 4", "3 jumps of 4" mean 3 × 4; other words go */
   const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1, tenth: 0.1, hundredth: 0.01 };
   function norm(s) {
     return String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1')
       .replace(/(^|[^\d.\/])(\d+) (\d+)\/(\d+)/g, (m, pre, w, n, d) => pre + '(' + w + ' + ' + n + '/' + d + ')')
+      .replace(/(^|[^\d.(])(\d+)\/(\d+)(?![\d.])/g, '$1($2/$3)')
       .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
       .replace(/\$/g, '').replace(/ ?%/g, ' / 100').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
@@ -115,6 +116,11 @@
     chunks: o => ({ total: o.steps.reduce((x, y) => x + y, 0) * o.d }),
     pvmove: o => (o.shift ? { total: o.n } : null),
     dline: o => ((o.ask || []).length ? { blanks: o.ask.length, own: (o, a) => o.ask.flatMap((v, i) => (same(num(a[i]), v) ? [] : ['the number line answer ' + a[i] + ' is not ' + v])) } : o.pt != null ? { total: o.pt } : null),
+    /* fraction bars: one row (or rows that all show the same amount) shows that fraction, by its own name */
+    frac: o => (o.uneven ? null : { total: o.k / o.n, name: o.k + '/' + o.n }),
+    fbars: o => { const v = o.rows.map(r => r[1] / r[0]); return v.every(x => same(x, v[0])) ? { total: v[0], name: o.rows.length === 1 ? o.rows[0][1] + '/' + o.rows[0][0] : null } : null; },
+    /* a ratio picture: how many of each kind in all */
+    mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
@@ -136,7 +142,7 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grid: [{ n: 37, unit: '1000' }]
   };
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
 
@@ -153,9 +159,9 @@
     }
     /* 2. fill every box and work each sum out */
     const filled = (it.eq || []).map(row => row.split(' ').map(t => {
-      if (t !== '[]' && t !== '[],') return t;
+      if (!/\[\]/.test(t)) return t;
       if (!a.length) { say('a box has no answer: ' + row); return '?'; }
-      return a.shift() + (t === '[],' ? ',' : '');
+      return t.replace('[]', a.shift());
     }).join(' '));
     if (a.length) say(a.length + ' answer(s) left over with no box');
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
@@ -165,7 +171,19 @@
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
-      if (it.round) {
+      const rat = row.match(/\d+ ?: ?\d+/g);
+      if (rat) {
+        /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
+           its own is the one the item asks for: of names its two terms from the picture's or the story's parts (a, b or all) */
+        const r = rat.map(x => x.split(':').map(Number));
+        if (r.some(([p, q]) => r[0][0] * q !== r[0][1] * p)) say('the ratios are not equivalent: ' + row);
+        const parts = (pc && pc.parts) || it.parts;
+        if (it.of && parts) {
+          const t = { a: parts[0], b: parts[1], all: parts[0] + parts[1] }, want = it.of.map(k => t[k]);
+          if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
+        } else if (r.length < 2) say('nothing checks the ratio ' + row);
+        if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
+      } else if (it.round) {
         /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up) */
         const n = nums(row);
         if (n.length !== 2 || !same(Math.round(n[0] / it.round) * it.round, n[1])) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
@@ -198,7 +216,7 @@
         /* a bare answer: the number the picture shows, or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
         if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
-        else if (pc && pc.total != null) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); }
+        else if (pc && pc.total != null) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
         else if (!it.calc && !byItem) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc && !byItem) say('nothing checks this row: ' + raw[ri]);
     });
@@ -273,6 +291,19 @@
       } else if (pk.diff) {
         const v = o.map(num), odd = v.map((x, i) => v.filter((y, j) => j !== i && same(x, y)).length === 0);
         if (!odd[pk.ans] || odd.filter(Boolean).length !== 1) say('the circled choice is not the only one with a different value: ' + o.join(', '));
+      } else if (pk.simplest) {
+        /* the only fraction in simplest form: its top and bottom share no factor but 1 */
+        const g = (x, y) => (y ? g(y, x % y) : x), ok = o.map(x => { const [n, d] = String(x).split('/').map(Number); return g(n, d) === 1; });
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in simplest form: ' + o.join(', '));
+      } else if (pk.ratio) {
+        /* exactly one choice is (or, with not, is not) equivalent to the ratio, in the same order */
+        const ok = o.map(x => { const r = String(x).split(':').map(Number); return r.length === 2 && pk.ratio[0] * r[1] === pk.ratio[1] * r[0]; }).map(e => (pk.not ? !e : e));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + (pk.not ? 'not ' : '') + 'equivalent to ' + pk.ratio.join(' : ') + ': ' + o.join(', '));
+      } else if (pk.more || pk.less) {
+        /* "who has more" (or less): the choices are names, pk.more or pk.less holds their amounts in the same order */
+        const am = pk.more || pk.less, v = am.map(x => val(norm(x))), sg = pk.more ? 1 : -1;
+        if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && sg * x >= sg * v[pk.ans])) say('the circled one does not have the ' + (pk.more ? 'most' : 'least') + ': ' + am.join(', '));
+        am.forEach(x => nums(x).forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the amount ' + x + ' uses ' + n + ', which is not in the question'); }));
       } else if (pk.small) {
         const v = o.map(x => val(norm(x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the least: ' + o.join(', '));
@@ -280,7 +311,7 @@
         const v = o.map(x => (isNaN(val(norm(x))) ? fromWords(x) : val(norm(x))));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled choice is not the biggest: ' + o.join(', '));
       } else if (pk.val != null) {
-        const ok = o.map(x => val(norm(x)) === pk.val);
+        const ok = o.map(x => same(val(norm(x)), pk.val));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice makes ' + pk.val);
       } else if (o[0] === 'yes' && pc && pc.counts) {
         if (pc.counts.every(x => x === pc.counts[0]) !== yes) say('equal groups: the key is wrong');

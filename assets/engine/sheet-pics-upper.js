@@ -17,6 +17,7 @@
                                 drawn in on the key; u: the size of a square, 11 at most)
      fbars { rows: [[n, k], ...], labels }   fraction bars of the same length stacked: each row cut into n parts with k
                                 shaded; a k bigger than n draws more bars side by side (11/4 is 2 whole bars and 3/4)
+     mix   { a, b, g }          a ratio: a shaded circles and b open squares, in g groups of that mix (g 1 when left out)
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
@@ -231,5 +232,21 @@
       if (k === 0 && lo < 0) for (var q = 0; q < rows; q++) out += '<circle cx="' + (cx + cw) + '" cy="' + (y + 18 + q * rh + rh - 5) + '" r="2" fill="' + INK + '"/>';
     }
     return { svg: out, h: 18 + rows * rh, w: (hi - lo + 1) * cw };
+  };
+
+  /* a ratio: groups of a shaded circles and b open squares, side by side in light rounded boxes */
+  P.mix = function (p, x, y, w) {
+    var g = p.g || 1, n = p.a + p.b, s = 13, per = Math.max(1, Math.min(n, g > 1 ? 6 : 10)), gw = per * s + 8, gh = Math.ceil(n / per) * s + 8;
+    var across = Math.max(1, Math.floor((Math.min(w, 300) + 6) / (gw + 6))), out = '';
+    for (var k = 0; k < g; k++) {
+      var gx = x + (k % across) * (gw + 6), gy = y + Math.floor(k / across) * (gh + 6);
+      if (g > 1) out += '<rect x="' + gx + '" y="' + gy + '" width="' + gw + '" height="' + gh + '" rx="6" fill="none" stroke="' + LINE + '" stroke-width="1"/>';
+      for (var i = 0; i < n; i++) {
+        var cx = gx + 4 + (i % per) * s + s / 2, cy = gy + 4 + Math.floor(i / per) * s + s / 2;
+        out += i < p.a ? '<circle cx="' + cx + '" cy="' + cy + '" r="4.6" fill="' + INK2 + '"/>' : '<rect x="' + (cx - 4.4) + '" y="' + (cy - 4.4) + '" width="8.8" height="8.8" fill="#fff" stroke="' + INK + '" stroke-width="1.1"/>';
+      }
+    }
+    var rows = Math.ceil(g / across);
+    return { svg: out, h: rows * gh + (rows - 1) * 6, w: Math.min(g, across) * (gw + 6) - 6 };
   };
 })();
