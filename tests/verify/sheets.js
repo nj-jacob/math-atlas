@@ -80,6 +80,28 @@
     };
     return d < 0 || !run(String(code).split(',')) ? null : [x, y];
   }
+  /* 3D objects: flat faces, edges, vertices, curved surfaces, points; prism, pyramid or neither (cones and cylinders are
+     described with words, so their edges and vertices are never asked) */
+  const SOLID = {
+    cube: { f: 6, e: 12, v: 8, c: 0, p: 0, kind: 'prism', sq: 1, sqonly: 1 }, prism: { f: 6, e: 12, v: 8, c: 0, p: 0, kind: 'prism', sq: 0 },
+    tri: { f: 5, e: 9, v: 6, c: 0, p: 0, kind: 'prism', sq: 0 }, pyramid: { f: 5, e: 8, v: 5, c: 0, p: 1, kind: 'pyramid', sq: 1 },
+    tpyr: { f: 4, e: 6, v: 4, c: 0, p: 1, kind: 'pyramid', sq: 0 }, cylinder: { f: 2, c: 1, p: 0, kind: 'neither', roll: 1 },
+    cone: { f: 1, c: 1, p: 1, kind: 'neither', roll: 1 }, sphere: { f: 0, c: 1, p: 0, kind: 'neither', roll: 1 }
+  };
+  const SOLID_BY = { cube: 'cube', 'rectangular prism': 'prism', 'triangular prism': 'tri', 'square-based pyramid': 'pyramid', 'triangular pyramid': 'tpyr', cylinder: 'cylinder', cone: 'cone', sphere: 'sphere' };
+  /* a choice names an object, or is a letter for one of the pictured objects */
+  const solidOf = (x, it) => (/^[A-H]$/.test(x) && it.pic ? [].concat(it.pic[1].list || [])[x.charCodeAt(0) - 65] : SOLID_BY[x]);
+  const fits = (k, clue) => !!SOLID[k] && Object.keys(clue).every(c => SOLID[k][c] === clue[c]);
+  /* directions: a compass turn, and walking on a map with columns A, B, C ... and rows 1, 2, 3 ... from the bottom */
+  const DIRS = ['north', 'east', 'south', 'west'];
+  const turnBy = t => (/half turn/.test(t) ? 2 : /full turn/.test(t) ? 4 : /quarter turn right/.test(t) ? 1 : /quarter turn left/.test(t) ? 3 : null);
+  const facing = (from, moves) => moves.split(',').map(t => t.trim()).filter(Boolean).reduce((d, t) => (d == null || turnBy(t) == null ? null : (d + turnBy(t)) % 4), DIRS.indexOf(from));
+  const walkCode = c => String(c).replace(/forward (\d+)/g, 'move $1').replace(/quarter turn (right|left)/g, 'turn $1').replace(/half turn/g, 'turn right, turn right');
+  function walk(m, code) {
+    const end = robot(m.start, walkCode(code)), steps = (String(code).match(/forward (\d+)/g) || []).reduce((t, f) => t + +f.split(' ')[1], 0);
+    const d = facing(DIRS[['^', '>', 'v', '<'].indexOf(m.start[2])], String(code).split(',').filter(t => /turn/.test(t)).join(','));
+    return end && { cell: 'ABCDEFGHIJ'[end[0]] + (m.rows - end[1]), steps, dir: DIRS[d], inside: end[0] >= 0 && end[1] >= 0 && end[0] < m.cols && end[1] < m.rows };
+  }
   /* the shape names a repeating pattern uses */
   const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
@@ -138,10 +160,11 @@
     blocks: [{ h: 3, t: 4, o: 5 }], pv: [{ n: 307, blank: true }, [3, 0, 7]], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
     wholes: [{ n: 5 }], pat: [{ seq: 'cstcst', blanks: 2, next: 'cs', core: 3 }], clock: [{ h: 3, m: 40, blank: true }],
     coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2 }],
-    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'prism', 'pyramid', 'cylinder'], letters: true }],
+    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'tpyr', 'pyramid', 'cylinder'], letters: true }],
     area: [{ cols: 8, rows: 4, rect: [5, 3] }], rect: [{ a: 6, b: 3, unit: 'cm', all: true }], ruler: [{ len: 7, from: 0 }],
     balance: [{ l: 6, r: '{one}', tilt: 0 }], cups: [{ n: 6 }], nl: [{ min: 300, max: 400, tick: 10, lab: 50, pt: 370, ask: [330] }, [330]],
-    map: [{ cols: 7, rows: 4, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'red', b: 'round' }],
+    map: [{ cols: 7, rows: 4, grid: true, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'red', b: 'round' }],
+    stack: [{ list: ['tri', 'cube'] }], box: [{ l: 4, d: 2, h: 3 }], compass: [{ face: 'east' }],
     row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }]
   };
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -176,6 +199,27 @@
         const m = it.pic[1], end = robot(m.start, row), mark = (m.marks || []).find(k => k[2] === it.robot.to);
         if (!end) say('cannot read the code: ' + row);
         else if (!mark || end[0] !== mark[0] || end[1] !== mark[1]) say('the code ' + row + ' stops at ' + end.join(',') + ', not at ' + it.robot.to);
+      } else if (it.solid && /^\d+ [a-z ]+$/.test(row)) {
+        /* "[] flat faces", "[] edges" ...: the objects' own counts, added up for a structure */
+        const what = row.replace(/^\d+ /, '').replace(/^flat /, '')[0], all = [].concat(it.solid), n = +row.split(' ')[0];
+        const want = what === 'o' ? all.length : all.reduce((t, k) => t + (SOLID[k] ? SOLID[k][what] : NaN), 0);
+        if (want !== n) say(all.join(' and ') + ': ' + row.replace(/^\d+ /, '') + ' is ' + want + ', not ' + n);
+      } else if (it.walk || it.turn || it.turnTo) {
+        /* a walk on the map (where you end, how far, which way you face) or a turn on the compass */
+        const w = it.walk && walk(it.pic[1], it.walk === true ? filled.join(', ') : it.walk), v = row.replace(/^(facing|at) /, '');
+        if (it.walk === true) { if (ri) return; if (!w || !w.inside || w.cell !== it.to) say('the directions ' + filled.join(', ') + ' end at ' + (w && w.cell) + ', not ' + it.to); return; }
+        if (it.walk && !w) say('cannot read the walk: ' + it.walk);
+        else if (/^[A-J]\d+$/.test(v)) { if (v !== w.cell || !w.inside) say('the walk ends at ' + w.cell + ', not ' + v); }
+        else if (/^\d+ squares?$/.test(v)) { if (+v.split(' ')[0] !== w.steps) say('the walk is ' + w.steps + ' squares, not ' + v); }
+        else if (/^\d+ quarter turns?$/.test(v)) {
+          const k = [1, 2, 3, 4].find(n => (DIRS.indexOf(it.turnTo.from) + n * (it.turnTo.dir === 'left' ? 3 : 1)) % 4 === DIRS.indexOf(it.turnTo.to));
+          if (k !== +v.split(' ')[0]) say('from ' + it.turnTo.from + ' to ' + it.turnTo.to + ' is ' + k + ' quarter turns ' + it.turnTo.dir + ', not ' + v);
+        } else if (DIRS.indexOf(v) >= 0) {
+          const want = w ? w.dir : DIRS[facing(it.turn.from, it.turn.moves)];
+          if (v !== want) say('you face ' + want + ', not ' + v);
+        } else say('nothing checks this row: ' + raw[ri]);
+      } else if (it.cong) {
+        /* congruent: checked below, from the lengths */
       } else if (/≠/.test(row)) {
         const sides = norm(row).split('≠').map(val);
         if (sides.some(isNaN)) say('cannot read: ' + row); else if (sides[0] === sides[1]) say('both sides are ' + sides[0] + ': ' + row);
@@ -228,6 +272,13 @@
         else if (!it.calc) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc) say('nothing checks this row: ' + raw[ri]);
     });
+    /* congruent faces or boxes: with the blanks filled in, the two lists of lengths match once sorted */
+    if (it.cong) {
+      const q = ansAll.slice(), b = it.cong.b.map(x => (x === '?' ? +q.shift() : x)), srt = l => l.slice().sort((x, y) => x - y).join();
+      if (it.cong.b.indexOf('?') >= 0 && srt(it.cong.a) !== srt(b)) say(it.cong.a.join(' by ') + ' and ' + b.join(' by ') + ' are not congruent');
+    }
+    /* directions written on the key take you to the place asked for */
+    if (it.give) { const w = walk(it.pic[1], it.lines.key); if (!w || !w.inside || w.cell !== it.give) say('the key directions end at ' + (w && w.cell) + ', not ' + it.give); }
     /* the answers are these numbers, in some order (putting numbers in order) */
     if (it.set && ansAll.slice().sort((x, y) => x - y).join() !== it.set.slice().sort((x, y) => x - y).join()) say('the answers ' + ansAll.join(', ') + ' are not the numbers ' + it.set.join(', '));
     /* expanded form: every answer is one digit followed by zeros, each in a different place */
@@ -256,6 +307,40 @@
       const o = pk.opts, yes = pk.ans === 0;
       if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
+      } else if (pk.clue) {
+        /* exactly one choice is an object that fits every part of the clue */
+        const ok = o.map(x => fits(solidOf(x, it), pk.clue));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice fits ' + JSON.stringify(pk.clue) + ': ' + o.join(', '));
+      } else if (pk.part != null) {
+        /* the object at this place in a structure (0: the top) */
+        const want = it.pic[1].list[pk.part];
+        if (solidOf(o[pk.ans], it) !== want || o.filter(x => solidOf(x, it) === want).length !== 1) say('part ' + (pk.part + 1) + ' of the structure is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.claim) {
+        /* true or false: the object (pk.claim.s) has these counts */
+        const c = Object.assign({}, pk.claim); delete c.s;
+        if (fits(pk.claim.s, c) !== yes) say(JSON.stringify(pk.claim) + ' is ' + fits(pk.claim.s, c) + ', but the key circles ' + o[pk.ans]);
+      } else if (it.solid && !Array.isArray(it.solid) && /^(prism|pyramid|neither)$/.test(o[pk.ans])) {
+        if (SOLID[it.solid].kind !== o[pk.ans]) say('a ' + it.solid + ' is ' + SOLID[it.solid].kind + ', not ' + o[pk.ans]);
+      } else if (pk.same) {
+        /* the one choice congruent to pk.same: the same lengths once sorted */
+        const srt = l => l.slice().sort((x, y) => x - y).join(), ok = pk.dims.map(d => srt(d) === srt(pk.same));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is congruent to ' + pk.same.join(' by '));
+      } else if (it.cong && o[0] === 'yes') {
+        /* "Are A and B congruent?": yes when their lengths match once sorted */
+        const srt = l => l.slice().sort((x, y) => x - y).join(), want = srt(it.cong.a) === srt(it.cong.b);
+        if (want !== yes) say(it.cong.a.join(' by ') + ' and ' + it.cong.b.join(' by ') + (want ? ' are' : ' are not') + ' congruent');
+      } else if (it.turn && DIRS.indexOf(o[pk.ans]) >= 0) {
+        const want = DIRS[facing(it.turn.from, it.turn.moves)];
+        if (o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say('you face ' + want + ', not ' + o[pk.ans]);
+      } else if (it.turnTo) {
+        /* exactly one turn takes you from one way to the other */
+        const ok = o.map(t => DIRS[facing(it.turnTo.from, t)] === it.turnTo.to);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one turn goes from ' + it.turnTo.from + ' to ' + it.turnTo.to);
+      } else if (it.walk && it.pic && it.pic[0] === 'map') {
+        /* the circled place is where the walk ends */
+        const m = it.pic[1], w = walk(m, it.walk), hit = w && (m.marks || []).filter(k => 'ABCDEFGHIJ'[k[0]] + (m.rows - k[1]) === w.cell);
+        if (!w) say('cannot read the walk: ' + it.walk);
+        else if (!hit.length || hit[0][2] !== o[pk.ans]) say('the walk ends at ' + w.cell + ', not at ' + o[pk.ans]);
       } else if (it.tf) {
         const t = truth(it.tf);
         if (t === null) say('cannot read the statement: ' + it.tf);

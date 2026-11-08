@@ -16,14 +16,18 @@
      tag       { t, p }                               a price tag: a label and cents
      bar       { cats, vals, max, step }              a bar graph (a val of null leaves that bar to draw)
      tally     { cats, vals, head, blank }            a tally table; blank: the counts are lines to write on
-     solids    { list: ['cube', 'prism', 'pyramid', 'cylinder', 'cone', 'sphere', 'tri'], letters }
+     solids    { list: ['cube', 'prism', 'pyramid', 'tpyr', 'cylinder', 'cone', 'sphere', 'tri'], letters }   prism: rectangular; pyramid: square-based; tpyr: triangular pyramid; tri: triangular prism
+     stack     { list: [top, ..., bottom] }           a structure taken apart: the same object names as solids
+     box       { l, d, h }                            a box of cubes: l long, d deep, h tall
+     compass   { face: 'north' | 'east' | 'south' | 'west' }   N, E, S and W, with an arrow for the way someone faces
      area      { cols, rows, cells: ['c,r', ...] | rect: [c, r] }   squares on a grid, some shaded
      rect      { a, b, unit, all }                    a rectangle with its side lengths (not to scale)
      ruler     { len, from, max }                     a cm ruler with a ribbon of len cm above it
      balance   { l, r, tilt: -1 | 0 | 1 }             a pan balance with cubes (numbers) or words on each side
      cups      { n }                                  n cups in a row
      nl        { min, max, tick, lab, pt, ptl, ask: [values], jumps: [[from, to, 'label']] }   a number line; ask: lines under those ticks
-     map       { cols, rows, marks: [[c, r, 'label']], start: [c, r, '>'], path: [[c, r], ...] }   a grid map; the key draws the path
+     map       { cols, rows, marks: [[c, r, 'label']], start: [c, r, '>'], path: [[c, r], ...], grid }   a grid map; the key draws the path;
+                                                      grid: columns A, B, C ... and rows 1, 2, 3 ... from the bottom
      venn      { a, b }                               a two-circle Venn diagram
      row       { list: [pic, pic], labels, gap }      pictures side by side */
 (function () {
@@ -207,6 +211,11 @@
       out += path('M' + a + ' L' + b + ' L' + c + ' L' + t + ' Z M' + t + ' L' + b, o) + path('M' + a + ' L' + dd + ' L' + c + ' M' + dd + ' L' + t, d);
       return { svg: out, w: s, h: s * 0.95 };
     }
+    if (k === 'tpyr') {
+      var pa = [x, y + s * 0.8], pb = [x + s * 0.62, y + s * 0.95], pc = [x + s, y + s * 0.68], pt = [x + s * 0.48, y];
+      out += path('M' + pa + ' L' + pb + ' L' + pc + ' L' + pt + ' Z M' + pt + ' L' + pb, o) + path('M' + pa + ' L' + pc, d);
+      return { svg: out, w: s, h: s * 0.95 };
+    }
     if (k === 'cylinder') {
       var cw = s * 0.7, ch = s * 0.9, e = s * 0.12;
       out += '<ellipse cx="' + (x + cw / 2) + '" cy="' + (y + e) + '" rx="' + cw / 2 + '" ry="' + e + '" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>' + path('M' + x + ' ' + (y + e) + ' L' + x + ' ' + (y + ch) + ' A' + cw / 2 + ' ' + e + ' 0 0 0 ' + (x + cw) + ' ' + (y + ch) + ' L' + (x + cw) + ' ' + (y + e), o) + path('M' + x + ' ' + (y + ch) + ' A' + cw / 2 + ' ' + e + ' 0 0 1 ' + (x + cw) + ' ' + (y + ch), d);
@@ -237,6 +246,32 @@
     });
     return { svg: out, h: h + (p.letters ? 26 : 4), w: cx - x - 22 };
   };
+  /* a structure taken apart: its objects from top to bottom, lifted a little apart and centred */
+  P.stack = function (p, x, y) {
+    var s = p.s || 46, parts = p.list.map(function (k) { return solid(k, 0, 0, s); }), mw = Math.max.apply(null, parts.map(function (o) { return o.w; })), out = '', cy = y;
+    p.list.forEach(function (k, i) { out += solid(k, x + (mw - parts[i].w) / 2, cy, s).svg; cy += parts[i].h + 10; });
+    return { svg: out, h: cy - y - 10, w: mw };
+  };
+  /* a box built from l long, d deep and h tall cubes, drawn at a slant */
+  P.box = function (p, x, y) {
+    var u = p.u || 14, dx = u * 0.5, dy = u * 0.4, top = y + p.d * dy, out = '', i;
+    out += r(x, top, p.l * u, p.h * u, { s: INK, sw: 1.3 });
+    for (i = 1; i < p.l; i++) out += ln(x + i * u, top, x + i * u, top + p.h * u, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.h; i++) out += ln(x, top + i * u, x + p.l * u, top + i * u, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.d; i++) out += ln(x + i * dx, top - i * dy, x + p.l * u + i * dx, top - i * dy, { s: LINE, sw: 0.7 }) + ln(x + p.l * u + i * dx, top - i * dy, x + p.l * u + i * dx, top - i * dy + p.h * u, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.l; i++) out += ln(x + i * u, top, x + i * u + p.d * dx, top - p.d * dy, { s: LINE, sw: 0.7 });
+    for (i = 1; i < p.h; i++) out += ln(x + p.l * u, top + i * u, x + p.l * u + p.d * dx, top + i * u - p.d * dy, { s: LINE, sw: 0.7 });
+    var bx = x + p.l * u, ex = p.d * dx, ey = p.d * dy;
+    out += path('M' + x + ' ' + top + ' L' + (x + ex) + ' ' + y + ' L' + (bx + ex) + ' ' + y + ' L' + (bx + ex) + ' ' + (top + p.h * u - ey) + ' L' + bx + ' ' + (top + p.h * u) + ' M' + bx + ' ' + top + ' L' + (bx + ex) + ' ' + y, { s: INK, sw: 1.3 });
+    return { svg: out, h: p.h * u + ey, w: p.l * u + ex };
+  };
+  /* a compass: north, east, south and west, with an arrow for the way someone faces */
+  P.compass = function (p, x, y) {
+    var R = 24, cx = x + R + 14, cy = y + R + 14, out = circ(cx, cy, R, { s: LINE, sw: 1 });
+    [['N', 0, -1], ['E', 1, 0], ['S', 0, 1], ['W', -1, 0]].forEach(function (c) { out += ln(cx + c[1] * (R - 5), cy + c[2] * (R - 5), cx + c[1] * R, cy + c[2] * R, { s: INK2 }) + T(cx + c[1] * (R + 9), cy + c[2] * (R + 9) + 4, c[0], { s: 11, w: 700, a: 'middle' }); });
+    if (p.face) out += shape({ north: '^', east: '>', south: 'v', west: '<' }[p.face], cx, cy, R * 1.3);
+    return { svg: out, h: 2 * R + 28, w: 2 * R + 28 };
+  };
   P.area = function (p, x, y) {
     var u = p.u || 15, out = '';
     for (var i = 0; i < p.rows; i++) for (var j = 0; j < p.cols; j++) {
@@ -249,7 +284,7 @@
     var w = p.w || 120, h = p.h || 64, top = p.all ? 16 : 0, out = r(x + 50, y + 4 + top, w, h, { s: INK, sw: 1.5 });
     out += T(x + 50 + w / 2, y + top + h + 22, p.a + ' ' + p.unit, { s: 12, w: 700, a: 'middle' }) + T(x + 44, y + top + 4 + h / 2 + 4, p.b + ' ' + p.unit, { s: 12, w: 700, a: 'end' });
     if (p.all) out += T(x + 50 + w / 2, y + 12, p.a + ' ' + p.unit, { s: 12, w: 700, a: 'middle' }) + T(x + 56 + w, y + top + 4 + h / 2 + 4, p.b + ' ' + p.unit, { s: 12, w: 700 });
-    return { svg: out, h: h + 28 + top, w: w + 100 };
+    return { svg: out, h: h + 28 + top, w: w + (p.all ? 100 : 54) };
   };
   P.ruler = function (p, x, y, w) {
     var max = p.max || 12, cm = Math.min(18, (w - 10) / max), out = '', ry = y + 20;
@@ -292,13 +327,18 @@
     return { svg: out, h: 60, w: w, used: used };
   };
   P.map = function (p, x, y, w, key, th) {
-    var u = p.u || 26, out = '';
+    var u = p.u || 26, out = '', x00 = x;
+    if (p.grid) {
+      x += 16;
+      for (var gi = 0; gi < p.cols; gi++) out += T(x + gi * u + u / 2, y + p.rows * u + 14, 'ABCDEFGHIJ'[gi], { s: 10, w: 700, f: INK2, a: 'middle' });
+      for (var gj = 0; gj < p.rows; gj++) out += T(x - 8, y + gj * u + u / 2 + 4, p.rows - gj, { s: 10, w: 700, f: INK2, a: 'middle' });
+    }
     for (var i = 0; i <= p.rows; i++) out += ln(x, y + i * u, x + p.cols * u, y + i * u, { s: LINE, sw: 0.8 });
     for (var j = 0; j <= p.cols; j++) out += ln(x + j * u, y, x + j * u, y + p.rows * u, { s: LINE, sw: 0.8 });
+    if (key && p.path) out += path('M' + p.path.map(function (q) { return (x + q[0] * u + u / 2) + ' ' + (y + q[1] * u + u / 2); }).join(' L'), { s: KEY, sw: 1.8 });
     (p.marks || []).forEach(function (m) { out += circ(x + m[0] * u + u / 2, y + m[1] * u + u / 2, u * 0.38, { s: INK2 }) + T(x + m[0] * u + u / 2, y + m[1] * u + u / 2 + 4, D.words(m[2], th), { s: 10, w: 700, a: 'middle' }); });
     if (p.start) out += shape(p.start[2], x + p.start[0] * u + u / 2, y + p.start[1] * u + u / 2, u * 0.8);
-    if (key && p.path) out += path('M' + p.path.map(function (q) { return (x + q[0] * u + u / 2) + ' ' + (y + q[1] * u + u / 2); }).join(' L'), { s: KEY, sw: 1.8 });
-    return { svg: out, h: p.rows * u, w: p.cols * u };
+    return { svg: out, h: p.rows * u + (p.grid ? 18 : 0), w: p.cols * u + x - x00 };
   };
   P.venn = function (p, x, y, w, key, th) {
     var R = p.R || Math.min(70, w / 3.2), cx = x + Math.min(w, 3.2 * R) / 2, out = '<ellipse cx="' + (cx - R * 0.55) + '" cy="' + (y + R + 18) + '" rx="' + R + '" ry="' + R * 0.85 + '" fill="none" stroke="' + INK + '" stroke-width="1.4"/><ellipse cx="' + (cx + R * 0.55) + '" cy="' + (y + R + 18) + '" rx="' + R + '" ry="' + R * 0.85 + '" fill="none" stroke="' + INK + '" stroke-width="1.4"/>';
