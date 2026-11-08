@@ -10,6 +10,8 @@
       and, for the newer question shapes, the answer worked out again by verify/*.js.
    3. Pages: every chapter, lesson screen, practice page, quiz and Toolbox tool opens with no errors. The Toolbox blocks
       are tapped and dragged the way a child would (add, snap 10 ones into a ten, put back, undo) on a phone-size screen.
+   3b. Worksheets: every printable sheet in every theme, with and without its key, must fit its page, and every key is
+      worked out again by verify/sheets.js; the Worksheets tab must fit a phone and print one page per sheet.
    4. Answering: on a phone-size screen, practice questions of every kind are answered the way a child would
       (right, and sometimes wrong first), and must be marked correctly. Nothing may run off the side of the screen.
    5. Saved progress: progress saved before a change (gNatlas: keys) still loads: levels, secure skills, quiz bests,
@@ -226,6 +228,74 @@ async function checkGrade(browser, base, g) {
     await page.evaluate(h => { location.hash = '#' + h; }, r);
     await page.waitForTimeout(40);
     if (errs.length > before) fail(where, 'page #' + r + ' has an error: ' + errs.slice(before).join(' / '));
+  }
+
+  /* 3b. Worksheets: every sheet in every theme, with and without its answer key, is drawn and must fit its page
+     (nothing past the bottom, no text outside the page or its question's column, no unfilled words); every question's
+     key is worked out again by verify/sheets.js; the Worksheets tab opens on a phone without running off the side;
+     and printing a sheet with its key gives exactly 2 pages. */
+  const sheetChapters = await page.evaluate(() => (Atlas.sheets ? Object.keys(Atlas.sheets.chapters) : []));
+  if (sheetChapters.length) {
+    /* sheets are measured in their real fonts, so this page may fetch Google Fonts (and nothing else from outside) */
+    const sctx = await browser.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true });
+    await sctx.route('**/*', r => (r.request().url().startsWith(base) || /^https:\/\/fonts\.(googleapis|gstatic)\.com\//.test(r.request().url()) ? r.continue() : r.abort()));
+    for (const f of inject) await sctx.addInitScript({ content: fs.readFileSync(path.join(__dirname, f), 'utf8') });
+    const sp = await sctx.newPage();
+    sp.on('pageerror', e => errs.push(e.message));
+    await sp.goto(base + '/grade' + g + '/index.html#home');
+    await sp.waitForFunction(() => window.Atlas && Atlas.sheets && Atlas.sheets.themes.length, null, { timeout: 15000 });
+    const fontsOk = await sp.evaluate(async () => {
+      const want = Atlas.sheets.fontList();
+      await Promise.race([Promise.all(want.map(f => document.fonts.load(f).catch(() => {}))), new Promise(r => setTimeout(r, 10000))]);
+      return want.filter(f => !document.fonts.check(f));
+    });
+    if (fontsOk.length) fail(where + ' worksheets', 'the sheet fonts did not load (' + fontsOk.join(', ') + '), so the page sizes cannot be checked. Is the internet reachable?');
+    const ws = await sp.evaluate(chs => {
+      const S = Atlas.sheets, out = [];
+      let pages = 0;
+      const box = document.createElement('div');
+      box.style.cssText = 'position:absolute;left:0;top:0;width:612px;height:792px';
+      document.body.appendChild(box);
+      for (const ch of chs) for (const s of S.list(ch)) for (const t of S.themes) {
+        S.items(ch, s.slug, s.kind, t.id).items.forEach((it, i) => window.__sheetCheck(it).forEach(m => out.push(ch + ' sheet ' + s.slug + '/' + s.kind + ' (' + t.id + ') question ' + (i + 1) + ': ' + m)));
+        for (const key of [false, true]) {
+          S.overflow.length = 0;
+          const svg = S.page(ch, s.slug, s.kind, t.id, key), code = S.code(ch, s.slug, s.kind, S.themeById(t.id)) + (key ? ' key' : '');
+          pages++;
+          S.overflow.forEach(m => out.push(code + ': ' + m));
+          box.innerHTML = svg;
+          box.querySelectorAll('text').forEach(el => {
+            if (/\{\w+\}|undefined|NaN/.test(el.textContent)) out.push(code + ': "' + el.textContent + '" has unfilled words, "undefined" or "NaN"');
+            const b = el.getBBox(), cell = el.closest('.it');
+            if (b.x < 0 || b.y < 0 || b.x + b.width > 612 || b.y + b.height > 792) out.push(code + ': "' + el.textContent + '" runs off the page');
+            else if (cell && !el.closest('.pic') && (b.x < +cell.dataset.x0 - 1 || b.x + b.width > +cell.dataset.x1 + 1)) out.push(code + ': "' + el.textContent + '" runs out of question ' + cell.dataset.n);
+          });
+        }
+      }
+      box.remove();
+      return { out: out.slice(0, 60), more: Math.max(0, out.length - 60), pages };
+    }, sheetChapters);
+    ws.out.forEach(p => fail(where + ' worksheets', p));
+    if (ws.more) fail(where + ' worksheets', ws.more + ' more problems');
+    log('Grade ' + g + ' worksheets: ' + ws.pages + ' pages drawn and checked.');
+    await sp.evaluate(() => { localStorage.setItem('atlas:adult', '1'); document.documentElement.classList.add('adult'); });
+    for (const ch of sheetChapters) {
+      const first = await sp.evaluate(ch => Atlas.sheets.list(ch)[0], ch);
+      for (const r of [ch + '/sheets', ch + '/sheets/all', ch + '/sheets/' + first.slug + '/' + first.kind]) {
+        const before = errs.length;
+        await sp.evaluate(h => { location.hash = '#' + h; }, r);
+        await sp.waitForTimeout(r.endsWith('/all') ? 1500 : 600);
+        if (errs.length > before) fail(where, 'page #' + r + ' has an error: ' + errs.slice(before).join(' / '));
+        if (await sp.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'page #' + r + ' runs off the side of a phone screen');
+      }
+      if (await sp.evaluate(() => document.querySelectorAll('.ws-sheet').length) !== 2) fail(where, 'a worksheet preview with its key does not show 2 pages');
+      await sp.emulateMedia({ media: 'print' });
+      const pdf = (await sp.pdf({ preferCSSPageSize: true, printBackground: true })).toString('latin1');
+      await sp.emulateMedia({ media: 'screen' });
+      const n = (pdf.match(/\/Type\s*\/Page[^s]/g) || []).length;
+      if (n !== 2) fail(where, 'printing a worksheet with its key gives ' + n + ' pages, not 2');
+    }
+    await sctx.close();
   }
 
   /* 3a. Toolbox blocks: tap and drag blocks onto the mat, drag a one into Tens to snap 10 ones into a ten,

@@ -99,8 +99,11 @@
     var tabs = '<nav class="jump ls-tabs" aria-label="In this chapter">' +
       [['learn', 'Lessons', '#' + id], ['practice', 'Practise', '#' + id + '/practice'], ['quiz', 'Chapter quiz', '#' + id + '/quiz']].map(function (t) {
         return '<a href="' + t[2] + '"' + (tab === t[0] ? ' aria-current="page"' : '') + '>' + t[1] + '</a>';
-      }).join('') + '<a href="#check-up/' + id + '">Check-up</a><a href="#progress">My progress</a></nav>';
+      }).join('') + '<a href="#check-up/' + id + '">Check-up</a><a href="#progress">My progress</a>' +
+      (A.sheets && A.sheets.has(id) ? '<a class="adult-only" href="#' + id + '/sheets"' + (tab === 'sheets' ? ' aria-current="page"' : '') + '>Worksheets</a>' : '') + '</nav>';
     var h = '<div class="wrap chapter" data-strand="' + ctx.m.strand + '"><p class="crumb"><a href="#home">All chapters</a></p>' + ctx.head + tabs;
+    document.documentElement.classList.remove('ws-on');
+    if (tab === 'sheets' && A.sheets && A.sheets.has(id)) { A.sheets.view(app, id, parts.slice(1), h); return ''; }
     if (tab === 'learn' && parts[1]) return concept(app, id, parts[1], h, ctx);
     if (tab === 'review') { review(app, id, h, ctx); return ''; }
     if (tab === 'practice') {
