@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-08
+- Worksheets for Grade 3 **Patterns, Equations and Code**: all 17 ideas (repeating, growing and shrinking patterns, pattern rules and tables, input-output machines, balancing equations, and robot code with steps, loops, things at the same time and fixing code), 5 sheets each in 10 themes, with answer keys.
 - Worksheets for Grade 3 **Adding and Subtracting**: all 16 ideas (make a ten, doubles, mental math to 1000, friendly numbers, counting up, trading and column methods, estimating, checking, word problems and equal sides), 5 sheets each in 10 themes, with answer keys.
 - Worksheets for Grade 3 **Numbers to 1000**: all 17 ideas (blocks, place value, expanded form, words, counting by 50s, 100s and 200s, comparing, ordering and rounding), 5 sheets each in 10 themes, with answer keys.
 - Worksheets: new pictures for the rest of Grade 3 and up (base ten blocks, place value charts, ten frames, column sums, fractions, patterns, clocks, money, graphs and tallies, 3D objects, area, rulers, balances, number lines, maps and Venn diagrams), each checked to fit its question. No new sheets yet; the chapters follow.
