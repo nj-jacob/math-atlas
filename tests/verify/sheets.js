@@ -297,6 +297,10 @@
       } else if (it.odd) {
         const ok = o.map(truth);
         if (ok[pk.ans] !== false || ok.filter(x => x === false).length !== 1) say('the odd one out is not the only wrong fact');
+      } else if (pk.nth) {
+        /* the nth term of a repeating pattern: the core comes round again every core length */
+        const c = pk.nth.core;
+        if (o[pk.ans] !== c[(pk.nth.n - 1) % c.length]) say('term ' + pk.nth.n + ' of the core ' + c.join(', ') + ' is ' + c[(pk.nth.n - 1) % c.length] + ', not ' + o[pk.ans]);
       } else if (pk.equal) {
         /* "Equal parts?" under a fraction picture: yes unless the picture is cut unevenly */
         const ev = !(it.pic && it.pic[0] === 'frac' && it.pic[1].uneven);
@@ -467,12 +471,18 @@
     }
     /* a fraction in simplest form: its top and bottom share no factor */
     if (it.simplest) (it.a || []).filter(v => /\//.test(v)).forEach(v => { const [n, d] = String(v).split(' ').pop().split('/').map(Number); for (let f = 2; f <= Math.min(n, d); f++) if (n % f === 0 && d % f === 0) say(v + ' is not in simplest form'); });
+    /* a shape pattern: the shapes to draw next carry on its core */
+    if (it.pic && it.pic[0] === 'pat' && it.pic[1].next) {
+      const p = it.pic[1], c = p.seq.slice(0, p.core);
+      if (p.seq.split('').some((ch, i) => ch !== c[i % p.core])) say('the shapes ' + p.seq + ' do not repeat the core ' + c);
+      if (p.next.split('').some((ch, i) => ch !== c[(p.seq.length + i) % p.core])) say('the next shapes ' + p.next + ' do not carry on the core ' + c);
+    }
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
     if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
-    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own) && !ask) say('a question with nothing to answer');
+    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own) && !ask && !(it.pic && it.pic[0] === 'pat' && it.pic[1].next)) say('a question with nothing to answer');
     return bad;
   };
 })();
