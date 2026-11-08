@@ -24,29 +24,65 @@
     const a = val(sides[0]), b = val(sides[1]);
     return isNaN(a) || isNaN(b) ? null : a === b;
   }
-  /* how many things the picture shows, and the two numbers of its times sum (if it has one) */
-  function picture(p) {
-    const o = p[1];
-    if (p[0] === 'groups') { const c = o.counts || Array(o.g).fill(o.k); return { total: c.reduce((x, y) => x + y, 0), pair: o.counts ? null : [o.g, o.k], counts: c }; }
-    if (p[0] === 'array') return { total: o.r * o.c, pair: [o.r, o.c] };
-    if (p[0] === 'line') return o.n ? { total: o.n * o.step, pair: [o.n, o.step] } : null;
-    if (p[0] === 'share') return { total: o.t, share: o.g };
-    if (p[0] === 'dots') return { total: o.t };
-    return null;
-  }
+  /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
+     own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
+     Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
+  const READ = {
+    groups: o => { const c = o.counts || Array(o.g).fill(o.k); return { total: c.reduce((x, y) => x + y, 0), pair: o.counts ? null : [o.g, o.k], counts: c }; },
+    array: o => ({ total: o.r * o.c, pair: [o.r, o.c] }),
+    line: o => (o.n ? { total: o.n * o.step, pair: [o.n, o.step] } : null),
+    share: o => ({ total: o.t, share: o.g }),
+    dots: o => ({ total: o.t }),
+    /* a table's blanks: every filled row keeps the same "for every 1" amount */
+    table: o => ({ blanks: o.rows.flat().filter(x => x === '[]').length, own: (o, a) => {
+      const bad = []; let rate = null;
+      o.rows.forEach(r => {
+        const v = r.map(x => (x === '[]' ? a.shift() : x));
+        if (v.some(x => typeof x !== 'number')) { bad.push('a table blank has no answer'); return; }
+        const k = v[1] / v[0];
+        if (rate === null) rate = k; else if (k !== rate) bad.push('table row ' + v.join(' and ') + ' does not keep ' + rate + ' for every 1');
+      });
+      return bad;
+    } }),
+    /* sheet-pics.js */
+    blocks: o => ({ total: 100 * o.h + 10 * o.t + o.o }),
+    tenframe: o => ({ total: o.a + o.b }),
+    coins: o => ({ total: o.list.reduce((x, y) => x + y, 0) }),
+    area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length }),
+    wholes: o => ({ total: o.n }),
+    cups: o => ({ total: o.n }),
+    col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
+    tally: o => (o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : null),
+    nl: o => ((o.ask || []).length ? { blanks: o.ask.length, own: (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) } : null),
+    row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
+      return n ? { blanks: n, own: (o, a) => o.list.flatMap((p, i) => (parts[i].own ? parts[i].own(p[1], a.splice(0, parts[i].blanks)) : [])) } : null; }
+  };
+  /* one example of every picture, drawn by tests/run.js in a question's column (228 points) with and without the key;
+     a picture file that adds a picture adds its example here too */
+  window.__picSamples = {
+    groups: [{ g: 3, k: 4 }], array: [{ r: 3, c: 5 }], dots: [{ t: 12 }], line: [{ n: 3, step: 5, max: 20 }], share: [{ t: 12, g: 3 }],
+    table: [{ head: ['{conts}', '{many}'], rows: [[1, 5], [2, '[]']] }, [10]],
+    blocks: [{ h: 3, t: 4, o: 5 }], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
+    wholes: [{ n: 5 }], pat: [{ seq: 'cstcst', blanks: 2, next: 'cs', core: 3 }], clock: [{ h: 3, m: 40, blank: true }],
+    coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2 }],
+    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'prism', 'pyramid', 'cylinder'], letters: true }],
+    area: [{ cols: 8, rows: 4, rect: [5, 3] }], rect: [{ a: 6, b: 3, unit: 'cm', all: true }], ruler: [{ len: 7, from: 0 }],
+    balance: [{ l: 6, r: '{one}', tilt: 0 }], cups: [{ n: 6 }], nl: [{ min: 300, max: 400, tick: 10, lab: 50, pt: 370, ask: [330] }, [330]],
+    map: [{ cols: 7, rows: 4, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'red', b: 'round' }],
+    row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }]
+  };
+  function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
+
 
   window.__sheetCheck = function (it) {
     const bad = [], a = (it.a || []).slice();
     const say = m => bad.push(m);
-    /* 1. a table's blanks take the first answers; every filled row keeps the same "for every 1" amount */
-    if (it.pic && it.pic[0] === 'table') {
-      let rate = null;
-      it.pic[1].rows.forEach(r => {
-        const v = r.map(x => (x === '[]' ? a.shift() : x));
-        if (v.some(x => typeof x !== 'number')) { say('a table blank has no answer'); return; }
-        const k = v[1] / v[0];
-        if (rate === null) rate = k; else if (k !== rate) say('table row ' + v.join(' and ') + ' does not keep ' + rate + ' for every 1');
-      });
+    /* 1. a picture with its own write-on lines takes the first answers, and checks them itself */
+    const pc = it.pic && picture(it.pic);
+    if (pc && pc.own) {
+      const mine = a.splice(0, pc.blanks);
+      if (mine.length < pc.blanks) say('a blank in the picture has no answer');
+      else pc.own(it.pic[1], mine).forEach(say);
     }
     /* 2. fill every box and work each sum out */
     const filled = (it.eq || []).map(row => row.split(' ').map(t => {
@@ -67,10 +103,9 @@
       else if (v.some(x => x !== v[0])) say('the sum is not true: ' + row);
     });
     /* 3. the picture matches the sum: its total is in the first sum, and a times sum uses its two numbers */
-    const pc = it.pic && picture(it.pic);
     const first = filled.filter(r => /=/.test(r))[0];
     if (pc && first) {
-      if (nums(first).indexOf(pc.total) < 0) say('the picture shows ' + pc.total + ' but the sum is ' + first);
+      if (pc.total != null && nums(first).indexOf(pc.total) < 0) say('the picture shows ' + pc.total + ' but the sum is ' + first);
       const m = norm(first).match(/^(\d+) \* (\d+) =/);
       if (m && pc.pair && [+m[1], +m[2]].sort().join() !== pc.pair.slice().sort().join()) say('the times sum ' + first + ' does not match the picture (' + pc.pair.join(' and ') + ')');
       const d = norm(first).match(/^(\d+) \/ (\d+) =/);
@@ -120,7 +155,7 @@
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
-    if (!it.eq && !pk && !it.draw && !it.lines && !(it.pic && it.pic[0] === 'table')) say('a question with nothing to answer');
+    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own)) say('a question with nothing to answer');
     return bad;
   };
 })();

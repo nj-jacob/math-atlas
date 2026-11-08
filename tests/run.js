@@ -272,6 +272,20 @@ async function checkGrade(browser, base, g) {
           });
         }
       }
+      /* every picture has an example that draws inside a question's column, with numbers and no "undefined" */
+      const th = S.themes[0];
+      Object.keys(S.pics).forEach(name => {
+        const ex = window.__picSamples[name];
+        if (!ex) { out.push('the worksheet picture "' + name + '" has no example in verify/sheets.js'); return; }
+        for (const key of [false, true]) {
+          let r;
+          try { r = S.draw.pic([name, ex[0]], 70, 20, 228, key, th, (ex[1] || []).slice()); } catch (e) { out.push('the worksheet picture "' + name + '" stopped: ' + e.message); return; }
+          box.innerHTML = '<svg viewBox="0 0 612 792" width="612" height="792">' + r.svg + '</svg>';
+          const b = box.querySelector('svg').getBBox();
+          if (/undefined|NaN/.test(r.svg) || !(r.h > 0)) out.push('the worksheet picture "' + name + '" draws "undefined", "NaN" or nothing');
+          if (b.x < 69 || b.x + b.width > 299) out.push('the worksheet picture "' + name + '" runs out of its column (' + Math.round(b.x) + ' to ' + Math.round(b.x + b.width) + ')');
+        }
+      });
       box.remove();
       return { out: out.slice(0, 60), more: Math.max(0, out.length - 60), pages };
     }, sheetChapters);
