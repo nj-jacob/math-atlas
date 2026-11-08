@@ -20,7 +20,7 @@
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
-     pv    { n, shift, dir }    a place value chart with n in it; with shift, a second row shows n × 10^shift
+     pvmove { n, shift, dir }   a place value chart with n in it; with shift, a second row shows n × 10^shift
                                 (dir 'x') or n ÷ 10^shift (dir 'd'), drawn only on the answer key
    Numbers of 5 or more digits are written with a space (12 500), using S.fmt from sheets.js. The answer checks are in tests/verify/sheets.js. */
 (function () {
@@ -214,7 +214,7 @@
     (s[1] || '').split('').forEach(function (ch, i) { out[-1 - i] = ch; });
     return { hi: hi, lo: lo, d: out };
   }
-  P.pv = function (p, x, y, w, key) {
+  P.pvmove = function (p, x, y, w, key) {
     var shift = p.shift || 0, res = shift ? (p.dir === 'd' ? p.n / Math.pow(10, shift) : p.n * Math.pow(10, shift)) : null;
     res = res === null ? null : +res.toFixed(6);
     var a = places(p.n), b = res === null ? null : places(res), hi = Math.max(a.hi, b ? b.hi : 0), lo = Math.min(a.lo, b ? b.lo : 0);

@@ -17,7 +17,7 @@
   /* expanded form back to standard form */
   function ST(list) { return { eq: [list.map(F).join(' + ') + ' = []'], a: [list.reduce(function (s, v) { return s + v; }, 0)], wide: true }; }
   /* words to numerals, and numerals to words */
-  function WN(w, n) { return { q: 'Write in numerals: ' + w + '.', eq: ['[]'], a: [n], say: w }; }
+  function WN(w, n) { return { q: 'Write in numerals: ' + w + '.', eq: ['[]'], a: [n], words: w }; }
   function NW(n, w) { return { q: 'Write ' + F(n) + ' in words.', lines: { n: 2, key: w } }; }
   /* compare two numbers: circle the sign */
   function CMP(x, y) { return { eq: [F(x) + ' ? ' + F(y)], pick: { opts: ['<', '>', '='], ans: x < y ? 0 : x > y ? 1 : 2, cmp: [F(x), F(y)] }, pickLast: true }; }
@@ -27,14 +27,14 @@
   }
   /* round n to the nearest `to`, with the hill (pic) or without */
   function RD(n, to, pic) {
-    var lo = Math.floor(n / to) * to, it = { q: 'Round ' + F(n) + ' to the nearest ' + F(to) + '.', eq: ['[]'], a: [Math.round(n / to) * to], round: { n: F(n), to: to } };
+    var lo = Math.floor(n / to) * to, it = { q: 'Round ' + F(n) + ' to the nearest ' + F(to) + '.', eq: [F(n) + ' is about []'], a: [Math.round(n / to) * to], round: to };
     if (pic) it.pic = ['hill', { lo: lo, hi: lo + to, n: n }];
     return it;
   }
   /* × or ÷ by 10, 100 or 1000 on a place value chart */
   function PV(n, shift, dir) {
     var r = dir === 'd' ? n / Math.pow(10, shift) : n * Math.pow(10, shift);
-    return { pic: ['pv', { n: n, shift: shift, dir: dir }], eq: [F(n) + (dir === 'd' ? ' ÷ ' : ' × ') + F(Math.pow(10, shift)) + ' = []'], a: [r] };
+    return { pic: ['pvmove', { n: n, shift: shift, dir: dir }], eq: [F(n) + (dir === 'd' ? ' ÷ ' : ' × ') + F(Math.pow(10, shift)) + ' = []'], a: [r] };
   }
   /* disks: what number do they show? */
   function DK(n) { return { pic: ['disks', { n: n }], eq: ['[]'], a: [n] }; }
@@ -75,13 +75,13 @@
       watch: 'giving the digit or the place name instead of the value ("7" or "thousands" for the 7 in 47 305). Value = digit × place.',
       goal: 'I can tell what a digit is worth from its place.',
       learn: {
-        show: { pic: ['pv', { n: 47305 }], cap: 'the 7 is in the thousands place', eq: ['7 × 1000 = 7000'] },
-        together: [{ pic: ['pv', { n: 25618 }], q: 'The 5 is in the thousands place.', eq: ['5 × 1000 = []'], a: [5000] }, DV(63402, 6)],
+        show: { pic: ['pvmove', { n: 47305 }], cap: 'the 7 is in the thousands place', eq: ['7 × 1000 = 7000'] },
+        together: [{ pic: ['pvmove', { n: 25618 }], q: 'The 5 is in the thousands place.', eq: ['5 × 1000 = []'], a: [5000] }, DV(63402, 6)],
         cue: 'Find the digit’s place. Value = digit × place.',
         own: [DV(18350, 8), DV(72914, 9), DV(30657, 3), DV(46281, 2)]
       },
       p1: {
-        show: { pic: ['pv', { n: 52416 }], cap: 'the 2 is in the thousands place', eq: ['2 × 1000 = 2000'] },
+        show: { pic: ['pvmove', { n: 52416 }], cap: 'the 2 is in the thousands place', eq: ['2 × 1000 = 2000'] },
         items: [DV(3456, 4), DV(8172, 1), DV(15340, 5), DV(29806, 9), DV(61537, 6), DV(40218, 8)]
       },
       p2: {
@@ -112,7 +112,7 @@
         own: [WN('sixty thousand eight', 60008), WN('seven thousand forty', 7040), WN('fifty thousand three hundred', 50300), WN('ten thousand five hundred two', 10502)]
       },
       p1: {
-        show: { pic: ['pv', { n: 30607 }], cap: 'thirty thousand six hundred seven', eq: ['30 607'] },
+        show: { pic: ['pvmove', { n: 30607 }], cap: 'thirty thousand six hundred seven', eq: ['30 607'] },
         items: [DK(3060), DK(40011), WN('two thousand five', 2005), WN('eighty thousand', 80000), WN('nine thousand three hundred', 9300), WN('forty thousand twenty', 40020)]
       },
       p2: {
@@ -136,7 +136,7 @@
       watch: 'writing the digits instead of their values (52 408 = 5 + 2 + 4 + 8). Each part is a digit times its place.',
       goal: 'I can write a number in expanded form and back again.',
       learn: {
-        show: { pic: ['pv', { n: 52408 }], eq: ['50 000 + 2000 + 400 + 8', '= 52 408'] },
+        show: { pic: ['pvmove', { n: 52408 }], eq: ['50 000 + 2000 + 400 + 8', '= 52 408'] },
         together: [EX(36215), ST([40000, 3000, 70, 5])],
         cue: 'Write what each digit is worth, then add the parts. Skip the zeros.',
         own: [EX(4762), EX(81093), ST([20000, 600, 9]), ST([70000, 8000, 300, 40])]
@@ -302,7 +302,7 @@
         items: [{ q: '{b} rounded 48 650 to the nearest thousand and got 48 000. What went wrong?', lines: { n: 3, key: 'The hundreds digit is 6, which is 5 or more, so it rounds up to 49 000.' } },
           { q: 'Write a number that rounds to 30 000 (nearest thousand) but is more than 30 000.', lines: { n: 1, key: 'Any number from 30 001 to 30 499.' } },
           { q: 'A town has 23 487 people. Why might a news story say "about 23 000"?', lines: { n: 3, key: 'Rounded numbers are easier to read and remember, and the exact count changes often.' } },
-          { q: 'Mark 72 300 on the hill, then round it to the nearest 10 000.', pic: ['hill', { lo: 70000, hi: 80000, n: 72300, ask: true }], eq: ['[]'], a: [70000], round: { n: F(72300), to: 10000 } }]
+          { q: 'Mark 72 300 on the hill, then round it to the nearest 10 000.', pic: ['hill', { lo: 70000, hi: 80000, n: 72300, ask: true }], eq: ['72 300 is about []'], a: [70000], round: 10000 }]
       }
     },
 
@@ -329,7 +329,7 @@
         items: [{ q: '{b} rounded 39 700 to the nearest thousand and wrote 30 000. What went wrong?', lines: { n: 3, key: '39 700 is between 39 000 and 40 000, and it is past 39 500. It rounds up to 40 000.' } },
           { q: 'Round 99 999 to the nearest 10, 100, 1000 and 10 000. What do you notice?', lines: { n: 3, key: 'Every answer is 100 000. The 9s keep carrying.' } },
           { q: 'Write a number that rounds to 60 000 (nearest thousand) but starts with 59.', lines: { n: 1, key: 'Any number from 59 500 to 59 999.' } },
-          { q: 'Which rounds to 10 000 (nearest hundred)?', pick: { opts: ['9949', '9950', '9849'], ans: 1, rnd: { to: 100, is: 10000 } }, wide: true }]
+          { q: 'Which rounds to 10 000 (nearest hundred)?', pick: { opts: ['9949', '9950', '9849'], ans: 1, round: { to: 100, val: 10000 } }, wide: true }]
       }
     },
 

@@ -118,7 +118,7 @@
     set('g3as-ndmc', q => { const ok = q.options.map(o => { const n = nums(o); return n.length === 2 && Math.abs(n[0] - n[1]) === 1; }); return ok[q.answer] && ok.filter(Boolean).length === 1 ? '' : 'near double'; });
     set('g3as-bondmatch', q => q.pairs.every(p => { const l = nums(p[0]), r = nums(p[1]); return l[0] - l[1] === r[1] && r[0] === l[1] && r[2] === l[0]; }) ? '' : 'pairs');
     set('g3as-calcmatch', q => q.pairs.every(p => ev(p[0]) === +H.strip(p[1])) ? '' : 'pairs');
-    set('g3as-friendmc', (q, m) => { const ok = q.options.map(o => ev(o) === op(m.a, m.op, m.b) && nums(o).some(n => n % 10 === 0 && n !== m.a)); return ok[q.answer] && ok.filter(Boolean).length === 1 ? '' : 'friendly way'; });
+    set('g3as-friendmc', (q, m) => { const ok = q.options.map(o => ev(o) === op(m.a, m.op, m.b) && nums(o)[1] % 10 === 0); return ok[q.answer] && ok.filter(Boolean).length === 1 ? '' : 'friendly way'; });
     set('g3as-build', (q, m) => q.answer === op(m.a, m.op, m.b) ? '' : 'build');
     set('g3as-colstep', (q, m) => { const o = dg(m.a, 0) + dg(m.b, 0); return q.answers[0] === o && q.answers[1] === o % 10 && q.answers[2] === (o >= 10 ? 1 : 0) ? '' : 'ones column'; });
     set('g3as-digit', (q, m) => q.answer === dg(op(m.a, m.op, m.b), m.p) ? '' : 'digit');

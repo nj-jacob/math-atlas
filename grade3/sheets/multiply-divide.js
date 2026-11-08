@@ -122,7 +122,7 @@
       goal: 'I can write a times sum for an array.',
       learn: {
         show: { pic: ['array', { r: 3, c: 5 }], cap: '3 rows of 5', eq: ['5, 10, 15', '3 × 5 = 15'] },
-        together: [{ pic: ['array', { r: 2, c: 4 }], eq: ['4, []', '2 × 4 = []'], a: [8, 8] }, AR(3, 3)],
+        together: [{ pic: ['array', { r: 2, c: 4 }], eq: ['4, []', '2 × 4 = []'], a: [8, 8], by: 4 }, AR(3, 3)],
         cue: 'Count by the number in one row, one row at a time.',
         own: [AR(2, 5), { eq: ['4 × 2 = []', '3 × 4 = []', '5 × 3 = []'], a: [8, 12, 15] }]
       },

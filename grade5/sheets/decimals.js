@@ -26,7 +26,7 @@
   /* compare two decimals: circle the sign */
   function CMP(x, y) { return { eq: [x + ' ? ' + y], pick: { opts: ['<', '>', '='], ans: +x < +y ? 0 : +x > +y ? 1 : 2, cmp: [x, y] }, pickLast: true }; }
   /* round to the nearest tenth (or whole) */
-  function RD(n, to) { return { q: 'Round ' + n + ' to the nearest ' + (to === 1 ? 'whole number' : 'tenth') + '.', eq: ['[]'], a: [+(Math.round(n / to) * to).toFixed(1)], round: { n: String(n), to: to } }; }
+  function RD(n, to) { return { q: 'Round ' + n + ' to the nearest ' + (to === 1 ? 'whole number' : 'tenth') + '.', eq: [n + ' is about []'], a: [+(Math.round(n / to) * to).toFixed(1)], round: to }; }
   /* a fraction out of 10 or 100 as a decimal and a percent */
   function FD(n, d) { var v = n / d; return { eq: [n + '/' + d + ' = []', n + '/' + d + ' = [] %'], a: [+v.toFixed(2), +(v * 100).toFixed(0)] }; }
   /* a decimal sum; calc stories use the same */
@@ -73,7 +73,7 @@
         show: { pic: ['disks', { list: [[1, 2], [0.1, 3], [0.01, 4]] }], cap: '2 ones, 3 tenths, 4 hundredths', eq: ['2.34'] },
         together: [DK(1, 5, 2), { eq: ['10 hundredths = [] tenth'], a: [1] }],
         cue: '10 hundredths make 1 tenth. 10 tenths make 1 one.',
-        own: [DK(3, 0, 6), DK(0, 4, 8), { eq: ['10 tenths = [] one'], a: [1] }]
+        own: [DK(0, 4, 8), { eq: ['10 tenths = [] one'], a: [1] }]
       },
       p1: {
         show: { pic: ['disks', { list: [[1, 1], [0.1, 6]] }], cap: '1 one and 6 tenths', eq: ['1.6'] },
@@ -175,7 +175,7 @@
         items: [{ q: '{b} rounded 3.46 to the nearest tenth and got 3.4. What went wrong?', lines: { n: 3, key: 'The hundredths digit is 6, which is 5 or more, so 3.46 rounds up to 3.5.' } },
           { q: 'Write a decimal with hundredths that rounds to 2.0.', lines: { n: 1, key: 'Any decimal from 1.95 to 2.04, such as 1.98.' } },
           { q: 'A jump is 3.47 m. Why might a coach say "about 3.5 m"?', lines: { n: 3, key: 'Rounded numbers are easier to remember and compare.' } },
-          { q: 'Which rounds to 0.3?', pick: { opts: ['0.24', '0.34', '0.36'], ans: 1, rnd: { to: 0.1, is: 0.3 } }, wide: true }]
+          { q: 'Which rounds to 0.3?', pick: { opts: ['0.24', '0.34', '0.36'], ans: 1, round: { to: 0.1, val: 0.3 } }, wide: true }]
       }
     },
 
@@ -246,13 +246,13 @@
       watch: 'moving the decimal point the wrong way (× 0.1 making a number bigger). One tenth of a number is smaller than the number.',
       goal: 'I can multiply by 0.1 and 0.01.',
       learn: {
-        show: { pic: ['pv', { n: 45, shift: 1, dir: 'd' }], cap: 'a tenth of 45: each digit moves one place right', eq: ['45 × 0.1 = 4.5'] },
+        show: { pic: ['pvmove', { n: 45, shift: 1, dir: 'd' }], cap: 'a tenth of 45: each digit moves one place right', eq: ['45 × 0.1 = 4.5'] },
         together: [TO(30, 0.1), TO(200, 0.01)],
         cue: '× 0.1 is ÷ 10. × 0.01 is ÷ 100. The digits move right.',
         own: [TO(72, 0.1), TO(5, 0.1), TO(350, 0.01), TO(8, 0.01)]
       },
       p1: {
-        show: { pic: ['pv', { n: 60, shift: 1, dir: 'd' }], cap: 'a tenth of 60', eq: ['60 × 0.1 = 6'] },
+        show: { pic: ['pvmove', { n: 60, shift: 1, dir: 'd' }], cap: 'a tenth of 60', eq: ['60 × 0.1 = 6'] },
         items: [TO(40, 0.1), TO(90, 0.1), TO(100, 0.01), TO(25, 0.1), TO(500, 0.01), TO(7, 0.1)]
       },
       p2: {
