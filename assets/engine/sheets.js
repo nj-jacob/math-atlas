@@ -167,17 +167,21 @@
   };
   function pic(spec, x, y, w, key, th, ans) { return PIC[spec[0]](spec[1], x, y, w, key, th, ans); }
 
-  /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer */
+  /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer;
+     3/[] and []/8 put the line in one part of a fraction */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
     s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
-      var comma = tok === '[],';
+      var comma = tok === '[],', fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
       if (comma) tok = '[]';
-      if (tok === '[]') {
-        var bl = ans[k] == null ? BL : Math.max(BL, tw(fmt(ans[k]), big, 700) + 10);
+      if (fr && (tok === '[]' || !fr[1] !== !fr[2])) {
+        /* a blank, or a blank for one part of a fraction: 3/[] or []/8 */
+        var short = tok !== '[]', bl = ans[k] == null ? (short ? 28 : BL) : Math.max(short ? 28 : BL, tw(fmt(ans[k]), big, 700) + 10);
+        if (fr[1]) { out += T(cx, y + 21, fr[1], { s: big, w: 700 }); cx += tw(fr[1], big, 700) + 2; }
         out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + bl) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
         if (key) out += T(cx + bl / 2, y + 21, fmt(ans[k]), { s: big, w: 700, f: KEY, a: 'middle' });
-        k++; cx += bl + 7;
+        k++; cx += bl + (fr[2] ? 2 : 7);
+        if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
       } else if (/^\$?[\d,.\/\u00a0]*\d[\d,.\/\u00a0%]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
