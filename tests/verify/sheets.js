@@ -376,7 +376,7 @@
     /* a fraction in simplest form: its top and bottom share no factor */
     if (it.simplest) (it.a || []).filter(v => /\//.test(v)).forEach(v => { const [n, d] = String(v).split(' ').pop().split('/').map(Number); for (let f = 2; f <= Math.min(n, d); f++) if (n % f === 0 && d % f === 0) say(v + ' is not in simplest form'); });
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
-    if (ask && nums(it.q).indexOf(ask * num(it.pic[1].unit || 1)) < 0) say('shading ' + ask + ' squares does not show the number asked for');
+    if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
