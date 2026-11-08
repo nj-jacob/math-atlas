@@ -75,7 +75,7 @@
   function SAME(n1, v1, n2, v2, what) { var g = {}, f = function (v) { return what === 'mean' ? sum(v) / v.length : modeOf(v); }; g[n1] = v1; g[n2] = v2; return { q: n1 + ': ' + v1.join(', ') + '. ' + n2 + ': ' + v2.join(', ') + '. The same ' + what + '?', pick: { opts: ['yes', 'no'], ans: f(v1) === f(v2) ? 0 : 1, sameStat: what }, stat: { g: g }, wide: true }; }
   /* chance: a bag of marbles or a spinner */
   function cw(k, n) { return k === 0 ? 'impossible' : k === n ? 'certain' : 2 * k < n ? 'unlikely' : 2 * k === n ? 'equally likely' : 'likely'; }
-  function count(p) { var c = p[0] === 'bag' ? p[1].c : {}; if (p[0] === 'spin') p[1].parts.forEach(function (x) { c[x] = (c[x] || 0) + 1; }); return c; }
+  function count(p) { var c = p[0] === 'bag' ? p[1].c : {}; if (p[0] === 'spinner') p[1].parts.forEach(function (x) { c[x] = (c[x] || 0) + 1; }); return c; }
   function total(c) { var t = 0; for (var k in c) t += c[k]; return t; }
   /* the same, with the marbles told in words: 'A bag has 5 red and 1 blue.' */
   function CB(c, of, opts) {
@@ -83,7 +83,7 @@
     return { q: 'A bag has ' + said + '. Getting ' + of + ' is…', pick: { opts: o, ans: o.indexOf(cw(c[of] || 0, total(c))), chance: { of: of } }, chances: c, wide: true };
   }
   function BAG(c) { return ['bag', { c: c }]; }
-  function SPN(parts) { return ['spin', { parts: parts }]; }
+  function SPN(parts) { return ['spinner', { parts: parts }]; }
   var W4 = ['impossible', 'unlikely', 'likely', 'certain'];
   function CW(p, of, opts, q) { var c = count(p); return { q: q || (p[0] === 'bag' ? 'Pick one without looking. Getting ' : 'Spin once. Landing on ') + of + ' is…', pic: p, pick: { opts: opts || W4, ans: (opts || W4).indexOf(cw(c[of] || 0, total(c))), chance: { of: of } }, wide: true }; }
   function CT(p, of, say, q) { var c = count(p); return { q: q, pic: p, pick: { opts: ['true', 'false'], ans: cw(c[of] || 0, total(c)) === say ? 0 : 1, chance: { of: of, say: say } } }; }

@@ -40,7 +40,7 @@
      plot      { lo, hi, v: [values] }                a line plot: an × for each value
      towers    { v: [heights], line }                 towers of cubes; line: a dashed line at that height
      bag       { c: { red, blue, green, yellow } }    a bag of lettered marbles
-     spin      { parts: ['red', 'blue', ...] }        a spinner in equal lettered parts
+     spinner   { parts: ['red', 'blue', ...] }        a spinner in equal lettered parts
      row       { list: [pic, pic], labels, gap }      pictures side by side */
 (function () {
   'use strict';
@@ -482,7 +482,7 @@
     return { svg: out, h: bh + 6, w: bw };
   };
   /* a spinner cut in equal parts, each lettered with its colour */
-  P.spin = function (p, x, y) {
+  P.spinner = function (p, x, y) {
     var R = 30, cx = x + R + 2, cy = y + R + 2, n = p.parts.length, out = circ(cx, cy, R, { s: INK, sw: 1.4 });
     p.parts.forEach(function (c, i) {
       var a0 = (i / n) * 2 * Math.PI - Math.PI / 2, a1 = ((i + 1) / n) * 2 * Math.PI - Math.PI / 2, am = (a0 + a1) / 2;

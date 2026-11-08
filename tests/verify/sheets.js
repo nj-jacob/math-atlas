@@ -237,10 +237,10 @@
     wholes: o => ({ total: o.n }),
     cups: o => ({ total: o.n }),
     col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
-    tally: o => Object.assign({ data: dataOf(o) }, o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : {}),
-    bar: o => Object.assign({ data: dataOf(o), step: o.step, parts: { title: !!o.title, ylab: !!o.ylab, src: !!o.src } }, o.hide ? { blanks: 0, own: () => [] } : {}),
+    tally: o => Object.assign({ byCat: dataOf(o) }, o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : {}),
+    bar: o => Object.assign({ byCat: dataOf(o), step: o.step, parts: { title: !!o.title, ylab: !!o.ylab, src: !!o.src } }, o.hide ? { blanks: 0, own: () => [] } : {}),
     /* every value is a whole or half number of pictures */
-    picto: o => ({ data: dataOf(o), parts: { title: !!o.title }, blanks: 0, own: o => o.vals.filter(v => (2 * v) % o.key !== 0).map(v => v + ' is not a whole or half number of pictures of ' + o.key) }),
+    picto: o => ({ byCat: dataOf(o), parts: { title: !!o.title }, blanks: 0, own: o => o.vals.filter(v => (2 * v) % o.key !== 0).map(v => v + ' is not a whole or half number of pictures of ' + o.key) }),
     venn: o => (o.parts ? { list: o.parts.flat(), blanks: 0, own: o => sorted(o, o.parts, vennPart, 'Venn diagram') } : null),
     carroll: o => (o.cells ? { list: o.cells.flat(), blanks: 0, own: o => sorted(o, o.cells, carrollCell, 'Carroll diagram') } : null),
     tray: o => ({ list: o.list }),
@@ -249,7 +249,7 @@
     plot: o => ({ list: o.v }),
     towers: o => ({ list: o.v }),
     bag: o => ({ chance: o.c }),
-    spin: o => ({ chance: o.parts.reduce((c, x) => Object.assign(c, { [x]: (c[x] || 0) + 1 }), {}) }),
+    spinner: o => ({ chance: o.parts.reduce((c, x) => Object.assign(c, { [x]: (c[x] || 0) + 1 }), {}) }),
     nl: o => ({ total: o.pt != null ? o.pt : undefined, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
     pv: o => ({ total: o.n, blanks: o.blank ? Math.max(3, String(o.n).length) : 0, own: o.blank ? (o, a) => (+a.join('') === o.n ? [] : ['the chart digits ' + a.join('') + ' are not ' + o.n]) : null }),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
@@ -270,7 +270,7 @@
     carroll: [{ a: 'even', b: 'more than 10', cells: [[12, 20], [4], [15], [7, 9]] }], tray: [{ list: ['cdB', 'qws', 'tdB', 'cws'] }],
     tree: [{ tray: ['cdB', 'qws', 'cds', 'cws', 'qdB'], by: [['circle', 'square'], ['shaded', 'white']], blank: true }, [2, 1, 1, 1]],
     picto: [{ title: 'Favourite fruit', cats: ['Apple', 'Pear'], vals: [7, 4], key: 2 }], plot: [{ lo: 2, hi: 9, v: [3, 5, 8, 5, 3, 6] }],
-    towers: [{ v: [2, 8, 5], line: 5 }], bag: [{ c: { red: 2, blue: 6 } }], spin: [{ parts: ['red', 'blue', 'blue', 'blue'] }],
+    towers: [{ v: [2, 8, 5], line: 5 }], bag: [{ c: { red: 2, blue: 6 } }], spinner: [{ parts: ['red', 'blue', 'blue', 'blue'] }],
     poly: [{ sides: [4, 5, '?'] }], blob: [{ cols: 8, rows: 5, cx: 4, cy: 2.5, rx: 3.2, ry: 2.1 }], units: [{ n: 6, unit: '4 cm' }],
     stack: [{ list: ['tri', 'cube'] }], box: [{ l: 4, d: 2, h: 3 }], compass: [{ face: 'east' }],
     row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }]
@@ -279,7 +279,7 @@
   /* it.data: { op: 'value' | 'total' | 'more', a: [categories], b: [categories], at }: the sum of a (or of everything for a
      total), or a take away b. at: which picture of a row. null when a category is not in the data */
   function dataVal(it) {
-    const p = it.data.at != null ? it.pic[1].list[it.data.at] : it.pic, d = (picture(p) || {}).data;
+    const p = it.data.at != null ? it.pic[1].list[it.data.at] : it.pic, d = (picture(p) || {}).byCat;
     if (!d) return null;
     const sum = l => (l.some(c => d[c] === undefined) ? NaN : l.reduce((t, c) => t + d[c], 0)), a = sum(it.data.a || Object.keys(d));
     const v = it.data.op === 'more' ? a - sum(it.data.b) : a;
@@ -311,8 +311,8 @@
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in */
-      if (pc && pc.data && !it.data) {
-        const d = pc.data, re = new RegExp('\\b(' + Object.keys(d).sort((x, y) => y.length - x.length).join('|') + '|in all)\\b', 'g');
+      if (pc && pc.byCat && !it.data) {
+        const d = pc.byCat, re = new RegExp('\\b(' + Object.keys(d).sort((x, y) => y.length - x.length).join('|') + '|in all)\\b', 'g');
         if (re.test(row)) row = row.replace(re, m => (m === 'in all' ? '(' + Object.values(d).join(' + ') + ')' : d[m]));
       }
       let worth;
@@ -507,7 +507,7 @@
         if (hit.length !== 1) say('cannot tell how the data is collected from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is an ' + hit[0] + ', not an ' + o[pk.ans]);
       } else if (it.data && /most|least/.test(it.data.op)) {
         /* the one category with the most (or least) */
-        const d = (picture(it.pic) || {}).data || {}, v = o.map(c => d[c]), best = it.data.op === 'most' ? Math.max(...v) : Math.min(...v);
+        const d = (picture(it.pic) || {}).byCat || {}, v = o.map(c => d[c]), best = it.data.op === 'most' ? Math.max(...v) : Math.min(...v);
         if (v.some(x => x === undefined) || v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + it.data.op + ' is not only ' + o[pk.ans] + ': ' + v.join(', '));
       } else if (it.data && o[0] === 'true') {
         const want = dataVal(it) === it.data.say;
