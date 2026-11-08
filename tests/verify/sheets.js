@@ -31,7 +31,7 @@
       .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
       .replace(/\$/g, '').replace(/ ?%/g, ' / 100').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
-      .replace(/[A-Za-z’'?:²³°]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
+      .replace(/[A-Za-z’'?:²³°¢]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
   }
   const nums = s => (String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/\d+(\.\d+)?/g) || []).map(Number);
   /* two values are the same when they differ only by rounding (0.1 + 0.2 and 0.3) */
@@ -388,7 +388,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -612,6 +612,13 @@
     /* 3b. a shape with a perimeter: every sum that adds (5 + 3 + 5 + 3, 2 × (5 + 3)) works out to it */
     if (pc && pc.perim != null) filled.filter(r => /=/.test(r) && /\+/.test(r)).forEach(r => { if (!same(val(norm(r).split('=')[0]), pc.perim)) say('the perimeter is ' + pc.perim + ', not ' + r); });
     /* 4. a story: its answer follows from the numbers in it */
+    if (it.fewest) {
+      /* change in the fewest coins: as many of the biggest coin as fit, then the next (amt in cents, coins biggest first) */
+      let left = it.fewest.amt;
+      const want = it.fewest.coins.map(c => { const k = Math.floor(left / c); left -= k * c; return k; });
+      if (left) say(it.fewest.amt + '¢ cannot be made from ' + it.fewest.coins.join(', ') + '¢ coins');
+      else if (want.join() !== ansAll.map(Number).join()) say('the fewest coins for ' + it.fewest.amt + '¢ are ' + want.join(', ') + ', not ' + ansAll.join(', '));
+    }
     if (it.calc) {
       const v = val(norm(it.calc));
       const ans = (it.a || [])[0], av = typeof ans === 'number' ? ans : val(norm(String(ans)));
