@@ -145,11 +145,51 @@
   };
   /* mass, capacity or time: the words that tell which one a question is about */
   const MEASURE = { mass: /heav|weigh|light|balance/, capacity: /hold|fill|pour|cups? of|full/, time: /long does|how long|minutes|seconds|hours|take/ };
+  /* data: is a label true of a number ("even", "odd", "more than 15", "less than 10", "multiple of 5", "has a 5") or of an
+     attribute block ('cdB': c circle, q square, t triangle; d shaded, w white; B big, s small)? "not ..." turns it round; null if unknown */
+  function holds(label, x) {
+    const l = String(label).trim(); let m;
+    if (/^not /.test(l)) { const t = holds(l.slice(4), x); return t === null ? null : !t; }
+    if (typeof x === 'number') {
+      if (l === 'even' || l === 'odd') return x % 2 === (l === 'even' ? 0 : 1);
+      if ((m = l.match(/^more than (\d+)$/))) return x > +m[1];
+      if ((m = l.match(/^less than (\d+)$/))) return x < +m[1];
+      if ((m = l.match(/^multiple of (\d+)$/))) return x % +m[1] === 0;
+      if ((m = l.match(/^has a (\d)$/))) return String(x).indexOf(m[1]) >= 0;
+      return null;
+    }
+    const b = { circle: [0, 'c'], square: [0, 'q'], triangle: [0, 't'], shaded: [1, 'd'], white: [1, 'w'], big: [2, 'B'], small: [2, 's'] }[l];
+    return b ? x[b[0]] === b[1] : null;
+  }
+  /* where a number goes: Venn parts [a only, both, b only, neither]; Carroll cells [a and b, a only, b only, neither] by row and column */
+  const vennPart = (o, x) => (holds(o.a, x) ? (holds(o.b, x) ? 1 : 0) : holds(o.b, x) ? 2 : 3);
+  const carrollCell = (o, x) => (holds(o.a, x) ? 0 : 2) + (holds(o.b, x) ? 0 : 1);
+  function sorted(o, groups, where, name) {
+    const bad = [], all = groups.flat();
+    if (all.some(x => holds(o.a, x) === null || holds(o.b, x) === null)) return ['cannot read the labels ' + o.a + ' and ' + o.b];
+    groups.forEach((g, i) => g.forEach(x => { if (where(o, x) !== i) bad.push(x + ' is in the wrong part of the ' + name); }));
+    if (o.list && o.list.slice().sort().join() !== all.slice().sort().join()) bad.push('the ' + name + ' does not hold exactly the numbers to sort');
+    return bad;
+  }
+  /* the mode(s) of a list: 'none' when nothing repeats, else the values that appear most, joined with "and" */
+  function modeOf(v) {
+    const c = {}; v.forEach(x => { c[x] = (c[x] || 0) + 1; });
+    const top = Math.max(...Object.values(c));
+    return top < 2 ? 'none' : Object.keys(c).filter(k => c[k] === top).map(Number).sort((x, y) => x - y).join(' and ');
+  }
+  /* chance words: compare the count of one colour (k) with all of them (n) */
+  const chanceWord = (k, n) => (k === 0 ? 'impossible' : k === n ? 'certain' : 2 * k < n ? 'unlikely' : 2 * k === n ? 'equally likely' : 'likely');
+  /* kinds of data: a survey question with number answers starts "How many", "How far" ...; the way data is collected */
+  const QUANT = /^how (many|much|far|long|tall|old|heavy|fast|high)\b/i;
+  const COLLECT = { interview: /\bask/, observation: /\bwatch|\blook at|\bcount the .* (pass|go by|in the)/, experiment: /\btest|\btry|\bdrop|\broll|\btoss|\bflip|\bbounce/ };
+  /* mean or mode: the words that ask for one */
+  const STAT = { mean: /fair|share|even(ly| out)|level|same number/, mode: /most (common|often|popular)|appears most|shows up most/ };
   /* the shape names a repeating pattern uses */
   const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
      own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
      Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
+  const dataOf = o => Object.fromEntries(o.cats.map((c, i) => [c, o.vals[i]]));
   const READ = {
     groups: o => { const c = o.counts || Array(o.g).fill(o.k); return { total: c.reduce((x, y) => x + y, 0), pair: o.counts ? null : [o.g, o.k], counts: c }; },
     array: o => ({ total: o.r * o.c, pair: [o.r, o.c] }),
@@ -197,7 +237,19 @@
     wholes: o => ({ total: o.n }),
     cups: o => ({ total: o.n }),
     col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
-    tally: o => (o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : null),
+    tally: o => Object.assign({ data: dataOf(o) }, o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : {}),
+    bar: o => Object.assign({ data: dataOf(o), step: o.step, parts: { title: !!o.title, ylab: !!o.ylab, src: !!o.src } }, o.hide ? { blanks: 0, own: () => [] } : {}),
+    /* every value is a whole or half number of pictures */
+    picto: o => ({ data: dataOf(o), parts: { title: !!o.title }, blanks: 0, own: o => o.vals.filter(v => (2 * v) % o.key !== 0).map(v => v + ' is not a whole or half number of pictures of ' + o.key) }),
+    venn: o => (o.parts ? { list: o.parts.flat(), blanks: 0, own: o => sorted(o, o.parts, vennPart, 'Venn diagram') } : null),
+    carroll: o => (o.cells ? { list: o.cells.flat(), blanks: 0, own: o => sorted(o, o.cells, carrollCell, 'Carroll diagram') } : null),
+    tray: o => ({ list: o.list }),
+    /* the leaves of a tree diagram, left to right: first sort, then second sort */
+    tree: o => ({ list: o.tray, blanks: o.blank ? 4 : 0, own: o.blank ? (o, a) => { const want = o.by[0].flatMap(x => o.by[1].map(y => o.tray.filter(b => holds(x, b) && holds(y, b)).length)); return a.join() === want.join() ? [] : ['the tree leaves are ' + want.join(', ') + ', not ' + a.join(', ')]; } : null }),
+    plot: o => ({ list: o.v }),
+    towers: o => ({ list: o.v }),
+    bag: o => ({ chance: o.c }),
+    spin: o => ({ chance: o.parts.reduce((c, x) => Object.assign(c, { [x]: (c[x] || 0) + 1 }), {}) }),
     nl: o => ({ total: o.pt != null ? o.pt : undefined, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
     pv: o => ({ total: o.n, blanks: o.blank ? Math.max(3, String(o.n).length) : 0, own: o.blank ? (o, a) => (+a.join('') === o.n ? [] : ['the chart digits ' + a.join('') + ' are not ' + o.n]) : null }),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
@@ -210,16 +262,29 @@
     table: [{ head: ['{conts}', '{many}'], rows: [[1, 5], [2, '[]']] }, [10]],
     blocks: [{ h: 3, t: 4, o: 5 }], pv: [{ n: 307, blank: true }, [3, 0, 7]], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
     wholes: [{ n: 5 }], pat: [{ seq: 'cstcst', blanks: 2, next: 'cs', core: 3 }], clock: [{ h: 3, m: 40, blank: true }],
-    coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2 }],
+    coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2, title: 'Votes', ylab: 'Votes', src: 'Room 4', hide: [1] }],
     tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'tpyr', 'pyramid', 'cylinder'], letters: true }],
     area: [{ cols: 8, rows: 4, rect: [5, 3] }], rect: [{ a: 6, b: 3, unit: 'cm', all: true }], ruler: [{ len: 7, from: 0 }],
     balance: [{ l: 6, r: '{one}', tilt: 0 }], cups: [{ n: 6 }], nl: [{ min: 300, max: 400, tick: 10, lab: 50, pt: 370, ask: [330] }, [330]],
-    map: [{ cols: 7, rows: 4, grid: true, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'red', b: 'round' }],
+    map: [{ cols: 7, rows: 4, grid: true, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'even', b: 'more than 15', parts: [[6, 12], [18, 24], [17], [9, 3]], list: [6, 18, 9, 24, 3, 12, 17], blank: true }],
+    carroll: [{ a: 'even', b: 'more than 10', cells: [[12, 20], [4], [15], [7, 9]] }], tray: [{ list: ['cdB', 'qws', 'tdB', 'cws'] }],
+    tree: [{ tray: ['cdB', 'qws', 'cds', 'cws', 'qdB'], by: [['circle', 'square'], ['shaded', 'white']], blank: true }, [2, 1, 1, 1]],
+    picto: [{ title: 'Favourite fruit', cats: ['Apple', 'Pear'], vals: [7, 4], key: 2 }], plot: [{ lo: 2, hi: 9, v: [3, 5, 8, 5, 3, 6] }],
+    towers: [{ v: [2, 8, 5], line: 5 }], bag: [{ c: { red: 2, blue: 6 } }], spin: [{ parts: ['red', 'blue', 'blue', 'blue'] }],
     poly: [{ sides: [4, 5, '?'] }], blob: [{ cols: 8, rows: 5, cx: 4, cy: 2.5, rx: 3.2, ry: 2.1 }], units: [{ n: 6, unit: '4 cm' }],
     stack: [{ list: ['tri', 'cube'] }], box: [{ l: 4, d: 2, h: 3 }], compass: [{ face: 'east' }],
     row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }]
   };
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
+  /* it.data: { op: 'value' | 'total' | 'more', a: [categories], b: [categories], at }: the sum of a (or of everything for a
+     total), or a take away b. at: which picture of a row. null when a category is not in the data */
+  function dataVal(it) {
+    const p = it.data.at != null ? it.pic[1].list[it.data.at] : it.pic, d = (picture(p) || {}).data;
+    if (!d) return null;
+    const sum = l => (l.some(c => d[c] === undefined) ? NaN : l.reduce((t, c) => t + d[c], 0)), a = sum(it.data.a || Object.keys(d));
+    const v = it.data.op === 'more' ? a - sum(it.data.b) : a;
+    return isNaN(v) ? null : v;
+  }
 
 
   window.__sheetCheck = function (it) {
@@ -239,11 +304,20 @@
       return a.shift() + (t === '[],' ? ',' : '');
     }).join(' '));
     if (a.length) say(a.length + ' answer(s) left over with no box');
+    /* the marbles or spinner parts: from the picture, or it.chances when the question says them ("5 red and 1 blue") */
+    const chances = (pc && pc.chance) || it.chances;
+    if (it.chances) Object.keys(it.chances).forEach(c => { if (!new RegExp('\\b' + it.chances[c] + ' ' + c + '\\b').test(it.q)) say('the question does not say ' + it.chances[c] + ' ' + c); });
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
+      /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in */
+      if (pc && pc.data && !it.data) {
+        const d = pc.data, re = new RegExp('\\b(' + Object.keys(d).sort((x, y) => y.length - x.length).join('|') + '|in all)\\b', 'g');
+        if (re.test(row)) row = row.replace(re, m => (m === 'in all' ? '(' + Object.values(d).join(' + ') + ')' : d[m]));
+      }
       let worth;
       let est;
+      let st;
       if (it.robot && it.robot.to) {
         /* code with blanks filled in, one line per row: it must take the robot from the start to the square marked "to" */
         if (ri) return;
@@ -251,6 +325,27 @@
         const m = it.pic[1], end = robot(m.start, row), mark = (m.marks || []).find(k => k[2] === it.robot.to);
         if (!end) say('cannot read the code: ' + row);
         else if (!mark || end[0] !== mark[0] || end[1] !== mark[1]) say('the code ' + row + ' stops at ' + end.join(',') + ', not at ' + it.robot.to);
+      } else if (it.cnt && /^\d+( [a-z]+)?$/.test(row)) {
+        /* how many of the things sorted fit every label */
+        const list = it.cnt.of || pc.list, n = +row.split(' ')[0];
+        if (list.some(x => it.cnt.is.some(l => holds(l, x) === null))) say('cannot read the labels ' + it.cnt.is.join(', '));
+        else if (list.filter(x => it.cnt.is.every(l => holds(l, x))).length !== n) say(list.filter(x => it.cnt.is.every(l => holds(l, x))).length + ' are ' + it.cnt.is.join(' and ') + ', not ' + n);
+      } else if (it.data && /^\d+( [a-z]+)?$/.test(row)) {
+        /* a value read from a graph or table, a total, or how many more */
+        const want = dataVal(it), n = +row.split(' ')[0];
+        if (want === null) say('cannot read the data for ' + JSON.stringify(it.data)); else if (want !== n) say('the data give ' + want + ', not ' + n);
+      } else if (it.stat && (st = row.match(/^(.*?) ?(mean|mode|modes)( =|:) (.+)$/))) {
+        /* the mean (a fair share: the total shared equally) or the mode (the value that appears most) */
+        const v = st[1] ? (it.stat.g || {})[st[1]] : it.stat.v || pc.list;
+        if (!v) say('no data for ' + row);
+        else {
+          const want = st[2] === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v);
+          if (String(want) !== st[4].trim()) say('the ' + st[2] + ' of ' + v.join(', ') + ' is ' + want + ', not ' + st[4]);
+        }
+      } else if (it.predict && (st = row.match(/^about (\d+)/))) {
+        /* a fair prediction: the share of the spins or picks that this colour is of the whole */
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = it.predict.n * (c[it.predict.of] || 0) / n;
+        if (want !== +st[1]) say('in ' + it.predict.n + ' tries, expect about ' + want + ' ' + it.predict.of + ', not ' + st[1]);
       } else if (it.solid && /^\d+ [a-z ]+$/.test(row)) {
         /* "[] flat faces", "[] edges" ...: the objects' own counts, added up for a structure */
         const what = row.replace(/^\d+ /, '').replace(/^flat /, '')[0], all = [].concat(it.solid), n = +row.split(' ')[0];
@@ -357,6 +452,11 @@
       const asked = (it.q || '').match(/\d{1,2}:\d\d|quarter (past|to) \d{1,2}|half past \d{1,2}|\d{1,2} o'clock/);
       if (!asked || clockMin(asked[0]) !== pc.time) say('the clock to draw does not match the time asked for: ' + it.q);
     }
+    /* a graph to draw from data in the question: the key draws each value the question gives */
+    if (it.pic && ((it.pic[0] === 'picto' && it.pic[1].blank) || (it.pic[0] === 'bar' && it.pic[1].hide))) {
+      const p = it.pic[1];
+      p.cats.forEach((c, i) => { if ((it.pic[0] === 'picto' || p.hide.indexOf(i) >= 0) && !new RegExp('\\b' + c + ':? ' + p.vals[i] + '\\b').test(it.q)) say('the question does not give ' + c + ' ' + p.vals[i] + ' for the key to draw'); });
+    }
     /* congruent faces or boxes: with the blanks filled in, the two lists of lengths match once sorted */
     if (it.cong) {
       const q = ansAll.slice(), b = it.cong.b.map(x => (x === '?' ? +q.shift() : x)), srt = l => l.slice().sort((x, y) => x - y).join();
@@ -392,6 +492,56 @@
       const o = pk.opts, yes = pk.ans === 0;
       if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
+      } else if (pk.region != null || pk.cell != null) {
+        /* where a number goes in the Venn or Carroll diagram (its labels, or pk.a and pk.b when there is no picture) */
+        const p = it.pic ? it.pic[1] : pk, x = pk.region != null ? pk.region : pk.cell;
+        const want = pk.region != null ? [p.a + ' only', 'both', p.b + ' only', 'neither'] : ['top left', 'top right', 'bottom left', 'bottom right'];
+        const at = pk.region != null ? vennPart(p, x) : carrollCell(p, x);
+        if (holds(p.a, x) === null || holds(p.b, x) === null) say('cannot read the labels ' + p.a + ' and ' + p.b);
+        else if (o.join() !== want.join() || pk.ans !== at) say(x + ' goes in "' + want[at] + '", not "' + o[pk.ans] + '"');
+      } else if (pk.kindOf) {
+        const want = QUANT.test(pk.kindOf) ? 'numbers' : 'words';
+        if (o[pk.ans] !== want) say('"' + pk.kindOf + '" has ' + want + ' for answers, not ' + o[pk.ans]);
+      } else if (o.indexOf('interview') >= 0 && o.indexOf('experiment') >= 0) {
+        const q = it.q.toLowerCase(), hit = Object.keys(COLLECT).filter(k => COLLECT[k].test(q));
+        if (hit.length !== 1) say('cannot tell how the data is collected from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is an ' + hit[0] + ', not an ' + o[pk.ans]);
+      } else if (it.data && /most|least/.test(it.data.op)) {
+        /* the one category with the most (or least) */
+        const d = (picture(it.pic) || {}).data || {}, v = o.map(c => d[c]), best = it.data.op === 'most' ? Math.max(...v) : Math.min(...v);
+        if (v.some(x => x === undefined) || v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + it.data.op + ' is not only ' + o[pk.ans] + ': ' + v.join(', '));
+      } else if (it.data && o[0] === 'true') {
+        const want = dataVal(it) === it.data.say;
+        if (want !== yes) say('the data give ' + dataVal(it) + ', so "' + it.data.say + '" is ' + want);
+      } else if (pk.scale) {
+        /* the step the graph's scale counts by */
+        const ok = o.map(x => nums(x)[0] === pc.step);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('the scale counts by ' + pc.step + ', not ' + o[pk.ans]);
+      } else if (pk.scaleFor) {
+        /* the smallest step that shows the biggest count in 10 lines or fewer */
+        const s = o.map(x => nums(x)[0]), fit = s.filter(x => pk.scaleFor / x <= 10), want = Math.min(...fit);
+        if (s[pk.ans] !== want) say('for a biggest count of ' + pk.scaleFor + ', count by ' + want + 's, not ' + o[pk.ans]);
+      } else if (pk.missing) {
+        /* the one part the graph does not have */
+        const key = { title: 'title', label: 'ylab', source: 'src' }, has = pc.parts, gone = o.filter(x => has[key[x]] === false);
+        if (o.some(x => has[key[x]] === undefined) || gone.length !== 1 || gone[0] !== o[pk.ans]) say('the graph is missing ' + gone.join(' and ') + ', not ' + o[pk.ans]);
+      } else if (o.indexOf('mean') >= 0 && o.indexOf('mode') >= 0) {
+        const q = it.q.toLowerCase(), hit = Object.keys(STAT).filter(k => STAT[k].test(q));
+        if (hit.length !== 1) say('cannot tell mean or mode from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this asks for the ' + hit[0] + ', not the ' + o[pk.ans]);
+      } else if (pk.sameStat) {
+        const g = Object.values(it.stat.g), f = v => (pk.sameStat === 'mean' ? v.reduce((x, y) => x + y, 0) / v.length : modeOf(v)), want = f(g[0]) === f(g[1]);
+        if (want !== yes) say('the ' + pk.sameStat + 's are ' + f(g[0]) + ' and ' + f(g[1]) + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.chance) {
+        /* how likely one colour is, from the counts in the bag or on the spinner */
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = chanceWord(c[pk.chance.of] || 0, n);
+        if (pk.chance.say ? (want === pk.chance.say) !== yes : o[pk.ans] !== want) say(pk.chance.of + ' is ' + want + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.likely) {
+        /* the one colour most (or least) likely */
+        const c = chances, v = o.map(x => c[x] || 0), best = pk.likely === 'most' ? Math.max(...v) : Math.min(...v);
+        if (v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + pk.likely + ' likely colour is not only ' + o[pk.ans]);
+      } else if (it.fair) {
+        /* a game is fair when each player's colour has the same chance */
+        const c = chances, want = (c[it.fair[0]] || 0) === (c[it.fair[1]] || 0);
+        if (want !== yes) say('the game is ' + (want ? '' : 'not ') + 'fair, but the key circles ' + o[pk.ans]);
       } else if (it.pic && it.pic[0] === 'balance' && pc.heavy !== undefined && o.indexOf(it.pic[1].l) >= 0) {
         /* the side that goes down is the heavier one */
         if (pc.heavy === null || o[pk.ans] !== pc.heavy) say('the heavier one is ' + pc.heavy + ', not ' + o[pk.ans]);
