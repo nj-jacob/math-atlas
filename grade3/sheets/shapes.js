@@ -260,7 +260,7 @@
       watch: 'naming the whole structure as one object. Lift the top off and name each part.',
       goal: 'I can take a structure apart into objects.',
       learn: {
-        show: { pic: ['stack', { list: ['tri', 'cube'], s: 32 }], cap: 'A house: a triangular prism on a cube', eq: ['5 + 6 = 11 flat faces'] },
+        show: { pic: ['stack', { list: ['tri', 'cube'], s: 32 }], cap: 'A triangular prism on a cube', eq: ['5 + 6 = 11 faces'] },
         together: [ST(['cone', 'cylinder'], 'f'), SP(['cone', 'cube'], 0, ['cone', 'cube', 'sphere'])],
         cue: 'Lift off each part from the top down. Name it, then count.',
         own: [ST(['pyramid', 'cube'], 'f'), SP(['cone', 'cylinder'], 0, ['cone', 'cube', 'cylinder'])]
@@ -410,9 +410,9 @@
       goal: 'I can give directions on a map.',
       learn: {
         show: { cap: 'B1 to E4, facing north: forward 3, quarter turn right, forward 3' },
-        together: [GF('A1', 'north', 'forward [], quarter turn right, forward []', [2, 3]), GF('A1', 'east', 'forward []', [4])],
+        together: [GF('A1', 'north', 'forward [], quarter turn right, forward []', [2, 3], 12), GF('A1', 'east', 'forward []', [4], 12)],
         cue: 'Count the rows to go up or down, then the columns to go across. Say which way to turn.',
-        own: [GF('B2', 'north', 'forward []', [3], 13), GF('F5', 'west', 'forward []', [4], 13)]
+        own: [GF('B2', 'north', 'forward []', [3], 12), GF('F5', 'west', 'forward []', [4], 12)]
       },
       p1: {
         show: { cap: 'A2, facing east, to E2: across 4', eq: ['forward 4'] },
