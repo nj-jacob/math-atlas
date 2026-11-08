@@ -26,6 +26,8 @@
                                 starts the scale above 0 (a graph that misleads), with a zigzag on the axis
      lineg { cats, vals, min, max, step, title, h }   a line graph: a point for each category, joined in order
      spin  { parts }            a spinner cut into equal parts, each labelled (['R', 'R', 'B'] is 2 parts R and 1 part B)
+     stem  { data, title }      a stem-and-leaf plot of whole numbers under 100 or 1000: the tens (or tens and hundreds) as
+                                stems down the left, every ones digit as a leaf in order, and a key (3 | 4 means 34)
      tri   { sides: [a, b, c] } or { angles: [A, B, C] }, show: 'sides' | 'angles', ask: 0 | 1 | 2, marks
                                 a triangle drawn from its side lengths or its angles (in degrees); show writes the
                                 lengths (cm) or the angles, ask leaves one angle as "?", marks draws ticks on equal sides
@@ -356,6 +358,23 @@
     });
     out += line(cx, cy, cx + R * 0.32 * Math.cos(-0.6), cy + R * 0.32 * Math.sin(-0.6), { sw: 2 }) + '<circle cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + INK + '"/>';
     return { svg: out, h: 2 * R + 4, w: 2 * R + 4 };
+  };
+
+  /* a stem-and-leaf plot: one row for every stem from the least to the greatest (an empty stem keeps its row) */
+  P.stem = function (p, x, y, w) {
+    var d = p.data.slice().sort(function (m, n) { return m - n; }), lo = Math.floor(d[0] / 10), hi = Math.floor(d[d.length - 1] / 10);
+    var lh = 18, sw = 30, top = y + (p.title ? 16 : 0), out = p.title ? T(x, y + 10, p.title, { s: 10.5, w: 700, f: INK2 }) : '', wid = 0;
+    out += T(x + sw - 6, top + 11, 'Stem', { s: 9, f: INK2, a: 'end' }) + T(x + sw + 8, top + 11, 'Leaf', { s: 9, f: INK2 });
+    for (var st = lo; st <= hi; st++) {
+      var ry = top + 16 + (st - lo) * lh, leaves = d.filter(function (v) { return Math.floor(v / 10) === st; }).map(function (v) { return v % 10; }).join('  ');
+      out += T(x + sw - 6, ry + 13, String(st), { s: 13, w: 700, a: 'end' }) + T(x + sw + 8, ry + 13, leaves, { s: 13, w: 700 });
+      wid = Math.max(wid, sw + 8 + tw(leaves, 13, 700));
+    }
+    var bot = top + 16 + (hi - lo + 1) * lh + 4;
+    out += line(x + sw, top + 14, x + sw, bot, { sw: 1.3 }) + line(x, top + 16, x + Math.min(w, Math.max(wid, 110)), top + 16, { s: LINE, sw: 1 });
+    var key = 'Key: ' + lo + ' | ' + (d[0] % 10) + ' means ' + d[0];
+    out += T(x, bot + 14, key, { s: 9.5, f: INK2 });
+    return { svg: out, h: bot + 18 - y, w: Math.max(wid, tw(key, 9.5)) };
   };
 
   /* a triangle from 3 sides (law of cosines) or 3 angles (sides in proportion to the sines), scaled to fit */
