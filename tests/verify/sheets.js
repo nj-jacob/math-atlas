@@ -119,6 +119,8 @@
     /* fraction bars: one row (or rows that all show the same amount) shows that fraction, by its own name */
     frac: o => (o.uneven ? null : { total: o.k / o.n, name: o.k + '/' + o.n }),
     fbars: o => { const v = o.rows.map(r => r[1] / r[0]); return v.every(x => same(x, v[0])) ? { total: v[0], name: o.rows.length === 1 ? o.rows[0][1] + '/' + o.rows[0][0] : null } : null; },
+    /* a ratio picture: how many of each kind in all */
+    mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
@@ -140,7 +142,7 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grid: [{ n: 37, unit: '1000' }]
   };
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
 
@@ -169,7 +171,19 @@
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
-      if (it.round) {
+      const rat = row.match(/\d+ ?: ?\d+/g);
+      if (rat) {
+        /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
+           its own is the one the item asks for: of names its two terms from the picture's or the story's parts (a, b or all) */
+        const r = rat.map(x => x.split(':').map(Number));
+        if (r.some(([p, q]) => r[0][0] * q !== r[0][1] * p)) say('the ratios are not equivalent: ' + row);
+        const parts = (pc && pc.parts) || it.parts;
+        if (it.of && parts) {
+          const t = { a: parts[0], b: parts[1], all: parts[0] + parts[1] }, want = it.of.map(k => t[k]);
+          if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
+        } else if (r.length < 2) say('nothing checks the ratio ' + row);
+        if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
+      } else if (it.round) {
         /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up) */
         const n = nums(row);
         if (n.length !== 2 || !same(Math.round(n[0] / it.round) * it.round, n[1])) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
@@ -275,11 +289,15 @@
         /* the only fraction in simplest form: its top and bottom share no factor but 1 */
         const g = (x, y) => (y ? g(y, x % y) : x), ok = o.map(x => { const [n, d] = String(x).split('/').map(Number); return g(n, d) === 1; });
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in simplest form: ' + o.join(', '));
-      } else if (pk.more) {
-        /* "who has more": the choices are names, pk.more holds their amounts in the same order */
-        const v = pk.more.map(x => val(norm(x)));
-        if (v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled name does not have the most: ' + pk.more.join(', '));
-        pk.more.forEach(x => { if (!String(it.q).includes(x)) say('the amount ' + x + ' is not in the question'); });
+      } else if (pk.ratio) {
+        /* exactly one choice is (or, with not, is not) equivalent to the ratio, in the same order */
+        const ok = o.map(x => { const r = String(x).split(':').map(Number); return r.length === 2 && pk.ratio[0] * r[1] === pk.ratio[1] * r[0]; }).map(e => (pk.not ? !e : e));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + (pk.not ? 'not ' : '') + 'equivalent to ' + pk.ratio.join(' : ') + ': ' + o.join(', '));
+      } else if (pk.more || pk.less) {
+        /* "who has more" (or less): the choices are names, pk.more or pk.less holds their amounts in the same order */
+        const am = pk.more || pk.less, v = am.map(x => val(norm(x))), sg = pk.more ? 1 : -1;
+        if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && sg * x >= sg * v[pk.ans])) say('the circled one does not have the ' + (pk.more ? 'most' : 'least') + ': ' + am.join(', '));
+        am.forEach(x => nums(x).forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the amount ' + x + ' uses ' + n + ', which is not in the question'); }));
       } else if (pk.small) {
         const v = o.map(x => val(norm(x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the least: ' + o.join(', '));

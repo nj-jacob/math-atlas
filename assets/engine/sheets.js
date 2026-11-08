@@ -183,7 +183,7 @@
         k++; cx += bl + (fr[2] ? 2 : 7);
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
-      } else if (/^\$?[\d,.\/\u00a0]*\d[\d,.\/\u00a0%]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      } else if (/^\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
