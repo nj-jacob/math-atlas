@@ -271,12 +271,12 @@
   P.grow = function (p, x, y, w) {
     var sz = 10, gap = 16, out = '', cx = x, hi = Math.max(p.b, p.m) * sz;
     for (var n = 1; n <= p.k; n++) {
-      for (var i = 0; i < p.b; i++) out += '<rect x="' + cx + '" y="' + (y + hi - (i + 1) * sz) + '" width="' + sz + '" height="' + sz + '" fill="#dfe5ee" stroke="' + INK2 + '" stroke-width="1"/>';
-      var ox = cx + (p.b ? sz : 0);
+      var fw = (p.b ? sz : 0) + n * sz, slot = Math.max(fw, 40), fx = cx + (slot - fw) / 2;
+      for (var i = 0; i < p.b; i++) out += '<rect x="' + fx + '" y="' + (y + hi - (i + 1) * sz) + '" width="' + sz + '" height="' + sz + '" fill="#dfe5ee" stroke="' + INK2 + '" stroke-width="1"/>';
+      var ox = fx + (p.b ? sz : 0);
       for (var r = 0; r < p.m; r++) for (var c = 0; c < n; c++) out += '<rect x="' + (ox + c * sz) + '" y="' + (y + hi - (r + 1) * sz) + '" width="' + sz + '" height="' + sz + '" fill="#fff" stroke="' + INK + '" stroke-width="1"/>';
-      var fw = (p.b ? sz : 0) + n * sz;
-      out += T(cx + fw / 2, y + hi + 14, 'Figure ' + n, { s: 9, f: INK2, a: 'middle' });
-      cx += fw + gap;
+      out += T(cx + slot / 2, y + hi + 14, 'Figure ' + n, { s: 9, f: INK2, a: 'middle' });
+      cx += slot + gap;
     }
     return { svg: out, h: hi + 18, w: cx - gap - x };
   };
