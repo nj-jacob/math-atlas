@@ -157,7 +157,18 @@
       } else if (raw[ri].trim() === '[]') {
         /* a bare answer: the number the picture shows, or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
-        if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
+        if (it.digits) {
+          /* the greatest or least number made from these digits, not starting with 0 */
+          const perms = d => (d.length < 2 ? [d] : d.flatMap((x, i) => perms(d.slice(0, i).concat(d.slice(i + 1))).map(r => [x].concat(r))));
+          const made = perms(it.digits).filter(p => p[0] !== 0).map(p => +p.join(''));
+          const want = it.most ? Math.max(...made) : Math.min(...made);
+          if (want !== v) say('the ' + (it.most ? 'greatest' : 'least') + ' number from ' + it.digits.join(', ') + ' is ' + want + ', not ' + v);
+        } else if (it.edge) {
+          /* the least or greatest whole number that rounds to val */
+          const fits = []; for (let n = 0; n <= 1100; n++) if (Math.round(n / it.edge.to) * it.edge.to === it.edge.val) fits.push(n);
+          const want = it.edge.end === 'least' ? fits[0] : fits[fits.length - 1];
+          if (want !== v) say('the ' + it.edge.end + ' number that rounds to ' + it.edge.val + ' is ' + want + ', not ' + v);
+        } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
         else if (pc && pc.total != null) { if (pc.total !== v) say('the picture shows ' + pc.total + ', not ' + v); }
         else if (!it.calc) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc) say('nothing checks this row: ' + raw[ri]);
@@ -209,8 +220,23 @@
         const ok = o.map(truth);
         if (ok[pk.ans] !== false || ok.filter(x => x === false).length !== 1) say('the odd one out is not the only wrong fact');
       } else if (pk.round) {
-        const ok = o.map(x => Math.round(+x / pk.round.to) * pk.round.to === pk.round.val);
+        const rnd = (x, r) => Math.round(+x / r.to) * r.to === r.val;
+        const ok = o.map(x => rnd(x, pk.round) && (!pk.also || rnd(x, pk.also)));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice rounds to ' + pk.round.val);
+      } else if (pk.place) {
+        /* the one number where digit d is worth v */
+        const ok = o.map(x => x.split(pk.place.d).length === 2 && pk.place.d * Math.pow(10, x.length - 1 - x.indexOf(String(pk.place.d))) === pk.place.v);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice has its ' + pk.place.d + ' worth ' + pk.place.v);
+      } else if (pk.blocks) {
+        /* the number that needs the most base ten blocks: the most when its digits are added */
+        const n = o.map(x => String(x).split('').reduce((t, d) => t + +d, 0));
+        if (n.some((x, i) => i !== pk.ans && x >= n[pk.ans])) say('the circled number does not need the most blocks: ' + o.join(', '));
+      } else if (pk.seq) {
+        const ok = o.map(x => +x >= pk.seq.from && (+x - pk.seq.from) % pk.seq.by === 0);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in the count from ' + pk.seq.from + ' by ' + pk.seq.by);
+      } else if (pk.between) {
+        const ok = o.map(x => +x > pk.between[0] && +x < pk.between[1]);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is between ' + pk.between.join(' and '));
       } else if (pk.small) {
         const v = o.map(x => val(norm(x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the smallest: ' + o.join(', '));

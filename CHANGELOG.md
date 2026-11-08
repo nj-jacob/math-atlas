@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-08
+- Worksheets for Grade 3 **Numbers to 1000**: all 17 ideas (blocks, place value, expanded form, words, counting by 50s, 100s and 200s, comparing, ordering and rounding), 5 sheets each in 10 themes, with answer keys.
 - Worksheets: new pictures for the rest of Grade 3 and up (base ten blocks, place value charts, ten frames, column sums, fractions, patterns, clocks, money, graphs and tallies, 3D objects, area, rulers, balances, number lines, maps and Venn diagrams), each checked to fit its question. No new sheets yet; the chapters follow.
 - **Worksheets: a new premium look** (Editorial, chosen by Noel). Each sheet now opens with a large title and an "I can" goal, shows the example with a tip beside it, sets the questions in two calm columns with large numbers in the margin and fine lines between them, and has children write answers on short lines instead of in boxes. A "How did it feel?" check-in closes each sheet; the answer key shows what to watch for, the Ontario codes and a score line there. The ten themes keep their own font, colour, pictures and a small line drawing.
 
