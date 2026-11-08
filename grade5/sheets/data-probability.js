@@ -143,10 +143,10 @@
       watch: 'trusting the size of the bars without reading the scale. Check where the scale starts.',
       goal: 'I can spot a graph that misleads.',
       learn: {
-        show: { pic: ['dbar', { cats: ['A', 'B'], sets: [[52, 50]], min: 48, max: 54, step: 2, title: 'Votes' }], cap: 'the scale starts at 48: A looks twice as tall, but is only 2 more' },
+        show: { pic: ['dbar', { cats: ['A', 'B'], sets: [[52, 50]], min: 48, max: 54, step: 2, title: 'Votes' }], cap: 'starts at 48: A looks twice as tall, but is 2 more' },
         together: [ML([30, 25], 20, 30, 2, 0, 1), { q: 'What would make this graph fair?', lines: { n: 2, key: 'Start the scale at 0.' } }],
-        cue: 'Before you trust a graph, check its title, labels, scale and source.',
-        own: [{ q: 'A graph of 64 and 62 starts at 60. How many times as tall does 64 look?', eq: ['[] times'], a: [2], calc: '(64 − 60) ÷ (62 − 60)' }, { q: 'Who might want A to look far ahead?', lines: { n: 2, key: 'Someone on A\'s side, or selling A.' } }]
+        cue: 'Check the title, labels, scale and source.',
+        own: [{ q: 'Bars of 64 and 62, scale from 60. 64 looks how many times as tall?', eq: ['[] times'], a: [2], calc: '(64 − 60) ÷ (62 − 60)' }, { q: 'Who might want A to look far ahead?', lines: { n: 1, key: 'Someone on A\'s side, or selling A.' } }]
       },
       p1: {
         show: { cap: 'A scale that starts above 0 makes small gaps look big.', eq: ['really 95 − 92 = 3 more', 'looks 5 ÷ 2 = 2.5 times'] },
