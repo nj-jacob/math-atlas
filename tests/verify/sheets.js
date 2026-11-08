@@ -243,12 +243,12 @@
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
+      let est;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
       const rat = row.match(/\d+ ?: ?\d+/g);
-      let est;
       if (it.robot && it.robot.to) {
         /* code with blanks filled in, one line per row: it must take the robot from the start to the square marked "to" */
         if (ri) return;
@@ -259,6 +259,17 @@
       } else if (/≠/.test(row)) {
         const sides = norm(row).split('≠').map(val);
         if (sides.some(isNaN)) say('cannot read: ' + row); else if (sides[0] === sides[1]) say('both sides are ' + sides[0] + ': ' + row);
+      } else if (rat) {
+        /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
+           its own is the one the item asks for: of names its two terms from the picture's or the story's parts (a, b or all) */
+        const r = rat.map(x => x.split(':').map(Number));
+        if (r.some(([p, q]) => r[0][0] * q !== r[0][1] * p)) say('the ratios are not equivalent: ' + row);
+        const parts = (pc && pc.parts) || it.parts;
+        if (it.of && parts) {
+          const t = { a: parts[0], b: parts[1], all: parts[0] + parts[1] }, want = it.of.map(k => t[k]);
+          if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
+        } else if (r.length < 2) say('nothing checks the ratio ' + row);
+        if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
       } else if (it.est && (est = row.match(/^(\d+) ([+−]) (\d+) is about (\d+)$/))) {
         /* "389 + 212 is about []": round each number to the nearest 10 or 100 first, then add or subtract */
         const r = n => Math.round(+n / it.est) * it.est, want = est[2] === '+' ? r(est[1]) + r(est[3]) : r(est[1]) - r(est[3]);
@@ -274,8 +285,9 @@
           if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
         } else if (r.length < 2) say('nothing checks the ratio ' + row);
         if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
-      } else if (it.round) {
-        /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up) */
+      } else if (it.round && !/=/.test(row)) {
+        /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up); a sum in the same
+           question (the change from a rounded cash total) is worked out below like any other */
         const n = nums(row);
         if (n.length !== 2 || !same(Math.round(n[0] / it.round) * it.round, n[1])) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
       } else if ((worth = row.replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/^The (\d) in (\d+) is worth (\d+)$/))) {
@@ -533,6 +545,18 @@
         /* qualitative or quantitative, from an example answer: a number is quantitative, words are qualitative */
         const want = isNaN(num(pk.dtype)) ? 'qualitative' : 'quantitative';
         if (o[pk.ans] !== want) say('an answer like "' + pk.dtype + '" is ' + want + ' data, not ' + o[pk.ans]);
+      } else if (pk.pay) {
+        /* a way to pay, from how the money moves: bills and coins are cash; from your own account right away is debit;
+           the bank pays now and you pay it back later is credit; from one account to another with no card is an e-transfer */
+        const h = pk.pay, way = h.cash ? 'cash' : h.from === 'own' ? 'debit' : h.from === 'bank' ? 'credit' : h.accounts ? 'e-transfer' : null;
+        if (o[pk.ans] !== way) say('that way to pay is ' + way + ', not ' + o[pk.ans]);
+      } else if (pk.gov) {
+        /* which level of government runs a service */
+        const LEVEL = { passports: 'federal', 'the armed forces': 'federal', 'national parks': 'federal', 'coins and bills': 'federal', 'mail delivery': 'federal',
+          hospitals: 'provincial', schools: 'provincial', highways: 'provincial', "driver's licences": 'provincial', 'health cards': 'provincial',
+          libraries: 'municipal', 'garbage pickup': 'municipal', 'local parks': 'municipal', 'fire trucks': 'municipal', 'city buses': 'municipal', 'snow ploughs on your street': 'municipal' };
+        if (!LEVEL[pk.gov]) say('no level is known for ' + pk.gov);
+        else if (o[pk.ans] !== LEVEL[pk.gov]) say(pk.gov + ' are run by the ' + LEVEL[pk.gov] + ' government, not ' + o[pk.ans]);
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
