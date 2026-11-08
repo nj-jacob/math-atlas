@@ -26,6 +26,12 @@
                                 starts the scale above 0 (a graph that misleads), with a zigzag on the axis
      lineg { cats, vals, min, max, step, title, h }   a line graph: a point for each category, joined in order
      spin  { parts }            a spinner cut into equal parts, each labelled (['R', 'R', 'B'] is 2 parts R and 1 part B)
+     stem  { data, title }      a stem-and-leaf plot of whole numbers under 100 or 1000: the tens (or tens and hundreds) as
+                                stems down the left, every ones digit as a leaf in order, and a key (3 | 4 means 34)
+     dial  { g, max, lab, tick, unit, blank }   a kitchen scale from 0 to max grams with its needle at g: a numbered mark
+                                every lab (in kg when unit is 'kg'), a small mark every tick; blank: no needle (the key draws it)
+     jug   { mL, max, lab, tick, blank }   a measuring jug from 0 to max mL filled to mL, marked like the scale; blank:
+                                empty for the child to colour (the key shows the level)
      tri   { sides: [a, b, c] } or { angles: [A, B, C] }, show: 'sides' | 'angles', ask: 0 | 1 | 2, marks
                                 a triangle drawn from its side lengths or its angles (in degrees); show writes the
                                 lengths (cm) or the angles, ask leaves one angle as "?", marks draws ticks on equal sides
@@ -356,6 +362,58 @@
     });
     out += line(cx, cy, cx + R * 0.32 * Math.cos(-0.6), cy + R * 0.32 * Math.sin(-0.6), { sw: 2 }) + '<circle cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + INK + '"/>';
     return { svg: out, h: 2 * R + 4, w: 2 * R + 4 };
+  };
+
+  /* a stem-and-leaf plot: one row for every stem from the least to the greatest (an empty stem keeps its row) */
+  P.stem = function (p, x, y, w) {
+    var d = p.data.slice().sort(function (m, n) { return m - n; }), lo = Math.floor(d[0] / 10), hi = Math.floor(d[d.length - 1] / 10);
+    var lh = 18, sw = 30, top = y + (p.title ? 16 : 0), out = p.title ? T(x, y + 10, p.title, { s: 10.5, w: 700, f: INK2 }) : '', wid = 0;
+    out += T(x + sw - 6, top + 11, 'Stem', { s: 9, f: INK2, a: 'end' }) + T(x + sw + 8, top + 11, 'Leaf', { s: 9, f: INK2 });
+    for (var st = lo; st <= hi; st++) {
+      var ry = top + 16 + (st - lo) * lh, leaves = d.filter(function (v) { return Math.floor(v / 10) === st; }).map(function (v) { return v % 10; });
+      out += T(x + sw - 6, ry + 13, String(st), { s: 13, w: 700, a: 'end' });
+      leaves.forEach(function (l, i) { out += T(x + sw + 8 + i * 14, ry + 13, String(l), { s: 13, w: 700 }); });
+      wid = Math.max(wid, sw + 8 + leaves.length * 14);
+    }
+    var bot = top + 16 + (hi - lo + 1) * lh + 4;
+    out += line(x + sw, top + 14, x + sw, bot, { sw: 1.3 }) + line(x, top + 16, x + Math.min(w, Math.max(wid, 110)), top + 16, { s: LINE, sw: 1 });
+    var key = 'Key: ' + lo + ' | ' + (d[0] % 10) + ' means ' + d[0];
+    out += T(x, bot + 14, key, { s: 9.5, f: INK2 });
+    return { svg: out, h: bot + 18 - y, w: Math.max(wid, tw(key, 9.5)) };
+  };
+
+  /* a kitchen scale: a round dial from 0 to max grams, a numbered mark every lab (written in kg when unit is 'kg'), a
+     longer mark halfway between and a small mark every tick, with the needle at g; blank leaves the needle off for the child (the key draws it) */
+  P.dial = function (p, x, y, w, key) {
+    var R = 42, cx = x + R + 4, cy = y + R + 4, n = Math.round(p.max / p.tick), kg = p.unit === 'kg';
+    var at = function (v, r) { var a = (-135 + 270 * v / p.max) * Math.PI / 180; return [(cx + Math.sin(a) * r).toFixed(1), (cy - Math.cos(a) * r).toFixed(1)]; };
+    var out = '<circle cx="' + cx + '" cy="' + cy + '" r="' + (R + 3) + '" fill="#fff" stroke="' + INK + '" stroke-width="1.6"/>';
+    for (var i = 0; i <= n; i++) {
+      var v = i * p.tick, big = v % p.lab === 0, mid = !big && v % (p.lab / 2) === 0, a = at(v, R - (big ? 8 : mid ? 6 : 4)), b = at(v, R);
+      out += line(a[0], a[1], b[0], b[1], { s: big ? INK : INK2, sw: big ? 1.3 : mid ? 1 : 0.8 });
+      if (big) { var t = at(v, R - 17); out += T(t[0], +t[1] + 3.5, String(kg ? v / 1000 : v), { s: 8.5, w: 700, a: 'middle' }); }
+    }
+    out += T(cx, cy + R - 8, kg ? 'kg' : 'g', { s: 9, f: INK2, a: 'middle' });
+    if (!p.blank || key) { var e = at(p.g, R - 6); out += line(cx, cy, e[0], e[1], { s: p.blank ? KEY : INK, sw: 2 }); }
+    out += '<circle cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + INK + '"/>';
+    return { svg: out, h: 2 * R + 8, w: 2 * R + 8 };
+  };
+
+  /* a measuring jug from 0 to max mL: a numbered mark every lab and a small mark every tick, filled to mL; blank leaves
+     it empty for the child to colour (the key fills it) */
+  P.jug = function (p, x, y, w, key) {
+    var H = 96, W = 64, top = y + 4, bot = top + H, n = Math.round(p.max / p.tick), Y = function (v) { return bot - (H - 10) * v / p.max; };
+    var out = '';
+    if (!p.blank || key) out += '<rect x="' + (x + 1) + '" y="' + Y(p.mL).toFixed(1) + '" width="' + (W - 2) + '" height="' + (bot - Y(p.mL)).toFixed(1) + '" fill="' + (p.blank ? 'none' : '#dfe5ee') + '"' + (p.blank ? ' stroke="' + KEY + '" stroke-width="1.6"' : '') + '/>';
+    out += '<path d="M' + x + ' ' + top + ' L' + x + ' ' + bot + ' L' + (x + W) + ' ' + bot + ' L' + (x + W) + ' ' + top + '" fill="none" stroke="' + INK + '" stroke-width="1.6"/>';
+    out += '<path d="M' + (x + W) + ' ' + (top + 14) + ' q 16 0 16 18 q 0 22 -16 26" fill="none" stroke="' + INK + '" stroke-width="1.6"/>';
+    for (var i = 1; i <= n; i++) {
+      var v = i * p.tick, big = v % p.lab === 0, yy = Y(v).toFixed(1);
+      out += line(x, yy, x + (big ? 14 : 8), yy, { s: big ? INK : INK2, sw: big ? 1.2 : 0.8 });
+      if (big) out += T(x + 17, +yy + 3.5, fmt(v), { s: 8.5, w: 700 });
+    }
+    out += T(x + W - 4, bot - 5, 'mL', { s: 8.5, f: INK2, a: 'end' });
+    return { svg: out, h: H + 6, w: W + 18 };
   };
 
   /* a triangle from 3 sides (law of cosines) or 3 angles (sides in proportion to the sines), scaled to fit */
