@@ -250,47 +250,56 @@ async function checkGrade(browser, base, g) {
       return want.filter(f => !document.fonts.check(f));
     });
     if (fontsOk.length) fail(where + ' worksheets', 'the sheet fonts did not load (' + fontsOk.join(', ') + '), so the page sizes cannot be checked. Is the internet reachable?');
-    const ws = await sp.evaluate(chs => {
-      const S = Atlas.sheets, out = [];
-      let pages = 0;
-      const box = document.createElement('div');
-      box.style.cssText = 'position:absolute;left:0;top:0;width:612px;height:792px';
-      document.body.appendChild(box);
-      for (const ch of chs) for (const s of S.list(ch)) for (const t of S.themes) {
-        S.items(ch, s.slug, s.kind, t.id).items.forEach((it, i) => window.__sheetCheck(it).forEach(m => out.push(ch + ' sheet ' + s.slug + '/' + s.kind + ' (' + t.id + ') question ' + (i + 1) + ': ' + m)));
-        for (const key of [false, true]) {
-          S.overflow.length = 0;
-          const svg = S.page(ch, s.slug, s.kind, t.id, key), code = S.code(ch, s.slug, s.kind, S.themeById(t.id)) + (key ? ' key' : '');
-          pages++;
-          S.overflow.forEach(m => out.push(code + ': ' + m));
-          box.innerHTML = svg;
-          box.querySelectorAll('text').forEach(el => {
-            if (/\{\w+\}|undefined|NaN/.test(el.textContent)) out.push(code + ': "' + el.textContent + '" has unfilled words, "undefined" or "NaN"');
-            const b = el.getBBox(), cell = el.closest('.it');
-            if (b.x < 0 || b.y < 0 || b.x + b.width > 612 || b.y + b.height > 792) out.push(code + ': "' + el.textContent + '" runs off the page');
-            else if (cell && !el.closest('.pic') && (b.x < +cell.dataset.x0 - 1 || b.x + b.width > +cell.dataset.x1 + 1)) out.push(code + ': "' + el.textContent + '" runs out of question ' + cell.dataset.n);
-          });
+    /* one chapter at a time, so a slow chapter shows in the log; the pictures' own examples are checked with the last */
+    const ws = { out: [], more: 0, pages: 0 };
+    for (const [ci, ch] of sheetChapters.entries()) {
+      const t0 = Date.now();
+      const r = await sp.evaluate(([chs, pics]) => {
+        const S = Atlas.sheets, out = [];
+        let pages = 0;
+        const box = document.createElement('div');
+        box.style.cssText = 'position:absolute;left:0;top:0;width:612px;height:792px';
+        document.body.appendChild(box);
+        for (const ch of chs) for (const s of S.list(ch)) for (const t of S.themes) {
+          S.items(ch, s.slug, s.kind, t.id).items.forEach((it, i) => window.__sheetCheck(it).forEach(m => out.push(ch + ' sheet ' + s.slug + '/' + s.kind + ' (' + t.id + ') question ' + (i + 1) + ': ' + m)));
+          for (const key of [false, true]) {
+            S.overflow.length = 0;
+            const svg = S.page(ch, s.slug, s.kind, t.id, key), code = S.code(ch, s.slug, s.kind, S.themeById(t.id)) + (key ? ' key' : '');
+            pages++;
+            S.overflow.forEach(m => out.push(code + ': ' + m));
+            box.innerHTML = svg;
+            box.querySelectorAll('text').forEach(el => {
+              if (/\{\w+\}|undefined|NaN/.test(el.textContent)) out.push(code + ': "' + el.textContent + '" has unfilled words, "undefined" or "NaN"');
+              const b = el.getBBox(), cell = el.closest('.it');
+              if (b.x < 0 || b.y < 0 || b.x + b.width > 612 || b.y + b.height > 792) out.push(code + ': "' + el.textContent + '" runs off the page');
+              else if (cell && !el.closest('.pic') && (b.x < +cell.dataset.x0 - 1 || b.x + b.width > +cell.dataset.x1 + 1)) out.push(code + ': "' + el.textContent + '" runs out of question ' + cell.dataset.n);
+            });
+          }
         }
-      }
-      /* every picture has an example that draws inside a question's column, with numbers and no "undefined" */
-      const th = S.themes[0];
-      Object.keys(S.pics).forEach(name => {
-        const ex = window.__picSamples[name];
-        if (!ex) { out.push('the worksheet picture "' + name + '" has no example in verify/sheets.js'); return; }
-        for (const key of [false, true]) {
-          let r;
-          try { r = S.draw.pic([name, ex[0]], 70, 20, 228, key, th, (ex[1] || []).slice()); } catch (e) { out.push('the worksheet picture "' + name + '" stopped: ' + e.message); return; }
-          box.innerHTML = '<svg viewBox="0 0 612 792" width="612" height="792">' + r.svg + '</svg>';
-          const b = box.querySelector('svg').getBBox();
-          if (/undefined|NaN/.test(r.svg) || !(r.h > 0)) out.push('the worksheet picture "' + name + '" draws "undefined", "NaN" or nothing');
-          if (b.x < 69 || b.x + b.width > 299) out.push('the worksheet picture "' + name + '" runs out of its column (' + Math.round(b.x) + ' to ' + Math.round(b.x + b.width) + ')');
+        if (pics) {
+        /* every picture has an example that draws inside a question's column, with numbers and no "undefined" */
+        const th = S.themes[0];
+        Object.keys(S.pics).forEach(name => {
+          const ex = window.__picSamples[name];
+          if (!ex) { out.push('the worksheet picture "' + name + '" has no example in verify/sheets.js'); return; }
+          for (const key of [false, true]) {
+            let r;
+            try { r = S.draw.pic([name, ex[0]], 70, 20, 228, key, th, (ex[1] || []).slice()); } catch (e) { out.push('the worksheet picture "' + name + '" stopped: ' + e.message); return; }
+            box.innerHTML = '<svg viewBox="0 0 612 792" width="612" height="792">' + r.svg + '</svg>';
+            const b = box.querySelector('svg').getBBox();
+            if (/undefined|NaN/.test(r.svg) || !(r.h > 0)) out.push('the worksheet picture "' + name + '" draws "undefined", "NaN" or nothing');
+            if (b.x < 69 || b.x + b.width > 299) out.push('the worksheet picture "' + name + '" runs out of its column (' + Math.round(b.x) + ' to ' + Math.round(b.x + b.width) + ')');
+          }
+        });
         }
-      });
-      box.remove();
-      return { out: out.slice(0, 60), more: Math.max(0, out.length - 60), pages };
-    }, sheetChapters);
-    ws.out.forEach(p => fail(where + ' worksheets', p));
-    if (ws.more) fail(where + ' worksheets', ws.more + ' more problems');
+        box.remove();
+        return { out: out.slice(0, 60), more: Math.max(0, out.length - 60), pages };
+      }, [[ch], ci === sheetChapters.length - 1]);
+      ws.out.push(...r.out); ws.more += r.more; ws.pages += r.pages;
+      log('Grade ' + g + ' worksheets, ' + ch + ': ' + r.pages + ' pages in ' + Math.round((Date.now() - t0) / 1000) + ' s.');
+    }
+    ws.out.slice(0, 60).forEach(p => fail(where + ' worksheets', p));
+    if (ws.more || ws.out.length > 60) fail(where + ' worksheets', ws.more + Math.max(0, ws.out.length - 60) + ' more problems');
     log('Grade ' + g + ' worksheets: ' + ws.pages + ' pages drawn and checked.');
     await sp.evaluate(() => { localStorage.setItem('atlas:adult', '1'); document.documentElement.classList.add('adult'); });
     for (const ch of sheetChapters) {
