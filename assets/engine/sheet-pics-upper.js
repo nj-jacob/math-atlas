@@ -21,6 +21,11 @@
      grow  { m, b, k }          a growing pattern: figures 1 to k, figure n has b shaded tiles that never change and
                                 m rows of n open tiles (m × n + b tiles in all)
      code  { lines }            a short program in a box, one instruction per line (two spaces in front indent a line)
+     dbar  { cats, sets, keys, min, max, step, stack, title, h }   a bar graph (h: plot height, 64 when left out): one bar per set in each category (two sets
+                                make a double bar graph, with keys as its legend), or the sets stacked in one bar; min
+                                starts the scale above 0 (a graph that misleads), with a zigzag on the axis
+     lineg { cats, vals, min, max, step, title, h }   a line graph: a point for each category, joined in order
+     spin  { parts }            a spinner cut into equal parts, each labelled (['R', 'R', 'B'] is 2 parts R and 1 part B)
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
@@ -275,5 +280,66 @@
       out += '<text x="' + (x + 10 + ind * 14) + '" y="' + (y + 19 + i * lh) + '" style="font-family:\'Courier New\', monospace;font-size:11.5px;fill:' + INK + '">' + l.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</text>';
     });
     return { svg: out, h: p.lines.length * lh + 12, w: bw };
+  };
+
+  /* graph axes with a scale from min to max; returns the drawing, the plot box and a y for any value */
+  function axes(p, x, y, w, h) {
+    var gx = x + 28, gw = Math.min(w, 240) - 32, top = y + (p.title ? 18 : 6), min = p.min || 0, out = '';
+    var at = function (v) { return top + h - (v - min) / (p.max - min) * h; };
+    if (p.title) out += T(gx + gw / 2, y + 10, p.title, { s: 10.5, w: 700, f: INK2, a: 'middle' });
+    for (var v = min; v <= p.max + 1e-9; v += p.step) out += line(gx, at(v), gx + gw, at(v), { s: LINE, sw: 0.7 }) + T(gx - 5, at(v) + 3.5, fmt(+v.toFixed(2)), { s: 9, f: INK2, a: 'end' });
+    out += line(gx, top, gx, top + h, { sw: 1.3 }) + line(gx, top + h, gx + gw, top + h, { sw: 1.3 });
+    if (min) out += '<path d="M' + (gx - 4) + ' ' + (top + h - 5) + ' l4 -3 l-4 -3 l4 -3" fill="none" stroke="' + INK + '" stroke-width="1.1"/>';
+    return { svg: out, gx: gx, gw: gw, top: top, at: at };
+  }
+  var FILLS = ['#dfe5ee', '#fff', '#9aa6b8'];
+  P.dbar = function (p, x, y, w) {
+    var h = p.h || 64, a = axes(p, x, y, w, h), out = a.svg, n = p.cats.length, cw = a.gw / n, k = p.sets.length, base = a.at(p.min || 0);
+    p.cats.forEach(function (c, i) {
+      if (p.stack) {
+        var acc = 0;
+        p.sets.forEach(function (set, j) {
+          var y1 = a.at(acc + set[i]), y0 = a.at(acc); acc += set[i];
+          out += '<rect x="' + (a.gx + i * cw + cw * 0.22) + '" y="' + y1 + '" width="' + cw * 0.56 + '" height="' + (y0 - y1) + '" fill="' + FILLS[j % 3] + '" stroke="' + INK2 + '" stroke-width="1"/>';
+        });
+      } else {
+        var bw = cw * 0.7 / k;
+        p.sets.forEach(function (set, j) {
+          if (set[i] == null) return;
+          var top = a.at(set[i]);
+          out += '<rect x="' + (a.gx + i * cw + cw * 0.15 + j * bw) + '" y="' + top + '" width="' + bw + '" height="' + (base - top) + '" fill="' + FILLS[j % 3] + '" stroke="' + INK2 + '" stroke-width="1"/>';
+        });
+      }
+      out += T(a.gx + i * cw + cw / 2, base + 13, c, { s: 9.5, f: INK2, a: 'middle' });
+    });
+    var hh = base - y + 18;
+    if (p.keys) {
+      var kx = a.gx;
+      p.keys.forEach(function (kk, j) { out += '<rect x="' + kx + '" y="' + (y + hh - 2) + '" width="9" height="9" fill="' + FILLS[j % 3] + '" stroke="' + INK2 + '" stroke-width="1"/>' + T(kx + 13, y + hh + 6, kk, { s: 9.5, f: INK2 }); kx += 22 + tw(kk, 9.5); });
+      hh += 14;
+    }
+    return { svg: out, h: hh, w: a.gw + 28 };
+  };
+  P.lineg = function (p, x, y, w) {
+    var h = p.h || 64, a = axes(p, x, y, w, h), out = a.svg, n = p.cats.length, cw = a.gw / n, pts = [];
+    p.cats.forEach(function (c, i) {
+      var px = a.gx + i * cw + cw / 2;
+      pts.push(px + ' ' + a.at(p.vals[i]));
+      out += T(px, a.at(p.min || 0) + 13, c, { s: 9.5, f: INK2, a: 'middle' });
+    });
+    out += '<path d="M' + pts.join(' L') + '" fill="none" stroke="' + INK + '" stroke-width="1.5"/>';
+    pts.forEach(function (pt) { var q = pt.split(' '); out += '<circle cx="' + q[0] + '" cy="' + q[1] + '" r="3" fill="' + INK + '"/>'; });
+    return { svg: out, h: a.at(p.min || 0) - y + 18, w: a.gw + 28 };
+  };
+  /* a spinner in equal parts with a label in each and an arrow from the centre */
+  P.spin = function (p, x, y) {
+    var R = 30, cx = x + R + 2, cy = y + R + 2, n = p.parts.length, out = '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>';
+    p.parts.forEach(function (lab, i) {
+      var a0 = -Math.PI / 2 + i * 2 * Math.PI / n, am = a0 + Math.PI / n;
+      if (n > 1) out += line(cx, cy, cx + R * Math.cos(a0), cy + R * Math.sin(a0), { s: INK2, sw: 1 });
+      out += T(cx + R * 0.62 * Math.cos(am), cy + R * 0.62 * Math.sin(am) + 4, lab, { s: 11, w: 700, a: 'middle' });
+    });
+    out += line(cx, cy, cx + R * 0.32 * Math.cos(-0.6), cy + R * 0.32 * Math.sin(-0.6), { sw: 2 }) + '<circle cx="' + cx + '" cy="' + cy + '" r="2.6" fill="' + INK + '"/>';
+    return { svg: out, h: 2 * R + 4, w: 2 * R + 4 };
   };
 })();

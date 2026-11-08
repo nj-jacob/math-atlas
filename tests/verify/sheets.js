@@ -98,7 +98,8 @@
     wholes: o => ({ total: o.n }),
     cups: o => ({ total: o.n }),
     col: o => { const res = String(o.op === '+' ? o.a + o.b : o.a - o.b); return { blanks: res.length, own: (o, a) => (a.join('') === res ? [] : ['the column answer ' + a.join('') + ' is not ' + res]) }; },
-    tally: o => (o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]) } : null),
+    tally: o => (o.blank ? { blanks: o.cats.length, own: (o, a) => (a.join() === o.vals.join() ? [] : ['the tally counts ' + a.join() + ' do not match the tallies ' + o.vals.join()]), data: o.vals } : { data: o.vals }),
+    bar: o => ({ data: o.vals.filter(v => v != null) }),
     nl: o => ({ total: o.pt != null ? o.pt : undefined, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
     pv: o => ({ total: o.n, blanks: o.blank ? Math.max(3, String(o.n).length) : 0, own: o.blank ? (o, a) => (+a.join('') === o.n ? [] : ['the chart digits ' + a.join('') + ' are not ' + o.n]) : null }),
     /* sheet-pics-upper.js */
@@ -121,6 +122,10 @@
     fbars: o => { const v = o.rows.map(r => r[1] / r[0]); return v.every(x => same(x, v[0])) ? { total: v[0], name: o.rows.length === 1 ? o.rows[0][1] + '/' + o.rows[0][0] : null } : null; },
     /* a ratio picture: how many of each kind in all */
     grow: o => ({ m: o.m, b: o.b }),
+    /* graphs give their numbers (data) for stories and statistics; a spinner gives its parts for probability */
+    dbar: o => ({ data: [].concat(...o.sets).filter(v => v != null), sets: o.sets, min: o.min || 0 }),
+    lineg: o => ({ data: o.vals, min: o.min || 0 }),
+    spin: o => ({ parts: o.parts }),
     code: () => null,
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
@@ -144,8 +149,9 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
   };
+  const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
 
 
@@ -169,12 +175,14 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq);
+    const byItem = !!(it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks);
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
+      /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
+      if (it.prob) return;
       const rat = row.match(/\d+ ?: ?\d+/g);
       if (rat) {
         /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
@@ -251,7 +259,7 @@
       const v = val(norm(it.calc));
       const ans = (it.a || [])[0], av = typeof ans === 'number' ? ans : val(norm(String(ans)));
       if (!same(v, av)) say('the story works out to ' + v + ', not ' + (it.a || [])[0]);
-      const inQ = nums(it.q + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : ''));
+      const inQ = nums(it.q + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : []);
       nums(it.calc).forEach(n => { if (inQ.indexOf(n) < 0) say('the story sum uses ' + n + ', which is not in the story'); });
     }
     /* 5. the circled choice */
@@ -328,6 +336,8 @@
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice makes ' + pk.val);
       } else if (o[0] === 'yes' && pc && pc.counts) {
         if (pc.counts.every(x => x === pc.counts[0]) !== yes) say('equal groups: the key is wrong');
+      } else if (pk.chance) {
+        if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
     }
     /* 5b. a remainder story: the last answer rounds the quotient up (leftovers need their own group) or drops the leftovers */
@@ -372,6 +382,47 @@
       const v = num(ansAll[ansAll.length - 1]);
       if (truth(put(it.ineq, v)) !== true) say(v + ' does not make ' + it.ineq + ' true');
       if (it.edge && truth(put(it.ineq, it.edge === 'most' ? v + 1 : v - 1)) !== false) say(v + ' is not the ' + (it.edge === 'most' ? 'greatest' : 'least') + ' whole number that makes ' + it.ineq + ' true');
+    }
+    /* data: a statistic of the data (from the item, which must be in its question, or from the picture), the relative
+       frequency of one count, and how many times as tall one bar looks when the scale does not start at 0 */
+    const data = it.data || (pc && pc.data), last = num(ansAll[ansAll.length - 1]);
+    if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the data value ' + n + ' is not in the question'); });
+    if (it.stat) {
+      const d = (data || []).slice().sort((x, y) => x - y), n = d.length, cnt = {};
+      d.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
+      const most = Math.max(...Object.values(cnt)), modes = Object.keys(cnt).filter(k => cnt[k] === most).map(Number);
+      const all = { mean: d.reduce((x, y) => x + y, 0) / n, median: n % 2 ? d[(n - 1) / 2] : (d[n / 2 - 1] + d[n / 2]) / 2, range: d[n - 1] - d[0], mode: modes.length === 1 && most > 1 ? modes[0] : NaN };
+      /* stat is one statistic or a list, answered in order by the last answers */
+      const asked = [].concat(it.stat), got = ansAll.slice(-asked.length);
+      if (!n) say('a statistic with no data');
+      else asked.forEach((st, i) => {
+        if (isNaN(all[st])) say('the data has no single ' + st);
+        else if (!same(all[st], num(got[i]))) say('the ' + st + ' is ' + all[st] + ', not ' + got[i]);
+      });
+    }
+    if (it.rel != null && data) {
+      /* rel is one row of the data or a list of rows, answered in order by the last answers */
+      const rows = [].concat(it.rel), got = ansAll.slice(-rows.length), t = data.reduce((x, y) => x + y, 0);
+      rows.forEach((r, i) => { if (!same(data[r] / t, num(got[i]))) say('the relative frequency is ' + data[r] + ' out of ' + t + ', not ' + got[i]); });
+    }
+    if (it.looks && pc && pc.sets) {
+      const v = pc.sets[0], r = (v[it.looks[0]] - pc.min) / (v[it.looks[1]] - pc.min);
+      if (!same(r, last)) say('that bar looks ' + r + ' times as tall, not ' + ansAll[ansAll.length - 1]);
+    }
+    /* probability on a spinner of equal parts: ways it can happen ÷ all the parts; with trials, how many to expect */
+    const parts = pc && pc.parts, chance = l => parts.filter(x => x === l).length / parts.length;
+    if (it.prob && parts) {
+      /* prob is one label or a list, answered in order by the last answers */
+      const labs = [].concat(it.prob), got = ansAll.slice(-labs.length);
+      labs.forEach((l, i) => {
+        const want = chance(l) * (it.trials || 1);
+        if (!same(want, num(got[i]))) say((it.trials ? 'in ' + it.trials + ' spins expect ' + want + ' ' + l : 'the probability of ' + l + ' is ' + want) + ', not ' + got[i]);
+      });
+      if (it.trials && nums(it.q).indexOf(it.trials) < 0) say('the number of spins ' + it.trials + ' is not in the question');
+    }
+    if (pk && pk.chance && parts) {
+      const c = chance(pk.chance), w = c === 0 ? 'impossible' : c === 1 ? 'certain' : c === 0.5 ? 'equally likely' : c < 0.5 ? 'unlikely' : 'likely';
+      if (o2(pk) !== w) say('landing on ' + pk.chance + ' is ' + w + ', not ' + o2(pk));
     }
     /* a fraction in simplest form: its top and bottom share no factor */
     if (it.simplest) (it.a || []).filter(v => /\//.test(v)).forEach(v => { const [n, d] = String(v).split(' ').pop().split('/').map(Number); for (let f = 2; f <= Math.min(n, d); f++) if (n % f === 0 && d % f === 0) say(v + ' is not in simplest form'); });

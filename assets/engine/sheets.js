@@ -204,11 +204,13 @@
       var px = x;
       it.pick.opts.forEach(function (o, i) {
         var ow = tw(words(o, th), 16, 700);
+        /* choices that do not fit on one line go on to the next */
+        if (i && px + ow > x + w) { px = x; cy += 34; }
         if (key && i === it.pick.ans) out += '<ellipse cx="' + (px + ow / 2) + '" cy="' + (cy + 15) + '" rx="' + (ow / 2 + 11) + '" ry="14" fill="none" stroke="' + KEY + '" stroke-width="1.8"/>';
         out += T(px, cy + 21, words(o, th), { s: 16, w: 700 });
         px += ow + 34;
       });
-      if (px - 34 > x + w) S.overflow.push('the choices are too wide: ' + it.pick.opts.join(', '));
+      if (px - 34 > x + w) S.overflow.push('a choice is too wide: ' + it.pick.opts.join(', '));
       cy += 36;
     }
     if (it.pick && !it.pickLast) pick();
