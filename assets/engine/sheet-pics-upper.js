@@ -18,6 +18,9 @@
      fbars { rows: [[n, k], ...], labels }   fraction bars of the same length stacked: each row cut into n parts with k
                                 shaded; a k bigger than n draws more bars side by side (11/4 is 2 whole bars and 3/4)
      mix   { a, b, g }          a ratio: a shaded circles and b open squares, in g groups of that mix (g 1 when left out)
+     grow  { m, b, k }          a growing pattern: figures 1 to k, figure n has b shaded tiles that never change and
+                                m rows of n open tiles (m × n + b tiles in all)
+     code  { lines }            a short program in a box, one instruction per line (two spaces in front indent a line)
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
@@ -248,5 +251,29 @@
     }
     var rows = Math.ceil(g / across);
     return { svg: out, h: rows * gh + (rows - 1) * 6, w: Math.min(g, across) * (gw + 6) - 6 };
+  };
+
+  /* a growing pattern of tiles: figure n is b shaded tiles in a column, then m rows of n open tiles */
+  P.grow = function (p, x, y, w) {
+    var sz = 10, gap = 16, out = '', cx = x, hi = Math.max(p.b, p.m) * sz;
+    for (var n = 1; n <= p.k; n++) {
+      for (var i = 0; i < p.b; i++) out += '<rect x="' + cx + '" y="' + (y + hi - (i + 1) * sz) + '" width="' + sz + '" height="' + sz + '" fill="#dfe5ee" stroke="' + INK2 + '" stroke-width="1"/>';
+      var ox = cx + (p.b ? sz : 0);
+      for (var r = 0; r < p.m; r++) for (var c = 0; c < n; c++) out += '<rect x="' + (ox + c * sz) + '" y="' + (y + hi - (r + 1) * sz) + '" width="' + sz + '" height="' + sz + '" fill="#fff" stroke="' + INK + '" stroke-width="1"/>';
+      var fw = (p.b ? sz : 0) + n * sz;
+      out += T(cx + fw / 2, y + hi + 14, 'Figure ' + n, { s: 9, f: INK2, a: 'middle' });
+      cx += fw + gap;
+    }
+    return { svg: out, h: hi + 18, w: cx - gap - x };
+  };
+
+  /* a short program: one instruction per line in a light box, written in a plain monospace face */
+  P.code = function (p, x, y, w) {
+    var lh = 17, bw = Math.min(w, 220), out = '<rect x="' + x + '" y="' + y + '" width="' + bw + '" height="' + (p.lines.length * lh + 12) + '" rx="5" fill="#f6f7f9" stroke="' + LINE + '" stroke-width="1"/>';
+    p.lines.forEach(function (l, i) {
+      var ind = l.match(/^ */)[0].length / 2;
+      out += '<text x="' + (x + 10 + ind * 14) + '" y="' + (y + 19 + i * lh) + '" style="font-family:\'Courier New\', monospace;font-size:11.5px;fill:' + INK + '">' + l.trim().replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</text>';
+    });
+    return { svg: out, h: p.lines.length * lh + 12, w: bw };
   };
 })();

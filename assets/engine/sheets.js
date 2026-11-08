@@ -172,8 +172,9 @@
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
     s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
-      var comma = tok === '[],', fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
+      var comma = tok === '[],';
       if (comma) tok = '[]';
+      var fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
       if (fr && (tok === '[]' || !fr[1] !== !fr[2])) {
         /* a blank, or a blank for one part of a fraction: 3/[] or []/8 */
         var short = tok !== '[]', bl = ans[k] == null ? (short ? 28 : BL) : Math.max(short ? 28 : BL, tw(fmt(ans[k]), big, 700) + 10);
