@@ -17,10 +17,12 @@
   /* a row with two or more different metric units (3.5 m = 350 cm, 1 kg 200 g = 1200 g) is put into one unit per kind:
      every amount becomes its number times the unit's size in metres, grams or litres */
   const MU = { mm: 0.001, cm: 0.01, m: 1, km: 1000, mg: 0.001, g: 1, kg: 1000, mL: 0.001, L: 1 };
+  /* units of time work the same way, in seconds (1 h 15 min = 75 min) */
+  const TU = { s: 1, min: 60, h: 3600, day: 86400, days: 86400, week: 604800, weeks: 604800 };
   function metric(s) {
-    const re = /(\d+(?:\.\d+)?) ?(mm|cm|km|m|mg|kg|g|mL|L)(?![\w²³])/g;
+    const re = /(\d+(?:\.\d+)?) ?(mm|min|mL|mg|cm|km|kg|m|g|L|h|s|days?|weeks?)(?![\w²³])/g;
     if (new Set([...s.matchAll(re)].map(m => m[2])).size < 2) return s;
-    return s.replace(re, (m, n, u) => '(' + n + ' * ' + MU[u] + ')').replace(/\) \(/g, ') + (');
+    return s.replace(re, (m, n, u) => '(' + n + ' * ' + (MU[u] || TU[u]) + ')').replace(/\) \(/g, ') + (');
   }
   function norm(s) {
     return metric(String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1'))
@@ -202,6 +204,8 @@
   const COLLECT = { interview: /\bask/, observation: /\bwatch|\blook at|\bcount the .* (pass|go by|in the)/, experiment: /\btest|\btry|\bdrop|\broll|\btoss|\bflip|\bbounce/ };
   /* mean or mode: the words that ask for one */
   const STAT = { mean: /fair|share|even(ly| out)|level|same number/, mode: /most (common|often|popular)|appears most|shows up most/ };
+  /* how many right angles a shape's corners make: at each corner the two sides meet square on */
+  const rights = sh => sh.filter((p, i) => { const a = sh[(i + sh.length - 1) % sh.length], b = sh[(i + 1) % sh.length]; return (a[0] - p[0]) * (b[0] - p[0]) + (a[1] - p[1]) * (b[1] - p[1]) === 0; }).length;
   /* the shape names a repeating pattern uses */
   const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
@@ -294,6 +298,10 @@
     dbar: o => ({ data: [].concat(...o.sets).filter(v => v != null), sets: o.sets, min: o.min || 0 }),
     lineg: o => ({ data: o.vals, min: o.min || 0 }),
     spin: o => ({ parts: o.parts }),
+    stem: o => ({ data: o.data }),
+    /* a scale or a jug shows its amount; left blank, the child draws the amount the question names (the key shows it) */
+    dial: o => (o.blank ? { blanks: 0, own: () => [], draw: o.g } : { total: o.g }),
+    jug: o => (o.blank ? { blanks: 0, own: () => [], draw: o.mL } : { total: o.mL }),
     /* a triangle: its angles (worked out from its sides when it is drawn from sides) and its kinds */
     tri: o => {
       const r = Math.PI / 180, sd = o.sides, ang = o.angles || [0, 1, 2].map(i => Math.acos((sd[(i + 1) % 3] ** 2 + sd[(i + 2) % 3] ** 2 - sd[i] ** 2) / (2 * sd[(i + 1) % 3] * sd[(i + 2) % 3])) / r);
@@ -342,7 +350,7 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -380,7 +388,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -395,6 +403,13 @@
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
+      /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
+         of minutes; a time on its own is the time the clock picture shows */
+      if (it.clock) {
+        const one = row.trim().match(/^(\d{1,2}) ?: ?(\d{2})$/);
+        if (one && pc && pc.time != null) { if ((+one[1] % 12) * 60 + +one[2] !== pc.time % 720) say('the clock shows ' + Math.floor(pc.time / 60) + ':' + pc.time % 60 + ', not ' + row); return; }
+        row = row.replace(/(\d{1,2}) ?: ?(\d{2})(?: ?([ap])\.m\.)?/g, (m, h, mm, ap) => ((+h % 12) + (ap === 'p' ? 12 : 0)) * 60 + +mm + ' min');
+      }
       const rat = row.match(/\d+ ?: ?\d+/g);
       if (it.robot && it.robot.to) {
         /* code with blanks filled in, one line per row: it must take the robot from the start to the square marked "to" */
@@ -491,6 +506,17 @@
         /* "389 + 212 is about []": round each number to the nearest 10 or 100 first, then add or subtract */
         const r = n => Math.round(+n / it.est) * it.est, want = est[2] === '+' ? r(est[1]) + r(est[3]) : r(est[1]) - r(est[3]);
         if (want !== +est[4]) say('rounding first, ' + est[1] + ' ' + est[2] + ' ' + est[3] + ' is about ' + want + ', not ' + est[4]);
+      } else if (rat) {
+        /* ratios: every ratio in the row names the same comparison (3 : 5 = 6 : 10, because 3 × 10 = 5 × 6); a ratio on
+           its own is the one the item asks for: of names its two terms from the picture's or the story's parts (a, b or all) */
+        const r = rat.map(x => x.split(':').map(Number));
+        if (r.some(([p, q]) => r[0][0] * q !== r[0][1] * p)) say('the ratios are not equivalent: ' + row);
+        const parts = (pc && pc.parts) || it.parts;
+        if (it.of && parts) {
+          const t = { a: parts[0], b: parts[1], all: parts[0] + parts[1] }, want = it.of.map(k => t[k]);
+          if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
+        } else if (r.length < 2) say('nothing checks the ratio ' + row);
+        if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
       } else if (it.round && !/=/.test(row)) {
         /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up); a sum in the same
            question (the change from a rounded cash total) is worked out below like any other */
@@ -502,7 +528,8 @@
         if (at < 0 || s2.lastIndexOf(d) !== at) say('the digit ' + d + ' is not in ' + s2 + ' exactly once');
         else if (+d * Math.pow(10, s2.length - 1 - at) !== +worth[3]) say('the ' + d + ' in ' + s2 + ' is worth ' + (+d * Math.pow(10, s2.length - 1 - at)) + ', not ' + worth[3]);
       } else if (/,/.test(row)) {
-        const n = nums(row);
+        /* a count: each term is a number or a fraction (1/4, 2/4, 3/4), and every step is the same */
+        const terms = row.split(',').map(t => val(norm(t))), n = terms.some(isNaN) ? nums(row) : terms;
         const step = it.by != null ? it.by : n[1] - n[0];
         if (it.core) {
           /* a repeating pattern: every number is the one a core length before it */
@@ -756,6 +783,20 @@
       } else if (it.odd) {
         const ok = o.map(truth);
         if (ok[pk.ans] !== false || ok.filter(x => x === false).length !== 1) say('the odd one out is not the only wrong fact');
+      } else if (pk.term) {
+        /* the nth term of a repeating pattern of numbers or names: the core comes round again every core length */
+        const c = pk.term.core;
+        if (o[pk.ans] !== c[(pk.term.n - 1) % c.length]) say('term ' + pk.term.n + ' of the core ' + c.join(', ') + ' is ' + c[(pk.term.n - 1) % c.length] + ', not ' + o[pk.ans]);
+      } else if (pk.equal) {
+        /* "Equal parts?" under a fraction picture: yes unless the picture is cut unevenly */
+        const ev = !(it.pic && it.pic[0] === 'frac' && it.pic[1].uneven);
+        if (o[pk.ans] !== (ev ? 'yes' : 'no')) say('the parts are ' + (ev ? '' : 'not ') + 'equal, but the key circles ' + o[pk.ans]);
+      } else if (pk.nw != null) {
+        const ok = o.map(x => num(x) === fromWords(pk.nw));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + pk.nw);
+      } else if (pk.wn != null) {
+        const ok = o.map(x => fromWords(x) === pk.wn);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice says ' + pk.wn + ' in words');
       } else if (pk.cmp) {
         const x = num(pk.cmp[0]), y = num(pk.cmp[1]), want = x < y ? '<' : x > y ? '>' : '=';
         if (o[pk.ans] !== want) say(pk.cmp.join(' and ') + ': the sign is ' + want + ', not ' + o[pk.ans]);
@@ -881,7 +922,12 @@
            a unit fits when the number is not tiny or huge (mm under 1 cm, cm under 1 m, m under 1 km, then km; g under
            1 kg; mL under 1 L); an estimate is the one closest to the real size, by how many times too big or too small */
         const [u, v] = Object.entries(pk.size)[0];
-        if (o.every(x => MU[x] != null)) {
+        /* what kind of measure (length in m, mass in g, capacity in L), and the tool: a ruler under 1 m, a measuring tape
+           from 1 m, a scale for mass, a measuring jug for capacity */
+        const KIND = { m: 'length', g: 'mass', L: 'capacity' }, tool = u === 'm' ? (v < 1 ? 'ruler' : 'measuring tape') : u === 'g' ? 'scale' : 'measuring jug';
+        if (o.indexOf('length') >= 0) { if (o[pk.ans] !== KIND[u]) say('that is ' + KIND[u] + ', not ' + o[pk.ans]); }
+        else if (o.indexOf('ruler') >= 0 || o.indexOf('scale') >= 0) { if (o[pk.ans] !== tool) say('the tool for ' + v + ' ' + u + ' is a ' + tool + ', not ' + o[pk.ans]); }
+        else if (o.every(x => MU[x] != null)) {
           const fit = u === 'm' ? (v < 0.01 ? 'mm' : v < 1 ? 'cm' : v < 1000 ? 'm' : 'km') : u === 'g' ? (v < 1000 ? 'g' : 'kg') : v < 1 ? 'mL' : 'L';
           if (o[pk.ans] !== fit || o.filter(x => x === fit).length !== 1) say('the unit that fits ' + v + ' ' + u + ' is ' + fit + ', not ' + o[pk.ans]);
         } else {
@@ -889,10 +935,24 @@
           if (d.some(isNaN)) say('cannot read the estimates ' + o.join(', '));
           else if (d.some((x, i) => i !== pk.ans && x <= d[pk.ans])) say('the circled ' + o[pk.ans] + ' is not the closest to ' + v + ' ' + u);
         }
+      } else if (pk.rect || pk.sym) {
+        /* a shape on a grid: a rectangle has 4 sides and 4 right angles; a line of symmetry flips every corner onto a corner */
+        const sh = it.pic && it.pic[0] === 'coord' && it.pic[1].shape, m = it.pic && it.pic[1].mirror;
+        if (!sh || (pk.sym && !m)) say('a shape choice has no shape' + (pk.sym ? ' or mirror line' : ''));
+        else {
+          const set = sh.map(p => p.join());
+          const yes2 = pk.rect ? sh.length === 4 && rights(sh) === 4 : sh.every(p => set.includes((m.x != null ? [2 * m.x - p[0], p[1]] : [p[0], 2 * m.y - p[1]]).join()));
+          if ((o[pk.ans] === 'yes') !== yes2) say((pk.rect ? 'the shape is ' + (yes2 ? '' : 'not ') + 'a rectangle' : 'the line is ' + (yes2 ? '' : 'not ') + 'a line of symmetry') + ', but the key circles ' + o[pk.ans]);
+        }
+      } else if (pk.dtype != null) {
+        /* qualitative or quantitative, from an example answer: a number is quantitative, words are qualitative */
+        const want = isNaN(num(pk.dtype)) ? 'qualitative' : 'quantitative';
+        if (o[pk.ans] !== want) say('an answer like "' + pk.dtype + '" is ' + want + ' data, not ' + o[pk.ans]);
       } else if (pk.pay) {
-        /* a way to pay, from how the money moves: bills and coins are cash; from your own account right away is debit;
+        /* a way to pay, from how the money moves: bills and coins are cash; a card that works at one store is a gift card;
+           from your own account right away is debit;
            the bank pays now and you pay it back later is credit; from one account to another with no card is an e-transfer */
-        const h = pk.pay, way = h.cash ? 'cash' : h.from === 'own' ? 'debit' : h.from === 'bank' ? 'credit' : h.accounts ? 'e-transfer' : null;
+        const h = pk.pay, way = h.cash ? 'cash' : h.gift ? 'gift card' : h.from === 'own' ? 'debit' : h.from === 'bank' ? 'credit' : h.accounts ? 'e-transfer' : null;
         if (o[pk.ans] !== way) say('that way to pay is ' + way + ', not ' + o[pk.ans]);
       } else if (pk.gov) {
         /* which level of government runs a service */
@@ -901,6 +961,16 @@
           libraries: 'municipal', 'garbage pickup': 'municipal', 'local parks': 'municipal', 'fire trucks': 'municipal', 'city buses': 'municipal', 'snow ploughs on your street': 'municipal' };
         if (!LEVEL[pk.gov]) say('no level is known for ' + pk.gov);
         else if (o[pk.ans] !== LEVEL[pk.gov]) say(pk.gov + ' are run by the ' + LEVEL[pk.gov] + ' government, not ' + o[pk.ans]);
+      } else if (pk.con) {
+        /* where money goes: money coming in is earned; buying something is spending; keeping it for later is saving;
+           putting it where it may grow is investing; giving it away is donating */
+        const h = pk.con, kind = h.in ? 'earn' : h.buy ? 'spend' : h.keep ? 'save' : h.grow ? 'invest' : h.give ? 'donate' : null;
+        if (o[pk.ans] !== kind) say('that money choice is ' + kind + ', not ' + o[pk.ans]);
+      } else if (pk.need) {
+        /* needs keep you safe and healthy; anything not on this list is a want */
+        const NEED = ['a winter coat', 'boots for snow', 'food for dinner', 'medicine', 'a toothbrush', 'bus fare to school', 'mittens', 'milk', 'glasses to see the board'];
+        const want = NEED.indexOf(pk.need) >= 0 ? 'need' : 'want';
+        if (o[pk.ans] !== want) say(pk.need + ' is a ' + want + ', not a ' + o[pk.ans]);
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
@@ -956,7 +1026,7 @@
       const d = (data || []).slice().sort((x, y) => x - y), n = d.length, cnt = {};
       d.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
       const most = Math.max(...Object.values(cnt)), modes = Object.keys(cnt).filter(k => cnt[k] === most).map(Number);
-      const all = { mean: d.reduce((x, y) => x + y, 0) / n, median: n % 2 ? d[(n - 1) / 2] : (d[n / 2 - 1] + d[n / 2]) / 2, range: d[n - 1] - d[0], mode: modes.length === 1 && most > 1 ? modes[0] : NaN };
+      const all = { mean: d.reduce((x, y) => x + y, 0) / n, median: n % 2 ? d[(n - 1) / 2] : (d[n / 2 - 1] + d[n / 2]) / 2, range: d[n - 1] - d[0], least: d[0], greatest: d[n - 1], count: n, mode: modes.length === 1 && most > 1 ? modes[0] : NaN };
       /* stat is one statistic or a list, answered in order by the last answers */
       const asked = [].concat(it.stat), got = ansAll.slice(-asked.length);
       if (!n) say('a statistic with no data');
@@ -983,6 +1053,7 @@
       if (ansAll.join() !== want.join()) say('the ' + [].concat(it.view).join(' and ') + ' view' + (Array.isArray(it.view) ? 's are ' : ' is ') + want.join(', ') + ', not ' + ansAll.join(', '));
     }
     const at = q => (typeof q === 'string' ? pc && pc.pts && pc.pts[q] : q);
+    if (it.corners) { const sh = it.pic && it.pic[1].shape; if (!sh || rights(sh) !== last) say('the shape has ' + (sh ? rights(sh) : '?') + ' right angles, not ' + ansAll[ansAll.length - 1]); }
     if (it.pt) { const q = at(it.pt); if (!q || ansAll.slice(-2).join() !== q.join()) say('point ' + it.pt + ' is at (' + (q || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')'); }
     if (it.move) {
       const q = at(it.move.pt), m = it.move, to = !q ? null : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
@@ -1007,12 +1078,20 @@
     }
     /* a fraction in simplest form: its top and bottom share no factor */
     if (it.simplest) (it.a || []).filter(v => /\//.test(v)).forEach(v => { const [n, d] = String(v).split(' ').pop().split('/').map(Number); for (let f = 2; f <= Math.min(n, d); f++) if (n % f === 0 && d % f === 0) say(v + ' is not in simplest form'); });
+    /* a shape pattern: the shapes to draw next carry on its core */
+    if (it.pic && it.pic[0] === 'pat' && it.pic[1].next) {
+      const p = it.pic[1], per = [...Array(p.seq.length).keys()].map(k => k + 1).find(k => p.seq.split('').every((ch, i) => ch === p.seq[i % k]));
+      const c = p.seq.slice(0, per);
+      if (p.core && p.core !== per) say('the core of ' + p.seq + ' is ' + per + ' long, not ' + p.core);
+      if (p.next.split('').some((ch, i) => ch !== c[(p.seq.length + i) % per])) say('the next shapes ' + p.next + ' do not carry on the core ' + c);
+    }
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
-    if (ask && nums(it.q).indexOf(ask * num(it.pic[1].unit || 1)) < 0) say('shading ' + ask + ' squares does not show the number asked for');
+    if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
+    if (pc && pc.draw != null && !nums(it.q).some(x => same(x, pc.draw))) say('the picture is drawn at ' + pc.draw + ', which the question does not ask for');
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
-    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own) && !ask) say('a question with nothing to answer');
+    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own) && !ask && !(it.pic && it.pic[0] === 'pat' && it.pic[1].next)) say('a question with nothing to answer');
     return bad;
   };
 })();
