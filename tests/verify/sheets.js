@@ -17,10 +17,12 @@
   /* a row with two or more different metric units (3.5 m = 350 cm, 1 kg 200 g = 1200 g) is put into one unit per kind:
      every amount becomes its number times the unit's size in metres, grams or litres */
   const MU = { mm: 0.001, cm: 0.01, m: 1, km: 1000, mg: 0.001, g: 1, kg: 1000, mL: 0.001, L: 1 };
+  /* units of time work the same way, in seconds (1 h 15 min = 75 min) */
+  const TU = { s: 1, min: 60, h: 3600, day: 86400, days: 86400, week: 604800, weeks: 604800 };
   function metric(s) {
-    const re = /(\d+(?:\.\d+)?) ?(mm|cm|km|m|mg|kg|g|mL|L)(?![\w²³])/g;
+    const re = /(\d+(?:\.\d+)?) ?(mm|min|mL|mg|cm|km|kg|m|g|L|h|s|days?|weeks?)(?![\w²³])/g;
     if (new Set([...s.matchAll(re)].map(m => m[2])).size < 2) return s;
-    return s.replace(re, (m, n, u) => '(' + n + ' * ' + MU[u] + ')').replace(/\) \(/g, ') + (');
+    return s.replace(re, (m, n, u) => '(' + n + ' * ' + (MU[u] || TU[u]) + ')').replace(/\) \(/g, ') + (');
   }
   function norm(s) {
     return metric(String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1'))
@@ -140,6 +142,7 @@
     blocks: o => ({ total: 100 * o.h + 10 * o.t + o.o }),
     tenframe: o => ({ total: o.a + o.b }),
     coins: o => ({ total: o.list.reduce((x, y) => x + y, 0) }),
+    clock: o => (o.blank ? null : { time: o.h * 60 + o.m }),
     area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length }),
     wholes: o => ({ total: o.n }),
     cups: o => ({ total: o.n }),
@@ -173,6 +176,9 @@
     lineg: o => ({ data: o.vals, min: o.min || 0 }),
     spin: o => ({ parts: o.parts }),
     stem: o => ({ data: o.data }),
+    /* a scale or a jug shows its amount; left blank, the child draws the amount the question names (the key shows it) */
+    dial: o => (o.blank ? { blanks: 0, own: () => [], draw: o.g } : { total: o.g }),
+    jug: o => (o.blank ? { blanks: 0, own: () => [], draw: o.mL } : { total: o.mL }),
     /* a triangle: its angles (worked out from its sides when it is drawn from sides) and its kinds */
     tri: o => {
       const r = Math.PI / 180, sd = o.sides, ang = o.angles || [0, 1, 2].map(i => Math.acos((sd[(i + 1) % 3] ** 2 + sd[(i + 2) % 3] ** 2 - sd[i] ** 2) / (2 * sd[(i + 1) % 3] * sd[(i + 2) % 3])) / r);
@@ -215,7 +221,7 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -250,6 +256,13 @@
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
+      /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
+         of minutes; a time on its own is the time the clock picture shows */
+      if (it.clock) {
+        const one = row.trim().match(/^(\d{1,2}) ?: ?(\d{2})$/);
+        if (one && pc && pc.time != null) { if ((+one[1] % 12) * 60 + +one[2] !== pc.time % 720) say('the clock shows ' + Math.floor(pc.time / 60) + ':' + pc.time % 60 + ', not ' + row); return; }
+        row = row.replace(/(\d{1,2}) ?: ?(\d{2})(?: ?([ap])\.m\.)?/g, (m, h, mm, ap) => ((+h % 12) + (ap === 'p' ? 12 : 0)) * 60 + +mm + ' min');
+      }
       const rat = row.match(/\d+ ?: ?\d+/g);
       if (it.robot && it.robot.to) {
         /* code with blanks filled in, one line per row: it must take the robot from the start to the square marked "to" */
@@ -535,7 +548,12 @@
            a unit fits when the number is not tiny or huge (mm under 1 cm, cm under 1 m, m under 1 km, then km; g under
            1 kg; mL under 1 L); an estimate is the one closest to the real size, by how many times too big or too small */
         const [u, v] = Object.entries(pk.size)[0];
-        if (o.every(x => MU[x] != null)) {
+        /* what kind of measure (length in m, mass in g, capacity in L), and the tool: a ruler under 1 m, a measuring tape
+           from 1 m, a scale for mass, a measuring jug for capacity */
+        const KIND = { m: 'length', g: 'mass', L: 'capacity' }, tool = u === 'm' ? (v < 1 ? 'ruler' : 'measuring tape') : u === 'g' ? 'scale' : 'measuring jug';
+        if (o.indexOf('length') >= 0) { if (o[pk.ans] !== KIND[u]) say('that is ' + KIND[u] + ', not ' + o[pk.ans]); }
+        else if (o.indexOf('ruler') >= 0 || o.indexOf('scale') >= 0) { if (o[pk.ans] !== tool) say('the tool for ' + v + ' ' + u + ' is a ' + tool + ', not ' + o[pk.ans]); }
+        else if (o.every(x => MU[x] != null)) {
           const fit = u === 'm' ? (v < 0.01 ? 'mm' : v < 1 ? 'cm' : v < 1000 ? 'm' : 'km') : u === 'g' ? (v < 1000 ? 'g' : 'kg') : v < 1 ? 'mL' : 'L';
           if (o[pk.ans] !== fit || o.filter(x => x === fit).length !== 1) say('the unit that fits ' + v + ' ' + u + ' is ' + fit + ', not ' + o[pk.ans]);
         } else {
@@ -557,9 +575,10 @@
         const want = isNaN(num(pk.dtype)) ? 'qualitative' : 'quantitative';
         if (o[pk.ans] !== want) say('an answer like "' + pk.dtype + '" is ' + want + ' data, not ' + o[pk.ans]);
       } else if (pk.pay) {
-        /* a way to pay, from how the money moves: bills and coins are cash; from your own account right away is debit;
+        /* a way to pay, from how the money moves: bills and coins are cash; a card that works at one store is a gift card;
+           from your own account right away is debit;
            the bank pays now and you pay it back later is credit; from one account to another with no card is an e-transfer */
-        const h = pk.pay, way = h.cash ? 'cash' : h.from === 'own' ? 'debit' : h.from === 'bank' ? 'credit' : h.accounts ? 'e-transfer' : null;
+        const h = pk.pay, way = h.cash ? 'cash' : h.gift ? 'gift card' : h.from === 'own' ? 'debit' : h.from === 'bank' ? 'credit' : h.accounts ? 'e-transfer' : null;
         if (o[pk.ans] !== way) say('that way to pay is ' + way + ', not ' + o[pk.ans]);
       } else if (pk.gov) {
         /* which level of government runs a service */
@@ -568,6 +587,16 @@
           libraries: 'municipal', 'garbage pickup': 'municipal', 'local parks': 'municipal', 'fire trucks': 'municipal', 'city buses': 'municipal', 'snow ploughs on your street': 'municipal' };
         if (!LEVEL[pk.gov]) say('no level is known for ' + pk.gov);
         else if (o[pk.ans] !== LEVEL[pk.gov]) say(pk.gov + ' are run by the ' + LEVEL[pk.gov] + ' government, not ' + o[pk.ans]);
+      } else if (pk.con) {
+        /* where money goes: money coming in is earned; buying something is spending; keeping it for later is saving;
+           putting it where it may grow is investing; giving it away is donating */
+        const h = pk.con, kind = h.in ? 'earn' : h.buy ? 'spend' : h.keep ? 'save' : h.grow ? 'invest' : h.give ? 'donate' : null;
+        if (o[pk.ans] !== kind) say('that money choice is ' + kind + ', not ' + o[pk.ans]);
+      } else if (pk.need) {
+        /* needs keep you safe and healthy; anything not on this list is a want */
+        const NEED = ['a winter coat', 'boots for snow', 'food for dinner', 'medicine', 'a toothbrush', 'bus fare to school', 'mittens', 'milk', 'glasses to see the board'];
+        const want = NEED.indexOf(pk.need) >= 0 ? 'need' : 'want';
+        if (o[pk.ans] !== want) say(pk.need + ' is a ' + want + ', not a ' + o[pk.ans]);
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
@@ -684,6 +713,7 @@
     }
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
     if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
+    if (pc && pc.draw != null && !nums(it.q).some(x => same(x, pc.draw))) say('the picture is drawn at ' + pc.draw + ', which the question does not ask for');
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
