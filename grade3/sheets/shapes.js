@@ -229,7 +229,7 @@
       watch: 'stopping at the first clue that fits. Test every part of the clue, then name the look-alike that does not fit.',
       goal: 'I can find an object from clues.',
       learn: {
-        show: { pic: ['solids', { list: ['cube', 'prism'], letters: true, s: 44 }], cap: 'Both have 6 faces. Only A has all squares.', eq: ['A: cube'] },
+        show: { pic: ['solids', { list: ['cube', 'prism'], letters: true, s: 40 }], cap: '6 faces: only A has all squares', eq: ['A: cube'] },
         together: [CL('I have 5 flat faces and a point.', ['tri', 'pyramid', 'cube', 'cone'], { f: 5, p: 1 }, 1), CL('I have a curved surface and no point.', ['cone', 'sphere', 'cube', 'tri'], { c: 1, p: 0, f: 0 }, 1)],
         cue: 'Test every part of the clue. Cross out each object that does not fit.',
         own: [CL('I have 4 flat faces.', ['tpyr', 'tri', 'cube', 'cone'], { f: 4 }, 0), CL('I have 2 flat faces and roll.', ['cone', 'cube', 'sphere', 'cylinder'], { f: 2, roll: 1 }, 3)]
