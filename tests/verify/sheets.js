@@ -11,13 +11,14 @@
     if (!s || !OPS.test(s)) return NaN;
     try { const v = Function('"use strict"; return (' + s + ');')(); return typeof v === 'number' && isFinite(v) ? v : NaN; } catch (e) { return NaN; }
   }
-  /* sheet maths into plain maths: × ÷ −, 12 500 as 12500, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
+  /* sheet maths into plain maths: × ÷ −, 12 500 as 12500, 2 3/4 as (2 + 3/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
      and "3 groups of 4", "3 rows of 4", "3 jumps of 4" mean 3 × 4; other words go */
-  const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1 };
+  const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1, tenth: 0.1, hundredth: 0.01 };
   function norm(s) {
     return String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1')
-      .replace(/(\d+) (ten thousand|thousand|hundred|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ')')
-      .replace(/\$/g, '').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
+      .replace(/(^|[^\d.\/])(\d+) (\d+)\/(\d+)/g, (m, pre, w, n, d) => pre + '(' + w + ' + ' + n + '/' + d + ')')
+      .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ')')
+      .replace(/\$/g, '').replace(/ ?%/g, ' / 100').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
       .replace(/[A-Za-z’'?:]+/g, ' ').replace(/~/g, 'R').replace(/\s+/g, ' ').trim();
   }
@@ -25,7 +26,7 @@
   /* two values are the same when they differ only by rounding (0.1 + 0.2 and 0.3) */
   const same = (x, y) => Math.abs(x - y) < 1e-9 * Math.max(1, Math.abs(x), Math.abs(y));
   /* the value of a number as a sheet writes it: 12 500, 3.75, $4.50 */
-  const num = s => Number(String(s).replace(/\u00a0|\s/g, '').replace(/^\$/, ''));
+  const num = s => { const v = Number(String(s).replace(/\u00a0|\s/g, '').replace(/^\$/, '')); return isNaN(v) ? val(norm(s)) : v; };
   /* a whole number in words, such as "forty-two thousand six hundred five", or NaN */
   const SMALL = 'zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen seventeen eighteen nineteen'.split(' ');
   const TENS = 'twenty thirty forty fifty sixty seventy eighty ninety'.split(' ');
@@ -91,6 +92,7 @@
     /* the chunks must add up to the total, so the picture "shows" what they add up to */
     chunks: o => ({ total: o.steps.reduce((x, y) => x + y, 0) * o.d }),
     pv: o => (o.shift ? { total: o.n } : null),
+    dline: o => ((o.ask || []).length ? { blanks: o.ask.length, own: (o, a) => o.ask.flatMap((v, i) => (same(num(a[i]), v) ? [] : ['the number line answer ' + a[i] + ' is not ' + v])) } : o.pt != null ? { total: o.pt } : null),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
@@ -111,6 +113,7 @@
     row: [{ list: [['frac', { n: 2, k: 1 }], ['frac', { n: 4, k: 2 }]], labels: ['A', 'B'] }],
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pv: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
+    fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
     hill: [{ lo: 48000, hi: 49000, n: 48650 }], grid: [{ n: 37, unit: '1000' }]
   };
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -205,8 +208,11 @@
         const worth = o.map(x => { const d = String(x).replace(/\D/g, ''), at = d.indexOf(String(pk.digit.d)); return at < 0 ? 0 : pk.digit.d * Math.pow(10, d.length - 1 - at); });
         if (worth[pk.ans] !== pk.digit.worth || worth.filter(v => v === pk.digit.worth).length !== 1) say('not exactly one choice has a ' + pk.digit.d + ' worth ' + pk.digit.worth);
       } else if (pk.rnd) {
-        const ok = o.map(x => Math.round(num(x) / pk.rnd.to) * pk.rnd.to === pk.rnd.is);
+        const ok = o.map(x => same(Math.round(num(x) / pk.rnd.to) * pk.rnd.to, pk.rnd.is));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice rounds to ' + pk.rnd.is);
+      } else if (pk.diff) {
+        const v = o.map(num), odd = v.map((x, i) => v.filter((y, j) => j !== i && same(x, y)).length === 0);
+        if (!odd[pk.ans] || odd.filter(Boolean).length !== 1) say('the circled choice is not the only one with a different value: ' + o.join(', '));
       } else if (pk.small) {
         const v = o.map(x => val(norm(x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the least: ' + o.join(', '));
@@ -240,13 +246,15 @@
     }
     if (it.round) {
       const r = Math.round(num(it.round.n) / it.round.to) * it.round.to;
-      if ((it.a || []).slice(-1)[0] !== r) say(it.round.n + ' to the nearest ' + it.round.to + ' is ' + r);
+      if (!same(num((it.a || []).slice(-1)[0]), r)) say(it.round.n + ' to the nearest ' + it.round.to + ' is ' + r);
     }
     if (it.big || it.small) {
       const d = (it.big || it.small).slice().sort((x, y) => (it.big ? y - x : x - y));
       if (it.small && d[0] === 0) { const k = d.findIndex(x => x > 0); d.unshift(d.splice(k, 1)[0]); }
       if ((it.a || [])[0] !== +d.join('')) say('the ' + (it.big ? 'biggest' : 'smallest') + ' number from those digits is ' + d.join(''));
     }
+    /* a fraction in simplest form: its top and bottom share no factor */
+    if (it.simplest) (it.a || []).filter(v => /\//.test(v)).forEach(v => { const [n, d] = String(v).split(' ').pop().split('/').map(Number); for (let f = 2; f <= Math.min(n, d); f++) if (n % f === 0 && d % f === 0) say(v + ' is not in simplest form'); });
     filled.filter(r => /[<>]/.test(r) && !/=/.test(r)).forEach(row => {
       const v = row.split(/[<>]/).map(num), up = /</.test(row);
       if (v.some(isNaN) || v.some((x, i) => i && (up ? x <= v[i - 1] : x >= v[i - 1]))) say('the numbers are not in order: ' + row);

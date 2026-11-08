@@ -12,8 +12,14 @@
      disks { n } or { list: [[1000, 3], [100, 12]] }   place value disks: the digits of n, or a count of each disk
      hill  { lo, hi, n, ask }   rounding: a hill from lo to hi with its top at halfway and n marked on it
                                 (ask: true leaves n unmarked for the child to mark; the key marks it)
-     grid  { n, cells, unit, ask }  a 10 by 10 grid with n squares shaded (cells: 10 for tenths strips; unit labels a
-                                square; ask: how many the child shades, drawn in on the key)
+     grid  { n, cells, unit, ask, u, quiet }  a 10 by 10 grid with n squares shaded (cells: 10 for tenths strips; unit:
+                                what one square is worth, written beside it unless quiet; ask: how many the child shades,
+                                drawn in on the key; u: the size of a square, 11 at most)
+     fbars { rows: [[n, k], ...], labels }   fraction bars of the same length stacked: each row cut into n parts with k
+                                shaded; a k bigger than n draws more bars side by side (11/4 is 2 whole bars and 3/4)
+     dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
+                                part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
+                                write on under each (answers in order)
      pv    { n, shift, dir }    a place value chart with n in it; with shift, a second row shows n × 10^shift
                                 (dir 'x') or n ÷ 10^shift (dir 'd'), drawn only on the answer key
    Numbers of 5 or more digits are written with a space (12 500), using S.fmt from sheets.js. The answer checks are in tests/verify/sheets.js. */
@@ -152,13 +158,52 @@
 
   /* a hundred grid, or ten tenths strips (cells: 10), with n parts shaded */
   P.grid = function (p, x, y, w, key) {
-    var cells = p.cells || 100, u = Math.min(11, (Math.min(w, 140) - 2) / 10), out = '', SH = '#dfe5ee', KS = '#f2d4da';
+    var cells = p.cells || 100, u = Math.min(p.u || 11, (Math.min(w, 140) - 2) / 10), out = '', SH = '#dfe5ee', KS = '#f2d4da';
     var fill = function (i) { return i < p.n ? SH : key && p.ask && i < p.n + p.ask ? KS : '#fff'; };
     if (cells === 10) for (var c = 0; c < 10; c++) out += '<rect x="' + (x + c * u) + '" y="' + y + '" width="' + u + '" height="' + 10 * u + '" fill="' + fill(c) + '" stroke="' + INK2 + '" stroke-width=".8"/>';
     else for (var i = 0; i < 100; i++) out += '<rect x="' + (x + (i % 10) * u) + '" y="' + (y + Math.floor(i / 10) * u) + '" width="' + u + '" height="' + u + '" fill="' + fill(i) + '" stroke="' + (fill(i) !== '#fff' ? INK2 : LINE) + '" stroke-width=".7"/>';
     out += '<rect x="' + x + '" y="' + y + '" width="' + 10 * u + '" height="' + 10 * u + '" fill="none" stroke="' + INK + '" stroke-width="1.2"/>';
-    if (p.unit) out += T(x + 10 * u + 8, y + u, 'each square = ' + p.unit, { s: 10, f: INK2 });
-    return { svg: out, h: 10 * u, w: 10 * u + (p.unit ? 8 + tw('each square = ' + p.unit, 10) : 0) };
+    var lab = p.unit && !p.quiet;
+    if (lab) out += T(x + 10 * u + 8, y + u, 'each square = ' + p.unit, { s: 10, f: INK2 });
+    return { svg: out, h: 10 * u, w: 10 * u + (lab ? 8 + tw('each square = ' + p.unit, 10) : 0) };
+  };
+
+  /* fraction bars, all the same length per whole, one row per fraction */
+  P.fbars = function (p, x, y, w) {
+    var most = Math.max.apply(null, p.rows.map(function (r) { return Math.max(1, Math.ceil(r[1] / r[0])); }));
+    var lab = p.labels ? 40 : 0, gap = 6, bw = Math.min(200, (Math.min(w, 300) - lab - gap * (most - 1)) / most), bh = 22, out = '';
+    p.rows.forEach(function (r, i) {
+      var ry = y + i * (bh + 6), bars = Math.max(1, Math.ceil(r[1] / r[0]));
+      if (p.labels) out += T(x, ry + 16, p.labels[i], { s: 12, w: 700, f: INK2 });
+      for (var b = 0; b < bars; b++) for (var c = 0; c < r[0]; c++) {
+        var on = b * r[0] + c < r[1];
+        out += '<rect x="' + (x + lab + b * (bw + gap) + c * bw / r[0]) + '" y="' + ry + '" width="' + bw / r[0] + '" height="' + bh + '" fill="' + (on ? '#dfe5ee' : '#fff') + '" stroke="' + INK2 + '" stroke-width="1"/>';
+      }
+    });
+    return { svg: out, h: p.rows.length * (bh + 6) - 6, w: lab + most * (bw + gap) - gap };
+  };
+
+  /* a number line in parts of a whole; values are worked in whole parts so tenths never drift (0.30000000000000004) */
+  P.dline = function (p, x, y, w, key, th, ans) {
+    var d = p.d, lo = Math.round(p.min * d), hi = Math.round(p.max * d), u = (Math.min(w, 300) - 24) / (hi - lo), x0 = x + 12, ly = y + 26, out = '', used = 0;
+    var dec = function (k) { return fmt(+(k / d).toFixed(3)); };
+    var frac = function (k) { if (k % d === 0) return String(k / d); var wh = Math.floor(k / d); return (wh ? wh + ' ' : '') + (k % d) + '/' + d; };
+    var asks = (p.ask || []).map(function (v) { return Math.round(v * d); });
+    out += '<line x1="' + (x0 - 6) + '" y1="' + ly + '" x2="' + (x0 + (hi - lo) * u + 6) + '" y2="' + ly + '" stroke="' + INK + '" stroke-width="1.3"/>';
+    for (var k = lo; k <= hi; k++) {
+      var tx = x0 + (k - lo) * u, whole = k % d === 0, end = k === lo || k === hi, half = (k - lo) * 2 === hi - lo, lab = p.show === 'ends' ? whole || end : true;
+      var tick = whole || end ? 7 : half ? 5.5 : 4;
+      out += '<line x1="' + tx + '" y1="' + (ly - tick) + '" x2="' + tx + '" y2="' + (ly + tick) + '" stroke="' + INK + '" stroke-width="1"/>';
+      if (lab && asks.indexOf(k) < 0) out += T(tx, ly + 20, p.show === 'frac' ? frac(k) : whole ? String(k / d) : dec(k), { s: (hi - lo) > 10 && !whole ? 8 : 10, f: INK2, a: 'middle' });
+    }
+    asks.forEach(function (k) {
+      var tx = x0 + (k - lo) * u;
+      out += '<line class="blank" x1="' + (tx - 17) + '" y1="' + (ly + 26) + '" x2="' + (tx + 17) + '" y2="' + (ly + 26) + '" stroke="' + INK + '" stroke-width="1.3"/>';
+      if (key && ans) out += T(tx, ly + 22, ans[used], { s: 12, w: 700, f: KEY, a: 'middle' });
+      used++;
+    });
+    if (p.pt != null) { var px = x0 + (Math.round(p.pt * d) - lo) * u; out += '<circle cx="' + px + '" cy="' + ly + '" r="4" fill="' + INK + '"/>'; }
+    return { svg: out, h: asks.length ? 56 : 48, w: (hi - lo) * u + 24, used: used };
   };
 
   /* a place value chart: columns from the biggest place needed down to the smallest */
