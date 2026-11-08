@@ -4,6 +4,8 @@ The checks in `tests/run.js` stand in for a careful human tester. They run:
 - on every pull request (workflow **Checks**);
 - before every publish (workflow **Publish to Firebase**). If any check fails, nothing is published and the live site stays as it was.
 
+The log names each grade's worksheet chapters with their time, and if nothing is logged for 90 seconds it says which step is still running, so a slow or stuck step shows up online.
+
 ## What they check
 
 1. **Repository rules.** Every script parses. The shared engine (the grade app `site.js`, lessons, toolbox and answer types) exists only once, in `assets/engine/`, and every grade page loads it, with its own `assets/grade.js` settings. Every Math Plan expectation in `plan/ladder.js` has one short plain-language line in `plan/blurbs.js` (140 characters at most).
