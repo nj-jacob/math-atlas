@@ -132,7 +132,12 @@
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       let worth;
-      if (it.round) {
+      let est;
+      if (it.est && (est = row.match(/^(\d+) ([+−]) (\d+) is about (\d+)$/))) {
+        /* "389 + 212 is about []": round each number to the nearest 10 or 100 first, then add or subtract */
+        const r = n => Math.round(+n / it.est) * it.est, want = est[2] === '+' ? r(est[1]) + r(est[3]) : r(est[1]) - r(est[3]);
+        if (want !== +est[4]) say('rounding first, ' + est[1] + ' ' + est[2] + ' ' + est[3] + ' is about ' + want + ', not ' + est[4]);
+      } else if (it.round) {
         /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up) */
         const n = nums(row);
         if (n.length !== 2 || Math.round(n[0] / it.round) * it.round !== n[1]) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
@@ -199,7 +204,7 @@
     const pk = it.pick;
     if (pk) {
       const o = pk.opts, yes = pk.ans === 0;
-      if (o[0] === '×' && o[1] === '÷') {
+      if ((o[0] === '×' && o[1] === '÷') || (o[0] === '+' && o[1] === '−')) {
         if (!it.calc || it.calc.indexOf(o[pk.ans]) < 0) say('the circled ' + o[pk.ans] + ' does not match the story sum ' + it.calc);
       } else if (it.tf) {
         const t = truth(it.tf);
