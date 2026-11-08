@@ -222,8 +222,9 @@
           if (r[0][0] !== want[0] || r[0][1] !== want[1]) say('the ratio asked for is ' + want.join(':') + ', not ' + r[0].join(':'));
         } else if (r.length < 2) say('nothing checks the ratio ' + row);
         if (it.parts) it.parts.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the story part ' + n + ' is not in the question'); });
-      } else if (it.round) {
-        /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up) */
+      } else if (it.round && !/=/.test(row)) {
+        /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up); a sum in the same
+           question (the change from a rounded cash total) is worked out below like any other */
         const n = nums(row);
         if (n.length !== 2 || !same(Math.round(n[0] / it.round) * it.round, n[1])) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
       } else if ((worth = row.replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/^The (\d) in (\d+) is worth (\d+)$/))) {
@@ -391,6 +392,18 @@
           if (d.some(isNaN)) say('cannot read the estimates ' + o.join(', '));
           else if (d.some((x, i) => i !== pk.ans && x <= d[pk.ans])) say('the circled ' + o[pk.ans] + ' is not the closest to ' + v + ' ' + u);
         }
+      } else if (pk.pay) {
+        /* a way to pay, from how the money moves: bills and coins are cash; from your own account right away is debit;
+           the bank pays now and you pay it back later is credit; from one account to another with no card is an e-transfer */
+        const h = pk.pay, way = h.cash ? 'cash' : h.from === 'own' ? 'debit' : h.from === 'bank' ? 'credit' : h.accounts ? 'e-transfer' : null;
+        if (o[pk.ans] !== way) say('that way to pay is ' + way + ', not ' + o[pk.ans]);
+      } else if (pk.gov) {
+        /* which level of government runs a service */
+        const LEVEL = { passports: 'federal', 'the armed forces': 'federal', 'national parks': 'federal', 'coins and bills': 'federal', 'mail delivery': 'federal',
+          hospitals: 'provincial', schools: 'provincial', highways: 'provincial', "driver's licences": 'provincial', 'health cards': 'provincial',
+          libraries: 'municipal', 'garbage pickup': 'municipal', 'local parks': 'municipal', 'fire trucks': 'municipal', 'city buses': 'municipal', 'snow ploughs on your street': 'municipal' };
+        if (!LEVEL[pk.gov]) say('no level is known for ' + pk.gov);
+        else if (o[pk.ans] !== LEVEL[pk.gov]) say(pk.gov + ' are run by the ' + LEVEL[pk.gov] + ' government, not ' + o[pk.ans]);
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
