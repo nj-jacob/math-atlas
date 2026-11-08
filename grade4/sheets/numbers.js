@@ -24,7 +24,7 @@
     return { q: (down ? 'Greatest to least: ' : 'Least to greatest: ') + list.map(S.fmt).join(', '), eq: [s.map(function () { return '[]'; }).join(down ? ' > ' : ' < ')], a: s.map(S.fmt), set: list, wide: list.length > 3 };
   }
   /* round n to the nearest 10, 100 or 1000 */
-  function RD(n, to) { return { q: 'Round ' + n + ' to the nearest ' + to + '.', eq: ['[]'], a: [Math.round(n / to) * to], round: { n: n, to: to } }; }
+  function RD(n, to) { return { q: 'Round to the nearest ' + to + '.', eq: [S.fmt(n) + ' is about []'], a: [Math.round(n / to) * to], round: to }; }
   /* circle the number named in words */
   function NW(words, opts, ans) { return { q: 'Circle ' + words + '.', pick: { opts: opts.map(String), ans: ans, nw: words } }; }
   /* circle the words for a number */
@@ -330,7 +330,7 @@
         items: [{ q: 'Write 3 numbers that round to 5000 (nearest thousand).', lines: { n: 2, key: 'Any from 4500 to 5499, for example 4600, 5000, 5300.' } },
           { q: '{b} rounds 3500 to 3000. What would you tell {b}?', lines: { n: 3, key: 'Halfway rounds up, so 3500 rounds to 4000.' } },
           { q: 'Why do we round numbers in real life?', lines: { n: 3, key: 'For example, to estimate a price or a crowd quickly.' } },
-          { q: 'What is the smallest number that rounds to 700 (nearest hundred)?', eq: ['[]'], a: [650], least: { to: 100, r: 700 } }]
+          { q: 'Which one rounds to 700 (nearest hundred)?', pick: { opts: ['640', '650', '760'], ans: 1, round: { to: 100, val: 700 } } }]
       }
     },
 

@@ -33,7 +33,7 @@
     return { q: 'Break ' + n + ' into ' + parts.join(' + ') + '.', eq: [n + ' × ' + b + ' = []'], a: [n * b] };
   }
   /* n moved 1, 2 or 3 places on a place value chart (dir 'x' to multiply, 'd' to divide); the key fills the bottom row */
-  function PV(n, shift, dir) { var k = Math.pow(10, shift); return { pic: ['pv', { n: n, shift: shift, dir: dir }], eq: [n + (dir === 'x' ? ' × ' : ' ÷ ') + k + ' = []'], a: [dir === 'x' ? n * k : n / k] }; }
+  function PV(n, shift, dir) { var k = Math.pow(10, shift); return { pic: ['pvmove', { n: n, shift: shift, dir: dir }], eq: [n + (dir === 'x' ? ' × ' : ' ÷ ') + k + ' = []'], a: [dir === 'x' ? n * k : n / k] }; }
   /* an area model for n × b: the parts first, then the product */
   function AM(n, b) { var p = AMP(n, b); return { pic: ['amodel', { a: n, b: b }], eq: [n + ' × ' + b + ' = []'], a: p.concat([n * b]) }; }
   function AMP(n, b) { return String(n).split('').map(function (d, i, all) { return +d * Math.pow(10, all.length - 1 - i) * b; }).filter(Boolean); }
