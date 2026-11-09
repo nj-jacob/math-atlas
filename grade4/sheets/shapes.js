@@ -19,10 +19,13 @@
   function RA(shape, n) { return { q: 'How many right angles?', pic: ['coord', { n: n || 6, shape: shape }], eq: ['[] right angles'], a: [rights(shape)], corners: true }; }
   function IR(shape, n) { var r = rights(shape) === 4 && shape.length === 4; return { q: 'Is it a rectangle?', pic: ['coord', { n: n || 6, shape: shape }], pick: { opts: ['yes', 'no'], ans: r ? 0 : 1, rect: true } }; }
   function SY(shape, mirror, n) { return { q: 'Is the dashed line a line of symmetry?', pic: ['coord', { n: n || 8, shape: shape, mirror: mirror }], pick: { opts: ['yes', 'no'], ans: sym(shape, mirror) ? 0 : 1, sym: true } }; }
+  /* an inside (reflex) corner, like the inner corner of an L, is 270 degrees, not a right angle */
   function rights(sh) {
+    var turn = Math.sign(sh.reduce(function (t, p, i) { var q = sh[(i + 1) % sh.length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0));
     return sh.filter(function (p, i) {
       var a = sh[(i + sh.length - 1) % sh.length], b = sh[(i + 1) % sh.length];
-      return (a[0] - p[0]) * (b[0] - p[0]) + (a[1] - p[1]) * (b[1] - p[1]) === 0;
+      return (a[0] - p[0]) * (b[0] - p[0]) + (a[1] - p[1]) * (b[1] - p[1]) === 0 &&
+        ((p[0] - a[0]) * (b[1] - p[1]) - (p[1] - a[1]) * (b[0] - p[0])) * turn > 0;
     }).length;
   }
   function sym(sh, m) {
