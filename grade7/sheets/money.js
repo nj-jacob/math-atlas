@@ -273,7 +273,7 @@
       },
       p1: {
         show: { cap: 'compound: interest on interest', eq: ['1000 × 1.05 × 1.05'] },
-        items: [CI(200, 10, 3), CI(2000, 3, 2), CI(500, 10, 2), CI(1000, 5, 2)]
+        items: [CI(200, 10, 3), CI(2000, 3, 2), CI(500, 10, 2)]
       },
       p2: {
         items: [CI(1000, 6, 2), { q: '$1000 at 6% simple interest for 2 years. Total?', eq: ['1000 + 1000 × 0.06 × 2 = $ []'], a: [1120], wide: true },
