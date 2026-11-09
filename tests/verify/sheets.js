@@ -1029,6 +1029,14 @@
         /* prime (only 1 and itself as factors) or composite */
         const want = isPrime(pk.prime) ? 'prime' : pk.prime > 1 ? 'composite' : 'neither';
         if (o[pk.ans] !== want) say(pk.prime + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.lin) {
+        /* a linear pattern grows (or shrinks) by the same amount every time */
+        const q = pk.lin, want = q.every((x, i) => !i || same(x - q[i - 1], q[1] - q[0])) ? 'linear' : 'not linear';
+        if (o[pk.ans] !== want) say(q.join(', ') + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.dot) {
+        /* on a number line, < and > leave the number out (an open dot); ≤ and ≥ take it in (a closed dot) */
+        const want = /[≤≥]/.test(pk.dot) ? 'closed dot' : /[<>]/.test(pk.dot) ? 'open dot' : null;
+        if (o[pk.ans] !== want) say(pk.dot + ' is drawn with ' + want + ', not ' + o[pk.ans]);
       } else if (pk.rep) {
         /* a fraction's decimal stops (terminating) when its bottom, in simplest form, has no prime factor but 2 and 5 */
         let d = pk.rep[1] / gcd(pk.rep[0], pk.rep[1]);
