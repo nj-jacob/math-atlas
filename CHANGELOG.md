@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-09
+- **Worksheets for Grade 1: every chapter.** Counting to 50 (16 ideas), Tens and Ones (13), Adding and Subtracting to 10 (14) and to 50 (10), Equal Groups and Fair Shares (9), Patterns (9), Shapes, Position and Coding (10), Measuring and the Calendar (10), Sorting and Picture Graphs (5) and Canadian Money (5): 101 ideas, 505 sheets (5050 with the themes), each with an answer key and its Ontario codes. New pictures: one ten frame, flat shapes, a fold line on squares, a shelf of cubbies, a month of a calendar and strips to compare. Robot code in Grade 1 moves by direction (right 2, up 1), as in the lessons.
 - **Worksheets for Grade 2: all 11 chapters.** Every idea of every chapter has Learn, Practise 1 to 3 and Think, in all 10 themes with answer keys, covering every Grade 2 expectation. Grade 2 sheets use words like "groups of" and "rows of" rather than × and ÷. New pictures: shapes on a dot grid, pattern blocks, scattered things to count, pairs of shapes, a hundred chart and a two-way table. The answer checker now also understands fraction words, pattern-block names and coin names, fair shares, map grid cells and line plots.
 - Grade 4 Shapes worksheets: the L shape now has 5 right angles on the answer key, not 6 (its inside corner is bigger than a right angle).
 
