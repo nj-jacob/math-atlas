@@ -63,12 +63,13 @@
     return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + (o.s || 14) + '" font-weight="' + (o.w || 400) + '"' +
       (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + esc(s) + '</text>';
   }
-  /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are */
+  /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are;
+     a negative number gets a true minus sign (−3) */
   function fmt(n) {
     if (typeof n !== 'number') return n;
-    var parts = String(n).split('.'), whole = parts[0];
-    if (whole.replace('-', '').length >= 5) whole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
-    return whole + (parts[1] != null ? '.' + parts[1] : '');
+    var parts = String(Math.abs(n)).split('.'), whole = parts[0];
+    if (whole.length >= 5) whole = whole.replace(/\B(?=(\d{3})+(?!\d))/g, '\u00a0');
+    return (n < 0 ? '\u2212' : '') + whole + (parts[1] != null ? '.' + parts[1] : '');
   }
   S.fmt = fmt;
   function words(s, th) { return String(s).replace(/\{(\w+)\}/g, function (m, k) { return th.w[k] != null ? th.w[k] : m; }); }
@@ -190,7 +191,7 @@
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
         if (close) { out += T(cx - 4, y + 21, ')', { s: 14, f: INK2 }); cx += tw(')', 14) + 3; }
-      } else if (/^\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      } else if (/^\u2212?\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
@@ -307,7 +308,7 @@
   /* the heading: the theme's mark, a small line naming the chapter and kind, the title in the theme's face, and the goal */
   function heading(title, kicker, goal, key, th) {
     var size = 34, max = key ? RIGHT - M : 330;
-    while (tw(title, size, 700, th.font) > max && size > 18) size--;
+    while (tw(title, size, 700, th.font) > max && size > 14) size--;
     var out = '<g transform="translate(' + M + ' 28) scale(.5)">' + th.mark + '</g>' + label(M + 36, 47, kicker, th.acc) +
       T(M, 92, title, { s: size, w: 700, fam: th.font }) + (goal ? T(M, 116, goal, { s: 13, i: 1, f: INK2 }) : '');
     if (!key) out += nameDate(392, 52, RIGHT);

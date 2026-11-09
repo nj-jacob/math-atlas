@@ -358,10 +358,10 @@
     for (var t = p.min; t <= p.max; t += p.tick) {
       var big = (t - p.min) % p.lab === 0, tx = x0 + (t - p.min) * u;
       out += ln(tx, ly - (big ? 7 : 4), tx, ly + (big ? 7 : 4), { sw: 1 });
-      if (big && (p.ask || []).indexOf(t) < 0) out += T(tx, ly + 21, t, { s: 10, f: INK2, a: 'middle' });
+      if (big && (p.ask || []).indexOf(t) < 0) out += T(tx, ly + 21, S.fmt(t), { s: 10, f: INK2, a: 'middle' });
     }
     (p.ask || []).forEach(function (v) { out += blank(x0 + (v - p.min) * u, ly + 28, 34, key, ans && ans[used], 12); used++; });
-    if (p.pt != null) { var px = x0 + (p.pt - p.min) * u; out += circ(px, ly, 4, { f: INK }) + T(px, ly - 12, p.ptl || p.pt, { s: 12, w: 700, a: 'middle' }); }
+    if (p.pt != null) { var px = x0 + (p.pt - p.min) * u; out += circ(px, ly, 4, { f: INK }) + T(px, ly - 12, p.ptl || S.fmt(p.pt), { s: 12, w: 700, a: 'middle' }); }
     (p.jumps || []).forEach(function (j) {
       var a = x0 + (j[0] - p.min) * u, b = x0 + (j[1] - p.min) * u;
       out += path('M' + a + ' ' + (ly - 2) + ' Q' + (a + b) / 2 + ' ' + (ly - 28) + ' ' + b + ' ' + (ly - 2), { s: INK2, sw: 1.3 }) + (j[2] ? T((a + b) / 2, ly - 18, j[2], { s: 10, w: 700, f: INK2, a: 'middle' }) : '');
