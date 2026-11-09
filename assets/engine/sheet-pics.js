@@ -28,7 +28,9 @@
      units     { n, unit }                            a ribbon with n units of the same size end to end under it
      balance   { l, r, tilt: -1 | 0 | 1 }             a pan balance with cubes (numbers) or words on each side
      cups      { n }                                  n cups in a row
-     nl        { min, max, tick, lab, pt, ptl, ask: [values], jumps: [[from, to, 'label']] }   a number line; ask: lines under those ticks
+     nl        { min, max, tick, lab, pt, ptl, ask: [values], jumps: [[from, to, 'label']], ray: { at, dir, closed, key } }   a number line;
+                                                      ask: lines under those ticks; ray: an inequality's answers from at to the left or right end
+                                                      (closed: at is one of them), drawn only on the key when key is true
      map       { cols, rows, marks: [[c, r, 'label']], start: [c, r, '>'], path: [[c, r], ...], grid }   a grid map; the key draws the path;
                                                       grid: columns A, B, C ... and rows 1, 2, 3 ... from the bottom
      venn      { a, b, parts: [[a only], [both], [b only], [neither]], list, blank }   a two-circle Venn diagram, with numbers in it;
@@ -54,7 +56,7 @@
   /* a short line to write on, centred on cx, with the key's answer above it */
   function blank(cx, y, w, key, a, size) {
     return '<line class="blank" x1="' + (cx - w / 2) + '" y1="' + y + '" x2="' + (cx + w / 2) + '" y2="' + y + '" stroke="' + INK + '" stroke-width="1.3"/>' +
-      (key && a != null ? T(cx, y - 4, a, { s: size || 15, w: 700, f: KEY, a: 'middle' }) : '');
+      (key && a != null ? T(cx, y - 4, S.fmt(a), { s: size || 15, w: 700, f: KEY, a: 'middle' }) : '');
   }
   S.draw.blank = blank;
 
@@ -352,16 +354,25 @@
     for (var i = 0; i < p.n; i++) { var cx = x + i * 26; out += path('M' + cx + ' ' + y + ' L' + (cx + 20) + ' ' + y + ' L' + (cx + 17) + ' ' + (y + 26) + ' L' + (cx + 3) + ' ' + (y + 26) + ' Z', { s: INK2 }) + ln(cx + 2, y + 8, cx + 18, y + 8, { s: LINE, sw: 0.8 }); }
     return { svg: out, h: 28, w: p.n * 26 };
   };
+  /* a negative number with a true minus sign: −3 */
+  function sgn(v) { return v < 0 ? '\u2212' + -v : v; }
   P.nl = function (p, x, y, w, key, th, ans) {
     var span = p.max - p.min, u = (w - 24) / span, x0 = x + 12, ly = y + 30, used = 0;
     var out = ln(x0 - 6, ly, x0 + span * u + 6, ly, { sw: 1.3 });
     for (var t = p.min; t <= p.max; t += p.tick) {
       var big = (t - p.min) % p.lab === 0, tx = x0 + (t - p.min) * u;
       out += ln(tx, ly - (big ? 7 : 4), tx, ly + (big ? 7 : 4), { sw: 1 });
-      if (big && (p.ask || []).indexOf(t) < 0) out += T(tx, ly + 21, t, { s: 10, f: INK2, a: 'middle' });
+      if (big && (p.ask || []).indexOf(t) < 0) out += T(tx, ly + 21, sgn(t), { s: 10, f: INK2, a: 'middle' });
+    }
+    /* an inequality's answers: a dot at ray.at (filled when it is included), and a thick line with an arrow to one end */
+    var r = p.ray;
+    if (r && (key || !r.key)) {
+      var rx = x0 + (r.at - p.min) * u, end = r.dir === 'left' ? x0 - 4 : x0 + span * u + 4, col = r.key ? KEY : INK;
+      out += ln(rx, ly, end, ly, { s: col, sw: 3 }) + path('M' + end + ' ' + (ly - 5) + ' L' + (end + (r.dir === 'left' ? -7 : 7)) + ' ' + ly + ' L' + end + ' ' + (ly + 5) + ' Z', { s: col, f: col, sw: 1 }) +
+        circ(rx, ly, 4.5, { s: col, f: r.closed ? col : '#fff', sw: 1.8 });
     }
     (p.ask || []).forEach(function (v) { out += blank(x0 + (v - p.min) * u, ly + 28, 34, key, ans && ans[used], 12); used++; });
-    if (p.pt != null) { var px = x0 + (p.pt - p.min) * u; out += circ(px, ly, 4, { f: INK }) + T(px, ly - 12, p.ptl || p.pt, { s: 12, w: 700, a: 'middle' }); }
+    if (p.pt != null) { var px = x0 + (p.pt - p.min) * u; out += circ(px, ly, 4, { f: INK }) + T(px, ly - 12, p.ptl || sgn(p.pt), { s: 12, w: 700, a: 'middle' }); }
     (p.jumps || []).forEach(function (j) {
       var a = x0 + (j[0] - p.min) * u, b = x0 + (j[1] - p.min) * u;
       out += path('M' + a + ' ' + (ly - 2) + ' Q' + (a + b) / 2 + ' ' + (ly - 28) + ' ' + b + ' ' + (ly - 2), { s: INK2, sw: 1.3 }) + (j[2] ? T((a + b) / 2, ly - 18, j[2], { s: 10, w: 700, f: INK2, a: 'middle' }) : '');

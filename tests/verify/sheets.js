@@ -11,7 +11,7 @@
     if (!s || !OPS.test(s)) return NaN;
     try { const v = Function('"use strict"; return (' + s + ');')(); return typeof v === 'number' && isFinite(v) ? v : NaN; } catch (e) { return NaN; }
   }
-  /* sheet maths into plain maths: × ÷ −, 12 500 as 12500, 2 3/4 as (2 + 3/4), 1/4 as (1/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
+  /* sheet maths into plain maths: × ÷ −, 2^5, √49, 12 500 as 12500, 2 3/4 as (2 + 3/4), 1/4 as (1/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
      and "3 groups of 4", "3 rows of 4", "3 jumps of 4" mean 3 × 4; other words go */
   const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1, tenth: 0.1, hundredth: 0.01 };
   /* a row with two or more different metric units (3.5 m = 350 cm, 1 kg 200 g = 1200 g) is put into one unit per kind:
@@ -25,7 +25,10 @@
     return s.replace(re, (m, n, u) => '(' + n + ' * ' + (MU[u] || TU[u]) + ')').replace(/\) \(/g, ') + (');
   }
   function norm(s) {
-    return metric(String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1'))
+    /* a power 2^5 or (−3)^2 and a square root √49 become plain maths first */
+    s = String(s).replace(/\^/g, ' ** ').replace(/√(\d+(?:\.\d+)?)/g, '($1 ** 0.5)')
+      .replace(/(\d+(?:\.\d+)?) (million|billion)\b/g, (m, n, w) => '(' + n + ' * ' + (w === 'million' ? 1000000 : 1000000000) + ')');
+    return metric(s.replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1'))
       .replace(/(^|[^\d.\/])(\d+) (\d+)\/(\d+)/g, (m, pre, w, n, d) => pre + '(' + w + ' + ' + n + '/' + d + ')')
       .replace(/(^|[^\d.(])(\d+)\/(\d+)(?![\d.])/g, '$1($2/$3)')
       .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
@@ -106,9 +109,16 @@
     cube: { f: 6, e: 12, v: 8, c: 0, p: 0, kind: 'prism', sq: 1, sqonly: 1 }, prism: { f: 6, e: 12, v: 8, c: 0, p: 0, kind: 'prism', sq: 0 },
     tri: { f: 5, e: 9, v: 6, c: 0, p: 0, kind: 'prism', sq: 0 }, pyramid: { f: 5, e: 8, v: 5, c: 0, p: 1, kind: 'pyramid', sq: 1 },
     tpyr: { f: 4, e: 6, v: 4, c: 0, p: 1, kind: 'pyramid', sq: 0 }, cylinder: { f: 2, c: 1, p: 0, kind: 'neither', roll: 1 },
-    cone: { f: 1, c: 1, p: 1, kind: 'neither', roll: 1 }, sphere: { f: 0, c: 1, p: 0, kind: 'neither', roll: 1 }
+    cone: { f: 1, c: 1, p: 1, kind: 'neither', roll: 1 }, sphere: { f: 0, c: 1, p: 0, kind: 'neither', roll: 1 },
+    pentprism: { f: 7, e: 15, v: 10, c: 0, p: 0, kind: 'prism', sq: 0 }, hexprism: { f: 8, e: 18, v: 12, c: 0, p: 0, kind: 'prism', sq: 0 },
+    pentpyr: { f: 6, e: 10, v: 6, c: 0, p: 1, kind: 'pyramid', sq: 0 }, hexpyr: { f: 7, e: 12, v: 7, c: 0, p: 1, kind: 'pyramid', sq: 0 }
   };
-  const SOLID_BY = { cube: 'cube', 'rectangular prism': 'prism', 'triangular prism': 'tri', 'square-based pyramid': 'pyramid', 'triangular pyramid': 'tpyr', cylinder: 'cylinder', cone: 'cone', sphere: 'sphere' };
+  /* symmetry of a solid whose base is a regular shape (a rectangular prism's faces are all different rectangles): ax is the order
+     of rotational symmetry about the line through the middle of its base (and top), pl its planes of symmetry */
+  const SYM = { cube: { ax: 4, pl: 9 }, prism: { ax: 2, pl: 3 }, tri: { ax: 3, pl: 4 }, pentprism: { ax: 5, pl: 6 }, hexprism: { ax: 6, pl: 7 },
+    pyramid: { ax: 4, pl: 4 }, pentpyr: { ax: 5, pl: 5 }, hexpyr: { ax: 6, pl: 6 } };
+  const SOLID_BY = { cube: 'cube', 'rectangular prism': 'prism', 'triangular prism': 'tri', 'square-based pyramid': 'pyramid', 'triangular pyramid': 'tpyr', cylinder: 'cylinder', cone: 'cone', sphere: 'sphere',
+    'pentagonal prism': 'pentprism', 'hexagonal prism': 'hexprism', 'pentagonal pyramid': 'pentpyr', 'hexagonal pyramid': 'hexpyr' };
   /* a choice names an object, or is a letter for one of the pictured objects */
   const solidOf = (x, it) => (/^[A-H]$/.test(x) && it.pic ? [].concat(it.pic[1].list || [])[x.charCodeAt(0) - 65] : SOLID_BY[x]);
   const fits = (k, clue) => !!SOLID[k] && Object.keys(clue).every(c => SOLID[k][c] === clue[c]);
@@ -314,6 +324,17 @@
     /* a coordinate grid: its labelled points; points to plot are drawn on the key, so they need no answer */
     coord: o => Object.assign({ pts: Object.fromEntries((o.pts || []).map(q => [q[2], [q[0], q[1]]])) }, o.plot || o.keyShape ? { blanks: 0, own: () => [] } : {}),
     code: () => null,
+    /* Grade 7: chips and a thermometer show their integer; a circle, cylinder or prism gives its sizes for a story sum and,
+       with ask, the circumference, area, volume or surface area its sum works out (π as 3.14); a circle graph gives its
+       percents; an outcome grid has one outcome for each pair */
+    chips: o => ({ total: o.pos - o.neg }),
+    therm: o => ({ total: o.t }),
+    circ: o => { const r = o.r || o.d / 2, d = o.d || 2 * o.r; return { data: [r, d, 2, 3.14], total: o.ask === 'C' ? 3.14 * d : o.ask === 'A' ? 3.14 * r * r : undefined }; },
+    pie: o => ({ byCat: dataOf(o), data: o.vals }),
+    cyl: o => { const r = o.r || o.d / 2; return { data: [r, 2 * r, o.h, 2, 3.14], total: o.ask === 'V' ? 3.14 * r * r * o.h : o.ask === 'SA' ? 2 * 3.14 * r * r + 2 * 3.14 * r * o.h : undefined }; },
+    prism: o => ({ data: o.tri ? [o.b, o.th, o.l, 2] : [o.l, o.w, o.h], total: o.ask === 'V' ? (o.tri ? o.b * o.th / 2 * o.l : o.l * o.w * o.h) : undefined }),
+    cnet: o => ({ data: [o.r, 2 * o.r, o.h, 2, 3.14] }),
+    outs: o => ({ total: o.a.length * o.b.length, outs: [o.a, o.b] }),
     /* an angle: its size; a flat shape: its area (or its perimeter, with ask), its base and height for a times sum, and
        its perimeter when its sides are known (a rectangle, or a parallelogram with its slanted side); a triangle's
        story sum may halve, so 2 counts as one of its numbers */
@@ -350,7 +371,10 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }],
+    chips: [{ pos: 5, neg: 8, pairs: 5 }], therm: [{ t: -8, min: -20, max: 20, step: 2, lab: 10 }], circ: [{ r: 6, show: 'r', ask: 'C' }],
+    pie: [{ cats: ['Soccer', 'Hockey', 'Swim', 'Other'], vals: [40, 30, 20, 10], title: 'Favourite sport' }], cyl: [{ r: 3, h: 10, ask: 'V' }],
+    prism: [{ tri: true, b: 6, th: 4, l: 10, ask: 'V' }], cnet: [{ r: 4, h: 9, ask: true }], outs: [{ a: ['H', 'T'], b: ['1', '2', '3', '4', '5', '6'], ta: 'Coin', tb: 'Number cube' }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -388,7 +412,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -403,6 +427,8 @@
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
+      /* rows that name a GCF or LCM, a chance of two events, or a solid's symmetry are checked by the item below */
+      if (it.gcf || it.lcm || it.two || it.dep || it.ssym || it.factors) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
          of minutes; a time on its own is the time the clock picture shows */
       if (it.clock) {
@@ -978,6 +1004,36 @@
         const NEED = ['a winter coat', 'boots for snow', 'food for dinner', 'medicine', 'a toothbrush', 'bus fare to school', 'mittens', 'milk', 'glasses to see the board'];
         const want = NEED.indexOf(pk.need) >= 0 ? 'need' : 'want';
         if (o[pk.ans] !== want) say(pk.need + ' is a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.prime || pk.pprime) {
+        /* the one prime number (exactly two factors), or the one product made only of primes that makes pk.pprime */
+        const isP = v => v > 1 && [...Array(Math.max(0, Math.floor(Math.sqrt(v)) - 1)).keys()].every(k => v % (k + 2) !== 0);
+        const ok = o.map(x => (pk.prime ? isP(num(x)) : x.split(' × ').every(f => isP(+f)) && same(val(norm(x)), pk.pprime)));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + (pk.prime ? 'prime' : 'a product of primes for ' + pk.pprime) + ': ' + o.join(', '));
+      } else if (pk.square) {
+        /* the one perfect square: a whole number times itself */
+        const ok = o.map(x => Number.isInteger(Math.sqrt(num(x))));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is a perfect square: ' + o.join(', '));
+      } else if (pk.dkind) {
+        /* kinds of data: answers in words are qualitative; counted answers are discrete; measured answers are continuous */
+        const want = pk.dkind.words ? 'qualitative' : pk.dkind.counted ? 'discrete' : pk.dkind.measured ? 'continuous' : null;
+        if (o[pk.ans] !== want) say('that data is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.indep) {
+        /* two events are independent when the first cannot change the second: separate things, or the first is put back */
+        const want = pk.indep.separate || pk.indep.back ? 'independent' : 'dependent';
+        if (o[pk.ans] !== want) say('those events are ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.prop) {
+        /* proportional: every pair has the same ratio y ÷ x (so 0 goes with 0); a table of pairs, or a start amount b and a rate m */
+        const pr = pk.prop, yes3 = Array.isArray(pr) ? pr.every(q => q[0] !== 0 && same(q[1] / q[0], pr[0][1] / pr[0][0])) : pr.b === 0;
+        if (o[pk.ans] !== (yes3 ? 'proportional' : 'not proportional')) say('that is ' + (yes3 ? '' : 'not ') + 'proportional, but the key circles ' + o[pk.ans]);
+      } else if (pk.graph) {
+        /* the graph that fits: parts of one whole make a circle graph, change over time a line graph, two sets compared a
+           double bar graph, separate categories a bar graph */
+        const g = pk.graph, want = g.parts ? 'circle graph' : g.time ? 'line graph' : g.two ? 'double bar graph' : g.cats ? 'bar graph' : null;
+        if (o[pk.ans] !== want) say('that data fits a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.gl) {
+        /* sharing into the biggest equal groups needs the GCF; when things line up again needs the LCM */
+        const want = pk.gl.split ? 'GCF' : pk.gl.again ? 'LCM' : null;
+        if (o[pk.ans] !== want) say('that problem needs the ' + want + ', not the ' + o[pk.ans]);
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
@@ -1051,6 +1107,29 @@
       const v = pc.sets[0], r = (v[it.looks[0]] - pc.min) / (v[it.looks[1]] - pc.min);
       if (!same(r, last)) say('that bar looks ' + r + ' times as tall, not ' + ansAll[ansAll.length - 1]);
     }
+    /* Grade 7 number facts: a greatest common factor, a lowest common multiple, every factor of a number in order, and a
+       product of primes */
+    const gcd = (x, y) => (y ? gcd(y, x % y) : x);
+    if (it.gcf && it.gcf.reduce(gcd) !== last) say('the GCF of ' + it.gcf.join(', ') + ' is ' + it.gcf.reduce(gcd) + ', not ' + last);
+    if (it.lcm) { const l = it.lcm.reduce((x, y) => x * y / gcd(x, y)); if (l !== last) say('the LCM of ' + it.lcm.join(', ') + ' is ' + l + ', not ' + last); }
+    if (it.factors) { const f = []; for (let k = 1; k <= it.factors; k++) if (it.factors % k === 0) f.push(k); if (ansAll.map(Number).join() !== f.join()) say('the factors of ' + it.factors + ' in order are ' + f.join(', ') + ', not ' + ansAll.join(', ')); }
+    if (it.primes) ansAll.map(Number).forEach(v => { for (let k = 2; k * k <= v; k++) if (v % k === 0) { say(v + ' is not prime'); return; } if (v < 2) say(v + ' is not prime'); });
+    /* the chance of two events: two names the wanted outcomes of each event in the outcome grid (independent: multiply);
+       dep draws from a bag in turn, putting each one back (back: true) or not, so the second chance changes */
+    if (it.two) {
+      const o = pc && pc.outs;
+      if (!o || it.two.some((l, i) => l.some(x => o[i].indexOf(x) < 0))) say('the outcomes ' + JSON.stringify(it.two) + ' are not in the grid');
+      else { const want = it.two[0].length / o[0].length * it.two[1].length / o[1].length; if (!same(want, last)) say('the chance is ' + want + ', not ' + ansAll[ansAll.length - 1]); }
+    }
+    if (it.dep) {
+      const bag = Object.assign({}, it.dep.bag); let want = 1;
+      it.dep.draws.forEach(c => { const n = Object.values(bag).reduce((x, y) => x + y, 0); want *= (bag[c] || 0) / n; if (!it.dep.back) bag[c]--; });
+      Object.keys(it.dep.bag).forEach(c => { if (!new RegExp('\\b' + it.dep.bag[c] + ' ' + c + '\\b').test(it.q)) say('the question does not say ' + it.dep.bag[c] + ' ' + c); });
+      const says = /not put|without|keeps? (it|the first)/.test(it.q) ? false : /puts? (it |the first one )?back|replace/.test(it.q) ? true : null;
+      if (says !== it.dep.back) say('the question does not say that the first one goes back' + (it.dep.back ? '' : ' or not'));
+      if (!same(want, last)) say('the chance is ' + want + ', not ' + ansAll[ansAll.length - 1]);
+    }
+    if (it.ssym) { const v = (SYM[it.ssym.s] || {})[it.ssym.what]; if (v !== last) say('the ' + it.ssym.s + ' has ' + v + ' for ' + it.ssym.what + ', not ' + ansAll[ansAll.length - 1]); }
     /* shapes: an angle left as "?" in a triangle, a view of stacks, a point read from a grid, and a point moved by a
        slide or a flip (over the line x = k or y = k) */
     if (pc && pc.ask != null && pc.angles && !same(Math.round(pc.angles[pc.ask]), last)) say('the missing angle is ' + Math.round(pc.angles[pc.ask]) + '°, not ' + ansAll[ansAll.length - 1]);
@@ -1063,8 +1142,11 @@
     if (it.corners) { const sh = it.pic && it.pic[1].shape; if (!sh || rights(sh) !== last) say('the shape has ' + (sh ? rights(sh) : '?') + ' right angles, not ' + ansAll[ansAll.length - 1]); }
     if (it.pt) { const q = at(it.pt); if (!q || ansAll.slice(-2).join() !== q.join()) say('point ' + it.pt + ' is at (' + (q || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')'); }
     if (it.move) {
-      const q = at(it.move.pt), m = it.move, to = !q ? null : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
-      if (!to || ansAll.slice(-2).join() !== to.join()) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
+      /* rot: a turn about the origin in degrees (90 is a quarter turn counterclockwise, −90 clockwise, 180 a half turn);
+         dil: a dilation from the origin by that scale factor */
+      const q = at(it.move.pt), m = it.move, turn = { 90: p => [-p[1], p[0]], '-90': p => [p[1], -p[0]], 180: p => [-p[0], -p[1]] };
+      const to = !q ? null : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.rot != null ? turn[m.rot](q) : m.dil != null ? [q[0] * m.dil, q[1] * m.dil] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
+      if (!to || ansAll.slice(-2).map(Number).join() !== to.map(v => v + 0).join()) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
       if (m.slide && m.slide.some(v => v && nums(it.q).indexOf(Math.abs(v)) < 0)) say('the slide ' + m.slide.join(', ') + ' is not in the question');
       if (m.flip && nums(it.q).indexOf(m.flip.x != null ? m.flip.x : m.flip.y) < 0) say('the flip line is not in the question');
     }
