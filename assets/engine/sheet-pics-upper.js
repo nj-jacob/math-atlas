@@ -604,7 +604,7 @@
   P.ftree = function (p, x, y, w, key, th, ans) {
     var pr = p.primes, rest = p.n, rows = [], used = 0, out = '', dx = Math.min(30, (Math.min(w, 228) - 70) / pr.length), rh = 30;
     for (var i = 0; i < pr.length - 1; i++) { rest = rest / pr[i]; rows.push([pr[i], rest]); }
-    var px = x + 26, py = y + 14;
+    var px = x + 40, py = y + 14;
     out += T(px, py, fmt(p.n), { s: 15, w: 700, a: 'middle' });
     rows.forEach(function (r, j) {
       var ly = py + rh, lx = px - dx * 0.8, rx = px + dx, last = j === rows.length - 1;
