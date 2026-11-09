@@ -293,7 +293,7 @@
       watch: 'thinking any straight line is proportional. It must also start at 0: nothing costs nothing.',
       goal: 'I can tell if two amounts are proportional.',
       learn: {
-        show: { pic: ['table', { head: ['km', 'cost ($)'], rows: [[5, 10], [10, 20]] }], cap: 'cost ÷ km = 2 every time' },
+        show: { cap: '5 km for $10, 10 km for $20', eq: ['cost ÷ km = 2 every time'] },
         together: [PT(['visits', 'cost ($)'], [[1, 5], [2, 10], [4, 20]]), PT(['visits', 'cost ($)'], [[1, 22], [2, 24], [4, 28]])],
         cue: 'Divide each pair. Is it the same every time?',
         own: [PB('Pens at $2 each.', 0), PB('A taxi: $5 to start, then $2 per km.', 5)]

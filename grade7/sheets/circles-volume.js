@@ -298,7 +298,7 @@
       watch: 'using the diameter for the rectangle\'s length, or forgetting one of the circles.',
       goal: 'I can find the surface area of a cylinder from its net.',
       learn: {
-        show: { cap: 'r = 3 cm, h = 10 cm', eq: ['56.52 + 188.4 = 244.92 cm²'] },
+        show: { cap: 'r 3 cm, h 10 cm: 56.52 + 188.4 = 244.92 cm²' },
         together: [SA(2, 5)],
         cue: 'Two circles, plus circumference × height.',
         own: [bare(SA(1, 10), 'r = 1 cm, h = 10 cm'), bare(SA(2, 3), 'r = 2 cm, h = 3 cm')]
