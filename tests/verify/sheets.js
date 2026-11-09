@@ -205,7 +205,53 @@
   /* mean or mode: the words that ask for one */
   const STAT = { mean: /fair|share|even(ly| out)|level|same number/, mode: /most (common|often|popular)|appears most|shows up most/ };
   /* how many right angles a shape's corners make: at each corner the two sides meet square on */
-  const rights = sh => sh.filter((p, i) => { const a = sh[(i + sh.length - 1) % sh.length], b = sh[(i + 1) % sh.length]; return (a[0] - p[0]) * (b[0] - p[0]) + (a[1] - p[1]) * (b[1] - p[1]) === 0; }).length;
+  /* square corners: the sides meet at a right angle, and the corner points out (an L shape's inside corner does not count) */
+  const turnOf = sh => Math.sign(sh.reduce((t, p, i) => { const q = sh[(i + 1) % sh.length]; return t + p[0] * q[1] - q[0] * p[1]; }, 0));
+  const rights = sh => sh.filter((p, i) => { const a = sh[(i + sh.length - 1) % sh.length], b = sh[(i + 1) % sh.length];
+    return (a[0] - p[0]) * (b[0] - p[0]) + (a[1] - p[1]) * (b[1] - p[1]) === 0 && ((p[0] - a[0]) * (b[1] - p[1]) - (p[1] - a[1]) * (b[0] - p[0])) * turnOf(sh) > 0; }).length;
+  /* a shape on a dot grid: its sides, corners, square corners, whether every side is the same length, and its lines of
+     symmetry. A line of symmetry flips the shape onto itself: every side lands on a side. The lines tried are the ones
+     through the middle of the corners: up and down, across, and the two diagonals */
+  const sideSet = sh => sh.map((p, i) => [p, sh[(i + 1) % sh.length]].map(q => q.join(',')).sort().join(' ')).sort().join('|');
+  const mirrorOf = (p, m) => (m.x != null ? [2 * m.x - p[0], p[1]] : m.y != null ? [p[0], 2 * m.y - p[1]] : m.d === 1 ? [p[1] + m.c, p[0] - m.c] : [m.c - p[1], m.c - p[0]]);
+  const isMirror = (sh, m) => sideSet(sh.map(p => mirrorOf(p, m))) === sideSet(sh);
+  function shapeFacts(sh) {
+    const n = sh.length, mx = sh.reduce((t, p) => t + p[0], 0) / n, my = sh.reduce((t, p) => t + p[1], 0) / n;
+    const len = sh.map((p, i) => { const q = sh[(i + 1) % n]; return (q[0] - p[0]) ** 2 + (q[1] - p[1]) ** 2; });
+    return { sides: n, corners: n, rights: rights(sh), eqAll: len.every(v => v === len[0]), lines: [{ x: mx }, { y: my }, { d: 1, c: mx - my }, { d: -1, c: mx + my }].filter(m => isMirror(sh, m)).length };
+  }
+  const POLY = { 3: 'triangle', 4: 'quadrilateral', 5: 'pentagon', 6: 'hexagon', 8: 'octagon' };
+  /* pattern blocks, measured in triangles: a hexagon is 6, a trapezoid 3, a rhombus 2 */
+  const PB = { hexagon: 6, trapezoid: 3, rhombus: 2, triangle: 1 };
+  const pbOf = r => String(r).replace(/(\d+) (hexagon|trapezoid|rhombus|triangle)(e?s)?\b/g, (m, n, k) => '(' + n + ' * ' + PB[k] + ')');
+  /* where things are on a map: a mark is left of another in the same row, above another in the same column, and between two
+     in the same row or column */
+  function placed(m, label, rel, ref) {
+    const at = l => (m.marks || []).find(k => k[2] === l), a = at(label), r = ref.map(at);
+    if (!a || r.some(x => !x)) return null;
+    const [b, c] = r;
+    if (rel === 'left of') return a[1] === b[1] && a[0] < b[0];
+    if (rel === 'right of') return a[1] === b[1] && a[0] > b[0];
+    if (rel === 'above') return a[0] === b[0] && a[1] < b[1];
+    if (rel === 'below') return a[0] === b[0] && a[1] > b[1];
+    if (rel === 'between') return (a[1] === b[1] && b[1] === c[1] && (a[0] - b[0]) * (a[0] - c[0]) < 0) || (a[0] === b[0] && b[0] === c[0] && (a[1] - b[1]) * (a[1] - c[1]) < 0);
+    return null;
+  }
+  /* the job a number does: counts how many, puts in order, names, or measures */
+  const JOB = { 'pages in a book': 'counts', 'children in a gym': 'counts', 'apples in a box': 'counts', 'cars in a lot': 'counts', 'stickers on a page': 'counts',
+    'the 100th day of school': 'orders', 'the 3rd in line': 'orders', 'the 25th of May': 'orders', 'floor 12 of a building': 'orders', 'the 2nd place runner': 'orders',
+    'bus number 120': 'names', 'room 114': 'names', 'jersey number 17': 'names', 'house number 186': 'names', 'phone number 905': 'names',
+    'a plant 35 cm tall': 'measures', 'a ribbon 60 cm long': 'measures', 'a 5 m rope': 'measures', 'a 30 minute show': 'measures', 'a pool 25 m long': 'measures' };
+  /* fraction words: the number of equal parts in a whole */
+  const FW = { half: 2, third: 3, fourth: 4, fifth: 5, sixth: 6, eighth: 8, tenth: 10, whole: 1 };
+  /* Canadian coins by name, in cents */
+  /* "3 fourths", "one half": a number (in digits or words) and a fraction word become (3 / 4) */
+  const fwOf = r => String(r).replace(/\b(one|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve)(?= (halves|half|thirds?|fourths?|fifths?|sixths?|eighths?|tenths?|wholes?)\b)/gi, w => ONES.indexOf(w.toLowerCase()))
+    .replace(/\ban? (half|third|fourth|sixth|whole)\b/g, '1 $1')
+    .replace(/(\d+) (halves|half|thirds?|fourths?|fifths?|sixths?|eighths?|tenths?|wholes?)\b/g, (m, n, k) => '(' + n + ' / ' + FW[k.replace(/s$/, '').replace('halve', 'half')] + ')');
+  const COIN = { nickel: 5, dime: 10, quarter: 25, loonie: 100, toonie: 200 };
+  /* "3 quarters" is (3 * 25) cents, and "2 $20 bills" is (2 * 20) dollars */
+  const coinOf = r => String(r).replace(/(\d+) (nickel|dime|quarter|loonie|toonie)s?\b/g, (m, n, k) => '(' + n + ' * ' + COIN[k] + ')').replace(/(\d+) \$(\d+) bills?\b/g, '($1 * $2)');
   /* the shape names a repeating pattern uses */
   const SHAPES = { c: 'circle', s: 'square', t: 'triangle', d: 'diamond', C: 'circle', S: 'square' };
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
@@ -246,7 +292,8 @@
     /* sheet-pics.js */
     blocks: o => ({ total: 100 * o.h + 10 * o.t + o.o }),
     tenframe: o => ({ total: o.a + o.b }),
-    coins: o => ({ total: o.list.reduce((x, y) => x + y, 0) }),
+    /* coins in cents; a "$[]" answer reads the same coins and bills in dollars */
+    coins: o => ({ total: o.list.reduce((x, y) => x + y, 0), dollars: o.list.reduce((x, y) => x + y, 0) / 100 }),
     area: o => ({ total: o.rect ? o.rect[0] * o.rect[1] : o.cells.length, area: o.rect ? o.rect[0] * o.rect[1] : o.cells.length, perim: o.rect ? 2 * (o.rect[0] + o.rect[1]) : cellPerim(o.cells) }),
     rect: o => ({ perim: 2 * (o.a + o.b), area: o.a * o.b }),
     poly: o => (o.sides.indexOf('?') < 0 ? { perim: o.sides.reduce((x, y) => x + y, 0) } : { known: o.sides.filter(v => v !== '?').reduce((x, y) => x + y, 0) }),
@@ -325,8 +372,19 @@
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
+    /* Grade 2: a shape on a dot grid; a hexagon of pattern blocks (each part 1, 2, 3 or 6 triangles, 6 in all); pattern
+       blocks in a row; scattered dots to estimate; dots in pairs */
+    geo: o => Object.assign({ shape: o.pts }, shapeFacts(o.pts)),
+    hex: o => ({ total: o.parts.length, blanks: 0, own: o => (o.parts.reduce((x, y) => x + y, 0) !== 6 || o.parts.some(n => [1, 2, 3, 6].indexOf(n) < 0) ? ['the hexagon parts ' + o.parts.join(', ') + ' are not pattern blocks that fill it'] : []) }),
+    pb: o => ({ total: o.list.length }),
+    scatter: o => ({ total: o.t }),
+    pairs: o => ({ total: o.n }),
+    hund: () => null,
+    twoway: o => ({ byCat: Object.fromEntries(o.rows.flatMap((rw, i) => o.cols.map((c, j) => [c + ' in ' + rw, o.vals[i][j]]))) }),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
-      return n ? { blanks: n, own: (o, a) => o.list.flatMap((p, i) => (parts[i].own ? parts[i].own(p[1], a.splice(0, parts[i].blanks)) : [])) } : null; }
+      if (n) return { blanks: n, own: (o, a) => o.list.flatMap((p, i) => (parts[i].own ? parts[i].own(p[1], a.splice(0, parts[i].blanks)) : [])) };
+      /* a row of fraction pictures with no labels (Grade 2's groups of halves) shows them all together */
+      return !o.labels && parts.every(p => p.total != null) ? { total: parts.reduce((x, p) => x + p.total, 0) } : null; }
   };
   /* one example of every picture, drawn by tests/run.js in a question's column (228 points) with and without the key;
      a picture file that adds a picture adds its example here too */
@@ -350,14 +408,18 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }],
+    geo: [{ pts: [[1, 0], [3, 0], [4, 2], [2, 4], [0, 2]], cols: 5, rows: 4, mirror: { x: 2 }, sym: true }], hex: [{ parts: [3, 2, 1], blank: true }], pb: [{ list: ['hex', 'trap', 'rhom', 'tri'] }],
+    scatter: [{ t: 47 }], pairs: [{ n: 13 }], hund: [{ from: 1, rows: 3, shade: [5, 10, 15], ask: [20, 25, 30] }], twoway: [{ rows: ['Gr 2', 'Gr 3'], cols: ['Walk', 'Ride'], vals: [[7, 4], [3, 6]] }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
   /* it.look: { op: 'value' | 'total' | 'more', a: [categories], b: [categories], at }: the sum of a (or of everything for a
      total), or a take away b. at: which picture of a row. null when a category is not in the data */
   function dataVal(it) {
-    const p = it.look.at != null ? it.pic[1].list[it.look.at] : it.pic, d = (picture(p) || {}).byCat;
+    /* a line plot is read as how many answers each number got */
+    const p = it.look.at != null ? it.pic[1].list[it.look.at] : it.pic, pp = picture(p) || {};
+    const d = pp.byCat || (p[0] === 'plot' ? Object.fromEntries(pp.list.map(v => [v, pp.list.filter(x => x === v).length])) : null);
     if (!d) return null;
     const sum = l => (l.some(c => d[c] === undefined) ? NaN : l.reduce((t, c) => t + d[c], 0)), a = sum(it.look.a || Object.keys(d));
     const v = it.look.op === 'more' ? a - sum(it.look.b) : a;
@@ -388,7 +450,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.deal || it.fshare || it.find || it.shapeAsk || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -396,11 +458,20 @@
         const d = pc.byCat, re = new RegExp('\\b(' + Object.keys(d).sort((x, y) => y.length - x.length).join('|') + '|in all)\\b', 'g');
         if (re.test(row)) row = row.replace(re, m => (m === 'in all' ? '(' + Object.values(d).join(' + ') + ')' : d[m]));
       }
+      /* pattern blocks are counted in triangles: "1 trapezoid = 3 triangles" */
+      /* fraction words for Grade 2: "3 fourths" is 3/4 of a whole, "2 halves" is 1 whole */
+      if (it.fw) row = fwOf(row);
+      /* a share of several things (4 bars for 3 friends): every answer row together is the things over the sharers */
+      if (it.fshare && blanks) { if (!same(val(norm(row)), it.fshare[0] / it.fshare[1])) say(it.fshare.join(' shared by ') + ' is not ' + row); return; }
+      if (it.pb) row = pbOf(row);
+      if (it.coins) row = coinOf(row);
       let worth;
       let est;
       let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
+      /* Grade 2's symbols for a number ("▲ = 5"): put it in the item's sentence, which must then be true */
+      if (it.letter && /^[▲●■★] = \S+$/.test(row)) { if (truth(it.letter.replace(/[▲●■★]/g, row.split(' = ')[1])) !== true) say('with ' + row + ', "' + it.letter + '" is not true'); return; }
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
@@ -444,6 +515,10 @@
         const what = row.replace(/^\d+ /, '').replace(/^flat /, '')[0], all = [].concat(it.solid), n = +row.split(' ')[0];
         const want = what === 'o' ? all.length : all.reduce((t, k) => t + (SOLID[k] ? SOLID[k][what] : NaN), 0);
         if (want !== n) say(all.join(' and ') + ': ' + row.replace(/^\d+ /, '') + ' is ' + want + ', not ' + n);
+      } else if (it.find && /^at [A-J]\d+$/.test(row)) {
+        /* where a mark is on a map with lettered columns and numbered rows (from the bottom) */
+        const m = it.pic[1], k = (m.marks || []).find(x => x[2] === it.find), cell = k && 'ABCDEFGHIJ'[k[0]] + (m.rows - k[1]);
+        if (row !== 'at ' + cell) say(it.find + ' is at ' + cell + ', not ' + row.slice(3));
       } else if (it.walk || it.turn || it.turnTo) {
         /* a walk on the map (where you end, how far, which way you face) or a turn on the compass */
         const w = it.walk && walk(it.pic[1], it.walk === true ? filled.join(', ') : it.walk), v = row.replace(/^(facing|at) /, '');
@@ -552,7 +627,7 @@
         const t = order(row);
         if (t === null) say('cannot read the comparison: ' + row);
         else if (!t) say('the comparison is not true: ' + row);
-      } else if (/^\[\]( [^\s\d\[\]=<>,]+)?$/.test(raw[ri].trim())) {
+      } else if (/^\$?\[\]( [^\s\d\[\]=<>,]+)?$/.test(raw[ri].trim())) {
         /* a bare answer, with or without its unit ("[] °"): the number the picture shows (unless a story sum checks it), or the number written in words */
         const v = ansAll[filled.slice(0, ri).reduce((k, r, j) => k + (raw[j].match(/\[\]/g) || []).length, 0)];
         if (it.digits) {
@@ -571,8 +646,13 @@
           const t = truth(it.letter.replace(/\b[a-z]\b/g, String(v)));
           if (t !== true) say('with ' + v + ' for the letter, "' + it.letter + '" is not true');
         } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
-        else if (pc && pc.total != null && !it.calc) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
+        else if (it.deal) { /* checked by the sharing check below */ }
+        else if (it.fw && pc && pc.total != null) { if (!same(val(norm(row)), pc.total)) say('the picture shows ' + pc.total + ' of a whole, not ' + row); }
+        else if (pc && pc.total != null && !it.calc) { if (!same(/^\$/.test(raw[ri].trim()) && pc.dollars != null ? pc.dollars : pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
         else if (!it.calc && !byItem) say('nothing checks the answer ' + v);
+      } else if (blanks && it.fw && pc && pc.total != null) {
+        /* "[] wholes + [] halves": the parts, put together, are what the picture shows */
+        if (!same(val(norm(row)), pc.total)) say('the picture shows ' + pc.total + ' of a whole, not ' + row);
       } else if (blanks && !it.calc && !byItem) say('nothing checks this row: ' + raw[ri]);
     });
     /* a clock to draw the hands on: the time asked for is the time on the key */
@@ -600,7 +680,9 @@
     if (it.spell != null && (!it.lines || it.lines.key !== toWords(it.spell))) say(it.spell + ' in words is "' + toWords(it.spell) + '", not "' + (it.lines && it.lines.key) + '"');
     /* 3. the picture matches the sum: its total is in the first sum that shows it (as a number or as one side), and a
        times sum uses its two numbers */
-    const shows = r => nums(r).indexOf(pc.total) >= 0 || norm(r).split('=').map(val).some(v => same(v, pc.total));
+    /* (with fraction words, a part of the sum may show it: "3 fourths + [] fourths = 1 whole") */
+    const shows = r => nums(r).indexOf(pc.total) >= 0 || norm(r).split('=').map(val).some(v => same(v, pc.total))
+      || (it.fw && norm(fwOf(r)).split(/[=+]/).map(val).some(v => same(v, pc.total)));
     const sums = filled.filter(r => /=/.test(r)), first = (pc && pc.total != null && sums.filter(shows)[0]) || sums[0];
     if (pc && first) {
       if (pc.total != null && !shows(first)) say('the picture shows ' + pc.total + ' but the sum is ' + first);
@@ -623,7 +705,7 @@
       const v = val(norm(it.calc));
       const ans = (it.a || [])[0], av = typeof ans === 'number' ? ans : val(norm(String(ans)));
       if (!same(v, av)) say('the story works out to ' + v + ', not ' + (it.a || [])[0]);
-      const inQ = nums(it.q + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : []);
+      const inQ = nums((it.fw ? fwOf(it.q) : it.q) + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : []);
       nums(it.calc).forEach(n => { if (inQ.indexOf(n) < 0) say('the story sum uses ' + n + ', which is not in the story'); });
     }
     /* 5. the circled choice */
@@ -672,7 +754,9 @@
         if (want !== yes) say('the ' + pk.sameStat + 's are ' + f(g[0]) + ' and ' + f(g[1]) + ', but the key circles ' + o[pk.ans]);
       } else if (pk.chanceOf) {
         /* how likely one colour is, from the counts in the bag or on the spinner */
-        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), want = chanceWord(c[pk.chanceOf.of] || 0, n);
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), k = c[pk.chanceOf.of] || 0;
+        /* Grade 2 uses three words: impossible, possible and certain */
+        const want = o.indexOf('possible') >= 0 ? (k === 0 ? 'impossible' : k === n ? 'certain' : 'possible') : chanceWord(k, n);
         if (pk.chanceOf.say ? (want === pk.chanceOf.say) !== yes : o[pk.ans] !== want) say(pk.chanceOf.of + ' is ' + want + ', but the key circles ' + o[pk.ans]);
       } else if (pk.likely) {
         /* the one colour most (or least) likely */
@@ -773,7 +857,7 @@
         if (!w) say('cannot read the walk: ' + it.walk);
         else if (!hit.length || hit[0][2] !== o[pk.ans]) say('the walk ends at ' + w.cell + ', not at ' + o[pk.ans]);
       } else if (it.tf) {
-        const t = truth(it.tf);
+        const t = truth(it.fw ? fwOf(it.tf) : it.pb ? pbOf(it.tf) : it.coins ? coinOf(it.tf) : it.tf);
         if (t === null) say('cannot read the statement: ' + it.tf);
         else if (t !== yes) say('"' + it.tf + '" is ' + t + ', but the key circles ' + o[pk.ans]);
         if (/Check it with ×/.test(it.q || '')) {
@@ -794,6 +878,15 @@
         /* the nth term of a repeating pattern of numbers or names: the core comes round again every core length */
         const c = pk.term.core;
         if (o[pk.ans] !== c[(pk.term.n - 1) % c.length]) say('term ' + pk.term.n + ' of the core ' + c.join(', ') + ' is ' + c[(pk.term.n - 1) % c.length] + ', not ' + o[pk.ans]);
+      } else if (pk.parts) {
+        /* the name of the equal parts a fraction picture is cut into */
+        const n = it.pic && it.pic[0] === 'frac' ? it.pic[1].n : null, want = Object.keys(FW).find(k => FW[k] === n);
+        if (!want || FW[String(o[pk.ans]).replace(/s$/, '').replace('halve', 'half')] !== n) say('the picture is cut into ' + (want || '?') + 's, not ' + o[pk.ans]);
+      } else if (pk.shareCmp) {
+        /* two sharing groups [things, sharers]: who gets more each, or the same */
+        const [p, q] = pk.shareCmp, d = p[0] / p[1] - q[0] / q[1], want = Math.abs(d) < 1e-9 ? 2 : d > 0 ? 0 : 1;
+        if (pk.ans !== want) say(p.join(' for ') + ' and ' + q.join(' for ') + ': the key circles ' + o[pk.ans] + ', not ' + o[want]);
+        [].concat(p, q).forEach(n => { if (nums(fwOf(it.q)).indexOf(n) < 0) say('the sharing ' + n + ' is not in the question'); });
       } else if (pk.equal) {
         /* "Equal parts?" under a fraction picture: yes unless the picture is cut unevenly */
         const ev = !(it.pic && it.pic[0] === 'frac' && it.pic[1].uneven);
@@ -890,10 +983,10 @@
         const ok = o.map(x => +x > pk.between[0] && +x < pk.between[1]);
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is between ' + pk.between.join(' and '));
       } else if (pk.small) {
-        const v = o.map(x => val(norm(x)));
+        const v = o.map(x => val(norm(it.fw ? fwOf(x) : x)));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x <= v[pk.ans])) say('the circled choice is not the least: ' + o.join(', '));
       } else if (pk.big) {
-        const v = o.map(x => (isNaN(val(norm(x))) ? fromWords(x) : val(norm(x))));
+        const v = o.map(x => (it.fw ? val(norm(fwOf(x))) : isNaN(val(norm(x))) ? fromWords(x) : val(norm(x))));
         if (v.some(isNaN) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled choice is not the biggest: ' + o.join(', '));
       } else if (pk.val != null) {
         const ok = o.map(x => same(val(norm(x)), pk.val));
@@ -944,11 +1037,11 @@
         }
       } else if (pk.rect || pk.sym) {
         /* a shape on a grid: a rectangle has 4 sides and 4 right angles; a line of symmetry flips every corner onto a corner */
-        const sh = it.pic && it.pic[0] === 'coord' && it.pic[1].shape, m = it.pic && it.pic[1].mirror;
+        const sh = it.pic && ((it.pic[0] === 'coord' && it.pic[1].shape) || (it.pic[0] === 'geo' && it.pic[1].pts)), m = it.pic && it.pic[1].mirror;
         if (!sh || (pk.sym && !m)) say('a shape choice has no shape' + (pk.sym ? ' or mirror line' : ''));
         else {
           const set = sh.map(p => p.join());
-          const yes2 = pk.rect ? sh.length === 4 && rights(sh) === 4 : sh.every(p => set.includes((m.x != null ? [2 * m.x - p[0], p[1]] : [p[0], 2 * m.y - p[1]]).join()));
+          const yes2 = pk.rect ? sh.length === 4 && rights(sh) === 4 : m.d ? isMirror(sh, m) : sh.every(p => set.includes((m.x != null ? [2 * m.x - p[0], p[1]] : [p[0], 2 * m.y - p[1]]).join()));
           if ((o[pk.ans] === 'yes') !== yes2) say((pk.rect ? 'the shape is ' + (yes2 ? '' : 'not ') + 'a rectangle' : 'the line is ' + (yes2 ? '' : 'not ') + 'a line of symmetry') + ', but the key circles ' + o[pk.ans]);
         }
       } else if (pk.dtype != null) {
@@ -978,6 +1071,35 @@
         const NEED = ['a winter coat', 'boots for snow', 'food for dinner', 'medicine', 'a toothbrush', 'bus fare to school', 'mittens', 'milk', 'glasses to see the board'];
         const want = NEED.indexOf(pk.need) >= 0 ? 'need' : 'want';
         if (o[pk.ans] !== want) say(pk.need + ' is a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.polyName) {
+        /* a shape's name from its number of sides */
+        const want = POLY[pc && pc.sides];
+        if (!want || o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say('a shape with ' + (pc && pc.sides) + ' sides is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.eqSides) {
+        if (!pc || pc.eqAll === undefined) say('an equal-sides choice has no shape');
+        else if (pc.eqAll !== yes) say('the sides are ' + (pc.eqAll ? '' : 'not ') + 'all equal, but the key circles ' + o[pk.ans]);
+      } else if (pk.parity != null) {
+        const want = pk.parity % 2 ? 'odd' : 'even';
+        if (o[pk.ans] !== want) say(pk.parity + ' is ' + want + ', not ' + o[pk.ans]);
+        if (pc && pc.total != null && pc.total !== pk.parity) say('the picture shows ' + pc.total + ', not ' + pk.parity);
+      } else if (pk.where) {
+        /* the one mark on the map that is left of, right of, above, below or between the others named */
+        const ok = o.map(x => placed(it.pic[1], x, pk.where.rel, pk.where.ref));
+        if (ok.some(x => x === null)) say('cannot find the marks ' + o.concat(pk.where.ref).join(', ') + ' on the map');
+        else if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one mark is ' + pk.where.rel + ' ' + pk.where.ref.join(' and ') + ': ' + o.join(', '));
+      } else if (pk.at) {
+        /* the mark in a square of a grid map: columns A, B, C ... and rows 1, 2, 3 ... from the bottom */
+        const m = it.pic[1], hit = (m.marks || []).find(k => 'ABCDEFGHIJ'[k[0]] + (m.rows - k[1]) === pk.at);
+        if (!hit || o[pk.ans] !== hit[2] || o.filter(x => x === hit[2]).length !== 1) say('at ' + pk.at + ' is ' + (hit ? hit[2] : 'nothing') + ', not ' + o[pk.ans]);
+      } else if (pk.job) {
+        if (!JOB[pk.job]) say('no job is known for ' + pk.job);
+        else if (o[pk.ans] !== JOB[pk.job]) say('in ' + pk.job + ' the number ' + JOB[pk.job] + ', not ' + o[pk.ans]);
+      } else if (pk.coinName != null) {
+        const want = Object.keys(COIN).find(k => COIN[k] === pk.coinName);
+        if (o[pk.ans] !== want) say('the ' + pk.coinName + '¢ coin is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.coinMost) {
+        const v = o.map(x => COIN[x]);
+        if (v.some(x => x === undefined) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled coin is not worth the most: ' + o.join(', '));
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
       } else say('a choice with nothing to check it by: ' + o.join(', '));
@@ -1060,6 +1182,20 @@
       if (ansAll.join() !== want.join()) say('the ' + [].concat(it.view).join(' and ') + ' view' + (Array.isArray(it.view) ? 's are ' : ' is ') + want.join(', ') + ', not ' + ansAll.join(', '));
     }
     const at = q => (typeof q === 'string' ? pc && pc.pts && pc.pts[q] : q);
+    /* Grade 2 sharing: deal t things one at a time to g sharers; the answers are how many each gets and (if asked) how many
+       are left over, which must be fewer than the sharers */
+    if (it.deal) {
+      const [t, g] = it.deal, each = Math.floor(t / g), left = t % g;
+      if (ansAll[0] !== each) say(t + ' shared by ' + g + ' is ' + each + ' each, not ' + ansAll[0]);
+      if (ansAll.length > 1 && ansAll[1] !== left) say(t + ' shared by ' + g + ' leaves ' + left + ', not ' + ansAll[1]);
+      if (!(pc && pc.total === t && pc.share === g)) [t, g].forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the sharing ' + t + ' by ' + g + ' is not in the question'); });
+    }
+    if (it.shapeAsk) {
+      /* sides, corners, square corners or lines of symmetry of the shape drawn, answered in order by the last answers */
+      const asked = [].concat(it.shapeAsk), got = ansAll.slice(-asked.length);
+      if (!pc || pc.sides == null) say('a question about a shape has no shape');
+      else asked.forEach((k, i) => { if (pc[k] !== num(got[i])) say('the shape has ' + pc[k] + ' ' + k + ', not ' + got[i]); });
+    }
     if (it.corners) { const sh = it.pic && it.pic[1].shape; if (!sh || rights(sh) !== last) say('the shape has ' + (sh ? rights(sh) : '?') + ' right angles, not ' + ansAll[ansAll.length - 1]); }
     if (it.pt) { const q = at(it.pt); if (!q || ansAll.slice(-2).join() !== q.join()) say('point ' + it.pt + ' is at (' + (q || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')'); }
     if (it.move) {

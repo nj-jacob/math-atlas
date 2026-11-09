@@ -2,6 +2,10 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-09
+- **Worksheets for Grade 2: all 11 chapters.** Every idea of every chapter has Learn, Practise 1 to 3 and Think, in all 10 themes with answer keys, covering every Grade 2 expectation. Grade 2 sheets use words like "groups of" and "rows of" rather than × and ÷. New pictures: shapes on a dot grid, pattern blocks, scattered things to count, pairs of shapes, a hundred chart and a two-way table. The answer checker now also understands fraction words, pattern-block names and coin names, fair shares, map grid cells and line plots.
+- Grade 4 Shapes worksheets: the L shape now has 5 right angles on the answer key, not 6 (its inside corner is bigger than a right angle).
+
 ## 2026-11-08
 - Worksheets for Grade 3 **Fractions and Fair Shares** (all 19 ideas: equal parts, naming the piece, top and bottom numbers, fair shares with wholes, leftovers and fewer things than people, comparing shares, counting unit fractions, past one whole, equal fractions in halves to eighths, thirds and sixths, fifths and tenths, groups of pieces that make wholes, recipes and laps, and bigger pieces or more pieces) and **Money: Making Change** (all 9 ideas: counting coins, cash rounding to 5¢, counting up to $1, adding two prices, the fewest coins, change from a bill, subtracting and checking, estimating change, and total, change or how much more), 5 sheets each in 10 themes, with answer keys. Every Grade 3 chapter now has worksheets.
 - Worksheets for Grade 3 **Data**: all 15 ideas (Venn, Carroll and tree diagrams, kinds of data and how to collect it, tally tables, pictographs, bar graphs, making a graph, answering questions with data, the mode, the mean, mean or mode, comparing two groups, words for chance, and predictions and fair games), 5 sheets each in 10 themes, with answer keys. New pictures: Venn and Carroll diagrams with numbers in them, attribute blocks and a tree diagram, pictographs, line plots, towers of cubes, bags of marbles and spinners; bar graphs can now show a title, side label and source.
