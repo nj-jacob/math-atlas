@@ -17,6 +17,7 @@
      bar       { cats, vals, max, step, title, ylab, src, hide: [i] }   a bar graph (a val of null leaves that bar to draw; hide: drawn on the key only)
      tally     { cats, vals, head, blank }            a tally table; blank: the counts are lines to write on
      solids    { list: ['cube', 'prism', 'pyramid', 'tpyr', 'cylinder', 'cone', 'sphere', 'tri'], letters }   prism: rectangular; pyramid: square-based; tpyr: triangular pyramid; tri: triangular prism
+                                                     pentprism, hexprism, pentpyr, hexpyr: pentagonal and hexagonal prisms and pyramids
      stack     { list: [top, ..., bottom] }           a structure taken apart: the same object names as solids
      box       { l, d, h }                            a box of cubes: l long, d deep, h tall
      compass   { face: 'north' | 'east' | 'south' | 'west' }   N, E, S and W, with an arrow for the way someone faces
@@ -248,6 +249,19 @@
       var tw2 = s * 0.8, th2 = s * 0.6, tq = s * 0.35, by2 = y + s * 0.85;
       out += path('M' + x + ' ' + by2 + ' L' + (x + tw2) + ' ' + by2 + ' L' + (x + tw2 / 2) + ' ' + (by2 - th2) + ' Z', o) + path('M' + (x + tw2 / 2) + ' ' + (by2 - th2) + ' L' + (x + tw2 / 2 + tq) + ' ' + (by2 - th2 - tq * 0.5) + ' L' + (x + tw2 + tq) + ' ' + (by2 - tq * 0.5) + ' L' + (x + tw2) + ' ' + by2, o) + path('M' + x + ' ' + by2 + ' L' + (x + tq) + ' ' + (by2 - tq * 0.5) + ' L' + (x + tw2 + tq) + ' ' + (by2 - tq * 0.5) + ' M' + (x + tq) + ' ' + (by2 - tq * 0.5) + ' L' + (x + tw2 / 2 + tq) + ' ' + (by2 - th2 - tq * 0.5), d);
       return { svg: out, w: tw2 + tq, h: s * 0.9 };
+    }
+    var sides = { pentprism: 5, hexprism: 6, pentpyr: 5, hexpyr: 6 }[k];
+    if (sides) {
+      /* a prism or pyramid on a regular base seen from a little above: hidden edges dashed */
+      var rx = s * 0.45, ry = s * 0.16, ox = x + rx, oy = y + s * 0.8, up = /prism/.test(k) ? s * 0.6 : s * 0.78, i, n2;
+      var pts = [], front = [];
+      for (i = 0; i < sides; i++) { var ag = Math.PI / 2 + 2 * Math.PI * (i + 0.5) / sides; pts.push([ox + rx * Math.cos(ag), oy + ry * Math.sin(ag)]); front.push(Math.sin(ag) > -1e-9 || Math.abs(Math.cos(ag)) > 0.95); }
+      for (i = 0; i < sides; i++) { n2 = (i + 1) % sides; out += path('M' + pts[i] + ' L' + pts[n2], front[i] && front[n2] ? o : d); }
+      if (/prism/.test(k)) {
+        out += path(pts.map(function (q, j) { return (j ? 'L' : 'M') + q[0] + ' ' + (q[1] - up); }).join(' ') + ' Z', o);
+        pts.forEach(function (q, j) { out += path('M' + q + ' L' + q[0] + ' ' + (q[1] - up), front[j] ? o : d); });
+      } else pts.forEach(function (q, j) { out += path('M' + q + ' L' + ox + ' ' + (oy - up), front[j] ? o : d); });
+      return { svg: out, w: 2 * rx, h: s * 0.8 + ry };
     }
     return { svg: '', w: 0, h: 0 };
   }

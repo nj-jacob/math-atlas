@@ -45,7 +45,7 @@
      plane { kind: 'rect' | 'para' | 'tri', b, h, off, s, unit, ask }   a rectangle, parallelogram or triangle with its
                                 base and dashed height; off: how far along the top (or top corner) sits; s: the slanted
                                 side; ask: 'perim' when the question is its perimeter
-     coord { n, min, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
+     coord { n, min, u, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
                                 a coordinate grid from 0 (or min, for four quadrants) to n: labelled points, a shape, the shape after a move (dashed), a
                                 dashed mirror line, and points or a shape drawn only on the key
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
@@ -483,7 +483,7 @@
   /* a coordinate grid from 0 to n (or from min to n on both axes, with the axes through the origin) with labelled
      points and shapes */
   P.coord = function (p, x, y, w, key) {
-    var n = p.n || 8, lo = p.min || 0, span = n - lo, u = Math.min(11, (Math.min(w, 220) - 24) / span), ox = x + 18 - lo * u, oy = y + 6 + n * u, out = '';
+    var n = p.n || 8, lo = p.min || 0, span = n - lo, u = Math.min(p.u || 11, (Math.min(w, 220) - 24) / span), ox = x + 18 - lo * u, oy = y + 6 + n * u, out = '';
     var X = function (v) { return ox + v * u; }, Y = function (v) { return oy - v * u; }, sg = function (v) { return v < 0 ? '\u2212' + -v : v; };
     for (var i = lo; i <= n; i++) {
       out += line(X(i), Y(lo), X(i), Y(n), { s: LINE, sw: 0.7 }) + line(X(lo), Y(i), X(n), Y(i), { s: LINE, sw: 0.7 });

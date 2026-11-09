@@ -362,7 +362,7 @@
     blocks: [{ h: 3, t: 4, o: 5 }], pv: [{ n: 307, blank: true }, [3, 0, 7]], tenframe: [{ a: 8, b: 5 }], col: [{ a: 368, b: 254, op: '+' }, [6, 2, 2]], frac: [{ n: 4, k: 3, shape: 'circle' }],
     wholes: [{ n: 5 }], pat: [{ seq: 'cstcst', blanks: 2, next: 'cs', core: 3 }], clock: [{ h: 3, m: 40, blank: true }],
     coins: [{ list: [500, 200, 100, 25, 10, 5] }], tag: [{ t: 'Juice box', p: 135 }], bar: [{ cats: ['A', 'B', 'C', 'D'], vals: [4, 7, 2, 5], max: 8, step: 2, title: 'Votes', ylab: 'Votes', src: 'Room 4', hide: [1] }],
-    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'tpyr', 'pyramid', 'cylinder'], letters: true }],
+    tally: [{ cats: ['{many}', 'balls'], vals: [7, 12], blank: true }, [7, 12]], solids: [{ list: ['cube', 'tpyr', 'pyramid', 'cylinder', 'hexprism', 'pentpyr'], letters: true }],
     area: [{ cols: 8, rows: 4, rect: [5, 3] }], rect: [{ a: 6, b: 3, unit: 'cm', all: true }], ruler: [{ len: 7, from: 0 }],
     balance: [{ l: 6, r: '{one}', tilt: 0 }], cups: [{ n: 6 }], nl: [{ min: 300, max: 400, tick: 10, lab: 50, pt: 370, ask: [330] }, [330]],
     map: [{ cols: 7, rows: 4, grid: true, marks: [[1, 1, 'A'], [5, 2, 'B']], start: [0, 3, '>'], path: [[0, 3], [3, 3], [3, 1]] }], venn: [{ a: 'even', b: 'more than 15', parts: [[6, 12], [18, 24], [17], [9, 3]], list: [6, 18, 9, 24, 3, 12, 17], blank: true }],
@@ -865,6 +865,19 @@
         /* exactly one choice is (or, with not, is not) equivalent to the ratio, in the same order */
         const ok = o.map(x => { const r = String(x).split(':').map(Number); return r.length === 2 && pk.ratio[0] * r[1] === pk.ratio[1] * r[0]; }).map(e => (pk.not ? !e : e));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + (pk.not ? 'not ' : '') + 'equivalent to ' + pk.ratio.join(' : ') + ': ' + o.join(', '));
+      } else if (pk.solidName) {
+        /* the name of the solid in the picture: its base gives the name */
+        const want = it.pic[1].list[0];
+        if (SOLID_BY[o[pk.ans]] !== want || o.filter(x => SOLID_BY[x] === want).length !== 1) say('the solid is a ' + want + ', not a ' + o[pk.ans]);
+      } else if (pk.sim) {
+        /* similar rectangles: length and width multiplied by the same scale factor */
+        const ok = o.map(x => { const v = nums(x); return v.length === 2 && same(v[0] * pk.sim[1], v[1] * pk.sim[0]); });
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is similar to ' + pk.sim.join(' by ') + ': ' + o.join(', '));
+      } else if (pk.quad) {
+        /* the quadrant of a point: I up right, II up left, III down left, IV down right */
+        const [qx, qy] = pk.quad, want = qx > 0 ? (qy > 0 ? 'I' : 'IV') : (qy > 0 ? 'II' : 'III');
+        if (!qx || !qy || o[pk.ans] !== want) say('(' + pk.quad.join(', ') + ') is in quadrant ' + want + ', not ' + o[pk.ans]);
+        if (nums(it.q).join() !== pk.quad.join()) say('the point ' + pk.quad.join(', ') + ' is not the one in the question');
       } else if (pk.inq) {
         /* which inequality a number line shows: the circled one is the item's inequality (its dot and ray are checked below) */
         if (o[pk.ans] !== it.ineq || o.filter(x => x === it.ineq).length !== 1) say('the circled ' + o[pk.ans] + ' is not ' + it.ineq);
