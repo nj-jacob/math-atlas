@@ -1061,6 +1061,10 @@
         /* true or false: every one of the first kind is also the second kind */
         const want = ISA[pk.family[1]] && QUAD[pk.family[0]] ? ISA[pk.family[1]](QUAD[pk.family[0]]) : null;
         if (want === null) say('cannot tell if every ' + pk.family[0] + ' is a ' + pk.family[1]); else if (want !== yes) say('every ' + pk.family[0] + ' is ' + (want ? '' : 'not ') + 'a ' + pk.family[1] + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.span) {
+        /* a goal for days or weeks is short-term; one for months or years (about 3 months or more) is long-term */
+        const want = pk.span.days < 90 ? 'short-term' : 'long-term';
+        if (o[pk.ans] !== want) say('a goal ' + pk.span.days + ' days away is ' + want + ', not ' + o[pk.ans]);
       } else if (pk.pair) {
         /* two angles: complementary when they add to 90°, supplementary when they add to 180° */
         const t = pk.pair[0] + pk.pair[1], want = t === 90 ? 'complementary' : t === 180 ? 'supplementary' : 'neither';
