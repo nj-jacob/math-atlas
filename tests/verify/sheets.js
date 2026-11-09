@@ -660,7 +660,10 @@
       const ans = (it.a || [])[0], av = typeof ans === 'number' ? ans : val(norm(String(ans)));
       if (!same(v, av)) say('the story works out to ' + v + ', not ' + (it.a || [])[0]);
       const inQ = nums(it.q + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : []);
-      nums(it.calc).forEach(n => { if (inQ.indexOf(n) < 0) say('the story sum uses ' + n + ', which is not in the story'); });
+      /* know: fixed facts a story may use without saying them (π as 3.14, 2 radii in a diameter, 1000 cm³ in a litre) */
+      const FACTS = [2, 3.14, 1000, 10000, 1000000];
+      (it.know || []).forEach(n => { if (FACTS.indexOf(n) < 0) say(n + ' is not a known fact a story may use'); });
+      nums(it.calc).forEach(n => { if (inQ.indexOf(n) < 0 && (it.know || []).indexOf(n) < 0) say('the story sum uses ' + n + ', which is not in the story'); });
     }
     /* 5. the circled choice */
     const pk = it.pick;
@@ -878,6 +881,11 @@
         const [qx, qy] = pk.quad, want = qx > 0 ? (qy > 0 ? 'I' : 'IV') : (qy > 0 ? 'II' : 'III');
         if (!qx || !qy || o[pk.ans] !== want) say('(' + pk.quad.join(', ') + ') is in quadrant ' + want + ', not ' + o[pk.ans]);
         if (nums(it.q).join() !== pk.quad.join()) say('the point ' + pk.quad.join(', ') + ' is not the one in the question');
+      } else if (pk.around) {
+        /* around a circle (fence, trim, edge) is its circumference; covering it (paint, carpet, seed) is its area */
+        const ar = /around|edge|border|fence|trim|ribbon|edging/.test(it.q), ins = /cover|paint|carpet|grass|seed|glass|cloth/.test(it.q);
+        if (ar === ins) say('the words do not tell around from inside: ' + it.q);
+        else if (o[pk.ans] !== (ar ? 'circumference' : 'area')) say('that needs the ' + (ar ? 'circumference' : 'area') + ', not the ' + o[pk.ans]);
       } else if (pk.inq) {
         /* which inequality a number line shows: the circled one is the item's inequality (its dot and ray are checked below) */
         if (o[pk.ans] !== it.ineq || o.filter(x => x === it.ineq).length !== 1) say('the circled ' + o[pk.ans] + ' is not ' + it.ineq);
