@@ -417,7 +417,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || it.int || it.like || (pc && pc.ask != null));
+    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || it.int || it.like || it.up || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -1176,6 +1176,8 @@
       if (nums(it.q).indexOf(it.int.size) < 0) say('the size ' + it.int.size + ' is not in the question');
       if (down !== !!it.int.neg) say('the words of the question do not match the sign');
     }
+    /* up: a sum whose answer is rounded up to a whole number (weeks to reach a goal) */
+    if (it.up) { const w = Math.ceil(val(norm(it.up)) - 1e-9); if (w !== last) say(it.up + ' rounded up is ' + w + ', not ' + ansAll[ansAll.length - 1]); }
     if (it.ssym) { const v = (SYM[it.ssym.s] || {})[it.ssym.what]; if (v !== last) say('the ' + it.ssym.s + ' has ' + v + ' for ' + it.ssym.what + ', not ' + ansAll[ansAll.length - 1]); }
     /* shapes: an angle left as "?" in a triangle, a view of stacks, a point read from a grid, and a point moved by a
        slide or a flip (over the line x = k or y = k) */
