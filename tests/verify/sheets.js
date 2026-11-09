@@ -81,6 +81,7 @@
     return isNaN(a) || isNaN(b) ? null : same(a, b);
   }
   /* run robot code such as "move 3, turn right, repeat 2: move 1, turn left" from start [column, row, '>' | 'v' | '<' | '^'];
+     Grade 1 code moves by direction instead: "right 2, up 1" or "right, right, up" (the robot does not turn);
      "repeat N:" repeats the rest of the code. Returns the square [column, row] where it stops, or null when unreadable */
   function robot(start, code) {
     const D = ['>', 'v', '<', '^'], step = { '>': [1, 0], 'v': [0, 1], '<': [-1, 0], '^': [0, -1] };
@@ -89,9 +90,10 @@
       for (let i = 0; i < list.length; i++) {
         const c = list[i].trim();
         if (!c) continue;
-        const rep = c.match(/^repeat (\d+)(?: times)?:\s*(.*)$/), mv = c.match(/^move (\d+)$/);
+        const rep = c.match(/^repeat (\d+)(?: times)?:\s*(.*)$/), mv = c.match(/^move (\d+)$/), go = c.match(/^(up|down|left|right)(?: (\d+))?$/);
         if (rep) { const body = [rep[2]].concat(list.slice(i + 1)); for (let k = 0; k < +rep[1]; k++) if (!run(body)) return false; return true; }
         if (mv) { x += step[D[d]][0] * +mv[1]; y += step[D[d]][1] * +mv[1]; }
+        else if (go) { const g = step[{ up: '^', down: 'v', left: '<', right: '>' }[go[1]]]; x += g[0] * +(go[2] || 1); y += g[1] * +(go[2] || 1); }
         else if (c === 'turn right') d = (d + 1) % 4;
         else if (c === 'turn left') d = (d + 3) % 4;
         else return false;
@@ -108,7 +110,7 @@
     tpyr: { f: 4, e: 6, v: 4, c: 0, p: 1, kind: 'pyramid', sq: 0 }, cylinder: { f: 2, c: 1, p: 0, kind: 'neither', roll: 1 },
     cone: { f: 1, c: 1, p: 1, kind: 'neither', roll: 1 }, sphere: { f: 0, c: 1, p: 0, kind: 'neither', roll: 1 }
   };
-  const SOLID_BY = { cube: 'cube', 'rectangular prism': 'prism', 'triangular prism': 'tri', 'square-based pyramid': 'pyramid', 'triangular pyramid': 'tpyr', cylinder: 'cylinder', cone: 'cone', sphere: 'sphere' };
+  const SOLID_BY = { cube: 'cube', pyramid: 'pyramid', 'rectangular prism': 'prism', 'triangular prism': 'tri', 'square-based pyramid': 'pyramid', 'triangular pyramid': 'tpyr', cylinder: 'cylinder', cone: 'cone', sphere: 'sphere' };
   /* a choice names an object, or is a letter for one of the pictured objects */
   const solidOf = (x, it) => (/^[A-H]$/.test(x) && it.pic ? [].concat(it.pic[1].list || [])[x.charCodeAt(0) - 65] : SOLID_BY[x]);
   const fits = (k, clue) => !!SOLID[k] && Object.keys(clue).every(c => SOLID[k][c] === clue[c]);
@@ -211,6 +213,32 @@
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
      own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
      Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
+  /* Grade 1: sides of flat shapes, folds, places on a shelf, the calendar, seasons, and what changes */
+  const FLAT = { tri: 3, sq: 4, rect: 4, rhom: 4, pent: 5, hex: 6, circle: 0, oval: 0 };
+  /* the flat shapes the faces of each 3D object trace */
+  const FACES = { cube: ['square'], prism: ['rectangle', 'square'], tri: ['triangle', 'rectangle'], pyramid: ['square', 'triangle'], tpyr: ['triangle'], cylinder: ['circle'], cone: ['circle'], sphere: [] };
+  const LIKE = { 'soup can': 'cylinder', drum: 'cylinder', 'paper towel roll': 'cylinder', ball: 'sphere', orange: 'sphere', marble: 'sphere', 'cereal box': 'prism', 'tissue box': 'prism', brick: 'prism',
+    'number cube': 'cube', 'ice cube': 'cube', 'party hat': 'cone', 'traffic cone': 'cone', 'ice cream cone': 'cone' };
+  const FLAT_NAME = { tri: 'triangle', sq: 'square', rect: 'rectangle', rhom: 'rhombus', pent: 'pentagon', hex: 'hexagon', circle: 'circle', oval: 'oval' };
+  /* a fold line makes matching halves when every shaded square lands on a shaded square */
+  const folds = o => o.cells.every(c => { const [x, y] = c.split(',').map(Number), m = o.line.x != null ? [2 * o.line.x - 1 - x, y] : [x, 2 * o.line.y - 1 - y]; return o.cells.indexOf(m.join()) >= 0; });
+  /* what is above, below, left of or right of a thing on a shelf (rows top first); null when that cubby is empty or off the shelf */
+  function shelfAt(rows, of, rel) {
+    for (let i = 0; i < rows.length; i++) { const j = rows[i].indexOf(of); if (j < 0) continue;
+      const [di, dj] = { above: [-1, 0], below: [1, 0], 'left of': [0, -1], 'right of': [0, 1] }[rel]; return ((rows[i + di] || [])[j + dj]) || null; }
+    return null;
+  }
+  const WEEK = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const MONTHS = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  /* seasons in Canada by month, the way Grade 1 learns them: winter December to February, spring March to May, summer June to August, fall September to November */
+  const seasonOf = m => ['winter', 'spring', 'summer', 'fall'][Math.floor(((MONTHS.indexOf(m) + 1) % 12) / 3)];
+  /* things that change and things that always stay the same */
+  const VARY = { changes: ['the weather', 'your height', 'how many people are at the park', 'the number of leaves on a tree', 'the time on a clock', 'how many apples are in the bowl', 'your age'],
+    'stays the same': ['the number of days in a week', 'the number of wheels on a bike', 'the number of months in a year', 'the number of sides on a triangle', 'the number of fingers on one hand', 'the number of legs on a spider'] };
+  /* what a question measures, from its words */
+  const ATTR = { length: /\blong|\btall|\bwide|\bshort|\bhigh\b/, mass: /heav|weigh|light/, capacity: /\bhold|\bfill|\bpour/, area: /\bcover/ };
+  /* Canadian money: coin names and bill colours */
+  const COIN = { 5: 'nickel', 10: 'dime', 25: 'quarter', 100: 'loonie', 200: 'toonie' }, BILL = { 500: 'blue', 1000: 'purple', 2000: 'green', 5000: 'red' };
   const dataOf = o => Object.fromEntries(o.cats.map((c, i) => [c, o.vals[i]]));
   const READ = {
     groups: o => { const c = o.counts || Array(o.g).fill(o.k); return { total: c.reduce((x, y) => x + y, 0), pair: o.counts ? null : [o.g, o.k], counts: c }; },
@@ -325,6 +353,13 @@
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
+    /* Grade 1: a ten frame, flat shapes (one shape gives its sides), a fold line, a shelf, a calendar, strips */
+    frame: o => ({ total: o.n + (o.b || 0) - (o.x || 0) }),
+    flat: o => ({ sides: o.list.map(k => FLAT[k]), total: o.list.length === 1 ? FLAT[o.list[0]] : undefined }),
+    fold: o => ({ fold: o }),
+    shelf: o => ({ shelf: o.rows }),
+    cal: o => ({ total: o.days, cal: o }),
+    strips: o => ({ lens: Object.fromEntries(o.list.map(s => [s[0], s[1]])), total: o.list.length === 1 ? o.list[0][1] : undefined }),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
       return n ? { blanks: n, own: (o, a) => o.list.flatMap((p, i) => (parts[i].own ? parts[i].own(p[1], a.splice(0, parts[i].blanks)) : [])) } : null; }
   };
@@ -350,7 +385,9 @@
     amodel: [{ a: 246, b: 3 }, [600, 120, 18]], mult: [{ a: 47, b: 26 }, [282, 940, 1222]], shareR: [{ t: 14, g: 4 }],
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
-    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }]
+    hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }],
+    frame: [{ n: 6, b: 2, x: 3 }], flat: [{ list: ['tri', 'sq', 'rect', 'hex'], turn: 20, letters: true }], fold: [{ cols: 6, rows: 4, cells: ['1,1', '2,1', '3,1', '4,1'], line: { x: 3 } }],
+    shelf: [{ rows: [['cup', 'book', ''], ['ball', 'hat', 'box']] }], cal: [{ month: 'November', start: 0, days: 30, marks: [11] }], strips: [{ list: [['A', 7, 0], ['B', 5, 2]], cubes: true }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -402,7 +439,7 @@
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
-      if (it.prob || it.pt || it.move || it.view) return;
+      if (it.prob || it.pt || it.move || it.view || it.left) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
          of minutes; a time on its own is the time the clock picture shows */
       if (it.clock) {
@@ -571,6 +608,11 @@
           const t = truth(it.letter.replace(/\b[a-z]\b/g, String(v)));
           if (t !== true) say('with ' + v + ' for the letter, "' + it.letter + '" is not true');
         } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
+        else if (it.coreOf) {
+          /* how many shapes in the core: the shortest part that repeats, and it must come round at least twice */
+          const sq = it.coreOf, k = [...Array(sq.length).keys()].map(j => j + 1).find(j => [...sq].every((c, i) => c === sq[i % j]));
+          if (2 * k > sq.length) say(sq + ' does not repeat its core twice'); else if (k !== v) say('the core of ' + sq + ' has ' + k + ' shapes, not ' + v);
+        }
         else if (pc && pc.total != null && !it.calc) { if (!same(pc.total, num(v))) say('the picture shows ' + pc.total + ', not ' + v); else if (pc.name && /\//.test(v) && v !== pc.name) say('the picture shows ' + pc.name + ', not ' + v); }
         else if (!it.calc && !byItem) say('nothing checks the answer ' + v);
       } else if (blanks && !it.calc && !byItem) say('nothing checks this row: ' + raw[ri]);
@@ -685,7 +727,7 @@
       } else if (it.pic && it.pic[0] === 'balance' && pc.heavy !== undefined && o.indexOf(it.pic[1].l) >= 0) {
         /* the side that goes down is the heavier one */
         if (pc.heavy === null || o[pk.ans] !== pc.heavy) say('the heavier one is ' + pc.heavy + ', not ' + o[pk.ans]);
-      } else if (!pk.size && o.indexOf('mass') >= 0 && o.indexOf('capacity') >= 0) {
+      } else if (!pk.size && !pk.attr && o.indexOf('mass') >= 0 && o.indexOf('capacity') >= 0) {
         const q = it.q.toLowerCase(), hit = Object.keys(MEASURE).filter(k => MEASURE[k].test(q));
         if (hit.length !== 1) say('cannot tell mass, capacity or time from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is about ' + hit[0] + ', not ' + o[pk.ans]);
       } else if (it.chain) {
@@ -772,6 +814,92 @@
         const m = it.pic[1], w = walk(m, it.walk), hit = w && (m.marks || []).filter(k => 'ABCDEFGHIJ'[k[0]] + (m.rows - k[1]) === w.cell);
         if (!w) say('cannot read the walk: ' + it.walk);
         else if (!hit.length || hit[0][2] !== o[pk.ans]) say('the walk ends at ' + w.cell + ', not at ' + o[pk.ans]);
+      } else if (pk.fold) {
+        const want = folds(it.pic[1]);
+        if (want !== yes) say('the fold line ' + (want ? 'makes' : 'does not make') + ' matching halves, but the key circles ' + o[pk.ans]);
+      } else if (pk.repeats) {
+        /* a pattern repeats when a core comes round at least twice in the picture */
+        const sq = it.pic[1].seq, per = [...Array(sq.length).keys()].map(k => k + 1).find(k => [...sq].every((c, i) => c === sq[i % k])), want = !!per && 2 * per <= sq.length;
+        if (want !== yes) say(sq + (want ? ' repeats' : ' does not repeat') + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.abc) {
+        /* the pattern in letters: A for the first shape, B for the next new one ... */
+        const seen = [], want = [...it.pic[1].seq].map(c => { if (seen.indexOf(c) < 0) seen.push(c); return 'ABCDEFG'[seen.indexOf(c)]; }).join(' ');
+        if (o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say(it.pic[1].seq + ' in letters is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.flat != null) {
+        /* the name of a flat shape in the picture (by its place in the list) */
+        const want = FLAT_NAME[it.pic[1].list[pk.flat]];
+        if (o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say('shape ' + (pk.flat + 1) + ' is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.sides != null) {
+        /* the one lettered shape with this many sides */
+        const sd = pc.sides, ok = o.map(x => sd[x.charCodeAt(0) - 65] === pk.sides);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one shape has ' + pk.sides + ' sides: ' + o.join(', '));
+      } else if (pk.solid != null) {
+        /* the name of a pictured 3D object (by its place in the list) */
+        const want = it.pic[1].list[pk.solid];
+        if (SOLID_BY[o[pk.ans]] !== want || o.filter(x => SOLID_BY[x] === want).length !== 1) say('object ' + (pk.solid + 1) + ' is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.like) {
+        /* the 3D object an everyday thing is shaped like */
+        const want = LIKE[pk.like];
+        if (!want || SOLID_BY[o[pk.ans]] !== want || o.filter(x => SOLID_BY[x] === want).length !== 1) say('a ' + pk.like + ' is shaped like a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.face) {
+        /* the flat shape a face of the object could trace: exactly one choice is one of its faces */
+        const ok = o.map(x => (FACES[pk.face] || []).indexOf(x) >= 0);
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is a face of a ' + pk.face + ': ' + o.join(', '));
+      } else if (pk.reach) {
+        /* the one code that takes the robot to the mark pk.reach */
+        const m = it.pic[1], mark = (m.marks || []).find(k => k[2] === pk.reach), ok = o.map(c => { const e = robot(m.start, c); return !!e && !!mark && e[0] === mark[0] && e[1] === mark[1]; });
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one code reaches ' + pk.reach + ': ' + o.join(' / '));
+      } else if (pk.pos) {
+        const want = shelfAt(pc.shelf, pk.pos.of, pk.pos.rel);
+        if (!want || o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say('the thing ' + pk.pos.rel + ' the ' + pk.pos.of + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.day != null) {
+        /* the day of the week a date of the calendar falls on */
+        const c = pc.cal, want = WEEK[(c.start + pk.day - 1) % 7];
+        if (pk.day > c.days || o[pk.ans] !== want) say(c.month + ' ' + pk.day + ' is a ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.after) {
+        /* the day or month n places after (or before, n < 0) another */
+        const L = WEEK.indexOf(pk.after.from) >= 0 ? WEEK : MONTHS, want = L[(L.indexOf(pk.after.from) + pk.after.n + 84) % L.length];
+        if (L.indexOf(pk.after.from) < 0 || o[pk.ans] !== want) say(pk.after.n + ' from ' + pk.after.from + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.season) {
+        if (o[pk.ans] !== seasonOf(pk.season)) say(pk.season + ' is in ' + seasonOf(pk.season) + ', not ' + o[pk.ans]);
+      } else if (pk.vary) {
+        /* a thing from the lists, or numbers (a list that never changes stays the same) */
+        const want = Array.isArray(pk.vary) ? (pk.vary.every(x => x === pk.vary[0]) ? 'stays the same' : 'changes') : Object.keys(VARY).find(k => VARY[k].indexOf(pk.vary) >= 0);
+        if (!want || o[pk.ans] !== want) say('"' + pk.vary + '" ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.attr) {
+        const q = it.q.toLowerCase(), hit = Object.keys(ATTR).filter(k => ATTR[k].test(q));
+        if (hit.length !== 1) say('cannot tell length, mass, capacity or area from: ' + it.q); else if (o[pk.ans] !== hit[0]) say('this is about ' + hit[0] + ', not ' + o[pk.ans]);
+      } else if (pk.worth) {
+        /* coins and bills by name: the one worth more (or less), or the one list in order from least to greatest */
+        const cents = x => { const k = Object.keys(COIN).find(c => COIN[c] === x), b = String(x).match(/^\$(\d+) bill$/); return k ? +k : b ? 100 * b[1] : null; };
+        if (pk.worth === 'order') {
+          const ok = o.map(l => { const v = l.split(', ').map(cents); return v.every((c, i) => c !== null && (!i || c > v[i - 1])); });
+          if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one list goes from least to greatest: ' + o.join(' / '));
+        } else {
+          const v = o.map(cents), best = pk.worth === 'more' ? Math.max(...v) : Math.min(...v);
+          if (v.some(c => c === null) || v[pk.ans] !== best || v.filter(c => c === best).length !== 1) say('the one worth ' + pk.worth + ' is not ' + o[pk.ans]);
+        }
+      } else if (pk.coin != null) {
+        /* a coin's name or a bill's colour */
+        const want = COIN[pk.coin] || BILL[pk.coin];
+        if (!want || o[pk.ans] !== want || o.filter(x => x === want).length !== 1) say('that money is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.cpi) {
+        /* impossible, possible or certain, from the counts in the bag */
+        const c = chances, n = Object.values(c).reduce((x, y) => x + y, 0), k = c[pk.cpi] || 0, want = k === 0 ? 'impossible' : k === n ? 'certain' : 'possible';
+        if (o[pk.ans] !== want) say('getting ' + pk.cpi + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.len) {
+        /* the longest or shortest strip, by its own length (not where its end is) */
+        const L = pc.lens, v = o.map(x => L[x]), best = pk.len === 'longest' ? Math.max(...v) : Math.min(...v);
+        if (v.some(x => x === undefined) || v[pk.ans] !== best || v.filter(x => x === best).length !== 1) say('the ' + pk.len + ' strip is not only ' + o[pk.ans]);
+      } else if (pk.pieces) {
+        /* more sharers make smaller pieces: the biggest piece goes with the fewest sharers */
+        const n = pk.pieces, want = pk.big === false ? n.indexOf(Math.max(...n)) : n.indexOf(Math.min(...n));
+        if (pk.ans !== want) say('with ' + n.join(' and ') + ' sharers, the ' + (pk.big === false ? 'smaller' : 'bigger') + ' piece is ' + o[want]);
+        n.forEach(x => { if (nums(it.q + ' ' + o.join(' ')).indexOf(x) < 0) say('the sharers ' + x + ' are not in the question'); });
+      } else if (pk.half) {
+        /* the fraction a picture shows, in words */
+        const f = it.pic[1], want = f.n === 2 && f.k === 1 ? 'one half' : f.n === 4 && f.k === 1 ? 'one fourth' : f.n === 4 && f.k === 2 ? 'two fourths' : null;
+        if (!want || o[pk.ans] !== want) say('the picture shows ' + want + ', not ' + o[pk.ans]);
       } else if (it.tf) {
         const t = truth(it.tf);
         if (t === null) say('cannot read the statement: ' + it.tf);
@@ -991,6 +1119,12 @@
         if (last !== want) say('rounding ' + it.rem + ' from ' + r[3] + ' R ' + r[4] + ' gives ' + want + ', not ' + last);
         [+r[1], +r[2]].forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the sum uses ' + n + ', which is not in the story'); });
       }
+    }
+    /* 5b2. a fair share with some left over: each gets as many as fit, and fewer are left than there are sharers */
+    if (it.left) {
+      const { t, g } = it.left, got = (it.a || []).slice(-2);
+      if (got[0] !== Math.floor(t / g) || got[1] !== t % g) say(t + ' shared by ' + g + ' is ' + Math.floor(t / g) + ' each and ' + t % g + ' left over, not ' + got.join(' and '));
+      [t, g].forEach(n => { if (nums(it.q + ' ' + JSON.stringify(it.pic || [])).indexOf(n) < 0) say('the share uses ' + n + ', which is not in the question'); });
     }
     /* 5c. place value: the value of a digit, the biggest or smallest number from some digits,
        and shading a grid */
