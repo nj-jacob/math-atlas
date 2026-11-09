@@ -913,7 +913,7 @@
         const ok = o.map(x => +x >= pk.seq.from && (+x - pk.seq.from) % pk.seq.by === 0);
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in the count from ' + pk.seq.from + ' by ' + pk.seq.by);
       } else if (pk.between) {
-        const ok = o.map(x => +x > pk.between[0] && +x < pk.between[1]);
+        const ok = o.map(x => num(x) > pk.between[0] && num(x) < pk.between[1]);
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is between ' + pk.between.join(' and '));
       } else if (pk.small) {
         const v = o.map(x => val(norm(x)));
