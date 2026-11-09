@@ -254,7 +254,7 @@
       watch: 'mixing up lending and borrowing. You lend what is yours; you borrow what is someone else\'s.',
       goal: 'I can tell trading, lending, borrowing and donating apart.',
       learn: {
-        show: { cap: 'trade: a swap. Lend: mine, it comes back. Borrow: theirs, I give it back. Donate: nothing comes back.' },
+        show: { cap: 'does it come back?', eq: ['lend, borrow: yes', 'donate: no'] },
         together: [DS('{a} swaps a hockey card for {b}\'s comic.', { swap: true }), DS('{b} lets {a} use a tent and gets it back next week.', { give: true, back: true })],
         cue: 'What moves? Does it come back?',
         own: [DS('{a} uses {b}\'s skates and returns them Sunday.', { get: true, back: true }), DS('{b} gives winter coats to a shelter.', { give: true })]

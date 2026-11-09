@@ -44,7 +44,7 @@
         show: { pic: ['grid', { n: 37, unit: '0.01', quiet: true, u: 8 }], cap: '37 of 100 squares', eq: ['37 hundredths', '0.37'] },
         together: [HG(45), { eq: ['1 tenth = [] hundredths'], a: [10] }],
         cue: 'Each place to the right is one tenth of the place before it.',
-        own: [HG(8), { eq: ['1 hundredth = [] thousandths'], a: [10] }, { eq: ['0.4 = [] hundredths'], a: [40] }]
+        own: [HG(8), { eq: ['0.01 = [] thousandths'], a: [10] }, { eq: ['0.4 = [] hundredths'], a: [40] }]
       },
       p1: {
         show: { eq: ['0.1 = 10 hundredths', '0.1 = 100 thousandths'] },
