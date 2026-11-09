@@ -455,7 +455,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.simp || it.bnd || it.sp || it.bag || it.vp || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.simp || it.bnd || it.at != null || it.sp || it.bag || it.vp || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -1117,7 +1117,7 @@
     /* data: a statistic of the data (from the item, which must be in its question, or from the picture), the relative
        frequency of one count, and how many times as tall one bar looks when the scale does not start at 0 */
     const data = it.data || (pc && pc.data), last = num(ansAll[ansAll.length - 1]);
-    if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the data value ' + n + ' is not in the question'); });
+    if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(Math.abs(n)) < 0) say('the data value ' + n + ' is not in the question'); });
     if (it.stat) {
       const d = (data || []).slice().sort((x, y) => x - y), n = d.length, cnt = {};
       d.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
@@ -1206,6 +1206,8 @@
       }
       if (pc && it.pic[0] === 'iline' && it.pic[1].ray) { const r = it.pic[1].ray; if (!m || r.at !== num(m[2]) || (r.dir === 'right') !== /[>≥]/.test(m[1]) || r.open !== /[<>]/.test(m[1])) say('the graph does not match ' + (row || it.bnd)); }
     }
+    /* a scatter plot read at one value across (it.at): the answer is the height of the one point there */
+    if (it.at != null && pc && pc.pts) { const q = pc.pts.filter(p => p[0] === it.at); if (q.length !== 1 || !same(q[0][1], last)) say('the point at ' + it.at + ' is not at ' + last); }
     /* two whole numbers next to each other (a square root lies between them) */
     if (it.consec && !(ansAll.length >= 2 && num(ansAll[1]) - num(ansAll[0]) === 1)) say('the two numbers ' + ansAll.join(' and ') + ' are not next to each other');
     /* scientific notation: the first part is at least 1 and less than 10 */
