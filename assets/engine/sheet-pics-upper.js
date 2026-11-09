@@ -646,15 +646,15 @@
   };
   /* a scatter plot: pts [[x, y]] on axes from 0 to xmax and ymax, a number every xs and ys, labels xl and yl */
   P.scat = function (p, x, y, w) {
-    var gx = x + 28, gw = Math.min(w, 228) - 40, h = p.h || 84, top = y + 4, out = '';
+    var gx = x + 28, gw = Math.min(w, 228) - 40, h = p.h || 84, top = y + 14, out = '';
     var X = function (v) { return gx + v / p.xmax * gw; }, Y = function (v) { return top + h - v / p.ymax * h; };
-    for (var a = 0; a <= p.xmax; a += p.xs) out += line(X(a), top, X(a), top + h, { s: LINE, sw: 0.6 }) + T(X(a), top + h + 11, a, { s: 8.5, f: INK2, a: 'middle' });
+    for (var a = 0; a <= p.xmax; a += p.xs) out += line(X(a), top, X(a), top + h, { s: LINE, sw: 0.6 }) + (a ? T(X(a), top + h + 11, a, { s: 8.5, f: INK2, a: 'middle' }) : '');
     for (var b = 0; b <= p.ymax; b += p.ys) out += line(gx, Y(b), gx + gw, Y(b), { s: LINE, sw: 0.6 }) + T(gx - 4, Y(b) + 3, b, { s: 8.5, f: INK2, a: 'end' });
     out += line(gx, top, gx, top + h, { sw: 1.2 }) + line(gx, top + h, gx + gw, top + h, { sw: 1.2 });
     p.pts.forEach(function (q) { out += '<circle cx="' + X(q[0]) + '" cy="' + Y(q[1]) + '" r="2.6" fill="' + INK + '"/>'; });
     out += T(gx + gw / 2, top + h + 23, p.xl, { s: 9.5, f: INK2, a: 'middle' });
-    out += '<text transform="translate(' + (x + 6) + ' ' + (top + h / 2) + ') rotate(-90)" text-anchor="middle" font-size="9.5" style="font-family:' + D.FONT.replace(/"/g, "'") + ';fill:' + INK2 + '">' + p.yl + '</text>';
-    return { svg: out, h: h + 28, w: gw + 40 };
+    out += T(gx - 4, top - 6, p.yl, { s: 9.5, f: INK2 });
+    return { svg: out, h: h + 38, w: gw + 40 };
   };
   /* two parallel lines (or, with one: true, a single crossing) cut by a slanted line; the 8 angles are numbered
      0 to 3 at the top crossing (top right, top left, bottom left, bottom right) and 4 to 7 at the bottom one.

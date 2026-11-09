@@ -40,12 +40,24 @@
     }
     return s;
   }
+  /* a bracket raised to a power, (−4)², is wrapped whole so a minus in front of it cannot reach the ** (JavaScript refuses −a ** 2) */
+  function bracketPowers(s) {
+    let i = s.indexOf(') ** ');
+    while (i >= 0) {
+      let d = 0, a = i;
+      do { d += s[a] === ')' ? 1 : s[a] === '(' ? -1 : 0; a--; } while (d > 0 && a >= 0);
+      const e = s.slice(i + 5).match(/^-?[\d.]+/)[0], b = i + 5 + e.length;
+      s = s.slice(0, a + 1) + '(' + s.slice(a + 1, b) + ')' + s.slice(b);
+      i = s.indexOf(') ** ', i + 7);
+    }
+    return s;
+  }
   function powers(s) {
-    return rootGroups(s.replace(/(\d)(?=√)/g, '$1 × ')).replace(/% of /g, ' / 100 * ').replace(/(\d)(?=[√π])/g, '$1 × ').replace(/π/g, '(' + Math.PI + ')')
+    return bracketPowers(rootGroups(s.replace(/(\d)(?=√)/g, '$1 × ')).replace(/% of /g, ' / 100 * ').replace(/(\d)(?=[√π])/g, '$1 × ').replace(/π/g, '(' + Math.PI + ')')
       .replace(/√(\d+(?:\.\d+)?)/g, '(($1) ** 0.5)')
       .replace(/(\d+(?:\.\d+)?|\))(⁻?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (m, b, e) => (b === ')' ? ')' : '((' + b + ')') + ' ** ' + e.replace('⁻', '-').split('').map(c => (c === '-' ? c : SUPS.indexOf(c))).join('') + (b === ')' ? '' : ')'))
       .replace(/(\d+(?:\.\d+)?)\^(-?\d+)/g, '(($1) ** $2)')
-      .replace(/(\d|\)) (tera|giga|mega|kilo|milli|micro|nano|pico)[a-z]*/g, (m, b, pre) => b + ' * 10 ** ' + PRE[pre]);
+      .replace(/(\d|\)) (tera|giga|mega|kilo|milli|micro|nano|pico)[a-z]*/g, (m, b, pre) => b + ' * 10 ** ' + PRE[pre]));
   }
   const PRE = { tera: 12, giga: 9, mega: 6, kilo: 3, milli: -3, micro: -6, nano: -9, pico: -12 };
   /* scientific notation: "4.7 × 10⁶" with a first part from 1 to less than 10 */
@@ -239,6 +251,8 @@
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
      own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
      Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
+  /* a linear pattern from [figure, term] pairs: { m: the rate, b: the term at figure 0 }, or nothing when the points are not on one line */
+  const lin = r => { const q = r.filter(x => typeof x[0] === 'number' && typeof x[1] === 'number'); if (q.length < 2 || q[1][0] === q[0][0]) return {}; const m = (q[1][1] - q[0][1]) / (q[1][0] - q[0][0]); return q.every(x => Math.abs(x[1] - q[0][1] - m * (x[0] - q[0][0])) < 1e-9) ? { m: m, b: q[0][1] - m * q[0][0] } : {}; };
   const dataOf = o => Object.fromEntries(o.cats.map((c, i) => [c, o.vals[i]]));
   const READ = {
     groups: o => { const c = o.counts || Array(o.g).fill(o.k); return { total: c.reduce((x, y) => x + y, 0), pair: o.counts ? null : [o.g, o.k], counts: c }; },
@@ -361,7 +375,7 @@
     chips: o => ({ total: o.pos - o.neg }),
     ptree: o => ({ total: o.a.length * o.b.length }),
     pvenn: o => ({ vn: o.n, data: o.n }),
-    scat: o => ({ pts: o.pts }),
+    scat: o => Object.assign({ pts: o.pts }, lin(o.pts)),
     par: o => { const at = i => (i % 2 === o.give % 2 ? o.ang : 180 - o.ang); return Object.assign({ angAt: at, data: [o.ang, 180, 360] }, o.ask != null ? { total: at(o.ask) } : {}); },
     circ: o => ({ data: [o.r != null ? o.r : o.d, 2, 3.14] }),
     cyl: o => ({ data: [o.r, o.h, 2, 3.14] }),
@@ -371,7 +385,7 @@
     cgrid: o => Object.assign({ pts: Object.fromEntries((o.pts || []).map(q => [q[2], [q[0], q[1]]])) }, o.plot || o.keyShape ? { blanks: 0, own: () => [] } : {}),
     comp: o => (o.kind === 'L' ? { area: o.w * o.h - o.cw * o.ch, perim: 2 * (o.w + o.h), data: [o.w, o.h, o.cw, o.ch, o.h - o.ch, o.w - o.cw] } : { data: [o.w, o.h, o.w / 2, 2, 3.14] }),
     atiles: o => ({ tiles: o }),
-    tbl: o => ({ data: o.rows.flat().filter(v => typeof v === 'number') }),
+    tbl: o => Object.assign({ data: o.rows.flat().filter(v => typeof v === 'number') }, lin(o.rows)),
     row: o => { const parts = o.list.map(p => (READ[p[0]] ? READ[p[0]](p[1]) : null) || {}); const n = parts.reduce((x, p) => x + (p.blanks || 0), 0);
       return n ? { blanks: n, own: (o, a) => o.list.flatMap((p, i) => (parts[i].own ? parts[i].own(p[1], a.splice(0, parts[i].blanks)) : [])) } : null; }
   };
@@ -453,7 +467,7 @@
       let est;
       let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
-      if ((it.expr || it.solve || it.ineq || it.rule || it.simp || it.bnd) && /(^|[\d\s(−])[a-z]\b/.test(row)) return;
+      if ((it.expr || it.solve || it.ineq || it.rule || it.simp || it.bnd) && /(^|[\d\s(−\/])[a-z]\b/.test(row)) return;
       /* probability rows (P(red) = []) are checked by the item's sp, bag or vp below */
       if (it.sp || it.bag || it.vp) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
@@ -1092,7 +1106,7 @@
     if (gr && it.rule && (ansAll[0] !== gr.m || ansAll[1] !== gr.b)) say('the rule is ' + gr.m + ' × n + ' + gr.b + ', not ' + ansAll[0] + ' × n + ' + ansAll[1]);
     /* algebra: put a number in for the letter. expr is worked out for n; solve is an equation the answer must make true;
        ineq is an inequality the answer must make true, and with edge 'most' or 'least' the next whole number must not */
-    const put = (e, v) => norm(e.replace(/(\d)\s*([a-z])\b/g, '$1 * ($2)').replace(/\b([a-z])\b/g, '(' + v + ')'));
+    const put = (e, v) => norm(e.replace(/(\d)\s*([a-z(])/g, (m, d, c) => d + ' * ' + (c === '(' ? '(' : '(' + c + ')')).replace(/\b([a-z])\b/g, '(' + v + ')'));
     if (it.expr && !same(val(put(it.expr, it.n)), num(ansAll[ansAll.length - 1]))) say(it.expr + ' when the letter is ' + it.n + ' is ' + val(put(it.expr, it.n)) + ', not ' + ansAll[ansAll.length - 1]);
     if (it.solve && truth(put(it.solve, ansAll[ansAll.length - 1])) !== true) say(ansAll[ansAll.length - 1] + ' does not solve ' + it.solve);
     if (it.ineq) {
@@ -1172,10 +1186,10 @@
     if (pc && pc.draw != null && !nums(it.q).some(x => same(x, pc.draw))) say('the picture is drawn at ' + pc.draw + ', which the question does not ask for');
     /* Grade 8 */
     if (pc && pc.bad) say(pc.bad);
-    /* like terms: the answer is an expression that equals simp for every value of the letter */
-    const asExpr = (e, v) => val(norm(String(e).replace(/(\d)\s*([a-z])\b/g, '$1 * ($2)').replace(/\b([a-z])\b/g, '(' + v + ')')));
+    /* like terms: the last row, after its "=", is an expression that equals simp for every value of the letter */
+    const asExpr = (e, v) => val(norm(String(e).replace(/(\d)\s*([a-z(])/g, (m, d, c) => d + ' * ' + (c === '(' ? '(' : '(' + c + ')')).replace(/\b([a-z])\b/g, '(' + v + ')')));
     if (it.simp) {
-      const ans = String(ansAll[ansAll.length - 1]);
+      const ans = filled[filled.length - 1].split('=').pop();
       if ([2, 3, -1.5, 7].some(v => !same(asExpr(it.simp, v), asExpr(ans, v)))) say(it.simp + ' does not simplify to ' + ans);
       if (it.tiles && pc && pc.tiles) { const t = pc.tiles, want = (t.xp || 0) - (t.xn || 0) + 'x + ' + ((t.up || 0) - (t.un || 0)); if ([2, 5].some(v => !same(asExpr(want, v), asExpr(it.simp, v)))) say('the tiles show ' + want + ', not ' + it.simp); }
     }

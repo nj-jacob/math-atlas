@@ -79,9 +79,22 @@
     var js = String(e).replace(/\.\d+(?:[\u00a0 ]\d+)+/g, function (m) { return m.replace(/[\u00a0 ]/g, ''); }).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').replace(/[\u2212\u2013]/g, '-').replace(/\u00d7/g, '*').replace(/\u00f7/g, '/').replace(/\$/g, '').replace(/(\d+(?:\.\d+)?)% of /g, '($1/100)*').replace(/(\d+(?:\.\d+)?)%/g, '($1/100)')
       .replace(/(\d+) (\d+)\/(\d+)/g, '($1+$2#$3)').replace(/(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)/g, '($1/$2)').replace(/#/g, '/').replace(/(\d)(?=[\u221a\u03c0])/g, '$1*').replace(/\u03c0/g, '(Math.PI)').replace(/\u221a(\d+(?:\.\d+)?)/g, 'Math.sqrt($1)').replace(/\u221a\(/g, 'Math.sqrt(')
       .replace(/([\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, function (m, neg, d) { return '**' + (neg ? '-' : '') + d.split('').map(function (c) { return SUP[c]; }).join(''); })
-      .replace(/\^/g, '**').replace(/(\d+(?:\.\d+)?)\*\*(-?\d+)/g, '(($1)**$2)');
-    return +(+Function('return (' + js + ');')().toPrecision(12)).toFixed(10);
+      .replace(/\^/g, '**');
+    return +(+Function('return (' + pow(js) + ');')().toPrecision(12)).toFixed(10);
   };
+  /* JavaScript will not take −3**2: each power, base (a number or a bracket) and exponent, goes in its own brackets */
+  function pow(js) {
+    var i = js.indexOf('**');
+    while (i > 0) {
+      var a = i, b = i + 2, d = 0;
+      if (js[a - 1] === ')') { do { a--; d += js[a] === ')' ? 1 : js[a] === '(' ? -1 : 0; } while (d > 0 && a > 0); } else { while (a > 0 && /[\d.]/.test(js[a - 1])) a--; }
+      if (js[b] === '-') b++;
+      while (b < js.length && /[\d.]/.test(js[b])) b++;
+      js = js.slice(0, a) + '(' + js.slice(a, b) + ')' + js.slice(b);
+      i = js.indexOf('**', i + 3);
+    }
+    return js;
+  }
   /* a sum to work out: S.q('(−3) × 4') is { eq: ['(−3) × 4 = []'], a: [−12] }; o.frac writes the answer as a fraction
      (o.mixed as a mixed number), o.dp rounds it ("≈"), o.q adds words, o.unit goes after the line; a long sum takes both columns */
   S.q = function (e, o) {
@@ -202,6 +215,8 @@
 
   /* a number as a sum writes it: 12 500, 3.75, 3/4, $4.50, 25%, a ratio 3:5, and for Grade 8 −7, (−3), 10⁵, 5², √49 and π */
   var NUMTOK = /^[(\u2212\u221a]*\$?[\d,.\/\u00a0:]*[\d\u03c0][\d,.\/\u00a0%:\u00b2\u00b3\u00b9\u2070\u2074-\u2079\u207b)]*$/;
+  /* an algebra term (3x, −2n, x², the letters x, n, t and y) is drawn like a number */
+  var TERMTOK = /^[(\u2212]*(\d[\d.\/]*[a-z]|[xnty])[\u00b2\u00b3]?\)*$/;
   /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer;
      3/[] and []/8 put the line in one part of a fraction; a blank may sit in brackets: 2 × ([] + []) */
   function eqRow(s, x, y, key, ans, size) {
@@ -221,6 +236,9 @@
         k++; cx += 31; return;
       }
       if (rt) { out += T(cx, y + 21, '\u221a', { s: big, w: 700 }); cx += tw('\u221a', big, 700) + 1; tok = '[]'; }
+      /* a blank with a letter after it: []x is the number of x */
+      var letter = (tok.match(/^\[\]([a-z])$/) || [])[1];
+      if (letter) tok = '[]';
       var fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
       if (fr && (tok === '[]' || !fr[1] !== !fr[2])) {
         /* a blank, or a blank for one part of a fraction: 3/[] or []/8 */
@@ -230,11 +248,12 @@
         if (fr[1]) { out += T(cx, y + 21, fr[1], { s: big, w: 700 }); cx += tw(fr[1], big, 700) + 2; }
         out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + bl) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
         if (key) out += T(cx + bl / 2, y + 21, fmt(ans[k]), { s: fs, w: 700, f: KEY, a: 'middle' });
-        k++; cx += bl + (fr[2] ? 2 : 7);
+        k++; cx += bl + (fr[2] || letter ? 2 : 7);
+        if (letter) { out += T(cx, y + 21, letter, { s: big, w: 700 }); cx += tw(letter, big, 700) + 7; }
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
         if (close) { out += T(cx - 4, y + 21, ')', { s: 14, f: INK2 }); cx += tw(')', 14) + 3; }
-      } else if (NUMTOK.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      } else if (NUMTOK.test(tok) || TERMTOK.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
