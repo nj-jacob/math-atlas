@@ -158,11 +158,11 @@
     if (p.split) { var ly = y + 6 + p.split * sp - sp / 2 + 4; out += '<line x1="' + x + '" y1="' + ly + '" x2="' + (x + p.c * sp) + '" y2="' + ly + '" stroke="' + KEY + '" stroke-width="1.4" stroke-dasharray="5 4"/>'; }
     return { svg: out, h: p.r * sp + (p.split ? 8 : 0), w: p.c * sp };
   };
-  /* t loose dots in rows of 10, for making groups */
+  /* t loose dots in rows of 10, for making groups; sp: the space between them (19, or less for big counts) */
   PIC.dots = function (p, x, y) {
-    var out = '';
-    for (var i = 0; i < p.t; i++) out += obj(x + 7 + (i % 10) * 19, y + 7 + Math.floor(i / 10) * 19, 5);
-    return { svg: out, h: Math.ceil(p.t / 10) * 19 - 5, w: Math.min(p.t, 10) * 19 };
+    var out = '', sp = p.sp || 19;
+    for (var i = 0; i < p.t; i++) out += obj(x + 7 + (i % 10) * sp, y + 7 + Math.floor(i / 10) * sp, sp * 5 / 19);
+    return { svg: out, h: Math.ceil(p.t / 10) * sp - 5, w: Math.min(p.t, 10) * sp };
   };
   /* a number line from 0 to max with n jumps of size step drawn from 0 (n: 0 for an empty line) */
   PIC.line = function (p, x, y, w) {

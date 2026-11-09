@@ -41,7 +41,14 @@
      towers    { v: [heights], line }                 towers of cubes; line: a dashed line at that height
      bag       { c: { red, blue, green, yellow } }    a bag of lettered marbles
      spinner   { parts: ['red', 'blue', ...] }        a spinner in equal lettered parts
-     row       { list: [pic, pic], labels, gap }      pictures side by side */
+     row       { list: [pic, pic], labels, gap }      pictures side by side
+   Grade 1 adds:
+     frame     { n, b, x }                            one ten frame: n dark counters, then b white ones; x: the last x crossed out
+     flat      { list: ['tri', 'sq', 'rect', 'pent', 'hex', 'circle', 'oval', 'rhom'], turn, letters }   flat shapes; turn: degrees
+     fold      { cols, rows, cells: ['c,r', ...], line: { x } | { y } }   a shape on squares with a dashed fold line (x or y in squares)
+     shelf     { rows: [['cup', 'book', ''], ...] }   a shelf of cubbies, one word in each (top row first); '' is an empty cubby
+     cal       { month, start: 0-6 (Sunday first), days, marks: [dates] }   one month of a calendar; marks: dates ringed
+     strips    { list: [['A', 7, 0], ...], cubes }   strips len units long, moved off units from the start line; cubes: show each unit */
 (function () {
   'use strict';
   var S = window.Atlas && Atlas.sheets;
@@ -503,5 +510,80 @@
       cx += o.w + gap; h = Math.max(h, o.h);
     });
     return { svg: out, h: h + (p.labels ? 20 : 0), w: cx - x - gap, used: used };
+  };
+  /* ---------- Grade 1 ---------- */
+  P.frame = function (p, x, y) {
+    var out = '', c = 20, all = p.n + (p.b || 0);
+    for (var i = 0; i < 10; i++) {
+      var cx = x + (i % 5) * c, cy = y + Math.floor(i / 5) * c;
+      out += r(cx, cy, c, c, { s: INK2, sw: 1 });
+      if (i < all) out += circ(cx + c / 2, cy + c / 2, 6.5, i < p.n ? { f: INK, s: INK } : { f: '#fff', s: INK, sw: 1.4 });
+      if (p.x && i >= all - p.x && i < all) out += ln(cx + 3, cy + c - 3, cx + c - 3, cy + 3, { s: INK, sw: 1.6 });
+    }
+    return { svg: out, h: 2 * c, w: 5 * c };
+  };
+  /* the corners of a flat shape, about (cx, cy) with size s, turned by rot degrees */
+  var FLAT = { tri: 3, sq: 4, rect: 4, rhom: 4, pent: 5, hex: 6, circle: 0, oval: 0 };
+  S.draw.flatSides = FLAT;
+  function flatPts(k, cx, cy, s, rot) {
+    var pts, i, n = FLAT[k];
+    if (k === 'rect') pts = [[-0.62, -0.34], [0.62, -0.34], [0.62, 0.34], [-0.62, 0.34]];
+    else if (k === 'sq') pts = [[-0.4, -0.4], [0.4, -0.4], [0.4, 0.4], [-0.4, 0.4]];
+    else if (k === 'rhom') pts = [[0, -0.48], [0.34, 0], [0, 0.48], [-0.34, 0]];
+    else { pts = []; for (i = 0; i < n; i++) { var a = -Math.PI / 2 + i * 2 * Math.PI / n; pts.push([0.48 * Math.cos(a), 0.48 * Math.sin(a) + (n === 3 ? 0.08 : 0)]); } }
+    var t = (rot || 0) * Math.PI / 180;
+    return pts.map(function (q) { return [cx + s * (q[0] * Math.cos(t) - q[1] * Math.sin(t)), cy + s * (q[0] * Math.sin(t) + q[1] * Math.cos(t))]; });
+  }
+  P.flat = function (p, x, y, w) {
+    var n = p.list.length, s = Math.min(p.s || 62, (w - 14 * (n - 1)) / n), out = '';
+    p.list.forEach(function (k, i) {
+      var cx = x + s / 2 + i * (s + 14), cy = y + s / 2;
+      if (k === 'circle') out += circ(cx, cy, s * 0.42, { sw: 1.5 });
+      else if (k === 'oval') out += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + s * 0.48 + '" ry="' + s * 0.3 + '" transform="rotate(' + (p.turn || 0) + ' ' + cx + ' ' + cy + ')" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/>';
+      else out += path('M' + flatPts(k, cx, cy, s, p.turn).map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z', { sw: 1.5 });
+      if (p.letters) out += T(cx, y + s + 16, String.fromCharCode(65 + i), { s: 12, w: 700, f: INK2, a: 'middle' });
+    });
+    return { svg: out, h: s + (p.letters ? 20 : 0), w: n * (s + 14) - 14 };
+  };
+  P.fold = function (p, x, y) {
+    var u = p.u || 16, out = P.area({ cols: p.cols, rows: p.rows, cells: p.cells, u: u }, x, y).svg, L = p.line;
+    out += L.x != null ? ln(x + L.x * u, y - 6, x + L.x * u, y + p.rows * u + 6, { s: INK, sw: 1.5, d: '5 4' }) : ln(x - 6, y + L.y * u, x + p.cols * u + 6, y + L.y * u, { s: INK, sw: 1.5, d: '5 4' });
+    return { svg: out, h: p.rows * u, w: p.cols * u };
+  };
+  P.shelf = function (p, x, y, w, key, th) {
+    var cols = p.rows[0].length, cw = Math.min(64, (w - 8) / cols), ch = 30, out = '';
+    p.rows.forEach(function (row, i) {
+      row.forEach(function (t, j) {
+        out += r(x + 4 + j * cw, y + i * ch, cw, ch, { s: INK2, sw: 1 });
+        if (t) out += T(x + 4 + j * cw + cw / 2, y + i * ch + 19, D.words(t, th), { s: 11, w: 700, a: 'middle' });
+      });
+    });
+    out += ln(x, y + p.rows.length * ch, x + cols * cw + 8, y + p.rows.length * ch, { sw: 2 });
+    return { svg: out, h: p.rows.length * ch + 2, w: cols * cw + 8 };
+  };
+  P.cal = function (p, x, y, w) {
+    var cw = Math.min(30, (w - 2) / 7), ch = 20, out = T(x + cw * 3.5, y + 12, p.month, { s: 13, w: 700, a: 'middle' }), top = y + 20;
+    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(function (d, i) { out += T(x + i * cw + cw / 2, top + 12, d, { s: 10, w: 700, f: INK2, a: 'middle' }); });
+    var weeks = Math.ceil((p.start + p.days) / 7);
+    for (var k = 0; k < weeks * 7; k++) {
+      var d = k - p.start + 1, cx = x + (k % 7) * cw, cy = top + 16 + Math.floor(k / 7) * ch;
+      out += r(cx, cy, cw, ch, { s: LINE, sw: 0.8 });
+      if (d >= 1 && d <= p.days) {
+        out += T(cx + cw / 2, cy + 14, d, { s: 11, w: 700, a: 'middle' });
+        if ((p.marks || []).indexOf(d) >= 0) out += circ(cx + cw / 2, cy + ch / 2, 9, { f: 'none', s: INK, sw: 1.3 });
+      }
+    }
+    return { svg: out, h: 16 + 16 + weeks * ch, w: 7 * cw };
+  };
+  P.strips = function (p, x, y, w) {
+    var lw = 18, most = Math.max.apply(null, p.list.map(function (s) { return s[1] + (s[2] || 0); })), u = Math.min(20, (w - lw - 6) / most), out = '';
+    out += ln(x + lw, y - 2, x + lw, y + p.list.length * 22, { s: INK2, sw: 1, d: '3 3' });
+    p.list.forEach(function (s, i) {
+      var sy = y + i * 22 + 3, sx = x + lw + (s[2] || 0) * u;
+      out += T(x, sy + 12, s[0], { s: 12, w: 700, f: INK2 });
+      if (p.cubes) for (var k = 0; k < s[1]; k++) out += r(sx + k * u, sy, u, 14, { s: INK2, sw: 0.9, f: SHADE });
+      else out += r(sx, sy, s[1] * u, 14, { rx: 3, s: INK2, f: SHADE });
+    });
+    return { svg: out, h: p.list.length * 22, w: lw + most * u };
   };
 })();
