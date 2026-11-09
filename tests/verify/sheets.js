@@ -67,23 +67,26 @@
   }
   /* is a row of numbers joined by < and > (such as "345 < 354 < 400") true? null when it cannot be read */
   function order(st) {
-    const parts = norm(st).split(/([<>])/);
+    const parts = norm(st).split(/([<>≤≥])/);
     if (parts.length < 3) return null;
     for (let i = 0; i + 2 < parts.length; i += 2) {
       const a = val(parts[i]), b = val(parts[i + 2]);
       if (isNaN(a) || isNaN(b)) return null;
-      if (parts[i + 1] === '<' ? !(a < b) : !(a > b)) return false;
+      const op = parts[i + 1];
+      if (!(op === '<' ? a < b : op === '>' ? a > b : op === '≤' ? a <= b : a >= b)) return false;
     }
     return true;
   }
   /* is a statement such as "4 × 7 = 7 × 4" or "18 ÷ 2 = 8." true? null when it cannot be read */
   function truth(st) {
-    if (!/=/.test(st) && /[<>]/.test(st)) return order(st);
+    if (!/=/.test(st) && /[<>≤≥]/.test(st)) return order(st);
     const sides = norm(st).split('=');
     if (sides.length !== 2) return null;
     const a = val(sides[0]), b = val(sides[1]);
     return isNaN(a) || isNaN(b) ? null : same(a, b);
   }
+  /* put a number in for every one-letter variable: 3x + 2 with 5 is 3 * (5) + 2 */
+  const putIn = (e, v) => String(e).replace(/(\d)\s*([a-z])\b/g, '$1 * ($2)').replace(/\b([a-z])\b/g, '(' + v + ')');
   /* run robot code such as "move 3, turn right, repeat 2: move 1, turn left" from start [column, row, '>' | 'v' | '<' | '^'];
      "repeat N:" repeats the rest of the code. Returns the square [column, row] where it stops, or null when unreadable */
   function robot(start, code) {
@@ -284,7 +287,7 @@
     towers: o => ({ list: o.v }),
     bag: o => ({ chance: o.c }),
     spinner: o => ({ chance: o.parts.reduce((c, x) => Object.assign(c, { [x]: (c[x] || 0) + 1 }), {}) }),
-    nl: o => ({ total: o.pt != null ? o.pt : undefined, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
+    nl: o => ({ total: o.pt != null ? o.pt : undefined, ray: o.ray, blanks: (o.ask || []).length, own: (o.ask || []).length ? (o, a) => (a.join() === o.ask.join() ? [] : ['the number line answers ' + a.join() + ' are not ' + o.ask.join()]) : null }),
     pv: o => ({ total: o.n, blanks: o.blank ? Math.max(3, String(o.n).length) : 0, own: o.blank ? (o, a) => (+a.join('') === o.n ? [] : ['the chart digits ' + a.join('') + ' are not ' + o.n]) : null }),
     /* sheet-pics-upper.js */
     amodel: o => {
@@ -414,7 +417,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || it.int || (pc && pc.ask != null));
+    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || it.int || it.like || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -427,6 +430,11 @@
       let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
+      /* like terms: a row with a letter (2x + 3 + 4x = 6x + 3) must be true whatever the letter is */
+      if (it.like && /(^|[\d\s(−-])[a-z]\b/.test(row)) {
+        if ([2, 7].some(v => truth(putIn(row, v)) !== true)) say('the two sides are not the same for every value of the letter: ' + row);
+        return;
+      }
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
       /* rows that name a GCF or LCM, a chance of two events, or a solid's symmetry are checked by the item below */
@@ -589,7 +597,7 @@
           const made = perms(it.digits).filter(p => p[0] !== 0).map(p => +p.join(''));
           const want = it.most ? Math.max(...made) : Math.min(...made);
           if (want !== v) say('the ' + (it.most ? 'greatest' : 'least') + ' number from ' + it.digits.join(', ') + ' is ' + want + ', not ' + v);
-        } else if (it.edge) {
+        } else if (it.edge && it.edge.to) {
           /* the least or greatest whole number that rounds to val */
           const fits = []; for (let n = 0; n <= 1100; n++) if (Math.round(n / it.edge.to) * it.edge.to === it.edge.val) fits.push(n);
           const want = it.edge.end === 'least' ? fits[0] : fits[fits.length - 1];
@@ -857,6 +865,9 @@
         /* exactly one choice is (or, with not, is not) equivalent to the ratio, in the same order */
         const ok = o.map(x => { const r = String(x).split(':').map(Number); return r.length === 2 && pk.ratio[0] * r[1] === pk.ratio[1] * r[0]; }).map(e => (pk.not ? !e : e));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + (pk.not ? 'not ' : '') + 'equivalent to ' + pk.ratio.join(' : ') + ': ' + o.join(', '));
+      } else if (pk.inq) {
+        /* which inequality a number line shows: the circled one is the item's inequality (its dot and ray are checked below) */
+        if (o[pk.ans] !== it.ineq || o.filter(x => x === it.ineq).length !== 1) say('the circled ' + o[pk.ans] + ' is not ' + it.ineq);
       } else if (pk.more || pk.less) {
         /* "who has more" (or less): the choices are names, pk.more or pk.less holds their amounts in the same order */
         const am = pk.more || pk.less, v = am.map(x => val(norm(x))), sg = pk.more ? 1 : -1;
@@ -1075,10 +1086,16 @@
     if (gr && it.rule && (ansAll[0] !== gr.m || ansAll[1] !== gr.b)) say('the rule is ' + gr.m + ' × n + ' + gr.b + ', not ' + ansAll[0] + ' × n + ' + ansAll[1]);
     /* algebra: put a number in for the letter. expr is worked out for n; solve is an equation the answer must make true;
        ineq is an inequality the answer must make true, and with edge 'most' or 'least' the next whole number must not */
-    const put = (e, v) => norm(e.replace(/(\d)\s*([a-z])\b/g, '$1 * ($2)').replace(/\b([a-z])\b/g, '(' + v + ')'));
+    const put = (e, v) => norm(putIn(e, v));
     if (it.expr && !same(val(put(it.expr, it.n)), num(ansAll[ansAll.length - 1]))) say(it.expr + ' when the letter is ' + it.n + ' is ' + val(put(it.expr, it.n)) + ', not ' + ansAll[ansAll.length - 1]);
     if (it.solve && truth(put(it.solve, ansAll[ansAll.length - 1])) !== true) say(ansAll[ansAll.length - 1] + ' does not solve ' + it.solve);
-    if (it.ineq) {
+    if (it.ineq && pc && pc.ray) {
+      /* an inequality on a number line: the dot is filled when its number is included, and the ray points to the numbers that work */
+      const r = pc.ray, inc = truth(put(it.ineq, r.at)) === true, right = truth(put(it.ineq, r.at + 0.5)) === true;
+      if (inc !== !!r.closed) say('the dot at ' + r.at + ' should be ' + (inc ? 'filled' : 'open') + ' for ' + it.ineq);
+      if (right !== (r.dir === 'right')) say('the ray for ' + it.ineq + ' should point ' + (right ? 'right' : 'left'));
+    }
+    if (it.ineq && ansAll.length) {
       const v = num(ansAll[ansAll.length - 1]);
       if (truth(put(it.ineq, v)) !== true) say(v + ' does not make ' + it.ineq + ' true');
       if (it.edge && truth(put(it.ineq, it.edge === 'most' ? v + 1 : v - 1)) !== false) say(v + ' is not the ' + (it.edge === 'most' ? 'greatest' : 'least') + ' whole number that makes ' + it.ineq + ' true');
@@ -1189,7 +1206,7 @@
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
-    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own) && !ask && !(it.pic && it.pic[0] === 'pat' && it.pic[1].next)) say('a question with nothing to answer');
+    if (!it.eq && !pk && !it.draw && !it.lines && !(pc && pc.own) && !ask && !(pc && pc.ray && pc.ray.key) && !(it.pic && it.pic[0] === 'pat' && it.pic[1].next)) say('a question with nothing to answer');
     return bad;
   };
 })();
