@@ -19,13 +19,53 @@
   const MU = { mm: 0.001, cm: 0.01, m: 1, km: 1000, mg: 0.001, g: 1, kg: 1000, mL: 0.001, L: 1 };
   /* units of time work the same way, in seconds (1 h 15 min = 75 min) */
   const TU = { s: 1, min: 60, h: 3600, day: 86400, days: 86400, week: 604800, weeks: 604800 };
+  /* Grade 8 prefixes on metres, grams, seconds, watts and bytes (tera 10¹² down to pico 10⁻¹²) */
+  const PU = {};
+  [['T', 12], ['G', 9], ['M', 6], ['k', 3], ['m', -3], ['µ', -6], ['n', -9], ['p', -12]].forEach(([p, e]) => ['m', 'g', 's', 'W', 'B'].forEach(u => { if (!MU[p + u] && !TU[p + u]) PU[p + u] = '10 ** ' + e; }));
+  ['W', 'B'].forEach(u => { PU[u] = 1; });
   function metric(s) {
-    const re = /(\d+(?:\.\d+)?) ?(mm|min|mL|mg|cm|km|kg|m|g|L|h|s|days?|weeks?)(?![\w²³])/g;
+    const re = /(\d+(?:\.\d+)?) ?(Tm|Gm|Mm|µm|nm|pm|Tg|Gg|Mg|µg|ng|pg|Ts|Gs|Ms|ks|ms|µs|ns|ps|TW|GW|MW|kW|mW|µW|nW|pW|TB|GB|MB|kB|W|B|mm|min|mL|mg|cm|km|kg|m|g|L|h|s|days?|weeks?)(?![\w²³])/g;
     if (new Set([...s.matchAll(re)].map(m => m[2])).size < 2) return s;
-    return s.replace(re, (m, n, u) => '(' + n + ' * ' + (MU[u] || TU[u]) + ')').replace(/\) \(/g, ') + (');
+    return s.replace(re, (m, n, u) => '(' + n + ' * ' + (MU[u] || TU[u] || PU[u]) + ')').replace(/\) \(/g, ') + (');
   }
+  /* Grade 8 maths: 10⁵ and 1.05^3 are powers, √49 a square root, "25% of 80" is 25 / 100 × 80, π is 3.14 */
+  const SUPS = '⁰¹²³⁴⁵⁶⁷⁸⁹';
+  /* √( ... ): the root of everything up to the matching bracket */
+  function rootGroups(s) {
+    let i;
+    while ((i = s.indexOf('√(')) >= 0) {
+      let d = 0, j = i + 1;
+      for (; j < s.length; j++) { if (s[j] === '(') d++; else if (s[j] === ')' && --d === 0) break; }
+      s = s.slice(0, i) + '(' + s.slice(i + 1, j + 1) + ' ** 0.5)' + s.slice(j + 1);
+    }
+    return s;
+  }
+  /* a bracket raised to a power, (−4)², is wrapped whole so a minus in front of it cannot reach the ** (JavaScript refuses −a ** 2) */
+  function bracketPowers(s) {
+    let i = s.indexOf(') ** ');
+    while (i >= 0) {
+      let d = 0, a = i;
+      do { d += s[a] === ')' ? 1 : s[a] === '(' ? -1 : 0; a--; } while (d > 0 && a >= 0);
+      const e = s.slice(i + 5).match(/^-?[\d.]+/)[0], b = i + 5 + e.length;
+      s = s.slice(0, a + 1) + '(' + s.slice(a + 1, b) + ')' + s.slice(b);
+      i = s.indexOf(') ** ', i + 7);
+    }
+    return s;
+  }
+  function powers(s) {
+    return bracketPowers(rootGroups(s.replace(/(\d)(?=√)/g, '$1 × ')).replace(/% of /g, ' / 100 * ').replace(/(\d)(?=[√π])/g, '$1 × ').replace(/π/g, '(' + Math.PI + ')')
+      .replace(/√(\d+(?:\.\d+)?)/g, '(($1) ** 0.5)')
+      .replace(/(\d+(?:\.\d+)?|\))(⁻?[⁰¹²³⁴⁵⁶⁷⁸⁹]+)/g, (m, b, e) => (b === ')' ? ')' : '((' + b + ')') + ' ** ' + e.replace('⁻', '-').split('').map(c => (c === '-' ? c : SUPS.indexOf(c))).join('') + (b === ')' ? '' : ')'))
+      .replace(/(\d+(?:\.\d+)?)\^(-?\d+)/g, '(($1) ** $2)')
+      .replace(/(\d|\)) (tera|giga|mega|kilo|milli|micro|nano|pico)[a-z]*/g, (m, b, pre) => b + ' * 10 ** ' + PRE[pre]));
+  }
+  const PRE = { tera: 12, giga: 9, mega: 6, kilo: 3, milli: -3, micro: -6, nano: -9, pico: -12 };
+  /* scientific notation: "4.7 × 10⁶" with a first part from 1 to less than 10 */
+  const sciForm = x => { const m = String(x).match(/^(\d+(?:\.\d+)?) × 10[⁻⁰¹²³⁴⁵⁶⁷⁸⁹]+$/); return !!m && +m[1] >= 1 && +m[1] < 10; };
+  /* 12 500 and 0.000 52 written without their spaces */
+  const digits = s => String(s).replace(/\.\d+(?:[\u00a0 ]\d+)+/g, m => m.replace(/[\u00a0 ]/g, '')).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1');
   function norm(s) {
-    return metric(String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1'))
+    return metric(powers(digits(s)))
       .replace(/(^|[^\d.\/])(\d+) (\d+)\/(\d+)/g, (m, pre, w, n, d) => pre + '(' + w + ' + ' + n + '/' + d + ')')
       .replace(/(^|[^\d.(])(\d+)\/(\d+)(?![\d.])/g, '$1($2/$3)')
       .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
@@ -33,7 +73,7 @@
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
       .replace(/[A-Za-z’'?:²³°¢]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
   }
-  const nums = s => (String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/\d+(\.\d+)?/g) || []).map(Number);
+  const nums = s => (digits(s).match(/\d+(\.\d+)?/g) || []).map(Number);
   /* two values are the same when they differ only by rounding (0.1 + 0.2 and 0.3) */
   const same = (x, y) => Math.abs(x - y) < 1e-9 * Math.max(1, Math.abs(x), Math.abs(y));
   /* the value of a number as a sheet writes it: 12 500, 3.75, $4.50 */
@@ -259,6 +299,8 @@
   /* What each picture shows, by its name: { total, pair, counts, share } for the "picture matches the sum" check, and
      own(o, answers) for a picture with its own write-on lines (it takes the first answers): a list of problems.
      Picture files add their own readers here (sheet-pics.js below; sheet-pics-upper.js after it). */
+  /* a linear pattern from [figure, term] pairs: { m: the rate, b: the term at figure 0 }, or nothing when the points are not on one line */
+  const lin = r => { const q = r.filter(x => typeof x[0] === 'number' && typeof x[1] === 'number'); if (q.length < 2 || q[1][0] === q[0][0]) return {}; const m = (q[1][1] - q[0][1]) / (q[1][0] - q[0][0]); return q.every(x => Math.abs(x[1] - q[0][1] - m * (x[0] - q[0][0])) < 1e-9) ? { m: m, b: q[0][1] - m * q[0][0] } : {}; };
   /* Grade 1: sides of flat shapes, folds, places on a shelf, the calendar, seasons, and what changes */
   const FLAT = { tri: 3, sq: 4, rect: 4, rhom: 4, pent: 5, hex: 6, circle: 0, oval: 0 };
   /* the flat shapes the faces of each 3D object trace */
@@ -400,6 +442,25 @@
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
+    /* Grade 8: an integer line gives where its jumps end; counters their value (zero pairs cancel); a tree its number of
+       outcomes; a Venn diagram its counts; a scatter plot its points; parallel lines the angle marked "?" (the angles
+       at even places match the given one when it is at an even place, the others make 180° with it); solids and
+       circles their measures for story sums; a right triangle its missing side; an L shape its area and perimeter */
+    iline: o => Object.assign({ data: [o.min, o.max] }, o.jumps && o.jumps.length ? { total: o.jumps[o.jumps.length - 1][0] + o.jumps[o.jumps.length - 1][1], data: o.jumps.flat().map(Math.abs) } : {}),
+    chips: o => ({ total: o.pos - o.neg }),
+    ptree: o => ({ total: o.a.length * o.b.length }),
+    pvenn: o => ({ vn: o.n, data: o.n }),
+    scat: o => Object.assign({ pts: o.pts }, lin(o.pts)),
+    par: o => { const at = i => (i % 2 === o.give % 2 ? o.ang : 180 - o.ang); return Object.assign({ angAt: at, data: [o.ang, 180, 360] }, o.ask != null ? { total: at(o.ask) } : {}); },
+    circ: o => ({ data: [o.r != null ? o.r : o.d, 2, 3.14] }),
+    cyl: o => ({ data: [o.r, o.h, 2, 3.14] }),
+    rbox: o => ({ data: [o.l, o.w, o.h, 2] }),
+    tprism: o => ({ data: [o.b, o.h, o.l, 2] }),
+    rtri: o => { if (o.a * o.a + o.b * o.b !== o.c * o.c && !same(o.a * o.a + o.b * o.b, o.c * o.c)) return { bad: o.a + ', ' + o.b + ', ' + o.c + ' is not a right triangle' }; const ks = { a: o.a, b: o.b, c: o.c }; const kn = Object.keys(ks).filter(k => k !== o.ask).map(k => ks[k]); return Object.assign({ data: kn }, o.ask ? { total: ks[o.ask] } : {}); },
+    cgrid: o => Object.assign({ pts: Object.fromEntries((o.pts || []).map(q => [q[2], [q[0], q[1]]])) }, o.plot || o.keyShape ? { blanks: 0, own: () => [] } : {}),
+    comp: o => (o.kind === 'L' ? { area: o.w * o.h - o.cw * o.ch, perim: 2 * (o.w + o.h), data: [o.w, o.h, o.cw, o.ch, o.h - o.ch, o.w - o.cw] } : { data: [o.w, o.h, o.w / 2, 2, 3.14] }),
+    atiles: o => ({ tiles: o }),
+    tbl: o => Object.assign({ data: o.rows.flat().filter(v => typeof v === 'number') }, lin(o.rows)),
     /* Grade 2: a shape on a dot grid; a hexagon of pattern blocks (each part 1, 2, 3 or 6 triangles, 6 in all); pattern
        blocks in a row; scattered dots to estimate; dots in pairs */
     geo: o => Object.assign({ shape: o.pts }, shapeFacts(o.pts)),
@@ -444,6 +505,12 @@
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
     hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }],
+    iline: [{ min: -6, max: 6, lab: 2, pts: [[-4, 'A']], jumps: [[-4, 7], [3, -5]], ray: { at: 1, open: true, dir: 'right' } }], chips: [{ pos: 5, neg: 3, pairs: true }],
+    ptree: [{ a: ['H', 'T'], b: ['1', '2', '3'], pa: ['1/2', '1/2'], pb: ['1/3', '1/3', '1/3'] }], pvenn: [{ a: 'Soccer', b: 'Music', n: [8, 5, 7, 4] }],
+    scat: [{ pts: [[1, 2], [2, 3], [4, 5], [6, 6]], xmax: 8, ymax: 8, xs: 2, ys: 2, xl: 'Hours', yl: 'Score' }], par: [{ ang: 65, give: 0, ask: 6, letters: [[1, 'a']] }],
+    circ: [{ r: 5, unit: 'cm' }], cyl: [{ r: 3, h: 10, unit: 'cm' }], rbox: [{ l: 8, w: 5, h: 3, unit: 'cm' }], tprism: [{ b: 6, h: 4, l: 10, unit: 'cm' }],
+    rtri: [{ a: 8, b: 6, c: 10, ask: 'c' }], cgrid: [{ n: 5, pts: [[2, 3, 'A'], [-3, -1, 'B']], shape: [[1, 1], [3, 1], [1, 4]], plot: [[-2, 2, 'C']] }],
+    comp: [{ kind: 'L', w: 10, h: 6, cw: 4, ch: 3, unit: 'm' }], atiles: [{ xp: 3, xn: 1, up: 2, un: 4 }], tbl: [{ head: ['Month', 'In', 'Out'], rows: [['Jan', 2400, 2250], ['Feb', 2400, 2600]] }],
     geo: [{ pts: [[1, 0], [3, 0], [4, 2], [2, 4], [0, 2]], cols: 5, rows: 4, mirror: { x: 2 }, sym: true }], hex: [{ parts: [3, 2, 1], blank: true }], pb: [{ list: ['hex', 'trap', 'rhom', 'tri'] }],
     scatter: [{ t: 47 }], pairs: [{ n: 13 }], hund: [{ from: 1, rows: 3, shade: [5, 10, 15], ask: [20, 25, 30] }], twoway: [{ rows: ['Gr 2', 'Gr 3'], cols: ['Walk', 'Ride'], vals: [[7, 4], [3, 6]] }],
     frame: [{ n: 6, b: 2, x: 3 }], flat: [{ list: ['tri', 'sq', 'rect', 'hex'], turn: 20, letters: true }], fold: [{ cols: 6, rows: 4, cells: ['1,1', '2,1', '3,1', '4,1'], line: { x: 3 } }],
@@ -487,7 +554,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.deal || it.fshare || it.find || it.shapeAsk || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.deal || it.fshare || it.find || it.shapeAsk || it.simp || it.bnd || it.at != null || it.sp || it.bag || it.vp || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -506,7 +573,11 @@
       let est;
       let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
-      if ((it.expr || it.solve || it.ineq || it.rule) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
+      if ((it.expr || it.solve || it.ineq || it.rule || it.simp || it.bnd) && /(^|[\d\s(−\/])[a-z]\b/.test(row)) return;
+      /* probability rows (P(red) = []) are checked by the item's sp, bag or vp below */
+      if (it.sp || it.bag || it.vp) return;
+      /* an angle named by a letter on parallel lines (a = [] °) is checked from the picture below */
+      if (pc && pc.angAt && /^[a-z] = /.test(row)) return;
       /* Grade 2's symbols for a number ("▲ = 5"): put it in the item's sentence, which must then be true */
       if (it.letter && /^[▲●■★] = \S+$/.test(row)) { if (truth(it.letter.replace(/[▲●■★]/g, row.split(' = ')[1])) !== true) say('with ' + row + ', "' + it.letter + '" is not true'); return; }
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
@@ -589,7 +660,7 @@
         /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
         const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
         if (want !== n) say('the ' + it.find + ' is ' + want + ', not ' + n);
-      } else if (!it.cong && !/[×÷+−]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
+      } else if (!it.cong && !/[×÷+−]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && !/(µm|nm|pm)\b|\^/.test(row) && / [<>=] /.test(row)) {
         /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" */
         const m = row.split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
         if (m.length !== 3 || a === null || b === null) say('cannot read the lengths: ' + row);
@@ -649,6 +720,14 @@
           else if (n.some((x, i) => i >= it.core && x !== n[i - it.core])) say('the pattern does not repeat its core of ' + it.core + ': ' + row);
         } else if (n.length < (it.by != null ? 2 : 3)) say('a count needs 3 numbers, or a "by" step, to be checked: ' + row);
         else if (n.some((x, i) => i > 0 && !same(x - n[i - 1], step))) say('the count does not go up by the same step: ' + row);
+      } else if (it.is != null && !/[=<>]/.test(row)) {
+        /* a row with no equals sign is the number the question gives (it.is), written another way */
+        if (!same(val(norm(row)), num(it.is))) say(row + ' is not ' + it.is);
+      } else if (/≈/.test(row)) {
+        /* "√50 ≈ 7.1": the left side, rounded to as many decimal places as the right side has, is the right side */
+        const sides = row.split('≈'), l = val(norm(sides[0])), r = String(sides[1]).trim(), dp = (r.split('.')[1] || '').replace(/\D.*$/, '').length;
+        if (sides.length !== 2 || isNaN(l) || isNaN(num(r))) say('cannot read: ' + row);
+        else if (!same(+l.toFixed(dp), num(r))) say(sides[0].trim() + ' is about ' + l.toFixed(dp) + ', not ' + r);
       } else if (/=/.test(row)) {
         const rem = norm(row).match(/^(\d+) \/ (\d+) = (\d+) R (\d+)$/);
         if (rem) {
@@ -746,8 +825,10 @@
     if (it.calc) {
       const v = val(norm(it.calc));
       const ans = (it.a || [])[0], av = typeof ans === 'number' ? ans : val(norm(String(ans)));
-      if (!same(v, av)) say('the story works out to ' + v + ', not ' + (it.a || [])[0]);
-      const inQ = nums((it.fw ? fwOf(it.q) : it.q) + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : []);
+      if (!same(it.dp != null ? +v.toFixed(it.dp) : v, av)) say('the story works out to ' + v + ', not ' + (it.a || [])[0]);
+      /* a story may change units (× 10, 100, 1000 or a million) or take a percent from the whole (1 − 20%) without saying so;
+         a circle story that says "π ≈ 3.14" may use 2 for the radius in d = 2r and C = 2 × π × r */
+      const inQ = nums((it.fw ? fwOf(it.q) : it.q) + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : [], [1, 10, 100, 1000, 1000000], /π ≈ 3\.14/.test(it.q) ? [2] : []);
       nums(it.calc).forEach(n => { if (inQ.indexOf(n) < 0) say('the story sum uses ' + n + ', which is not in the story'); });
     }
     /* 5. the circled choice */
@@ -1026,7 +1107,9 @@
         const ok = o.map(x => fromWords(x) === pk.wn);
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice says ' + pk.wn + ' in words');
       } else if (pk.cmp) {
-        const x = num(pk.cmp[0]), y = num(pk.cmp[1]), want = x < y ? '<' : x > y ? '>' : '=';
+        /* equal when they agree to 12 significant figures, so 3.6 × 10⁻⁴ and 0.000 36 match despite rounding in powers */
+        const x = num(pk.cmp[0]), y = num(pk.cmp[1]), same = Math.abs(x - y) <= 1e-12 * Math.max(Math.abs(x), Math.abs(y));
+        const want = same ? '=' : x < y ? '<' : '>';
         if (o[pk.ans] !== want) say(pk.cmp.join(' and ') + ': the sign is ' + want + ', not ' + o[pk.ans]);
       } else if (pk.est) {
         const v = val(norm(pk.est)), d = o.map(x => Math.abs(val(norm(x)) - v));
@@ -1230,6 +1313,17 @@
         if (v.some(x => x === undefined) || v.some((x, i) => i !== pk.ans && x >= v[pk.ans])) say('the circled coin is not worth the most: ' + o.join(', '));
       } else if (pk.chance) {
         if (!(pc && pc.parts)) say('a choice about chance has no spinner to check it by');
+      } else if (pk.sci) {
+        /* in scientific notation: the one choice (sci: true), or yes or no for one number */
+        if (pk.sci === true) { const ok = o.map(sciForm); if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in scientific notation: ' + o.join(', ')); }
+        else if ((o2(pk) === 'yes') !== sciForm(pk.sci)) say(pk.sci + (sciForm(pk.sci) ? ' is' : ' is not') + ' in scientific notation');
+      } else if (pk.numset) {
+        /* does the number belong to the set? natural 1, 2, 3 ...; whole 0, 1, 2 ...; integer ... −1, 0, 1 ...; rational; irrational */
+        const v = val(norm(pk.numset.n)), irr = /π/.test(pk.numset.n) || (/√/.test(pk.numset.n) && !Number.isInteger(+(v * 100).toFixed(6)));
+        const isIn = { natural: Number.isInteger(v) && v > 0, whole: Number.isInteger(v) && v >= 0, integer: Number.isInteger(v), rational: !irr, irrational: irr }[pk.numset.is];
+        if ((o2(pk) === 'yes') !== isIn) say(pk.numset.n + (isIn ? ' is' : ' is not') + ' ' + pk.numset.is);
+      } else if (pk.real || pk.trend || pk.right || pk.prop || pk.vars || pk.cont || pk.graph || pk.budget || pk.cost || pk.indep || pk.move) {
+        /* Grade 8 choices: checked below */
       } else say('a choice with nothing to check it by: ' + o.join(', '));
     }
     /* 5b. a remainder story: the last answer rounds the quotient up (leftovers need their own group) or drops the leftovers */
@@ -1273,7 +1367,7 @@
     if (gr && it.rule && (ansAll[0] !== gr.m || ansAll[1] !== gr.b)) say('the rule is ' + gr.m + ' × n + ' + gr.b + ', not ' + ansAll[0] + ' × n + ' + ansAll[1]);
     /* algebra: put a number in for the letter. expr is worked out for n; solve is an equation the answer must make true;
        ineq is an inequality the answer must make true, and with edge 'most' or 'least' the next whole number must not */
-    const put = (e, v) => norm(e.replace(/(\d)\s*([a-z])\b/g, '$1 * ($2)').replace(/\b([a-z])\b/g, '(' + v + ')'));
+    const put = (e, v) => norm(e.replace(/(\d)\s*([a-z(])/g, (m, d, c) => d + ' * ' + (c === '(' ? '(' : '(' + c + ')')).replace(/\b([a-z])\b/g, '(' + v + ')'));
     if (it.expr && !same(val(put(it.expr, it.n)), num(ansAll[ansAll.length - 1]))) say(it.expr + ' when the letter is ' + it.n + ' is ' + val(put(it.expr, it.n)) + ', not ' + ansAll[ansAll.length - 1]);
     if (it.solve && truth(put(it.solve, ansAll[ansAll.length - 1])) !== true) say(ansAll[ansAll.length - 1] + ' does not solve ' + it.solve);
     if (it.ineq) {
@@ -1284,7 +1378,7 @@
     /* data: a statistic of the data (from the item, which must be in its question, or from the picture), the relative
        frequency of one count, and how many times as tall one bar looks when the scale does not start at 0 */
     const data = it.data || (pc && pc.data), last = num(ansAll[ansAll.length - 1]);
-    if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the data value ' + n + ' is not in the question'); });
+    if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(Math.abs(n)) < 0) say('the data value ' + n + ' is not in the question'); });
     if (it.stat) {
       const d = (data || []).slice().sort((x, y) => x - y), n = d.length, cnt = {};
       d.forEach(v => { cnt[v] = (cnt[v] || 0) + 1; });
@@ -1332,7 +1426,7 @@
     }
     if (it.corners) { const sh = it.pic && it.pic[1].shape; if (!sh || rights(sh) !== last) say('the shape has ' + (sh ? rights(sh) : '?') + ' right angles, not ' + ansAll[ansAll.length - 1]); }
     if (it.pt) { const q = at(it.pt); if (!q || ansAll.slice(-2).join() !== q.join()) say('point ' + it.pt + ' is at (' + (q || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')'); }
-    if (it.move) {
+    if (it.move && (it.move.slide || it.move.flip)) {
       const q = at(it.move.pt), m = it.move, to = !q ? null : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
       if (!to || ansAll.slice(-2).join() !== to.join()) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
       if (m.slide && m.slide.some(v => v && nums(it.q).indexOf(Math.abs(v)) < 0)) say('the slide ' + m.slide.join(', ') + ' is not in the question');
@@ -1365,6 +1459,120 @@
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
     if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
     if (pc && pc.draw != null && !nums(it.q).some(x => same(x, pc.draw))) say('the picture is drawn at ' + pc.draw + ', which the question does not ask for');
+    /* Grade 8 */
+    if (pc && pc.bad) say(pc.bad);
+    /* like terms: the last row, after its "=", is an expression that equals simp for every value of the letter */
+    const asExpr = (e, v) => val(norm(String(e).replace(/(\d)\s*([a-z(])/g, (m, d, c) => d + ' * ' + (c === '(' ? '(' : '(' + c + ')')).replace(/\b([a-z])\b/g, '(' + v + ')')));
+    if (it.simp) {
+      const ans = filled[filled.length - 1].split('=').pop();
+      if ([2, 3, -1.5, 7].some(v => !same(asExpr(it.simp, v), asExpr(ans, v)))) say(it.simp + ' does not simplify to ' + ans);
+      if (it.tiles && pc && pc.tiles) { const t = pc.tiles, want = (t.xp || 0) - (t.xn || 0) + 'x + ' + ((t.up || 0) - (t.un || 0)); if ([2, 5].some(v => !same(asExpr(want, v), asExpr(it.simp, v)))) say('the tiles show ' + want + ', not ' + it.simp); }
+    }
+    /* an inequality's solution: x > [] (or <, ≥, ≤): at the boundary both sides are equal, and just past it on the
+       written side the inequality is true */
+    if (it.bnd) {
+      const row = filled.find(r => /^[a-z] [<>≤≥] /.test(r)), m = row && row.match(/^[a-z] ([<>≤≥]) (.+)$/);
+      if (!m) say('no "x > []" row for ' + it.bnd);
+      else {
+        const b = num(m[2]), sign = m[1], side = /[>≥]/.test(sign) ? 0.5 : -0.5, e = it.bnd.replace(/[<>≤≥]/, '=');
+        if (truth(put(e, b)) !== true) say(b + ' is not where ' + it.bnd + ' changes');
+        if (truth(put(it.bnd.replace('≤', '<').replace('≥', '>'), b + side)) !== true) say('the solutions of ' + it.bnd + ' are not ' + row);
+        if (/[≤≥]/.test(it.bnd) !== /[≤≥]/.test(sign)) say('the boundary of ' + it.bnd + ' is ' + (/[≤≥]/.test(it.bnd) ? '' : 'not ') + 'a solution');
+      }
+      if (pc && it.pic[0] === 'iline' && it.pic[1].ray) { const r = it.pic[1].ray; if (!m || r.at !== num(m[2]) || (r.dir === 'right') !== /[>≥]/.test(m[1]) || r.open !== /[<>]/.test(m[1])) say('the graph does not match ' + (row || it.bnd)); }
+    }
+    /* parallel lines: an angle named by a letter ("a = [] °") is the given angle or 180° minus it */
+    if (pc && pc.angAt) (it.pic[1].letters || []).forEach(l => { const r = filled.map(x => x.match(new RegExp('^' + l[1] + ' = ([\\d.]+)'))).filter(Boolean)[0]; if (!r) say('no row for angle ' + l[1]); else if (+r[1] !== pc.angAt(l[0])) say('angle ' + l[1] + ' is ' + pc.angAt(l[0]) + '°, not ' + r[1]); });
+    /* a scatter plot read at one value across (it.at): the answer is the height of the one point there */
+    if (it.at != null && pc && pc.pts) { const q = pc.pts.filter(p => p[0] === it.at); if (q.length !== 1 || !same(q[0][1], last)) say('the point at ' + it.at + ' is not at ' + last); }
+    /* two whole numbers next to each other (a square root lies between them) */
+    if (it.consec && !(ansAll.length >= 2 && num(ansAll[1]) - num(ansAll[0]) === 1)) say('the two numbers ' + ansAll.join(' and ') + ' are not next to each other');
+    /* scientific notation: the first part is at least 1 and less than 10 */
+    if (it.sci && !(Math.abs(num(ansAll[0])) >= 1 && Math.abs(num(ansAll[0])) < 10)) say(ansAll[0] + ' is not between 1 and 10, so this is not scientific notation');
+    /* probability: count the outcomes. sp = { sets: [[outcomes of event 1], [event 2]], ev: [allowed outcomes for each event,
+       or null for any], sum: n (the outcomes add to n), more: n (add to more than n), dbl: true (the same) }; bag = { c: { red: 3, ... },
+       draw: ['red', 'blue'], back: true | false }; vp: 'a' | 'b' | 'both' | 'either' | 'neither' | 'aonly' from the Venn counts */
+    let pr = null;
+    if (it.sp) {
+      const all = it.sp.sets.reduce((acc, set) => acc.flatMap(a => set.map(x => a.concat([x]))), [[]]);
+      const ok = all.filter(o => (!it.sp.ev || o.every((x, i) => !it.sp.ev[i] || it.sp.ev[i].indexOf(x) >= 0)) && (it.sp.sum == null || o.reduce((t, x) => t + +x, 0) === it.sp.sum) && (it.sp.more == null || o.reduce((t, x) => t + +x, 0) > it.sp.more) && (!it.sp.dbl || o.every(x => x === o[0])));
+      pr = ok.length / all.length;
+      if (it.sp.count != null) pr = all.length;
+    }
+    if (it.bag) {
+      const c = Object.assign({}, it.bag.c);
+      pr = 1;
+      it.bag.draw.forEach(k => { const n = Object.values(c).reduce((x, y) => x + y, 0); pr *= (c[k] || 0) / n; if (!it.bag.back) c[k]--; });
+      Object.keys(it.bag.c).forEach(k => { if (!new RegExp('\\b' + it.bag.c[k] + ' ' + k).test(it.q || '')) say('the question does not say ' + it.bag.c[k] + ' ' + k); });
+    }
+    if (it.vp && pc && pc.vn) {
+      const [a, b, c, d] = pc.vn, t = a + b + c + d;
+      pr = { a: a + b, b: b + c, both: b, either: a + b + c, neither: d, aonly: a, bonly: c, total: t }[it.vp] / (it.vcount ? 1 : t);
+    }
+    if (pr !== null && (it.a || []).length) {
+      const got = ansAll[ansAll.length - 1], v = it.pct ? num(got) / 100 : it.trials ? num(got) / it.trials : num(got);
+      if (!same(pr, v)) say('the probability is ' + pr + (it.trials ? ' (' + pr * it.trials + ' of ' + it.trials + ')' : '') + ', not ' + got);
+    }
+    if (pk) {
+      const o = pk.opts, yes = pk.ans === 0;
+      if (pk.real) {
+        /* rational: a fraction, a decimal that ends or repeats, or the root of a perfect square (of a fraction too); irrational: π, other roots */
+        const r = String(pk.real), m = r.match(/^√\(?(\d+(?:\.\d+)?)(?:\/(\d+))?\)?$/), sq = n => { const k = Math.round(Math.sqrt(n * 10000)); return k * k === Math.round(n * 10000); };
+        const want = /π/.test(r) || pk.nonrep || (m && !(sq(+m[1]) && (!m[2] || sq(+m[2])))) ? 'irrational' : 'rational';
+        if (o2(pk) !== want) say(r + ' is ' + want + ', not ' + o2(pk));
+      } else if (pk.trend) {
+        /* the strength and direction of a scatter plot from its correlation: strong 0.8 or more, weak 0.3 to 0.8, none below */
+        const P2 = pc && pc.pts;
+        if (!P2) say('a trend choice has no scatter plot');
+        else {
+          const n = P2.length, mx = P2.reduce((t, q) => t + q[0], 0) / n, my = P2.reduce((t, q) => t + q[1], 0) / n;
+          const sxy = P2.reduce((t, q) => t + (q[0] - mx) * (q[1] - my), 0), sxx = P2.reduce((t, q) => t + (q[0] - mx) ** 2, 0), syy = P2.reduce((t, q) => t + (q[1] - my) ** 2, 0), r = sxy / Math.sqrt(sxx * syy || 1);
+          const ar = Math.abs(r), want = ar < 0.3 ? 'none' : (ar >= 0.8 ? 'strong ' : 'weak ') + (r > 0 ? 'positive' : 'negative');
+          if ([0.3, 0.8].some(b => Math.abs(ar - b) < 0.06)) say('the trend is too close to call (r = ' + r.toFixed(2) + ')');
+          if (o2(pk) !== want && !(pk.dir && o2(pk) === (r > 0 ? 'positive' : 'negative'))) say('the trend is ' + want + ' (r = ' + r.toFixed(2) + '), not ' + o2(pk));
+        }
+      } else if (pk.right) {
+        /* a right triangle when the two short sides squared add to the long side squared */
+        const t = pk.right.slice().sort((x, y) => x - y), want = same(t[0] * t[0] + t[1] * t[1], t[2] * t[2]) ? 'yes' : 'no';
+        if (o2(pk) !== want) say(pk.right.join(', ') + (want === 'yes' ? ' is' : ' is not') + ' a right triangle');
+      } else if (pk.prop) {
+        /* proportional: every pair has the same ratio y ÷ x (and so the line goes through 0) */
+        const k = pk.prop[0][1] / pk.prop[0][0], want = pk.prop.every(r => same(r[1] / r[0], k)) ? 'yes' : 'no';
+        if (o2(pk) !== want) say('the table is ' + (want === 'yes' ? '' : 'not ') + 'proportional');
+      } else if (pk.vars) {
+        const want = pk.vars.length === 1 ? 'one-variable' : 'two-variable';
+        if (o2(pk) !== want) say(pk.vars.join(' and ') + ' is ' + want + ' data');
+      } else if (pk.cont) {
+        /* measured (it can be any value in between) or counted */
+        const MEAS = /height|length|mass|time|temperature|distance|speed|arm span|volume|area|age in days|weight/, want = MEAS.test(pk.cont) ? 'continuous' : 'discrete';
+        if (o2(pk) !== want) say(pk.cont + ' is ' + want);
+      } else if (pk.graph) {
+        /* two variables: scatter plot; change over time: line graph; parts of a whole: circle graph; comparing groups: bar graph */
+        const want = { two: 'scatter plot', time: 'line graph', parts: 'circle graph', groups: 'bar graph' }[pk.graph];
+        if (o2(pk) !== want) say('for ' + pk.graph + ' data use a ' + want + ', not a ' + o2(pk));
+      } else if (pk.budget) {
+        const d = pk.budget[0] - pk.budget[1], want = d > 0 ? 'surplus' : d < 0 ? 'deficit' : 'balanced';
+        if (o2(pk) !== want) say('income ' + pk.budget[0] + ' and spending ' + pk.budget[1] + ' is a ' + want);
+      } else if (pk.cost) {
+        const FIXED = ['rent', 'phone plan', 'car insurance', 'internet', 'loan payment', 'gym membership', 'streaming plan', 'bus pass'];
+        const want = FIXED.indexOf(pk.cost) >= 0 ? 'fixed' : 'variable';
+        if (o2(pk) !== want) say(pk.cost + ' is a ' + want + ' cost');
+      } else if (pk.indep) {
+        const want = pk.indep.back ? 'independent' : 'dependent';
+        if (o2(pk) !== want) say('these events are ' + want);
+      } else if (pk.move) {
+        /* the transformation that takes shape to after: a slide keeps the turn, a flip turns it over, a turn spins it */
+        const a = pk.move[0], b = pk.move[1], sign = q => Math.sign((q[1][0] - q[0][0]) * (q[2][1] - q[0][1]) - (q[1][1] - q[0][1]) * (q[2][0] - q[0][0]));
+        const d = (u, v) => [v[0] - u[0], v[1] - u[1]], e1 = d(a[0], a[1]), e2 = d(b[0], b[1]);
+        const len = q => Math.hypot(q[0], q[1]), want = !same(len(e1), len(e2)) ? 'dilation' : sign(a) !== sign(b) ? 'reflection' : e1[0] === e2[0] && e1[1] === e2[1] ? 'translation' : 'rotation';
+        if (o2(pk) !== want) say('the move is a ' + want + ', not a ' + o2(pk));
+      }
+    }
+    /* a point moved by a turn about the origin (rot: 90 counterclockwise, 180, −90) or a dilation by k from the origin */
+    if (it.move && (it.move.rot || it.move.dil)) {
+      const q = at(it.move.pt), m = it.move, to = !q ? null : m.dil ? [q[0] * m.dil, q[1] * m.dil] : m.rot === 180 ? [-q[0], -q[1]] : m.rot === 90 ? [-q[1], q[0]] : [q[1], -q[0]];
+      if (!to || !same(num(ansAll[ansAll.length - 2]), to[0]) || !same(num(ansAll[ansAll.length - 1]), to[1])) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
+    }
     /* 6. open questions need an example answer on the key */
     if (it.draw && !it.draw.key) say('a drawing question has no example on the key');
     if (it.lines && !it.lines.key) say('a written question has no example on the key');
