@@ -39,6 +39,8 @@
                                 and a square in a right angle
      heights { g: [[2, 1], [1, 0]] }   a top view of cube stacks: the number in each square is how tall it is (0 is empty);
                                 the front is the bottom edge and the right side is the right edge
+     cross { deg, labs }        two straight lines crossing at deg; labs names the four angles in turn, counterclockwise
+                                from the one between the right-hand ray and the tilted ray (such as ['65°', 'a', 'b', 'c'])
      angle { deg, rot, bench, prot, from }   an angle of deg degrees, turned by rot, with a dashed square corner to
                                 compare (bench); prot: on a protractor (outer scale from the left, inner from the right),
                                 from: 'left' puts the first arm on the left
@@ -539,6 +541,21 @@
     }
     out += line(vx, vy, vx + A[0], vy + A[1], { sw: 1.6 }) + line(vx, vy, vx + B[0], vy + B[1], { sw: 1.6 }) + '<circle cx="' + vx + '" cy="' + vy + '" r="2.2" fill="' + INK + '"/>';
     return { svg: out, h: maxy - miny + 12, w: maxx - minx + 12 };
+  };
+
+  /* two straight lines crossing: one across, the other at deg to it; labs names the four angles in turn, starting
+     between the right-hand ray and the tilted one, then counterclockwise */
+  P.cross = function (p, x, y) {
+    var rad = Math.PI / 180, L = 50, g = p.deg, up = Math.sin(g * rad) * L, cx = x + L + 8, cy = y + up + 6, out = '';
+    var at = function (a, r) { return [cx + Math.cos(a * rad) * r, cy - Math.sin(a * rad) * r]; };
+    var e1 = at(0, L), e2 = at(180, L), e3 = at(g, L), e4 = at(180 + g, L);
+    out += line(e2[0], e2[1], e1[0], e1[1], { sw: 1.6 }) + line(e4[0], e4[1], e3[0], e3[1], { sw: 1.6 });
+    [[0, g], [g, 180], [180, 180 + g], [180 + g, 360]].forEach(function (sec, i) {
+      var t = at((sec[0] + sec[1]) / 2, 26);
+      out += T(t[0], t[1] + 4, (p.labs || [])[i] || '', { s: 11, w: 600, a: 'middle' });
+    });
+    out += '<circle cx="' + cx + '" cy="' + cy + '" r="2.2" fill="' + INK + '"/>';
+    return { svg: out, h: 2 * up + 12, w: 2 * L + 16 };
   };
 
   /* a flat shape with its base and height (not to scale): a rectangle, a parallelogram whose top is moved off along

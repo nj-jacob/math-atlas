@@ -347,6 +347,8 @@
        its perimeter when its sides are known (a rectangle, or a parallelogram with its slanted side); a triangle's
        story sum may halve, so 2 counts as one of its numbers */
     angle: o => ({ total: o.deg, deg: o.deg }),
+    /* two crossing lines: the four angles in turn are deg, 180 − deg, deg, 180 − deg, each under its label */
+    cross: o => ({ cross: Object.fromEntries((o.labs || []).map((l, i) => [l, i % 2 ? 180 - o.deg : o.deg])), blanks: 0, own: () => [] }),
     plane: o => {
       const area = o.kind === 'tri' || o.kind === 'rhom' || o.kind === 'kite' ? o.b * o.h / 2 : o.kind === 'trap' ? (o.b + o.t) * o.h / 2 : o.b * o.h, perim = o.kind === 'rect' ? 2 * (o.b + o.h) : o.kind === 'para' && o.s ? 2 * (o.b + o.s) : null;
       const half = ['tri', 'trap', 'rhom', 'kite'].indexOf(o.kind) >= 0;
@@ -395,7 +397,7 @@
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
     hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }],
-    ftree: [{ n: 60, primes: [2, 2, 3, 5], blank: true }, [2, 30, 2, 15, 3, 5]], net: [{ kind: 'box', l: 6, w: 3, h: 4 }]
+    ftree: [{ n: 60, primes: [2, 2, 3, 5], blank: true }, [2, 30, 2, 15, 3, 5]], net: [{ kind: 'box', l: 6, w: 3, h: 4 }], cross: [{ deg: 65, labs: ['65°', 'a', 'b', 'c'] }]
   };
   const o2 = pk => pk.opts[pk.ans];
   function picture(p) { return READ[p[0]] ? READ[p[0]](p[1]) : null; }
@@ -433,7 +435,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.bins || it.pf || it.factors || it.lcm || it.quad || it.two || it.outcomes || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!((pc && pc.cross) || it.bins || it.pf || it.factors || it.lcm || it.quad || it.two || it.outcomes || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -447,7 +449,7 @@
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule || it.ident) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []), and rows about intervals, factors, shapes and two events, are checked by the item below */
-      if (it.bins || it.prob || it.pt || it.move || it.view || it.two || it.outcomes || it.quad || it.factors || it.lcm) return;
+      if ((pc && pc.cross) || it.bins || it.prob || it.pt || it.move || it.view || it.two || it.outcomes || it.quad || it.factors || it.lcm) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
          of minutes; a time on its own is the time the clock picture shows */
       if (it.clock) {
@@ -522,9 +524,9 @@
         /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
         const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
         if (want !== n) say('the ' + it.find + ' is ' + want + ', not ' + n);
-      } else if (!it.cong && !/[×÷+−]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
-        /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" */
-        const m = row.split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
+      } else if (!it.cong && !/[×÷+−²]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && / [<>=] /.test(row)) {
+        /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" (square units are worked out like any sum) */
+        const m = row.replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
         if (m.length !== 3 || a === null || b === null) say('cannot read the lengths: ' + row);
         else if (!(m[1] === '=' ? a === b : m[1] === '<' ? a < b : a > b)) say('not true: ' + row);
       } else if ((it.len != null || (pc && pc.len != null)) && toMM(row) !== null) {
@@ -1059,6 +1061,10 @@
         /* true or false: every one of the first kind is also the second kind */
         const want = ISA[pk.family[1]] && QUAD[pk.family[0]] ? ISA[pk.family[1]](QUAD[pk.family[0]]) : null;
         if (want === null) say('cannot tell if every ' + pk.family[0] + ' is a ' + pk.family[1]); else if (want !== yes) say('every ' + pk.family[0] + ' is ' + (want ? '' : 'not ') + 'a ' + pk.family[1] + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.pair) {
+        /* two angles: complementary when they add to 90°, supplementary when they add to 180° */
+        const t = pk.pair[0] + pk.pair[1], want = t === 90 ? 'complementary' : t === 180 ? 'supplementary' : 'neither';
+        if (o[pk.ans] !== want) say(pk.pair.join('° and ') + '° are ' + want + ', not ' + o[pk.ans]);
       } else if (pk.dc) {
         /* qualitative (words), discrete (counted) or continuous (measured), from the question's words */
         const q = it.q || '', want = WORDS.test(q) ? (o.indexOf('qualitative') >= 0 ? 'qualitative' : null) : o.indexOf('quantitative') >= 0 ? 'quantitative' : COUNTED.test(q) && !MEASURED.test(q) ? 'discrete' : MEASURED.test(q) && !COUNTED.test(q) ? 'continuous' : null;
@@ -1195,6 +1201,11 @@
       const want = [...Array(it.factors).keys()].map(k => k + 1).filter(k => it.factors % k === 0);
       if (ansAll.map(num).sort((x, y) => x - y).join() !== want.join()) say('the factors of ' + it.factors + ' are ' + want.join(', ') + ', not ' + ansAll.join(', '));
     }
+    /* crossing lines: each row "a = []°" is the angle under that label */
+    if (pc && pc.cross) filled.forEach(row => {
+      const m = row.match(/^([a-z]) = (\d+)°?$/);
+      if (!m || pc.cross[m[1]] == null) say('cannot read the angle: ' + row); else if (pc.cross[m[1]] !== +m[2]) say('angle ' + m[1] + ' is ' + pc.cross[m[1]] + '°, not ' + m[2] + '°');
+    });
     /* data sorted into intervals: each row "140 to 145: []" counts the values from its start up to (not including) its end */
     if (it.bins) filled.forEach(row => {
       const m = row.match(/^(\d+(?:\.\d+)?) to (\d+(?:\.\d+)?): (\d+)$/);

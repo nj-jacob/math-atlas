@@ -169,15 +169,16 @@
   function pic(spec, x, y, w, key, th, ans) { return PIC[spec[0]](spec[1], x, y, w, key, th, ans); }
 
   /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer;
-     3/[] and []/8 put the line in one part of a fraction, []% is a percent; a blank may sit in brackets: 2 × ([] + []) */
+     3/[] and []/8 put the line in one part of a fraction, []% is a percent and []° an angle; a blank may sit in brackets:
+     2 × ([] + []) */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
     s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
       var open = /^\(.*\[\]/.test(tok), close = /\[\].*\)$/.test(tok);
       if (open) { out += T(cx, y + 21, '(', { s: 14, f: INK2 }); cx += tw('(', 14) + 2; tok = tok.slice(1); }
       if (close) tok = tok.slice(0, -1);
-      var comma = tok === '[],', pct = tok === '[]%';
-      if (comma || pct) tok = '[]';
+      var comma = tok === '[],', sign = /^\[\][%°]$/.test(tok) ? tok.slice(2) : '';
+      if (comma || sign) tok = '[]';
       var fr = tok.match(/^(\d*\/)?\[\](\/\d+)?$/);
       if (fr && (tok === '[]' || !fr[1] !== !fr[2])) {
         /* a blank, or a blank for one part of a fraction: 3/[] or []/8 */
@@ -190,9 +191,9 @@
         k++; cx += bl + (fr[2] ? 2 : 7);
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
-        if (pct) { out += T(cx - 5, y + 21, '%', { s: big, w: 700 }); cx += tw('%', big, 700) + 2; }
+        if (sign) { out += T(cx - 5, y + 21, sign, { s: big, w: 700 }); cx += tw(sign, big, 700) + 2; }
         if (close) { out += T(cx - 4, y + 21, ')', { s: 14, f: INK2 }); cx += tw(')', 14) + 3; }
-      } else if (/^\u2212?\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      } else if (/^\(?\u2212?\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:°]*\)?$/.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
