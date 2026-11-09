@@ -36,7 +36,8 @@
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
       .replace(/[A-Za-z’'?:²³°¢]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
   }
-  const nums = s => (String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/\d+(\.\d+)?/g) || []).map(Number);
+  /* the numbers in some words or a sum; a true minus sign written against a number (−8, not 5 − 3) makes it negative */
+  const nums = s => (String(s).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/(?<![\d)])\u2212?\d+(\.\d+)?/g) || []).map(x => Number(x.replace('\u2212', '-')));
   /* two values are the same when they differ only by rounding (0.1 + 0.2 and 0.3) */
   const same = (x, y) => Math.abs(x - y) < 1e-9 * Math.max(1, Math.abs(x), Math.abs(y));
   /* the value of a number as a sheet writes it: 12 500, 3.75, $4.50 */
@@ -228,11 +229,12 @@
     line: o => (o.n ? { total: o.n * o.step, pair: [o.n, o.step] } : null),
     share: o => ({ total: o.t, share: o.g }),
     dots: o => ({ total: o.t }),
-    /* a table's blanks: every filled row keeps the same "for every 1" amount */
     /* a table's blanks: every filled row keeps the same "for every 1" amount; diff: the second column grows by the same
-       amount each row (a growing pattern); rule: '+ 3' or '× 2', the second column is the first with the rule applied */
+       amount each row (a growing pattern); rule: '+ 3' or '× 2', the second column is the first with the rule applied;
+       pairs: any pairs with no blanks (the question decides, such as "proportional or not") */
     table: o => ({ blanks: o.rows.flat().filter(x => x === '[]').length, own: (o, a) => {
       const bad = []; let rate = null;
+      if (o.pairs) return o.rows.flat().indexOf('[]') < 0 ? [] : ['a table of pairs has no blanks'];
       const rows = o.rows.map(r => r.map(x => (x === '[]' ? a.shift() : x)));
       if (rows.some(v => v.some(x => typeof x !== 'number'))) return ['a table blank has no answer'];
       rows.forEach((v, i) => {
@@ -412,7 +414,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || (pc && pc.ask != null));
+    const byItem = !!(it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || it.int || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -910,7 +912,7 @@
         const n = o.map(x => String(x).split('').reduce((t, d) => t + +d, 0));
         if (n.some((x, i) => i !== pk.ans && x >= n[pk.ans])) say('the circled number does not need the most blocks: ' + o.join(', '));
       } else if (pk.seq) {
-        const ok = o.map(x => +x >= pk.seq.from && (+x - pk.seq.from) % pk.seq.by === 0);
+        const ok = o.map(x => num(x) >= pk.seq.from && (num(x) - pk.seq.from) % pk.seq.by === 0);
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is in the count from ' + pk.seq.from + ' by ' + pk.seq.by);
       } else if (pk.between) {
         const ok = o.map(x => num(x) > pk.between[0] && num(x) < pk.between[1]);
@@ -1128,6 +1130,13 @@
       const says = /not put|without|keeps? (it|the first)/.test(it.q) ? false : /puts? (it |the first one )?back|replace/.test(it.q) ? true : null;
       if (says !== it.dep.back) say('the question does not say that the first one goes back' + (it.dep.back ? '' : ' or not'));
       if (!same(want, last)) say('the chance is ' + want + ', not ' + ansAll[ansAll.length - 1]);
+    }
+    /* an amount written as an integer: negative when the words say below, owing, falling or losing */
+    if (it.int) {
+      const want = it.int.neg ? -it.int.size : it.int.size, down = /below|under|debt|owes?\b|fell|drops?\b|lost|loses|down/.test(it.q);
+      if (last !== want) say('the integer is ' + want + ', not ' + ansAll[ansAll.length - 1]);
+      if (nums(it.q).indexOf(it.int.size) < 0) say('the size ' + it.int.size + ' is not in the question');
+      if (down !== !!it.int.neg) say('the words of the question do not match the sign');
     }
     if (it.ssym) { const v = (SYM[it.ssym.s] || {})[it.ssym.what]; if (v !== last) say('the ' + it.ssym.s + ' has ' + v + ' for ' + it.ssym.what + ', not ' + ansAll[ansAll.length - 1]); }
     /* shapes: an angle left as "?" in a triangle, a view of stacks, a point read from a grid, and a point moved by a
