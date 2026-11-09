@@ -225,7 +225,7 @@
   /* is every one of the first kind also the second kind? (by what the second kind needs) */
   const ISA = { parallelogram: q => q.par === 2, rectangle: q => q.par === 2 && q.right === 4, rhombus: q => q.sides === 'all', square: q => q.sides === 'all' && q.right === 4, kite: q => q.sides === 'adj' || q.sides === 'all' };
   /* data that is counted (discrete) or measured (continuous), from the words of the question */
-  const COUNTED = /\b(number of|how many)\b/i, MEASURED = /\b(height|length|mass|time|temperature|distance|how long|how tall|how heavy|how far|weight|how much water|how fast)\b/i;
+  const WORDS = /\b(favourite|colour|kind of|type of|name of|language)\b/i, COUNTED = /\b(number of|how many)\b/i, MEASURED = /\b(height|length|mass|time|temperature|distance|how long|how tall|how heavy|how far|weight|how much water|how fast)\b/i;
   /* chance words: compare the count of one colour (k) with all of them (n) */
   const chanceWord = (k, n) => (k === 0 ? 'impossible' : k === n ? 'certain' : 2 * k < n ? 'unlikely' : 2 * k === n ? 'equally likely' : 'likely');
   /* kinds of data: a survey question with number answers starts "How many", "How far" ...; the way data is collected */
@@ -433,7 +433,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.pf || it.factors || it.lcm || it.quad || it.two || it.outcomes || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
+    const byItem = !!(it.bins || it.pf || it.factors || it.lcm || it.quad || it.two || it.outcomes || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -446,8 +446,8 @@
       let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
       if ((it.expr || it.solve || it.ineq || it.rule || it.ident) && /(^|[\d\s(])[a-z]\b/.test(row)) return;
-      /* a spinner's rows (P(R) = [], R: about []), and rows about factors, shapes and two events, are checked by the item below */
-      if (it.prob || it.pt || it.move || it.view || it.two || it.outcomes || it.quad || it.factors || it.lcm) return;
+      /* a spinner's rows (P(R) = [], R: about []), and rows about intervals, factors, shapes and two events, are checked by the item below */
+      if (it.bins || it.prob || it.pt || it.move || it.view || it.two || it.outcomes || it.quad || it.factors || it.lcm) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
          of minutes; a time on its own is the time the clock picture shows */
       if (it.clock) {
@@ -1060,8 +1060,8 @@
         const want = ISA[pk.family[1]] && QUAD[pk.family[0]] ? ISA[pk.family[1]](QUAD[pk.family[0]]) : null;
         if (want === null) say('cannot tell if every ' + pk.family[0] + ' is a ' + pk.family[1]); else if (want !== yes) say('every ' + pk.family[0] + ' is ' + (want ? '' : 'not ') + 'a ' + pk.family[1] + ', but the key circles ' + o[pk.ans]);
       } else if (pk.dc) {
-        /* discrete (counted) or continuous (measured), from the question's words */
-        const q = it.q || '', want = COUNTED.test(q) && !MEASURED.test(q) ? 'discrete' : MEASURED.test(q) && !COUNTED.test(q) ? 'continuous' : null;
+        /* qualitative (words), discrete (counted) or continuous (measured), from the question's words */
+        const q = it.q || '', want = WORDS.test(q) ? (o.indexOf('qualitative') >= 0 ? 'qualitative' : null) : o.indexOf('quantitative') >= 0 ? 'quantitative' : COUNTED.test(q) && !MEASURED.test(q) ? 'discrete' : MEASURED.test(q) && !COUNTED.test(q) ? 'continuous' : null;
         if (!want) say('cannot tell counted or measured from: ' + q); else if (o[pk.ans] !== want) say('this data is ' + want + ', not ' + o[pk.ans]);
       } else if (pk.dist) {
         /* ways to share resources: swapping one thing for another is trading; giving something you will get back is lending;
@@ -1118,6 +1118,7 @@
     /* data: a statistic of the data (from the item, which must be in its question, or from the picture), the relative
        frequency of one count, and how many times as tall one bar looks when the scale does not start at 0 */
     const data = it.data || (pc && pc.data), last = num(ansAll[ansAll.length - 1]);
+    if (it.bins && it.q) it.bins.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the data value ' + n + ' is not in the question'); });
     if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the data value ' + n + ' is not in the question'); });
     if (it.stat) {
       const d = (data || []).slice().sort((x, y) => x - y), n = d.length, cnt = {};
@@ -1194,6 +1195,12 @@
       const want = [...Array(it.factors).keys()].map(k => k + 1).filter(k => it.factors % k === 0);
       if (ansAll.map(num).sort((x, y) => x - y).join() !== want.join()) say('the factors of ' + it.factors + ' are ' + want.join(', ') + ', not ' + ansAll.join(', '));
     }
+    /* data sorted into intervals: each row "140 to 145: []" counts the values from its start up to (not including) its end */
+    if (it.bins) filled.forEach(row => {
+      const m = row.match(/^(\d+(?:\.\d+)?) to (\d+(?:\.\d+)?): (\d+)$/);
+      if (!m) say('cannot read the interval: ' + row);
+      else { const k = it.bins.filter(v => v >= +m[1] && v < +m[2]).length; if (k !== +m[3]) say(k + ' values are from ' + m[1] + ' up to ' + m[2] + ', not ' + m[3]); }
+    });
     if (it.pf && ansAll.some(v => !isPrime(num(v)))) say('every factor in a prime factorization must be prime: ' + ansAll.join(', '));
     if (it.lcm && it.lcm.reduce((x, y) => x * y / gcd(x, y)) !== num(ansAll[ansAll.length - 1])) say('the least common multiple of ' + it.lcm.join(' and ') + ' is ' + it.lcm.reduce((x, y) => x * y / gcd(x, y)) + ', not ' + ansAll[ansAll.length - 1]);
     if (it.ident) filled.forEach(row => {
