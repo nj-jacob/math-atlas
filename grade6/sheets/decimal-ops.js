@@ -70,7 +70,7 @@
         show: { cap: 'brackets, then × and ÷, then + and −', eq: ['3 + 4 × 2 = 3 + 8', '= 11'] },
         together: [Q('5 + 6 × 3'), Q('(5 + 6) × 3')],
         cue: 'Brackets first, then × and ÷ from the left, then + and − from the left.',
-        own: [Q('20 − 12 ÷ 4'), Q('2.5 × 4 + 3'), story('{a} buys 3 {many} at $2.50 and a {one} at $4. Cost?', 'dollars', 11.5, '3 × 2.50 + 4')]
+        own: [Q('20 − 12 ÷ 4'), Q('2.5 × 4 + 3'), story('{a} buys 3 {many} at $2.50 and a {one} at $4. Cost?', 'dollars', '11.50', '3 × 2.50 + 4')]
       },
       p1: {
         show: { eq: ['(10 − 4) × 2 = 6 × 2 = 12'] },
@@ -83,7 +83,7 @@
       },
       p3: {
         items: [QW('2 × (3.5 + 1.5) − 6 ÷ 3'), QW('(20 − 4) ÷ 8 + 0.75'),
-          story('A canoe rental is $25 plus $6.50 per hour. Cost for 3 hours?', 'dollars', 44.5, '25 + 6.50 × 3'),
+          story('A canoe rental is $25 plus $6.50 per hour. Cost for 3 hours?', 'dollars', '44.50', '25 + 6.50 × 3'),
           story('{a} has 2 bags of 24 {many} and shares them equally among 6 friends. How many each?', '{many}', 8, '2 × 24 ÷ 6'),
           { q: 'Add brackets to make it true: 6 + 4 × 3 = 30', lines: { n: 1, key: '(6 + 4) × 3 = 30' } }]
       },
@@ -209,8 +209,9 @@
       p2: {
         items: [RM('A 125 m rope is cut into 0.4 m pieces (1250 ÷ 4 in tenths). How many full pieces?', 1250, 4, 'down', 'pieces'),
           RM('230 books go on shelves that hold 25. How many shelves are needed?', 230, 25, 'up', 'shelves'),
-          story('4 friends share a $30 bill equally. How much each?', 'dollars', 7.5, '30 ÷ 4'),
-          { eq: ['45 ÷ 8 = []'], a: [5.625] }]
+          story('4 friends share a $30 bill equally. How much each?', 'dollars', '7.50', '30 ÷ 4'),
+          { eq: ['45 ÷ 8 = []'], a: [5.625] },
+          RM('{a} has 75 {many} to put in {conts} of 10. How many {conts} are needed?', 75, 10, 'up', '{conts}'), { eq: ['17 ÷ 4 = []'], a: [4.25] }]
       },
       p3: {
         items: [RM('A bus holds 48. How many buses for 300 students?', 300, 48, 'up', 'buses'),
