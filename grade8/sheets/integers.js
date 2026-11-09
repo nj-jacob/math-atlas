@@ -126,7 +126,7 @@
       p3: {
         items: [Q('(−250) + 175'), Q('(−4.5) + (−2.8)'), Q('(−9) + 15 + (−20) + 6'), Q('(−3/4) + 1/4', { frac: true }),
           ST('A stock is worth $42. It changes by −$7, then +$3, then −$11. What is it worth now?', '42 + (−7) + 3 + (−11)', 'dollars'),
-          ST('At −8 °C the temperature rises 3 °C, then falls 9 °C. What is it now?', '−8 + 3 + (−9)', '°C'), Q('(−100) + 37 + (−37)'), Q('(−0.6) + 0.25')]
+          ST('At −8 °C the temperature rises 3 °C, then falls 9 °C. What is it now?', '−8 + 3 + (−9)', '°C'), Q('(−0.6) + 0.25')]
       },
       think: {
         items: [{ q: '{b} says −8 + 3 = −11. Explain the mistake.', lines: { n: 3, key: 'The signs are different, so subtract: 8 − 3 = 5, with the sign of 8: −5.' } },

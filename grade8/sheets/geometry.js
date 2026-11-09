@@ -45,7 +45,7 @@
         show: { pic: ['par', { ang: 65, give: 0, ask: 1, one: true }], cap: 'side by side on a straight line', eq: ['180 − 65 = 115'] },
         together: [PA(40, 0, 1, true)],
         cue: 'Straight line: 180°. Around a point: 360°.',
-        own: [PA(72, 0, 3, true), Q('360 − 90 − 145'), Q('180 − 37 − 48')]
+        own: [PA(72, 0, 3, true), Q('360 − 90 − 145')]
       },
       p1: {
         show: { eq: ['around a point:', '360 − 120 − 150 = 90'] },
