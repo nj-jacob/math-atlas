@@ -470,6 +470,8 @@
       if ((it.expr || it.solve || it.ineq || it.rule || it.simp || it.bnd) && /(^|[\d\s(−\/])[a-z]\b/.test(row)) return;
       /* probability rows (P(red) = []) are checked by the item's sp, bag or vp below */
       if (it.sp || it.bag || it.vp) return;
+      /* an angle named by a letter on parallel lines (a = [] °) is checked from the picture below */
+      if (pc && pc.angAt && /^[a-z] = /.test(row)) return;
       /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
       if (it.prob || it.pt || it.move || it.view) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
@@ -1206,6 +1208,8 @@
       }
       if (pc && it.pic[0] === 'iline' && it.pic[1].ray) { const r = it.pic[1].ray; if (!m || r.at !== num(m[2]) || (r.dir === 'right') !== /[>≥]/.test(m[1]) || r.open !== /[<>]/.test(m[1])) say('the graph does not match ' + (row || it.bnd)); }
     }
+    /* parallel lines: an angle named by a letter ("a = [] °") is the given angle or 180° minus it */
+    if (pc && pc.angAt) (it.pic[1].letters || []).forEach(l => { const r = filled.map(x => x.match(new RegExp('^' + l[1] + ' = ([\\d.]+)'))).filter(Boolean)[0]; if (!r) say('no row for angle ' + l[1]); else if (+r[1] !== pc.angAt(l[0])) say('angle ' + l[1] + ' is ' + pc.angAt(l[0]) + '°, not ' + r[1]); });
     /* a scatter plot read at one value across (it.at): the answer is the height of the one point there */
     if (it.at != null && pc && pc.pts) { const q = pc.pts.filter(p => p[0] === it.at); if (q.length !== 1 || !same(q[0][1], last)) say('the point at ' + it.at + ' is not at ' + last); }
     /* two whole numbers next to each other (a square root lies between them) */
