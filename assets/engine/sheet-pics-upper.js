@@ -52,9 +52,9 @@
      net   { kind: 'box', l, w, h } | { kind: 'tprism', b, th, s, l } | { kind: 'spyr', b, sh }, unit   a net of a
                                 rectangular prism, a triangular prism (triangle base b, height th, equal sides s, length
                                 l) or a square-based pyramid (base b, triangle height sh), with its lengths
-     coord { n, min, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
+     coord { n, min, u, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
                                 a coordinate grid from 0 (or min, such as −5, for all four quadrants) to n: labelled points, a shape, the shape after a move (dashed), a
-                                dashed mirror line, and points or a shape drawn only on the key
+                                dashed mirror line, and points or a shape drawn only on the key; u: a smaller square (13 at most below 0, 11 above)
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
@@ -477,10 +477,10 @@
 
   /* a coordinate grid from 0 (or min, below 0 for four quadrants) to n with labelled points and shapes */
   P.coord = function (p, x, y, w, key) {
-    var n = p.n || 8, m = p.min || 0, span = n - m, u = Math.min(m ? 13 : 11, (Math.min(w, 220) - 24) / span), ox = x + 18 - m * u, oy = y + 6 + n * u, out = '';
+    var n = p.n || 8, m = p.min || 0, span = n - m, u = Math.min(p.u || (m ? 13 : 11), (Math.min(w, 220) - 24) / span), ox = x + 18 - m * u, oy = y + 6 + n * u, out = '';
     var X = function (v) { return ox + v * u; }, Y = function (v) { return oy - v * u; };
     /* the axes cross at (0, 0); a grid below 0 labels every other line so the minus signs have room */
-    var every = m && span > 10 ? 2 : 1, ly = m ? Y(0) + 11 : Y(0) + 12;
+    var every = m && (span > 10 || u < 12) ? 2 : 1, ly = m ? Y(0) + 11 : Y(0) + 12;
     for (var i = m; i <= n; i++) {
       out += line(X(i), Y(m), X(i), Y(n), { s: LINE, sw: 0.7 }) + line(X(m), Y(i), X(n), Y(i), { s: LINE, sw: 0.7 });
       if (i % every || (m && !i)) continue;
