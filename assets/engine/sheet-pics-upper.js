@@ -12,7 +12,8 @@
      disks { n } or { list: [[1000, 3], [100, 12]] }   place value disks: the digits of n, or a count of each disk
      hill  { lo, hi, n, ask }   rounding: a hill from lo to hi with its top at halfway and n marked on it
                                 (ask: true leaves n unmarked for the child to mark; the key marks it)
-     grid  { n, cells, unit, ask, u, quiet }  a 10 by 10 grid with n squares shaded (cells: 10 for tenths strips; unit:
+     grid  { n, cells, unit, ask, u, quiet, rect }  a 10 by 10 grid with n squares shaded (rect: [a, b] shades a columns and
+                                b rows lightly and their overlap, n squares, darker; cells: 10 for tenths strips; unit:
                                 what one square is worth, written beside it unless quiet; ask: how many the child shades,
                                 drawn in on the key; u: the size of a square, 11 at most)
      fbars { rows: [[n, k], ...], labels }   fraction bars of the same length stacked: each row cut into n parts with k
@@ -200,6 +201,8 @@
   P.grid = function (p, x, y, w, key) {
     var cells = p.cells || 100, u = Math.min(p.u || 11, (Math.min(w, 140) - 2) / 10), out = '', SH = '#dfe5ee', KS = '#f2d4da';
     var fill = function (i) { return i < p.n ? SH : key && p.ask && i < p.n + p.ask ? KS : '#fff'; };
+    /* rect: [a, b] shades a tenths across and b tenths down, with the overlap darker (tenths × tenths) */
+    if (p.rect) fill = function (i) { var c = i % 10 < p.rect[0], r = Math.floor(i / 10) < p.rect[1]; return c && r ? '#b9c2d0' : c || r ? '#eef1f6' : '#fff'; };
     if (cells === 10) for (var c = 0; c < 10; c++) out += '<rect x="' + (x + c * u) + '" y="' + y + '" width="' + u + '" height="' + 10 * u + '" fill="' + fill(c) + '" stroke="' + INK2 + '" stroke-width=".8"/>';
     else for (var i = 0; i < 100; i++) out += '<rect x="' + (x + (i % 10) * u) + '" y="' + (y + Math.floor(i / 10) * u) + '" width="' + u + '" height="' + u + '" fill="' + fill(i) + '" stroke="' + (fill(i) !== '#fff' ? INK2 : LINE) + '" stroke-width=".7"/>';
     out += '<rect x="' + x + '" y="' + y + '" width="' + 10 * u + '" height="' + 10 * u + '" fill="none" stroke="' + INK + '" stroke-width="1.2"/>';
