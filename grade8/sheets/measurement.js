@@ -385,7 +385,7 @@
       watch: 'using the diameter in π × r². Halve it first.',
       goal: 'I can find the volume of a cylinder.',
       learn: {
-        show: { pic: ['cyl', { r: 3, h: 10 }], eq: ['3.14 × 3² × 10 = 282.6 cm³'] },
+        show: { cap: 'r = 3 cm, h = 10 cm', eq: ['3.14 × 3² × 10 = 282.6 cm³'] },
         together: [PI(['cyl', { r: 2, h: 5 }], 'Volume?', '3.14 × 2 × 2 × 5', 'cm³')],
         cue: 'Circle area (π × r²) × height.',
         own: [PI(['cyl', { r: 5, h: 4 }], 'Volume?', '3.14 × 5 × 5 × 4', 'cm³')]

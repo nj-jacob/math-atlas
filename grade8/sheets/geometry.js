@@ -133,14 +133,14 @@
       watch: 'jumping to an answer with no reason. Write the rule for every step.',
       goal: 'I can find missing angles in several steps.',
       learn: {
-        show: { cap: 'a is opposite 70°, so a = 70°. b and a are co-interior, so b = 110°.' },
+        show: { cap: 'a is opposite 70°; a and b make 180°' },
         together: [PL(60, 0, [[1, 'a'], [4, 'b']])],
         cue: 'One step at a time. Say the rule each time.',
-        own: [PL(115, 1, [[3, 'a'], [6, 'b']])]
+        own: [PL(115, 1, [[6, 'a']])]
       },
       p1: {
         show: { eq: ['b = 180 − a (C)'] },
-        items: [PL(50, 0, [[2, 'a'], [6, 'b']]), PL(125, 1, [[0, 'a'], [5, 'b']]), PL(80, 2, [[1, 'a'], [4, 'b']])]
+        items: [PL(50, 0, [[2, 'a'], [6, 'b']]), PL(125, 1, [[0, 'a'], [5, 'b']]), Q('180 − 80')]
       },
       p2: {
         items: [PL(35, 0, [[1, 'a'], [5, 'b'], [6, 'c']]), PL(140, 3, [[0, 'a'], [4, 'b'], [7, 'c']]), Q('180 − 72')]
@@ -256,7 +256,7 @@
       watch: 'moving the wrong way on a grid. Across (x) first, then up or down (y).',
       goal: 'I can slide, flip and turn shapes on a coordinate grid.',
       learn: {
-        show: { cap: 'slide 3 right, 2 down', eq: ["(1, 4) → (4, 2)"] },
+        show: { cap: 'slide 3 right, 2 down: (1, 4) → (4, 2)' },
         together: [MV([2, 3, 'A'], { slide: [-4, -1] }, 'Slide A 4 left and 1 down.')],
         cue: 'Slide: add to x and y. Flip in the x-axis: y changes sign.',
         own: [MV([3, 1, 'B'], { flip: { y: 0 } }, 'Flip B in the x-axis (y = 0).'), MV([-2, 4, 'C'], { rot: 180 }, 'Turn 180° about (0, 0).', 6, true)]
@@ -286,7 +286,7 @@
       watch: 'adding the scale factor. A dilation multiplies every coordinate by it.',
       goal: 'I can dilate shapes from the origin.',
       learn: {
-        show: { cap: 'scale factor 2 from (0, 0)', eq: ['(1, 3) → (2, 6)'] },
+        show: { cap: 'scale factor 2 from (0, 0): (1, 3) → (2, 6)' },
         together: [MV([2, 1, 'A'], { dil: 3 }, 'Dilate A by 3 from (0, 0).')],
         cue: 'Multiply both coordinates by the scale factor.',
         own: [MV([4, -2, 'B'], { dil: 0.5 }, 'Dilate B by 1/2 from (0, 0).'), Q('2.5 × 4')]

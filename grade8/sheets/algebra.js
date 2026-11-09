@@ -18,7 +18,7 @@
   function SR(seq) { return { q: 'Figures 1, 2, 3: ' + seq.join(', ') + '.', eq: ['t = []n + []'], a: [seq[1] - seq[0], 2 * seq[0] - seq[1]], seq: seq, rule: true }; }
   function TR(m, b, ns) { return { pic: ['tbl', { head: ['n', 't'], rows: ns.map(function (n) { return [n, m * n + b]; }) }], q: 'Write the rule.', eq: ['t = []n + []'], a: [m, b], rule: true }; }
   function TF(m, b, ns, n) { return { pic: ['tbl', { head: ['n', 't'], rows: ns.map(function (n) { return [n, m * n + b]; }) }], q: 'Term ' + n + '?', eq: ['[]'], a: [m * n + b], fig: n }; }
-  function GP(m, b, k, ymax, ys) { var p = []; for (var n = 1; n <= k; n++) p.push([n, m * n + b]); return { pts: p, xmax: k + 1, ymax: ymax, xs: 1, ys: ys, xl: 'Figure', yl: 'Term', h: 72 }; }
+  function GP(m, b, k, ymax, ys) { var p = []; for (var n = 1; n <= k; n++) p.push([n, m * n + b]); return { pts: p, xmax: k + 1, ymax: ymax, xs: 1, ys: ys, xl: 'Figure', yl: 'Term', h: 64 }; }
   function GG(m, b, k, ymax, ys) { return { pic: ['scat', GP(m, b, k, ymax, ys)], q: 'Write the rule.', eq: ['t = []n + []'], a: [m, b], rule: true }; }
   /* the next terms of a pattern of rational numbers */
   function NX(list, k, step) {
@@ -189,7 +189,7 @@
         items: [LT('3x + 2x + 4'), LT('5 + 2x + 3'), LT('x + 2 + x + 2'), LT('6x + 3 + 2x + 1'), LT('(2x + 3) + (4x + 6)')]
       },
       p2: {
-        items: [LT('(5x + 2) + (x + 9)'), LT('7x + 4 + 3 + 2x'), LT('(6x + 5) − (2x + 1)'), LT('(8x + 7) − (3x + 2)'), LT('2.5x + 1 + 1.5x + 3'), LT('(x + 1/2) + (x + 1/2)')]
+        items: [LT('(5x + 2) + (x + 9)'), LT('7x + 4 + 3 + 2x'), LT('(6x + 5) − (2x + 1)'), LT('(8x + 7) − (3x + 2)'), LT('2.5x + 1 + 1.5x + 3')]
       },
       p3: {
         items: [LT('(4x + 9) − (x + 3)'), LT('(10x + 12) − (4x + 5)'), LT('3x + 0.5 + 2x + 1.25'), LT('(2x + 5) + (3x + 4) + x'),
@@ -218,7 +218,7 @@
         items: [LT('6x − 4x + 2'), LT('x − 5 + 3x'), LT('7 − 2x + 4x − 9'), LT('−3x + 5x − 1'), LT('5x − 6 − x − 2')]
       },
       p2: {
-        items: [LT('(4x − 3) + (x − 6)'), LT('(2x + 5) − (3x − 1)'), LT('(−x + 4) + (5x − 9)'), LT('(6x − 2) − (2x + 7)'), LT('−4x + 3 − 2x − 8'), LT('1.5x − 2 − 0.5x + 7')]
+        items: [LT('(4x − 3) + (x − 6)'), LT('(2x + 5) − (3x − 1)'), LT('(−x + 4) + (5x − 9)'), LT('(6x − 2) − (2x + 7)'), LT('−4x + 3 − 2x − 8')]
       },
       p3: {
         items: [LT('(3x − 4) − (5x − 10)'), LT('(−2x − 3) − (−4x + 1)'), LT('(x − 1/2) + (2x − 1/4)'), LT('(7x − 5) + (−3x − 2) − x'),

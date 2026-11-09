@@ -115,7 +115,7 @@
       p1: {
         show: { eq: ['30% of 360 = 108°'] },
         items: [GRA('Favourite sports of three classes.', 'groups'), GRA('The temperature every hour.', 'time'), GRA('Height and shoe size of 20 students.', 'two'),
-          ANG(50, 'Rent'), ANG(10, 'Savings'), ANG(35, 'Food')]
+          ANG(50, 'Rent'), ANG(10, 'Savings')]
       },
       p2: {
         items: [GRA('How a town\'s land is used.', 'parts'), GRA('Rainfall in each province last year.', 'groups'),
@@ -142,7 +142,7 @@
       watch: 'joining the points with a line. A scatter plot is just points: one for each pair.',
       goal: 'I can make and read a scatter plot.',
       learn: {
-        show: { cap: 'one point for each student', eq: ['(4, 72): 4 hours, a mark of 72'] },
+        show: { cap: 'one point for each student: (4, 72) is 4 hours and a mark of 72' },
         together: [AT(HRS, 3, 'What mark for 3 hours?')],
         cue: 'Across for the first value, up for the second.',
         own: [AT(HRS, 6, 'What mark for 6 hours?'), AT(HRS, 1, 'What mark for 1 hour?')]
@@ -179,10 +179,10 @@
         show: { cap: 'up to the right, close to a line', eq: ['strong positive'] },
         together: [TR(SC([[1, 9], [2, 8], [3, 6], [4, 5], [5, 3], [6, 2]], 7, 10, 1, 2, 'Price', 'Sold'), ['positive', 'negative', 'none'])],
         cue: 'Up to the right: positive. Down: negative. Close to a line: strong.',
-        own: [TR(SC([[1, 5], [2, 2], [3, 7], [4, 3], [5, 6], [6, 4]], 7, 10, 1, 2, 'Shoe', 'Mark'), ['positive', 'negative', 'none'])]
+        own: [{ q: 'Points fall to the right, close to a line. Describe the relationship.', lines: { n: 1, key: 'Strong negative.' } }]
       },
       p1: {
-        show: { cap: 'rising: positive; falling: negative; scattered: none', eq: ['close to a line: strong'] },
+        show: { cap: 'rising: positive; falling: negative; scattered: none. Close to a line: strong.' },
         items: [TR(SC([[1, 2], [2, 3], [3, 5], [4, 6], [5, 8]], 6, 10, 1, 2, 'Hours', 'Pay'), ['strong positive', 'weak positive', 'none']),
           TR(SC([[1, 8], [2, 6], [3, 9], [4, 4], [5, 6], [6, 3]], 7, 10, 1, 2, 'Km', 'Time'), ['strong negative', 'weak negative', 'none']),
           TR(SC([[1, 2], [2, 5], [3, 1], [4, 6], [5, 3], [6, 6]], 7, 8, 1, 2, 'Age', 'Size'), ['strong positive', 'weak positive', 'none']),
@@ -242,14 +242,14 @@
       watch: 'reading bar heights, not the scale. A scale that starts above 0 makes small gaps look big.',
       goal: 'I can spot a graph that misleads with a cut-off axis.',
       learn: {
-        show: { cap: 'scale starts at 48: 52 looks twice as tall as 50, but is only 2 more' },
+        show: { cap: 'from 48 up: 52 looks twice 50, but is 2 more' },
         together: [ML([60, 55], 50, 64, 2, 0, 1)],
         cue: 'Read the scale. Does it start at 0?',
-        own: [ML([90, 85, 80], 75, 95, 5, 0, 2)]
+        own: [{ q: 'A scale starts at 75. Bars show 90 and 80: 15 and 5 above the start. How many times as tall does 90 look?', eq: ['15 ÷ 5 = []'], a: [3] }]
       },
       p1: {
         show: { eq: ['(52 − 48) ÷ (50 − 48) = 2', 'looks 2 times as tall'] },
-        items: [ML([30, 25], 20, 32, 2, 0, 1), ML([104, 102, 101], 100, 106, 2, 0, 2), ML([45, 42, 40], 38, 46, 2, 1, 2)]
+        items: [ML([30, 25], 20, 32, 2, 0, 1), ML([104, 102, 101], 100, 106, 2, 0, 2), { q: 'A graph starts its scale at 38. Bars show 45 and 42. How much more is 45, really?', eq: ['45 − 42 = []'], a: [3] }]
       },
       p2: {
         items: [ML([250, 230], 200, 260, 20, 0, 1), ML([7.5, 7, 6.5], 6, 8, 0.5, 0, 2),

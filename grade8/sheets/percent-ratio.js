@@ -225,7 +225,7 @@
       watch: 'calling any growing table proportional. Every pair must have the same ratio, and 0 must go with 0.',
       goal: 'I can tell if a relationship is proportional.',
       learn: {
-        show: { pic: ['tbl', { head: ['x', 'y'], rows: [[1, 4], [2, 8], [5, 20]] }], cap: 'y ÷ x is always 4', eq: ['proportional'] },
+        show: { cap: 'x 1, 2, 5 and y 4, 8, 20: y ÷ x is always 4', eq: ['proportional'] },
         together: [TB([[1, 3], [2, 6], [4, 12]]), TB([[1, 5], [2, 7], [3, 9]])],
         cue: 'Divide y by x in every row. Always the same? Proportional.',
         own: [TB([[2, 5], [4, 10], [6, 15]]), TB([[1, 2], [3, 8], [5, 14]])]
@@ -305,7 +305,7 @@
       },
       p2: {
         items: [BUY(['A', 'B', 'C'], [3.60, 5.00, 8.40], [4, 5, 12], 'cans'), BUY(['Box', 'Bag'], [6.30, 4.95], [700, 500], 'g'),
-          BUY(['A', 'B'], [24.00, 39.00], [8, 12], 'kg'), BUY(['Small', 'Big'], [1.95, 3.60], [500, 1000], 'mL')]
+          BUY(['A', 'B'], [24.00, 39.00], [8, 12], 'kg')]
       },
       p3: {
         items: [BUY(['A', 'B'], [17.40, 20.00], [20, 25], 'm'), BUY(['A', 'B'], [5.49, 8.99], [750, 1250], 'mL'),

@@ -709,12 +709,12 @@
   };
   /* a right triangle with legs a and b and hypotenuse c (cm); ask: 'a', 'b' or 'c' is written "?" */
   P.rtri = function (p, x, y) {
-    var k = Math.min(120 / p.a, 62 / p.b), A = p.a * k, B = p.b * k, x0 = x + 28, y0 = y + B + 6, u = ' ' + (p.unit || 'cm'), out = '';
+    var k = Math.min(120 / p.a, 62 / p.b), A = p.a * k, B = p.b * k, x0 = x + 36, y0 = y + B + 6, u = ' ' + (p.unit || 'cm'), out = '';
     out += '<path d="M' + x0 + ' ' + y0 + ' h' + A + ' L' + x0 + ' ' + (y0 - B) + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
     out += '<path d="M' + (x0 + 8) + ' ' + y0 + ' v-8 h-8" fill="none" stroke="' + INK + '" stroke-width="1"/>';
     var say = function (s, v) { return p.ask === s ? '?' : fmt(v) + u; };
     out += T(x0 + A / 2, y0 + 13, say('a', p.a), { s: 11, w: 700, a: 'middle' }) + T(x0 - 4, y0 - B / 2 + 4, say('b', p.b), { s: 11, w: 700, a: 'end' }) + T(x0 + A / 2 + 6, y0 - B / 2 - 2, say('c', p.c), { s: 11, w: 700 });
-    return { svg: out, h: B + 22, w: A + 90 };
+    return { svg: out, h: B + 22, w: A + 98 };
   };
   /* a coordinate grid from −n to n in both directions: pts, shape, after, keyShape and plot work as in coord */
   P.cgrid = function (p, x, y, w, key) {
