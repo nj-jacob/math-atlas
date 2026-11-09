@@ -281,10 +281,10 @@
       goal: 'I can spot a graph that misleads.',
       learn: {
         show: { cap: 'axis starts at 30: B looks 3 times as tall', eq: ['60 ÷ 40 = 1.5'] },
-        together: [{ q: 'How many times as tall does B look?', pic: ['dbar', { cats: ['A', 'B'], sets: [[50, 75]], min: 40, max: 80, step: 10, title: 'Sales' }], eq: ['[] times'], a: [3.5], looks: [1, 0] },
+        together: [{ q: 'How many times as tall does B look?', pic: ['dbar', { cats: ['A', 'B'], sets: [[50, 75]], min: 40, max: 80, step: 10, title: 'Sales', h: 60 }], eq: ['[] times'], a: [3.5], looks: [1, 0] },
           { q: 'How many times as many is B, really?', eq: ['75 ÷ 50 = []'], a: [1.5] }],
-        cue: 'Read the scale before you trust the picture.',
-        own: [{ q: 'How many times as tall does B look?', pic: ['dbar', { cats: ['A', 'B'], sets: [[22, 26]], min: 20, max: 26, step: 2, title: 'Points' }], eq: ['[] times'], a: [3], looks: [1, 0] }]
+        cue: 'Read the scale first.',
+        own: [{ q: 'How many times as tall does B look?', pic: ['dbar', { cats: ['A', 'B'], sets: [[22, 26]], min: 20, max: 26, step: 2, title: 'Points', h: 48 }], eq: ['[] times'], a: [3], looks: [1, 0] }]
       },
       p1: {
         show: { eq: ['the axis starts at 30, not 0'] },
