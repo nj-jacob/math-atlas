@@ -76,7 +76,7 @@
      out again in their own way (tests/verify/sheets.js). */
   var SUP = { '\u2070': 0, '\u00b9': 1, '\u00b2': 2, '\u00b3': 3, '\u2074': 4, '\u2075': 5, '\u2076': 6, '\u2077': 7, '\u2078': 8, '\u2079': 9 };
   S.calc = function (e) {
-    var js = String(e).replace(/\.\d+(?:[\u00a0 ]\d+)+/g, function (m) { return m.replace(/[\u00a0 ]/g, ''); }).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').replace(/[\u2212\u2013]/g, '-').replace(/\u00d7/g, '*').replace(/\u00f7/g, '/').replace(/\$/g, '')
+    var js = String(e).replace(/\.\d+(?:[\u00a0 ]\d+)+/g, function (m) { return m.replace(/[\u00a0 ]/g, ''); }).replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').replace(/[\u2212\u2013]/g, '-').replace(/\u00d7/g, '*').replace(/\u00f7/g, '/').replace(/\$/g, '').replace(/(\d+(?:\.\d+)?)% of /g, '($1/100)*').replace(/(\d+(?:\.\d+)?)%/g, '($1/100)')
       .replace(/(\d+) (\d+)\/(\d+)/g, '($1+$2#$3)').replace(/(\d+(?:\.\d+)?)\/(\d+(?:\.\d+)?)/g, '($1/$2)').replace(/#/g, '/').replace(/(\d)(?=[\u221a\u03c0])/g, '$1*').replace(/\u03c0/g, '(Math.PI)').replace(/\u221a(\d+(?:\.\d+)?)/g, 'Math.sqrt($1)').replace(/\u221a\(/g, 'Math.sqrt(')
       .replace(/([\u207b]?)([\u2070\u00b9\u00b2\u00b3\u2074-\u2079]+)/g, function (m, neg, d) { return '**' + (neg ? '-' : '') + d.split('').map(function (c) { return SUP[c]; }).join(''); })
       .replace(/\^/g, '**').replace(/(\d+(?:\.\d+)?)\*\*(-?\d+)/g, '(($1)**$2)');

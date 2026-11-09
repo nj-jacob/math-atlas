@@ -686,8 +686,8 @@
       const v = val(norm(it.calc));
       const ans = (it.a || [])[0], av = typeof ans === 'number' ? ans : val(norm(String(ans)));
       if (!same(it.dp != null ? +v.toFixed(it.dp) : v, av)) say('the story works out to ' + v + ', not ' + (it.a || [])[0]);
-      /* a story may change units (× 10, 100, 1000 or a million) without saying so */
-      const inQ = nums(it.q + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : [], [10, 100, 1000, 1000000]);
+      /* a story may change units (× 10, 100, 1000 or a million) or take a percent from the whole (1 − 20%) without saying so */
+      const inQ = nums(it.q + ' ' + (it.pic && it.pic[0] === 'code' ? it.pic[1].lines.join(' ') : '')).concat(pc && pc.data ? pc.data : [], pc && pc.min ? [pc.min] : [], [1, 10, 100, 1000, 1000000]);
       nums(it.calc).forEach(n => { if (inQ.indexOf(n) < 0) say('the story sum uses ' + n + ', which is not in the story'); });
     }
     /* 5. the circled choice */
