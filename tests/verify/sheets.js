@@ -1014,7 +1014,9 @@
         const ok = o.map(x => fromWords(x) === pk.wn);
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice says ' + pk.wn + ' in words');
       } else if (pk.cmp) {
-        const x = num(pk.cmp[0]), y = num(pk.cmp[1]), want = x < y ? '<' : x > y ? '>' : '=';
+        /* equal when they agree to 12 significant figures, so 3.6 × 10⁻⁴ and 0.000 36 match despite rounding in powers */
+        const x = num(pk.cmp[0]), y = num(pk.cmp[1]), same = Math.abs(x - y) <= 1e-12 * Math.max(Math.abs(x), Math.abs(y));
+        const want = same ? '=' : x < y ? '<' : '>';
         if (o[pk.ans] !== want) say(pk.cmp.join(' and ') + ': the sign is ' + want + ', not ' + o[pk.ans]);
       } else if (pk.est) {
         const v = val(norm(pk.est)), d = o.map(x => Math.abs(val(norm(x)) - v));
