@@ -62,6 +62,22 @@
                                 write on under each (answers in order)
      pvmove { n, shift, dir }   a place value chart with n in it; with shift, a second row shows n × 10^shift
                                 (dir 'x') or n ÷ 10^shift (dir 'd'), drawn only on the answer key
+   Grade 8:
+     iline { min, max, lab, pts, jumps, ray }   an integer number line: points, jumps [[from, by]] as arcs, and the ray of
+                                an inequality's solutions { at, open, dir }
+     chips { pos, neg, pairs }  + and − counters; pairs rings each zero pair
+     ptree { a, b, pa, pb }     a tree diagram of two events with the outcomes at the leaves (pa, pb: branch labels)
+     pvenn { a, b, n }          a Venn diagram with counts n = [a only, both, b only, neither]
+     scat  { pts, xmax, ymax, xs, ys, xl, yl, h }   a scatter plot
+     par   { ang, give, ask, letters, one }   parallel lines (or one crossing) cut by a slanted line; the angles are
+                                numbered 0 to 3 at the top crossing (top right, top left, bottom left, bottom right), 4 to 7 below
+     circ  { r | d, unit }      a circle with its radius or diameter
+     cyl   { r, h, unit }, rbox { l, w, h, unit }, tprism { b, h, l, unit }   solids with their measures
+     rtri  { a, b, c, ask, unit }   a right triangle with legs a, b and hypotenuse c; ask writes one as "?"
+     cgrid { n, pts, shape, after, keyShape, plot }   a coordinate grid from −n to n (as coord)
+     comp  { kind: 'L' | 'semi', w, h, cw, ch, unit }   an L shape, or a rectangle with a half circle on top
+     atiles { xp, xn, up, un }  algebra tiles: x tiles and unit tiles, positive shaded and negative white
+     tbl   { head, rows }       a table of values
    Numbers of 5 or more digits are written with a space (12 500), using S.fmt from sheets.js. The answer checks are in tests/verify/sheets.js. */
 (function () {
   'use strict';
@@ -657,5 +673,209 @@
       ht = (B + 2 * sh) * k + 8; wd = (B + 2 * sh) * k + 8;
     }
     return { svg: out, h: ht, w: wd };
+  };
+  /* ---------- Grade 8 ---------- */
+  var neg = function (v) { return fmt(v); };
+  function dash(svg) { return svg.replace('/>', ' stroke-dasharray="4 3"/>'); }
+  /* an integer number line from min to max, a number every lab; pts: [[v, 'A']]; jumps: [[from, by]] drawn as arcs
+     (above when going right, below when going left); ray: { at, open, dir: 'right' | 'left' } shades the solutions of
+     an inequality from at (an open dot leaves at out) */
+  P.iline = function (p, x, y, w) {
+    var n = p.max - p.min, u = (Math.min(w, 228) - 20) / n, x0 = x + 10, ly = y + 30, out = '', lab = p.lab || 1;
+    var X = function (v) { return x0 + (v - p.min) * u; };
+    out += line(x0 - 6, ly, X(p.max) + 6, ly, { sw: 1.3 });
+    for (var v = p.min; v <= p.max; v++) {
+      var big = v % lab === 0;
+      out += line(X(v), ly - (big ? 5 : 3), X(v), ly + (big ? 5 : 3), { sw: v === 0 ? 1.6 : 1 });
+      if (big) out += T(X(v), ly + 17, neg(v), { s: 9.5, f: INK2, a: 'middle' });
+    }
+    (p.jumps || []).forEach(function (j) {
+      var a = X(j[0]), b = X(j[0] + j[1]), up = j[1] > 0, cy = up ? ly - 24 : ly + 24;
+      out += '<path d="M' + a + ' ' + (ly + (up ? -2 : 2)) + ' Q' + (a + b) / 2 + ' ' + cy + ' ' + b + ' ' + (ly + (up ? -2 : 2)) + '" fill="none" stroke="' + INK2 + '" stroke-width="1.4"/>';
+      out += '<circle cx="' + b + '" cy="' + ly + '" r="2.2" fill="' + INK2 + '"/>';
+    });
+    if (p.ray) {
+      var r0 = X(p.ray.at), r1 = p.ray.dir === 'right' ? X(p.max) + 6 : x0 - 6;
+      out += line(r0, ly, r1, ly, { sw: 3.2 }) + '<circle cx="' + r0 + '" cy="' + ly + '" r="4" fill="' + (p.ray.open ? '#fff' : INK) + '" stroke="' + INK + '" stroke-width="1.5"/>';
+    }
+    (p.pts || []).forEach(function (q) { out += '<circle cx="' + X(q[0]) + '" cy="' + ly + '" r="3.4" fill="' + INK + '"/>' + (q[1] ? T(X(q[0]), ly - 9, q[1], { s: 10.5, w: 700, a: 'middle' }) : ''); });
+    return { svg: out, h: (p.jumps && p.jumps.some(function (j) { return j[1] < 0; }) ? 64 : 52), w: n * u + 20 };
+  };
+  /* integer counters: pos + counters and neg − counters; pairs: true rings each zero pair */
+  P.chips = function (p, x, y, w) {
+    var r = 8, sp = 20, per = Math.max(1, Math.floor((Math.min(w, 228) - 4) / sp)), out = '', i;
+    function chip(cx, cy, plus) {
+      return '<circle cx="' + cx + '" cy="' + cy + '" r="' + r + '" fill="' + (plus ? '#dfe5ee' : '#fff') + '" stroke="' + INK + '" stroke-width="1.1"/>' +
+        line(cx - 4, cy, cx + 4, cy, { sw: 1.5 }) + (plus ? line(cx, cy - 4, cx, cy + 4, { sw: 1.5 }) : '');
+    }
+    var rows = [[], []];
+    for (i = 0; i < p.pos; i++) rows[0].push(1);
+    for (i = 0; i < p.neg; i++) rows[1].push(0);
+    var lines = Math.ceil(Math.max(p.pos, p.neg, 1) / per);
+    rows.forEach(function (row, ri) {
+      row.forEach(function (c, j) { out += chip(x + 4 + r + (j % per) * sp, y + 4 + r + (Math.floor(j / per) * 2 + ri) * sp, c); });
+    });
+    if (p.pairs) for (i = 0; i < Math.min(p.pos, p.neg); i++) {
+      var cx = x + 4 + r + (i % per) * sp, cy = y + 4 + r + Math.floor(i / per) * 2 * sp;
+      out += '<rect x="' + (cx - r - 2) + '" y="' + (cy - r - 2) + '" width="' + (2 * r + 4) + '" height="' + (sp + 2 * r + 4) + '" rx="' + (r + 2) + '" fill="none" stroke="' + INK2 + '" stroke-width="1" stroke-dasharray="3 2"/>';
+    }
+    return { svg: out, h: lines * 2 * sp + 6, w: Math.min(Math.max(p.pos, p.neg), per) * sp + 8 };
+  };
+  /* a tree diagram: the first event's outcomes a, then the second event's b on each branch; pa, pb: probabilities to
+     write on the branches; the outcomes are listed at the leaves */
+  P.ptree = function (p, x, y, w) {
+    var n = p.a.length * p.b.length, lh = Math.min(17, 150 / n), out = '', x1 = x + 10, x2 = x + 70, x3 = x + 140, top = y + 6;
+    p.a.forEach(function (a, i) {
+      var ay = top + (i + 0.5) * p.b.length * lh;
+      out += line(x1, top + n * lh / 2, x2, ay, { s: INK2, sw: 1 }) + T(x2 + 3, ay + 4, a, { s: 11, w: 700 });
+      if (p.pa) out += T((x1 + x2) / 2 - 4, (top + n * lh / 2 + ay) / 2 - 3, p.pa[i], { s: 9, f: INK2, a: 'middle' });
+      p.b.forEach(function (b, j) {
+        var by = top + (i * p.b.length + j + 0.5) * lh;
+        out += line(x2 + 16, ay, x3, by, { s: INK2, sw: 1 }) + T(x3 + 3, by + 4, b, { s: 10.5, w: 700 }) + T(x3 + 34, by + 4, a + b, { s: 9.5, f: INK2 });
+        if (p.pb) out += T((x2 + x3) / 2 + 10, (ay + by) / 2 - 2, p.pb[j], { s: 8.5, f: INK2, a: 'middle' });
+      });
+    });
+    out += '<circle cx="' + x1 + '" cy="' + (top + n * lh / 2) + '" r="2.4" fill="' + INK + '"/>';
+    return { svg: out, h: n * lh + 10, w: 200 };
+  };
+  /* a Venn diagram with how many in each part: n = [a only, both, b only, neither], inside a box for everyone */
+  P.pvenn = function (p, x, y, w) {
+    var R = 34, bw = Math.min(w, 200), cx = x + bw / 2, cy = y + 18 + R, out = '';
+    out += '<rect x="' + x + '" y="' + (y + 12) + '" width="' + bw + '" height="' + (2 * R + 14) + '" fill="none" stroke="' + INK2 + '" stroke-width="1"/>';
+    out += '<circle cx="' + (cx - R * 0.6) + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="' + INK + '" stroke-width="1.3"/><circle cx="' + (cx + R * 0.6) + '" cy="' + cy + '" r="' + R + '" fill="none" stroke="' + INK + '" stroke-width="1.3"/>';
+    out += T(cx - R * 0.9, y + 8, p.a, { s: 10.5, w: 700, a: 'middle' }) + T(cx + R * 0.9, y + 8, p.b, { s: 10.5, w: 700, a: 'middle' });
+    out += T(cx - R * 1.05, cy + 5, p.n[0], { s: 14, w: 700, a: 'middle' }) + T(cx, cy + 5, p.n[1], { s: 14, w: 700, a: 'middle' }) + T(cx + R * 1.05, cy + 5, p.n[2], { s: 14, w: 700, a: 'middle' });
+    out += T(x + bw - 12, y + 2 * R + 20, p.n[3], { s: 14, w: 700, a: 'end' });
+    return { svg: out, h: 2 * R + 28, w: bw };
+  };
+  /* a scatter plot: pts [[x, y]] on axes from 0 to xmax and ymax, a number every xs and ys, labels xl and yl */
+  P.scat = function (p, x, y, w) {
+    var gx = x + 28, gw = Math.min(w, 228) - 40, h = p.h || 84, top = y + 14, out = '';
+    var X = function (v) { return gx + v / p.xmax * gw; }, Y = function (v) { return top + h - v / p.ymax * h; };
+    for (var a = 0; a <= p.xmax; a += p.xs) out += line(X(a), top, X(a), top + h, { s: LINE, sw: 0.6 }) + (a ? T(X(a), top + h + 11, a, { s: 8.5, f: INK2, a: 'middle' }) : '');
+    for (var b = 0; b <= p.ymax; b += p.ys) out += line(gx, Y(b), gx + gw, Y(b), { s: LINE, sw: 0.6 }) + T(gx - 4, Y(b) + 3, b, { s: 8.5, f: INK2, a: 'end' });
+    out += line(gx, top, gx, top + h, { sw: 1.2 }) + line(gx, top + h, gx + gw, top + h, { sw: 1.2 });
+    p.pts.forEach(function (q) { out += '<circle cx="' + X(q[0]) + '" cy="' + Y(q[1]) + '" r="2.6" fill="' + INK + '"/>'; });
+    out += T(gx + gw / 2, top + h + 23, p.xl, { s: 9.5, f: INK2, a: 'middle' });
+    out += T(gx - 4, top - 6, p.yl, { s: 9.5, f: INK2 });
+    return { svg: out, h: h + 38, w: gw + 40 };
+  };
+  /* two parallel lines (or, with one: true, a single crossing) cut by a slanted line; the 8 angles are numbered
+     0 to 3 at the top crossing (top right, top left, bottom left, bottom right) and 4 to 7 at the bottom one.
+     give: the angle written in degrees, ang: its size; ask: the angle marked "?" (and letters: ['a', ...] at others) */
+  P.par = function (p, x, y, w) {
+    var rad = Math.PI / 180, g = p.ang, give = p.give || 0, acute = give % 2 === 0 ? g : 180 - g;
+    var W2 = Math.min(w, 220), cx1 = x + W2 / 2 - 16, cy1 = y + 22, gap = p.one ? 0 : 50, out = '';
+    var slope = 1 / Math.tan(acute * rad), cx2 = cx1 - gap * slope, cy2 = cy1 + gap;
+    [cy1].concat(p.one ? [] : [cy2]).forEach(function (ly) { out += line(x + 4, ly, x + W2 - 4, ly, { sw: 1.4 }); if (!p.one) out += '<path d="M' + (x + W2 - 22) + ' ' + (ly - 4) + ' l5 4 l-5 4" fill="none" stroke="' + INK + '" stroke-width="1.1"/>'; });
+    var ext = 20, dx = Math.cos(acute * rad), dy = Math.sin(acute * rad);
+    out += line(cx1 + dx * ext * 1.3, cy1 - dy * ext * 1.3, cx2 - dx * ext * 1.3, cy2 + dy * ext * 1.3, { sw: 1.4 });
+    var mid = [acute / 2, (180 + acute) / 2, 180 + acute / 2, (360 + 180 + acute) / 2];
+    function lab(i, s, bold) {
+      var c = i < 4 ? [cx1, cy1] : [cx2, cy2], a = mid[i % 4] * rad, d = s.length > 2 ? 22 : 17;
+      return T(c[0] + Math.cos(a) * d, c[1] - Math.sin(a) * d + 4, s, { s: bold ? 12 : 10, w: bold ? 700 : 400, f: bold ? INK : INK2, a: 'middle' });
+    }
+    out += lab(give, g + '°', false);
+    if (p.ask != null) out += lab(p.ask, '?', true);
+    (p.letters || []).forEach(function (l) { out += lab(l[0], l[1], true); });
+    return { svg: out, h: (p.one ? 46 : 96), w: W2 };
+  };
+  /* a circle with its radius (show 'r') or diameter (show 'd') drawn and labelled */
+  P.circ = function (p, x, y) {
+    var R = 32, cx = x + R + 4, cy = y + R + 4, u = ' ' + (p.unit || 'cm'), out = '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/><circle cx="' + cx + '" cy="' + cy + '" r="2" fill="' + INK + '"/>';
+    if (p.d != null) out += line(cx - R, cy, cx + R, cy, { sw: 1.2 }) + T(cx, cy - 6, fmt(p.d) + u, { s: 11, w: 700, a: 'middle' });
+    else out += line(cx, cy, cx + R, cy, { sw: 1.2 }) + T(cx + R / 2, cy - 6, fmt(p.r) + u, { s: 11, w: 700, a: 'middle' });
+    return { svg: out, h: 2 * R + 8, w: 2 * R + 8 };
+  };
+  /* a cylinder with its radius and height */
+  P.cyl = function (p, x, y) {
+    var rx = 30, ry = 9, hh = 52, cx = x + rx + 4, t = y + ry + 2, u = ' ' + (p.unit || 'cm'), out = '';
+    out += '<path d="M' + (cx - rx) + ' ' + t + ' L' + (cx - rx) + ' ' + (t + hh) + ' A' + rx + ' ' + ry + ' 0 0 0 ' + (cx + rx) + ' ' + (t + hh) + ' L' + (cx + rx) + ' ' + t + '" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+    out += '<ellipse cx="' + cx + '" cy="' + t + '" rx="' + rx + '" ry="' + ry + '" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>' + dash(line(cx, t, cx + rx, t, { s: INK2, sw: 1 }));
+    out += T(cx + rx / 2, t - 3, fmt(p.r) + u, { s: 10.5, w: 700, a: 'middle' }) + T(cx + rx + 6, t + hh / 2 + 4, fmt(p.h) + u, { s: 10.5, w: 700 });
+    return { svg: out, h: hh + 2 * ry + 6, w: 2 * rx + 60 };
+  };
+  /* a rectangular prism with its length, width and height */
+  P.rbox = function (p, x, y) {
+    var L = 70, H = 38, dx = 22, dy = 14, x0 = x + 4, y0 = y + dy + 4, u = ' ' + (p.unit || 'cm'), out = '';
+    out += '<path d="M' + x0 + ' ' + y0 + ' h' + L + ' v' + H + ' h' + -L + ' Z M' + x0 + ' ' + y0 + ' l' + dx + ' ' + -dy + ' h' + L + ' l' + -dx + ' ' + dy + ' M' + (x0 + L + dx) + ' ' + (y0 - dy) + ' v' + H + ' l' + -dx + ' ' + dy + '" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>';
+    out += T(x0 + L / 2, y0 + H + 13, fmt(p.l) + u, { s: 10.5, w: 700, a: 'middle' }) + T(x0 + L + dx / 2 + 4, y0 + H - dy / 2 + 8, fmt(p.w) + u, { s: 10.5, w: 700 }) + T(x0 + L + dx + 4, y0 - dy + H / 2 + 4, fmt(p.h) + u, { s: 10.5, w: 700 });
+    return { svg: out, h: H + dy + 22, w: L + dx + 60 };
+  };
+  /* a triangular prism: a triangle of base b and height h, l long */
+  P.tprism = function (p, x, y) {
+    var B = 56, Hh = 40, dx = 64, dy = 18, x0 = x + 4, y0 = y + Hh + dy + 4, u = ' ' + (p.unit || 'cm'), out = '';
+    var top = [x0 + B / 2, y0 - Hh];
+    out += '<path d="M' + x0 + ' ' + y0 + ' L' + (x0 + B) + ' ' + y0 + ' L' + top[0] + ' ' + top[1] + ' Z M' + (x0 + B) + ' ' + y0 + ' l' + dx + ' ' + -dy + ' L' + (top[0] + dx) + ' ' + (top[1] - dy) + ' L' + top[0] + ' ' + top[1] + '" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>';
+    out += dash(line(top[0], top[1], top[0], y0, { s: INK2, sw: 1 }));
+    out += T(x0 + B / 2, y0 + 13, fmt(p.b) + u, { s: 10.5, w: 700, a: 'middle' }) + T(top[0] + 3, y0 - Hh / 3, fmt(p.h) + u, { s: 10, f: INK2 }) + T(x0 + B + dx / 2 + 6, y0 - dy / 2 + 12, fmt(p.l) + u, { s: 10.5, w: 700 });
+    return { svg: out, h: Hh + dy + 20, w: B + dx + 40 };
+  };
+  /* a right triangle with legs a and b and hypotenuse c (cm); ask: 'a', 'b' or 'c' is written "?" */
+  P.rtri = function (p, x, y) {
+    var k = Math.min(120 / p.a, 62 / p.b), A = p.a * k, B = p.b * k, x0 = x + 36, y0 = y + B + 6, u = ' ' + (p.unit || 'cm'), out = '';
+    out += '<path d="M' + x0 + ' ' + y0 + ' h' + A + ' L' + x0 + ' ' + (y0 - B) + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+    out += '<path d="M' + (x0 + 8) + ' ' + y0 + ' v-8 h-8" fill="none" stroke="' + INK + '" stroke-width="1"/>';
+    var say = function (s, v) { return p.ask === s ? '?' : fmt(v) + u; };
+    out += T(x0 + A / 2, y0 + 13, say('a', p.a), { s: 11, w: 700, a: 'middle' }) + T(x0 - 4, y0 - B / 2 + 4, say('b', p.b), { s: 11, w: 700, a: 'end' }) + T(x0 + A / 2 + 6, y0 - B / 2 - 2, say('c', p.c), { s: 11, w: 700 });
+    return { svg: out, h: B + 22, w: A + 98 };
+  };
+  /* a coordinate grid from −n to n in both directions: pts, shape, after, keyShape and plot work as in coord */
+  P.cgrid = function (p, x, y, w, key) {
+    var n = p.n || 5, u = Math.min(10, (Math.min(w, 220) - 20) / (2 * n)), ox = x + 14 + n * u, oy = y + 6 + n * u, out = '';
+    var X = function (v) { return ox + v * u; }, Y = function (v) { return oy - v * u; };
+    for (var i = -n; i <= n; i++) {
+      out += line(X(i), Y(-n), X(i), Y(n), { s: LINE, sw: 0.6 }) + line(X(-n), Y(i), X(n), Y(i), { s: LINE, sw: 0.6 });
+      if (i && i % 2 === 0) out += T(X(i), Y(0) + 10, neg(i), { s: 7.5, f: INK2, a: 'middle' }) + T(X(0) - 3, Y(i) + 3, neg(i), { s: 7.5, f: INK2, a: 'end' });
+    }
+    out += line(X(-n), Y(0), X(n), Y(0), { sw: 1.2 }) + line(X(0), Y(-n), X(0), Y(n), { sw: 1.2 });
+    function shape(list, col, d) { return '<path d="M' + list.map(function (q) { return X(q[0]) + ' ' + Y(q[1]); }).join(' L') + ' Z" fill="' + (d ? 'none' : '#dfe5ee') + '" fill-opacity="0.8" stroke="' + col + '" stroke-width="1.4"' + (d ? ' stroke-dasharray="4 3"' : '') + '/>'; }
+    function dot(q, col) { return '<circle cx="' + X(q[0]) + '" cy="' + Y(q[1]) + '" r="3" fill="' + col + '"/>' + (q[2] ? T(X(q[0]) + 4, Y(q[1]) - 4, q[2], { s: 10, w: 700, f: col }) : ''); }
+    if (p.shape) out += shape(p.shape, INK);
+    if (p.after) out += shape(p.after, INK, true);
+    if (key && p.keyShape) out += shape(p.keyShape, KEY, true);
+    (p.pts || []).forEach(function (q) { out += dot(q, INK); });
+    if (key) (p.plot || []).forEach(function (q) { out += dot(q, KEY); });
+    return { svg: out, h: 2 * n * u + 14, w: 2 * n * u + 28 };
+  };
+  /* a composite shape: kind 'L' is a w by h rectangle with a cw by ch corner cut from its top right; kind 'semi' is a
+     w by h rectangle with a half circle on top (its diameter is w) */
+  P.comp = function (p, x, y) {
+    var k = Math.min(140 / p.w, 70 / (p.h + (p.kind === 'semi' ? p.w / 2 : 0))), W2 = p.w * k, H2 = p.h * k, u = ' ' + (p.unit || 'm'), out = '';
+    var x0 = x + 34, y0 = y + 6 + (p.kind === 'semi' ? W2 / 2 : 0) + H2;
+    if (p.kind === 'L') {
+      var cw = p.cw * k, ch = p.ch * k;
+      out += '<path d="M' + x0 + ' ' + y0 + ' h' + W2 + ' v' + -(H2 - ch) + ' h' + -cw + ' v' + -ch + ' h' + -(W2 - cw) + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+      out += T(x0 + W2 / 2, y0 + 13, fmt(p.w) + u, { s: 10.5, w: 700, a: 'middle' }) + T(x0 - 4, y0 - H2 / 2 + 4, fmt(p.h) + u, { s: 10.5, w: 700, a: 'end' });
+      out += T(x0 + W2 - cw / 2, y0 - H2 + ch - 4, fmt(p.cw) + u, { s: 10, f: INK2, a: 'middle' }) + T(x0 + W2 + 4, y0 - (H2 - ch) / 2 + 4, fmt(p.h - p.ch) + u, { s: 10, f: INK2 });
+    } else {
+      out += '<path d="M' + x0 + ' ' + (y0 - H2) + ' v' + H2 + ' h' + W2 + ' v' + -H2 + ' A' + W2 / 2 + ' ' + W2 / 2 + ' 0 0 0 ' + x0 + ' ' + (y0 - H2) + '" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>' + dash(line(x0, y0 - H2, x0 + W2, y0 - H2, { s: INK2, sw: 1 }));
+      out += T(x0 + W2 / 2, y0 + 13, fmt(p.w) + u, { s: 10.5, w: 700, a: 'middle' }) + T(x0 - 4, y0 - H2 / 2 + 4, fmt(p.h) + u, { s: 10.5, w: 700, a: 'end' });
+    }
+    return { svg: out, h: y0 - y + 18, w: W2 + 80 };
+  };
+  /* algebra tiles: xp and xn long x tiles (positive shaded, negative white), up and un small unit tiles */
+  P.atiles = function (p, x, y, w) {
+    var out = '', cx = x + 2, row = function (n, wide, pos) {
+      for (var i = 0; i < n; i++) {
+        out += '<rect x="' + cx + '" y="' + (y + 2) + '" width="' + (wide ? 11 : 11) + '" height="' + (wide ? 34 : 11) + '" fill="' + (pos ? '#dfe5ee' : '#fff') + '" stroke="' + INK + '" stroke-width="1.1"/>';
+        out += T(cx + 5.5, y + (wide ? 22 : 11), pos ? (wide ? 'x' : '+') : (wide ? '−x' : '−'), { s: wide ? 8 : 9, w: 700, a: 'middle' });
+        cx += wide ? 15 : 14;
+      }
+      if (n) cx += 8;
+    };
+    row(p.xp || 0, true, true); row(p.xn || 0, true, false); row(p.up || 0, false, true); row(p.un || 0, false, false);
+    return { svg: out, h: 38, w: cx - x };
+  };
+  /* a table with a heading row: head ['Month', 'Income', ...], rows [[...], ...]; numbers get a space from 5 digits */
+  P.tbl = function (p, x, y, w) {
+    var n = p.head.length, cw = Math.min(w, 228) / n, rh = 17, out = '';
+    p.head.forEach(function (h, i) { out += T(x + i * cw + 3, y + 11, h, { s: 9.5, w: 700, f: INK2 }); });
+    out += line(x, y + 15, x + cw * n, y + 15, { s: INK2, sw: 0.9 });
+    p.rows.forEach(function (r, j) {
+      r.forEach(function (v, i) { out += T(x + i * cw + 3, y + 15 + (j + 1) * rh - 4, fmt(v), { s: 10.5, w: i ? 400 : 700 }); });
+      out += line(x, y + 15 + (j + 1) * rh, x + cw * n, y + 15 + (j + 1) * rh, { s: LINE, sw: 0.7 });
+    });
+    return { svg: out, h: 18 + p.rows.length * rh, w: cw * n };
   };
 })();
