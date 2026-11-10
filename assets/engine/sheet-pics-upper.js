@@ -22,9 +22,10 @@
      grow  { m, b, k }          a growing pattern: figures 1 to k, figure n has b shaded tiles that never change and
                                 m rows of n open tiles (m × n + b tiles in all)
      code  { lines }            a short program in a box, one instruction per line (two spaces in front indent a line)
-     dbar  { cats, sets, keys, min, max, step, stack, title, h }   a bar graph (h: plot height, 64 when left out): one bar per set in each category (two sets
+     dbar  { cats, sets, keys, min, max, step, stack, hist, title, h }   a bar graph (h: plot height, 64 when left out): one bar per set in each category (two sets
                                 make a double bar graph, with keys as its legend), or the sets stacked in one bar; min
-                                starts the scale above 0 (a graph that misleads), with a zigzag on the axis
+                                starts the scale above 0 (a graph that misleads), with a zigzag on the axis; hist: the
+                                bars touch, for a histogram of intervals (cats such as '0–9')
      lineg { cats, vals, min, max, step, title, h }   a line graph: a point for each category, joined in order
      spin  { parts }            a spinner cut into equal parts, each labelled (['R', 'R', 'B'] is 2 parts R and 1 part B)
      stem  { data, title }      a stem-and-leaf plot of whole numbers under 100 or 1000: the tens (or tens and hundreds) as
@@ -39,15 +40,24 @@
                                 and a square in a right angle
      heights { g: [[2, 1], [1, 0]] }   a top view of cube stacks: the number in each square is how tall it is (0 is empty);
                                 the front is the bottom edge and the right side is the right edge
+     cross { deg, labs }        two straight lines crossing at deg; labs names the four angles in turn, counterclockwise
+                                from the one between the right-hand ray and the tilted ray (such as ['65°', 'a', 'b', 'c'])
      angle { deg, rot, bench, prot, from }   an angle of deg degrees, turned by rot, with a dashed square corner to
                                 compare (bench); prot: on a protractor (outer scale from the left, inner from the right),
                                 from: 'left' puts the first arm on the left
-     plane { kind: 'rect' | 'para' | 'tri', b, h, off, s, unit, ask }   a rectangle, parallelogram or triangle with its
-                                base and dashed height; off: how far along the top (or top corner) sits; s: the slanted
-                                side; ask: 'perim' when the question is its perimeter
+     plane { kind: 'rect' | 'para' | 'tri' | 'trap' | 'rhom' | 'kite', b, h, t, off, s, unit, ask }   a rectangle,
+                                parallelogram, triangle or trapezoid (top side t) with its base and dashed height; off: how
+                                far along the top (or top corner) sits; s: the slanted side; ask: 'perim' when the question
+                                is its perimeter. A rhombus or kite is drawn from its two diagonals, b across and h down
+                                (off: where a kite's cross piece meets the long diagonal, from the top)
+     ftree { n, primes, blank } a factor tree that splits off one prime at a time (primes in that order); blank: every
+                                number under n is a line (answers row by row: the prime, then what is left)
+     net   { kind: 'box', l, w, h } | { kind: 'tprism', b, th, s, l } | { kind: 'spyr', b, sh }, unit   a net of a
+                                rectangular prism, a triangular prism (triangle base b, height th, equal sides s, length
+                                l) or a square-based pyramid (base b, triangle height sh), with its lengths
      coord { n, min, u, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
                                 a coordinate grid from 0 (or min, for four quadrants) to n: labelled points, a shape, the shape after a move (dashed), a
-                                dashed mirror line, and points or a shape drawn only on the key
+                                dashed mirror line, and points or a shape drawn only on the key; u: a smaller square
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
@@ -353,11 +363,11 @@
           out += '<rect x="' + (a.gx + i * cw + cw * 0.22) + '" y="' + y1 + '" width="' + cw * 0.56 + '" height="' + (y0 - y1) + '" fill="' + FILLS[j % 3] + '" stroke="' + INK2 + '" stroke-width="1"/>';
         });
       } else {
-        var bw = cw * 0.7 / k;
+        var bw = (p.hist ? cw : cw * 0.7) / k;
         p.sets.forEach(function (set, j) {
           if (set[i] == null) return;
           var top = a.at(set[i]);
-          out += '<rect x="' + (a.gx + i * cw + cw * 0.15 + j * bw) + '" y="' + top + '" width="' + bw + '" height="' + (base - top) + '" fill="' + FILLS[j % 3] + '" stroke="' + INK2 + '" stroke-width="1"/>';
+          out += '<rect x="' + (a.gx + i * cw + (p.hist ? 0 : cw * 0.15) + j * bw) + '" y="' + top + '" width="' + bw + '" height="' + (base - top) + '" fill="' + FILLS[j % 3] + '" stroke="' + INK2 + '" stroke-width="1"/>';
         });
       }
       out += T(a.gx + i * cw + cw / 2, base + 13, c, { s: 9.5, f: INK2, a: 'middle' });
@@ -563,29 +573,120 @@
     return { svg: out, h: maxy - miny + 12, w: maxx - minx + 12 };
   };
 
+  /* two straight lines crossing: one across, the other at deg to it; labs names the four angles in turn, starting
+     between the right-hand ray and the tilted one, then counterclockwise */
+  P.cross = function (p, x, y) {
+    var rad = Math.PI / 180, L = 50, g = p.deg, up = Math.sin(g * rad) * L, cx = x + L + 8, cy = y + up + 6, out = '';
+    var at = function (a, r) { return [cx + Math.cos(a * rad) * r, cy - Math.sin(a * rad) * r]; };
+    var e1 = at(0, L), e2 = at(180, L), e3 = at(g, L), e4 = at(180 + g, L);
+    out += line(e2[0], e2[1], e1[0], e1[1], { sw: 1.6 }) + line(e4[0], e4[1], e3[0], e3[1], { sw: 1.6 });
+    [[0, g], [g, 180], [180, 180 + g], [180 + g, 360]].forEach(function (sec, i) {
+      var t = at((sec[0] + sec[1]) / 2, 26);
+      out += T(t[0], t[1] + 4, (p.labs || [])[i] || '', { s: 11, w: 600, a: 'middle' });
+    });
+    out += '<circle cx="' + cx + '" cy="' + cy + '" r="2.2" fill="' + INK + '"/>';
+    return { svg: out, h: 2 * up + 12, w: 2 * L + 16 };
+  };
+
   /* a flat shape with its base and height (not to scale): a rectangle, a parallelogram whose top is moved off along
-     the base, or a triangle whose top corner is off along the base. The height is dashed with a square corner; s labels
-     the slanted side of a parallelogram or triangle */
+     the base, a triangle whose top corner is off along the base, or a trapezoid whose top side t starts off along the
+     base. The height is dashed with a square corner; s labels the slanted side of a parallelogram or triangle.
+     A rhombus or kite is drawn from its diagonals instead: b across and h down, crossing at right angles (a kite's
+     diagonals cross off from its top, so one is cut in two unequal parts) */
   P.plane = function (p, x, y, w) {
-    var b = p.b, h = p.h, u = ' ' + (p.unit || 'cm'), off = p.kind === 'rect' ? 0 : p.off != null ? p.off : Math.round(b / 3);
-    var span = p.kind === 'para' ? b + off : b, k = Math.min((Math.min(w, 230) - 70) / span, 56 / h, 14), ox = x + 54, oy = y + 6 + h * k;
+    var b = p.b, h = p.h, u = ' ' + (p.unit || 'cm'), out = '';
+    if (p.kind === 'rhom' || p.kind === 'kite') {
+      var cut = p.kind === 'kite' ? (p.off != null ? p.off : h / 3) : h / 2, kd = Math.min((Math.min(w, 230) - 70) / b, 72 / h, 12);
+      var dx = x + 30, dy = y + 6, P2 = function (q) { return (dx + q[0] * kd).toFixed(1) + ' ' + (dy + q[1] * kd).toFixed(1); };
+      out += '<path d="M' + [[b / 2, 0], [b, cut], [b / 2, h], [0, cut]].map(P2).join(' L') + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/>';
+      out += '<path d="M' + P2([0, cut]) + ' L' + P2([b, cut]) + ' M' + P2([b / 2, 0]) + ' L' + P2([b / 2, h]) + '" stroke="' + INK2 + '" stroke-width="1.1" stroke-dasharray="4 3" fill="none"/>';
+      var lw1 = tw(b + u, 11.5, 700) + 6, cx0 = dx + b / 4 * kd, cy0 = dy + cut * kd;
+      out += '<rect x="' + (cx0 - lw1 / 2) + '" y="' + (cy0 - 8) + '" width="' + lw1 + '" height="16" fill="#fff"/>' + T(cx0, cy0 + 4, b + u, { s: 11.5, w: 700, a: 'middle' });
+      out += T(dx + b * kd + 8, dy + (cut + h) / 2 * kd + 4, h + u, { s: 11.5, w: 700 });
+      return { svg: out, h: h * kd + 12, w: b * kd + 30 + 12 + tw(h + u, 11.5, 700) };
+    }
+    var top = p.kind === 'trap' ? p.t : 0, off = p.kind === 'rect' ? 0 : p.off != null ? p.off : Math.round(b / 3);
+    var span = p.kind === 'para' ? b + off : p.kind === 'trap' ? Math.max(b, off + top) : b, k = Math.min((Math.min(w, 230) - 70) / span, 56 / h, 14), pad = top ? 16 : 0, ox = x + 54, oy = y + 6 + pad + h * k;
     /* a tall shape is widened a little (up to 10 points a unit) so it does not become a sliver; it is not to scale */
     var kx = Math.max(k, Math.min((Math.min(w, 230) - 70) / span, 10));
     var X = function (v) { return ox + v * kx; }, Y = function (v) { return oy - v * k; };
-    var pts = p.kind === 'rect' ? [[0, 0], [b, 0], [b, h], [0, h]] : p.kind === 'para' ? [[0, 0], [b, 0], [b + off, h], [off, h]] : [[0, 0], [b, 0], [off, h]];
-    var out = '<path d="M' + pts.map(function (q) { return X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); }).join(' L') + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/>';
+    var pts = p.kind === 'rect' ? [[0, 0], [b, 0], [b, h], [0, h]] : p.kind === 'para' ? [[0, 0], [b, 0], [b + off, h], [off, h]] : p.kind === 'trap' ? [[0, 0], [b, 0], [off + top, h], [off, h]] : [[0, 0], [b, 0], [off, h]];
+    out += '<path d="M' + pts.map(function (q) { return X(q[0]).toFixed(1) + ' ' + Y(q[1]).toFixed(1); }).join(' L') + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/>';
     out += T(X(b / 2), oy + 16, b + u, { s: 11.5, w: 700, a: 'middle' });
+    if (p.kind === 'trap') out += T(X(off + top / 2), Y(h) - 6, top + u, { s: 11.5, w: 700, a: 'middle' });
     if (p.kind === 'rect') out += T(ox - 6, Y(h / 2) + 4, h + u, { s: 11.5, w: 700, a: 'end' });
     else {
-      out += '<line x1="' + X(off) + '" y1="' + Y(h) + '" x2="' + X(off) + '" y2="' + oy + '" stroke="' + INK2 + '" stroke-width="1.1" stroke-dasharray="4 3"/>';
-      out += '<path d="M' + (X(off) + 7) + ' ' + oy + ' L' + (X(off) + 7) + ' ' + (oy - 7) + ' L' + X(off) + ' ' + (oy - 7) + '" fill="none" stroke="' + INK2 + '" stroke-width="0.9"/>';
+      var hx = p.kind === 'trap' ? off + top / 2 : off;
+      out += '<line x1="' + X(hx) + '" y1="' + Y(h) + '" x2="' + X(hx) + '" y2="' + oy + '" stroke="' + INK2 + '" stroke-width="1.1" stroke-dasharray="4 3"/>';
+      out += '<path d="M' + (X(hx) + 7) + ' ' + oy + ' L' + (X(hx) + 7) + ' ' + (oy - 7) + ' L' + X(hx) + ' ' + (oy - 7) + '" fill="none" stroke="' + INK2 + '" stroke-width="0.9"/>';
       /* the height's label goes on the roomier side of the dashed line, on a white patch so a side never runs through it */
       var tri = p.kind === 'tri', at = tri ? h / 3 : h / 2, left = tri && off > (b - off), lw = tw(h + u, 11.5, 700) + 6;
-      var lx = left ? X(off) - 5 - lw : X(off) + 5;
+      var lx = left ? X(hx) - 5 - lw : X(hx) + 5;
       out += '<rect x="' + lx + '" y="' + (Y(at) - 9) + '" width="' + lw + '" height="16" fill="#fff"/>' + T(lx + 3, Y(at) + 4, h + u, { s: 11.5, w: 700 });
       if (p.s) out += T(X(off / 2) - 7, Y(h / 2) + 4, p.s + u, { s: 11.5, f: INK2, a: 'end' });
     }
-    return { svg: out, h: h * k + 24, w: span * kx + 54 + 10 };
+    return { svg: out, h: h * k + 24 + pad, w: span * kx + 54 + 10 };
+  };
+
+  /* a factor tree that splits off one prime at a time: n at the top, then each number splits into the next prime of
+     primes (circled) and what is left, until what is left is the last prime. blank: every number under n is a line to
+     write on (answers in order: the prime, then what is left, one row at a time) */
+  P.ftree = function (p, x, y, w, key, th, ans) {
+    var pr = p.primes, rest = p.n, rows = [], used = 0, out = '', dx = Math.min(30, (Math.min(w, 228) - 70) / pr.length), rh = 30;
+    for (var i = 0; i < pr.length - 1; i++) { rest = rest / pr[i]; rows.push([pr[i], rest]); }
+    var px = x + 40, py = y + 14;
+    out += T(px, py, fmt(p.n), { s: 15, w: 700, a: 'middle' });
+    rows.forEach(function (r, j) {
+      var ly = py + rh, lx = px - dx * 0.8, rx = px + dx, last = j === rows.length - 1;
+      out += line(px - 4, py + 5, lx + 4, ly - 13, { s: INK2, sw: 1 }) + line(px + 4, py + 5, rx - 4, ly - 13, { s: INK2, sw: 1 });
+      [[lx, r[0], true], [rx, r[1], last]].forEach(function (c) {
+        if (c[2]) out += '<circle cx="' + c[0] + '" cy="' + (ly - 5) + '" r="12" fill="none" stroke="' + INK2 + '" stroke-width="1"/>';
+        if (p.blank) { out += blank(c[0], ly + 2, 22); if (key) out += T(c[0], ly, fmt(ans[used]), { s: 13, w: 700, f: KEY, a: 'middle' }); used++; }
+        else out += T(c[0], ly, fmt(c[1]), { s: 14, w: 700, a: 'middle' });
+      });
+      px = rx; py = ly;
+    });
+    return { svg: out, h: py - y + 12, w: px - x + 30, used: used };
+  };
+
+  /* a net (a solid opened flat) with its lengths: box { l, w, h } (a rectangular prism; a cube when all three are
+     equal), tprism { b, th, s, l } (a triangular prism: a triangle of base b, height th and two equal sides s, and
+     length l), spyr { b, sh } (a square-based pyramid: base b and the height of each triangle sh). Not to scale */
+  P.net = function (p, x, y, w) {
+    var out = '', u = ' ' + (p.unit || 'cm'), R = function (rx, ry, rw, rhh) { return '<rect x="' + rx.toFixed(1) + '" y="' + ry.toFixed(1) + '" width="' + rw.toFixed(1) + '" height="' + rhh.toFixed(1) + '" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>'; };
+    var lab = function (lx, ly, s, a) { return T(lx, ly, s, { s: 10.5, w: 700, f: INK2, a: a || 'middle' }); }, k, ht, wd;
+    var poly = function (pts) { return '<path d="M' + pts.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>'; };
+    if (p.kind === 'box') {
+      /* a cross: top, front, bottom and back down the middle (l across), with a side (w across, h down) each side of the
+         front; l is written above the top, w beside the top and h beside the right side */
+      var L = p.l, W = p.w, H = p.h, lw = Math.max(tw(W + u, 10.5, 700), tw(H + u, 10.5, 700)) + 6;
+      k = Math.min((Math.min(w, 228) - 16 - lw) / (L + 2 * W), 150 / (2 * W + 2 * H), 14);
+      var x0 = x + 4 + W * k, y0 = y + 16;
+      out += R(x0, y0, L * k, W * k) + R(x0, y0 + W * k, L * k, H * k) + R(x0, y0 + (W + H) * k, L * k, W * k) + R(x0, y0 + (2 * W + H) * k, L * k, H * k);
+      out += R(x0 - W * k, y0 + W * k, W * k, H * k) + R(x0 + L * k, y0 + W * k, W * k, H * k);
+      out += lab(x0 + L * k / 2, y0 - 4, L + u) + lab(x0 + L * k + 4, y0 + W * k / 2 + 4, W + u, 'start') + lab(x0 + (L + W) * k + 4, y0 + (W + H / 2) * k + 4, H + u, 'start');
+      ht = (2 * W + 2 * H) * k + 20; wd = (L + 2 * W) * k + 8 + lw;
+    } else if (p.kind === 'tprism') {
+      var b = p.b, th = p.th, s2 = p.s, l = p.l;
+      k = Math.min((Math.min(w, 228) - 20 - tw(l + u, 10.5, 700)) / (b + 2 * s2), 150 / (l + 2 * th), 12);
+      var tx = x + 8 + s2 * k, ty = y + 4 + th * k;
+      out += R(tx - s2 * k, ty, s2 * k, l * k) + R(tx, ty, b * k, l * k) + R(tx + b * k, ty, s2 * k, l * k);
+      out += poly([[tx, ty], [tx + b * k, ty], [tx + b * k / 2, ty - th * k]]) + poly([[tx, ty + l * k], [tx + b * k, ty + l * k], [tx + b * k / 2, ty + (l + th) * k]]);
+      out += '<line x1="' + (tx + b * k / 2) + '" y1="' + ty + '" x2="' + (tx + b * k / 2) + '" y2="' + (ty - th * k) + '" stroke="' + INK2 + '" stroke-width="1" stroke-dasharray="3 2"/>';
+      out += lab(tx + b * k / 2, ty + l * k / 2 + 4, b + u) + lab(tx + b * k / 2 + 4, ty - th * k / 3, th + u, 'start') + lab(tx + b * k + s2 * k / 2, ty + l * k / 2 + 4, s2 + u) + lab(tx + (b + s2) * k + 4, ty + l * k / 2 + 4, l + u, 'start');
+      ht = (l + 2 * th) * k + 8; wd = (b + 2 * s2) * k + 12 + tw(l + u, 10.5, 700);
+    } else {
+      var B = p.b, sh = p.sh;
+      k = Math.min((Math.min(w, 228) - 30) / (B + 2 * sh), 150 / (B + 2 * sh), 12);
+      var sx = x + 8 + sh * k, sy = y + 4 + sh * k, c = [sx + B * k / 2, sy + B * k / 2];
+      out += R(sx, sy, B * k, B * k);
+      out += poly([[sx, sy], [sx + B * k, sy], [c[0], sy - sh * k]]) + poly([[sx, sy + B * k], [sx + B * k, sy + B * k], [c[0], sy + (B + sh) * k]]);
+      out += poly([[sx, sy], [sx, sy + B * k], [sx - sh * k, c[1]]]) + poly([[sx + B * k, sy], [sx + B * k, sy + B * k], [sx + (B + sh) * k, c[1]]]);
+      out += '<line x1="' + c[0] + '" y1="' + sy + '" x2="' + c[0] + '" y2="' + (sy - sh * k) + '" stroke="' + INK2 + '" stroke-width="1" stroke-dasharray="3 2"/>';
+      out += lab(c[0], c[1] + 4, B + u) + lab(c[0] + 4, sy - sh * k / 3, sh + u, 'start');
+      ht = (B + 2 * sh) * k + 8; wd = (B + 2 * sh) * k + 8;
+    }
+    return { svg: out, h: ht, w: wd };
   };
   /* ---------- Grade 7: integers, circles, circle graphs, prisms and cylinders, and two-event outcomes ---------- */
   function sgn(v) { return v < 0 ? '−' + -v : String(v); }

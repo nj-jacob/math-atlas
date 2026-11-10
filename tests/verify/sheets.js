@@ -13,7 +13,7 @@
   }
   /* sheet maths into plain maths: × ÷ −, 2^5, √49, 12 500 as 12500, 2 3/4 as (2 + 3/4), 1/4 as (1/4), 75% as 75 / 100, $4.50 as 4.50, "23 hundreds" as (23 * 100), a remainder "R" kept,
      and "3 groups of 4", "3 rows of 4", "3 jumps of 4" mean 3 × 4; other words go */
-  const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1, tenth: 0.1, hundredth: 0.01 };
+  const PLACE = { 'ten thousand': 10000, thousand: 1000, hundred: 100, ten: 10, one: 1, tenth: 0.1, hundredth: 0.01, thousandth: 0.001 };
   /* a row with two or more different metric units (3.5 m = 350 cm, 1 kg 200 g = 1200 g) is put into one unit per kind:
      every amount becomes its number times the unit's size in metres, grams or litres */
   const MU = { mm: 0.001, cm: 0.01, m: 1, km: 1000, mg: 0.001, g: 1, kg: 1000, mL: 0.001, L: 1 };
@@ -24,6 +24,9 @@
   [['T', 12], ['G', 9], ['M', 6], ['k', 3], ['m', -3], ['µ', -6], ['n', -9], ['p', -12]].forEach(([p, e]) => ['m', 'g', 's', 'W', 'B'].forEach(u => { if (!MU[p + u] && !TU[p + u]) PU[p + u] = '10 ** ' + e; }));
   ['W', 'B'].forEach(u => { PU[u] = 1; });
   function metric(s) {
+    /* areas: 3 m² = 30 000 cm² (a square unit's size is its length squared) */
+    const sq = /(\d+(?:\.\d+)?) ?(mm|cm|m|km)²/g;
+    if (new Set([...s.matchAll(sq)].map(m => m[2])).size >= 2) return s.replace(sq, (m, n, u) => '(' + n + ' * ' + MU[u] * MU[u] + ')');
     const re = /(\d+(?:\.\d+)?) ?(Tm|Gm|Mm|µm|nm|pm|Tg|Gg|Mg|µg|ng|pg|Ts|Gs|Ms|ks|ms|µs|ns|ps|TW|GW|MW|kW|mW|µW|nW|pW|TB|GB|MB|kB|W|B|mm|min|mL|mg|cm|km|kg|m|g|L|h|s|days?|weeks?)(?![\w²³])/g;
     if (new Set([...s.matchAll(re)].map(m => m[2])).size < 2) return s;
     return s.replace(re, (m, n, u) => '(' + n + ' * ' + (MU[u] || TU[u] || PU[u]) + ')').replace(/\) \(/g, ') + (');
@@ -70,7 +73,8 @@
     return metric(powers(s).replace(/\^/g, ' ** '))
       .replace(/(^|[^\d.\/])(\d+) (\d+)\/(\d+)/g, (m, pre, w, n, d) => pre + '(' + w + ' + ' + n + '/' + d + ')')
       .replace(/(^|[^\d.(])(\d+)\/(\d+)(?![\d.])/g, '$1($2/$3)')
-      .replace(/(\d+) (ten thousand|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
+      .replace(/\) of (?=[\d(])/g, ') * ')
+      .replace(/(\d+) (ten thousand|thousandth|thousand|hundredth|hundred|tenth|ten|one)s?\b/g, (m, n, pl) => '(' + n + ' * ' + PLACE[pl] + ') +')
       .replace(/\$/g, '').replace(/ ?%/g, ' / 100').replace(/×/g, '*').replace(/÷/g, '/').replace(/−/g, '-').replace(/\b(groups|rows|jumps) of\b/g, '*')
       .replace(/ R (?=\d)/g, ' ~ ').replace(/\.(?!\d)|(?<!\d)\./g, ' ')
       .replace(/[A-Za-z’'?:²³°¢]+/g, ' ').replace(/~/g, 'R').replace(/\+\s*(?=[=<>)]|$)/g, '').replace(/\s+/g, ' ').trim();
@@ -86,19 +90,24 @@
   const ONES = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'eleven', 'twelve', 'thirteen', 'fourteen', 'fifteen', 'sixteen', 'seventeen', 'eighteen', 'nineteen'];
   const TENS = ['', '', 'twenty', 'thirty', 'forty', 'fifty', 'sixty', 'seventy', 'eighty', 'ninety'];
   function fromWords(w) {
+    /* a decimal: "four and thirty-six hundredths", "five thousandths" */
+    const dec = String(w).toLowerCase().match(/^(?:(.+) and )?(.+) (tenth|hundredth|thousandth)s?$/);
+    if (dec) return (dec[1] ? fromWords(dec[1]) : 0) + fromWords(dec[2]) * { tenth: 0.1, hundredth: 0.01, thousandth: 0.001 }[dec[3]];
     let n = 0, part = 0;
     for (const t of String(w).toLowerCase().replace(/-/g, ' ').split(/\s+/).filter(Boolean)) {
       if (ONES.indexOf(t) >= 0) part += ONES.indexOf(t);
       else if (TENS.indexOf(t) >= 2) part += 10 * TENS.indexOf(t);
       else if (t === 'hundred') part *= 100;
       else if (t === 'thousand') { n += part * 1000; part = 0; }
+      else if (t === 'million') { n += part * 1000000; part = 0; }
       else if (t !== 'and') return NaN;
     }
     return n + part;
   }
-  /* a number in words, written the Canadian school way: 342 is "three hundred forty-two" */
+  /* a number in words, written the Canadian school way: 342 is "three hundred forty-two", 3 000 040 is "three million forty" */
   function toWords(n) {
-    if (n === 1000) return 'one thousand';
+    if (n >= 1000000) return toWords(Math.floor(n / 1000000)) + ' million' + (n % 1000000 ? ' ' + toWords(n % 1000000) : '');
+    if (n >= 1000) return toWords(Math.floor(n / 1000)) + ' thousand' + (n % 1000 ? ' ' + toWords(n % 1000) : '');
     const h = Math.floor(n / 100), r = n % 100, out = [];
     if (h) out.push(ONES[h] + ' hundred');
     if (r >= 20) out.push(TENS[Math.floor(r / 10)] + (r % 10 ? '-' + ONES[r % 10] : ''));
@@ -253,6 +262,26 @@
     const top = Math.max(...Object.values(c));
     return top < 2 ? 'none' : Object.keys(c).filter(k => c[k] === top).map(Number).sort((x, y) => x - y).join(' and ');
   }
+  const isPrime = n => Number.isInteger(n) && n > 1 && [...Array(Math.floor(Math.sqrt(n)) + 1).keys()].slice(2).every(f => n % f);
+  const gcd = (x, y) => (y ? gcd(y, x % y) : x);
+  /* quadrilaterals and regular shapes: pairs of parallel sides (par), right angles (right), which sides are equal
+     (all, opp: opposite pairs, adj: two pairs side by side, none), lines of symmetry (sym), order of rotational symmetry
+     (rot: 1 means it only fits once in a full turn), and the diagonals: equal (deq), at right angles (dperp), cutting
+     each other in half (dhalf) */
+  const QUAD = {
+    square: { par: 2, right: 4, sides: 'all', sym: 4, rot: 4, deq: 1, dperp: 1, dhalf: 1 },
+    rectangle: { par: 2, right: 4, sides: 'opp', sym: 2, rot: 2, deq: 1, dperp: 0, dhalf: 1 },
+    rhombus: { par: 2, right: 0, sides: 'all', sym: 2, rot: 2, deq: 0, dperp: 1, dhalf: 1 },
+    parallelogram: { par: 2, right: 0, sides: 'opp', sym: 0, rot: 2, deq: 0, dperp: 0, dhalf: 1 },
+    trapezoid: { par: 1, right: 0, sides: 'none', sym: 0, rot: 1, deq: 0, dperp: 0, dhalf: 0 },
+    'isosceles trapezoid': { par: 1, right: 0, sides: 'legs', sym: 1, rot: 1, deq: 1, dperp: 0, dhalf: 0 },
+    kite: { par: 0, right: 0, sides: 'adj', sym: 1, rot: 1, deq: 0, dperp: 1, dhalf: 0 },
+    'equilateral triangle': { sym: 3, rot: 3 }, 'regular pentagon': { sym: 5, rot: 5 }, 'regular hexagon': { sym: 6, rot: 6 }, 'regular octagon': { sym: 8, rot: 8 }
+  };
+  /* is every one of the first kind also the second kind? (by what the second kind needs) */
+  const ISA = { parallelogram: q => q.par === 2, rectangle: q => q.par === 2 && q.right === 4, rhombus: q => q.sides === 'all', square: q => q.sides === 'all' && q.right === 4, kite: q => q.sides === 'adj' || q.sides === 'all' };
+  /* data that is counted (discrete) or measured (continuous), from the words of the question */
+  const WORDS = /\b(favourite|colour|kind of|type of|name of|language)\b/i, COUNTED = /\b(number of|how many)\b/i, MEASURED = /\b(height|length|mass|time|temperature|distance|how long|how tall|how heavy|how far|weight|how much water|how fast)\b/i;
   /* chance words: compare the count of one colour (k) with all of them (n) */
   const chanceWord = (k, n) => (k === 0 ? 'impossible' : k === n ? 'certain' : 2 * k < n ? 'unlikely' : 2 * k === n ? 'equally likely' : 'likely');
   /* kinds of data: a survey question with number answers starts "How many", "How far" ...; the way data is collected */
@@ -460,10 +489,27 @@
        its perimeter when its sides are known (a rectangle, or a parallelogram with its slanted side); a triangle's
        story sum may halve, so 2 counts as one of its numbers */
     angle: o => ({ total: o.deg, deg: o.deg }),
+    /* two crossing lines: the four angles in turn are deg, 180 − deg, deg, 180 − deg, each under its label */
+    cross: o => ({ cross: Object.fromEntries((o.labs || []).map((l, i) => [l, i % 2 ? 180 - o.deg : o.deg])), blanks: 0, own: () => [] }),
     plane: o => {
-      const area = o.kind === 'tri' ? o.b * o.h / 2 : o.b * o.h, perim = o.kind === 'rect' ? 2 * (o.b + o.h) : o.kind === 'para' && o.s ? 2 * (o.b + o.s) : null;
-      return { total: o.ask === 'perim' ? perim : area, perim: perim, pair: o.kind === 'tri' ? null : [o.b, o.h], data: [o.b, o.h].concat(o.s ? [o.s] : [], o.kind === 'tri' ? [2] : []) };
+      const area = o.kind === 'tri' || o.kind === 'rhom' || o.kind === 'kite' ? o.b * o.h / 2 : o.kind === 'trap' ? (o.b + o.t) * o.h / 2 : o.b * o.h, perim = o.kind === 'rect' ? 2 * (o.b + o.h) : o.kind === 'para' && o.s ? 2 * (o.b + o.s) : null;
+      const half = ['tri', 'trap', 'rhom', 'kite'].indexOf(o.kind) >= 0;
+      return { total: o.ask === 'perim' ? perim : area, perim: perim, pair: half || o.kind === 'trap' ? null : [o.b, o.h], data: [o.b, o.h].concat(o.s ? [o.s] : [], o.t ? [o.t] : [], half ? [2] : []) };
     },
+    /* a factor tree: each row's two numbers multiply to the number above, the circled ones are prime, and the last
+       number left is prime too */
+    ftree: o => (o.blank ? { blanks: 2 * (o.primes.length - 1), own: (o, a) => {
+      const bad = []; let top = o.n;
+      for (let i = 0; i + 1 < a.length; i += 2) {
+        if (!isPrime(a[i])) bad.push('the factor tree circles ' + a[i] + ', which is not prime');
+        if (a[i] * a[i + 1] !== top) bad.push('in the factor tree ' + a[i] + ' × ' + a[i + 1] + ' is not ' + top);
+        top = a[i + 1];
+      }
+      if (!isPrime(top)) bad.push('the factor tree ends at ' + top + ', which is not prime');
+      return bad;
+    } } : { total: o.n, own: () => (o.primes.reduce((x, y) => x * y, 1) === o.n && o.primes.every(isPrime) ? [] : ['the factor tree of ' + o.n + ' is not split into primes']), blanks: 0 }),
+    /* a net: its surface area, every face added */
+    net: o => ({ total: o.kind === 'box' ? 2 * (o.l * o.w + o.l * o.h + o.w * o.h) : o.kind === 'tprism' ? o.b * o.th + (o.b + 2 * o.s) * o.l : o.b * o.b + 2 * o.b * o.sh, data: [o.l, o.w, o.h, o.b, o.th, o.s, o.sh].filter(v => v != null).concat([2, 4]) }),
     mix: o => ({ parts: [o.a * (o.g || 1), o.b * (o.g || 1)] }),
     disks: o => ({ total: o.list ? o.list.reduce((x, r) => x + r[0] * r[1], 0) : o.n }),
     grid: o => (o.unit && o.n ? { total: o.n * num(o.unit) } : null),
@@ -530,6 +576,7 @@
     chunks: [{ t: 372, d: 12, steps: [30, 1] }], pvmove: [{ n: 3.45, shift: 2, dir: 'x' }], disks: [{ list: [[10000, 2], [1000, 3], [100, 13], [1, 4]] }],
     fbars: [{ rows: [[4, 3], [8, 6]], labels: ['3/4', '6/8'] }], dline: [{ min: 0, max: 1, d: 10, show: 'dec', pt: 0.7, ask: [0.4] }, ['0.4']],
     hill: [{ lo: 48000, hi: 49000, n: 48650 }], mix: [{ a: 2, b: 3, g: 4 }], grow: [{ m: 2, b: 1, k: 3 }], dbar: [{ cats: ['Mon', 'Tue', 'Wed'], sets: [[4, 6, 3], [5, 2, 7]], keys: ['A', 'B'], max: 8, step: 2 }], lineg: [{ cats: ['Jan', 'Feb', 'Mar'], vals: [3, 5, 4], max: 6, step: 2 }], spin: [{ parts: ['R', 'R', 'B', 'G'] }], stem: [{ data: [23, 31, 35, 38, 42, 47, 47, 56] }], dial: [{ g: 650, max: 1000, lab: 200, tick: 50 }], jug: [{ mL: 750, max: 1000, lab: 200, tick: 50 }], tri: [{ sides: [5, 5, 8], show: 'sides', marks: true }], heights: [{ g: [[2, 1], [1, 0]] }], coord: [{ n: 8, pts: [[2, 3, 'A']], plot: [[5, 1, 'B']] }], angle: [{ deg: 120, prot: true }], plane: [{ kind: 'para', b: 9, h: 4, s: 5, unit: 'cm' }], code: [{ lines: ['set total to 5', 'repeat 3 times', '  add 4 to total'] }], grid: [{ n: 37, unit: '1000' }],
+    ftree: [{ n: 60, primes: [2, 2, 3, 5], blank: true }, [2, 30, 2, 15, 3, 5]], net: [{ kind: 'box', l: 6, w: 3, h: 4 }], cross: [{ deg: 65, labs: ['65°', 'a', 'b', 'c'] }],
     therm: [{ t: -8, min: -20, max: 20, step: 2, lab: 10 }], circ7: [{ r: 6, show: 'r', ask: 'C' }],
     pie: [{ cats: ['Soccer', 'Hockey', 'Swim', 'Other'], vals: [40, 30, 20, 10], title: 'Favourite sport' }], cyl7: [{ r: 3, h: 10, ask: 'V' }],
     prism: [{ tri: true, b: 6, th: 4, l: 10, ask: 'V' }], cnet: [{ r: 4, h: 9, ask: true }], outs: [{ a: ['H', 'T'], b: ['1', '2', '3', '4', '5', '6'], ta: 'Coin', tb: 'Number cube' }],
@@ -582,7 +629,7 @@
     const raw = it.eq || [], ansAll = (it.a || []).slice(pc && pc.own ? pc.blanks : 0);
     /* rows whose answer is checked from the item itself further down (a digit's value, the biggest or smallest number from
        some digits, a remainder story) */
-    const byItem = !!(it.deal || it.fshare || it.find || it.shapeAsk || it.simp || it.bnd || it.at != null || it.sp || it.bag || it.vp || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.factors || it.int || it.like || it.up || (pc && pc.ask != null));
+    const byItem = !!((pc && pc.cross) || it.bins || it.pf || it.factors || it.lcm || it.quad || it.two || it.outcomes || it.deal || it.fshare || it.find || it.shapeAsk || it.simp || it.bnd || it.at != null || it.sp || it.bag || it.vp || it.fewest || it.corners || it.dv || it.big || it.small || it.rem || it.fig || it.rule || it.expr || it.solve || it.ineq || it.stat || it.rel != null || it.prob || it.looks || it.int || it.like || it.up || (pc && pc.ask != null));
     filled.forEach((row, ri) => {
       const blanks = /\[\]/.test(raw[ri]);
       /* a row that names the categories of a graph or table ("Summer − Spring = 6", "in all = 30"): put their values in (not a "Red: 9/20" label) */
@@ -601,7 +648,7 @@
       let est;
       let st;
       /* a row with a letter for a number (3n + 2 = [], n = []) is checked by its item's expr, solve, ineq or rule below */
-      if ((it.expr || it.solve || it.ineq || it.rule || it.simp || it.bnd) && /(^|[\d\s(−\/])[a-z]\b/.test(row)) return;
+      if ((it.expr || it.solve || it.ineq || it.rule || it.ident || it.simp || it.bnd) && /(^|[\d\s(−\/])[a-z]\b/.test(row)) return;
       /* like terms: a row with a letter (2x + 3 + 4x = 6x + 3) must be true whatever the letter is */
       if (it.like && /(^|[\d\s(−-])[a-z]\b/.test(row)) {
         if ([2, 7].some(v => truth(putIn(row, v)) !== true)) say('the two sides are not the same for every value of the letter: ' + row);
@@ -613,8 +660,8 @@
       if (pc && pc.angAt && /^[a-z] = /.test(row)) return;
       /* Grade 2's symbols for a number ("▲ = 5"): put it in the item's sentence, which must then be true */
       if (it.letter && /^[▲●■★] = \S+$/.test(row)) { if (truth(it.letter.replace(/[▲●■★]/g, row.split(' = ')[1])) !== true) say('with ' + row + ', "' + it.letter + '" is not true'); return; }
-      /* a spinner's rows (P(R) = [], R: about []) are checked by its item's prob below */
-      if (it.prob || it.pt || it.move || it.view || it.left) return;
+      /* a spinner's rows (P(R) = [], R: about []), and rows about intervals, factors, shapes and two events, are checked by the item below */
+      if ((pc && pc.cross) || it.bins || it.prob || it.pt || it.move || it.view || it.left || it.two || it.outcomes || it.quad || it.factors || it.lcm) return;
       /* rows that name a GCF or LCM, a chance of two events, or a solid's symmetry are checked by the item below */
       if (it.gcf || it.lcm || it.two || it.dep || it.ssym || it.factors) return;
       /* times of day (clock: 9:45 a.m. + 15 min = 10:00 a.m.) become minutes after midnight, so the row is checked as a sum
@@ -695,9 +742,9 @@
         /* perimeter (around), area (inside) or the missing side of a shape with a known perimeter */
         const want = it.find === 'side' ? it.perimTo - pc.known : pc[it.find], n = +row.split(' ')[0];
         if (want !== n) say('the ' + it.find + ' is ' + want + ', not ' + n);
-      } else if (!it.cong && !/[×÷+−]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && !/(µm|nm|pm)\b|\^/.test(row) && / [<>=] /.test(row)) {
-        /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" */
-        const m = row.split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
+      } else if (!it.cong && !/[×÷+−²]/.test(row) && /\d ?(mm|cm|m|km)\b/.test(row) && !/(µm|nm|pm)\b|\^/.test(row) && / [<>=] /.test(row)) {
+        /* lengths in units: "2 m 40 cm = 240 cm", "5 cm > 45 mm" (square units are worked out like any sum) */
+        const m = row.replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').split(/ ([<>=]) /), a = toMM(m[0]), b = toMM(m[2]);
         if (m.length !== 3 || a === null || b === null) say('cannot read the lengths: ' + row);
         else if (!(m[1] === '=' ? a === b : m[1] === '<' ? a < b : a > b)) say('not true: ' + row);
       } else if ((it.len != null || (pc && pc.len != null)) && toMM(row) !== null) {
@@ -738,8 +785,10 @@
       } else if (it.round && !/=/.test(row)) {
         /* "345 is about []": the answer is the number rounded to the nearest 10 or 100 (5 rounds up); a sum in the same
            question (the change from a rounded cash total) is worked out below like any other */
-        const n = nums(row);
-        if (n.length !== 2 || !same(Math.round(n[0] / it.round) * it.round, n[1])) say(n[0] + ' to the nearest ' + it.round + ' is ' + Math.round(n[0] / it.round) * it.round + ', not ' + n[1]);
+        /* a fraction to round ("2/3 is about 0.67") is its value */
+        const fr = row.match(/^(\d+)\/(\d+) is about/), n = fr ? [+fr[1] / +fr[2]].concat(nums(row).slice(2)) : nums(row);
+        const rd = x => Math.round(x / it.round + 1e-9) * it.round;
+        if (n.length !== 2 || !same(rd(n[0]), n[1])) say(n[0] + ' to the nearest ' + it.round + ' is ' + rd(n[0]) + ', not ' + n[1]);
       } else if ((worth = row.replace(/(\d)[\u00a0 ](?=\d{3}\b)/g, '$1').match(/^The (\d) in (\d+) is worth (\d+)$/))) {
         /* "The 7 in 472 is worth []": the digit's place gives its value */
         const d = worth[1], s2 = worth[2], at = s2.indexOf(d);
@@ -796,7 +845,7 @@
           /* the number a letter stands for: put it in, and the statement must be true */
           const t = truth(it.letter.replace(/\b[a-z]\b/g, String(v)));
           if (t !== true) say('with ' + v + ' for the letter, "' + it.letter + '" is not true');
-        } else if (it.words != null) { if (fromWords(it.words) !== v) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
+        } else if (it.words != null) { if (!same(fromWords(it.words), num(v))) say('"' + it.words + '" is ' + fromWords(it.words) + ', not ' + v); }
         else if (it.deal) { /* checked by the sharing check below */ }
         else if (it.fw && pc && pc.total != null) { if (!same(val(norm(row)), pc.total)) say('the picture shows ' + pc.total + ' of a whole, not ' + row); }
         else if (it.coreOf) {
@@ -1139,7 +1188,7 @@
         const ev = !(it.pic && it.pic[0] === 'frac' && it.pic[1].uneven);
         if (o[pk.ans] !== (ev ? 'yes' : 'no')) say('the parts are ' + (ev ? '' : 'not ') + 'equal, but the key circles ' + o[pk.ans]);
       } else if (pk.nw != null) {
-        const ok = o.map(x => num(x) === fromWords(pk.nw));
+        const ok = o.map(x => same(num(x), fromWords(pk.nw)));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is ' + pk.nw);
       } else if (pk.wn != null) {
         const ok = o.map(x => fromWords(x) === pk.wn);
@@ -1157,7 +1206,7 @@
         const worth = o.map(x => { const d = String(x).replace(/\D/g, ''), at = d.indexOf(String(pk.digit.d)); return at < 0 ? 0 : pk.digit.d * Math.pow(10, d.length - 1 - at); });
         if (worth[pk.ans] !== pk.digit.worth || worth.filter(v => v === pk.digit.worth).length !== 1) say('not exactly one choice has a ' + pk.digit.d + ' worth ' + pk.digit.worth);
       } else if (pk.round) {
-        const rnd = (x, r) => same(Math.round(num(x) / r.to) * r.to, r.val);
+        const rnd = (x, r) => same(Math.round(num(x) / r.to + 1e-9) * r.to, r.val);
         const ok = o.map(x => rnd(x, pk.round) && (!pk.also || rnd(x, pk.also)));
         if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice rounds to ' + pk.round.val);
       } else if (pk.diff) {
@@ -1341,6 +1390,57 @@
         const NEED = ['a winter coat', 'boots for snow', 'food for dinner', 'medicine', 'a toothbrush', 'bus fare to school', 'mittens', 'milk', 'glasses to see the board'];
         const want = NEED.indexOf(pk.need) >= 0 ? 'need' : 'want';
         if (o[pk.ans] !== want) say(pk.need + ' is a ' + want + ', not a ' + o[pk.ans]);
+      } else if (typeof pk.prime === 'number') {
+        /* prime (only 1 and itself as factors) or composite */
+        const want = isPrime(pk.prime) ? 'prime' : pk.prime > 1 ? 'composite' : 'neither';
+        if (o[pk.ans] !== want) say(pk.prime + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.lin) {
+        /* a linear pattern grows (or shrinks) by the same amount every time */
+        const q = pk.lin, want = q.every((x, i) => !i || same(x - q[i - 1], q[1] - q[0])) ? 'linear' : 'not linear';
+        if (o[pk.ans] !== want) say(q.join(', ') + ' is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.dot) {
+        /* on a number line, < and > leave the number out (an open dot); ≤ and ≥ take it in (a closed dot) */
+        const want = /[≤≥]/.test(pk.dot) ? 'closed dot' : /[<>]/.test(pk.dot) ? 'open dot' : null;
+        if (o[pk.ans] !== want) say(pk.dot + ' is drawn with ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.rep) {
+        /* a fraction's decimal stops (terminating) when its bottom, in simplest form, has no prime factor but 2 and 5 */
+        let d = pk.rep[1] / gcd(pk.rep[0], pk.rep[1]);
+        while (d % 2 === 0) d /= 2;
+        while (d % 5 === 0) d /= 5;
+        const want = d === 1 ? 'terminating' : 'repeating';
+        if (o[pk.ans] !== want) say(pk.rep.join('/') + ' as a decimal is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.onePrime) {
+        const ok = o.map(x => isPrime(num(x)));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one choice is prime: ' + o.join(', '));
+      } else if (pk.qfit) {
+        /* exactly one shape has every property of the clue */
+        const ok = o.map(x => !!QUAD[x] && Object.keys(pk.qfit).every(k => QUAD[x][k] === pk.qfit[k]));
+        if (!ok[pk.ans] || ok.filter(Boolean).length !== 1) say('not exactly one shape fits ' + JSON.stringify(pk.qfit) + ': ' + o.join(', '));
+      } else if (pk.qprop) {
+        /* yes or no: does this shape have this property? */
+        const q = QUAD[pk.qprop[0]], want = q && q[pk.qprop[1]] != null ? !!q[pk.qprop[1]] : null;
+        if (want === null) say('no property ' + pk.qprop[1] + ' is known for a ' + pk.qprop[0]); else if (want !== yes) say('for a ' + pk.qprop[0] + ', ' + pk.qprop[1] + ' is ' + want + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.family) {
+        /* true or false: every one of the first kind is also the second kind */
+        const want = ISA[pk.family[1]] && QUAD[pk.family[0]] ? ISA[pk.family[1]](QUAD[pk.family[0]]) : null;
+        if (want === null) say('cannot tell if every ' + pk.family[0] + ' is a ' + pk.family[1]); else if (want !== yes) say('every ' + pk.family[0] + ' is ' + (want ? '' : 'not ') + 'a ' + pk.family[1] + ', but the key circles ' + o[pk.ans]);
+      } else if (pk.span) {
+        /* a goal for days or weeks is short-term; one for months or years (about 3 months or more) is long-term */
+        const want = pk.span.days < 90 ? 'short-term' : 'long-term';
+        if (o[pk.ans] !== want) say('a goal ' + pk.span.days + ' days away is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.pair) {
+        /* two angles: complementary when they add to 90°, supplementary when they add to 180° */
+        const t = pk.pair[0] + pk.pair[1], want = t === 90 ? 'complementary' : t === 180 ? 'supplementary' : 'neither';
+        if (o[pk.ans] !== want) say(pk.pair.join('° and ') + '° are ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.dc) {
+        /* qualitative (words), discrete (counted) or continuous (measured), from the question's words */
+        const q = it.q || '', want = WORDS.test(q) ? (o.indexOf('qualitative') >= 0 ? 'qualitative' : null) : o.indexOf('quantitative') >= 0 ? 'quantitative' : COUNTED.test(q) && !MEASURED.test(q) ? 'discrete' : MEASURED.test(q) && !COUNTED.test(q) ? 'continuous' : null;
+        if (!want) say('cannot tell counted or measured from: ' + q); else if (o[pk.ans] !== want) say('this data is ' + want + ', not ' + o[pk.ans]);
+      } else if (pk.dist) {
+        /* ways to share resources: swapping one thing for another is trading; giving something you will get back is lending;
+           getting something you must give back is borrowing; giving it away for good is donating */
+        const h = pk.dist, way = h.swap ? 'trade' : h.give && h.back ? 'lend' : h.get && h.back ? 'borrow' : h.give ? 'donate' : null;
+        if (o[pk.ans] !== way) say('that is ' + way + ', not ' + o[pk.ans]);
       } else if (pk.prime || pk.pprime) {
         /* the one prime number (exactly two factors), or the one product made only of primes that makes pk.pprime */
         const isP = v => v > 1 && [...Array(Math.max(0, Math.floor(Math.sqrt(v)) - 1)).keys()].every(k => v % (k + 2) !== 0);
@@ -1469,6 +1569,7 @@
     /* data: a statistic of the data (from the item, which must be in its question, or from the picture), the relative
        frequency of one count, and how many times as tall one bar looks when the scale does not start at 0 */
     const data = it.data || (pc && pc.data), last = num(ansAll[ansAll.length - 1]);
+    if (it.bins && it.q) it.bins.forEach(n => { if (nums(it.q).indexOf(n) < 0) say('the data value ' + n + ' is not in the question'); });
     if (it.data && it.q) it.data.forEach(n => { if (nums(it.q).indexOf(Math.abs(n)) < 0) say('the data value ' + n + ' is not in the question'); });
     if (it.stat) {
       const d = (data || []).slice().sort((x, y) => x - y), n = d.length, cnt = {};
@@ -1494,14 +1595,13 @@
     }
     /* Grade 7 number facts: a greatest common factor, a lowest common multiple, every factor of a number in order, and a
        product of primes */
-    const gcd = (x, y) => (y ? gcd(y, x % y) : x);
     if (it.gcf && it.gcf.reduce(gcd) !== last) say('the GCF of ' + it.gcf.join(', ') + ' is ' + it.gcf.reduce(gcd) + ', not ' + last);
     if (it.lcm) { const l = it.lcm.reduce((x, y) => x * y / gcd(x, y)); if (l !== last) say('the LCM of ' + it.lcm.join(', ') + ' is ' + l + ', not ' + last); }
     if (it.factors) { const f = []; for (let k = 1; k <= it.factors; k++) if (it.factors % k === 0) f.push(k); if (ansAll.map(Number).join() !== f.join()) say('the factors of ' + it.factors + ' in order are ' + f.join(', ') + ', not ' + ansAll.join(', ')); }
     if (it.primes) ansAll.map(Number).forEach(v => { for (let k = 2; k * k <= v; k++) if (v % k === 0) { say(v + ' is not prime'); return; } if (v < 2) say(v + ' is not prime'); });
     /* the chance of two events: two names the wanted outcomes of each event in the outcome grid (independent: multiply);
        dep draws from a bag in turn, putting each one back (back: true) or not, so the second chance changes */
-    if (it.two) {
+    if (it.two && !(it.pic && it.pic[0] === 'row')) {
       const o = pc && pc.outs;
       if (!o || it.two.some((l, i) => l.some(x => o[i].indexOf(x) < 0))) say('the outcomes ' + JSON.stringify(it.two) + ' are not in the grid');
       else { const want = it.two[0].length / o[0].length * it.two[1].length / o[1].length; if (!same(want, last)) say('the chance is ' + want + ', not ' + ansAll[ansAll.length - 1]); }
@@ -1549,11 +1649,14 @@
     }
     if (it.corners) { const sh = it.pic && it.pic[1].shape; if (!sh || rights(sh) !== last) say('the shape has ' + (sh ? rights(sh) : '?') + ' right angles, not ' + ansAll[ansAll.length - 1]); }
     if (it.pt) { const q = at(it.pt); if (!q || ansAll.slice(-2).join() !== q.join()) say('point ' + it.pt + ' is at (' + (q || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')'); }
-    if (it.move && (it.move.slide || it.move.flip)) {
-      const q = at(it.move.pt), m = it.move, to = !q ? null : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
-      if (!to || ansAll.slice(-2).join() !== to.join()) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
+    if (it.move && (it.move.slide || it.move.flip || it.move.turn)) {
+      /* turn: { deg: 90 | 180 | 270, dir: 'cw' | 'ccw' } about (0, 0): a quarter turn clockwise takes (x, y) to (y, −x) */
+      const turn = (q, t) => { let r = [q[0], q[1]]; const k = ((t.dir === 'ccw' ? 360 - t.deg : t.deg) / 90) % 4; for (let i = 0; i < k; i++) r = [r[1], -r[0]]; return r.map(v => v + 0); };
+      const q = at(it.move.pt), m = it.move, to = !q ? null : m.turn ? turn(q, m.turn) : m.slide ? [q[0] + m.slide[0], q[1] + m.slide[1]] : m.flip.x != null ? [2 * m.flip.x - q[0], q[1]] : [q[0], 2 * m.flip.y - q[1]];
+      if (!to || ansAll.slice(-2).map(num).join() !== to.join()) say('the point moves to (' + (to || []).join(', ') + '), not (' + ansAll.slice(-2).join(', ') + ')');
       if (m.slide && m.slide.some(v => v && nums(it.q).indexOf(Math.abs(v)) < 0)) say('the slide ' + m.slide.join(', ') + ' is not in the question');
-      if (m.flip && nums(it.q).indexOf(m.flip.x != null ? m.flip.x : m.flip.y) < 0) say('the flip line is not in the question');
+      if (m.flip && nums(it.q).indexOf(Math.abs(m.flip.x != null ? m.flip.x : m.flip.y)) < 0) say('the flip line is not in the question');
+      if (m.turn && (nums(it.q).indexOf(m.turn.deg) < 0 || !new RegExp(m.turn.dir === 'cw' ? '(^|[^r])clockwise' : 'counterclockwise').test(it.q))) say('the turn ' + m.turn.deg + '° ' + m.turn.dir + ' is not in the question');
     }
     /* probability on a spinner of equal parts: ways it can happen ÷ all the parts; with trials, how many to expect */
     const parts = pc && pc.parts, chance = l => parts.filter(x => x === l).length / parts.length;
@@ -1582,6 +1685,42 @@
     const ask = it.pic && it.pic[0] === 'grid' && it.pic[1].ask;
     if (ask && !nums(it.q).some(x => same(x, ask * num(it.pic[1].unit || 1)))) say('shading ' + ask + ' squares does not show the number asked for');
     if (pc && pc.draw != null && !nums(it.q).some(x => same(x, pc.draw))) say('the picture is drawn at ' + pc.draw + ', which the question does not ask for');
+    /* number sense: all the factors of a number (in any order), the least common multiple, and like terms (both sides
+       of each row come out the same whatever number the letter is) */
+    if (it.factors) {
+      const want = [...Array(it.factors).keys()].map(k => k + 1).filter(k => it.factors % k === 0);
+      if (ansAll.map(num).sort((x, y) => x - y).join() !== want.join()) say('the factors of ' + it.factors + ' are ' + want.join(', ') + ', not ' + ansAll.join(', '));
+    }
+    /* crossing lines: each row "a = []°" is the angle under that label */
+    if (pc && pc.cross) filled.forEach(row => {
+      const m = row.match(/^([a-z]) = (\d+)°?$/);
+      if (!m || pc.cross[m[1]] == null) say('cannot read the angle: ' + row); else if (pc.cross[m[1]] !== +m[2]) say('angle ' + m[1] + ' is ' + pc.cross[m[1]] + '°, not ' + m[2] + '°');
+    });
+    /* data sorted into intervals: each row "140 to 145: []" counts the values from its start up to (not including) its end */
+    if (it.bins) filled.forEach(row => {
+      const m = row.match(/^(\d+(?:\.\d+)?) to (\d+(?:\.\d+)?): (\d+)$/);
+      if (!m) say('cannot read the interval: ' + row);
+      else { const k = it.bins.filter(v => v >= +m[1] && v < +m[2]).length; if (k !== +m[3]) say(k + ' values are from ' + m[1] + ' up to ' + m[2] + ', not ' + m[3]); }
+    });
+    if (it.pf && ansAll.some(v => !isPrime(num(v)))) say('every factor in a prime factorization must be prime: ' + ansAll.join(', '));
+    if (it.lcm && it.lcm.reduce((x, y) => x * y / gcd(x, y)) !== num(ansAll[ansAll.length - 1])) say('the least common multiple of ' + it.lcm.join(' and ') + ' is ' + it.lcm.reduce((x, y) => x * y / gcd(x, y)) + ', not ' + ansAll[ansAll.length - 1]);
+    if (it.ident) filled.forEach(row => {
+      const sides = row.split('=');
+      if (sides.length !== 2) { say('cannot read the terms: ' + row); return; }
+      [2, 7].forEach(v => { const l = val(put(sides[0], v)), r = val(put(sides[1], v)); if (isNaN(l) || isNaN(r) || !same(l, r)) say('the two sides of ' + row + ' are not the same when the letter is ' + v); });
+    });
+    /* a shape's properties: "[] lines of symmetry", "order []" (rotational symmetry), "[] pairs of parallel sides", "[] right angles" */
+    if (it.quad) filled.forEach(row => {
+      const q = QUAD[it.quad], m = row.match(/^(\d+) lines? of symmetry$/) || row.match(/^order (\d+)$/) || row.match(/^(\d+) pairs? of parallel sides$/) || row.match(/^(\d+) right angles?$/);
+      const k = /symmetry/.test(row) ? 'sym' : /^order/.test(row) ? 'rot' : /parallel/.test(row) ? 'par' : 'right';
+      if (!q || !m) say('cannot read the property: ' + row); else if (q[k] !== +m[1]) say('a ' + it.quad + ' has ' + q[k] + ' (' + k + '), not ' + row);
+    });
+    /* two independent events on two spinners in a row: the outcomes are every pair, and the chance of both is the product */
+    if ((it.two || it.outcomes) && it.pic && it.pic[0] === 'row') {
+      const sp = it.pic[1].list.map(q => q[1].parts);
+      if (it.outcomes && sp[0].length * sp[1].length !== num(ansAll[0])) say('the two spinners give ' + sp[0].length * sp[1].length + ' outcomes, not ' + ansAll[0]);
+      if (it.two) { const want = sp[0].filter(x => it.two[0].indexOf(x) >= 0).length / sp[0].length * sp[1].filter(x => it.two[1].indexOf(x) >= 0).length / sp[1].length; if (!same(want, num(last))) say('the chance of both is ' + want + ', not ' + ansAll[ansAll.length - 1]); }
+    }
     /* Grade 8 */
     if (pc && pc.bad) say(pc.bad);
     /* like terms: the last row, after its "=", is an expression that equals simp for every value of the letter */
