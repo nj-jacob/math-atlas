@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-10
+- **Toolbox page: Reading passages.** On the Language tab, Grades 4 to 8 now show the printable Reading passages tool; Grades 1 to 3 do not. The Language tools shown now follow the grade picked.
+
 ## 2026-11-09
 - **Worksheets for every Grade 8 chapter**: Big and Small Numbers, Roots and Real Numbers, Integers, Fractions, Percents, Ratios and Rates, Algebra, Data, Probability, Geometry, Measurement, and Money. All 125 ideas have Learn, Practise 1 to 3 and Think, in all 10 themes with answer keys: 625 sheets, 6250 with the themes, and every Grade 8 expectation is on at least one sheet. The sheet maker can now write negatives, powers, square roots, π and algebra (3x + 2, x ≤ −4), and has new pictures: integer number lines and counters, tree and Venn diagrams, scatter plots, parallel lines, circles, cylinders, boxes and prisms, right triangles, a four-quadrant grid, composite shapes, algebra tiles and tables. The checks work every new kind of answer out again.
 - **Worksheets for Grade 1: every chapter.** Counting to 50 (16 ideas), Tens and Ones (13), Adding and Subtracting to 10 (14) and to 50 (10), Equal Groups and Fair Shares (9), Patterns (9), Shapes, Position and Coding (10), Measuring and the Calendar (10), Sorting and Picture Graphs (5) and Canadian Money (5): 101 ideas, 505 sheets (5050 with the themes), each with an answer key and its Ontario codes. New pictures: one ten frame, flat shapes, a fold line on squares, a shelf of cubbies, a month of a calendar and strips to compare. Robot code in Grade 1 moves by direction (right 2, up 1), as in the lessons.
