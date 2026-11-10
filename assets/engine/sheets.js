@@ -60,8 +60,11 @@
   /* a line of text; the font and colour go in a style so the site's own "svg text" rule cannot replace them */
   function T(x, y, s, o) {
     o = o || {};
-    return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + (o.s || 14) + '" font-weight="' + (o.w || 400) + '"' +
-      (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + esc(s) + '</text>';
+    var size = o.s || 14, body = esc(s);
+    /* a power written 10^6 has its exponent small and raised; the empty part after it brings the line back down */
+    if (/\^\d/.test(body)) body = body.replace(/\^(\d+)/g, function (m, e) { return '<tspan dy="-' + size * 0.4 + '" font-size="' + size * 0.62 + '">' + e + '</tspan><tspan dy="' + size * 0.4 + '">\u200b</tspan>'; });
+    return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + size + '" font-weight="' + (o.w || 400) + '"' +
+      (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + body + '</text>';
   }
   /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are */
   function fmt(n) {
@@ -213,15 +216,34 @@
   };
   function pic(spec, x, y, w, key, th, ans) { return PIC[spec[0]](spec[1], x, y, w, key, th, ans); }
 
+  /* a number as a sum writes it: digits with a minus sign, a $, a % or a root sign, in brackets or not: −3, (−2.5), √49 */
+  var NUM = /^\(?[\u2212\u221a]?\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*\)?$/;
   /* a number as a sum writes it: 12 500, 3.75, 3/4, $4.50, 25%, a ratio 3:5, and for Grade 8 −7, (−3), 10⁵, 5², √49 and π */
   var NUMTOK = /^[(\u2212\u221a]*\$?[\d,.\/\u00a0:]*[\d\u03c0][\d,.\/\u00a0%:\u00b2\u00b3\u00b9\u2070\u2074-\u2079\u207b)]*$/;
   /* an algebra term (3x, −2n, x², the letters x, n, t and y) is drawn like a number */
   var TERMTOK = /^[(\u2212]*(\d[\d.\/]*[a-z]|[xnty])[\u00b2\u00b3]?\)*$/;
   /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer;
-     3/[] and []/8 put the line in one part of a fraction; a blank may sit in brackets: 2 × ([] + []) */
+     3/[] and []/8 put the line in one part of a fraction; a blank may sit in brackets: 2 × ([] + []);
+     a power is written 2^5 or (−3)^2, and its exponent may be a blank: 10^[] */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
     s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
+      var pw = tok.match(/^(.+)\^(\[\]|\d+)$/), root = tok === '√[]';
+      if (root) { out += T(cx, y + 21, '√', { s: big, w: 700 }); cx += tw('√', big, 700) + 1; tok = '[]'; }
+      if (pw && (NUM.test(pw[1]) || pw[1] === '[]')) {
+        /* the base at full size (or a line to write it on), the exponent small and raised; a blank exponent is a short raised line */
+        if (pw[1] === '[]') {
+          out += '<line class="blank" x1="' + cx + '" y1="' + (y + 25) + '" x2="' + (cx + 30) + '" y2="' + (y + 25) + '" stroke="' + INK + '" stroke-width="1.3"/>';
+          if (key) out += T(cx + 15, y + 21, fmt(ans[k]), { s: big, w: 700, f: KEY, a: 'middle' });
+          k++; cx += 31;
+        } else { out += T(cx, y + 21, pw[1], { s: big, w: 700 }); cx += tw(pw[1], big, 700) + 1; }
+        if (pw[2] === '[]') {
+          out += '<line class="blank" x1="' + cx + '" y1="' + (y + 10) + '" x2="' + (cx + 20) + '" y2="' + (y + 10) + '" stroke="' + INK + '" stroke-width="1.2"/>';
+          if (key) out += T(cx + 10, y + 7, fmt(ans[k]), { s: 11, w: 700, f: KEY, a: 'middle' });
+          k++; cx += 27;
+        } else { out += T(cx, y + 11, pw[2], { s: big * 0.62, w: 700 }); cx += tw(pw[2], big * 0.62, 700) + 7; }
+        return;
+      }
       var open = /^\(.*\[\]/.test(tok), close = /\[\].*\)$/.test(tok);
       if (open) { out += T(cx, y + 21, '(', { s: 14, f: INK2 }); cx += tw('(', 14) + 2; tok = tok.slice(1); }
       if (close) tok = tok.slice(0, -1);
@@ -253,7 +275,7 @@
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
         if (close) { out += T(cx - 4, y + 21, ')', { s: 14, f: INK2 }); cx += tw(')', 14) + 3; }
-      } else if (NUMTOK.test(tok) || TERMTOK.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
+      } else if (NUMTOK.test(tok) || TERMTOK.test(tok) || NUM.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
     });
     return { svg: out, w: cx - 7 - x, used: k };
