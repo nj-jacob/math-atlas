@@ -20,7 +20,9 @@
    6. Parent pages: the Language placement check results (assets/langplace.js) are drawn for finished, older, unfinished
       and missing checks, on a phone-size screen, with nothing missing or cut off.
    7. Toolbox: each grade's #tools lists all its tools and each tool goes back to that list; the site's Toolbox page
-      (tools.html) shows each grade's Math tools on phone, iPad and laptop, and a tool opened from it goes back there. */
+      (tools.html) shows each grade's Math tools on phone, iPad and laptop, and a tool opened from it goes back there.
+   8. What's built page (checklist.html): fits a phone with no errors, every link on it goes to a page that exists
+      (Language links are checked against ../language-atlas when that folder is next to this one), and a tick is remembered. */
 const fs = require('fs'), path = require('path'), vm = require('vm');
 const { chromium } = require('playwright');
 const startServer = require('./server');
@@ -1423,6 +1425,40 @@ async function checkToolbox(browser, base) {
   log('Toolbox pages: every grade\'s tool list and the site Toolbox page checked on phone, iPad and laptop.');
 }
 
+/* ---------- 8. What's built page ---------- */
+async function checkChecklist(browser, base) {
+  const w = 'What\'s built page (checklist.html)';
+  const ctx = await browser.newContext({ viewport: { width: 390, height: 844 } });
+  const page = await ctx.newPage();
+  const errors = [];
+  page.on('pageerror', e => errors.push(e.message));
+  await page.route(/^https?:\/\/(?!127\.0\.0\.1|localhost)/, r => r.abort());
+  await page.goto(base + '/checklist.html');
+  if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(w, 'runs off the side of a phone screen');
+  const r = await page.evaluate(() => ({
+    hrefs: [...document.querySelectorAll('main a[href]')].map(a => a.getAttribute('href')),
+    ids: [...document.querySelectorAll('[id]')].map(e => e.id),
+    keys: [...document.querySelectorAll('.ck-list input')].map(i => i.dataset.k)
+  }));
+  if (new Set(r.keys).size !== r.keys.length || r.keys.some(k => !k)) fail(w, 'every tick box needs its own data-k');
+  const LANG = path.resolve(ROOT, '..', 'language-atlas');
+  for (const h of r.hrefs) {
+    if (/^https:\/\//.test(h)) continue;
+    if (h.startsWith('#')) { if (!r.ids.includes(h.slice(1))) fail(w, 'link ' + h + ' has no section'); continue; }
+    const file = h.split('#')[0], lang = file.startsWith('language/');
+    if (lang && !fs.existsSync(LANG)) continue;
+    let f = lang ? path.join(LANG, file.slice(9)) : path.join(ROOT, file);
+    if (file.endsWith('/') || !file) f = path.join(f, 'index.html');
+    if (!fs.existsSync(f)) fail(w, 'link ' + h + ' goes to a page that does not exist');
+  }
+  await page.click('.ck-list label');
+  await page.reload();
+  if (!(await page.isChecked('.ck-list input'))) fail(w, 'a tick is not remembered');
+  errors.forEach(e => fail(w, 'page error: ' + e));
+  await ctx.close();
+  log('What\'s built page: ' + r.hrefs.length + ' links checked on a phone screen.');
+}
+
 (async () => {
   const t0 = Date.now();
   repoRules();
@@ -1440,6 +1476,7 @@ async function checkToolbox(browser, base) {
   }
   try { await checkLangPlace(browser, url); } catch (e) { fail('Language placement on the parent pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   try { await checkToolbox(browser, url); } catch (e) { fail('Toolbox pages', 'the check itself stopped: ' + e.message.split('\n')[0]); }
+  try { await checkChecklist(browser, url); } catch (e) { fail('What\'s built page', 'the check itself stopped: ' + e.message.split('\n')[0]); }
   await browser.close(); srv.close();
   log('');
   if (problems.length) {
