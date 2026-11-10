@@ -1,13 +1,13 @@
 /* Toolbox page (tools.html): every Math and Language tool for one grade, on the same shelves as each grade's own Toolbox.
    Math: the shelves come from Manip.shelves (assets/engine/manip.js), and a grade's tools are the `tools` list in its
    gradeN/assets/grade.js. Language: the tools register themselves when the Language tool box scripts load
-   (language/assets/engine/, see the Language docs/ARCHITECTURE.md), and Atlas.toolkit.shelves draws them; every grade has every tool.
+   (language/assets/engine/, see the Language docs/ARCHITECTURE.md), and Atlas.toolkit.shelves draws them for the grade picked (Reading passages start in Grade 4).
    A tool opens in its grade's own Toolbox (gradeN/#tools/<id>). The page sets atlas:toolbox in this tab's session storage
    so that tool's back button returns here. The grade picked is remembered in this browser (atlas:toolgrade). */
 const $ = (s, r) => (r || document).querySelector(s);
 const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
 const LANG = 'language/';
-const LANG_TOOLS = ['atlas', 'words', 'wordbank', 'cardbank', 'tools', 'soundbank', 'soundboard', 'reader', 'meaningbank', 'meaning', 'mapbank', 'textmaps', 'writebank', 'writetools', 'decodable'];
+const LANG_TOOLS = ['atlas', 'words', 'wordbank', 'cardbank', 'tools', 'soundbank', 'soundboard', 'reader', 'meaningbank', 'meaning', 'mapbank', 'textmaps', 'writebank', 'writetools', 'library', 'decodable'];
 const list = $('#tbx-list'), picker = $('.tbx-g');
 
 function stored(v) {
@@ -46,7 +46,7 @@ async function draw() {
   try {
     h = s === 'math'
       ? window.Manip.shelves(await mathTools(n), (id) => 'grade' + n + '/#tools/' + id)
-      : (await langTools()).shelves((id) => LANG + 'grade' + n + '/#tools/' + id);
+      : (await langTools()).shelves((id) => LANG + 'grade' + n + '/#tools/' + id, null, n);
   } catch (e) {
     h = '<p class="loading">' + (s === 'math' ? 'The tools did not load. Check the internet connection and try again.' : 'Language is not on this copy of the site yet.') + '</p>';
   }
