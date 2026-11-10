@@ -387,7 +387,7 @@
     return { svg: out, h: 28, w: p.n * 26 };
   };
   /* a negative number with a true minus sign: −3 */
-  function sgn(v) { return v < 0 ? '\u2212' + -v : v; }
+  function sgn(v) { return S.fmt(v); }
   P.nl = function (p, x, y, w, key, th, ans) {
     var span = p.max - p.min, u = (w - 24) / span, x0 = x + 12, ly = y + 30, used = 0;
     var out = ln(x0 - 6, ly, x0 + span * u + 6, ly, { sw: 1.3 });

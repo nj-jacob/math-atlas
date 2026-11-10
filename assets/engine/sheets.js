@@ -66,7 +66,8 @@
     return '<text x="' + x + '" y="' + y + '" style="font-family:' + (o.fam || FONT).replace(/"/g, "'") + ';fill:' + (o.f || INK) + '" font-size="' + size + '" font-weight="' + (o.w || 400) + '"' +
       (o.a ? ' text-anchor="' + o.a + '"' : '') + (o.i ? ' font-style="italic"' : '') + (o.ls ? ' letter-spacing="' + o.ls + '"' : '') + (o.c ? ' class="' + o.c + '"' : '') + '>' + body + '</text>';
   }
-  /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are */
+  /* a number as a sheet writes it: 12500 as "12 500" (a no-break space keeps it one number); 4-digit numbers stay as they are;
+     a negative number gets a true minus sign (−3) */
   function fmt(n) {
     if (typeof n !== 'number') return n;
     var parts = String(n).split('.'), whole = parts[0];
@@ -219,12 +220,12 @@
   /* a number as a sum writes it: digits with a minus sign, a $, a % or a root sign, in brackets or not: −3, (−2.5), √49 */
   var NUM = /^\(?[\u2212\u221a]?\$?[\d,.\/\u00a0:]*\d[\d,.\/\u00a0%:]*\)?$/;
   /* a number as a sum writes it: 12 500, 3.75, 3/4, $4.50, 25%, a ratio 3:5, and for Grade 8 −7, (−3), 10⁵, 5², √49 and π */
-  var NUMTOK = /^[(\u2212\u221a]*\$?[\d,.\/\u00a0:]*[\d\u03c0][\d,.\/\u00a0%:\u00b2\u00b3\u00b9\u2070\u2074-\u2079\u207b)]*$/;
+  var NUMTOK = /^[(\u2212\u221a]*\$?[\d,.\/\u00a0:]*[\d\u03c0][\d,.\/\u00a0%:\u00b0\u00b2\u00b3\u00b9\u2070\u2074-\u2079\u207b)]*$/;
   /* an algebra term (3x, −2n, x², the letters x, n, t and y) is drawn like a number */
   var TERMTOK = /^[(\u2212]*(\d[\d.\/]*[a-z]|[xnty])[\u00b2\u00b3]?\)*$/;
   /* one row of an equation: numbers, symbols and words; [] is a short line to write on, long enough for its answer;
-     3/[] and []/8 put the line in one part of a fraction; a blank may sit in brackets: 2 × ([] + []);
-     a power is written 2^5 or (−3)^2, and its exponent may be a blank: 10^[] */
+     3/[] and []/8 put the line in one part of a fraction, []% is a percent and []° an angle; a blank may sit in brackets:
+     2 × ([] + []); a power is written 2^5 or (−3)^2, and its exponent may be a blank: 10^[] */
   function eqRow(s, x, y, key, ans, size) {
     var out = '', cx = x, k = 0, big = size || 18;
     s.replace(/(\d) (?=\d{3}\b)/g, '$1\u00a0').split(' ').filter(Boolean).forEach(function (tok) {
@@ -247,8 +248,8 @@
       var open = /^\(.*\[\]/.test(tok), close = /\[\].*\)$/.test(tok);
       if (open) { out += T(cx, y + 21, '(', { s: 14, f: INK2 }); cx += tw('(', 14) + 2; tok = tok.slice(1); }
       if (close) tok = tok.slice(0, -1);
-      var comma = tok === '[],';
-      if (comma) tok = '[]';
+      var comma = tok === '[],', sign = /^\[\][%\u00b0]$/.test(tok) ? tok.slice(2) : '';
+      if (comma || sign) tok = '[]';
       var pw = tok.match(/^(\d+)\^\[\]$/), rt = /^\u221a\[\]$/.test(tok);
       if (pw) {
         /* a power with its exponent to write: 10^[] draws 10 with a small raised line */
@@ -274,6 +275,7 @@
         if (letter) { out += T(cx, y + 21, letter, { s: big, w: 700 }); cx += tw(letter, big, 700) + 7; }
         if (fr[2]) { out += T(cx, y + 21, fr[2], { s: big, w: 700 }); cx += tw(fr[2], big, 700) + 7; }
         if (comma) { out += T(cx - 4, y + 21, ',', { s: big, w: 700 }); cx += 6; }
+        if (sign) { out += T(cx - 5, y + 21, sign, { s: big, w: 700 }); cx += tw(sign, big, 700) + 2; }
         if (close) { out += T(cx - 4, y + 21, ')', { s: 14, f: INK2 }); cx += tw(')', 14) + 3; }
       } else if (NUMTOK.test(tok) || TERMTOK.test(tok) || NUM.test(tok)) { out += T(cx, y + 21, tok, { s: big, w: 700 }); cx += tw(tok, big, 700) + 7; }
       else { out += T(cx, y + 21, tok, { s: 14, f: INK2 }); cx += tw(tok, 14) + 7; }
@@ -392,7 +394,7 @@
   /* the heading: the theme's mark, a small line naming the chapter and kind, the title in the theme's face, and the goal */
   function heading(title, kicker, goal, key, th) {
     var size = 34, max = key ? RIGHT - M : 330;
-    while (tw(title, size, 700, th.font) > max && size > 18) size--;
+    while (tw(title, size, 700, th.font) > max && size > 14) size--;
     var out = '<g transform="translate(' + M + ' 28) scale(.5)">' + th.mark + '</g>' + label(M + 36, 47, kicker, th.acc) +
       T(M, 92, title, { s: size, w: 700, fam: th.font }) + (goal ? T(M, 116, goal, { s: 13, i: 1, f: INK2 }) : '');
     if (!key) out += nameDate(392, 52, RIGHT);

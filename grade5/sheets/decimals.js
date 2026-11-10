@@ -26,7 +26,7 @@
   /* compare two decimals: circle the sign */
   function CMP(x, y) { return { eq: [x + ' ? ' + y], pick: { opts: ['<', '>', '='], ans: +x < +y ? 0 : +x > +y ? 1 : 2, cmp: [x, y] }, pickLast: true }; }
   /* round to the nearest tenth (or whole) */
-  function RD(n, to) { return { q: 'Round ' + n + ' to the nearest ' + (to === 1 ? 'whole number' : 'tenth') + '.', eq: [n + ' is about []'], a: [+(Math.round(n / to) * to).toFixed(1)], round: to }; }
+  function RD(n, to) { return { q: 'Round ' + n + ' to the nearest ' + (to === 1 ? 'whole number' : 'tenth') + '.', eq: [n + ' is about []'], a: [+(Math.round(n / to + 1e-9) * to).toFixed(1)], round: to }; }
   /* a fraction out of 10 or 100 as a decimal and a percent */
   function FD(n, d) { var v = n / d; return { eq: [n + '/' + d + ' = []', n + '/' + d + ' = [] %'], a: [+v.toFixed(2), +(v * 100).toFixed(0)] }; }
   /* a decimal sum; calc stories use the same */
