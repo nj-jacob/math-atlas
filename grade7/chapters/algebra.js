@@ -201,7 +201,7 @@
         key: '<p><b>Rate: what is added each time. Initial value: where it starts, at term 0.</b></p>',
         mistake: '<p>Taking term 1 as the initial value. Term 1 is 5 tiles, but the initial value is 3: go back one step.</p>',
         check: [K.ck('al-pattern', 1), K.ck('al-pattern', 1)] },
-      { id: 'rule', title: 'The pattern rule', exp: ['C1.3'], skill: 'al-pattern', hard: true,
+      { id: 'rule', title: 'The pattern rule', exp: ['C1.2', 'C1.3'], skill: 'al-pattern', hard: true,
         body: '<p>The rule is <span class="math">rate &times; <i>n</i> + initial value</span>, where <i>n</i> is the term number. The pattern above is ' + expr(2, 3) + '.</p>',
         watch: K.slides([
           { say: 'Rule: 2n + 3. Term 10: replace n with 10.', fig: eq('2 &times; 10 + 3 = <b>23</b>') },
