@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-10
+- **Toolbox page: Language's new Decodable readers** (50 printable phonics stories, Kindergarten to Grade 2) now show on the Reading shelf for every grade.
 - **Worksheets for Grade 7: every chapter, every expectation.** Powers, Roots and Factors (14 ideas), Fractions (15), Multiplying and Dividing (16), Integers (10), Percent and Ratio (10), Algebra (12), Data and Probability (11), Shapes and Moves (9), Circles and Volume (10) and Money and Finance (11): 118 ideas, 590 sheets (5900 with the themes), each with Learn, Practise 1 to 3 and Think and an answer key. New pictures: thermometers, circles, circle graphs, cylinders and prisms with their measures, a cylinder's net, two events' outcomes, four-quadrant grids, inequality rays, and pentagonal and hexagonal prisms and pyramids. Integers use the Grade 8 counters. Sheets can now show powers, square roots and negative numbers, and the checks work all of those answers out again. The Algebra lesson "The pattern rule" now also names expectation C1.2, so every Grade 7 expectation has a lesson and a worksheet.
 
 ## 2026-11-09
