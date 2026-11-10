@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-10
+- What's built page: Decodable readers now show Kindergarten to Grade 3, 255 stories, with a page for every consonant sound.
 - **What's built page** (`checklist.html`, not in the menus): one page listing everything in Atlas (lessons, Toolbox, worksheets, reading passages, decodable readers, grown-up extras) with a link to each part, what is still being built, and what waits on Noel. A tick on each row is remembered in the browser. The checks make sure every link on it goes to a real page.
 - **Toolbox page: Language's new Decodable readers** (50 printable phonics stories, Kindergarten to Grade 2) now show on the Reading shelf for every grade.
 - **Toolbox page: Reading passages.** On the Language tab, Grades 4 to 8 now show the printable Reading passages tool; Grades 1 to 3 do not. The Language tools shown now follow the grade picked.
