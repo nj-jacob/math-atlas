@@ -12,7 +12,8 @@
      disks { n } or { list: [[1000, 3], [100, 12]] }   place value disks: the digits of n, or a count of each disk
      hill  { lo, hi, n, ask }   rounding: a hill from lo to hi with its top at halfway and n marked on it
                                 (ask: true leaves n unmarked for the child to mark; the key marks it)
-     grid  { n, cells, unit, ask, u, quiet }  a 10 by 10 grid with n squares shaded (cells: 10 for tenths strips; unit:
+     grid  { n, cells, unit, ask, u, quiet, rect }  a 10 by 10 grid with n squares shaded (rect: [a, b] shades a columns and
+                                b rows lightly and their overlap, n squares, darker; cells: 10 for tenths strips; unit:
                                 what one square is worth, written beside it unless quiet; ask: how many the child shades,
                                 drawn in on the key; u: the size of a square, 11 at most)
      fbars { rows: [[n, k], ...], labels }   fraction bars of the same length stacked: each row cut into n parts with k
@@ -55,13 +56,23 @@
                                 rectangular prism, a triangular prism (triangle base b, height th, equal sides s, length
                                 l) or a square-based pyramid (base b, triangle height sh), with its lengths
      coord { n, min, u, pts: [[x, y, 'A']], shape: [[x, y], ...], after, mirror: { x } | { y }, keyShape, plot: [[x, y, 'B']] }
-                                a coordinate grid from 0 (or min, such as −5, for all four quadrants) to n: labelled points, a shape, the shape after a move (dashed), a
-                                dashed mirror line, and points or a shape drawn only on the key; u: a smaller square (13 at most below 0, 11 above)
+                                a coordinate grid from 0 (or min, for four quadrants) to n: labelled points, a shape, the shape after a move (dashed), a
+                                dashed mirror line, and points or a shape drawn only on the key; u: a smaller square
      dline { min, max, d, show, pt, ask }   a number line cut into d parts per whole; show 'dec' or 'frac' labels every
                                 part ('ends' labels the two ends and any whole number); pt marks a point; ask: [values] puts a line to
                                 write on under each (answers in order)
      pvmove { n, shift, dir }   a place value chart with n in it; with shift, a second row shows n × 10^shift
                                 (dir 'x') or n ÷ 10^shift (dir 'd'), drawn only on the answer key
+   Grade 7 (integers use Grade 8's chips, below):
+     therm { t, min, max, step, lab }   a thermometer in °C filled to t, a mark every step and a number every lab
+     circ7 { r | d, show: 'r' | 'd', unit, ask: 'C' | 'A' }   a circle with its radius or diameter drawn and written;
+                                ask: the sum works out its circumference or area (with π as 3.14)
+     pie   { cats, vals, title, noval }   a circle graph: a slice for each category (vals are percents), in grey tints, with a key
+     cyl7  { r | d, h, show, unit, ask: 'V' | 'SA' }   a cylinder with its radius (or diameter) and height
+     prism { l, w, h, unit, ask: 'V' } or { tri: true, b, th, l }   a rectangular prism, or a triangular prism (triangle base
+                                b and height th, l long)
+     cnet  { r, h, unit, ask }  the net of a cylinder: two circles and the rectangle, as long as the circumference ("?" with ask)
+     outs  { a, b, ta, tb }     every outcome of two events in a grid: a's outcomes down the side, b's across the top
    Grade 8:
      iline { min, max, lab, pts, jumps, ray }   an integer number line: points, jumps [[from, by]] as arcs, and the ray of
                                 an inequality's solutions { at, open, dir }
@@ -216,6 +227,8 @@
   P.grid = function (p, x, y, w, key) {
     var cells = p.cells || 100, u = Math.min(p.u || 11, (Math.min(w, 140) - 2) / 10), out = '', SH = '#dfe5ee', KS = '#f2d4da';
     var fill = function (i) { return i < p.n ? SH : key && p.ask && i < p.n + p.ask ? KS : '#fff'; };
+    /* rect: [a, b] shades a tenths across and b tenths down, with the overlap darker (tenths × tenths) */
+    if (p.rect) fill = function (i) { var c = i % 10 < p.rect[0], r = Math.floor(i / 10) < p.rect[1]; return c && r ? '#b9c2d0' : c || r ? '#eef1f6' : '#fff'; };
     if (cells === 10) for (var c = 0; c < 10; c++) out += '<rect x="' + (x + c * u) + '" y="' + y + '" width="' + u + '" height="' + 10 * u + '" fill="' + fill(c) + '" stroke="' + INK2 + '" stroke-width=".8"/>';
     else for (var i = 0; i < 100; i++) out += '<rect x="' + (x + (i % 10) * u) + '" y="' + (y + Math.floor(i / 10) * u) + '" width="' + u + '" height="' + u + '" fill="' + fill(i) + '" stroke="' + (fill(i) !== '#fff' ? INK2 : LINE) + '" stroke-width=".7"/>';
     out += '<rect x="' + x + '" y="' + y + '" width="' + 10 * u + '" height="' + 10 * u + '" fill="none" stroke="' + INK + '" stroke-width="1.2"/>';
@@ -243,19 +256,19 @@
   P.dline = function (p, x, y, w, key, th, ans) {
     var d = p.d, lo = Math.round(p.min * d), hi = Math.round(p.max * d), u = (Math.min(w, 300) - 24) / (hi - lo), x0 = x + 12, ly = y + 26, out = '', used = 0;
     var dec = function (k) { return fmt(+(k / d).toFixed(3)); };
-    var frac = function (k) { if (k % d === 0) return String(k / d); var wh = Math.floor(k / d); return (wh ? wh + ' ' : '') + (k % d) + '/' + d; };
+    var frac = function (k) { if (k % d === 0) return fmt(k / d); var m = Math.abs(k), wh = Math.floor(m / d); return (k < 0 ? '\u2212' : '') + (wh ? wh + ' ' : '') + (m % d) + '/' + d; };
     var asks = (p.ask || []).map(function (v) { return Math.round(v * d); });
     out += '<line x1="' + (x0 - 6) + '" y1="' + ly + '" x2="' + (x0 + (hi - lo) * u + 6) + '" y2="' + ly + '" stroke="' + INK + '" stroke-width="1.3"/>';
     for (var k = lo; k <= hi; k++) {
       var tx = x0 + (k - lo) * u, whole = k % d === 0, end = k === lo || k === hi, half = (k - lo) * 2 === hi - lo, lab = p.show === 'ends' ? whole || end : true;
       var tick = whole || end ? 7 : half ? 5.5 : 4;
       out += '<line x1="' + tx + '" y1="' + (ly - tick) + '" x2="' + tx + '" y2="' + (ly + tick) + '" stroke="' + INK + '" stroke-width="1"/>';
-      if (lab && asks.indexOf(k) < 0) out += T(tx, ly + 20, p.show === 'frac' ? frac(k) : whole ? String(k / d) : dec(k), { s: (hi - lo) > 10 && !whole ? 8 : 10, f: INK2, a: 'middle' });
+      if (lab && asks.indexOf(k) < 0) out += T(tx, ly + 20, p.show === 'frac' ? frac(k) : whole ? fmt(k / d) : dec(k), { s: (hi - lo) > 10 && !whole ? 8 : 10, f: INK2, a: 'middle' });
     }
     asks.forEach(function (k) {
       var tx = x0 + (k - lo) * u;
       out += '<line class="blank" x1="' + (tx - 17) + '" y1="' + (ly + 26) + '" x2="' + (tx + 17) + '" y2="' + (ly + 26) + '" stroke="' + INK + '" stroke-width="1.3"/>';
-      if (key && ans) out += T(tx, ly + 22, ans[used], { s: 12, w: 700, f: KEY, a: 'middle' });
+      if (key && ans) out += T(tx, ly + 22, fmt(ans[used]), { s: 12, w: 700, f: KEY, a: 'middle' });
       used++;
     });
     if (p.pt != null) { var px = x0 + (Math.round(p.pt * d) - lo) * u; out += '<circle cx="' + px + '" cy="' + ly + '" r="4" fill="' + INK + '"/>'; }
@@ -493,27 +506,28 @@
     return { svg: out, h: p.g.length * sz + 18, w: wd + 30 };
   };
 
-  /* a coordinate grid from 0 (or min, below 0 for four quadrants) to n with labelled points and shapes */
+  /* a coordinate grid from 0 to n (or from min to n on both axes, with the axes through the origin) with labelled
+     points and shapes */
   P.coord = function (p, x, y, w, key) {
-    var n = p.n || 8, m = p.min || 0, span = n - m, u = Math.min(p.u || (m ? 13 : 11), (Math.min(w, 220) - 24) / span), ox = x + 18 - m * u, oy = y + 6 + n * u, out = '';
-    var X = function (v) { return ox + v * u; }, Y = function (v) { return oy - v * u; };
-    /* the axes cross at (0, 0); a grid below 0 labels every other line so the minus signs have room */
-    var every = m && (span > 10 || u < 12) ? 2 : 1, ly = m ? Y(0) + 11 : Y(0) + 12;
-    for (var i = m; i <= n; i++) {
-      out += line(X(i), Y(m), X(i), Y(n), { s: LINE, sw: 0.7 }) + line(X(m), Y(i), X(n), Y(i), { s: LINE, sw: 0.7 });
-      if (i % every || (m && !i)) continue;
-      out += T(X(i) + (m ? 0 : 0), ly, fmt(i), { s: m ? 7.5 : 8.5, f: INK2, a: 'middle' }) + (i ? T(X(0) - 4, Y(i) + 3, fmt(i), { s: m ? 7.5 : 8.5, f: INK2, a: 'end' }) : '');
+    var n = p.n || 8, lo = p.min || 0, span = n - lo, u = Math.min(p.u || 11, (Math.min(w, 220) - 24) / span), ox = x + 18 - lo * u, oy = y + 6 + n * u, out = '';
+    var X = function (v) { return ox + v * u; }, Y = function (v) { return oy - v * u; }, sg = function (v) { return v < 0 ? '\u2212' + -v : v; };
+    for (var i = lo; i <= n; i++) {
+      out += line(X(i), Y(lo), X(i), Y(n), { s: LINE, sw: 0.7 }) + line(X(lo), Y(i), X(n), Y(i), { s: LINE, sw: 0.7 });
+      /* with four quadrants, every second number is written, beside the axes */
+      if (!lo) out += T(X(i), Y(0) + 12, i, { s: 8.5, f: INK2, a: 'middle' }) + (i ? T(X(0) - 5, Y(i) + 3, i, { s: 8.5, f: INK2, a: 'end' }) : '');
+      else if (i && i % 2 === 0) out += T(X(i), Y(0) + 11, sg(i), { s: 8, f: INK2, a: 'middle' }) + T(X(0) - 4, Y(i) + 3, sg(i), { s: 8, f: INK2, a: 'end' });
     }
-    out += line(X(m), Y(0), X(n), Y(0), { sw: 1.2 }) + line(X(0), Y(m), X(0), Y(n), { sw: 1.2 });
+    if (lo) out += T(X(n) + 2, Y(0) - 4, 'x', { s: 10, i: 1, f: INK2 }) + T(X(0) + 4, Y(n) + 4, 'y', { s: 10, i: 1, f: INK2 });
+    out += line(X(lo), Y(0), X(n), Y(0), { sw: 1.2 }) + line(X(0), Y(lo), X(0), Y(n), { sw: 1.2 });
     function shape(list, col, dash) { return '<path d="M' + list.map(function (q) { return X(q[0]) + ' ' + Y(q[1]); }).join(' L') + ' Z" fill="' + (dash ? 'none' : '#dfe5ee') + '" fill-opacity="0.8" stroke="' + col + '" stroke-width="1.4"' + (dash ? ' stroke-dasharray="4 3"' : '') + '/>'; }
     function dot(q, col) { return '<circle cx="' + X(q[0]) + '" cy="' + Y(q[1]) + '" r="3.2" fill="' + col + '"/>' + (q[2] ? T(X(q[0]) + 5, Y(q[1]) - 5, q[2], { s: 10.5, w: 700, f: col }) : ''); }
-    if (p.mirror) out += p.mirror.x != null ? line(X(p.mirror.x), Y(m), X(p.mirror.x), Y(n), { sw: 1.6 }).replace('/>', ' stroke-dasharray="5 3"/>') : line(X(m), Y(p.mirror.y), X(n), Y(p.mirror.y), { sw: 1.6 }).replace('/>', ' stroke-dasharray="5 3"/>');
+    if (p.mirror) out += p.mirror.x != null ? line(X(p.mirror.x), Y(lo), X(p.mirror.x), Y(n), { sw: 1.6 }).replace('/>', ' stroke-dasharray="5 3"/>') : line(X(lo), Y(p.mirror.y), X(n), Y(p.mirror.y), { sw: 1.6 }).replace('/>', ' stroke-dasharray="5 3"/>');
     if (p.shape) out += shape(p.shape, INK);
     if (p.after) out += shape(p.after, INK, true);
     if (key && p.keyShape) out += shape(p.keyShape, KEY, true);
     (p.pts || []).forEach(function (q) { out += dot(q, INK); });
     if (key) (p.plot || []).forEach(function (q) { out += dot(q, KEY); });
-    return { svg: out, h: span * u + 22, w: span * u + 24 };
+    return { svg: out, h: span * u + (lo ? 12 : 22), w: span * u + 24 };
   };
 
   /* an angle: two arms from a vertex, deg apart. Plain, it has an arc (a square for 90°), can be turned by rot and can
@@ -673,6 +687,110 @@
       ht = (B + 2 * sh) * k + 8; wd = (B + 2 * sh) * k + 8;
     }
     return { svg: out, h: ht, w: wd };
+  };
+  /* ---------- Grade 7: integers, circles, circle graphs, prisms and cylinders, and two-event outcomes ---------- */
+  function sgn(v) { return v < 0 ? '−' + -v : String(v); }
+  function round2(v) { return +v.toFixed(4); }
+  /* a thermometer from min to max °C: a mark every step, a number every lab, filled up to t */
+  P.therm = function (p, x, y) {
+    var k = 120 / (p.max - p.min), Y = function (v) { return y + 6 + (p.max - v) * k; }, bx = x + 30, out = '';
+    out += '<rect x="' + (bx - 6) + '" y="' + (Y(p.max) - 4) + '" width="12" height="' + (Y(p.min) - Y(p.max) + 8) + '" rx="6" fill="#fff" stroke="' + INK + '" stroke-width="1.2"/>';
+    out += '<circle cx="' + bx + '" cy="' + (Y(p.min) + 12) + '" r="9" fill="#b9c2d0" stroke="' + INK + '" stroke-width="1.2"/>';
+    out += '<rect x="' + (bx - 3) + '" y="' + Y(p.t) + '" width="6" height="' + (Y(p.min) + 6 - Y(p.t)) + '" fill="#b9c2d0"/>';
+    for (var v = p.min; v <= p.max; v += p.step) {
+      var big = (v - p.min) % p.lab === 0;
+      out += line(bx + 7, Y(v), bx + (big ? 15 : 11), Y(v), { sw: v === 0 ? 1.6 : 0.9 });
+      if (big) out += T(bx + 19, Y(v) + 3.5, sgn(v), { s: 9.5, w: v === 0 ? 700 : 400, f: INK2 });
+    }
+    return { svg: out + T(bx - 12, Y(p.max) + 4, '°C', { s: 9.5, f: INK2, a: 'end' }), h: 150, w: 80 };
+  };
+  /* a circle with its centre and its radius (show: 'r') or diameter (show: 'd') drawn and labelled; ask: 'C' or 'A' says
+     which one its sum works out (for the answer check) */
+  P.circ7 = function (p, x, y) {
+    var R = 38, cx = x + R + 4, cy = y + R + 4, v = p.show === 'd' ? p.d : p.r, lab = (p.show === 'd' ? 'd' : 'r') + ' = ' + v + ' ' + (p.unit || 'cm');
+    var out = '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/><circle cx="' + cx + '" cy="' + cy + '" r="2" fill="' + INK + '"/>';
+    out += p.show === 'd' ? line(cx - R, cy, cx + R, cy, { sw: 1.3 }) : line(cx, cy, cx + R, cy, { sw: 1.3 });
+    out += T(cx + R + 10, cy + 4, lab, { s: 12, w: 700 });
+    return { svg: out, h: 2 * R + 8, w: 2 * R + 14 + tw(lab, 12, 700) };
+  };
+  /* a circle graph: one slice per category (vals are percents that make 100), each a light grey tint, with a key beside it */
+  var TINTS = ['#ffffff', '#dfe5ee', '#b9c2d0', '#eef1f6', '#cdd5e1', '#9aa6b8'];
+  P.pie = function (p, x, y) {
+    var R = 44, cx = x + R + 2, cy = y + R + 2, a0 = -Math.PI / 2, out = '', ky = y + 4;
+    p.vals.forEach(function (v, i) {
+      var a1 = a0 + v / 100 * Math.PI * 2, big = v > 50 ? 1 : 0;
+      var pt = function (a) { return (cx + R * Math.cos(a)).toFixed(2) + ' ' + (cy + R * Math.sin(a)).toFixed(2); };
+      out += v >= 100 ? '<circle cx="' + cx + '" cy="' + cy + '" r="' + R + '" fill="' + TINTS[i] + '" stroke="' + INK + '" stroke-width="1.2"/>'
+        : '<path d="M' + cx + ' ' + cy + ' L' + pt(a0) + ' A' + R + ' ' + R + ' 0 ' + big + ' 1 ' + pt(a1) + ' Z" fill="' + TINTS[i] + '" stroke="' + INK + '" stroke-width="1.2"/>';
+      a0 = a1;
+      out += '<rect x="' + (x + 2 * R + 14) + '" y="' + (ky - 8) + '" width="10" height="10" fill="' + TINTS[i] + '" stroke="' + INK + '" stroke-width="1"/>' +
+        T(x + 2 * R + 30, ky + 1, p.cats[i] + (p.noval ? '' : ' ' + v + '%'), { s: 11.5 });
+      ky += 17;
+    });
+    if (p.title) out += T(x, y + 2 * R + 20, p.title, { s: 11, w: 700, f: INK2 });
+    return { svg: out, h: Math.max(2 * R + 4 + (p.title ? 22 : 0), ky - y), w: 2 * R + 30 + Math.max.apply(null, p.cats.map(function (c, i) { return tw(c + ' ' + p.vals[i] + '%', 11.5); })) };
+  };
+  /* a cylinder with its radius (or diameter, show: 'd') and height; ask: 'V' or 'SA' says which its sum works out */
+  P.cyl7 = function (p, x, y) {
+    var rx = 34, ry = 10, hh = 64, cx = x + rx + 2, top = y + ry + 2, u = ' ' + (p.unit || 'cm');
+    var out = '<path d="M' + (cx - rx) + ' ' + top + ' L' + (cx - rx) + ' ' + (top + hh) + ' A' + rx + ' ' + ry + ' 0 0 0 ' + (cx + rx) + ' ' + (top + hh) + ' L' + (cx + rx) + ' ' + top + '" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+    out += '<path d="M' + (cx - rx) + ' ' + (top + hh) + ' A' + rx + ' ' + ry + ' 0 0 1 ' + (cx + rx) + ' ' + (top + hh) + '" fill="none" stroke="' + INK2 + '" stroke-width="1" stroke-dasharray="3 3"/>';
+    out += '<ellipse cx="' + cx + '" cy="' + top + '" rx="' + rx + '" ry="' + ry + '" fill="#eef1f6" stroke="' + INK + '" stroke-width="1.4"/><circle cx="' + cx + '" cy="' + top + '" r="1.8" fill="' + INK + '"/>';
+    out += p.show === 'd' ? line(cx - rx, top, cx + rx, top, { sw: 1.2 }) : line(cx, top, cx + rx, top, { sw: 1.2 });
+    var lab = (p.show === 'd' ? 'd = ' + p.d : 'r = ' + p.r) + u;
+    out += T(cx + rx + 8, top + 4, lab, { s: 11.5, w: 700 }) + T(cx + rx + 8, top + hh / 2 + 10, 'h = ' + p.h + u, { s: 11.5, w: 700 });
+    return { svg: out, h: hh + 2 * ry + 6, w: 2 * rx + 12 + Math.max(tw(lab, 11.5, 700), tw('h = ' + p.h + u, 11.5, 700)) };
+  };
+  /* a rectangular prism (l long, w wide, h high) or, with tri: true, a triangular prism whose triangle has base b and
+     height th, l long; ask: 'V' says its sum works out the volume */
+  P.prism = function (p, x, y) {
+    var u = ' ' + (p.unit || 'cm'), dx = 22, dy = 14, W0 = 92, H0 = 50, ox = x + 4, oy = y + dy + H0 + 2, out = '';
+    var pts = function (l) { return l.map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L'); };
+    if (!p.tri) {
+      out += '<path d="M' + pts([[ox, oy], [ox + W0, oy], [ox + W0, oy - H0], [ox, oy - H0]]) + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+      out += '<path d="M' + pts([[ox, oy - H0], [ox + dx, oy - H0 - dy], [ox + W0 + dx, oy - H0 - dy], [ox + W0, oy - H0]]) + ' Z" fill="#eef1f6" stroke="' + INK + '" stroke-width="1.4"/>';
+      out += '<path d="M' + pts([[ox + W0, oy], [ox + W0 + dx, oy - dy], [ox + W0 + dx, oy - H0 - dy], [ox + W0, oy - H0]]) + ' Z" fill="#dfe5ee" stroke="' + INK + '" stroke-width="1.4"/>';
+      out += T(ox + W0 / 2, oy + 14, p.l + u, { s: 11.5, w: 700, a: 'middle' }) + T(ox + W0 + dx + 6, oy - dy - H0 / 2 + 4, p.h + u, { s: 11.5, w: 700 }) +
+        T(ox + W0 + dx / 2 + 8, oy - 1, p.w + u, { s: 11.5, w: 700 });
+      return { svg: out, h: H0 + dy + 20, w: W0 + dx + 14 + Math.max(tw(p.h + u, 11.5, 700), tw(p.w + u, 11.5, 700) - dx / 2) };
+    }
+    /* the triangle at the front, its base b along the bottom and its dashed height th; the prism runs l back */
+    var A = [ox, oy], B = [ox + 56, oy], C = [ox + 28, oy - H0];
+    out += '<path d="M' + pts([B, [B[0] + 60, B[1] - dy * 2], [C[0] + 60, C[1] - dy * 2], C]) + ' Z" fill="#dfe5ee" stroke="' + INK + '" stroke-width="1.4"/>';
+    out += '<path d="M' + pts([A, B, C]) + ' Z" fill="#fff" stroke="' + INK + '" stroke-width="1.4"/>';
+    out += line(C[0], C[1], C[0], oy, { s: INK2, sw: 1 }).replace('/>', ' stroke-dasharray="3 2"/>');
+    out += T(ox + 28, oy + 14, p.b + u, { s: 11.5, w: 700, a: 'middle' }) + T(C[0] + 3, oy - 12, p.th + u, { s: 10.5, w: 700 }) +
+      T(B[0] + 36, B[1] - dy + 12, p.l + u, { s: 11.5, w: 700 });
+    return { svg: out, h: H0 + 2 * dy + 4, w: 56 + 60 + 6 + tw(p.l + u, 11.5, 700) };
+  };
+  /* the net of a cylinder: two circles of radius r and the rectangle between them, h high and as long as the
+     circumference (written as "?" when ask is true) */
+  P.cnet = function (p, x, y) {
+    var u = ' ' + (p.unit || 'cm'), R = 17, rw = 130, rh = 46, cx = x + 10 + rw / 2, out = '';
+    out += '<circle cx="' + cx + '" cy="' + (y + R + 2) + '" r="' + R + '" fill="#eef1f6" stroke="' + INK + '" stroke-width="1.3"/>' + line(cx, y + R + 2, cx + R, y + R + 2, { sw: 1 });
+    out += T(cx + R + 6, y + R + 6, 'r = ' + p.r + u, { s: 11, w: 700 });
+    var ry = y + 2 * R + 4;
+    out += '<rect x="' + (x + 10) + '" y="' + ry + '" width="' + rw + '" height="' + rh + '" fill="#fff" stroke="' + INK + '" stroke-width="1.3"/>';
+    out += T(x + 10 + rw + 6, ry + rh / 2 + 4, p.h + u, { s: 11, w: 700 }) + T(cx, ry + rh / 2 + 4, p.ask ? 'length = ?' : 'length = ' + round2(2 * 3.14 * p.r) + u, { s: 10.5, f: INK2, a: 'middle' });
+    out += '<circle cx="' + cx + '" cy="' + (ry + rh + R + 2) + '" r="' + R + '" fill="#eef1f6" stroke="' + INK + '" stroke-width="1.3"/>';
+    return { svg: out, h: 4 * R + rh + 8, w: rw + 16 + tw(p.h + u, 11, 700) };
+  };
+  /* every outcome of two events: a grid with the first event's outcomes down the side and the second's across the top
+     (each cell names the pair, such as H3); ta and tb name the events */
+  P.outs = function (p, x, y, w) {
+    var lw = 34, cw = Math.min(30, (Math.min(w, 228) - lw - 4) / p.b.length), rh = 18, out = '';
+    out += T(x + lw + cw * p.b.length / 2, y + 9, p.tb || '', { s: 9.5, w: 700, f: INK2, a: 'middle' });
+    p.b.forEach(function (b, j) { out += T(x + lw + j * cw + cw / 2, y + 24, b, { s: 11, w: 700, a: 'middle' }); });
+    p.a.forEach(function (a, i) {
+      var ry = y + 30 + i * rh;
+      out += T(x + lw - 6, ry + 13, a, { s: 11, w: 700, a: 'end' });
+      p.b.forEach(function (b, j) {
+        out += '<rect x="' + (x + lw + j * cw) + '" y="' + ry + '" width="' + cw + '" height="' + rh + '" fill="#fff" stroke="' + LINE + '" stroke-width="1"/>' +
+          T(x + lw + j * cw + cw / 2, ry + 12.5, a + b, { s: 9.5, f: INK2, a: 'middle' });
+      });
+    });
+    if (p.ta) out += T(x, y + 24, p.ta, { s: 9.5, w: 700, f: INK2 });
+    return { svg: out, h: 34 + p.a.length * rh, w: lw + cw * p.b.length };
   };
   /* ---------- Grade 8 ---------- */
   var neg = function (v) { return fmt(v); };
