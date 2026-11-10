@@ -37,9 +37,9 @@
   /* a unit rate: amount ÷ number of units */
   function RT(t, n, unit, wide) { var m = unit.charAt(0) === '$'; return { eq: [t + ' ÷ ' + n + ' = ' + (m ? '$ [] ' + unit.slice(2) : '[] ' + unit)], a: [Math.round(t / n * 1e6) / 1e6], wide: !!wide }; }
   /* proportional or not, from a table of pairs */
-  function PT(head, rows) { var k = rows[0][1] / rows[0][0], yes = rows.every(function (r) { return r[1] / r[0] === k; }); return { q: 'Proportional?', pic: ['table', { head: head, rows: rows, pairs: true }], pick: { opts: ['proportional', 'not proportional'], ans: yes ? 0 : 1, prop: rows } }; }
+  function PT(head, rows) { var k = rows[0][1] / rows[0][0], yes = rows.every(function (r) { return r[1] / r[0] === k; }); return { q: 'Proportional?', pic: ['table', { head: head, rows: rows, pairs: true }], pick: { opts: ['proportional', 'not proportional'], ans: yes ? 0 : 1, isProp: rows } }; }
   /* proportional or not, from a cost with a start fee b */
-  function PB(q, b) { return { q: q, pick: { opts: ['proportional', 'not proportional'], ans: b ? 1 : 0, prop: { b: b } } }; }
+  function PB(q, b) { return { q: q, pick: { opts: ['proportional', 'not proportional'], ans: b ? 1 : 0, isProp: { b: b } } }; }
   function story(q, unit, ans, calc, more) { var it = { q: q, eq: ['[] ' + unit], a: [ans], calc: calc }; return more ? Object.assign(it, more) : it; }
 
   S.register('percent-ratio', { code: 'PR', ideas: {

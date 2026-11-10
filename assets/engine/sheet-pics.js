@@ -44,7 +44,25 @@
      towers    { v: [heights], line }                 towers of cubes; line: a dashed line at that height
      bag       { c: { red, blue, green, yellow } }    a bag of lettered marbles
      spinner   { parts: ['red', 'blue', ...] }        a spinner in equal lettered parts
-     row       { list: [pic, pic], labels, gap }      pictures side by side */
+     geo       { pts: [[c, r], ...], cols, rows, mirror: { x } | { y } | { d: 1 | -1, c }, sym }   a flat shape on a dot grid
+                                                      (a geoboard), corners at grid dots; mirror: a dashed line to test;
+                                                      sym: the key draws every line of symmetry
+     hex       { parts: [3, 1, 1, 1], blank }         a hexagon made of pattern blocks, going round: 1 a triangle, 2 a rhombus,
+                                                      3 a trapezoid, 6 the whole hexagon; blank: the outline only (the key draws the parts)
+     pb        { list: ['hex', 'trap', 'rhom', 'tri'] }   pattern blocks side by side, at the same scale
+     scatter   { t }                                  t dots scattered (always the same way for the same t), to estimate
+     pairs     { n }                                  n dots set out two by two; an odd number leaves one without a partner
+     hund      { from, rows, shade: [n, ...], ask: [n, ...] }   rows of a hundred chart from a number; shade: shaded on the sheet,
+                                                     ask: shaded on the key only (the child colours them)
+     twoway    { rows: [...], cols: [...], vals: [[...], ...] }   a two-way table: one row and one column for each answer
+     row       { list: [pic, pic], labels, gap }      pictures side by side
+   Grade 1 adds:
+     frame     { n, b, x }                            one ten frame: n dark counters, then b white ones; x: the last x crossed out
+     flat      { list: ['tri', 'sq', 'rect', 'pent', 'hex', 'circle', 'oval', 'rhom'], turn, letters }   flat shapes; turn: degrees
+     fold      { cols, rows, cells: ['c,r', ...], line: { x } | { y } }   a shape on squares with a dashed fold line (x or y in squares)
+     shelf     { rows: [['cup', 'book', ''], ...] }   a shelf of cubbies, one word in each (top row first); '' is an empty cubby
+     cal       { month, start: 0-6 (Sunday first), days, marks: [dates] }   one month of a calendar; marks: dates ringed
+     strips    { list: [['A', 7, 0], ...], cubes }   strips len units long, moved off units from the start line; cubes: show each unit */
 (function () {
   'use strict';
   var S = window.Atlas && Atlas.sheets;
@@ -519,6 +537,96 @@
     out += ln(cx, cy, cx, cy - R * 0.45, { sw: 2 }) + circ(cx, cy, 3, { f: INK });
     return { svg: out, h: 2 * R + 4, w: 2 * R + 4 };
   };
+  /* ---------- Grade 2 shapes, estimating and pairs ---------- */
+  /* the lines a shape folds onto itself along: up and down, across, and the two diagonals, through the middle of its corners.
+     A line is { x } (up and down), { y } (across), { d: 1, c } (the line y = x - c) or { d: -1, c } (the line y = c - x). */
+  function flip(q, m) {
+    return m.x != null ? [2 * m.x - q[0], q[1]] : m.y != null ? [q[0], 2 * m.y - q[1]] : m.d === 1 ? [q[1] + m.c, q[0] - m.c] : [m.c - q[1], m.c - q[0]];
+  }
+  function edges(pts) { return pts.map(function (q, i) { var b = pts[(i + 1) % pts.length]; return [q.join(), b.join()].sort().join(' '); }).sort().join('|'); }
+  function symLines(pts) {
+    var n = pts.length, cx = pts.reduce(function (t, q) { return t + q[0]; }, 0) / n, cy = pts.reduce(function (t, q) { return t + q[1]; }, 0) / n, own = edges(pts);
+    return [{ x: cx }, { y: cy }, { d: 1, c: cx - cy }, { d: -1, c: cx + cy }].filter(function (m) { return edges(pts.map(function (q) { return flip(q, m); })) === own; });
+  }
+  S.draw.symLines = symLines;
+  P.geo = function (p, x, y, w, key) {
+    var u = p.u || 18, out = '', X = function (c) { return x + 6 + c * u; }, Y = function (rr) { return y + 6 + rr * u; };
+    for (var i = 0; i <= p.rows; i++) for (var j = 0; j <= p.cols; j++) out += '<circle cx="' + X(j) + '" cy="' + Y(i) + '" r="1.3" fill="' + INK2 + '"/>';
+    out += path('M' + p.pts.map(function (q) { return X(q[0]) + ' ' + Y(q[1]); }).join(' L') + ' Z', { s: INK, f: SHADE, sw: 1.6 });
+    /* a mirror line (or the key's lines of symmetry), drawn a little past the shape */
+    function mline(m, col) {
+      var xs = p.pts.map(function (q) { return q[0]; }), ys = p.pts.map(function (q) { return q[1]; });
+      var x0 = Math.min.apply(null, xs) - 0.6, x1 = Math.max.apply(null, xs) + 0.6, y0 = Math.min.apply(null, ys) - 0.6, y1 = Math.max.apply(null, ys) + 0.6, a, b;
+      if (m.x != null) { a = [m.x, y0]; b = [m.x, y1]; }
+      else if (m.y != null) { a = [x0, m.y]; b = [x1, m.y]; }
+      else { var t0 = Math.max(x0, m.d === 1 ? y0 + m.c : m.c - y1), t1 = Math.min(x1, m.d === 1 ? y1 + m.c : m.c - y0); a = [t0, m.d === 1 ? t0 - m.c : m.c - t0]; b = [t1, m.d === 1 ? t1 - m.c : m.c - t1]; }
+      return ln(X(a[0]), Y(a[1]), X(b[0]), Y(b[1]), { s: col, sw: 1.6, d: '5 3' });
+    }
+    if (p.mirror) out += mline(p.mirror, INK);
+    if (key && p.sym) symLines(p.pts).forEach(function (m) { out += mline(m, KEY); });
+    return { svg: out, h: p.rows * u + 12, w: p.cols * u + 12 };
+  };
+  /* a hexagon cut into pattern blocks: each part is a run of 1, 2, 3 or 6 of its 6 triangles, going round from the top right */
+  P.hex = function (p, x, y, w, key) {
+    var R = p.R || 34, cx = x + R + 2, cy = y + R * 0.87 + 2, out = '', at = 0;
+    var V = function (k) { var a = (k * 60 - 60) * Math.PI / 180; return [(cx + R * Math.cos(a)).toFixed(1), (cy + R * Math.sin(a)).toFixed(1)]; };
+    out += path('M' + [0, 1, 2, 3, 4, 5].map(function (k) { return V(k).join(' '); }).join(' L') + ' Z', { s: INK, f: SHADE, sw: 1.6 });
+    if (!p.blank || key) p.parts.forEach(function (n) { if (n < 6) { out += ln(cx, cy, V(at)[0], V(at)[1], { s: p.blank ? KEY : INK, sw: 1.3 }); } at += n; });
+    return { svg: out, h: R * 1.74 + 4, w: 2 * R + 4 };
+  };
+  /* pattern blocks at the same scale (side s): a hexagon, a trapezoid, a rhombus and a triangle */
+  P.pb = function (p, x, y, w) {
+    var s = p.s || 24, h = s * 1.732, out = '', cx = x, base = y + h + 2;
+    var SH = { tri: [[0, 0], [s, 0], [s / 2, -h / 2]], rhom: [[0, 0], [s, 0], [1.5 * s, -h / 2], [s / 2, -h / 2]], trap: [[0, 0], [2 * s, 0], [1.5 * s, -h / 2], [s / 2, -h / 2]],
+      hex: [[s / 2, 0], [1.5 * s, 0], [2 * s, -h / 2], [1.5 * s, -h], [s / 2, -h], [0, -h / 2]] };
+    p.list.forEach(function (k) {
+      var pts = SH[k], wd = Math.max.apply(null, pts.map(function (q) { return q[0]; }));
+      out += path('M' + pts.map(function (q) { return (cx + q[0]).toFixed(1) + ' ' + (base + q[1]).toFixed(1); }).join(' L') + ' Z', { s: INK, f: SHADE, sw: 1.4 });
+      cx += wd + 12;
+    });
+    return { svg: out, h: h + 4, w: cx - 12 - x };
+  };
+  /* t dots scattered in a box, the same way every time for the same t: a grid of small cells with about a third left
+     empty, a dot in each of the others, nudged a little off centre (so no two dots touch) */
+  P.scatter = function (p, x, y, w) {
+    var c = 13, cols = Math.floor((Math.min(w - 4, 176) - 8) / c), rows = Math.ceil(p.t * 1.4 / cols), cells = [], seed = p.t * 7919 + 17, out = '', i;
+    function rnd() { seed = (seed * 16807) % 2147483647; return seed / 2147483647; }
+    for (i = 0; i < cols * rows; i++) cells.push(i);
+    for (i = cells.length - 1; i > 0; i--) { var j = Math.floor(rnd() * (i + 1)), t = cells[i]; cells[i] = cells[j]; cells[j] = t; }
+    out += r(x, y, cols * c + 8, rows * c + 8, { rx: 6, s: LINE, sw: 0.9 });
+    cells.slice(0, p.t).forEach(function (k) {
+      var cx = x + 4 + (k % cols + 0.5) * c + (rnd() - 0.5) * 4, cy = y + 4 + (Math.floor(k / cols) + 0.5) * c + (rnd() - 0.5) * 4;
+      out += '<circle cx="' + cx.toFixed(1) + '" cy="' + cy.toFixed(1) + '" r="3.2" fill="' + INK + '"/>';
+    });
+    return { svg: out, h: rows * c + 8, w: cols * c + 8 };
+  };
+  /* n dots in pairs: two rows, one partner above the other; an odd number leaves the last dot alone */
+  P.pairs = function (p, x, y, w) {
+    var cols = Math.ceil(p.n / 2), sp = Math.min(18, (w - 12) / cols), out = '';
+    for (var i = 0; i < p.n; i++) out += D.obj(x + 8 + Math.floor(i / 2) * sp, y + 8 + (i % 2) * 18, Math.min(5.5, sp / 3.1));
+    for (var k = 0; k < Math.floor(p.n / 2); k++) out += r(x + 8 + k * sp - sp * 0.38, y + 1, sp * 0.76, 32, { rx: 6, s: LINE, sw: 0.8, f: 'none' });
+    return { svg: out, h: 34, w: cols * sp + 8 };
+  };
+  P.hund = function (p, x, y, w, key) {
+    var u = Math.min(20, (Math.min(w, 202) - 2) / 10), out = '', n, i, on;
+    for (i = 0; i < 10 * p.rows; i++) {
+      n = p.from + i; on = (p.shade || []).indexOf(n) >= 0 || (key && (p.ask || []).indexOf(n) >= 0);
+      out += r(x + (i % 10) * u, y + Math.floor(i / 10) * u, u, u, { f: on ? SHADE : '#fff', s: LINE, sw: 0.8 });
+      out += T(x + (i % 10) * u + u / 2, y + Math.floor(i / 10) * u + u * 0.66, String(n), { s: u > 19 ? 9 : 7.5, f: INK, a: 'middle' });
+    }
+    out += r(x, y, 10 * u, p.rows * u, { f: 'none', s: INK, sw: 1.1 });
+    return { svg: out, h: p.rows * u, w: 10 * u };
+  };
+  P.twoway = function (p, x, y, w, key, th) {
+    var lw = 56, cw = Math.min(54, (Math.min(w, 260) - lw) / p.cols.length), rh = 20, out = '';
+    p.cols.forEach(function (c, j) { out += T(x + lw + j * cw + cw / 2, y + 14, D.words(c, th), { s: 10, w: 700, f: INK2, a: 'middle' }); });
+    p.rows.forEach(function (rw, i) {
+      var ry = y + rh * (i + 1);
+      out += r(x, ry, lw, rh, { f: SHADE, s: LINE, sw: 0.8 }) + T(x + 6, ry + 14, D.words(rw, th), { s: 10, w: 700 });
+      p.cols.forEach(function (c, j) { out += r(x + lw + j * cw, ry, cw, rh, { s: LINE, sw: 0.8 }) + T(x + lw + j * cw + cw / 2, ry + 14, String(p.vals[i][j]), { s: 11, w: 700, a: 'middle' }); });
+    });
+    return { svg: out, h: rh * (p.rows.length + 1), w: lw + cw * p.cols.length };
+  };
   P.row = function (p, x, y, w, key, th, ans) {
     var cx = x, h = 0, out = '', used = 0, gap = p.gap || 16, each = (w - (p.list.length - 1) * gap) / p.list.length;
     p.list.forEach(function (sp, i) {
@@ -528,5 +636,80 @@
       cx += o.w + gap; h = Math.max(h, o.h);
     });
     return { svg: out, h: h + (p.labels ? 20 : 0), w: cx - x - gap, used: used };
+  };
+  /* ---------- Grade 1 ---------- */
+  P.frame = function (p, x, y) {
+    var out = '', c = 20, all = p.n + (p.b || 0);
+    for (var i = 0; i < 10; i++) {
+      var cx = x + (i % 5) * c, cy = y + Math.floor(i / 5) * c;
+      out += r(cx, cy, c, c, { s: INK2, sw: 1 });
+      if (i < all) out += circ(cx + c / 2, cy + c / 2, 6.5, i < p.n ? { f: INK, s: INK } : { f: '#fff', s: INK, sw: 1.4 });
+      if (p.x && i >= all - p.x && i < all) out += ln(cx + 3, cy + c - 3, cx + c - 3, cy + 3, { s: INK, sw: 1.6 });
+    }
+    return { svg: out, h: 2 * c, w: 5 * c };
+  };
+  /* the corners of a flat shape, about (cx, cy) with size s, turned by rot degrees */
+  var FLAT = { tri: 3, sq: 4, rect: 4, rhom: 4, pent: 5, hex: 6, circle: 0, oval: 0 };
+  S.draw.flatSides = FLAT;
+  function flatPts(k, cx, cy, s, rot) {
+    var pts, i, n = FLAT[k];
+    if (k === 'rect') pts = [[-0.62, -0.34], [0.62, -0.34], [0.62, 0.34], [-0.62, 0.34]];
+    else if (k === 'sq') pts = [[-0.4, -0.4], [0.4, -0.4], [0.4, 0.4], [-0.4, 0.4]];
+    else if (k === 'rhom') pts = [[0, -0.48], [0.34, 0], [0, 0.48], [-0.34, 0]];
+    else { pts = []; for (i = 0; i < n; i++) { var a = -Math.PI / 2 + i * 2 * Math.PI / n; pts.push([0.48 * Math.cos(a), 0.48 * Math.sin(a) + (n === 3 ? 0.08 : 0)]); } }
+    var t = (rot || 0) * Math.PI / 180;
+    return pts.map(function (q) { return [cx + s * (q[0] * Math.cos(t) - q[1] * Math.sin(t)), cy + s * (q[0] * Math.sin(t) + q[1] * Math.cos(t))]; });
+  }
+  P.flat = function (p, x, y, w) {
+    var n = p.list.length, s = Math.min(p.s || 62, (w - 14 * (n - 1)) / n), out = '';
+    p.list.forEach(function (k, i) {
+      var cx = x + s / 2 + i * (s + 14), cy = y + s / 2;
+      if (k === 'circle') out += circ(cx, cy, s * 0.42, { sw: 1.5 });
+      else if (k === 'oval') out += '<ellipse cx="' + cx + '" cy="' + cy + '" rx="' + s * 0.48 + '" ry="' + s * 0.3 + '" transform="rotate(' + (p.turn || 0) + ' ' + cx + ' ' + cy + ')" fill="#fff" stroke="' + INK + '" stroke-width="1.5"/>';
+      else out += path('M' + flatPts(k, cx, cy, s, p.turn).map(function (q) { return q[0].toFixed(1) + ' ' + q[1].toFixed(1); }).join(' L') + ' Z', { sw: 1.5 });
+      if (p.letters) out += T(cx, y + s + 16, String.fromCharCode(65 + i), { s: 12, w: 700, f: INK2, a: 'middle' });
+    });
+    return { svg: out, h: s + (p.letters ? 20 : 0), w: n * (s + 14) - 14 };
+  };
+  P.fold = function (p, x, y) {
+    var u = p.u || 16, out = P.area({ cols: p.cols, rows: p.rows, cells: p.cells, u: u }, x, y).svg, L = p.line;
+    out += L.x != null ? ln(x + L.x * u, y - 6, x + L.x * u, y + p.rows * u + 6, { s: INK, sw: 1.5, d: '5 4' }) : ln(x - 6, y + L.y * u, x + p.cols * u + 6, y + L.y * u, { s: INK, sw: 1.5, d: '5 4' });
+    return { svg: out, h: p.rows * u, w: p.cols * u };
+  };
+  P.shelf = function (p, x, y, w, key, th) {
+    var cols = p.rows[0].length, cw = Math.min(64, (w - 8) / cols), ch = 30, out = '';
+    p.rows.forEach(function (row, i) {
+      row.forEach(function (t, j) {
+        out += r(x + 4 + j * cw, y + i * ch, cw, ch, { s: INK2, sw: 1 });
+        if (t) out += T(x + 4 + j * cw + cw / 2, y + i * ch + 19, D.words(t, th), { s: 11, w: 700, a: 'middle' });
+      });
+    });
+    out += ln(x, y + p.rows.length * ch, x + cols * cw + 8, y + p.rows.length * ch, { sw: 2 });
+    return { svg: out, h: p.rows.length * ch + 2, w: cols * cw + 8 };
+  };
+  P.cal = function (p, x, y, w) {
+    var cw = Math.min(30, (w - 2) / 7), ch = 20, out = T(x + cw * 3.5, y + 12, p.month, { s: 13, w: 700, a: 'middle' }), top = y + 20;
+    ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(function (d, i) { out += T(x + i * cw + cw / 2, top + 12, d, { s: 10, w: 700, f: INK2, a: 'middle' }); });
+    var weeks = Math.ceil((p.start + p.days) / 7);
+    for (var k = 0; k < weeks * 7; k++) {
+      var d = k - p.start + 1, cx = x + (k % 7) * cw, cy = top + 16 + Math.floor(k / 7) * ch;
+      out += r(cx, cy, cw, ch, { s: LINE, sw: 0.8 });
+      if (d >= 1 && d <= p.days) {
+        out += T(cx + cw / 2, cy + 14, d, { s: 11, w: 700, a: 'middle' });
+        if ((p.marks || []).indexOf(d) >= 0) out += circ(cx + cw / 2, cy + ch / 2, 9, { f: 'none', s: INK, sw: 1.3 });
+      }
+    }
+    return { svg: out, h: 16 + 16 + weeks * ch, w: 7 * cw };
+  };
+  P.strips = function (p, x, y, w) {
+    var lw = 18, most = Math.max.apply(null, p.list.map(function (s) { return s[1] + (s[2] || 0); })), u = Math.min(20, (w - lw - 6) / most), out = '';
+    out += ln(x + lw, y - 2, x + lw, y + p.list.length * 22, { s: INK2, sw: 1, d: '3 3' });
+    p.list.forEach(function (s, i) {
+      var sy = y + i * 22 + 3, sx = x + lw + (s[2] || 0) * u;
+      out += T(x, sy + 12, s[0], { s: 12, w: 700, f: INK2 });
+      if (p.cubes) for (var k = 0; k < s[1]; k++) out += r(sx + k * u, sy, u, 14, { s: INK2, sw: 0.9, f: SHADE });
+      else out += r(sx, sy, s[1] * u, 14, { rx: 3, s: INK2, f: SHADE });
+    });
+    return { svg: out, h: p.list.length * 22, w: lw + most * u };
   };
 })();

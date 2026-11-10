@@ -22,7 +22,7 @@
   function ST(data, stat, unit) { return { q: 'Data: ' + data.join(', '), eq: [stat.charAt(0).toUpperCase() + stat.slice(1) + ': []' + (unit ? ' ' + unit : '')], a: [stat === 'mean' ? data.reduce(function (x, y) { return x + y; }, 0) / data.length : stat === 'range' ? Math.max.apply(null, data) - Math.min.apply(null, data) : med(data)], data: data, stat: stat }; }
   function med(d) { var s = d.slice().sort(function (x, y) { return x - y; }), n = s.length; return n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2; }
   /* which graph fits */
-  function GG(q, g) { var o = {}; o[g] = true; var opts = ['bar graph', 'double bar graph', 'line graph', 'circle graph']; return { q: q, pick: { opts: opts, ans: { cats: 0, two: 1, time: 2, parts: 3 }[g], graph: o }, wide: true }; }
+  function GG(q, g) { var o = {}; o[g] = true; var opts = ['bar graph', 'double bar graph', 'line graph', 'circle graph']; return { q: q, pick: { opts: opts, ans: { cats: 0, two: 1, time: 2, parts: 3 }[g], gkind: o }, wide: true }; }
   /* independent or dependent */
   function ID(q, how) { var o = {}; if (how) o[how] = true; return { q: q, pick: { opts: ['independent', 'dependent'], ans: how ? 0 : 1, indep: o }, wide: true }; }
   /* two events from a grid of outcomes: the chance of one outcome of each */

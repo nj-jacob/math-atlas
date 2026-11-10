@@ -12,20 +12,20 @@
   /* the same question with no picture: the measure goes in the question */
   function bare(it, q) { delete it.pic; it.q = q; it.wide = false; return it; }
   /* a circle: diameter from radius, radius from diameter */
-  function DR(r) { return { pic: ['circ', { r: r, show: 'r', unit: 'cm' }], q: 'Diameter?', eq: ['2 × ' + r + ' = [] cm'], a: [2 * r] }; }
-  function RD(d) { return { pic: ['circ', { d: d, show: 'd', unit: 'cm' }], q: 'Radius?', eq: [d + ' ÷ 2 = [] cm'], a: [d / 2] }; }
+  function DR(r) { return { pic: ['circ7', { r: r, show: 'r', unit: 'cm' }], q: 'Diameter?', eq: ['2 × ' + r + ' = [] cm'], a: [2 * r] }; }
+  function RD(d) { return { pic: ['circ7', { d: d, show: 'd', unit: 'cm' }], q: 'Radius?', eq: [d + ' ÷ 2 = [] cm'], a: [d / 2] }; }
   /* circumference from the diameter, or from the radius */
-  function CD(d, unit) { return { pic: ['circ', { d: d, show: 'd', unit: unit || 'cm', ask: 'C' }], eq: ['3.14 × ' + d + ' = [] ' + (unit || 'cm')], a: [rd(3.14 * d)] }; }
-  function CR(r, unit) { return { pic: ['circ', { r: r, show: 'r', unit: unit || 'cm', ask: 'C' }], eq: ['3.14 × 2 × ' + r + ' = [] ' + (unit || 'cm')], a: [rd(3.14 * 2 * r)] }; }
+  function CD(d, unit) { return { pic: ['circ7', { d: d, show: 'd', unit: unit || 'cm', ask: 'C' }], eq: ['3.14 × ' + d + ' = [] ' + (unit || 'cm')], a: [rd(3.14 * d)] }; }
+  function CR(r, unit) { return { pic: ['circ7', { r: r, show: 'r', unit: unit || 'cm', ask: 'C' }], eq: ['3.14 × 2 × ' + r + ' = [] ' + (unit || 'cm')], a: [rd(3.14 * 2 * r)] }; }
   /* area from the radius, or from the diameter (halve it first) */
-  function AR(r, unit) { return { pic: ['circ', { r: r, show: 'r', unit: unit || 'cm', ask: 'A' }], eq: ['3.14 × ' + r + ' × ' + r + ' = [] ' + (unit || 'cm') + '²'], a: [rd(3.14 * r * r)] }; }
-  function AD(d, unit) { var r = d / 2; return { pic: ['circ', { d: d, show: 'd', unit: unit || 'cm', ask: 'A' }], eq: [d + ' ÷ 2 = []', '3.14 × [] × [] = []'], a: [r, r, r, rd(3.14 * r * r)], wide: true }; }
+  function AR(r, unit) { return { pic: ['circ7', { r: r, show: 'r', unit: unit || 'cm', ask: 'A' }], eq: ['3.14 × ' + r + ' × ' + r + ' = [] ' + (unit || 'cm') + '²'], a: [rd(3.14 * r * r)] }; }
+  function AD(d, unit) { var r = d / 2; return { pic: ['circ7', { d: d, show: 'd', unit: unit || 'cm', ask: 'A' }], eq: [d + ' ÷ 2 = []', '3.14 × [] × [] = []'], a: [r, r, r, rd(3.14 * r * r)], wide: true }; }
   /* around (circumference) or inside (area) */
   function AI(q, around) { return { q: q, pick: { opts: ['circumference', 'area'], ans: around ? 0 : 1, around: true }, wide: true }; }
   /* volume of a box, a triangular prism and a cylinder */
   function VB(l, w, h) { return { pic: ['prism', { l: l, w: w, h: h, ask: 'V' }], eq: [l + ' × ' + w + ' × ' + h + ' = [] cm³'], a: [rd(l * w * h)] }; }
   function VT(b, th, l) { return { pic: ['prism', { tri: true, b: b, th: th, l: l, ask: 'V' }], eq: [b + ' × ' + th + ' ÷ 2 = [] cm²', '[] × ' + l + ' = [] cm³'], a: [b * th / 2, b * th / 2, rd(b * th / 2 * l)] }; }
-  function VC(r, h) { return { pic: ['cyl', { r: r, h: h, show: 'r', ask: 'V' }], eq: ['3.14 × ' + r + ' × ' + r + ' = [] cm²', '[] × ' + h + ' = [] cm³'], a: [rd(3.14 * r * r), rd(3.14 * r * r), rd(3.14 * r * r * h)] }; }
+  function VC(r, h) { return { pic: ['cyl7', { r: r, h: h, show: 'r', ask: 'V' }], eq: ['3.14 × ' + r + ' × ' + r + ' = [] cm²', '[] × ' + h + ' = [] cm³'], a: [rd(3.14 * r * r), rd(3.14 * r * r), rd(3.14 * r * r * h)] }; }
   /* surface area of a cylinder from its net */
   function SA(r, h) {
     var c = rd(2 * 3.14 * r * r), s = rd(2 * 3.14 * r * h);
@@ -39,7 +39,7 @@
       watch: 'using the diameter where the radius is needed (or the other way round). Ask: centre to edge, or all the way across?',
       goal: 'I can find the radius and diameter of a circle.',
       learn: {
-        show: { pic: ['circ', { r: 4, show: 'r', unit: 'cm' }], cap: 'centre to edge: radius', eq: ['diameter = 2 × 4 = 8 cm'] },
+        show: { pic: ['circ7', { r: 4, show: 'r', unit: 'cm' }], cap: 'centre to edge: radius', eq: ['diameter = 2 × 4 = 8 cm'] },
         together: [DR(6), RD(14)],
         cue: 'Diameter = 2 radii.',
         own: [bare(DR(9), 'Radius 9 cm. Diameter?'), bare(RD(30), 'Diameter 30 cm. Radius?')]
@@ -68,7 +68,7 @@
       watch: 'multiplying the radius by π and forgetting to double it. Write d = 2r first.',
       goal: 'I can find the circumference of a circle.',
       learn: {
-        show: { pic: ['circ', { d: 10, show: 'd', unit: 'cm' }], cap: 'around = π × across', eq: ['3.14 × 10 = 31.4 cm'] },
+        show: { pic: ['circ7', { d: 10, show: 'd', unit: 'cm' }], cap: 'around = π × across', eq: ['3.14 × 10 = 31.4 cm'] },
         together: [CD(5), CR(3)],
         cue: 'C = 3.14 × diameter.',
         own: [bare(CD(20), 'd = 20 cm'), bare(CR(10), 'r = 10 cm')]
@@ -125,7 +125,7 @@
       watch: 'computing π × r × 2 (the circumference idea) instead of π × r × r.',
       goal: 'I can find the area of a circle.',
       learn: {
-        show: { pic: ['circ', { r: 5, show: 'r', unit: 'cm' }], cap: 'slices make a near rectangle: half the circumference by r', eq: ['3.14 × 5 × 5 = 78.5 cm²'] },
+        show: { pic: ['circ7', { r: 5, show: 'r', unit: 'cm' }], cap: 'slices make a near rectangle: half the circumference by r', eq: ['3.14 × 5 × 5 = 78.5 cm²'] },
         together: [AR(3), AR(10)],
         cue: 'A = 3.14 × r × r.',
         own: [bare(AR(4), 'r = 4 cm'), bare(AD(12), 'd = 12 cm')]
