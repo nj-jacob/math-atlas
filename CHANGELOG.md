@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-11
+- Toolbox page: the Language side shows Heart words (Spelling shelf).
 - **Removed the What's built page** (`checklist.html`). It was Noel's own to-do list and does not belong on the site parents and children use. Its check in the tests and its styles are gone too.
 
 ## 2026-11-10

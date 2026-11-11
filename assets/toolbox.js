@@ -7,7 +7,7 @@
 const $ = (s, r) => (r || document).querySelector(s);
 const tabs = Array.from(document.querySelectorAll('[role="tab"]'));
 const LANG = 'language/';
-const LANG_TOOLS = ['atlas', 'words', 'wordbank', 'cardbank', 'tools', 'soundbank', 'soundboard', 'reader', 'meaningbank', 'meaning', 'mapbank', 'textmaps', 'writebank', 'writetools', 'library', 'decodable', 'spellpath'];
+const LANG_TOOLS = ['atlas', 'words', 'wordbank', 'cardbank', 'tools', 'soundbank', 'soundboard', 'reader', 'meaningbank', 'meaning', 'mapbank', 'textmaps', 'writebank', 'writetools', 'library', 'decodable', 'spellpath', 'heartwords'];
 const list = $('#tbx-list'), picker = $('.tbx-g');
 
 function stored(v) {
