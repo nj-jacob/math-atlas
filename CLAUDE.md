@@ -8,7 +8,6 @@ Read this before changing anything. The owner, Noel, is not a developer, so thes
 3. Open a pull request. The **Checks** workflow runs on it. Merge only when it is green and Noel has OK'd the change.
 4. The publish workflow runs the checks again and publishes only if they pass.
 5. Add a line to `CHANGELOG.md` under today's date.
-6. When something goes live, starts waiting on Noel, or a new part of Atlas is started (in either repository), update `checklist.html`, the "What's built" page Noel bookmarks.
 
 ## Where things live
 See `docs/ARCHITECTURE.md`. In short:

@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-11
+- **Removed the What's built page** (`checklist.html`). It was Noel's own to-do list and does not belong on the site parents and children use. Its check in the tests and its styles are gone too.
+
 ## 2026-11-10
 - What's built page: Decodable readers now show Kindergarten to Grade 3, 255 stories, with a page for every consonant sound.
 - **What's built page** (`checklist.html`, not in the menus): one page listing everything in Atlas (lessons, Toolbox, worksheets, reading passages, decodable readers, grown-up extras) with a link to each part, what is still being built, and what waits on Noel. A tick on each row is remembered in the browser. The checks make sure every link on it goes to a real page.
