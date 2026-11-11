@@ -7,7 +7,6 @@ Math Atlas is a set of plain web pages with no build step: what is in this repos
 | Folder or file | What it is |
 | --- | --- |
 | `index.html`, `curriculum.html`, `tools.html` | Atlas home page (Math plan and Language side by side, and a Toolbox card; for parents and tutors, one card per child with both subjects), the Toolbox page (`assets/toolbox.js`: pick a grade, then Math or Language, and every tool of that grade shows on its shelves; a tool opens in its grade and its back button returns here) and the Curriculum page (Math and Language, every grade and chapter). Both share the top bar and sign-in from `assets/home.js` and `home.css`. `assets/curriculum.js` runs the Math / Language switch and builds the Language list. |
-| `checklist.html` | The "What's built" page for Noel (not in the menus; bookmarked): every part of Atlas with a link and its status (Live, Your OK, Being built). Written by hand: update it when something goes live or starts waiting on Noel. `assets/checklist.js` remembers each row's tick in the browser. The checks (part 8 in `tests/run.js`) fail if a link on it goes nowhere. |
 | `language/` (not in this repository) | The Language pages, from the `language-atlas` repository. The publish workflow copies them in before publishing (see "One app, two repositories" below and `SETUP.md`). |
 | `family.html`, `live.html` | Family sign-in and parent and tutor pages, and the "Work together" page |
 | `404.html` | The "page not found" page. Firebase shows it for any address that does not exist. It uses `/` paths so it works at any depth. |
