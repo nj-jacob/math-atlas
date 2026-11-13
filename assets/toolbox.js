@@ -1,7 +1,7 @@
 /* Toolbox page (tools.html): every Math and Language tool for one grade, on the same shelves as each grade's own Toolbox.
    Math: the shelves come from Manip.shelves (assets/engine/manip.js), and a grade's tools are the `tools` list in its
    gradeN/assets/grade.js. Language: the tools register themselves when the Language tool box scripts load
-   (language/assets/engine/, see the Language docs/ARCHITECTURE.md), and Atlas.toolkit.shelves draws them for the grade picked (Reading passages start in Grade 4).
+   (language/assets/engine/, see the Language docs/ARCHITECTURE.md), and Atlas.toolkit.shelves draws them for the grade picked.
    A tool opens in its grade's own Toolbox (gradeN/#tools/<id>). The page sets atlas:toolbox in this tab's session storage
    so that tool's back button returns here. The grade picked is remembered in this browser (atlas:toolgrade). */
 const $ = (s, r) => (r || document).querySelector(s);

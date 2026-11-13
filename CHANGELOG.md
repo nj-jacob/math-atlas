@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-11
+- Toolbox page: Language's Reading passages now show for Grades 1 to 3 too (the passages come from Language Atlas; only a note in the code changed here).
 - Toolbox page: the Language side shows Heart words (Spelling shelf).
 - **Removed the What's built page** (`checklist.html`). It was Noel's own to-do list and does not belong on the site parents and children use. Its check in the tests and its styles are gone too.
 
