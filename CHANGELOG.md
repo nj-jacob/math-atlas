@@ -2,6 +2,9 @@
 
 Newest first. One line per change, in plain English.
 
+## 2026-11-16
+- **Teaching guides for the Toolbox (pilot: Place value blocks).** A Guide button on the tool opens a guide for parents, tutors and teachers: a 2-minute start, short mini-lessons for the grade (I do, We do, You do), questions to ask, common mistakes, what each button does and the expectations it covers. A one-line tip points new grown-ups to it.
+
 ## 2026-11-11
 - Toolbox page: Language's Reading passages now show for Grades 1 to 3 too (the passages come from Language Atlas; only a note in the code changed here).
 - Toolbox page: the Language side shows Heart words (Spelling shelf).

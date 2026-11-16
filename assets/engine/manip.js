@@ -6,6 +6,8 @@
 (function () {
   'use strict';
   var M = (window.Manip = {});
+  /* this file's folder, for the teaching guides the Toolbox loads when asked */
+  var ENGINE = (document.currentScript && document.currentScript.src || '').replace(/[^\/]*$/, '');
   var SVGNS = 'http://www.w3.org/2000/svg';
 
   /* ---------- small helpers ---------- */
@@ -64,7 +66,7 @@
      max {h,t,o}; hideTotal; u / uMax (block size); onChange(state, tool).
      drag: the Toolbox version. The mat keeps one size and the blocks get smaller as more are added. A tray of blocks to drag (or tap) onto the mat; drag a block off the mat to put it back,
      drag a ten into Ones to break it, drag a one into Tens to snap 10 ones into a ten; tap a square inside a ten or hundred
-     to number it 1, 2, 3, or a layer of a thousand cube to count 100, 200, 300 (when "Tap to count" is on Small squares). Adds undo() and showNumbers(on).
+     to number it 1, 2, 3, or a layer of a thousand cube to count 100, 200, 300 (when "Tap to count" is on Small squares). Adds undo(), showNumbers(on) and setup({ k, h, t, o }).
      Moves: add(kind, n), remove(kind, n), set(h,t,o), group('o'|'t'), split('t'|'h', piece), countAll(), lightKind(kind), clearLit(). */
   var VAL = { k: 1000, h: 100, t: 10, o: 1 }, NAME = { k: 'thousand cube', h: 'hundred flat', t: 'ten rod', o: 'one cube' }, NAMES = { k: 'thousand cubes', h: 'hundred flats', t: 'ten rods', o: 'one cubes' };
   var PLACE = { k: 'Thousands', h: 'Hundreds', t: 'Tens', o: 'Ones' }, ONE = { k: 'Thousand', h: 'Hundred', t: 'Ten', o: 'One' };
@@ -385,6 +387,8 @@
     function act(fn) { hist.push(counts()); if (hist.length > 60) hist.shift(); fn(); }
     T.undo = function () { if (!hist.length) return; last = 'undo'; rebuild(hist.pop()); };
     T.canUndo = function () { return hist.length > 0; };
+    /* put these blocks on the mat at once ({ k, h, t, o }), as one move Undo can take back: the teaching guide uses it */
+    T.setup = function (c) { act(function () { last = 'setup'; rebuild(c); }); };
     T.showNumbers = function (on) { o.readout = !!on; o.hideTotal = !on; change(); };
     function canAdd(k) { return counts()[k] < max[k] && value() + VAL[k] <= (o.limit || 999); }
     var sayTimer;
@@ -8078,8 +8082,10 @@
 
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): #tools shows every tool of the grade on shelves; #tools/<id> fills the screen with one tool
-     under a slim bar (back to all tools, Undo, Show number, Tools menu). ids is the grade's list (Atlas.tools); unset shows
-     every tool. A tool that has undo() or showNumbers() gets those buttons.
+     under a slim bar (back to all tools, Undo, Show number, Guide, Tools menu). ids is the grade's list (Atlas.tools); unset shows
+     every tool. A tool that has undo() or showNumbers() gets those buttons. A tool in GUIDED gets a Guide button: a teaching
+     guide for the grown-up (guide.js and guides/<id>.js, loaded on the first tap), behind a "for grown-ups" step unless the
+     grown-up view is on. Until the Guide has been opened or the tip closed on this device, a one-line tip points to it.
      Manip.shelves(ids, href, cur) draws the shelves, also for the site's own Toolbox page (tools.html), which opens a tool in a
      grade and sets atlas:toolbox in this tab's session storage so that tool's back button returns there. */
   var SHELVES = [['num', 'Numbers'], ['parts', 'Parts and groups'], ['alg', 'Patterns and equations'], ['space', 'Shapes and space'], ['meas', 'Measure, money and data']];
@@ -8122,8 +8128,10 @@
     ['coins', 'meas', 'Money', '', { tool: true },
       '<circle cx="18" cy="26" r="11" style="fill:#d9b44a;stroke:#a8862a;stroke-width:1.5"/><circle cx="31" cy="21" r="10" style="fill:#dfe3ea;stroke:#9aa3b2;stroke-width:1.5"/><circle cx="31" cy="21" r="5.5" style="fill:#d9b44a"/>']
   ];
+  var GUIDED = ['base10'];
   function icon(b) { return '<svg class="tb-ic" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">' + b[5] + '</svg>'; }
   var SVG_UNDO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+  var SVG_GUIDE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
   var SVG_MENU = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>';
   M.shelves = function (ids, href, cur) {
     var box = ids ? BOX.filter(function (b) { return ids.indexOf(b[0]) >= 0; }) : BOX;
@@ -8136,6 +8144,54 @@
     }).join('');
   };
   function toolHref(id) { return '#tools/' + id; }
+  var loaded = {};
+  function need(src) {
+    if (!loaded[src]) loaded[src] = new Promise(function (ok, bad) {
+      var s = document.createElement('script');
+      s.src = src; s.onload = ok; s.onerror = function () { delete loaded[src]; bad(new Error('Could not load ' + src)); };
+      document.head.appendChild(s);
+    });
+    return loaded[src];
+  }
+  function store(k, v) {
+    try { if (v === undefined) return localStorage.getItem(k); localStorage.setItem(k, v); } catch (e) { return null; }
+  }
+  /* the Guide button, its tip and its dialog: onMat(blocks) is called when the grown-up asks to put a lesson's blocks on the mat */
+  function guide(app, cur, onMat) {
+    var btn = qs('[data-a="guide"]', app), dlg = qs('.tb-guide', app), tip = qs('.tb-tip', app), grade = (window.Atlas && Atlas.grade) || 1;
+    function seen() { store('atlas:guidetip', '1'); if (tip) { tip.remove(); tip = null; } }
+    function close() { dlg.close(); }
+    function full() {
+      dlg.innerHTML = '<p class="gd-wait">Opening the guide&hellip;</p>';
+      Promise.all([need(ENGINE + 'guide.js'), window.PLB ? null : need(ENGINE + '../../plan/blurbs.js')])
+        .then(function () { return need(ENGINE + 'guides/' + cur[0] + '.js'); })
+        .then(function () {
+          dlg.innerHTML = AtlasGuide.html(cur[0], grade, cur[2]);
+          var les = AtlasGuide.lessons(cur[0], grade);
+          qsa('.gd-mat', dlg).forEach(function (b) { b.addEventListener('click', function () { onMat(les[+b.getAttribute('data-les')].mat); close(); }); });
+          qs('.tb-x', dlg).addEventListener('click', close);
+        })
+        .catch(function () { dlg.innerHTML = '<p class="gd-wait">The guide did not load. Check the internet connection and try again.</p>'; });
+    }
+    function open() {
+      seen();
+      if (!dlg.open) dlg.showModal();
+      if (qs('.gd-body:not(.gd-gate)', dlg)) return;
+      if (document.documentElement.classList.contains('adult')) { full(); return; }
+      dlg.innerHTML = '<div class="gd-head"><div><p class="gd-eye">Teaching guide</p><h2 id="gdh">' + cur[2] + '</h2></div>' +
+        '<button type="button" class="tb-x" aria-label="Close">&#10005;</button></div><div class="gd-body gd-gate">' +
+        '<p>For grown-ups: short lessons to teach with this tool, questions to ask and common mistakes.</p>' +
+        '<button type="button" class="gd-open">Open the guide</button></div>';
+      qs('.tb-x', dlg).addEventListener('click', close);
+      qs('.gd-open', dlg).addEventListener('click', full);
+    }
+    btn.addEventListener('click', open);
+    dlg.addEventListener('click', function (e) { if (e.target === dlg) close(); });
+    if (tip) {
+      qs('.tb-tip-go', tip).addEventListener('click', open);
+      qs('.tb-tip-x', tip).addEventListener('click', seen);
+    }
+  }
   function fromBox(on) {
     try { if (on === false) sessionStorage.removeItem('atlas:toolbox'); return sessionStorage.getItem('atlas:toolbox') === '1'; } catch (e) { return false; }
   }
@@ -8148,14 +8204,19 @@
         '<p class="lede">Hands-on tools to build, move and explore. Pick one.</p></header><div class="tb-list">' + M.shelves(ids, toolHref) + '</div></div>';
       return null;
     }
+    var guided = GUIDED.indexOf(cur[0]) >= 0;
     var back = fromBox() ? '<a class="tb-back" href="../tools.html" aria-label="Back to the Toolbox">' : '<a class="tb-back" href="#tools" aria-label="Back to all tools">';
     var menu = '<dialog class="tb-menu" aria-labelledby="tbmh"><div class="tb-mh"><h2 id="tbmh">Tools</h2>' + grade +
       '<button type="button" class="tb-x" aria-label="Close">&#10005;</button></div>' + M.shelves(ids, toolHref, cur[0]) + '</dialog>';
     app.innerHTML = '<div class="tb"><div class="tb-bar">' + back + '&#8249;</a><h1>' + cur[2] + '</h1><span class="tb-sp"></span>' +
       '<button type="button" class="tb-b" data-a="undo" hidden>' + SVG_UNDO + '<span>Undo</span></button>' +
       '<button type="button" class="tb-b" data-a="show" role="switch" aria-checked="false" hidden><span>Show number</span><i class="tb-sw" aria-hidden="true"></i></button>' +
+      (guided ? '<button type="button" class="tb-b" data-a="guide" aria-haspopup="dialog">' + SVG_GUIDE + '<span>Guide</span></button>' : '') +
       '<button type="button" class="tb-b" data-a="menu" aria-haspopup="dialog">' + SVG_MENU + '<span>Tools</span></button></div>' +
-      (cur[3] ? '<p class="tb-how">' + cur[3] + '</p>' : '') + '<div class="tb-stage"></div>' + menu + '</div>';
+      (guided && store('atlas:guidetip') !== '1' ? '<p class="tb-tip">Grown-ups: new to this tool? <button type="button" class="tb-tip-go">Open the teaching guide</button>' +
+        '<button type="button" class="tb-tip-x" aria-label="Hide this tip">&#10005;</button></p>' : '') +
+      (cur[3] ? '<p class="tb-how">' + cur[3] + '</p>' : '') + '<div class="tb-stage"></div>' + menu +
+      (guided ? '<dialog class="tb-guide" aria-labelledby="gdh"></dialog>' : '') + '</div>';
     var undo = qs('[data-a="undo"]', app), show = qs('[data-a="show"]', app), dlg = qs('.tb-menu', app);
     function sync() { if (t && t.canUndo) undo.disabled = !t.canUndo(); }
     var opts = {}, k;
@@ -8171,6 +8232,7 @@
       show.setAttribute('aria-checked', String(on));
       t.showNumbers(on);
     });
+    if (guided) guide(app, cur, function (c) { if (t.setup) t.setup(c); });
     qs('[data-a="menu"]', app).addEventListener('click', function () { dlg.showModal(); });
     qs('.tb-x', dlg).addEventListener('click', function () { dlg.close(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.closest('.tb-card')) dlg.close(); });
@@ -8182,5 +8244,6 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
+  M.guided = GUIDED;
   M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'times', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();

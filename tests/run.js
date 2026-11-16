@@ -10,6 +10,7 @@
       and, for the newer question shapes, the answer worked out again by verify/*.js.
    3. Pages: every chapter, lesson screen, practice page, quiz and Toolbox tool opens with no errors. The Toolbox blocks
       are tapped and dragged the way a child would (add, snap 10 ones into a ten, put back, undo) on a phone-size screen.
+      Each tool's teaching guide opens with 3 or more mini-lessons for the grade, citing only that grade's expectations.
    3b. Worksheets: every printable sheet in every theme, with and without its key, must fit its page, and every key is
       worked out again by verify/sheets.js; the Worksheets tab must fit a phone and print one page per sheet.
    4. Answering: on a phone-size screen, practice questions of every kind are answered the way a child would
@@ -32,6 +33,8 @@ const ONLY = args.includes('--grade') ? [+args[args.indexOf('--grade') + 1]] : n
 const GRADES = ONLY || [1, 2, 3, 4, 5, 6, 7, 8];
 const TRIES = QUICK ? 12 : 40;
 const problems = [];
+/* every expectation, as "g<grade>.<code>", for the teaching guides' codes (check 3a22) */
+const LADDER = (() => { const w = {}; vm.runInNewContext(fs.readFileSync(path.join(ROOT, 'plan', 'ladder.js'), 'utf8'), { window: w }); return new Set(w.PL.map(r => 'g' + r[0] + '.' + r[1])); })();
 function fail(where, what) { problems.push(where + ': ' + what); }
 function log(s) { process.stdout.write(s + '\n'); quietSince = Date.now(); }
 /* a slow step names itself: after 90 s with nothing logged, say which step is running (once a minute) */
@@ -1157,6 +1160,40 @@ async function checkGrade(browser, base, g) {
     }
     if (g >= 7) { await mode('sq'); await bad('√36 = 6', 'the square root of 36'); await snap('s+1', 4); await bad('between 6 and 7', 'the square root of 40'); }
     if (await page.evaluate(() => document.documentElement.scrollWidth > innerWidth + 1)) fail(where, 'Toolbox times grid: the page runs off the side of a phone screen');
+  }
+
+  mark('grade ' + g + ', check 3a22 (Toolbox teaching guides)');
+  /* 3a22. Toolbox teaching guides: each guided tool of the grade opens its guide from the Guide button (through the "for grown-ups"
+     step, as a child's device would). The guide has 3 or more mini-lessons for the grade, each with I do, We do and You do; every
+     expectation code it names is one of this grade's (plan/ladder.js) and has its plain-language line; nothing reads "undefined" and
+     nothing runs off the side. A lesson's "Put ... on the mat" button closes the guide and puts blocks on the mat, which Undo takes back. */
+  for (const id of await page.evaluate(() => Manip.guided.filter(t => (Atlas.tools || []).includes(t)))) {
+    const w = where + ' Toolbox guide (' + id + ')';
+    await page.evaluate(t => { location.hash = '#home'; location.hash = '#tools/' + t; }, id);
+    await page.waitForTimeout(150);
+    await page.click('.tb-b[data-a=guide]');
+    if (await page.locator('.gd-open').count()) await page.click('.gd-open');
+    await page.waitForSelector('.tb-guide .gd-les', { timeout: 5000 }).catch(() => fail(w, 'the guide did not open'));
+    const gd = await page.evaluate(() => {
+      const d = document.querySelector('.tb-guide');
+      return {
+        text: d.innerText, lessons: d.querySelectorAll('.gd-les').length, steps: [...d.querySelectorAll('.gd-steps')].map(s => s.querySelectorAll('dd').length),
+        codes: [...d.querySelectorAll('.gd-codes i, .gd-cur b')].map(e => e.textContent), lines: [...d.querySelectorAll('.gd-cur li')].map(e => e.textContent),
+        wide: d.scrollWidth > d.clientWidth + 1 || [...d.querySelectorAll('.gd-body *')].some(e => e.getBoundingClientRect().right > innerWidth + 1)
+      };
+    });
+    if (gd.lessons < 3) fail(w, 'has ' + gd.lessons + ' mini-lessons for this grade. It needs 3 or more.');
+    if (gd.steps.some(n => n !== 3)) fail(w, 'a mini-lesson is missing I do, We do or You do');
+    if (/undefined|NaN/.test(gd.text)) fail(w, 'shows "undefined" or "NaN"');
+    gd.codes.filter(c => !LADDER.has('g' + g + '.' + c)).forEach(c => fail(w, 'names ' + c + ', which is not a Grade ' + g + ' expectation'));
+    gd.lines.filter(l => l.length < 12).forEach(l => fail(w, 'curriculum line "' + l + '" has no plain-language line'));
+    if (gd.wide) fail(w, 'runs off the side of a phone screen');
+    if (await page.locator('.gd-mat').count()) {
+      await page.evaluate(() => { document.querySelector('.gd-mat').closest('.gd-les').open = true; });
+      await page.locator('.gd-mat').first().click(); await page.waitForTimeout(300);
+      if (await page.evaluate(() => document.querySelector('.tb-guide').open)) fail(w, '"Put ... on the mat" did not close the guide');
+      if (await page.locator('.tb-b[data-a=undo]').isDisabled()) fail(w, '"Put ... on the mat" did not put anything on the mat for Undo to take back');
+    } else await page.click('.tb-guide .tb-x');
   }
 
   mark('grade ' + g + ', check 3b (full chapters)');
