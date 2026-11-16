@@ -1444,7 +1444,8 @@ html.tool-view main#app{padding:0}
 @media (max-width:700px){
   .tb{padding:0 10px 10px}
   .tb-bar{gap:6px;min-height:56px;margin:0 -10px 10px;padding:6px 10px}
-  .tb-bar h1{font-size:1.1rem}
+  .tb-bar h1{flex:1;min-width:0;font-size:1.1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tb-bar .tb-sp{display:none}
   .tb-b span{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
   .tb-b{padding:0 10px}
   .tb-menu{width:100%;max-width:100%;margin:auto 0 0;border-radius:22px 22px 0 0;padding:16px 14px;max-height:calc(100dvh - 32px)}
