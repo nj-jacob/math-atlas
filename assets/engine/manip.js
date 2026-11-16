@@ -8083,7 +8083,7 @@
   /* ================= Toolbox page (#tools) =================
      Manip.toolbox(app, sub, ids): #tools shows every tool of the grade on shelves; #tools/<id> fills the screen with one tool
      under a slim bar (back to all tools, Undo, Show number, Guide, Tools menu). ids is the grade's list (Atlas.tools); unset shows
-     every tool. A tool that has undo() or showNumbers() gets those buttons. A tool in GUIDED gets a Guide button: a teaching
+     every tool. A tool that has undo() or showNumbers() gets those buttons. Every tool has a Guide button: a teaching
      guide for the grown-up (guide.js and guides/<id>.js, loaded on the first tap), behind a "for grown-ups" step unless the
      grown-up view is on. Until the Guide has been opened or the tip closed on this device, a one-line tip points to it.
      Manip.shelves(ids, href, cur) draws the shelves, also for the site's own Toolbox page (tools.html), which opens a tool in a
@@ -8128,7 +8128,6 @@
     ['coins', 'meas', 'Money', '', { tool: true },
       '<circle cx="18" cy="26" r="11" style="fill:#d9b44a;stroke:#a8862a;stroke-width:1.5"/><circle cx="31" cy="21" r="10" style="fill:#dfe3ea;stroke:#9aa3b2;stroke-width:1.5"/><circle cx="31" cy="21" r="5.5" style="fill:#d9b44a"/>']
   ];
-  var GUIDED = ['base10'];
   function icon(b) { return '<svg class="tb-ic" viewBox="0 0 48 48" width="44" height="44" aria-hidden="true" focusable="false">' + b[5] + '</svg>'; }
   var SVG_UNDO = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M9 7L4 12l5 5M4 12h11a5 5 0 0 1 0 10h-3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
   var SVG_GUIDE = '<svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true"><path d="M12 6.5C10 5 7 4.5 3.5 5v13c3.5-.5 6.5 0 8.5 1.5 2-1.5 5-2 8.5-1.5V5C17 4.5 14 5 12 6.5zM12 6.5v13" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>';
@@ -8204,19 +8203,18 @@
         '<p class="lede">Hands-on tools to build, move and explore. Pick one.</p></header><div class="tb-list">' + M.shelves(ids, toolHref) + '</div></div>';
       return null;
     }
-    var guided = GUIDED.indexOf(cur[0]) >= 0;
     var back = fromBox() ? '<a class="tb-back" href="../tools.html" aria-label="Back to the Toolbox">' : '<a class="tb-back" href="#tools" aria-label="Back to all tools">';
     var menu = '<dialog class="tb-menu" aria-labelledby="tbmh"><div class="tb-mh"><h2 id="tbmh">Tools</h2>' + grade +
       '<button type="button" class="tb-x" aria-label="Close">&#10005;</button></div>' + M.shelves(ids, toolHref, cur[0]) + '</dialog>';
     app.innerHTML = '<div class="tb"><div class="tb-bar">' + back + '&#8249;</a><h1>' + cur[2] + '</h1><span class="tb-sp"></span>' +
       '<button type="button" class="tb-b" data-a="undo" hidden>' + SVG_UNDO + '<span>Undo</span></button>' +
       '<button type="button" class="tb-b" data-a="show" role="switch" aria-checked="false" hidden><span>Show number</span><i class="tb-sw" aria-hidden="true"></i></button>' +
-      (guided ? '<button type="button" class="tb-b" data-a="guide" aria-haspopup="dialog">' + SVG_GUIDE + '<span>Guide</span></button>' : '') +
+      '<button type="button" class="tb-b" data-a="guide" aria-haspopup="dialog">' + SVG_GUIDE + '<span>Guide</span></button>' +
       '<button type="button" class="tb-b" data-a="menu" aria-haspopup="dialog">' + SVG_MENU + '<span>Tools</span></button></div>' +
-      (guided && store('atlas:guidetip') !== '1' ? '<p class="tb-tip">Grown-ups: new to this tool? <button type="button" class="tb-tip-go">Open the teaching guide</button>' +
+      (store('atlas:guidetip') !== '1' ? '<p class="tb-tip">Grown-ups: new to this tool? <button type="button" class="tb-tip-go">Open the teaching guide</button>' +
         '<button type="button" class="tb-tip-x" aria-label="Hide this tip">&#10005;</button></p>' : '') +
       (cur[3] ? '<p class="tb-how">' + cur[3] + '</p>' : '') + '<div class="tb-stage"></div>' + menu +
-      (guided ? '<dialog class="tb-guide" aria-labelledby="gdh"></dialog>' : '') + '</div>';
+      '<dialog class="tb-guide" aria-labelledby="gdh"></dialog></div>';
     var undo = qs('[data-a="undo"]', app), show = qs('[data-a="show"]', app), dlg = qs('.tb-menu', app);
     function sync() { if (t && t.canUndo) undo.disabled = !t.canUndo(); }
     var opts = {}, k;
@@ -8232,7 +8230,7 @@
       show.setAttribute('aria-checked', String(on));
       t.showNumbers(on);
     });
-    if (guided) guide(app, cur, function (c) { if (t.setup) t.setup(c); });
+    guide(app, cur, function (c) { if (t.setup) t.setup(c); });
     qs('[data-a="menu"]', app).addEventListener('click', function () { dlg.showModal(); });
     qs('.tb-x', dlg).addEventListener('click', function () { dlg.close(); });
     dlg.addEventListener('click', function (e) { if (e.target === dlg || e.target.closest('.tb-card')) dlg.close(); });
@@ -8244,6 +8242,6 @@
     if (!M[name] || typeof M[name] !== 'function') throw new Error('Unknown manipulative: ' + name);
     return M[name](root, opts || {});
   };
-  M.guided = GUIDED;
+  M.guided = BOX.map(function (b) { return b[0]; });
   M.list = ['balance', 'patterns', 'data', 'grid', 'solids', 'times', 'base10', 'disks', 'clock', 'areagrid', 'scale', 'counters', 'tenframe', 'hundred', 'numberline', 'fractions', 'coins', 'geoboard', 'tiles'];
 })();
