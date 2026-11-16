@@ -1163,7 +1163,7 @@ async function checkGrade(browser, base, g) {
   }
 
   mark('grade ' + g + ', check 3a22 (Toolbox teaching guides)');
-  /* 3a22. Toolbox teaching guides: each guided tool of the grade opens its guide from the Guide button (through the "for grown-ups"
+  /* 3a22. Toolbox teaching guides: each tool of the grade opens its guide from the Guide button (through the "for grown-ups"
      step, as a child's device would). The guide has 3 or more mini-lessons for the grade, each with I do, We do and You do; every
      expectation code it names is one of this grade's (plan/ladder.js) and has its plain-language line; nothing reads "undefined" and
      nothing runs off the side. A lesson's "Put ... on the mat" button closes the guide and puts blocks on the mat, which Undo takes back. */
