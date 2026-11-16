@@ -3,6 +3,7 @@
 Newest first. One line per change, in plain English.
 
 ## 2026-11-16
+- Grade 6 Decimals: the "match each underlined digit" question always uses three different numbers (rarely two cards looked the same apart from the underline, which also stopped a publish).
 - **Teaching guides for the Toolbox (pilot: Place value blocks).** A Guide button on the tool opens a guide for parents, tutors and teachers: a 2-minute start, short mini-lessons for the grade (I do, We do, You do), questions to ask, common mistakes, what each button does and the expectations it covers. A one-line tip points new grown-ups to it.
 
 ## 2026-11-11

@@ -555,7 +555,9 @@ A.yt({ q: 'Which is greatest: ' + fr(2, 5) + ', 0.35 or 0.04?', type: 'mc', opti
             steps: [right], explain: right, meta: { k: 'g6-dval-tf', n: k, i: i, said: said } };
         }],
         [2, 'match', function () {
-          var items = [0, 1, 2].map(function (i) { return [k4(), i]; });
+          var ks = [];
+          while (ks.length < 3) { var k = k4(); if (ks.indexOf(k) < 0) ks.push(k); } /* three different numbers, so no two cards read the same */
+          var items = ks.map(function (k, i) { return [k, i]; });
           return { q: 'Match each underlined digit to what it is worth.', type: 'match', pairs: items.map(function (t) { return [uk(t[0], t[1]), dec(dval(t[0], t[1]))]; }),
             hint: 'Tenths, hundredths, thousandths.', steps: ['The first place after the point is tenths.'], explain: items.map(function (t) { return dec(t[0], 3) + ': ' + dec(dval(t[0], t[1])); }).join('. ') + '.', meta: { k: 'g6-dval-match', items: items } };
         }]
